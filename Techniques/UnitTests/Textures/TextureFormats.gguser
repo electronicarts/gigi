@@ -1,0 +1,17 @@
+{
+    "resourceViewNodeIndex": 1,
+    "resourceViewResourceIndex": 1,
+    "importedResources": [
+        {
+            "nodeName": "Texture",
+            "texture": {
+                "size": [
+                    16,
+                    16,
+                    1
+                ],
+                "format": "Any"
+            }
+        }
+    ]
+}

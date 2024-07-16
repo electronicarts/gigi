@@ -1,0 +1,118 @@
+{
+    "$schema": "gigischema.json",
+    "name": "SubInSubInner2",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Mult",
+            "type": "Float4",
+            "dflt": "1.0f, 0.5f, 2.0f, 1.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Inner2CS",
+            "fileName": "SubInSubInner2_CS.hlsl",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Rotate Colors",
+                "editorPos": [
+                    -12.0,
+                    -7.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Inner2CS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    -149.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -149.0,
+                    34.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy Back",
+                "editorPos": [
+                    149.0,
+                    -1.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Rotate Colors",
+                    "pin": "Output"
+                },
+                "dest": {
+                    "node": "Rotate Colors",
+                    "pin": "Input"
+                }
+            }
+        }
+    ]
+}

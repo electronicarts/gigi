@@ -1,0 +1,834 @@
+{
+    "$schema": "gigischema.json",
+    "name": "mnist",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Clear",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            },
+            "UIHint": "Button"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "c_numInputNeurons",
+            "type": "Int",
+            "Const": true,
+            "Static": true,
+            "dflt": "784"
+        },
+        {
+            "name": "c_numHiddenNeurons",
+            "type": "Int",
+            "Const": true,
+            "Static": true,
+            "dflt": "30"
+        },
+        {
+            "name": "c_numOutputNeurons",
+            "type": "Int",
+            "Const": true,
+            "Static": true,
+            "dflt": "10"
+        },
+        {
+            "name": "c_numHiddenWeights",
+            "comment": "(c_numInputNeurons + 1) * c_numHiddenNeurons",
+            "type": "Int",
+            "Const": true,
+            "dflt": "23550"
+        },
+        {
+            "name": "c_numOutputWeights",
+            "comment": "(c_numHiddenNeurons + 1) * c_numOutputNeurons",
+            "type": "Int",
+            "Const": true,
+            "Static": true,
+            "dflt": "310"
+        },
+        {
+            "name": "PenSize",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "c_NNInputImageSize",
+            "type": "Uint2",
+            "Const": true,
+            "Static": true,
+            "dflt": "28, 28"
+        },
+        {
+            "name": "c_drawingCanvasSize",
+            "type": "Uint2",
+            "Const": true,
+            "Static": true,
+            "dflt": "256, 256"
+        },
+        {
+            "name": "UseImportedImage",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "NormalizeDrawing",
+            "comment": "MNIST normalization: shrink image to 20x20 and put center of mass in the middle of a 28x28 image",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "initialized",
+            "type": "Bool",
+            "dflt": "false",
+            "transient": true
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Draw",
+            "fileName": "draw.hlsl",
+            "entryPoint": "Draw",
+            "resources": [
+                {
+                    "name": "Canvas",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "DrawExtents",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "DrawExtents"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Shrink",
+            "fileName": "shrink.hlsl",
+            "entryPoint": "Shrink",
+            "resources": [
+                {
+                    "name": "Canvas",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "DrawExtents",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "DrawExtents"
+                        }
+                    }
+                },
+                {
+                    "name": "NNInput",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "ImportedImage",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Hidden Layer",
+            "fileName": "HiddenLayer.hlsl",
+            "entryPoint": "HiddenLayer",
+            "CSNumThreads": [
+                64,
+                1,
+                1
+            ],
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "NNInput",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "NNWeights",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "HiddenLayerActivations",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Output Layer",
+            "fileName": "OutputLayer.hlsl",
+            "entryPoint": "OutputLayer",
+            "CSNumThreads": [
+                64,
+                1,
+                1
+            ],
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "NNWeights",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "HiddenLayerActivations",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "OutputLayerActivations",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Presentation",
+            "fileName": "Presentation.hlsl",
+            "entryPoint": "Presentation",
+            "resources": [
+                {
+                    "name": "DrawCanvas",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "NNInput",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "HiddenLayerActivations",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "OutputLayerActivations",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    },
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "PresentationCanvas",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "CalculateExtents",
+            "fileName": "CalculateExtents.hlsl",
+            "entryPoint": "CalculateExtents",
+            "resources": [
+                {
+                    "name": "Canvas",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "DrawExtents",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "DrawExtents"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "DrawExtents",
+            "fields": [
+                {
+                    "name": "MinX",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "MaxX",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "MinY",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "MaxY",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "PixelCount",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "PixelLocationSum",
+                    "type": "Uint2",
+                    "dflt": "0, 0"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "Backprop_Weights.bin",
+            "type": "Asset",
+            "binary": true
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "NN Weights",
+                "editorPos": [
+                    713.0,
+                    290.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "multiply": 23860
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Draw",
+                "editorPos": [
+                    355.0,
+                    162.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Canvas",
+                        "dstNode": "Drawing Canvas",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "DrawExtents",
+                        "dstNode": "Draw Extents",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Draw"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Drawing Canvas"
+                    },
+                    "indirectBuffer": {
+                        "node": "NN Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Drawing Canvas",
+                "editorPos": [
+                    197.0,
+                    162.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "variable": {
+                        "name": "c_drawingCanvasSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Shrink",
+                "editorPos": [
+                    691.0,
+                    162.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Canvas",
+                        "dstNode": "CalculateExtents",
+                        "dstPin": "Canvas"
+                    },
+                    {
+                        "srcPin": "NNInput",
+                        "dstNode": "NN Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ImportedImage",
+                        "dstNode": "Imported Image",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "DrawExtents",
+                        "dstNode": "CalculateExtents",
+                        "dstPin": "DrawExtents"
+                    }
+                ],
+                "shader": {
+                    "name": "Shrink"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NN Input"
+                    },
+                    "indirectBuffer": {
+                        "node": "NN Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NN Input",
+                "editorPos": [
+                    509.0,
+                    274.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        28,
+                        28,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Hidden Layer",
+                "editorPos": [
+                    883.0,
+                    204.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "NNInput",
+                        "dstNode": "Shrink",
+                        "dstPin": "NNInput"
+                    },
+                    {
+                        "srcPin": "NNWeights",
+                        "dstNode": "NN Weights",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "HiddenLayerActivations",
+                        "dstNode": "Hidden Layer Activations",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Hidden Layer"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "c_numHiddenNeurons"
+                    },
+                    "indirectBuffer": {
+                        "node": "Hidden Layer Activations"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Hidden Layer Activations",
+                "editorPos": [
+                    654.0,
+                    370.0
+                ],
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "c_numHiddenNeurons"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Output Layer",
+                "editorPos": [
+                    1109.0,
+                    249.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "HiddenLayerActivations",
+                        "dstNode": "Hidden Layer",
+                        "dstPin": "HiddenLayerActivations"
+                    },
+                    {
+                        "srcPin": "NNWeights",
+                        "dstNode": "Hidden Layer",
+                        "dstPin": "NNWeights"
+                    },
+                    {
+                        "srcPin": "OutputLayerActivations",
+                        "dstNode": "Output Layer Activations",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Output Layer"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "c_numOutputNeurons"
+                    },
+                    "indirectBuffer": {
+                        "node": "Output Layer Activations"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Output Layer Activations",
+                "editorPos": [
+                    897.0,
+                    338.0
+                ],
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "c_numOutputNeurons"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Presentation",
+                "editorPos": [
+                    1379.0,
+                    166.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "OutputLayerActivations",
+                        "dstNode": "Output Layer",
+                        "dstPin": "OutputLayerActivations"
+                    },
+                    {
+                        "srcPin": "HiddenLayerActivations",
+                        "dstNode": "Output Layer",
+                        "dstPin": "HiddenLayerActivations"
+                    },
+                    {
+                        "srcPin": "PresentationCanvas",
+                        "dstNode": "Presentation Canvas",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "DrawCanvas",
+                        "dstNode": "Shrink",
+                        "dstPin": "Canvas"
+                    },
+                    {
+                        "srcPin": "NNInput",
+                        "dstNode": "Hidden Layer",
+                        "dstPin": "NNInput"
+                    }
+                ],
+                "shader": {
+                    "name": "Presentation"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Presentation Canvas"
+                    },
+                    "indirectBuffer": {
+                        "node": "Presentation Canvas"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Presentation Canvas",
+                "editorPos": [
+                    1148.0,
+                    370.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Imported Image",
+                "editorPos": [
+                    485.0,
+                    338.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Draw Extents",
+                "editorPos": [
+                    209.0,
+                    242.0
+                ],
+                "format": {
+                    "structureType": {
+                        "name": "DrawExtents"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "CalculateExtents",
+                "editorPos": [
+                    515.0,
+                    162.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Canvas",
+                        "dstNode": "Draw",
+                        "dstPin": "Canvas"
+                    },
+                    {
+                        "srcPin": "DrawExtents",
+                        "dstNode": "Draw",
+                        "dstPin": "DrawExtents"
+                    }
+                ],
+                "shader": {
+                    "name": "CalculateExtents"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Drawing Canvas"
+                    }
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "iFrame"
+            },
+            "AVar": {
+                "name": "iFrame"
+            },
+            "BLiteral": "1",
+            "condition": {
+                "variable1": "initialized",
+                "comparison": "IsTrue"
+            }
+        },
+        {
+            "destination": {
+                "name": "iFrame"
+            },
+            "ALiteral": "0",
+            "BLiteral": "0",
+            "condition": {
+                "variable1": "initialized",
+                "comparison": "IsFalse"
+            }
+        },
+        {
+            "destination": {
+                "name": "initialized"
+            },
+            "ALiteral": "true",
+            "op": "BitwiseOr",
+            "BLiteral": "true",
+            "setBefore": false
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderCompiler": "FXC",
+            "shaderModelCs": "cs_5_1",
+            "shaderModelVs": "vs_5_1",
+            "shaderModelPs": "ps_5_1"
+        }
+    }
+}

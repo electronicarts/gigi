@@ -1,0 +1,156 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "Color",
+        "camera": {
+            "flySpeed": 1.0,
+            "startingCameraPos": [
+                0.0,
+                0.0,
+                -325.0
+            ]
+        },
+        "ProjMtx_textureName": "Color"
+    },
+    "resourceViewNodeIndex": 13,
+    "resourceViewResourceIndex": 4,
+    "savedVariables": [
+        {
+            "name": "metallic",
+            "value": "0.000000"
+        },
+        {
+            "name": "roughness",
+            "value": "1.000000"
+        },
+        {
+            "name": "lightDir",
+            "value": "-1.000000,0.300000,-0.100000"
+        },
+        {
+            "name": "lightColor",
+            "value": "1.000000,1.000000,1.000000"
+        },
+        {
+            "name": "lightIntensity",
+            "value": "3.000000"
+        },
+        {
+            "name": "lightAmbient",
+            "value": "0.025000,0.025000,0.025000"
+        },
+        {
+            "name": "RenderSize",
+            "value": "512,512"
+        },
+        {
+            "name": "Scale",
+            "value": "100.000000"
+        },
+        {
+            "name": "HeightScale",
+            "value": "0.100000"
+        },
+        {
+            "name": "RotationRadiansPerFrame",
+            "value": "0.002000"
+        },
+        {
+            "name": "LightingMode",
+            "value": "0"
+        },
+        {
+            "name": "CameraJitterLastFrame",
+            "value": "0.000366,-0.000036"
+        },
+        {
+            "name": "JitteredViewProjMtxLastFrame",
+            "value": "2.414213,0.000000,0.000366,0.119019,0.000000,2.414213,-0.000036,-0.011755,0.000000,0.000000,-0.000100,0.067507,0.000000,0.000000,1.000000,325.000000"
+        },
+        {
+            "name": "TAA_alpha",
+            "value": "0.100000"
+        },
+        {
+            "name": "TAA_sRGB",
+            "value": "false"
+        },
+        {
+            "name": "TAA_Enabled",
+            "value": "true"
+        },
+        {
+            "name": "TAA_JitteredViewProjMtxLastFrame",
+            "value": "2.414213,0.000000,0.000366,0.119019,0.000000,2.414213,-0.000036,-0.011755,0.000000,0.000000,-0.000100,0.067507,0.000000,0.000000,1.000000,325.000000"
+        },
+        {
+            "name": "TAA_DepthClearValue",
+            "value": "0.000000"
+        },
+        {
+            "name": "TAA_TemporalReprojection",
+            "value": "true"
+        },
+        {
+            "name": "TAA_ColorNeighborhoodMode",
+            "value": "1"
+        },
+        {
+            "name": "TAA_CameraJitterLastFrame",
+            "value": "0.000366,-0.000036"
+        },
+        {
+            "name": "TAA_UseMotionVectors",
+            "value": "true"
+        },
+        {
+            "name": "TAA_resetHistory",
+            "value": "false"
+        },
+        {
+            "name": "Tonemapping_ExposureFStops",
+            "value": "1.000000"
+        },
+        {
+            "name": "Tonemapping_ToneMapper",
+            "value": "1"
+        },
+        {
+            "name": "Outline_enabled",
+            "value": "true"
+        },
+        {
+            "name": "Outline_expansionRadius",
+            "value": "3"
+        },
+        {
+            "name": "Outline_blurRadius",
+            "value": "5"
+        },
+        {
+            "name": "Outline_outlineColor",
+            "value": "1.000000,0.500000,0.000000"
+        },
+        {
+            "name": "Outline_depthClearValue",
+            "value": "0.000000"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "4. SDR",
+            "viewableResourceDisplayName": "Tonemapping_Tonemap.SDR: Tonemapping_Color_SDR (UAV - After)"
+        },
+        {
+            "name": "1. HDR",
+            "viewableResourceDisplayName": "Globe.colorTarget0 (After)"
+        },
+        {
+            "name": "2. Velocity",
+            "viewableResourceDisplayName": "Globe.colorTarget1 (After)"
+        },
+        {
+            "name": "3. TAA",
+            "viewableResourceDisplayName": "TAA_Accumulate.Accum: TAA_Accumulation (UAV - After)"
+        }
+    ]
+}

@@ -1,0 +1,55 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "Depth"
+        },
+        {
+            "nodeName": "Input"
+        },
+        {
+            "nodeName": "Velocity"
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "alpha",
+            "value": "0.100000"
+        },
+        {
+            "name": "sRGB",
+            "value": "true"
+        },
+        {
+            "name": "Enabled",
+            "value": "true"
+        },
+        {
+            "name": "JitteredViewProjMtxLastFrame",
+            "value": "2.414213,0.000000,0.187500,1.875000,0.000000,2.414213,-0.018519,-0.185185,0.000000,0.000000,-0.000100,0.099010,0.000000,0.000000,1.000000,10.000000"
+        },
+        {
+            "name": "DepthClearValue",
+            "value": "0.000000"
+        },
+        {
+            "name": "TemporalReprojection",
+            "value": "true"
+        },
+        {
+            "name": "ColorNeighborhoodMode",
+            "value": "0"
+        },
+        {
+            "name": "CameraJitterLastFrame",
+            "value": "0.187500,-0.018519"
+        },
+        {
+            "name": "UseMotionVectors",
+            "value": "true"
+        },
+        {
+            "name": "resetHistory",
+            "value": "false"
+        }
+    ]
+}

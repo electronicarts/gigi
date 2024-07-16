@@ -1,0 +1,58 @@
+{
+    "$schema": "gigischema.json",
+    "name": "SubGraphTestInner",
+    "version": "0.98b",
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Imported Tex",
+                "editorPos": [
+                    245.0,
+                    370.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Exported Tex",
+                "editorPos": [
+                    247.0,
+                    466.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Imported Tex"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Imported Tex"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy Import To Export",
+                "editorPos": [
+                    451.0,
+                    399.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Imported Tex",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Exported Tex",
+                    "pin": "resource"
+                }
+            }
+        }
+    ]
+}

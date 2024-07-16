@@ -1,0 +1,30 @@
+{
+    "resourceViewNodeIndex": 4,
+    "resourceViewResourceIndex": 2,
+    "importedResources": [
+        {
+            "nodeName": "Render_Target",
+            "texture": {
+                "size": [
+                    256,
+                    256,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Dispatch_Count_1",
+            "value": "50,50,1"
+        },
+        {
+            "name": "Dispatch_Count_2",
+            "value": "100,100,1"
+        },
+        {
+            "name": "Second_Dispatch_Offset",
+            "value": "2"
+        }
+    ]
+}

@@ -1,0 +1,2527 @@
+///////////////////////////////////////////////////////////////////////////////
+//         Gigi Rapid Graphics Prototyping and Code Generation Suite         //
+//        Copyright (c) 2024 Electronic Arts Inc. All rights reserved.       //
+///////////////////////////////////////////////////////////////////////////////
+
+#pragma once
+
+#include <stdio.h>
+#include "Schemas/Types.h"
+#include "Backends/Shared.h"
+#include <unordered_map>
+#include <unordered_set>
+#include <algorithm>
+#include "GigiCompilerLib/Utils.h"
+
+struct DfltFixupVisitor
+{
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool FixupTypeDflt(const DataFieldType& type, std::string& dflt)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(type);
+
+        // Lazily implementing the cases that need to be fixed. add more as needed.
+        if (typeInfo.componentCount == 1 && typeInfo.componentType2 == DataFieldType::Float)
+        {
+            float f = 0.0f;
+            if (sscanf_s(dflt.c_str(), "%f", &f) == 1)
+            {
+                char buffer[256];
+                sprintf_s(buffer, "%ff", f);
+                dflt = buffer;
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(StructField& field, const std::string& path)
+    {
+        FixupTypeDflt(field.type, field.dflt);
+        return true;
+    }
+
+    bool Visit(Variable& variable, const std::string& path)
+    {
+        FixupTypeDflt(variable.type, variable.dflt);
+        return true;
+    }
+};
+
+struct DataFixupVisitor
+{
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(Condition& condition, const std::string& path)
+    {
+        if (condition.comparison == ConditionComparison::Count)
+            return true;
+
+        if (condition.variable1.empty() || condition.variable1Index == -1)
+            condition.comparison = ConditionComparison::Count;
+
+        return true;
+    }
+};
+
+struct AddNodeInfoToShadersVisitor
+{
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_ComputeShader& node, const std::string& path)
+    {
+        ShaderDefine newDefine;
+        std::ostringstream stream;
+
+        newDefine.name = "__GigiDispatchMultiply";
+        stream = std::ostringstream();
+        stream << "uint3(" << node.dispatchSize.multiply[0] << "," << node.dispatchSize.multiply[1] << "," << node.dispatchSize.multiply[2] << ")";
+        newDefine.value = stream.str();
+        node.defines.push_back(newDefine);
+
+        newDefine.name = "__GigiDispatchDivide";
+        stream = std::ostringstream();
+        stream << "uint3(" << node.dispatchSize.divide[0] << "," << node.dispatchSize.divide[1] << "," << node.dispatchSize.divide[2] << ")";
+        newDefine.value = stream.str();
+        node.defines.push_back(newDefine);
+
+        newDefine.name = "__GigiDispatchPreAdd";
+        stream = std::ostringstream();
+        stream << "uint3(" << node.dispatchSize.preAdd[0] << "," << node.dispatchSize.preAdd[1] << "," << node.dispatchSize.preAdd[2] << ")";
+        newDefine.value = stream.str();
+        node.defines.push_back(newDefine);
+
+        newDefine.name = "__GigiDispatchPostAdd";
+        stream = std::ostringstream();
+        stream << "uint3(" << node.dispatchSize.postAdd[0] << "," << node.dispatchSize.postAdd[1] << "," << node.dispatchSize.postAdd[2] << ")";
+        newDefine.value = stream.str();
+        node.defines.push_back(newDefine);
+
+        return true;
+    }
+};
+
+struct ErrorCheckVisitor
+{
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_DrawCall& node, const std::string& path)
+    {
+        // If there's a vertex shader, there can't be a mesh or amplification shader
+        if (node.vertexShader.shaderIndex != -1)
+        {
+            if (node.meshShader.shaderIndex != -1)
+            {
+                Assert(false, "Node %s has both a vertex shader and a mesh shader, only one is allowed.\nIn %s\n", node.name.c_str(), path.c_str());
+                return false;
+            }
+
+            if (node.amplificationShader.shaderIndex != -1)
+            {
+                Assert(false, "Node %s has both a vertex shader and an amplification shader. Amplification shader is not allowed when a vertex shader is specified.\nIn %s\n", node.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+        // else, there needs to be a mesh shader
+        else if (node.meshShader.shaderIndex == -1)
+        {
+            Assert(false, "Node %s has neither a vertex shader or mesh shader.  One must be specified.\nIn %s\n", node.name.c_str(), path.c_str());
+            return false;
+        }
+
+        // If this is a mesh shader (not a vertex shader) draw call, there can't be a vertex, index, or instance buffer plugged in
+        if (node.meshShader.shaderIndex != -1)
+        {
+            if (node.vertexBuffer.nodeIndex != -1)
+            {
+                Assert(false, "Node %s has uses a mesh shader, but has a vertex buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV.\nIn %s\n", node.name.c_str(), path.c_str());
+                return false;
+            }
+            if (node.indexBuffer.nodeIndex != -1)
+            {
+                Assert(false, "Node %s has uses a mesh shader, but has an index buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV\nIn %s\n", node.name.c_str(), path.c_str());
+                return false;
+            }
+            if (node.instanceBuffer.nodeIndex != -1)
+            {
+                Assert(false, "Node %s has uses a mesh shader, but has an instanceBuffer buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV\nIn %s\n", node.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        return true;
+    }
+};
+
+struct DepluralizeFileCopiesVisitor
+{
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(RenderGraph& renderGraph, const std::string& path)
+    {
+        std::vector<FileCopy> newFileCopies;
+
+        renderGraph.fileCopies.erase(
+            std::remove_if(renderGraph.fileCopies.begin(), renderGraph.fileCopies.end(),
+                [&](FileCopy& copy)
+                {
+                    if (!copy.plural)
+                        return false;
+
+                    // make sure there is a %i in the source file name
+                    bool useCubeMapNames = false;
+                    if (copy.fileName.find("%i") == std::string::npos)
+                    {
+                        if (copy.fileName.find("%s") != std::string::npos)
+                        {
+                            useCubeMapNames = true;
+                        }
+                        else
+                        {
+                            Assert(false, "Plural file copies need to contain a %%i or %%s. Not found in fileName %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
+                            return false;
+                        }
+                    }
+
+                    // make sure there is a %i in the dest file name too - or that it is empty
+                    if (!copy.destFileName.empty() && copy.destFileName.find("%i") == std::string::npos)
+                    {
+                        Assert(false, "Plural file copies need to contain a %%i. Not found in destFileName %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
+                        return false;
+                    }
+
+                    int fileCopyCount = -1;
+
+                    static const char* c_cubeMapNames[] =
+                    {
+                        "Right",
+                        "Left",
+                        "Up",
+                        "Down",
+                        "Front",
+                        "Back"
+                    };
+
+                    while (true)
+                    {
+                        fileCopyCount++;
+
+                        char indexedFileName[1024];
+                        if (useCubeMapNames)
+                            sprintf_s(indexedFileName, copy.fileName.c_str(), c_cubeMapNames[fileCopyCount]);
+                        else
+                            sprintf_s(indexedFileName, copy.fileName.c_str(), fileCopyCount);
+
+                        char indexedDestFileName[1024];
+                        sprintf_s(indexedDestFileName, copy.destFileName.c_str(), fileCopyCount);
+
+                        char fullFileName[4096];
+                        sprintf_s(fullFileName, "%s%s", renderGraph.baseDirectory.c_str(), indexedFileName);
+
+                        if (!FileExists(fullFileName))
+                        {
+                            if (fileCopyCount == 0)
+                            {
+                                Assert(false, "No files found for file copy pattern %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
+                                return false;
+                            }
+                            break;
+                        }
+
+                        FileCopy newFileCopy = copy;
+                        newFileCopy.plural = false;
+                        newFileCopy.fileName = indexedFileName;
+                        newFileCopy.destFileName = indexedDestFileName;
+                        newFileCopies.push_back(newFileCopy);
+
+                        if (useCubeMapNames && fileCopyCount == 5)
+                            break;
+                    }
+
+                    return true;
+                }
+            ),
+            renderGraph.fileCopies.end()
+        );
+
+        // Add the new file copies in
+        renderGraph.fileCopies.insert(renderGraph.fileCopies.end(), newFileCopies.begin(), newFileCopies.end());
+        return true;
+    }
+};
+
+struct ShaderFileDuplicationVisitor
+{
+    ShaderFileDuplicationVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(Shader& shader, const std::string& path)
+    {
+        // Set the destFileName if it hasn't been set yet
+        if (shader.destFileName.empty())
+            shader.destFileName = shader.fileName;
+
+        // If the file isn't going to be copied, ignore it
+        if (!shader.copyFile)
+            return true;
+
+        // If this shader file name hasn't been used yet, allow it, and remember that it is being used.
+        std::string fileName = std::filesystem::weakly_canonical(shader.destFileName).string();
+        auto it = existingShaderFiles.find(fileName);
+        if (it == existingShaderFiles.end())
+        {
+            existingShaderFiles[fileName] = shader.name;
+            return true;
+        }
+
+        // otherwise, error because the shaders will stomp each other with different shader resources
+        // NOTE: warn, not error for now because looping subgraphs (and subgraphs being used multiple times) cause this to trip too. need to sort that out before it can be an error.
+        ShowWarningMessage("Shader \"%s\" wants to write out \"%s\" which is also written out by shader \"%s\" so will be stomped.\nIn %s\n", shader.name.c_str(), fileName.c_str(), it->second.c_str(), path.c_str());
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+
+
+    std::unordered_map<std::string, std::string> existingShaderFiles;
+};
+
+struct ShaderReferenceFixupVisitor
+{
+    ShaderReferenceFixupVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(ComputeShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Compute && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find compute shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RayGenShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTRayGen && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTRayGen shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RTClosestHitShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTClosestHit && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTClosestHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RTClosestHitShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTClosestHit && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTClosestHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RTAnyHitShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTAnyHit && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTAnyHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RTAnyHitShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTAnyHit && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTAnyHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RTIntersectionShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTIntersection && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTIntersection shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(RTIntersectionShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::RTIntersection && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find RTIntersection shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(VertexShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Vertex && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find vertex shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(PixelShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Pixel && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find pixel shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(AmplificationShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Amplification && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find amplification shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(MeshShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Mesh && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find mesh shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(VertexShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Vertex && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find vertex shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(PixelShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Pixel && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find pixel shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(AmplificationShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Amplification && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find amplification shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(MeshShaderReferenceOptional& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::Mesh && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find mesh shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    RenderGraph& renderGraph;
+};
+
+struct ReferenceFixupVisitor
+{
+    ReferenceFixupVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(TextureNodeReference& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        if (!Visit(*(NodeReference*)&data, path))
+            return false;
+
+        switch (renderGraph.nodes[data.nodeIndex]._index)
+        {
+            case RenderGraphNode::c_index_resourceTexture:
+            {
+                data.textureNode = &renderGraph.nodes[data.nodeIndex].resourceTexture;
+                break;
+            }
+            default:
+            {
+                Assert(false, "%s was referenced as a texture node, but is not one!\nIn %s\n", data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(BufferNodeReference& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        if (!Visit(*(NodeReference*)&data, path))
+            return false;
+
+        switch (renderGraph.nodes[data.nodeIndex]._index)
+        {
+            case RenderGraphNode::c_index_resourceBuffer:
+            {
+                data.bufferNode = &renderGraph.nodes[data.nodeIndex].resourceBuffer;
+                break;
+            }
+            default:
+            {
+                Assert(false, "%s was referenced as a buffer node, but is not one!\nIn %s\n", data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(TextureOrBufferNodeReference& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        if (!Visit(*(NodeReference*)&data, path))
+            return false;
+
+        switch (renderGraph.nodes[data.nodeIndex]._index)
+        {
+            case RenderGraphNode::c_index_resourceTexture:
+            {
+                data.textureNode = &renderGraph.nodes[data.nodeIndex].resourceTexture;
+                break;
+            }
+            case RenderGraphNode::c_index_resourceBuffer:
+            {
+                data.bufferNode = &renderGraph.nodes[data.nodeIndex].resourceBuffer;
+                break;
+            }
+            default:
+            {
+                Assert(false, "%s was referenced as a texture or buffer node, but is neither!\nIn %s\n", data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(NodeReference& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        data.nodeIndex = GetNodeIndexByName(data.name.c_str());
+        if (data.nodeIndex != -1)
+            return true;
+
+        Assert(false, "Could not find node referenced: %s\nIn %s\n", data.name.c_str(), path.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(NodePinReference& data, const std::string& path)
+    {
+        // Get the nodeIndex and nodePinIndex
+        bool found = false;
+        for (int nodeIndex = 0; nodeIndex < (int)renderGraph.nodes.size(); ++nodeIndex)
+        {
+            RenderGraphNode& node = renderGraph.nodes[nodeIndex];
+            if (!_stricmp(data.node.c_str(), GetNodeName(node).c_str()))
+            {
+                data.nodeIndex = nodeIndex;
+                int pinCount = GetNodePinCount(node);
+                for (int pinIndex = 0; pinIndex < pinCount; ++pinIndex)
+                {
+                    if (!_stricmp(data.pin.c_str(), GetNodePinName(node, pinIndex).c_str()))
+                    {
+                        data.nodePinIndex = pinIndex;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                    break;
+
+                Assert(false, "Could not find pin referenced: %s:%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                return false;
+            }
+        }
+        if (!found)
+        {
+            Assert(false, "Could not find node referenced: %s\nIn %s\n", data.node.c_str(), path.c_str());
+            return false;
+        }
+
+        // Find the resourceNodeIndex!
+        data.resourceNodeIndex = data.nodeIndex;
+        int nodePinIndex = data.nodePinIndex;
+        while (true)
+        {
+            RenderGraphNode& node = renderGraph.nodes[data.resourceNodeIndex];
+
+            bool isResourceNode = false;
+            ExecuteOnNode(node,
+                [&](auto& node)
+                {
+                    isResourceNode = node.c_isResourceNode;
+                }
+            );
+
+            if (isResourceNode)
+                return true;
+
+            // make sure this node has been visited before get get pin into, since visitation fills it out
+            ExecuteOnNode(node,
+                [&](auto& node)
+                {
+                    Visit(node, path);
+                }
+            );
+            InputNodeInfo info = GetNodePinInputNodeInfo(node, nodePinIndex);
+
+            if (info.nodeIndex == -1)
+            {
+                Assert(false, "Could not get resourceNodeIndex for nodePinReference %s.%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                return false;
+            }
+
+            data.resourceNodeIndex = info.nodeIndex;
+            nodePinIndex = info.pinIndex;
+        }
+
+        return true;
+    }
+
+    bool Visit(NodePinReferenceOptional& data, const std::string& path)
+    {
+        if (data.node.empty() || data.pin.empty())
+            return true;
+
+        // Get the nodeIndex and nodePinIndex
+        bool found = false;
+        for (int nodeIndex = 0; nodeIndex < (int)renderGraph.nodes.size(); ++nodeIndex)
+        {
+            RenderGraphNode& node = renderGraph.nodes[nodeIndex];
+            if (!_stricmp(data.node.c_str(), GetNodeName(node).c_str()))
+            {
+                data.nodeIndex = nodeIndex;
+                int pinCount = GetNodePinCount(node);
+                for (int pinIndex = 0; pinIndex < pinCount; ++pinIndex)
+                {
+                    if (!_stricmp(data.pin.c_str(), GetNodePinName(node, pinIndex).c_str()))
+                    {
+                        data.nodePinIndex = pinIndex;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found)
+                    break;
+
+                Assert(false, "Could not find pin referenced: %s:%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                return false;
+            }
+        }
+        if (!found)
+        {
+            Assert(false, "Could not find node referenced: %s\nIn %s\n", data.node.c_str(), path.c_str());
+            return false;
+        }
+
+        // Find the resourceNodeIndex!
+        data.resourceNodeIndex = data.nodeIndex;
+        int nodePinIndex = data.nodePinIndex;
+        while (true)
+        {
+            RenderGraphNode& node = renderGraph.nodes[data.resourceNodeIndex];
+
+            bool isResourceNode = false;
+            ExecuteOnNode(node,
+                [&](auto& node)
+                {
+                    isResourceNode = node.c_isResourceNode;
+                }
+            );
+
+            if (isResourceNode)
+                return true;
+
+            // make sure this node has been visited before get get pin into, since visitation fills it out
+            ExecuteOnNode(node,
+                [&](auto& node)
+                {
+                    Visit(node, path);
+                }
+            );
+
+            InputNodeInfo info = GetNodePinInputNodeInfo(node, nodePinIndex);
+
+            if (info.nodeIndex == -1)
+            {
+                Assert(false, "Could not get resourceNodeIndex for nodePinReferenceOptional %s.%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                return false;
+            }
+
+            data.resourceNodeIndex = info.nodeIndex;
+            nodePinIndex = info.pinIndex;
+        }
+
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Resource_Buffer& data, const std::string& path)
+    {
+        if (data.visibility == ResourceVisibility::Internal)
+            return true;
+
+        if (!Visit(data.format.structureType, path))
+            return false;
+
+        if (data.format.structureType.structIndex == -1)
+            return true;
+
+        renderGraph.structs[data.format.structureType.structIndex].exported = true;
+
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_ComputeShader& data, const std::string& path)
+    {
+        int connectionIndex = -1;
+        Shader& shader = *data.shader.shader;
+        for (NodePinConnection& connection : data.connections)
+        {
+            connectionIndex++;
+            // get the source pin
+            int pinCount = (int)shader.resources.size();
+            for (int i = 0; i < pinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), shader.resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = i;
+                    break;
+                }
+            }
+            if (connection.srcNodePinIndex == -1)
+            {
+                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node
+            connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+            if (connection.dstNodeIndex == -1)
+            {
+                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node pin
+            connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+            if (connection.dstNodePinIndex == -1)
+            {
+                Assert(false, "Could not find dest pin %s (connections[%i]) in shader node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        if (data.connections.size() != shader.resources.size())
+        {
+            Assert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
+            return false;
+        }
+
+        // sort the connections to be in the same order as the shader resources are
+        std::sort(data.connections.begin(), data.connections.end(), [](const NodePinConnection& a, const NodePinConnection& b) { return a.srcNodePinIndex < b.srcNodePinIndex; });
+
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_RayShader& data, const std::string& path)
+    {
+        // Remember that this render graph uses ray tracing!
+        renderGraph.usesRaytracing = true;
+
+        int connectionIndex = -1;
+        Shader& shader = *data.shader.shader;
+        for (NodePinConnection& connection : data.connections)
+        {
+            connectionIndex++;
+            // get the source pin
+            int pinCount = (int)shader.resources.size();
+            for (int i = 0; i < pinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), shader.resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = i;
+                    break;
+                }
+            }
+            if (connection.srcNodePinIndex == -1)
+            {
+                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node
+            connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+            if (connection.dstNodeIndex == -1)
+            {
+                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node pin
+            connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+            if (connection.dstNodePinIndex == -1)
+            {
+                Assert(false, "Could not find dest pin %s (connections[%i]) in shader node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        if (data.connections.size() != shader.resources.size())
+        {
+            Assert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
+            return false;
+        }
+
+        // sort the connections to be in the same order as the shader resources are
+        std::sort(data.connections.begin(), data.connections.end(), [](const NodePinConnection& a, const NodePinConnection& b) { return a.srcNodePinIndex < b.srcNodePinIndex; });
+
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_SubGraph& data, const std::string& path)
+    {
+        for (int connectionIndex = 0; connectionIndex < (int)data.connections.size(); ++connectionIndex)
+        {
+            // set the source pin
+            NodePinConnection& connection = data.connections[connectionIndex];
+            connection.srcNodePinIndex = connectionIndex;
+
+            // get the dest node
+            connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+            if (connection.dstNodeIndex == -1)
+            {
+                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in SubGraph node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node pin
+            connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+            if (connection.dstNodePinIndex == -1)
+            {
+                Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in SubGraph node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_Barrier& data, const std::string& path)
+    {
+        for (int connectionIndex = 0; connectionIndex < (int)data.connections.size(); ++connectionIndex)
+        {
+            // set the source pin
+            NodePinConnection& connection = data.connections[connectionIndex];
+            connection.srcNodePinIndex = connectionIndex;
+
+            // get the dest node
+            connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+            if (connection.dstNodeIndex == -1)
+            {
+                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node pin
+            connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+            if (connection.dstNodePinIndex == -1)
+            {
+                Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_CopyResource& data, const std::string& path)
+    {
+        Visit(data.source, path + ".source");
+        Visit(data.dest, path + ".dest");
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_DrawCall& data, const std::string& path)
+    {
+        int connectionIndex = -1;
+        Shader* vertexShader = data.vertexShader.shader;
+        Shader& pixelShader = *data.pixelShader.shader;
+        Shader* amplificationShader = data.amplificationShader.shader;
+        Shader* meshShader = data.meshShader.shader;
+
+        if (vertexShader && meshShader)
+        {
+            Assert(false, "Node %s has both a vertex and mesh shader, which is not allowed.\nIn %s\n", data.name.c_str(), path.c_str());
+            return false;
+        }
+
+        if (!vertexShader && !meshShader)
+        {
+            Assert(false, "Node %s has neither a vertex nor a mesh shader, one must be specified.\nIn %s\n", data.name.c_str(), path.c_str());
+            return false;
+        }
+
+        // Get pin counts
+        int vertexPinCount = vertexShader ? (int)vertexShader->resources.size() : 0;
+        int pixelPinCount = (int)pixelShader.resources.size();
+        int amplificationPinCount = amplificationShader ? (int)amplificationShader->resources.size() : 0;
+        int meshPinCount = meshShader ? (int)meshShader->resources.size() : 0;
+
+        for (NodePinConnection& connection : data.connections)
+        {
+            connectionIndex++;
+            // get the source pin
+            for (int i = 0; i < vertexPinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), vertexShader->resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = i;
+                    break;
+                }
+            }
+            for (int i = 0; i < pixelPinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), pixelShader.resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = vertexPinCount + i;
+                    break;
+                }
+            }
+            for (int i = 0; i < amplificationPinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), amplificationShader->resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = vertexPinCount + pixelPinCount + i;
+                    break;
+                }
+            }
+            for (int i = 0; i < meshPinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), meshShader->resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = vertexPinCount + pixelPinCount + amplificationPinCount + i;
+                    break;
+                }
+            }
+
+            if (connection.srcNodePinIndex == -1)
+            {
+                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node
+            connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+            if (connection.dstNodeIndex == -1)
+            {
+                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node pin
+            connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+            if (connection.dstNodePinIndex == -1)
+            {
+                Assert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        if (data.connections.size() != (vertexPinCount + pixelPinCount + amplificationPinCount + meshPinCount))
+        {
+            Assert(false, "node %s doesn't have the right number of connections for shaders\nIn %s\n", data.name.c_str(), path.c_str());
+            return false;
+        }
+
+        // sort the connections to be in the same order as the shader resources are
+        std::sort(data.connections.begin(), data.connections.end(), [](const NodePinConnection& a, const NodePinConnection& b) { return a.srcNodePinIndex < b.srcNodePinIndex; });
+
+        // Also set the pin index etc for depth and color targets!
+        Visit(data.shadingRateImage, path + ".shadingRateImage");
+        Visit(data.vertexBuffer, path + ".vertexBuffer");
+        Visit(data.indexBuffer, path + ".indexBuffer");
+        Visit(data.instanceBuffer, path + ".instanceBuffer");
+        Visit(data.depthTarget, path + ".depthTarget");
+        for (int i = 0; i < data.colorTargets.size(); ++i)
+        {
+            char pathBuffer[64];
+            sprintf_s(pathBuffer, ".colorTargets[%i]", i);
+            Visit(data.colorTargets[i], path + pathBuffer);
+        }
+
+        return true;
+    }
+
+    bool Visit(Shader& data, const std::string& path)
+    {
+        // make all constant buffers add a CBV resource so a user doesn't need to do double data entry
+        int cbIndex = -1;
+        for (ShaderConstantBuffer& cbDesc : data.constantBuffers)
+        {
+            cbIndex++;
+
+            // Make sure the struct reference is visited first
+            char pathBuffer[64];
+            sprintf_s(pathBuffer, ".constantBuffers[%i]", cbIndex);
+            if (!Visit(cbDesc, path + pathBuffer))
+                return false;
+
+            ShaderResource newResource;
+            newResource.name = cbDesc.resourceName;
+            newResource.type = ShaderResourceType::ConstantBuffer;
+            newResource.access = ShaderResourceAccessType::CBV;
+            newResource.constantBufferStructIndex = cbDesc.structIndex;
+            data.resources.push_back(newResource);
+        }
+
+        // compute register indices
+        int nextRegisterIndexUAV = 0;
+        int nextRegisterIndexSRV = 0;
+        int nextRegisterIndexCBV = 0;
+        for (ShaderResource& resource : data.resources)
+        {
+            switch (resource.access)
+            {
+                case ShaderResourceAccessType::UAV: resource.registerIndex = nextRegisterIndexUAV++; break;
+                case ShaderResourceAccessType::RTScene:
+                {
+                    if (renderGraph.configFromBackend.RTSceneTakesSRVSlot)
+                        resource.registerIndex = nextRegisterIndexSRV++;
+                    break;
+                }
+                case ShaderResourceAccessType::SRV: resource.registerIndex = nextRegisterIndexSRV++; break;
+                case ShaderResourceAccessType::CBV: resource.registerIndex = nextRegisterIndexCBV++; break;
+                default:
+                {
+                    Assert(false, "Unhandled shader resource access type %s (%i). Shader = \"%s\", Resource = \"%s\".\nIn %s\n", EnumToString(resource.access), resource.access, data.name.c_str(), resource.name.c_str(), path.c_str());
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(Struct& data, const std::string& path)
+    {
+        if (data.forceHostVisible)
+            data.exported = true;
+
+        size_t bytes = 0;
+        for (StructField& field : data.fields)
+        {
+            field.sizeInBytes = DataFieldTypeToSize(field.type);
+            bytes += field.sizeInBytes;
+        }
+
+        data.sizeInBytes = bytes;
+        return true;
+    }
+
+    bool Visit(RenderGraph& data, const std::string& path)
+    {
+        // let each node know it's index
+        for (size_t index = 0; index < data.nodes.size(); ++index)
+            ExecuteOnNode(data.nodes[index], [index](auto& node) {node.nodeIndex = (int)index; });
+        return true;
+    }
+
+    bool Visit(VariableReference& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (size_t index = 0; index < renderGraph.variables.size(); ++index)
+        {
+            const Variable& variable = renderGraph.variables[index];
+
+            if (!_stricmp(data.name.c_str(), variable.name.c_str()))
+            {
+                data.variableIndex = (int)index;
+                return true;
+            }
+        }
+
+        Assert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(VariableReferenceNoConst& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (size_t index = 0; index < renderGraph.variables.size(); ++index)
+        {
+            const Variable& variable = renderGraph.variables[index];
+
+            if (!_stricmp(data.name.c_str(), variable.name.c_str()))
+            {
+                data.variableIndex = (int)index;
+                return true;
+            }
+        }
+
+        Assert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(StructReference& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (size_t index = 0; index < renderGraph.structs.size(); ++index)
+        {
+            const Struct& s = renderGraph.structs[index];
+
+            if (!_stricmp(data.name.c_str(), s.name.c_str()))
+            {
+                data.structIndex = (int)index;
+                return true;
+            }
+        }
+
+        Assert(data.structIndex != -1, "Could not find struct %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(ShaderConstantBuffer& data, const std::string& path)
+    {
+        if (data.structName.empty())
+            return true;
+
+        for (size_t index = 0; index < renderGraph.structs.size(); ++index)
+        {
+            const Struct& s = renderGraph.structs[index];
+
+            if (!_stricmp(data.structName.c_str(), s.name.c_str()))
+            {
+                data.structIndex = (int)index;
+                return true;
+            }
+        }
+
+        Assert(data.structIndex != -1, "Could not find struct %s\nIn %s\n", data.structName.c_str(), path.c_str());
+        return false;
+    }
+
+    bool Visit(Condition& data, const std::string& path)
+    {
+        if (!data.variable1.empty())
+        {
+            for (size_t index = 0; index < renderGraph.variables.size(); ++index)
+            {
+                const Variable& variable = renderGraph.variables[index];
+
+                if (!_stricmp(data.variable1.c_str(), variable.name.c_str()))
+                {
+                    data.variable1Index = (int)index;
+                    break;
+                }
+            }
+            Assert(data.variable1Index != -1, "Could not find variable %s\nIn %s\n", data.variable1.c_str(), path.c_str());
+        }
+
+        if (!data.variable2.empty())
+        {
+            for (size_t index = 0; index < renderGraph.variables.size(); ++index)
+            {
+                const Variable& variable = renderGraph.variables[index];
+
+                if (!_stricmp(data.variable2.c_str(), variable.name.c_str()))
+                {
+                    data.variable2Index = (int)index;
+                    break;
+                }
+            }
+            Assert(data.variable2Index != -1, "Could not find variable %s\nIn %s\n", data.variable2.c_str(), path.c_str());
+        }
+
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+
+    // Helpers
+    int GetNodeIndexByName(const char* name)
+    {
+        for (int i = 0; i < (int)renderGraph.nodes.size(); ++i)
+        {
+            if (!_stricmp(name, GetNodeName(renderGraph.nodes[i]).c_str()))
+                return i;
+        }
+        return -1;
+    }
+
+    int GetNodePinIndexByName(RenderGraphNode& node, const char* name)
+    {
+        int pinCount = GetNodePinCount(node);
+        for (int i = 0; i < pinCount; ++i)
+        {
+            if (!_stricmp(name, GetNodePinName(node, i).c_str()))
+                return i;
+        }
+        return -1;
+    }
+};
+
+struct ValidationVisitor
+{
+    ValidationVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(Shader& shader, const std::string& path)
+    {
+        switch (shader.type)
+        {
+            case ShaderType::Compute:
+            case ShaderType::RTRayGen:
+            case ShaderType::Vertex:
+            case ShaderType::Pixel:
+            {
+                return true;
+            }
+            case ShaderType::RTClosestHit:
+            case ShaderType::RTMiss:
+            case ShaderType::RTAnyHit:
+            case ShaderType::RTIntersection:
+            {
+                if (shader.resources.size() != 0)
+                {
+                    Assert(false, "Shader type \'%s\' has resources defined, but only the ray gen shader can. Ray gen resources are global so are accessible if they are in the same file or if the ray gen file is #included.\nIn %s\n", EnumToString(shader.type), path.c_str());
+                    return false;
+                }
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(Condition& condition, const std::string& path)
+    {
+        int AVarIndex = GetVariableIndex(renderGraph, condition.variable1.c_str());
+        if (AVarIndex == -1)
+            return true;
+
+        int BVarIndex = GetVariableIndex(renderGraph, condition.variable2.c_str());
+        if (BVarIndex != -1 && renderGraph.variables[AVarIndex].type != renderGraph.variables[BVarIndex].type)
+        {
+            Assert(false, "A condition with variable \"%s %s\" and \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[AVarIndex].type), condition.variable1.c_str(), EnumToString(renderGraph.variables[BVarIndex].type), condition.variable2.c_str(), path.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    bool Visit(SetVariable& setVar, const std::string& path)
+    {
+        // Get the destination variable type
+        int destVarIndex = GetVariableIndex(renderGraph, setVar.destination.name.c_str());
+        if (destVarIndex == -1)
+            return true;
+        DataFieldType destVarType = renderGraph.variables[destVarIndex].type;
+        if (setVar.destinationIndex != -1)
+            destVarType = DataFieldTypeInfo(destVarType).componentType2;
+
+        // If there is an A variable, make sure it's the same type
+        int AVarIndex = GetVariableIndex(renderGraph, setVar.AVar.name.c_str());
+        if (AVarIndex != -1)
+        {
+            DataFieldType AVarType = renderGraph.variables[AVarIndex].type;
+            if (setVar.AVarIndex != -1)
+                AVarType = DataFieldTypeInfo(AVarType).componentType2;
+
+            if (destVarType != AVarType)
+            {
+                Assert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[AVarIndex].type), setVar.AVar.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        // If there is a B variable, make sure it's the same type
+        int BVarIndex = GetVariableIndex(renderGraph, setVar.BVar.name.c_str());
+        if (BVarIndex != -1 && renderGraph.variables[destVarIndex].type != renderGraph.variables[BVarIndex].type)
+        {
+            DataFieldType BVarType = renderGraph.variables[BVarIndex].type;
+            if (setVar.BVarIndex != -1)
+                BVarType = DataFieldTypeInfo(BVarType).componentType2;
+
+            if (destVarType != BVarType)
+            {
+                Assert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[BVarIndex].type), setVar.BVar.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(Variable& variable, const std::string& path)
+    {
+        // Every variable needs a type
+        if (variable.type == DataFieldType::Count)
+        {
+            ShowErrorMessage("Variable \"%s\" does not have a data type set.", variable.name.c_str());
+            return false;
+        }
+
+        // Every variable needs a default!
+        if (variable.dflt.empty())
+        {
+            switch (variable.type)
+            {
+                case DataFieldType::Int: variable.dflt = "0"; break;
+                case DataFieldType::Int2: variable.dflt = "0,0"; break;
+                case DataFieldType::Int3: variable.dflt = "0,0,0"; break;
+                case DataFieldType::Int4: variable.dflt = "0,0,0,0"; break;
+                case DataFieldType::Uint: variable.dflt = "0"; break;
+                case DataFieldType::Uint2: variable.dflt = "0,0"; break;
+                case DataFieldType::Uint3: variable.dflt = "0,0,0"; break;
+                case DataFieldType::Uint4: variable.dflt = "0,0,0,0"; break;
+                case DataFieldType::Float: variable.dflt = "0.0f"; break;
+                case DataFieldType::Float2: variable.dflt = "0.0f,0.0f"; break;
+                case DataFieldType::Float3: variable.dflt = "0.0f,0.0f,0.0f"; break;
+                case DataFieldType::Float4: variable.dflt = "0.0f,0.0f,0.0f,0.0f"; break;
+                case DataFieldType::Bool: variable.dflt = "false"; break;
+                case DataFieldType::Float4x4: variable.dflt = "0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f"; break;
+                case DataFieldType::Uint_16: variable.dflt = "0"; break;
+                default:
+                {
+                    Assert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(variable.type), variable.type, path.c_str());
+                    break;
+                }
+            }
+        }
+
+        // Enum validation
+        if (!variable.Enum.empty())
+        {
+            if (variable.type != DataFieldType::Int)
+            {
+                Assert(false, "Variable \'%s\' uses enum \'%s\' but is not an integer type. Only integers can use enums.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
+                return false;
+            }
+
+            int enumIndex = -1;
+            for (const Enum& e : renderGraph.enums)
+            {
+                enumIndex++;
+                if (e.scope == variable.scope && e.originalName == variable.Enum)
+                {
+                    variable.enumIndex = enumIndex;
+                    return true;
+                }
+            }
+
+            Assert(false, "Variable \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
+            return false;
+        }
+
+        return true;
+    }
+
+    bool Visit(Struct& s, const std::string& path)
+    {
+        for (StructField& field : s.fields)
+        {
+            if (field.Enum.empty())
+                continue;
+
+            if (field.type != DataFieldType::Int)
+            {
+                Assert(false, "Struct field \'%s\' uses enum \'%s\' but is not an integer type. Only integers can use enums.\nIn %s\n", field.name.c_str(), field.Enum.c_str(), path.c_str());
+                return false;
+            }
+
+            int enumIndex = -1;
+            for (const Enum& e : renderGraph.enums)
+            {
+                enumIndex++;
+                if (e.scope == s.scope && e.originalName == field.Enum)
+                {
+                    field.enumIndex = enumIndex;
+                    break;
+                }
+            }
+            if (enumIndex != -1)
+                continue;
+
+            Assert(false, "Struct \'%s\' field \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", s.name.c_str(), field.name.c_str(), field.Enum.c_str(), path.c_str());
+            return false;
+        }
+        return true;
+    }
+
+    bool Visit(RenderGraph& renderGraph, const std::string& path)
+    {
+        // make sure the render graph has a name.
+        if (renderGraph.name.empty())
+        {
+            Assert(false, "The render graph name is empty. That field is used to make namespaces and folder names, so is required.\nIn %s\n", path.c_str());
+            return false;
+        }
+
+        // Verify that render graph node names are unique
+        {
+            std::unordered_set<std::string> names;
+            size_t currentNodeIndex = 0;
+            for (auto& node : renderGraph.nodes)
+            {
+                // get the lower case version of the node name
+                std::string name = GetNodeName(node);
+                std::transform(name.begin(), name.end(), name.begin(),
+                    [](unsigned char c) { return std::tolower(c); });
+
+                if (names.find(name) != names.end())
+                {
+                    std::vector<size_t> indices;
+                    for (size_t nodeIndex = 0; nodeIndex < renderGraph.nodes.size(); ++nodeIndex)
+                    {
+                        if (GetNodeName(renderGraph.nodes[nodeIndex]) == name)
+                            indices.push_back(nodeIndex);
+                    }
+
+                    Assert(false, "node name %s appears more than once in the render graph.\nIn %s\n", name.c_str(), path.c_str());
+                    return false;
+                }
+                names.insert(name);
+                currentNodeIndex++;
+            }
+        }
+
+        // Verify that shader names are unique
+        {
+            std::unordered_set<std::string> names;
+            for (const auto& shader : renderGraph.shaders)
+            {
+                // get the lower case version of the node name
+                std::string name = shader.name;
+                std::transform(name.begin(), name.end(), name.begin(),
+                    [](unsigned char c) { return std::tolower(c); });
+
+                if (names.find(name) != names.end())
+                {
+                    Assert(false, "shader name %s appears more than once in the render graph.\nIn %s\n", name.c_str(), path.c_str());
+                    return false;
+                }
+                names.insert(name);
+            }
+        }
+
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+};
+
+struct SanitizeVisitor
+{
+    SanitizeVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    // The goal of this function is to take an arbitrary string s
+    // and make a string which could be used as a C++ identifier
+    // that is still reasonable as human readable.
+    void Sanitize(std::string& s)
+    {
+        StringReplaceAll(s, " ", "_");
+        StringReplaceAll(s, "+", "plus");
+        StringReplaceAll(s, ":", "_");
+        StringReplaceAll(s, ".", "_");
+    }
+
+    void Sanitize(std::string& s, std::string& originalName)
+    {
+        if (originalName.empty())
+            originalName = s;
+
+        Sanitize(s);
+    }
+
+    bool Visit(RenderGraph& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(Variable& data, const std::string& path)
+    {
+        Sanitize(data.name, data.originalName);
+        Sanitize(data.Enum);
+
+        if (!data.Enum.empty())
+            Sanitize(data.dflt);
+
+        return true;
+    }
+
+    bool Visit(StructField& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        Sanitize(data.Enum);
+        return true;
+    }
+
+    // Sanitize enum names and all the item labels
+    bool Visit(Enum& data, const std::string& path)
+    {
+        Sanitize(data.name, data.originalName);
+        for (EnumItem& item : data.items)
+        {
+            item.displayLabel = item.label;
+            Sanitize(item.label);
+        }
+        return true;
+    }
+
+    // Sanitize node names
+    bool Visit(RenderGraphNode_Base& node, const std::string& path)
+    {
+        Sanitize(node.name, node.originalName);
+        return true;
+    }
+
+    // sanitize shader names
+    bool Visit(Shader& data, const std::string& path)
+    {
+        Sanitize(data.name, data.originalName);
+        return true;
+    }
+
+    // sanitize Condition variable names
+    bool Visit(Condition& data, const std::string& path)
+    {
+        Sanitize(data.variable1);
+        Sanitize(data.variable2);
+        return true;
+    }
+
+    // sanitize ComputeShaderReference shader names
+    bool Visit(ComputeShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RayGenShaderReference shader names
+    bool Visit(RayGenShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RTClosestHitShaderReference shader names
+    bool Visit(RTClosestHitShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RTAnyHitShaderReference shader names
+    bool Visit(RTAnyHitShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RTIntersectionShaderReference shader names
+    bool Visit(RTIntersectionShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RTClosestHitShaderReferenceOptional shader names
+    bool Visit(RTClosestHitShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RTAnyHitShaderReferenceOptional shader names
+    bool Visit(RTAnyHitShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize RTIntersectionShaderReferenceOptional shader names
+    bool Visit(RTIntersectionShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize VertexShaderReference shader names
+    bool Visit(VertexShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+    bool Visit(VertexShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize PixelShaderReference shader names
+    bool Visit(PixelShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+    bool Visit(PixelShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize MeshShaderReference shader names
+    bool Visit(MeshShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+    bool Visit(MeshShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize AmplificationShaderReference shader names
+    bool Visit(AmplificationShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+    bool Visit(AmplificationShaderReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    // sanitize NodePinConnection nodes and pin names
+    bool Visit(NodePinConnection& data, const std::string& path)
+    {
+        Sanitize(data.srcPin);
+        Sanitize(data.dstNode);
+        Sanitize(data.dstPin);
+        return true;
+    }
+
+    // sanitize ShaderResource names
+    bool Visit(ShaderResource& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(TextureOrBufferNodeReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(TextureNodeReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(BufferNodeReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(VariableReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(VariableReferenceNoConst& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
+    bool Visit(NodePinReference& data, const std::string& path)
+    {
+        Sanitize(data.node);
+        Sanitize(data.pin);
+        return true;
+    }
+
+    bool Visit(NodePinReferenceOptional& data, const std::string& path)
+    {
+        Sanitize(data.node);
+        Sanitize(data.pin);
+        return true;
+    }
+
+    bool Visit(RTHitGroup& data, const std::string& path)
+    {
+        Sanitize(data.name, data.originalName);
+        return true;
+    }
+
+    // remove connections which have a src pin, but no dest node
+    bool Visit(RenderGraphNode_Action_ComputeShader& data, const std::string& path)
+    {
+        data.connections.erase(
+            std::remove_if(
+                data.connections.begin(), data.connections.end(),
+                [](const NodePinConnection& connection)
+                {
+                    return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+                }
+            ),
+            data.connections.end()
+        );
+        return true;
+    }
+    bool Visit(RenderGraphNode_Action_RayShader& data, const std::string& path)
+    {
+        data.connections.erase(
+            std::remove_if(
+                data.connections.begin(), data.connections.end(),
+                [](const NodePinConnection& connection)
+                {
+                    return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+                }
+            ),
+            data.connections.end()
+                    );
+        return true;
+    }
+    bool Visit(RenderGraphNode_Action_DrawCall& data, const std::string& path)
+    {
+        data.connections.erase(
+            std::remove_if(
+                data.connections.begin(), data.connections.end(),
+                [](const NodePinConnection& connection)
+                {
+                    return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+                }
+            ),
+            data.connections.end()
+        );
+        return true;
+    }
+    bool Visit(RenderGraphNode_Action_SubGraph& data, const std::string& path)
+    {
+        data.connections.erase(
+            std::remove_if(
+                data.connections.begin(), data.connections.end(),
+                [](const NodePinConnection& connection)
+                {
+                    return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+                }
+            ),
+            data.connections.end()
+        );
+        return true;
+    }
+    bool Visit(RenderGraphNode_Action_Barrier& data, const std::string& path)
+    {
+        data.connections.erase(
+            std::remove_if(
+                data.connections.begin(), data.connections.end(),
+                [](const NodePinConnection& connection)
+                {
+                    return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+                }
+            ),
+            data.connections.end()
+        );
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+};
+
+struct ShaderDataVisitor
+{
+    ShaderDataVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool HookupVariables(Shader& shader, const std::string& path)
+    {
+        if (!shader.copyFile)
+            return true;
+
+        // Gather the variables referenced in this shader
+        std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
+
+        std::vector<unsigned char> fileContents;
+        if (!LoadFile(fileName, fileContents))
+        {
+            Assert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            return false;
+        }
+        fileContents.push_back(0);
+
+        auto BeginsWith = [](const char* haystack, int& index, const char* needle) -> bool
+        {
+            size_t needleLen = strlen(needle);
+            if (_strnicmp(&haystack[index], needle, needleLen) != 0)
+                return false;
+            index += (int)needleLen;
+            return true;
+        };
+
+        std::unordered_set<std::string> variablesAccessedUnsorted;
+        ForEachToken((char*)fileContents.data(),
+            [&](const std::string& tokenStr)
+            {
+                const char* token = tokenStr.c_str();
+                int tokenIndex = 0;
+                if (!BeginsWith(token, tokenIndex, "/*$("))
+                    return;
+
+                int oldTokenIndex = tokenIndex;
+
+                if (BeginsWith(token, tokenIndex, "Variable:"))
+                {
+                    std::string variableName = tokenStr.substr(tokenIndex, tokenStr.length() - (tokenIndex + 3));
+
+                    int variableIndex = GetScopedVariableIndex(renderGraph, (shader.scope + variableName).c_str());
+                    if (variableIndex == -1)
+                    {
+                        Assert(false, "Could not find variable \"%s\" referenced in shader file \"%s\".\nIn %s\n", variableName.c_str(), shader.fileName.c_str(), path.c_str());
+                        return;
+                    }
+
+                    // constants don't need to go through a constant buffer, they can just be written into the shader
+                    if (renderGraph.variables[variableIndex].Const)
+                        return;
+
+                    variablesAccessedUnsorted.insert(renderGraph.variables[variableIndex].name);
+                }
+                else if (
+                    BeginsWith(token, tokenIndex, "Image:") || BeginsWith(token, tokenIndex, "Image2D:") ||
+                    BeginsWith(token, tokenIndex, "Image2DArray:") || BeginsWith(token, tokenIndex, "Image3D:") ||
+                    BeginsWith(token, tokenIndex, "ImageCube:"))
+                {
+                    // Remember the dimensionality
+                    TextureDimensionType dimensionType = TextureDimensionType::Texture2D;
+                    if (BeginsWith(token, oldTokenIndex, "Image2DArray:"))
+                        dimensionType = TextureDimensionType::Texture2DArray;
+                    else if (BeginsWith(token, oldTokenIndex, "Image3D:"))
+                        dimensionType = TextureDimensionType::Texture3D;
+                    else if (BeginsWith(token, oldTokenIndex, "ImageCube:"))
+                        dimensionType = TextureDimensionType::TextureCube;
+
+                    // Get the file name string
+                    const char* fileNameBegin = &token[tokenIndex];
+                    const char* fileNameEnd = fileNameBegin;
+                    while (*fileNameEnd && *fileNameEnd != ':' && *fileNameEnd != ')')
+                        fileNameEnd++;
+                    std::string fileName(fileNameBegin, fileNameEnd);
+                    if (fileName.empty())
+                    {
+                        Assert(false, "filename is empty.\nIn %s\n", path.c_str());
+                        return;
+                    }
+
+                    // Get the texture format string
+                    const char* textureFormatBegin = (*fileNameEnd) ? fileNameEnd + 1 : fileNameEnd;
+                    const char* textureFormatEnd = textureFormatBegin;
+                    while (*textureFormatEnd && *textureFormatEnd != ':' && *textureFormatEnd != ')')
+                        textureFormatEnd++;
+                    std::string textureFormatStr(textureFormatBegin, textureFormatEnd);
+
+                    // Get the view type format string
+                    const char* viewTypeBegin = (*textureFormatEnd) ? textureFormatEnd + 1 : textureFormatEnd;
+                    const char* viewTypeEnd = viewTypeBegin;
+                    while (*viewTypeEnd && *viewTypeEnd != ':' && *viewTypeEnd != ')')
+                        viewTypeEnd++;
+                    std::string viewTypeStr(viewTypeBegin, viewTypeEnd);
+
+                    // Get the loadFileNameAsSRGB string
+                    const char* loadFileNameAsSRGBBegin = (*viewTypeEnd) ? viewTypeEnd + 1 : viewTypeEnd;
+                    const char* loadFileNameAsSRGBEnd = loadFileNameAsSRGBBegin;
+                    while (*loadFileNameAsSRGBEnd && *loadFileNameAsSRGBEnd != ':' && *loadFileNameAsSRGBEnd != ')')
+                        loadFileNameAsSRGBEnd++;
+                    std::string loadFileNameAsSRGBStr(loadFileNameAsSRGBBegin, loadFileNameAsSRGBEnd);
+
+                    // Get the makeMips string. optional.
+                    const char* makeMipsBegin = (*loadFileNameAsSRGBEnd) ? loadFileNameAsSRGBEnd + 1 : loadFileNameAsSRGBEnd;
+                    const char* makeMipsEnd = makeMipsBegin;
+                    while (*makeMipsEnd && *makeMipsEnd != ':' && *makeMipsEnd != ')')
+                        makeMipsEnd++;
+                    std::string makeMipsStr(makeMipsBegin, makeMipsEnd);
+                    if (makeMipsStr == "*/")
+                        makeMipsStr = "";
+
+                    // Get the texture format
+                    TextureFormat textureFormat;
+                    if (!StringToEnum(textureFormatStr.c_str(), textureFormat))
+                    {
+                        Assert(false, "Unknown texture format: %s.\nIn %s\n", textureFormatStr.c_str(), path.c_str());
+                        return;
+                    }
+
+                    // Get the view type
+                    TextureViewType viewType;
+                    if (!StringToEnum(viewTypeStr.c_str(), viewType))
+                    {
+                        Assert(false, "Unknown texture view type: %s.\nIn %s\n", viewTypeStr.c_str(), path.c_str());
+                        return;
+                    }
+
+                    // Get loadFileNameAsSRGB
+                    bool loadFileNameAsSRGB = true;
+                    if (!_stricmp(loadFileNameAsSRGBStr.c_str(), "true") || !_stricmp(loadFileNameAsSRGBStr.c_str(), "1"))
+                    {
+                        loadFileNameAsSRGB = true;
+                    }
+                    else if (!_stricmp(loadFileNameAsSRGBStr.c_str(), "false") || !_stricmp(loadFileNameAsSRGBStr.c_str(), "0"))
+                    {
+                        loadFileNameAsSRGB = false;
+                    }
+                    else
+                    {
+                        Assert(false, "Couldn't read loadFileNameAsSRGB: %s.\nIn %s\n", loadFileNameAsSRGBStr.c_str(), path.c_str());
+                        return;
+                    }
+
+                    // Get makeMips
+                    bool makeMips = false;
+                    if (!makeMipsStr.empty())
+                    {
+                        if (!_stricmp(makeMipsStr.c_str(), "true") || !_stricmp(makeMipsStr.c_str(), "1"))
+                        {
+                            makeMips = true;
+                        }
+                        else if (!_stricmp(makeMipsStr.c_str(), "false") || !_stricmp(makeMipsStr.c_str(), "0"))
+                        {
+                            makeMips = false;
+                        }
+                        else
+                        {
+                            Assert(false, "Couldn't read makeMips: %s.\nIn %s\n", makeMipsStr.c_str(), path.c_str());
+                            return;
+                        }
+                    }
+
+                    // see if we've already made a load texture node for this texture in this format, so we can use that node if so
+                    char textureLoadNodeName[256];
+                    bool createNewTexture = true;
+                    for (const RenderGraphNode& node : renderGraph.nodes)
+                    {
+                        if (node._index != RenderGraphNode::c_index_resourceTexture)
+                            continue;
+
+                        const RenderGraphNode_Resource_Texture& textureNode = node.resourceTexture;
+                        if (textureNode.loadFileName == fileName && textureNode.format.format == textureFormat && textureNode.dimension == dimensionType && textureNode.loadFileNameAsSRGB == loadFileNameAsSRGB && textureNode.loadFileMakeMips == makeMips)
+                        {
+                            strcpy_s(textureLoadNodeName, textureNode.name.c_str());
+                            createNewTexture = false;
+                            break;
+                        }
+                    }
+
+                    // create a new node if we should
+                    if (createNewTexture)
+                    {
+                        // Make the name of the new node
+                        sprintf_s(textureLoadNodeName, "_loadedTexture_%i", nextLoadedTextureIndex);
+                        nextLoadedTextureIndex++;
+
+                        // Add an internal, non transient render graph resource texture node for it.
+                        {
+                            RenderGraphNode newTextureNode;
+                            newTextureNode._index = RenderGraphNode::c_index_resourceTexture;
+                            newTextureNode.resourceTexture.visibility = ResourceVisibility::Internal;
+                            newTextureNode.resourceTexture.format.format = textureFormat;
+                            newTextureNode.resourceTexture.dimension = dimensionType;
+                            newTextureNode.resourceTexture.loadFileName = fileName.c_str();
+                            newTextureNode.resourceTexture.loadFileNameAsSRGB = loadFileNameAsSRGB;
+                            newTextureNode.resourceTexture.loadFileMakeMips = makeMips;
+                            newTextureNode.resourceTexture.name = textureLoadNodeName;
+                            newTextureNode.resourceTexture.originalName = newTextureNode.resourceTexture.name;
+                            newTextureNode.resourceTexture.transient = false;
+                            renderGraph.nodes.push_back(newTextureNode);
+                        }
+
+                        // make asset file copies
+                        {
+                            FileCopy newFileCopy;
+                            newFileCopy.fileName = fileName;
+                            newFileCopy.type = FileCopyType::Asset;
+                            newFileCopy.binary = true;
+                            newFileCopy.plural = (dimensionType != TextureDimensionType::Texture2D);
+                            renderGraph.fileCopies.push_back(newFileCopy);
+                        }
+                    }
+
+                    // See if we have previously added this resource to this shader.
+                    // This can happen if a shader references the same texture in the same format multiple times in a shader.
+                    bool resourceAlreadyAdded = false;
+                    for (const ShaderResource& resource : shader.resources)
+                    {
+                        if (resource.name == textureLoadNodeName)
+                        {
+                            resourceAlreadyAdded = true;
+                            break;
+                        }
+                    }
+
+                    // If the resource hasn't already been added to this shader, we need to add it
+                    if (!resourceAlreadyAdded)
+                    {
+                        // Add the resource
+                        ShaderResource newResource;
+                        newResource.name = textureLoadNodeName;
+                        newResource.type = ShaderResourceType::Texture;
+                        newResource.access = ShaderResourceAccessType::SRV;
+                        newResource.texture.viewType = viewType;
+                        newResource.texture.dimension = dimensionType;
+
+                        shader.resources.push_back(newResource);
+
+                        // Hook up this resource node for all uses of this shader
+                        for (RenderGraphNode& node : renderGraph.nodes)
+                        {
+                            switch (node._index)
+                            {
+                                case RenderGraphNode::c_index_actionComputeShader:
+                                {
+                                    RenderGraphNode_Action_ComputeShader& shaderNode = node.actionComputeShader;
+                                    if (shaderNode.shader.name != shader.name)
+                                        continue;
+
+                                    NodePinConnection newConnection;
+                                    newConnection.srcPin = textureLoadNodeName;
+                                    newConnection.dstNode = textureLoadNodeName;
+                                    newConnection.dstPin = "resource";
+                                    shaderNode.connections.push_back(newConnection);
+                                    break;
+                                }
+                                case RenderGraphNode::c_index_actionRayShader:
+                                {
+                                    RenderGraphNode_Action_RayShader& shaderNode = node.actionRayShader;
+                                    if (shaderNode.shader.name != shader.name)
+                                        continue;
+
+                                    NodePinConnection newConnection;
+                                    newConnection.srcPin = textureLoadNodeName;
+                                    newConnection.dstNode = textureLoadNodeName;
+                                    newConnection.dstPin = "resource";
+                                    shaderNode.connections.push_back(newConnection);
+                                    break;
+                                }
+                                case RenderGraphNode::c_index_actionDrawCall:
+                                {
+                                    RenderGraphNode_Action_DrawCall& shaderNode = node.actionDrawCall;
+                                    if (shaderNode.vertexShader.name != shader.name && shaderNode.pixelShader.name != shader.name)
+                                        continue;
+
+                                    NodePinConnection newConnection;
+                                    newConnection.srcPin = textureLoadNodeName;
+                                    newConnection.dstNode = textureLoadNodeName;
+                                    newConnection.dstPin = "resource";
+                                    shaderNode.connections.push_back(newConnection);
+                                    break;
+                                }
+                            }
+                        }
+
+                        // Remmeber that we've loaded this texture for this shader
+                        {
+                            LoadedTextureReference shaderTextureLoaded;
+                            shaderTextureLoaded.token = token;
+                            shaderTextureLoaded.resourceName = textureLoadNodeName;
+                            shader.loadedTextureRefs.push_back(shaderTextureLoaded);
+                        }
+                    }
+                }
+            }
+        );
+
+        // if no variables referenced, we are done
+        if (variablesAccessedUnsorted.empty())
+            return true;
+
+        // make a sorted list of accessed variables, for determinism
+        std::vector<std::string> variablesAccessed;
+        for (auto it : variablesAccessedUnsorted)
+            variablesAccessed.push_back(it);
+        std::sort(variablesAccessed.begin(), variablesAccessed.end());
+
+        // add a struct for this constant buffer
+        {
+            int paddingIndex = -1;
+            size_t byteCount = 0;
+            Struct newStruct;
+            newStruct.name = "_" + shader.name + "CB";
+
+            for (const std::string& variableName : variablesAccessed)
+            {
+                int variableIndex = GetVariableIndex(renderGraph, variableName.c_str());
+                Assert(variableIndex >= 0, "Could not find variable %s.\nIn %s\n", variableName.c_str(), path.c_str());
+                const Variable& variable = renderGraph.variables[variableIndex];
+
+                // automatically pad constant buffers
+                // https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules
+                size_t variableSize = DataFieldTypeToSize(variable.type);
+                if (byteCount > 0 && byteCount + variableSize > 16)
+                {
+                    paddingIndex++;
+                    StructField padding;
+                    std::ostringstream paddingName;
+                    paddingName << "_padding" << paddingIndex;
+                    padding.name = paddingName.str();
+                    switch ((16 - byteCount) / 4)
+                    {
+                        case 1:
+                        {
+                            padding.type = DataFieldType::Float;
+                            padding.dflt = "0.0f";
+                            break;
+                        }
+                        case 2:
+                        {
+                            padding.type = DataFieldType::Float2;
+                            break;
+                        }
+                        case 3:
+                        {
+                            padding.type = DataFieldType::Float3;
+                            break;
+                        }
+                        default:
+                        {
+                            Assert(false, "error while calculating padding.\nIn %s\n", path.c_str());
+                        }
+                    }
+                    padding.comment = "Padding";
+                    newStruct.fields.push_back(padding);
+                    byteCount = 0;
+                }
+                byteCount = (byteCount + variableSize) % 16;
+
+                StructField newField;
+                newField.name = variableName;
+                newField.type = variable.type;
+                newField.dflt = variable.dflt;
+                newField.Enum = variable.Enum;
+                newField.comment = variable.comment;
+                newStruct.fields.push_back(newField);
+            }
+
+            // Also, if the struct's final size isn't a multiple of 16 bytes, pad it to be.
+            if (byteCount % 16 != 0)
+            {
+                paddingIndex++;
+                StructField padding;
+                std::ostringstream paddingName;
+                paddingName << "_padding" << paddingIndex;
+                padding.name = paddingName.str();
+                switch ((16 - byteCount) / 4)
+                {
+                    case 1:
+                    {
+                        padding.type = DataFieldType::Float;
+                        padding.dflt = "0.0f";
+                        break;
+                    }
+                    case 2:
+                    {
+                        padding.type = DataFieldType::Float2;
+                        break;
+                    }
+                    case 3:
+                    {
+                        padding.type = DataFieldType::Float3;
+                        break;
+                    }
+                    default:
+                    {
+                        Assert(false, "error while calculating terminating padding.\nIn %s\n", path.c_str());
+                    }
+                }
+                padding.comment = "Padding";
+                newStruct.fields.push_back(padding);
+                byteCount = 0;
+            }
+
+            renderGraph.structs.push_back(newStruct);
+        }
+
+        // Use this struct as a constant buffer input for this node
+        {
+            ShaderConstantBuffer newCB;
+            newCB.structName = "_" + shader.name + "CB";
+            newCB.resourceName = "_" + shader.name + "CB";
+            shader.constantBuffers.push_back(newCB);
+        }
+
+        // Add a constant buffer resource that is set from the vars
+        {
+            RenderGraphNode_Resource_ShaderConstants newCB;
+            newCB.name = "_" + shader.name + "CB";
+            newCB.originalName = newCB.name;
+            newCB.structure.name = "_" + shader.name + "CB";
+            for (const std::string& variableName : variablesAccessed)
+            {
+                SetCBFromVar newSetFromVar;
+                newSetFromVar.field = variableName;
+                newSetFromVar.variable.name = variableName;
+                newCB.setFromVar.push_back(newSetFromVar);
+            }
+            RenderGraphNode node;
+            node._index = RenderGraphNode::c_index_resourceShaderConstants;
+            node.resourceShaderConstants = newCB;
+            renderGraph.nodes.push_back(node);
+        }
+
+        // Hook up this constant buffer to every action node that uses this shader.
+        for (RenderGraphNode& node : renderGraph.nodes)
+        {
+            // compute shader
+            if (node._index == RenderGraphNode::c_index_actionComputeShader)
+            {
+                if (node.actionComputeShader.shader.name != shader.name)
+                    continue;
+            }
+            // ray shader
+            else if (node._index == RenderGraphNode::c_index_actionRayShader)
+            {
+                if (node.actionRayShader.shader.name != shader.name)
+                    continue;
+            }
+            // draw call
+            else if (node._index == RenderGraphNode::c_index_actionDrawCall)
+            {
+                if (node.actionDrawCall.vertexShader.name != shader.name && node.actionDrawCall.pixelShader.name != shader.name &&
+                    node.actionDrawCall.amplificationShader.name != shader.name && node.actionDrawCall.meshShader.name != shader.name)
+                    continue;
+            }
+            // unknown node type
+            else
+                continue;
+
+            NodePinConnection newConnection;
+            newConnection.dstPin = "resource";
+            newConnection.dstNode = "_" + shader.name + "CB";
+            newConnection.srcPin = "_" + shader.name + "CB";
+
+            switch (node._index)
+            {
+                case RenderGraphNode::c_index_actionComputeShader: node.actionComputeShader.connections.push_back(newConnection); break;
+                case RenderGraphNode::c_index_actionRayShader: node.actionRayShader.connections.push_back(newConnection); break;
+                case RenderGraphNode::c_index_actionDrawCall: node.actionDrawCall.connections.push_back(newConnection); break;
+            }
+        }
+
+        return true;
+    }
+
+    bool CheckForUnusedResources(Shader& shader, const std::string& path)
+    {
+        if (shader.resources.size() == 0)
+            return true;
+
+        if (std::find(renderGraph.buildSettings.disableWarnings.begin(), renderGraph.buildSettings.disableWarnings.end(), GigiCompileWarning::ShaderUnusedResource) != renderGraph.buildSettings.disableWarnings.end())
+            return true;
+
+        std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
+
+        std::vector<unsigned char> fileContents_;
+        if (!LoadFile(fileName, fileContents_))
+        {
+            Assert(false, "Could not load file %s.\nIn %s\n", fileName.c_str(), path.c_str());
+            return false;
+        }
+        fileContents_.push_back(0);
+        std::string fileContents = (char*)fileContents_.data();
+
+        for (const ShaderResource& resource : shader.resources)
+        {
+            if (fileContents.find(resource.name) == std::string::npos)
+            {
+                bool isLoadedTexture = false;
+                for (const LoadedTextureReference& loadedTexture : shader.loadedTextureRefs)
+                {
+                    if (loadedTexture.resourceName == resource.name)
+                    {
+                        isLoadedTexture = true;
+                        break;
+                    }
+                }
+                if (!isLoadedTexture)
+                    ShowWarningMessage("shader %s (%s) does not seem to actually use resource %s.\n[%s] %s\n\n", shader.name.c_str(), fileName.c_str(), resource.name.c_str(), EnumToString(GigiCompileWarning::ShaderUnusedResource), EnumToDescription(GigiCompileWarning::ShaderUnusedResource));
+            }
+        }
+
+        return true;
+    }
+
+    bool Visit(Shader& shader, const std::string& path)
+    {
+        shader.entryPointW = ToWideString(shader.entryPoint.c_str());
+
+        if (!HookupVariables(shader, path))
+        {
+            return false;
+        }
+
+        if (!CheckForUnusedResources(shader, path))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+
+    int nextLoadedTextureIndex = 0;
+};
+
+
+struct ResolveBackendRestrictions
+{
+    ResolveBackendRestrictions(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(BackendRestriction& data, const std::string& path)
+    {
+        if (data.backends.empty())
+        {
+            data.backendFlags = (unsigned int)-1;
+        }
+        else
+        {
+            data.backendFlags = 0;
+            for (Backend b : data.backends)
+                data.backendFlags |= (1 << (unsigned int)b);
+        }
+
+        if (!data.isWhiteList)
+            data.backendFlags = ~data.backendFlags;
+
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+};

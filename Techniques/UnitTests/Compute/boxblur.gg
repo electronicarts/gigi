@@ -1,0 +1,206 @@
+{
+    "$schema": "gigischema.json",
+    "name": "boxblur",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "enabled",
+            "comment": "Enables or disables the blurring effect.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "radius",
+            "comment": "The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2",
+            "type": "Int",
+            "dflt": "2",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "BoxBlur",
+            "fileName": "boxblur.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputTexture",
+                "comment": "This is the texture to be blurred",
+                "editorPos": [
+                    153.0,
+                    0.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "PingPongTexture",
+                "comment": "An internal texture used during the blurring process",
+                "editorPos": [
+                    153.0,
+                    80.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BlurH",
+                "comment": "Horizontal blur pass",
+                "editorPos": [
+                    315.0,
+                    3.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "InputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "PingPongTexture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BoxBlur"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "entryPoint": "BlurH"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BlurV",
+                "comment": "Vertical blur pass",
+                "editorPos": [
+                    489.0,
+                    2.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "BlurH",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "BlurH",
+                        "dstPin": "Input"
+                    }
+                ],
+                "shader": {
+                    "name": "BoxBlur"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "entryPoint": "BlurV"
+            }
+        }
+    ]
+}

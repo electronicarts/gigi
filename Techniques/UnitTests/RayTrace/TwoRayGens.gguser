@@ -1,0 +1,41 @@
+{
+    "systemVars": {
+        "ProjMtx_textureName": "Texture",
+        "InvViewProjMtx_varName": "clipToWorld",
+        "CameraPos_varName": "cameraPos"
+    },
+    "resourceViewNodeIndex": 3,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "Scene",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "fileName": "SimpleRT_VertexBufferSimple.csv",
+                "type": "Float3",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "depthNearPlane",
+            "value": "0.000000"
+        },
+        {
+            "name": "hitColor",
+            "value": "0.000000,1.000000,0.000000"
+        },
+        {
+            "name": "missColor",
+            "value": "1.000000,0.000000,0.000000"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Output",
+            "viewableResourceDisplayName": "DoRT2.g_texture: Texture (UAV - After)"
+        }
+    ]
+}

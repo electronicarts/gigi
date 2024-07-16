@@ -1,0 +1,98 @@
+{
+    "systemVars": {
+        "camera": {
+            "startingCameraPos": [
+                -29.75796127319336,
+                11.7787504196167,
+                -34.54057693481445
+            ],
+            "startingCameraAltitudeAzimuth": [
+                -0.358530730009079,
+                5.717600345611572
+            ]
+        },
+        "ProjMtx_textureName": "Output"
+    },
+    "resourceViewNodeIndex": 0,
+    "resourceViewResourceIndex": 6,
+    "importedResources": [
+        {
+            "nodeName": "Output",
+            "texture": {
+                "size": [
+                    1024,
+                    720,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Reset",
+            "value": "false"
+        },
+        {
+            "name": "scene",
+            "value": "0"
+        },
+        {
+            "name": "lightColor",
+            "value": "0.000000,0.000000,0.000000"
+        },
+        {
+            "name": "skybox",
+            "value": "0"
+        },
+        {
+            "name": "skyboxMultiplier",
+            "value": "1.000000"
+        },
+        {
+            "name": "exposure",
+            "value": "0.000000"
+        },
+        {
+            "name": "numBounces",
+            "value": "8"
+        },
+        {
+            "name": "numSamplesPerFrame",
+            "value": "64"
+        },
+        {
+            "name": "jitter",
+            "value": "true"
+        },
+        {
+            "name": "AcesToneMap",
+            "value": "false"
+        },
+        {
+            "name": "LinearToSRGB",
+            "value": "true"
+        },
+        {
+            "name": "RedBlue3D",
+            "value": "false"
+        },
+        {
+            "name": "RedBlue3DEyeDistance",
+            "value": "1.000000"
+        },
+        {
+            "name": "RedBlue3DColorLeftEye",
+            "value": "1.000000,0.000000,0.000000"
+        },
+        {
+            "name": "RedBlue3DColorRightEye",
+            "value": "0.000000,1.000000,1.000000"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Output",
+            "viewableResourceDisplayName": "Node_1.output: Output (UAV - After)"
+        }
+    ]
+}

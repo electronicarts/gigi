@@ -1,0 +1,253 @@
+{
+    "$schema": "gigischema.json",
+    "name": "SimpleTAA_NoMotionVectors",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "alpha",
+            "comment": "The lerp value from previous frame to current frame. Usually 0.1",
+            "type": "Float",
+            "dflt": "0.1f",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "Enabled",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "JitteredViewProjMtx",
+            "type": "Float4x4",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvJitteredViewProjMtx",
+            "type": "Float4x4",
+            "visibility": "Host"
+        },
+        {
+            "name": "JitteredViewProjMtxLastFrame",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f"
+        },
+        {
+            "name": "DepthClearValue",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "TemporalReprojection",
+            "comment": "If motion vectors are off, this controls whether temporal reprojection happens or not.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ColorNeighborhoodMode",
+            "type": "Int",
+            "dflt": "Clamp",
+            "visibility": "User",
+            "Enum": "ColorNeighborhoodModes"
+        },
+        {
+            "name": "CameraJitter",
+            "type": "Float2",
+            "visibility": "User"
+        },
+        {
+            "name": "CameraJitterLastFrame",
+            "type": "Float2"
+        },
+        {
+            "name": "UseMotionVectors",
+            "comment": "If true, uses motion vectors to find previous frame pixel locations, instead of temporal reprojection.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "resetHistory",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            },
+            "UIHint": "Button"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "AccumulateCS",
+            "fileName": "SimpleTAA.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Velocity",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Accum",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    237.0,
+                    130.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Accumulation",
+                "editorPos": [
+                    211.0,
+                    226.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Accumulate",
+                "editorPos": [
+                    355.0,
+                    130.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Accum",
+                        "dstNode": "Accumulation",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "Depth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Velocity",
+                        "dstNode": "Velocity",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "AccumulateCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    237.0,
+                    82.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Velocity",
+                "editorPos": [
+                    237.0,
+                    178.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "ColorNeighborhoodModes",
+            "items": [
+                {
+                    "label": "Nothing"
+                },
+                {
+                    "label": "Clamp"
+                }
+            ]
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "JitteredViewProjMtxLastFrame"
+            },
+            "AVar": {
+                "name": "JitteredViewProjMtx"
+            },
+            "op": "Noop",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "CameraJitterLastFrame"
+            },
+            "AVar": {
+                "name": "CameraJitter"
+            },
+            "op": "Noop",
+            "setBefore": false
+        }
+    ]
+}

@@ -1,0 +1,395 @@
+{
+    "$schema": "gigischema.json",
+    "name": "RTDirectionalLight",
+    "version": "0.93b",
+    "variables": [
+        {
+            "name": "Enabled",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "CastsShadows",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "Direction",
+            "type": "Float3",
+            "visibility": "User"
+        },
+        {
+            "name": "Color",
+            "type": "Float3",
+            "dflt": "1.0f, 1.0f, 1.0f",
+            "visibility": "User",
+            "UIHint": "Color"
+        },
+        {
+            "name": "Intensity",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "DepthClearValue",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "RayTMin",
+            "type": "Float",
+            "dflt": "0.01f",
+            "visibility": "User"
+        },
+        {
+            "name": "RayTMax",
+            "type": "Float",
+            "dflt": "1000.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "RayNormalBias",
+            "comment": "Pushes the ray origin this far away from the object down the direction of the normal",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "RayGen",
+            "fileName": "RTDirectionalLight.hlsl",
+            "type": "RTRayGen",
+            "entryPoint": "RayGen",
+            "resources": [
+                {
+                    "name": "Scene",
+                    "type": "Buffer",
+                    "access": "RTScene"
+                },
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "Albedo_Roughness",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Normal_Metallic_AO",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "Miss",
+            "fileName": "RTDirectionalLight.hlsl",
+            "type": "RTMiss",
+            "entryPoint": "Miss",
+            "copyFile": false
+        },
+        {
+            "name": "NoShadows",
+            "fileName": "RTDirectionalLightNoShadows.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "Albedo_Roughness",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Normal_Metallic_AO",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "Octahedral.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "GBuffer.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "PBR.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionRayShader": {
+                "name": "DoRT",
+                "editorPos": [
+                    404.0,
+                    431.0
+                ],
+                "condition": {
+                    "variable1": "CastsShadows",
+                    "comparison": "IsTrue"
+                },
+                "shader": {
+                    "name": "RayGen"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color HDR"
+                    }
+                },
+                "connections": [
+                    {
+                        "srcPin": "Scene",
+                        "dstNode": "Scene",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "Depth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Albedo_Roughness",
+                        "dstNode": "Albedo_Roughness",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Normal_Metallic_AO",
+                        "dstNode": "Normal_Metallic_AO",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Color HDR",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Scene",
+                "editorPos": [
+                    205.0,
+                    354.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    205.0,
+                    418.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Albedo_Roughness",
+                "editorPos": [
+                    152.0,
+                    482.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Normal_Metallic_AO",
+                "editorPos": [
+                    140.0,
+                    546.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color HDR",
+                "editorPos": [
+                    197.0,
+                    610.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "NoShadows",
+                "editorPos": [
+                    404.0,
+                    562.0
+                ],
+                "condition": {
+                    "variable1": "CastsShadows",
+                    "comparison": "IsFalse"
+                },
+                "shader": {
+                    "name": "NoShadows"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color HDR"
+                    }
+                },
+                "connections": [
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "Depth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Albedo_Roughness",
+                        "dstNode": "Albedo_Roughness",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Normal_Metallic_AO",
+                        "dstNode": "Normal_Metallic_AO",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Color HDR",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        }
+    ],
+    "hitGroups": [
+        {
+            "name": "EmptyHitGroup"
+        }
+    ]
+}

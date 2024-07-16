@@ -1,0 +1,40 @@
+{
+    "systemVars": {
+        "camera": {
+            "startingCameraPos": [
+                0.5,
+                0.5,
+                -3.0
+            ]
+        },
+        "ProjMtx_textureName": "Output"
+    },
+    "resourceViewNodeIndex": 2,
+    "resourceViewResourceIndex": 4,
+    "importedResources": [
+        {
+            "nodeName": "AABBs",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "IntersectionShader.csv",
+                "type": "Float",
+                "IsAABBs": true
+            }
+        },
+        {
+            "nodeName": "AABBsSRV",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "IntersectionShader.csv",
+                "type": "Float",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Render",
+            "viewableResourceDisplayName": "Do_RT.Output: Output (UAV - After)"
+        }
+    ]
+}

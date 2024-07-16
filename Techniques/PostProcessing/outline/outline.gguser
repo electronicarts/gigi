@@ -1,0 +1,32 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "InputColor"
+        },
+        {
+            "nodeName": "InputDepth"
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "enabled",
+            "value": "true"
+        },
+        {
+            "name": "expansionRadius",
+            "value": "3"
+        },
+        {
+            "name": "blurRadius",
+            "value": "5"
+        },
+        {
+            "name": "outlineColor",
+            "value": "1.000000,0.500000,0.000000"
+        },
+        {
+            "name": "depthClearValue",
+            "value": "1.000000"
+        }
+    ]
+}

@@ -1,0 +1,22 @@
+{
+    "resourceViewNodeIndex": 2,
+    "resourceViewResourceIndex": 1,
+    "importedResources": [
+        {
+            "nodeName": "Imported_Tex",
+            "texture": {
+                "size": [
+                    256,
+                    256,
+                    1
+                ],
+                "color": [
+                    0.250980406999588,
+                    1.0,
+                    0.125490203499794,
+                    1.0
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,186 @@
+{
+    "$schema": "gigischema.json",
+    "name": "IndirectDispatch",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Dispatch Count 1",
+            "type": "Uint3",
+            "dflt": "50, 50, 1",
+            "visibility": "User"
+        },
+        {
+            "name": "Dispatch Count 2",
+            "type": "Uint3",
+            "dflt": "100, 100, 1",
+            "visibility": "User"
+        },
+        {
+            "name": "Second Dispatch Offset",
+            "type": "Int",
+            "dflt": "2",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Fill Indirect Dispatch Count",
+            "fileName": "IndirectDispatch_Fill.hlsl",
+            "entryPoint": "FillIndirectDispatchCount",
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ],
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "IndirectDispatchCount",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint4"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Do Indirect Dispatch",
+            "fileName": "IndirectDispatch_Execute.hlsl",
+            "entryPoint": "DoIndirectDispatch",
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ],
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Render Target",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Render Target",
+                "editorPos": [
+                    755.0,
+                    354.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Indirect Dispatch Count",
+                "editorPos": [
+                    470.0,
+                    418.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 12
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Fill Indirect Dispatch Count",
+                "editorPos": [
+                    673.0,
+                    415.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "IndirectDispatchCount",
+                        "dstNode": "Indirect Dispatch Count",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Fill Indirect Dispatch Count"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Do Indirect Dispatch 1",
+                "editorPos": [
+                    896.0,
+                    415.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Render Target",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Do Indirect Dispatch"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Fill Indirect Dispatch Count",
+                        "pin": "IndirectDispatchCount"
+                    },
+                    "indirectOffsetValue": 1
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Do Indirect Dispatch 2",
+                "editorPos": [
+                    1077.0,
+                    415.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Do Indirect Dispatch 1",
+                        "dstPin": "Render Target"
+                    }
+                ],
+                "shader": {
+                    "name": "Do Indirect Dispatch"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Do Indirect Dispatch 1",
+                        "pin": "indirectBuffer"
+                    },
+                    "indirectOffsetVariable": {
+                        "name": "Second Dispatch Offset"
+                    }
+                }
+            }
+        }
+    ]
+}

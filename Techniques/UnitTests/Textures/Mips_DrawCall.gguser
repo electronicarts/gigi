@@ -1,0 +1,47 @@
+{
+    "systemVars": {
+        "camera": {
+            "startingCameraPos": [
+                1.8031275272369385,
+                1.0489977598190308,
+                -0.7343816161155701
+            ],
+            "startingCameraAltitudeAzimuth": [
+                -0.37311917543411257,
+                1.1492680311203004
+            ]
+        }
+    },
+    "resourceViewNodeIndex": 14,
+    "resourceViewResourceIndex": 6,
+    "importedResources": [
+        {
+            "nodeName": "SphereVB",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "..\\..\\OBJAssets\\sphere.obj",
+                "structIndex": 0,
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "VertexBuffer",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                "structIndex": 0,
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "UseMips",
+            "value": "true"
+        },
+        {
+            "name": "RenderSize",
+            "value": "512,512"
+        }
+    ]
+}

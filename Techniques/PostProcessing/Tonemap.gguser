@@ -1,0 +1,34 @@
+{
+    "resourceViewNodeIndex": 2,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "Color_HDR",
+            "texture": {
+                "fileName": "..\\skyboxes\\Arches_E_PineTree_3k.hdr",
+                "fileIsSRGB": false,
+                "format": "RGBA32_Float"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "ExposureFStops",
+            "value": "2.000000"
+        },
+        {
+            "name": "ToneMapper",
+            "value": "1"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Output",
+            "viewableResourceDisplayName": "Tonemap.SDR: Color_SDR (UAV - After)"
+        },
+        {
+            "name": "Input",
+            "viewableResourceDisplayName": "Tonemap.HDR: Color_HDR (SRV)"
+        }
+    ]
+}

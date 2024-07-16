@@ -1,0 +1,101 @@
+{
+    "$schema": "gigischema.json",
+    "name": "TextureExample",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Opacity",
+            "type": "Float",
+            "dflt": "0.5",
+            "visibility": "User"
+        },
+        {
+            "name": "Texture",
+            "type": "Int",
+            "dflt": "Logo",
+            "visibility": "User",
+            "Enum": "Textures"
+        },
+        {
+            "name": "Tile",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "Enabled",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "TextureExampleCS",
+            "fileName": "TextureExample.hlsl",
+            "entryPoint": "Main",
+            "resources": [
+                {
+                    "name": "RenderTarget",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "RenderTarget",
+                "comment": "The render target",
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DoTextureExampleCS",
+                "comment": "Runs the shader",
+                "editorPos": [
+                    160.0,
+                    0.0
+                ],
+                "condition": {
+                    "variable1": "Enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "RenderTarget",
+                        "dstNode": "RenderTarget",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "TextureExampleCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "RenderTarget"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "Textures",
+            "items": [
+                {
+                    "label": "Logo"
+                },
+                {
+                    "label": "Cabin"
+                }
+            ]
+        }
+    ]
+}

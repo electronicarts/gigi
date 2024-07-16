@@ -1,0 +1,70 @@
+{
+    "resourceViewNodeIndex": 4,
+    "resourceViewResourceIndex": 27,
+    "importedResources": [
+        {
+            "nodeName": "Albedo_Roughness",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Color_HDR",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "color": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "format": "RGBA32_Float"
+            }
+        },
+        {
+            "nodeName": "Depth",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "R32_Uint"
+            }
+        },
+        {
+            "nodeName": "Normal_Metallic_AO",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Enabled",
+            "value": "true"
+        },
+        {
+            "name": "Skybox",
+            "value": "0"
+        },
+        {
+            "name": "DepthClearValue",
+            "value": "0.000000"
+        }
+    ]
+}

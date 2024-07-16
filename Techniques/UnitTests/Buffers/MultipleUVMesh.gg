@@ -1,0 +1,45 @@
+{
+    "$schema": "gigischema.json",
+    "name": "MultipleUVMesh",
+    "version": "0.98b",
+    "structs": [
+        {
+            "name": "VertexBuffer",
+            "fields": [
+                {
+                    "name": "pos",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "UV0",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "uv1",
+                    "type": "Float2",
+                    "semantic": "UV",
+                    "semanticIndex": 1
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "VB",
+                "editorPos": [
+                    346.0,
+                    323.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

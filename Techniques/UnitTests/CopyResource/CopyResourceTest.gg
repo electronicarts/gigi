@@ -1,0 +1,191 @@
+{
+    "$schema": "gigischema.json",
+    "name": "CopyResourceTest",
+    "version": "0.98b",
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Source Texture",
+                "editorPos": [
+                    284.0,
+                    130.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Texture From Texture",
+                "editorPos": [
+                    359.0,
+                    226.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Source Texture"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Source Texture"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Source Buffer",
+                "editorPos": [
+                    287.0,
+                    418.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Texture From Buffer",
+                "editorPos": [
+                    366.0,
+                    514.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Source Texture"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Source Texture"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Buffer From Texture",
+                "editorPos": [
+                    362.0,
+                    290.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Source Buffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "Source Buffer"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Buffer From Buffer",
+                "editorPos": [
+                    369.0,
+                    578.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Source Buffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "Source Buffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy Texture To Texture",
+                "editorPos": [
+                    643.0,
+                    127.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Source Texture",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Texture From Texture",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy Texture To Buffer",
+                "editorPos": [
+                    643.0,
+                    255.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Source Texture",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Buffer From Texture",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy Buffer To Texture",
+                "editorPos": [
+                    643.0,
+                    418.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Source Buffer",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Texture From Buffer",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy Buffer To Buffer",
+                "editorPos": [
+                    643.0,
+                    543.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Source Buffer",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Buffer From Buffer",
+                    "pin": "resource"
+                }
+            }
+        }
+    ]
+}

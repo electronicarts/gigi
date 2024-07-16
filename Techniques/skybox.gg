@@ -1,0 +1,210 @@
+{
+    "$schema": "gigischema.json",
+    "name": "skybox",
+    "comment": "Meant to be ran before anything else, it fills the color buffer with the contents of a skybox.\nMore efficient would be to run this later and fill in the unfilled pixels.",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "enabled",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "clipToView",
+            "type": "Float4x4",
+            "visibility": "Host"
+        },
+        {
+            "name": "cameraPos",
+            "type": "Float3",
+            "visibility": "Host"
+        },
+        {
+            "name": "exposureFStops",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "skybox",
+            "type": "Int",
+            "dflt": "Arches",
+            "visibility": "User",
+            "Enum": "Skybox"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "skybox",
+            "fileName": "skybox.hlsl",
+            "entryPoint": "skyboxCS",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "texSampler",
+                    "addressMode": "Clamp"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Skybox",
+                "editorPos": [
+                    482.0,
+                    269.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Color Buffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "skybox"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color Buffer"
+                    },
+                    "indirectBuffer": {
+                        "node": "Color Buffer"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color Buffer",
+                "editorPos": [
+                    336.0,
+                    269.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "Skybox",
+            "items": [
+                {
+                    "label": "Arches"
+                },
+                {
+                    "label": "SataraNightHdr"
+                },
+                {
+                    "label": "SataraNightExr"
+                }
+            ]
+        }
+    ]
+}

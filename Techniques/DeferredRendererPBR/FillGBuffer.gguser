@@ -1,0 +1,223 @@
+{
+    "systemVars": {
+        "camera": {
+            "leftHanded": false,
+            "startingCameraPos": [
+                0.0,
+                0.0,
+                3.0
+            ]
+        },
+        "ProjMtx_textureName": "Albedo_Roughness"
+    },
+    "resourceViewNodeIndex": 3,
+    "resourceViewResourceIndex": 14,
+    "importedResources": [
+        {
+            "nodeName": "Model_AO",
+            "texture": {
+                "fileName": "Textures\\sculptedfloorboards2b_AO.png",
+                "fileIsSRGB": false,
+                "size": [
+                    32,
+                    32,
+                    1
+                ],
+                "format": "R8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Model_Albedo",
+            "texture": {
+                "fileName": "Textures\\sculptedfloorboards2b_basecolor.png"
+            }
+        },
+        {
+            "nodeName": "Model_Metallic",
+            "texture": {
+                "fileName": "Textures\\sculptedfloorboards2b_metalness.png",
+                "fileIsSRGB": false,
+                "format": "R8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Model_Normal",
+            "texture": {
+                "fileName": "Textures\\sculptedfloorboards2b_normal.png",
+                "fileIsSRGB": false,
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Model_Roughness",
+            "texture": {
+                "fileName": "Textures\\sculptedfloorboards2b_roughness.png",
+                "fileIsSRGB": false,
+                "format": "R8_Unorm"
+            }
+        },
+        {
+            "nodeName": "VertexBuffer",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "fileName": "..\\OBJAssets\\sphere.obj",
+                "structIndex": 0,
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "DepthClearValue",
+            "value": "0.000000"
+        },
+        {
+            "name": "RenderSize",
+            "value": "512,512"
+        },
+        {
+            "name": "DebugMode",
+            "value": "1"
+        },
+        {
+            "name": "NormalMapping",
+            "value": "true"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Normal Metallic AO",
+            "viewableResourceDisplayName": "Fill_GBuffer.colorTarget1 (After)"
+        },
+        {
+            "name": "Depth",
+            "viewableResourceDisplayName": "Fill_GBuffer.depthTarget (After)"
+        },
+        {
+            "name": "Albedo Roughness",
+            "viewableResourceDisplayName": "Fill_GBuffer.colorTarget0 (After)"
+        },
+        {
+            "name": "Debug",
+            "viewableResourceDisplayName": "Fill_GBuffer.colorTarget2 (After)"
+        }
+    ],
+    "importedResourcePresets": [
+        {
+            "name": "Iron-Scuffed",
+            "importedResources": [
+                {
+                    "nodeName": "Model_AO",
+                    "texture": {
+                        "fileIsSRGB": false,
+                        "size": [
+                            32,
+                            32,
+                            1
+                        ],
+                        "format": "R8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "Model_Albedo",
+                    "texture": {
+                        "fileName": "Textures\\Iron-Scuffed_basecolor.png"
+                    }
+                },
+                {
+                    "nodeName": "Model_Metallic",
+                    "texture": {
+                        "fileName": "Textures\\Iron-Scuffed_metallic.png",
+                        "fileIsSRGB": false,
+                        "format": "R8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "Model_Normal",
+                    "texture": {
+                        "fileName": "Textures\\Iron-Scuffed_normal.png",
+                        "fileIsSRGB": false,
+                        "format": "RGBA8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "Model_Roughness",
+                    "texture": {
+                        "fileName": "Textures\\Iron-Scuffed_roughness.png",
+                        "fileIsSRGB": false,
+                        "format": "R8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "VertexBuffer",
+                    "resetEveryFrame": false,
+                    "isATexture": false,
+                    "buffer": {
+                        "fileName": "..\\OBJAssets\\sphere.obj",
+                        "structIndex": 0,
+                        "BLASOpaque": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sculpted Floor Boards",
+            "importedResources": [
+                {
+                    "nodeName": "Model_AO",
+                    "texture": {
+                        "fileName": "Textures\\sculptedfloorboards2b_AO.png",
+                        "fileIsSRGB": false,
+                        "size": [
+                            32,
+                            32,
+                            1
+                        ],
+                        "format": "R8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "Model_Albedo",
+                    "texture": {
+                        "fileName": "Textures\\sculptedfloorboards2b_basecolor.png"
+                    }
+                },
+                {
+                    "nodeName": "Model_Metallic",
+                    "texture": {
+                        "fileName": "Textures\\sculptedfloorboards2b_metalness.png",
+                        "fileIsSRGB": false,
+                        "format": "R8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "Model_Normal",
+                    "texture": {
+                        "fileName": "Textures\\sculptedfloorboards2b_normal.png",
+                        "fileIsSRGB": false,
+                        "format": "RGBA8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "Model_Roughness",
+                    "texture": {
+                        "fileName": "Textures\\sculptedfloorboards2b_roughness.png",
+                        "fileIsSRGB": false,
+                        "format": "R8_Unorm"
+                    }
+                },
+                {
+                    "nodeName": "VertexBuffer",
+                    "resetEveryFrame": false,
+                    "isATexture": false,
+                    "buffer": {
+                        "fileName": "..\\OBJAssets\\sphere.obj",
+                        "structIndex": 0,
+                        "BLASOpaque": true
+                    }
+                }
+            ]
+        }
+    ]
+}

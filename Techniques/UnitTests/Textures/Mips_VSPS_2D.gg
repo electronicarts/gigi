@@ -1,0 +1,125 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "256, 256",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "VS",
+            "fileName": "Mips_VSPS_2D_VS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "MipTexVS",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "PS",
+            "fileName": "Mips_VSPS_2D_PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "MipTexPS",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -21.0,
+                    66.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Node 1",
+                "editorPos": [
+                    146.0,
+                    -61.0
+                ],
+                "linkProperties": [
+                    {
+                        "UAVMipIndex": 2
+                    },
+                    {
+                        "UAVMipIndex": 1
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "MipTexVS",
+                        "dstNode": "MipTex",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "MipTexPS",
+                        "dstNode": "MipTex",
+                        "dstPin": "resource"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "countPerInstance": 3,
+                "colorTargets": [
+                    {
+                        "node": "Output",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "MipTex",
+                "editorPos": [
+                    -21.0,
+                    -46.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

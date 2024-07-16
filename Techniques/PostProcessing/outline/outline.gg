@@ -1,0 +1,339 @@
+{
+    "$schema": "gigischema.json",
+    "name": "outline",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "enabled",
+            "comment": "Enables or disables the blurring effect.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "expansionRadius",
+            "comment": "The radius of outline expansion",
+            "type": "Int",
+            "dflt": "3",
+            "visibility": "User"
+        },
+        {
+            "name": "blurRadius",
+            "comment": "The radius of outline blur",
+            "type": "Int",
+            "dflt": "5",
+            "visibility": "User"
+        },
+        {
+            "name": "outlineColor",
+            "comment": "The color of the outline",
+            "type": "Float3",
+            "dflt": "1.0f, 0.5f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "depthClearValue",
+            "comment": "What the depth is cleared to",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "OutlineSolid",
+            "fileName": "outline_solid.hlsl",
+            "resources": [
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "OutlineExpand",
+            "fileName": "outline_expand.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "OutlineBlur",
+            "fileName": "outline_blur.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "OutlineComposite",
+            "fileName": "outline_composite.hlsl",
+            "resources": [
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "OutlineBuffer",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputColor",
+                "comment": "The input color target",
+                "editorPos": [
+                    965.0,
+                    130.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "InputDepth",
+                "comment": "The input depth target",
+                "editorPos": [
+                    416.0,
+                    -35.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Scratch1",
+                "comment": "An internal texture",
+                "editorPos": [
+                    416.0,
+                    45.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "node": {
+                        "name": "InputColor"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Scratch2",
+                "comment": "An internal texture",
+                "editorPos": [
+                    560.0,
+                    125.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "node": {
+                        "name": "InputColor"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Solid",
+                "comment": "Make a solid color where the depth buffer is not default",
+                "editorPos": [
+                    531.0,
+                    -14.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "InputDepth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Scratch1",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "OutlineSolid"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputColor"
+                    }
+                },
+                "entryPoint": "Main"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Expand",
+                "comment": "Expand the outline color made by the Solid shader",
+                "editorPos": [
+                    707.0,
+                    44.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Solid",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Scratch2",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "OutlineExpand"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputColor"
+                    }
+                },
+                "entryPoint": "Main"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Blur",
+                "comment": "Blur the outline color made by the Expand shader",
+                "editorPos": [
+                    873.0,
+                    44.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Expand",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Expand",
+                        "dstPin": "Input"
+                    }
+                ],
+                "shader": {
+                    "name": "OutlineBlur"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputColor"
+                    }
+                },
+                "entryPoint": "Main"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Composite",
+                "comment": "Compose the outline color back into the color target",
+                "editorPos": [
+                    1081.0,
+                    -17.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "Solid",
+                        "dstPin": "Depth"
+                    },
+                    {
+                        "srcPin": "OutlineBuffer",
+                        "dstNode": "Blur",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "InputColor",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "OutlineComposite"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputColor"
+                    }
+                },
+                "entryPoint": "Main"
+            }
+        }
+    ]
+}

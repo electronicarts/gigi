@@ -1,0 +1,11 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "texture",
+            "texture": {
+                "fileName": "..\\..\\skyboxes\\Test_%s.png",
+                "makeMips": true
+            }
+        }
+    ]
+}

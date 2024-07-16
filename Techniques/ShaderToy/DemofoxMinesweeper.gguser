@@ -1,0 +1,33 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "Output",
+        "ProjMtx_textureName": "Output"
+    },
+    "resourceViewNodeIndex": 1,
+    "resourceViewResourceIndex": 5,
+    "importedResources": [
+        {
+            "nodeName": "Output",
+            "resetEveryFrame": false,
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Reset",
+            "value": "false"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "game",
+            "viewableResourceDisplayName": "Display.output: Output (UAV - After)"
+        }
+    ]
+}

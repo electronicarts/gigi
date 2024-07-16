@@ -1,0 +1,111 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Texture2DRW_CS",
+    "version": "0.98b",
+    "shaders": [
+        {
+            "name": "RWCS",
+            "fileName": "Texture2DRW_CS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "nodeTexture",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "importedTexture",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "importedColor",
+                    "type": "Texture",
+                    "access": "SRV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "NodeTexture",
+                "editorPos": [
+                    216.0,
+                    178.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "RW",
+                "editorPos": [
+                    387.0,
+                    207.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "nodeTexture",
+                        "dstNode": "NodeTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "importedTexture",
+                        "dstNode": "ImportedTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "importedColor",
+                        "dstNode": "ImportedColor",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "RWCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NodeTexture"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ImportedTexture",
+                "editorPos": [
+                    194.0,
+                    226.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ImportedColor",
+                "editorPos": [
+                    206.0,
+                    274.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

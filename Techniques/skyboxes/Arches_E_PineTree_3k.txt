@@ -1,0 +1,1 @@
+Arches_E_PineTree_3k.hdr is from http://www.hdrlabs.com/sibl/archive.html

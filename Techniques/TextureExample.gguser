@@ -1,0 +1,34 @@
+{
+    "resourceViewNodeIndex": 1,
+    "resourceViewResourceIndex": 4,
+    "importedResources": [
+        {
+            "nodeName": "RenderTarget",
+            "texture": {
+                "size": [
+                    1024,
+                    768,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Opacity",
+            "value": "0.500000"
+        },
+        {
+            "name": "Texture",
+            "value": "0"
+        },
+        {
+            "name": "Tile",
+            "value": "true"
+        },
+        {
+            "name": "Enabled",
+            "value": "true"
+        }
+    ]
+}

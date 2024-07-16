@@ -1,0 +1,503 @@
+{
+    "$schema": "gigischema.json",
+    "name": "FillGBuffer",
+    "version": "0.93b",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "DepthClearValue",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "visibility": "User"
+        },
+        {
+            "name": "DebugMode",
+            "type": "Int",
+            "visibility": "User",
+            "Enum": "DebugModes"
+        },
+        {
+            "name": "NormalMapping",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Fill GBuffer VS",
+            "fileName": "FillGBufferVS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vsmain"
+        },
+        {
+            "name": "Fill GBuffer PS",
+            "fileName": "FillGBufferPS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "psmain",
+            "resources": [
+                {
+                    "name": "Albedo",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Roughness",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "Normal",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Metallic",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "AO",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "samplerLinearWrap"
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VB",
+            "fields": [
+                {
+                    "name": "position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "tangent",
+                    "type": "Float4",
+                    "semantic": "Tangent"
+                },
+                {
+                    "name": "uv",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "materialID",
+                    "type": "Int",
+                    "semantic": "MaterialID"
+                },
+                {
+                    "name": "shapeID",
+                    "type": "Int",
+                    "semantic": "ShapeID"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "Octahedral.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "GBuffer.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Albedo_Roughness",
+                "editorPos": [
+                    248.0,
+                    210.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Normal_Metallic_AO",
+                "editorPos": [
+                    236.0,
+                    258.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    301.0,
+                    162.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Fill GBuffer",
+                "editorPos": [
+                    533.0,
+                    -62.0
+                ],
+                "vertexShader": {
+                    "name": "Fill GBuffer VS"
+                },
+                "pixelShader": {
+                    "name": "Fill GBuffer PS"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "cullMode": "Back",
+                "vertexBuffer": {
+                    "node": "VertexBuffer",
+                    "pin": "resource"
+                },
+                "indexBuffer": {
+                    "node": "Model Albedo"
+                },
+                "instanceBuffer": {
+                    "node": "Model Albedo"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Albedo_Roughness",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "Normal_Metallic_AO",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "GBuffer Debug",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "GBuffer Debug"
+                    },
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth",
+                    "pin": "resource"
+                },
+                "connections": [
+                    {
+                        "srcPin": "Albedo",
+                        "dstNode": "Model Albedo",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Roughness",
+                        "dstNode": "Model Roughness",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Normal",
+                        "dstNode": "Model Normal",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Metallic",
+                        "dstNode": "Model Metallic",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "AO",
+                        "dstNode": "Model AO",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VertexBuffer",
+                "editorPos": [
+                    37.0,
+                    50.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Model Albedo",
+                "editorPos": [
+                    273.0,
+                    -206.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Model Roughness",
+                "editorPos": [
+                    252.0,
+                    -158.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Model Normal",
+                "editorPos": [
+                    269.0,
+                    -110.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Model Metallic",
+                "editorPos": [
+                    265.0,
+                    -62.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Model AO",
+                "editorPos": [
+                    296.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "GBuffer Debug",
+                "editorPos": [
+                    268.0,
+                    306.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "DebugModes",
+            "items": [
+                {
+                    "label": "None"
+                },
+                {
+                    "label": "Albedo"
+                },
+                {
+                    "label": "Roughness"
+                },
+                {
+                    "label": "Metallic"
+                },
+                {
+                    "label": "AO"
+                },
+                {
+                    "label": "UV"
+                },
+                {
+                    "label": "VertexTangent"
+                },
+                {
+                    "label": "VertexNormal"
+                },
+                {
+                    "label": "TBNTangent"
+                },
+                {
+                    "label": "TBNBitangent"
+                },
+                {
+                    "label": "TBNNormal"
+                },
+                {
+                    "label": "ShadingNormal"
+                },
+                {
+                    "label": "Depth"
+                },
+                {
+                    "label": "LinearDepth"
+                },
+                {
+                    "label": "WorldPos"
+                },
+                {
+                    "label": "ViewPos"
+                },
+                {
+                    "label": "MaterialID"
+                },
+                {
+                    "label": "ShapeID"
+                }
+            ]
+        }
+    ]
+}

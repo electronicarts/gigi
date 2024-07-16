@@ -1,0 +1,519 @@
+========== Enum To / From String functions ==========
+
+  BackendFromString()
+  BackendToString()
+
+  ShaderResourceTypeFromString()
+  ShaderResourceTypeToString()
+
+  ShaderResourceAccessTypeFromString()
+  ShaderResourceAccessTypeToString()
+
+  DataFieldTypeFromString()
+  DataFieldTypeToString()
+
+  TextureViewTypeFromString()
+  TextureViewTypeToString()
+
+  SamplerFilterFromString()
+  SamplerFilterToString()
+
+  SamplerAddressModeFromString()
+  SamplerAddressModeToString()
+
+  TextureDimensionTypeFromString()
+  TextureDimensionTypeToString()
+
+  ShaderTypeFromString()
+  ShaderTypeToString()
+
+  StructFieldSemanticFromString()
+  StructFieldSemanticToString()
+
+  VariableVisibilityFromString()
+  VariableVisibilityToString()
+
+  VariableUIHintFromString()
+  VariableUIHintToString()
+
+  ConditionComparisonFromString()
+  ConditionComparisonToString()
+
+  ResourceVisibilityFromString()
+  ResourceVisibilityToString()
+
+  DrawCullModeFromString()
+  DrawCullModeToString()
+
+  DepthTestFunctionFromString()
+  DepthTestFunctionToString()
+
+  DrawBlendModeFromString()
+  DrawBlendModeToString()
+
+  StencilOpFromString()
+  StencilOpToString()
+
+  ShadingRateFromString()
+  ShadingRateToString()
+
+  ShadingRateCombinerFromString()
+  ShadingRateCombinerToString()
+
+  GeometryTypeFromString()
+  GeometryTypeToString()
+
+  TextureFormatFromString()
+  TextureFormatToString()
+
+  RenderPassBookmarkFromString()
+  RenderPassBookmarkToString()
+
+  PreviewMsgCS_Log_LevelFromString()
+  PreviewMsgCS_Log_LevelToString()
+
+  GGUserFile_ImportedTexture_BinaryTypeFromString()
+  GGUserFile_ImportedTexture_BinaryTypeToString()
+
+  GGUserFile_TLASBuildFlagsFromString()
+  GGUserFile_TLASBuildFlagsToString()
+
+  GGUserFile_CameraJitterTypeFromString()
+  GGUserFile_CameraJitterTypeToString()
+
+  GigiCompileResultFromString()
+  GigiCompileResultToString()
+
+  GigiCompileWarningFromString()
+  GigiCompileWarningToString()
+
+  DXShaderCompilerFromString()
+  DXShaderCompilerToString()
+
+  FileCopyTypeFromString()
+  FileCopyTypeToString()
+
+  SetVariableOperatorFromString()
+  SetVariableOperatorToString()
+
+========== Enum Values ==========
+
+  Backend:
+    Host.Backend_FIRST = 0
+    Host.Backend_DX12 = 0
+    Host.Backend_Halcyon = 1
+    Host.Backend_Frostbite = 2
+    Host.Backend_UE_5_3 = 3
+    Host.Backend_Interpreter = 4
+    Host.Backend_LAST = 4
+    Host.Backend_COUNT = 5
+
+  ShaderResourceType:
+    Host.ShaderResourceType_FIRST = 0
+    Host.ShaderResourceType_Texture = 0
+    Host.ShaderResourceType_Buffer = 1
+    Host.ShaderResourceType_ConstantBuffer = 2
+    Host.ShaderResourceType_Count = 3
+    Host.ShaderResourceType_LAST = 3
+    Host.ShaderResourceType_COUNT = 4
+
+  ShaderResourceAccessType:
+    Host.ShaderResourceAccessType_FIRST = 0
+    Host.ShaderResourceAccessType_UAV = 0
+    Host.ShaderResourceAccessType_SRV = 1
+    Host.ShaderResourceAccessType_CBV = 2
+    Host.ShaderResourceAccessType_CopySource = 3
+    Host.ShaderResourceAccessType_CopyDest = 4
+    Host.ShaderResourceAccessType_Indirect = 5
+    Host.ShaderResourceAccessType_RTScene = 6
+    Host.ShaderResourceAccessType_VertexBuffer = 7
+    Host.ShaderResourceAccessType_IndexBuffer = 8
+    Host.ShaderResourceAccessType_RenderTarget = 9
+    Host.ShaderResourceAccessType_DepthTarget = 10
+    Host.ShaderResourceAccessType_Barrier = 11
+    Host.ShaderResourceAccessType_ShadingRate = 12
+    Host.ShaderResourceAccessType_Count = 13
+    Host.ShaderResourceAccessType_LAST = 13
+    Host.ShaderResourceAccessType_COUNT = 14
+
+  DataFieldType:
+    Host.DataFieldType_FIRST = 0
+    Host.DataFieldType_Int = 0
+    Host.DataFieldType_Int2 = 1
+    Host.DataFieldType_Int3 = 2
+    Host.DataFieldType_Int4 = 3
+    Host.DataFieldType_Uint = 4
+    Host.DataFieldType_Uint2 = 5
+    Host.DataFieldType_Uint3 = 6
+    Host.DataFieldType_Uint4 = 7
+    Host.DataFieldType_Float = 8
+    Host.DataFieldType_Float2 = 9
+    Host.DataFieldType_Float3 = 10
+    Host.DataFieldType_Float4 = 11
+    Host.DataFieldType_Bool = 12
+    Host.DataFieldType_Float4x4 = 13
+    Host.DataFieldType_Uint_16 = 14
+    Host.DataFieldType_Count = 15
+    Host.DataFieldType_LAST = 15
+    Host.DataFieldType_COUNT = 16
+
+  TextureViewType:
+    Host.TextureViewType_FIRST = 0
+    Host.TextureViewType_Int = 0
+    Host.TextureViewType_Int4 = 1
+    Host.TextureViewType_Uint = 2
+    Host.TextureViewType_Uint4 = 3
+    Host.TextureViewType_Float = 4
+    Host.TextureViewType_Float2 = 5
+    Host.TextureViewType_Float3 = 6
+    Host.TextureViewType_Float4 = 7
+    Host.TextureViewType_LAST = 7
+    Host.TextureViewType_COUNT = 8
+
+  SamplerFilter:
+    Host.SamplerFilter_FIRST = 0
+    Host.SamplerFilter_MinMagMipPoint = 0
+    Host.SamplerFilter_MinMagLinear_MipPoint = 1
+    Host.SamplerFilter_MinMagMipLinear = 2
+    Host.SamplerFilter_Count = 3
+    Host.SamplerFilter_LAST = 3
+    Host.SamplerFilter_COUNT = 4
+
+  SamplerAddressMode:
+    Host.SamplerAddressMode_FIRST = 0
+    Host.SamplerAddressMode_Clamp = 0
+    Host.SamplerAddressMode_Wrap = 1
+    Host.SamplerAddressMode_Border = 2
+    Host.SamplerAddressMode_Count = 3
+    Host.SamplerAddressMode_LAST = 3
+    Host.SamplerAddressMode_COUNT = 4
+
+  TextureDimensionType:
+    Host.TextureDimensionType_FIRST = 0
+    Host.TextureDimensionType_Texture2D = 0
+    Host.TextureDimensionType_Texture2DArray = 1
+    Host.TextureDimensionType_Texture3D = 2
+    Host.TextureDimensionType_TextureCube = 3
+    Host.TextureDimensionType_LAST = 3
+    Host.TextureDimensionType_COUNT = 4
+
+  ShaderType:
+    Host.ShaderType_FIRST = 0
+    Host.ShaderType_Compute = 0
+    Host.ShaderType_RTRayGen = 1
+    Host.ShaderType_RTClosestHit = 2
+    Host.ShaderType_RTAnyHit = 3
+    Host.ShaderType_RTIntersection = 4
+    Host.ShaderType_RTMiss = 5
+    Host.ShaderType_Vertex = 6
+    Host.ShaderType_Pixel = 7
+    Host.ShaderType_Amplification = 8
+    Host.ShaderType_Mesh = 9
+    Host.ShaderType_Count = 10
+    Host.ShaderType_LAST = 10
+    Host.ShaderType_COUNT = 11
+
+  StructFieldSemantic:
+    Host.StructFieldSemantic_FIRST = 0
+    Host.StructFieldSemantic_Position = 0
+    Host.StructFieldSemantic_Color = 1
+    Host.StructFieldSemantic_Normal = 2
+    Host.StructFieldSemantic_Tangent = 3
+    Host.StructFieldSemantic_UV = 4
+    Host.StructFieldSemantic_MaterialID = 5
+    Host.StructFieldSemantic_ShapeID = 6
+    Host.StructFieldSemantic_Count = 7
+    Host.StructFieldSemantic_LAST = 7
+    Host.StructFieldSemantic_COUNT = 8
+
+  VariableVisibility:
+    Host.VariableVisibility_FIRST = 0
+    Host.VariableVisibility_Internal = 0
+    Host.VariableVisibility_Host = 1
+    Host.VariableVisibility_User = 2
+    Host.VariableVisibility_Count = 3
+    Host.VariableVisibility_LAST = 3
+    Host.VariableVisibility_COUNT = 4
+
+  VariableUIHint:
+    Host.VariableUIHint_FIRST = 0
+    Host.VariableUIHint_Button = 0
+    Host.VariableUIHint_Color = 1
+    Host.VariableUIHint_Drag = 2
+    Host.VariableUIHint_Slider = 3
+    Host.VariableUIHint_Angle = 4
+    Host.VariableUIHint_Count = 5
+    Host.VariableUIHint_LAST = 5
+    Host.VariableUIHint_COUNT = 6
+
+  ConditionComparison:
+    Host.ConditionComparison_FIRST = 0
+    Host.ConditionComparison_IsFalse = 0
+    Host.ConditionComparison_IsTrue = 1
+    Host.ConditionComparison_Equals = 2
+    Host.ConditionComparison_NotEquals = 3
+    Host.ConditionComparison_LT = 4
+    Host.ConditionComparison_LTE = 5
+    Host.ConditionComparison_GT = 6
+    Host.ConditionComparison_GTE = 7
+    Host.ConditionComparison_Count = 8
+    Host.ConditionComparison_LAST = 8
+    Host.ConditionComparison_COUNT = 9
+
+  ResourceVisibility:
+    Host.ResourceVisibility_FIRST = 0
+    Host.ResourceVisibility_Imported = 0
+    Host.ResourceVisibility_Internal = 1
+    Host.ResourceVisibility_Exported = 2
+    Host.ResourceVisibility_Count = 3
+    Host.ResourceVisibility_LAST = 3
+    Host.ResourceVisibility_COUNT = 4
+
+  DrawCullMode:
+    Host.DrawCullMode_FIRST = 0
+    Host.DrawCullMode_None = 0
+    Host.DrawCullMode_Front = 1
+    Host.DrawCullMode_Back = 2
+    Host.DrawCullMode_LAST = 2
+    Host.DrawCullMode_COUNT = 3
+
+  DepthTestFunction:
+    Host.DepthTestFunction_FIRST = 0
+    Host.DepthTestFunction_Never = 0
+    Host.DepthTestFunction_Less = 1
+    Host.DepthTestFunction_Equal = 2
+    Host.DepthTestFunction_LessEqual = 3
+    Host.DepthTestFunction_Greater = 4
+    Host.DepthTestFunction_NotEqual = 5
+    Host.DepthTestFunction_GreaterEqual = 6
+    Host.DepthTestFunction_Always = 7
+    Host.DepthTestFunction_LAST = 7
+    Host.DepthTestFunction_COUNT = 8
+
+  DrawBlendMode:
+    Host.DrawBlendMode_FIRST = 0
+    Host.DrawBlendMode_Zero = 0
+    Host.DrawBlendMode_One = 1
+    Host.DrawBlendMode_SrcColor = 2
+    Host.DrawBlendMode_InvSrcColor = 3
+    Host.DrawBlendMode_SrcAlpha = 4
+    Host.DrawBlendMode_InvSrcAlpha = 5
+    Host.DrawBlendMode_DestAlpha = 6
+    Host.DrawBlendMode_InvDestAlpha = 7
+    Host.DrawBlendMode_DestColor = 8
+    Host.DrawBlendMode_InvDestColor = 9
+    Host.DrawBlendMode_LAST = 9
+    Host.DrawBlendMode_COUNT = 10
+
+  StencilOp:
+    Host.StencilOp_FIRST = 0
+    Host.StencilOp_Keep = 0
+    Host.StencilOp_Zero = 1
+    Host.StencilOp_Replace = 2
+    Host.StencilOp_IncrementSaturate = 3
+    Host.StencilOp_DecrimentSaturate = 4
+    Host.StencilOp_Invert = 5
+    Host.StencilOp_Increment = 6
+    Host.StencilOp_Decriment = 7
+    Host.StencilOp_LAST = 7
+    Host.StencilOp_COUNT = 8
+
+  ShadingRate:
+    Host.ShadingRate_FIRST = 0
+    Host.ShadingRate__1x1 = 0
+    Host.ShadingRate__1x2 = 1
+    Host.ShadingRate__2x1 = 2
+    Host.ShadingRate__2x2 = 3
+    Host.ShadingRate__2x4 = 4
+    Host.ShadingRate__4x2 = 5
+    Host.ShadingRate__4x4 = 6
+    Host.ShadingRate_LAST = 6
+    Host.ShadingRate_COUNT = 7
+
+  ShadingRateCombiner:
+    Host.ShadingRateCombiner_FIRST = 0
+    Host.ShadingRateCombiner_PassThrough = 0
+    Host.ShadingRateCombiner_Override = 1
+    Host.ShadingRateCombiner_Min = 2
+    Host.ShadingRateCombiner_Max = 3
+    Host.ShadingRateCombiner_Sum = 4
+    Host.ShadingRateCombiner_LAST = 4
+    Host.ShadingRateCombiner_COUNT = 5
+
+  GeometryType:
+    Host.GeometryType_FIRST = 0
+    Host.GeometryType_TriangleList = 0
+    Host.GeometryType_LineList = 1
+    Host.GeometryType_PointList = 2
+    Host.GeometryType_LAST = 2
+    Host.GeometryType_COUNT = 3
+
+  TextureFormat:
+    Host.TextureFormat_FIRST = 0
+    Host.TextureFormat_Any = 0
+    Host.TextureFormat_R8_Unorm = 1
+    Host.TextureFormat_RG8_Unorm = 2
+    Host.TextureFormat_RGBA8_Unorm = 3
+    Host.TextureFormat_RGBA8_Unorm_sRGB = 4
+    Host.TextureFormat_R8_Snorm = 5
+    Host.TextureFormat_RG8_Snorm = 6
+    Host.TextureFormat_RGBA8_Snorm = 7
+    Host.TextureFormat_R8_Uint = 8
+    Host.TextureFormat_RG8_Uint = 9
+    Host.TextureFormat_RGBA8_Uint = 10
+    Host.TextureFormat_R8_Sint = 11
+    Host.TextureFormat_RG8_Sint = 12
+    Host.TextureFormat_RGBA8_Sint = 13
+    Host.TextureFormat_R16_Float = 14
+    Host.TextureFormat_RG16_Float = 15
+    Host.TextureFormat_RGBA16_Float = 16
+    Host.TextureFormat_RGBA16_Unorm = 17
+    Host.TextureFormat_RGBA16_Snorm = 18
+    Host.TextureFormat_R32_Float = 19
+    Host.TextureFormat_RG32_Float = 20
+    Host.TextureFormat_RGBA32_Float = 21
+    Host.TextureFormat_R32_Uint = 22
+    Host.TextureFormat_RGBA32_Uint = 23
+    Host.TextureFormat_R11G11B10_Float = 24
+    Host.TextureFormat_D32_Float = 25
+    Host.TextureFormat_D16_Unorm = 26
+    Host.TextureFormat_D32_Float_S8 = 27
+    Host.TextureFormat_D24_Unorm_S8 = 28
+    Host.TextureFormat_LAST = 28
+    Host.TextureFormat_COUNT = 29
+
+  RenderPassBookmark:
+    Host.RenderPassBookmark_FIRST = 0
+    Host.RenderPassBookmark_CreateDrawViewJobs = 0
+    Host.RenderPassBookmark_CreateOccluderGatherJobs = 1
+    Host.RenderPassBookmark_PostCreateOccluderRasterJobs = 2
+    Host.RenderPassBookmark_PostResourceSync = 3
+    Host.RenderPassBookmark_Update = 4
+    Host.RenderPassBookmark_PreDepthPrepass = 5
+    Host.RenderPassBookmark_PostDepthPrepass = 6
+    Host.RenderPassBookmark_PostGBuffer = 7
+    Host.RenderPassBookmark_AccumulateSunShadow = 8
+    Host.RenderPassBookmark_MidDirectionalShadowUpdate = 9
+    Host.RenderPassBookmark_PreShadowCascade = 10
+    Host.RenderPassBookmark_PostDirectionalShadowUpdate = 11
+    Host.RenderPassBookmark_PostSunShadowMask = 12
+    Host.RenderPassBookmark_MidLocalLightShadowUpdate = 13
+    Host.RenderPassBookmark_PostLocalLightShadowUpdate = 14
+    Host.RenderPassBookmark_PreLightTilePass = 15
+    Host.RenderPassBookmark_PostLightTileCulling = 16
+    Host.RenderPassBookmark_PostLightTilePass = 17
+    Host.RenderPassBookmark_PostCompleteZBuffer = 18
+    Host.RenderPassBookmark_PreTransparentPass = 19
+    Host.RenderPassBookmark_PostTransparentPass = 20
+    Host.RenderPassBookmark_PostVelocity = 21
+    Host.RenderPassBookmark_PreCoc = 22
+    Host.RenderPassBookmark_PostDof = 23
+    Host.RenderPassBookmark_PostUpdate = 24
+    Host.RenderPassBookmark_Bloom = 25
+    Host.RenderPassBookmark_PostBloom = 26
+    Host.RenderPassBookmark_AfterPost = 27
+    Host.RenderPassBookmark_Debug = 28
+    Host.RenderPassBookmark_ProcessCustomReflectionViews = 29
+    Host.RenderPassBookmark_ProcessCustomGiViews = 30
+    Host.RenderPassBookmark_ProcessCustomObjectLayers = 31
+    Host.RenderPassBookmark_LAST = 31
+    Host.RenderPassBookmark_COUNT = 32
+
+  PreviewMsgCS_Log_Level:
+    Host.PreviewMsgCS_Log_Level_FIRST = 0
+    Host.PreviewMsgCS_Log_Level_Info = 0
+    Host.PreviewMsgCS_Log_Level_Warn = 1
+    Host.PreviewMsgCS_Log_Level_Error = 2
+    Host.PreviewMsgCS_Log_Level_LAST = 2
+    Host.PreviewMsgCS_Log_Level_COUNT = 3
+
+  GGUserFile_ImportedTexture_BinaryType:
+    Host.GGUserFile_ImportedTexture_BinaryType_FIRST = 0
+    Host.GGUserFile_ImportedTexture_BinaryType_Float = 0
+    Host.GGUserFile_ImportedTexture_BinaryType_Byte = 1
+    Host.GGUserFile_ImportedTexture_BinaryType_Count = 2
+    Host.GGUserFile_ImportedTexture_BinaryType_LAST = 2
+    Host.GGUserFile_ImportedTexture_BinaryType_COUNT = 3
+
+  GGUserFile_TLASBuildFlags:
+    Host.GGUserFile_TLASBuildFlags_FIRST = 0
+    Host.GGUserFile_TLASBuildFlags_None = 0
+    Host.GGUserFile_TLASBuildFlags_AllowUpdate = 1
+    Host.GGUserFile_TLASBuildFlags_AllowCompaction = 2
+    Host.GGUserFile_TLASBuildFlags_PreferFastTrace = 3
+    Host.GGUserFile_TLASBuildFlags_PreferFastBuild = 4
+    Host.GGUserFile_TLASBuildFlags_MinimizeMemory = 5
+    Host.GGUserFile_TLASBuildFlags_LAST = 5
+    Host.GGUserFile_TLASBuildFlags_COUNT = 6
+
+  GGUserFile_CameraJitterType:
+    Host.GGUserFile_CameraJitterType_FIRST = 0
+    Host.GGUserFile_CameraJitterType_None = 0
+    Host.GGUserFile_CameraJitterType_UniformWhite = 1
+    Host.GGUserFile_CameraJitterType_Halton23 = 2
+    Host.GGUserFile_CameraJitterType_LAST = 2
+    Host.GGUserFile_CameraJitterType_COUNT = 3
+
+  GigiCompileResult:
+    Host.GigiCompileResult_FIRST = 0
+    Host.GigiCompileResult_OK = 0
+    Host.GigiCompileResult_WrongVersion = 1
+    Host.GigiCompileResult_WrongParams = 2
+    Host.GigiCompileResult_CantLoadRenderGraph = 3
+    Host.GigiCompileResult_ShaderReflection = 4
+    Host.GigiCompileResult_Validation = 5
+    Host.GigiCompileResult_ReferenceFixup = 6
+    Host.GigiCompileResult_DepluralizeFileCopies = 7
+    Host.GigiCompileResult_NoBackend = 8
+    Host.GigiCompileResult_BackendData = 9
+    Host.GigiCompileResult_Sanitize = 10
+    Host.GigiCompileResult_NotCompiledYet = 11
+    Host.GigiCompileResult_InterpreterError = 12
+    Host.GigiCompileResult_InlineSubGraphs = 13
+    Host.GigiCompileResult_ErrorCheck = 14
+    Host.GigiCompileResult_ShaderFileDuplication = 15
+    Host.GigiCompileResult_AddNodeInfoToShaders = 16
+    Host.GigiCompileResult_DataFixup = 17
+    Host.GigiCompileResult_DfltFixup = 18
+    Host.GigiCompileResult_LAST = 18
+    Host.GigiCompileResult_COUNT = 19
+
+  GigiCompileWarning:
+    Host.GigiCompileWarning_FIRST = 0
+    Host.GigiCompileWarning_ShaderUnusedResource = 0
+    Host.GigiCompileWarning_Count = 1
+    Host.GigiCompileWarning_LAST = 1
+    Host.GigiCompileWarning_COUNT = 2
+
+  DXShaderCompiler:
+    Host.DXShaderCompiler_FIRST = 0
+    Host.DXShaderCompiler_FXC = 0
+    Host.DXShaderCompiler_DXC = 1
+    Host.DXShaderCompiler_LAST = 1
+    Host.DXShaderCompiler_COUNT = 2
+
+  FileCopyType:
+    Host.FileCopyType_FIRST = 0
+    Host.FileCopyType_Private = 0
+    Host.FileCopyType_Shader = 1
+    Host.FileCopyType_Asset = 2
+    Host.FileCopyType_Count = 3
+    Host.FileCopyType_LAST = 3
+    Host.FileCopyType_COUNT = 4
+
+  SetVariableOperator:
+    Host.SetVariableOperator_FIRST = 0
+    Host.SetVariableOperator_Add = 0
+    Host.SetVariableOperator_Subtract = 1
+    Host.SetVariableOperator_Multiply = 2
+    Host.SetVariableOperator_Divide = 3
+    Host.SetVariableOperator_Modulo = 4
+    Host.SetVariableOperator_PowerOf2GE = 5
+    Host.SetVariableOperator_BitwiseOr = 6
+    Host.SetVariableOperator_BitwiseAnd = 7
+    Host.SetVariableOperator_BitwiseXor = 8
+    Host.SetVariableOperator_BitwiseNot = 9
+    Host.SetVariableOperator_Noop = 10
+    Host.SetVariableOperator_LAST = 10
+    Host.SetVariableOperator_COUNT = 11
+

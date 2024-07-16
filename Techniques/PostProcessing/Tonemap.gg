@@ -1,0 +1,125 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Tonemap",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "ExposureFStops",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "ToneMapper",
+            "type": "Int",
+            "visibility": "User",
+            "Enum": "ToneMappingOperation"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Tonemap",
+            "fileName": "Tonemap.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "HDR",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "SDR",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Color HDR",
+                "editorPos": [
+                    173.0,
+                    210.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color SDR",
+                "editorPos": [
+                    168.0,
+                    274.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color HDR"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Tonemap",
+                "editorPos": [
+                    297.0,
+                    226.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "HDR",
+                        "dstNode": "Color HDR",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "SDR",
+                        "dstNode": "Color SDR",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Tonemap"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color HDR"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "ToneMappingOperation",
+            "items": [
+                {
+                    "label": "None",
+                    "comment": "Only exposure is applied"
+                },
+                {
+                    "label": "Reinhard_Simple",
+                    "comment": "https://64.github.io/tonemapping/"
+                },
+                {
+                    "label": "ACES_Luminance",
+                    "comment": "https://knarkowicz.wordpress.com/2016/01/06/aces-filmic-tone-mapping-curve/"
+                },
+                {
+                    "label": "ACES",
+                    "comment": "https://github.com/TheRealMJP/BakingLab/blob/master/BakingLab/ACES.hlsl"
+                }
+            ]
+        }
+    ]
+}

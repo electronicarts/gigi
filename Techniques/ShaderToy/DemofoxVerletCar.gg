@@ -1,0 +1,330 @@
+{
+    "$schema": "gigischema.json",
+    "name": "DemofoxVerletCar",
+    "comment": "Port of https://www.shadertoy.com/view/Msy3WD",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "CSGameplay",
+            "fileName": "DemofoxVerletCar_gameplay.hlsl",
+            "entryPoint": "CSGameplay",
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ],
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "gameState",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GameState"
+                        }
+                    }
+                },
+                {
+                    "name": "keyStates",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "CSDisplay",
+            "fileName": "DemofoxVerletCar_display.hlsl",
+            "entryPoint": "CSDisplay",
+            "resources": [
+                {
+                    "name": "gameState",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GameState"
+                        }
+                    }
+                },
+                {
+                    "name": "output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "GameState",
+            "fields": [
+                {
+                    "name": "state",
+                    "type": "Float4"
+                },
+                {
+                    "name": "state2",
+                    "type": "Float4"
+                },
+                {
+                    "name": "state3",
+                    "type": "Float4"
+                },
+                {
+                    "name": "state4",
+                    "type": "Float4"
+                },
+                {
+                    "name": "backWheel",
+                    "type": "Float4"
+                },
+                {
+                    "name": "frontWheel",
+                    "type": "Float4"
+                },
+                {
+                    "name": "frontWheelCP1",
+                    "type": "Float4"
+                },
+                {
+                    "name": "frontWheelCP2",
+                    "type": "Float4"
+                },
+                {
+                    "name": "backWheelCP1",
+                    "type": "Float4"
+                },
+                {
+                    "name": "backWheelCP2",
+                    "type": "Float4"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "DemofoxVerletCar_common.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Gameplay",
+                "editorPos": [
+                    579.0,
+                    386.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gameState",
+                        "dstNode": "GameState",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "keyStates",
+                        "dstNode": "KeyStates",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CSGameplay"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Display",
+                "editorPos": [
+                    755.0,
+                    386.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gameState",
+                        "dstNode": "Gameplay",
+                        "dstPin": "gameState"
+                    },
+                    {
+                        "srcPin": "output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CSDisplay"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    },
+                    "indirectBuffer": {
+                        "node": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    637.0,
+                    482.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GameState",
+                "editorPos": [
+                    462.0,
+                    386.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "GameState"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "KeyStates",
+                "editorPos": [
+                    470.0,
+                    450.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 512
+                }
+            }
+        }
+    ]
+}

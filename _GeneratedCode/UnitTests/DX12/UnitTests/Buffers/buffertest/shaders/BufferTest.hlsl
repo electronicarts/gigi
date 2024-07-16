@@ -1,0 +1,61 @@
+// Buffer test Shader
+
+struct Struct_TestStruct
+{
+    float4 TheFloat4;
+    int4 TheInt4;
+    uint TheBool;
+};
+
+struct Struct__BufferTestCB
+{
+    float alpha1;
+    float alpha2;
+    float gain;
+    float _padding0;
+};
+
+Buffer<float> InputTyped : register(t0);
+RWBuffer<float> OutputTyped : register(u0);
+StructuredBuffer<Struct_TestStruct> InputStructured : register(t1);
+RWStructuredBuffer<Struct_TestStruct> OutputStructured : register(u1);
+ByteAddressBuffer InputTypedRaw : register(t2);
+RWByteAddressBuffer OutputTypedRaw : register(u2);
+ConstantBuffer<Struct__BufferTestCB> _BufferTestCB : register(b0);
+
+[numthreads(64, 1, 1)]
+void Main(uint3 DTid : SV_DispatchThreadID)
+{
+	// Do FIR on the typed buffer
+	// Info: https://blog.demofox.org/2020/01/14/fir-audio-data-filters/
+	// Coefficient Calculator: http://demofox.org/DSPFIR/FIR.html
+	float n_minus_2 = (DTid.x >= 2) ? InputTyped[DTid.x-2] : 0.0f;
+	float n_minus_1 = (DTid.x >= 1) ? InputTyped[DTid.x-1] : 0.0f;
+	float n = InputTyped[DTid.x];
+	OutputTyped[DTid.x] = _BufferTestCB.gain * (n + _BufferTestCB.alpha1 * n_minus_1 + _BufferTestCB.alpha2 * n_minus_2);
+
+	if (DTid.x == 0)
+	{
+		// modify the structured buffer
+		{
+			Struct_TestStruct s = InputStructured[0];
+
+			s.TheFloat4.x += 0.1f;
+			s.TheFloat4.y += 0.2f;
+			s.TheFloat4.z += 0.3f;
+			s.TheFloat4.w += 0.4f;
+
+			s.TheInt4.x += 1;
+			s.TheInt4.y += 2;
+			s.TheInt4.z += 3;
+			s.TheInt4.w += 4;
+
+			s.TheBool = !s.TheBool;
+
+			OutputStructured[0] = s;
+		}
+
+		// modify the raw byte buffers
+		OutputTypedRaw.Store(4, asuint(asfloat(InputTypedRaw.Load(4))+10.0f));
+	}
+}

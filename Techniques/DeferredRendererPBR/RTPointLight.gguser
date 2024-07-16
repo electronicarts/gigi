@@ -1,0 +1,96 @@
+{
+    "systemVars": {
+        "ProjMtx_textureName": "Color_HDR"
+    },
+    "resourceViewNodeIndex": 6,
+    "resourceViewResourceIndex": 5,
+    "importedResources": [
+        {
+            "nodeName": "Albedo_Roughness",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Color_HDR",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA32_Float"
+            }
+        },
+        {
+            "nodeName": "Depth",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "R32_Float"
+            }
+        },
+        {
+            "nodeName": "Normal_Metallic_AO",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Scene",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "..\\OBJAssets\\sphere.obj",
+                "type": "Float3",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Enabled",
+            "value": "true"
+        },
+        {
+            "name": "CastsShadows",
+            "value": "true"
+        },
+        {
+            "name": "Position",
+            "value": "0.000000,0.000000,0.000000"
+        },
+        {
+            "name": "Color",
+            "value": "0.000000,0.000000,0.000000"
+        },
+        {
+            "name": "Intensity",
+            "value": "0.000000"
+        },
+        {
+            "name": "DepthClearValue",
+            "value": "0.000000"
+        },
+        {
+            "name": "RayTMin",
+            "value": "0.010000"
+        },
+        {
+            "name": "RayNormalBias",
+            "value": "0.000000"
+        }
+    ]
+}

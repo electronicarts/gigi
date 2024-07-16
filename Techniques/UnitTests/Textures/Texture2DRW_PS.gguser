@@ -1,0 +1,50 @@
+{
+    "resourceViewNodeIndex": 3,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "Color",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "color": [
+                    1.0,
+                    0.250980406999588,
+                    0.501960813999176,
+                    1.0
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "ImportedColor",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "color": [
+                    1.0,
+                    0.250980406999588,
+                    0.501960813999176,
+                    1.0
+                ]
+            }
+        },
+        {
+            "nodeName": "ImportedTexture",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        }
+    ]
+}

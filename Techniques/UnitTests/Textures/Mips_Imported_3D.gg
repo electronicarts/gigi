@@ -1,0 +1,17 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.98b",
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "texture",
+                "editorPos": [
+                    16.0,
+                    0.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture3D"
+            }
+        }
+    ]
+}

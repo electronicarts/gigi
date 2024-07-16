@@ -1,0 +1,276 @@
+{
+    "$schema": "gigischema.json",
+    "name": "IBL",
+    "comment": "Image based lighting with ray traced shadows",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Enabled",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "Skybox",
+            "type": "Int",
+            "visibility": "User",
+            "Enum": "Skyboxes"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "DepthClearValue",
+            "type": "Float",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "NoShadows",
+            "fileName": "RTIBLNoShadows.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "Albedo_Roughness",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Normal_Metallic_AO",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrap"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "PBR.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "GBuffer.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "Octahedral.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    397.0,
+                    322.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Albedo_Roughness",
+                "editorPos": [
+                    344.0,
+                    386.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Normal_Metallic_AO",
+                "editorPos": [
+                    332.0,
+                    450.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color HDR",
+                "editorPos": [
+                    389.0,
+                    514.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "NoShadows",
+                "editorPos": [
+                    580.0,
+                    399.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "Depth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Albedo_Roughness",
+                        "dstNode": "Albedo_Roughness",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Normal_Metallic_AO",
+                        "dstNode": "Normal_Metallic_AO",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Color HDR",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "NoShadows"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color HDR"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "Skyboxes",
+            "items": [
+                {
+                    "label": "Vasa"
+                },
+                {
+                    "label": "AshCanyon"
+                },
+                {
+                    "label": "Marriot"
+                }
+            ]
+        }
+    ]
+}

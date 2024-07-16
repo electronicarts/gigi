@@ -1,0 +1,2670 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "title": "gigischema.json",
+  "type": "object",
+  "properties": {
+    "name": {
+      "description": "The name of the render graph.",
+      "type": "string"
+    },
+    "comment": {
+      "description": "Put author information, links, etc here.",
+      "type": "string"
+    },
+    "version": {
+      "description": "The gigi version of the render graph.",
+      "type": "string"
+    },
+    "variables": {
+      "description": "The render graph variables. Used for getting parameters from the host app and user. Can be referenced by many things in the render graph such as texture size and shader constants.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the variable.",
+            "type": "string"
+          },
+          "comment": {
+            "description": "A comment for the variable.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of the variable",
+            "type": "string",
+            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+          },
+          "Const": {
+            "description": "If true, the variable is declared const and cannot change at runtime",
+            "type": "boolean"
+          },
+          "Static": {
+            "description": "If true, the variable has the same value for all instances of the technique",
+            "type": "boolean"
+          },
+          "dflt": {
+            "description": "The default value of the variable",
+            "type": "string"
+          },
+          "visibility": {
+            "description": "Who can see and interact with this variable",
+            "type": "string",
+            "enum": ["Internal", "Host", "User", "Count"]
+          },
+          "Enum": {
+            "description": "Integer types can specify an enum, which will then make symbols in both C++ and shader code.",
+            "type": "string"
+          },
+          "backends": {
+            "description": "This variable can be limited to specific backends",
+            "type": "object",
+            "properties": {
+              "backends": {
+                "description": "A list of backends supported. Empty list means all backends",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                }
+              },
+              "isWhiteList": {
+                "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                "type": "boolean"
+              }
+            }
+          },
+          "transient": {
+            "description": "If true, the variable should not be saved between runs of this technique. The Gigi viewer uses this to decide if it should save it in the gguser file or not, for example.",
+            "type": "boolean"
+          },
+          "UISettings": {
+            "description": "UI Settings.",
+            "type": "object",
+            "properties": {
+              "UIHint": {
+                "description": "Any hints for UI",
+                "type": "string",
+                "enum": ["Button", "Color", "Drag", "Slider", "Angle", "Count"]
+              },
+              "min": {
+                "description": "The minimum value of the variable. Leave blank for no minimum.",
+                "type": "string"
+              },
+              "max": {
+                "description": "The maximum value of the variable. Leave blank for no maximum.",
+                "type": "string"
+              },
+              "step": {
+                "description": "The step size of the variable. Leave blank for default step size.",
+                "type": "string"
+              }
+            }
+          },
+          "UIHint": {
+            "description": "Any hints for UI",
+            "type": "string",
+            "enum": ["Button", "Color", "Drag", "Slider", "Angle", "Count"]
+          }
+        }
+      }
+    },
+    "shaders": {
+      "description": "The shaders used by the render graph.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the shader, as it will be referenced by nodes",
+            "type": "string"
+          },
+          "fileName": {
+            "description": "The file name of the shader file.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of shader it is",
+            "type": "string",
+            "enum": ["Compute", "RTRayGen", "RTClosestHit", "RTAnyHit", "RTIntersection", "RTMiss", "Vertex", "Pixel", "Amplification", "Mesh", "Count"]
+          },
+          "entryPoint": {
+            "description": "The shader entrypoint.",
+            "type": "string"
+          },
+          "defines": {
+            "description": "The defines the shader is compiled with.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the define.",
+                  "type": "string"
+                },
+                "value": {
+                  "description": "The value of the define.",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "CSNumThreads": {
+            "description": "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            }
+          },
+          "NumThreads": {
+            "description": "The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            }
+          },
+          "copyFile": {
+            "description": "if false, will not copy the file over. A hackaround for when you have multiple raytracing shaders in the same file. TODO: resolve this better.",
+            "type": "boolean"
+          },
+          "slangOptions": {
+            "description": "Settings for optionally processing shaders with slang",
+            "type": "object",
+            "properties": {
+              "process": {
+                "description": "if true, this shader will be processed by slang",
+                "type": "boolean"
+              }
+            }
+          },
+          "backends": {
+            "description": "The backends this file copy happens for.",
+            "type": "object",
+            "properties": {
+              "backends": {
+                "description": "A list of backends supported. Empty list means all backends",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                }
+              },
+              "isWhiteList": {
+                "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                "type": "boolean"
+              }
+            }
+          },
+          "resources": {
+            "description": "SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the resource in the shader",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The resource type",
+                  "type": "string",
+                  "enum": ["Texture", "Buffer", "ConstantBuffer", "Count"]
+                },
+                "access": {
+                  "description": "How the resource is accessed",
+                  "type": "string",
+                  "enum": ["UAV", "SRV", "CBV", "CopySource", "CopyDest", "Indirect", "RTScene", "VertexBuffer", "IndexBuffer", "RenderTarget", "DepthTarget", "Barrier", "ShadingRate", "Count"]
+                },
+                "buffer": {
+                  "description": "Data specific to buffers",
+                  "type": "object",
+                  "properties": {
+                    "type": {
+                      "description": "The data type of the buffer if a simple type",
+                      "type": "string",
+                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                    },
+                    "typeStruct": {
+                      "description": "The data type of the buffer if a struct type",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the struct.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "raw": {
+                      "description": "If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)",
+                      "type": "boolean"
+                    }
+                  }
+                },
+                "texture": {
+                  "description": "Data specific to textures",
+                  "type": "object",
+                  "properties": {
+                    "dimension": {
+                      "description": "The dimensionality of the texture",
+                      "type": "string",
+                      "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube"]
+                    },
+                    "viewType": {
+                      "description": "The dimensionality of the texture",
+                      "type": "string",
+                      "enum": ["Int", "Int4", "Uint", "Uint4", "Float", "Float2", "Float3", "Float4"]
+                    }
+                  }
+                },
+                "backends": {
+                  "description": "The backends this resource is present for.",
+                  "type": "object",
+                  "properties": {
+                    "backends": {
+                      "description": "A list of backends supported. Empty list means all backends",
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                      "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                      }
+                    },
+                    "isWhiteList": {
+                      "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "samplers": {
+            "description": "SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the resource in the shader",
+                  "type": "string"
+                },
+                "filter": {
+                  "description": "The type of filtering to do",
+                  "type": "string",
+                  "enum": ["MinMagMipPoint", "MinMagLinear_MipPoint", "MinMagMipLinear", "Count"]
+                },
+                "addressMode": {
+                  "description": "The sampling address mode",
+                  "type": "string",
+                  "enum": ["Clamp", "Wrap", "Border", "Count"]
+                }
+              }
+            }
+          },
+          "constantBuffers": {
+            "description": "A list of constant buffers this shader wants.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "resourceName": {
+                  "description": "The name of the resource in the shader",
+                  "type": "string"
+                },
+                "structName": {
+                  "description": "The name of the struct used",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "structs": {
+      "description": "The structs used by the render graph.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the struct.",
+            "type": "string"
+          },
+          "forceHostVisible": {
+            "description": "If true, the struct will be visible to the host, even if the struct isn't used by anything host visible.",
+            "type": "boolean"
+          },
+          "fields": {
+            "description": "The data fields",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the field",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The type of the field",
+                  "type": "string",
+                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                },
+                "dflt": {
+                  "description": "The default value",
+                  "type": "string"
+                },
+                "comment": {
+                  "description": "A comment to explain the field",
+                  "type": "string"
+                },
+                "Enum": {
+                  "description": "Integer types can specify an enum, which will then make symbols in both C++ and shader code.",
+                  "type": "string"
+                },
+                "semantic": {
+                  "description": "Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer. If none is given, it shows up in shaders as an autonumbering text coordinate.",
+                  "type": "string",
+                  "enum": ["Position", "Color", "Normal", "Tangent", "UV", "MaterialID", "ShapeID", "Count"]
+                },
+                "semanticIndex": {
+                  "description": "Some semantics can have multiple channels, like UVs and colors",
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "definition": {
+            "description": "The parsed string definition of the struct.",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fileCopies": {
+      "description": "Files to copy during the building process.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "fileName": {
+            "description": "The file to copy.",
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of file it is",
+            "type": "string",
+            "enum": ["Private", "Shader", "Asset", "Count"]
+          },
+          "destFileName": {
+            "description": "If empty, uses fileName",
+            "type": "string"
+          },
+          "backends": {
+            "description": "The backends this file copy happens for.",
+            "type": "object",
+            "properties": {
+              "backends": {
+                "description": "A list of backends supported. Empty list means all backends",
+                "type": "array",
+                "items": {
+                  "type": "string",
+                "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                }
+              },
+              "isWhiteList": {
+                "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                "type": "boolean"
+              }
+            }
+          },
+          "binary": {
+            "description": "If false, it will be treated as a text file, undergo string replacement, and line ending normalization. If true, it will be copied without modification.",
+            "type": "boolean"
+          },
+          "plural": {
+            "description": "If true, this file copy is a file pattern for possibly several files to copy.  The filename should contain a %i and all files from 0 to N at that location in the file name will be copied.",
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "nodes": {
+      "description": "The render graph nodes.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "resourceBuffer": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "transient": {
+                "description": "A non transient resource will persist across executions and frames. A transient resource may not, and is decided by the backend as a potential optimization opportunity.",
+                "type": "boolean"
+              },
+              "visibility": {
+                "description": "Who can see the buffer and who owns it",
+                "type": "string",
+                "enum": ["Imported", "Internal", "Exported", "Count"]
+              },
+              "format": {
+                "description": "The format of the texture.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "This node's format is used, if specified",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "structureType": {
+                    "description": "The buffer type, if it is a structured buffer",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the struct.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "type": {
+                    "description": "The buffer type. May become a typed or structured buffer, depending on the type chosen.",
+                    "type": "string",
+                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                  }
+                }
+              },
+              "count": {
+                "description": "How many items are in the buffer.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The node referenced, if there is one.",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "variable": {
+                    "description": "The variable referenced, if there is one.",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "multiply": {
+                    "description": "",
+                    "type": "integer"
+                  },
+                  "divide": {
+                    "description": "",
+                    "type": "integer"
+                  },
+                  "preAdd": {
+                    "description": "",
+                    "type": "integer"
+                  },
+                  "postAdd": {
+                    "description": "",
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          },
+          "resourceShaderConstants": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "transient": {
+                "description": "A non transient resource will persist across executions and frames. A transient resource may not, and is decided by the backend as a potential optimization opportunity.",
+                "type": "boolean"
+              },
+              "structure": {
+                "description": "The structure of the constant buffer.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the struct.",
+                    "type": "string"
+                  }
+                }
+              },
+              "setFromVar": {
+                "description": "Set constant buffer (left) to the value of variable (right) every execution",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "field": {
+                      "description": "The name of the field to set",
+                      "type": "string"
+                    },
+                    "variable": {
+                      "description": "The name of the variable to take the value from",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "resourceTexture": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "transient": {
+                "description": "A non transient resource will persist across executions and frames. A transient resource may not, and is decided by the backend as a potential optimization opportunity.",
+                "type": "boolean"
+              },
+              "visibility": {
+                "description": "Who can see the texture and who owns it",
+                "type": "string",
+                "enum": ["Imported", "Internal", "Exported", "Count"]
+              },
+              "format": {
+                "description": "The format of the texture.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "This node's format is used, if specified",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "format": {
+                    "description": "A specific format can be specified",
+                    "type": "string",
+                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8"]
+                  },
+                  "variable": {
+                    "description": "The variable that holds the texture format. Assumed to be a uint32.",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "size": {
+                "description": "The size of the texture.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The node referenced, if there is one.",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "variable": {
+                    "description": "If a variable is given, the size will be based on the value of the variable",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "multiply": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "divide": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "preAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "postAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "numMips": {
+                "description": "The number of mips the texture should have. 0 means the full set. 1 means just the full size image, and no smaller mips.",
+                "type": "integer"
+              },
+              "dimension": {
+                "description": "The dimensionality of the texture",
+                "type": "string",
+                "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube"]
+              }
+            }
+          },
+          "actionComputeShader": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "shader": {
+                "description": "The shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "dispatchSize": {
+                "description": "The dispatch size.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "variable": {
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "indirectBuffer": {
+                    "description": "If given, this buffer will be used as an indirect dispatch buffer",
+                    "type": "object",
+                    "properties": {
+                      "node": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      },
+                      "pin": {
+                        "description": "The name of the pin",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "multiply": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "divide": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "preAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "postAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "indirectOffsetVariable": {
+                    "description": "If a variable is given, it will be used as the offset into the indirect dispatch buffer. 0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "indirectOffsetValue": {
+                    "description": "The offset into the indirect dispatch buffer if no variable given.  0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "entryPoint": {
+                "description": "The shader entrypoint. Overrides the shader entry entryPoint.",
+                "type": "string"
+              },
+              "defines": {
+                "description": "The defines the shader is compiled with, on top of whatever defines the shader has already",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "description": "The name of the define.",
+                      "type": "string"
+                    },
+                    "value": {
+                      "description": "The value of the define.",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "actionRayShader": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "shader": {
+                "description": "The ray gen shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "dispatchSize": {
+                "description": "The dispatch size.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "variable": {
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "multiply": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "divide": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "preAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "postAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "entryPoint": {
+                "description": "The shader entrypoint. Overrides the shader entry entryPoint.",
+                "type": "string"
+              },
+              "defines": {
+                "description": "The defines the shader is compiled with, on top of whatever defines the shader has already",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "description": "The name of the define.",
+                      "type": "string"
+                    },
+                    "value": {
+                      "description": "The value of the define.",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "maxRecursionDepth": {
+                "description": "The maximum recursion depth of the ray.",
+                "type": "integer"
+              },
+              "rayPayloadSize": {
+                "description": "The size of the ray payload, in bytes. 64 bytes is four float4s.",
+                "type": "integer"
+              }
+            }
+          },
+          "actionCopyResource": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "source": {
+                "description": "The resource being copied from.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "dest": {
+                "description": "The resource being copied to.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          },
+          "actionDrawCall": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "amplificationShader": {
+                "description": "The amplification shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "meshShader": {
+                "description": "The mesh shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "vertexShader": {
+                "description": "The vertex shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "pixelShader": {
+                "description": "The pixel shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "countPerInstance": {
+                "description": "If using an index buffer, this is indexCountPerInstance, else is vertexCountPerInstance.  If -1, will use the count of the buffer.  Else, if a buffer is given, will use min(buffer count, countPerInstance).",
+                "type": "integer"
+              },
+              "instanceCount": {
+                "description": "How many instances to draw. If -1, will use the count of the instance buffer. Else, if an instance buffer is given, will use min (instance buffer count, instanceCount).",
+                "type": "integer"
+              },
+              "meshShaderDispatchSize": {
+                "description": "The mesh shader dispatch size.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "variable": {
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "indirectBuffer": {
+                    "description": "If given, this buffer will be used as an indirect dispatch buffer",
+                    "type": "object",
+                    "properties": {
+                      "node": {
+                        "description": "The name of the node",
+                        "type": "string"
+                      },
+                      "pin": {
+                        "description": "The name of the pin",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "multiply": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "divide": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "preAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "postAdd": {
+                    "description": "",
+                    "type": "array",
+                    "minItems": 3,
+                    "maxItems": 3,
+                    "items": {
+                      "type": "integer"
+                    }
+                  },
+                  "indirectOffsetVariable": {
+                    "description": "If a variable is given, it will be used as the offset into the indirect dispatch buffer. 0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "indirectOffsetValue": {
+                    "description": "The offset into the indirect dispatch buffer if no variable given.  0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.",
+                    "type": "integer"
+                  }
+                }
+              },
+              "depthTargetClear": {
+                "description": "If true, clears the depth target before doing a draw call.",
+                "type": "boolean"
+              },
+              "depthTargetClearValue": {
+                "description": "The value to clear the depth target to.",
+                "type": "number"
+              },
+              "depthWrite": {
+                "description": "If false, disables writing to the depth buffer",
+                "type": "boolean"
+              },
+              "depthArrayIndex": {
+                "description": "The array index, for Texture2DArray, Texture3D etc",
+                "type": "integer"
+              },
+              "depthMipLevel": {
+                "description": "The mip to use",
+                "type": "integer"
+              },
+              "depthTest": {
+                "description": "",
+                "type": "string",
+                "enum": ["Never", "Less", "Equal", "LessEqual", "Greater", "NotEqual", "GreaterEqual", "Always"]
+              },
+              "stencilClear": {
+                "description": "If true, clears the stencil before doing a draw call.",
+                "type": "boolean"
+              },
+              "stencilClearValue": {
+                "description": "",
+                "type": "integer"
+              },
+              "stencilRef": {
+                "description": "Sets the reference value for depth stencil tests.",
+                "type": "integer"
+              },
+              "stencilReadMask": {
+                "description": "",
+                "type": "integer"
+              },
+              "stencilWriteMask": {
+                "description": "",
+                "type": "integer"
+              },
+              "frontFaceStencilFail": {
+                "description": "When stencil test fails",
+                "type": "string",
+                "enum": ["Keep", "Zero", "Replace", "IncrementSaturate", "DecrimentSaturate", "Invert", "Increment", "Decriment"]
+              },
+              "backFaceStencilFail": {
+                "description": "When stencil test fails",
+                "type": "string",
+                "enum": ["Keep", "Zero", "Replace", "IncrementSaturate", "DecrimentSaturate", "Invert", "Increment", "Decriment"]
+              },
+              "frontFaceStencilDepthFail": {
+                "description": "When stencil passes but depth fails",
+                "type": "string",
+                "enum": ["Keep", "Zero", "Replace", "IncrementSaturate", "DecrimentSaturate", "Invert", "Increment", "Decriment"]
+              },
+              "backFaceStencilDepthFail": {
+                "description": "When stencil passes but depth fails",
+                "type": "string",
+                "enum": ["Keep", "Zero", "Replace", "IncrementSaturate", "DecrimentSaturate", "Invert", "Increment", "Decriment"]
+              },
+              "frontFaceStencilPass": {
+                "description": "When stencil and depth both pass",
+                "type": "string",
+                "enum": ["Keep", "Zero", "Replace", "IncrementSaturate", "DecrimentSaturate", "Invert", "Increment", "Decriment"]
+              },
+              "backFaceStencilPass": {
+                "description": "When stencil and depth both pass",
+                "type": "string",
+                "enum": ["Keep", "Zero", "Replace", "IncrementSaturate", "DecrimentSaturate", "Invert", "Increment", "Decriment"]
+              },
+              "frontFaceStencilFunc": {
+                "description": "How to test stencil data against existing stencil data",
+                "type": "string",
+                "enum": ["Never", "Less", "Equal", "LessEqual", "Greater", "NotEqual", "GreaterEqual", "Always"]
+              },
+              "backFaceStencilFunc": {
+                "description": "How to test stencil data against existing stencil data",
+                "type": "string",
+                "enum": ["Never", "Less", "Equal", "LessEqual", "Greater", "NotEqual", "GreaterEqual", "Always"]
+              },
+              "conservativeRasterization": {
+                "description": "Turns on conservative rasterization",
+                "type": "boolean"
+              },
+              "alphaAsCoverage": {
+                "description": "Turns on alpha as coverage",
+                "type": "boolean"
+              },
+              "independentAlpha": {
+                "description": "If false, colorTargetSettings[0] defines blend mode for all color targets",
+                "type": "boolean"
+              },
+              "colorTargetSettings": {
+                "description": "Settings for the color targets",
+                "type": "array",
+                "minItems": 8,
+                "maxItems": 8,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "clear": {
+                      "description": "If true, clears the color target before drawing",
+                      "type": "boolean"
+                    },
+                    "clearColor": {
+                      "description": "The color to clear the render target",
+                      "type": "array",
+                      "minItems": 4,
+                      "maxItems": 4,
+                      "items": {
+                        "type": "number"
+                      }
+                    },
+                    "writeChannels": {
+                      "description": "Controls whether R,G,B,A get written or not",
+                      "type": "array",
+                      "minItems": 4,
+                      "maxItems": 4,
+                      "items": {
+                        "type": "boolean"
+                      }
+                    },
+                    "enableBlending": {
+                      "description": "Enables alpha blending",
+                      "type": "boolean"
+                    },
+                    "srcBlend": {
+                      "description": "",
+                      "type": "string",
+                      "enum": ["Zero", "One", "SrcColor", "InvSrcColor", "SrcAlpha", "InvSrcAlpha", "DestAlpha", "InvDestAlpha", "DestColor", "InvDestColor"]
+                    },
+                    "destBlend": {
+                      "description": "",
+                      "type": "string",
+                      "enum": ["Zero", "One", "SrcColor", "InvSrcColor", "SrcAlpha", "InvSrcAlpha", "DestAlpha", "InvDestAlpha", "DestColor", "InvDestColor"]
+                    },
+                    "srcBlendAlpha": {
+                      "description": "",
+                      "type": "string",
+                      "enum": ["Zero", "One", "SrcColor", "InvSrcColor", "SrcAlpha", "InvSrcAlpha", "DestAlpha", "InvDestAlpha", "DestColor", "InvDestColor"]
+                    },
+                    "destBlendAlpha": {
+                      "description": "",
+                      "type": "string",
+                      "enum": ["Zero", "One", "SrcColor", "InvSrcColor", "SrcAlpha", "InvSrcAlpha", "DestAlpha", "InvDestAlpha", "DestColor", "InvDestColor"]
+                    },
+                    "arrayIndex": {
+                      "description": "The array index, for Texture2DArray, Texture3D etc",
+                      "type": "integer"
+                    },
+                    "mipLevel": {
+                      "description": "The mip to use",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "defines": {
+                "description": "The defines the shaders ares compiled with, on top of whatever defines the shaders have already",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "description": "The name of the define.",
+                      "type": "string"
+                    },
+                    "value": {
+                      "description": "The value of the define.",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "cullMode": {
+                "description": "",
+                "type": "string",
+                "enum": ["None", "Front", "Back"]
+              },
+              "frontIsCounterClockwise": {
+                "description": "",
+                "type": "boolean"
+              },
+              "shadingRate": {
+                "description": "For variable rate shading",
+                "type": "string",
+                "enum": ["_1x1", "_1x2", "_2x1", "_2x2", "_2x4", "_4x2", "_4x4"]
+              },
+              "shadingRateCombiner1": {
+                "description": "For variable rate shading. This combines the provoking vertex shading rate with the rate set by the command list.",
+                "type": "string",
+                "enum": ["PassThrough", "Override", "Min", "Max", "Sum"]
+              },
+              "shadingRateCombiner2": {
+                "description": "For variable rate shading. This combines the image based shading rate with the shading rate set by the command list and provoking vertex.",
+                "type": "string",
+                "enum": ["PassThrough", "Override", "Min", "Max", "Sum"]
+              },
+              "shadingRateImage": {
+                "description": "The image used to determine shading rate on the screen. Must be a 2d texture with format R8_Uint.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "vertexBuffer": {
+                "description": "The vertex buffer being rendered. If not given, a vertexCount needs to be given.",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "indexBuffer": {
+                "description": "Index buffer for vertex buffer (Optional).",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "instanceBuffer": {
+                "description": "Instance buffer (Optional).",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "colorTargets": {
+                "description": "Color Targets",
+                "type": "array",
+                "minItems": 8,
+                "maxItems": 8,
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "node": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "pin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "depthTarget": {
+                "description": "Depth Target",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "geometryType": {
+                "description": "What to draw",
+                "type": "string",
+                "enum": ["TriangleList", "LineList", "PointList"]
+              }
+            }
+          },
+          "actionSubGraph": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "fileName": {
+                "description": "Relative file name",
+                "type": "string"
+              },
+              "subGraphData": {
+                "description": "A cache of the interface of the other graph.",
+                "type": "object",
+                "properties": {
+                  "importedResources": {
+                    "description": "input output pins",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "exportedResources": {
+                    "description": "output only pins",
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "variables": {
+                    "description": "Variables in the subgraph",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "variable name",
+                          "type": "string"
+                        },
+                        "visibility": {
+                          "description": "Who can see and interact with this variable",
+                          "type": "string",
+                          "enum": ["Internal", "Host", "User", "Count"]
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "variableSettings": {
+                "description": "Per variable settings for subgraph variables.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "description": "variable name",
+                      "type": "string"
+                    },
+                    "visibility": {
+                      "description": "Who can see and interact with this variable",
+                      "type": "string",
+                      "enum": ["Internal", "Host", "User", "Count"]
+                    },
+                    "replaceWithStr": {
+                      "description": "If set, the subgraph variable will be deleted and all references will use this parent graph variable instead.",
+                      "type": "string"
+                    },
+                    "isLoopIndex": {
+                      "description": "If true, this variable will recieve the loop index.",
+                      "type": "boolean"
+                    },
+                    "replaceWith": {
+                      "description": "If set, the subgraph variable will be deleted and all references will use this parent graph variable instead.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "loopCount": {
+                "description": "Number of times to execute the technique.",
+                "type": "integer"
+              }
+            }
+          },
+          "actionBarrier": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "enums": {
+      "description": "Enums",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The name of the enum",
+            "type": "string"
+          },
+          "items": {
+            "description": "The items in the enum. Values start at 0 and count up from there.",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "label": {
+                  "description": "The text label of an enum",
+                  "type": "string"
+                },
+                "comment": {
+                  "description": "",
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "comment": {
+            "description": "",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "setVars": {
+      "description": "Variables to modify at the beginning or end of the render graph",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "destination": {
+            "description": "The variable to set.  destination = A (operator) B.",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the variable.",
+                "type": "string"
+              }
+            }
+          },
+          "destinationIndex": {
+            "description": "The index of the field in the destination variable. -1 means no index.",
+            "type": "integer"
+          },
+          "AVar": {
+            "description": "The variable on the left side of the operator",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the variable.",
+                "type": "string"
+              }
+            }
+          },
+          "AVarIndex": {
+            "description": "The index of the field in the A variable. -1 means no index.",
+            "type": "integer"
+          },
+          "ANode": {
+            "description": "If specified, the size of this resource will be used. AVarIndex will index into it if multi dimensional.",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              }
+            }
+          },
+          "ALiteral": {
+            "description": "The value to use, if no variable is set",
+            "type": "string"
+          },
+          "op": {
+            "description": "",
+            "type": "string",
+            "enum": ["Add", "Subtract", "Multiply", "Divide", "Modulo", "PowerOf2GE", "BitwiseOr", "BitwiseAnd", "BitwiseXor", "BitwiseNot", "Noop"]
+          },
+          "BVar": {
+            "description": "The variable on the right side of the operator",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the variable.",
+                "type": "string"
+              }
+            }
+          },
+          "BVarIndex": {
+            "description": "The index of the field in the B variable. -1 means no index.",
+            "type": "integer"
+          },
+          "BNode": {
+            "description": "If specified, the size of this resource will be used. BVarIndex will index into it if multi dimensional.",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              }
+            }
+          },
+          "BLiteral": {
+            "description": "The value to use, if no variable is set",
+            "type": "string"
+          },
+          "setBefore": {
+            "description": "If true, this happens before execution. If false, happens after execution.",
+            "type": "boolean"
+          },
+          "condition": {
+            "description": "An optional condition added for the action to happen",
+            "type": "object",
+            "properties": {
+              "variable1": {
+                "description": "Value 1",
+                "type": "string"
+              },
+              "comparison": {
+                "description": "The comparison operator",
+                "type": "string",
+                "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+              },
+              "value2": {
+                "description": "Value 2",
+                "type": "string"
+              },
+              "variable2": {
+                "description": "Value 2",
+                "type": "string"
+              },
+              "alwaysFalse": {
+                "description": "If checked, condition always evaluates to false",
+                "type": "boolean"
+              }
+            }
+          }
+        }
+      }
+    },
+    "hitGroups": {
+      "description": "Ray tracing hit group definitions",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "The unique name of the hit group",
+            "type": "string"
+          },
+          "closestHit": {
+            "description": "The closest hit shader",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the shader",
+                "type": "string"
+              }
+            }
+          },
+          "anyHit": {
+            "description": "The any hit shader",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the shader",
+                "type": "string"
+              }
+            }
+          },
+          "intersection": {
+            "description": "The intersection shader",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the shader",
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "settings": {
+      "description": "Backend settings",
+      "type": "object",
+      "properties": {
+        "dx12": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "numSRVDescriptors": {
+              "description": "The number of descriptors in the internal SRV heap",
+              "type": "integer"
+            },
+            "numRTVDescriptors": {
+              "description": "The number of descriptors in the internal RTV heap",
+              "type": "integer"
+            },
+            "numDSVDescriptors": {
+              "description": "The number of descriptors in the internal DSV heap",
+              "type": "integer"
+            },
+            "shaderCompiler": {
+              "description": "The shader compiler to use",
+              "type": "string",
+              "enum": ["FXC", "DXC"]
+            },
+            "shaderModelCs": {
+              "description": "The default shader model to use for compute shaders",
+              "type": "string"
+            },
+            "shaderModelVs": {
+              "description": "The default shader model to use for vertex shaders",
+              "type": "string"
+            },
+            "shaderModelPs": {
+              "description": "The default shader model to use for pixel shaders",
+              "type": "string"
+            },
+            "shaderModelRayShaders": {
+              "description": "The default shader model to use for ray shaders",
+              "type": "string"
+            },
+            "shaderModelAs": {
+              "description": "The default shader model to use for amplification shaders",
+              "type": "string"
+            },
+            "shaderModelMs": {
+              "description": "The default shader model to use for mesh shaders",
+              "type": "string"
+            },
+            "DXC_HLSL_2021": {
+              "description": "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021",
+              "type": "boolean"
+            }
+          }
+        },
+        "halcyon": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "shaderModelCs": {
+              "description": "The default shader model to use for compute shaders",
+              "type": "string"
+            },
+            "shaderModelVs": {
+              "description": "The default shader model to use for vertex shaders",
+              "type": "string"
+            },
+            "shaderModelPs": {
+              "description": "The default shader model to use for pixel shaders",
+              "type": "string"
+            }
+          }
+        },
+        "frostbite": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "bookmark": {
+              "description": "Where this technique goes in the render pipeline.",
+              "type": "string",
+              "enum": ["CreateDrawViewJobs", "CreateOccluderGatherJobs", "PostCreateOccluderRasterJobs", "PostResourceSync", "Update", "PreDepthPrepass", "PostDepthPrepass", "PostGBuffer", "AccumulateSunShadow", "MidDirectionalShadowUpdate", "PreShadowCascade", "PostDirectionalShadowUpdate", "PostSunShadowMask", "MidLocalLightShadowUpdate", "PostLocalLightShadowUpdate", "PreLightTilePass", "PostLightTileCulling", "PostLightTilePass", "PostCompleteZBuffer", "PreTransparentPass", "PostTransparentPass", "PostVelocity", "PreCoc", "PostDof", "PostUpdate", "Bloom", "PostBloom", "AfterPost", "Debug", "ProcessCustomReflectionViews", "ProcessCustomGiViews", "ProcessCustomObjectLayers"]
+            },
+            "shaderProgramsProviderVersion": {
+              "description": "This number needs to be incremented when certain changes are made.",
+              "type": "integer"
+            },
+            "shaderModelCs": {
+              "description": "The default shader model to use for compute shaders",
+              "type": "string"
+            },
+            "shaderModelVs": {
+              "description": "The default shader model to use for vertex shaders",
+              "type": "string"
+            },
+            "shaderModelPs": {
+              "description": "The default shader model to use for pixel shaders",
+              "type": "string"
+            },
+            "blackboardLinks": {
+              "description": "Links resources to the blackboard to automatically read and write them to the blackboard",
+              "type": "object",
+              "properties": {
+                "inputs": {
+                  "description": "These specify where imported resources should come from in the blackboard system before the technique runs. Optional. If not given, they must be hooked up in the generated code manually.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "resource": {
+                        "description": "The name of the gigi resource",
+                        "type": "string"
+                      },
+                      "structName": {
+                        "description": "The name of the blackboard struct",
+                        "type": "string"
+                      },
+                      "fieldName": {
+                        "description": "The name of the field in the blackboard struct",
+                        "type": "string"
+                      }
+                    }
+                  }
+                },
+                "outputs": {
+                  "description": "These specify where imported and exported resources should go to in the blackboard system after the technique runs. Optional. If not given, they must be hooked up in the generated code manually.",
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "resource": {
+                        "description": "The name of the gigi resource",
+                        "type": "string"
+                      },
+                      "structName": {
+                        "description": "The name of the blackboard struct",
+                        "type": "string"
+                      },
+                      "fieldName": {
+                        "description": "The name of the field in the blackboard struct",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "common": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "debugNames": {
+              "description": "If true, sets debug names to GPU objects on available platforms.",
+              "type": "boolean"
+            },
+            "debugShaders": {
+              "description": "If true, compiles shaders with debug options turned on, on available platforms.",
+              "type": "boolean"
+            }
+          }
+        }
+      }
+    },
+    "buildSettings": {
+      "description": "Build settings",
+      "type": "object",
+      "properties": {
+        "disableWarnings": {
+          "description": "Warnings listed here will be suppressed",
+          "type": "array",
+          "items": {
+            "type": "string",
+          "enum": ["ShaderUnusedResource", "Count"]
+          }
+        },
+        "outDX12": {
+          "description": "The output location for DX12",
+          "type": "string"
+        },
+        "outHalcyon": {
+          "description": "The output location for Halcyon",
+          "type": "string"
+        },
+        "outFrostbite": {
+          "description": "The output location for Frostbite",
+          "type": "string"
+        },
+        "outUE_5_3": {
+          "description": "The output location for UE 5.3",
+          "type": "string"
+        }
+      }
+    }
+  }
+}

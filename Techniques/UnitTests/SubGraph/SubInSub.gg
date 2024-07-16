@@ -1,0 +1,54 @@
+{
+    "$schema": "gigischema.json",
+    "name": "SubInSub",
+    "version": "0.98b",
+    "nodes": [
+        {
+            "actionSubGraph": {
+                "name": "Inner1",
+                "editorPos": [
+                    -96.0,
+                    0.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "SubInSubInner1.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Input"
+                    ],
+                    "variables": [
+                        {
+                            "name": "Inner1Mult",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "Inner1Mult",
+                        "visibility": "User"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    -213.0,
+                    2.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

@@ -1,0 +1,19 @@
+{
+    "resourceViewNodeIndex": 0,
+    "resourceViewResourceIndex": 1,
+    "importedResources": [
+        {
+            "nodeName": "Texture",
+            "texture": {
+                "fileName": "64x64_RGBA_f32.dat",
+                "fileIsSRGB": false,
+                "format": "RGBA32_Float",
+                "binaryDims": [
+                    64,
+                    64,
+                    1
+                ]
+            }
+        }
+    ]
+}

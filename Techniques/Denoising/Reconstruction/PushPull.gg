@@ -1,0 +1,319 @@
+{
+    "$schema": "gigischema.json",
+    "name": "PushPull",
+    "version": "0.98b",
+    "shaders": [
+        {
+            "name": "PushPullDownSample",
+            "fileName": "PushPullDownSampleCS.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "PushPullUpSample",
+            "fileName": "PushPullUpSampleCS.hlsl",
+            "resources": [
+                {
+                    "name": "Level1",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Level2",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    365.0,
+                    290.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    941.0,
+                    482.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DownSample_1_2",
+                "editorPos": [
+                    521.0,
+                    290.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Level1",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "PushPullDownSample"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Level1"
+                    },
+                    "indirectBuffer": {
+                        "node": "Level1"
+                    }
+                },
+                "entryPoint": "DownSample_1_2"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Level1",
+                "editorPos": [
+                    365.0,
+                    354.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DownSample_2_2",
+                "editorPos": [
+                    713.0,
+                    335.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "DownSample_1_2",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Level2",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "PushPullDownSample"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Level2"
+                    },
+                    "indirectBuffer": {
+                        "node": "Level1"
+                    }
+                },
+                "entryPoint": "DownSample_2_2"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Level2",
+                "editorPos": [
+                    589.0,
+                    402.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    },
+                    "divide": [
+                        4,
+                        4,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "UpSample_1_2",
+                "editorPos": [
+                    905.0,
+                    332.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Level1",
+                        "dstNode": "DownSample_2_2",
+                        "dstPin": "Input"
+                    },
+                    {
+                        "srcPin": "Level2",
+                        "dstNode": "DownSample_2_2",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Scratch",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "PushPullUpSample"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Level1"
+                    },
+                    "indirectBuffer": {
+                        "node": "UpSample_1_2"
+                    }
+                },
+                "entryPoint": "UpSample_1_2"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Scratch",
+                "editorPos": [
+                    765.0,
+                    466.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "UpSample_2_2",
+                "editorPos": [
+                    1123.0,
+                    287.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Level1",
+                        "dstNode": "DownSample_1_2",
+                        "dstPin": "Input"
+                    },
+                    {
+                        "srcPin": "Level2",
+                        "dstNode": "UpSample_1_2",
+                        "dstPin": "Level1"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "PushPullUpSample"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "entryPoint": "UpSample_2_2"
+            }
+        }
+    ]
+}

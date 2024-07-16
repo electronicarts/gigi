@@ -1,0 +1,7 @@
+UnitTests.dir/
+*.pdb
+*.user
+Debug/
+MinSizeRel/
+Release/
+RelWithDebInfo/

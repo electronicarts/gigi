@@ -1,0 +1,11 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "texture",
+            "texture": {
+                "fileName": "..\\..\\..\\..\\gigi\\Techniques\\cabinsmall.png",
+                "makeMips": true
+            }
+        }
+    ]
+}

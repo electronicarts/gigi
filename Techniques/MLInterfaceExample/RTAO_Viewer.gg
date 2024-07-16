@@ -1,0 +1,412 @@
+{
+    "$schema": "gigischema.json",
+    "name": "RTAO",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Render Size",
+            "type": "Uint2",
+            "dflt": "512, 512",
+            "visibility": "User"
+        },
+        {
+            "name": "depthClearValue",
+            "comment": "What the depth buffer is cleared to",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "rayMin",
+            "type": "Float",
+            "dflt": "0.01f",
+            "visibility": "User"
+        },
+        {
+            "name": "rayMax",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "distanceIsShade",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "AOPower",
+            "comment": "put AO on a power curve to adjust contrast",
+            "type": "Float",
+            "dflt": "2.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "SourceIsUnorm",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "ApplyInTangentSpace",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "RTAORayGen",
+            "fileName": "RTAO.hlsl",
+            "type": "RTRayGen",
+            "entryPoint": "RTAORayGen",
+            "resources": [
+                {
+                    "name": "g_texture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "g_scene",
+                    "type": "Buffer",
+                    "access": "RTScene"
+                },
+                {
+                    "name": "g_noiseTexture",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "g_depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "g_gbuffer",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Uint4"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RTAOMiss",
+            "fileName": "RTAO.hlsl",
+            "type": "RTMiss",
+            "entryPoint": "RTAOMiss",
+            "copyFile": false
+        },
+        {
+            "name": "RTAOClosestHit",
+            "fileName": "RTAO.hlsl",
+            "type": "RTClosestHit",
+            "entryPoint": "RTAOClosestHit",
+            "copyFile": false
+        },
+        {
+            "name": "GBufferVS",
+            "fileName": "RTAOGBufferVS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vsmain"
+        },
+        {
+            "name": "GBufferPS",
+            "fileName": "RTAOGBufferPS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "psmain"
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexBuffer",
+            "fields": [
+                {
+                    "name": "position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "tangent",
+                    "type": "Float4",
+                    "semantic": "Tangent"
+                },
+                {
+                    "name": "albedo",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "AO Result",
+                "comment": "The texture that is rendered to",
+                "editorPos": [
+                    649.0,
+                    -158.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Render Size"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Scene",
+                "comment": "The raytracing scene",
+                "editorPos": [
+                    589.0,
+                    -110.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    397.0,
+                    50.0
+                ],
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Render Size"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "GBuffer",
+                "editorPos": [
+                    397.0,
+                    98.0
+                ],
+                "format": {
+                    "format": "RGBA32_Uint"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Render Size"
+                    },
+                    "multiply": [
+                        1,
+                        1,
+                        4
+                    ]
+                },
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "actionRayShader": {
+                "name": "DoRT",
+                "editorPos": [
+                    772.0,
+                    6.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "g_texture",
+                        "dstNode": "AO Result",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "g_scene",
+                        "dstNode": "Scene",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "g_depth",
+                        "dstNode": "GBuffer Fill",
+                        "dstPin": "depthTarget"
+                    },
+                    {
+                        "srcPin": "g_gbuffer",
+                        "dstNode": "GBuffer Fill",
+                        "dstPin": "colorTarget0"
+                    },
+                    {
+                        "srcPin": "g_noiseTexture",
+                        "dstNode": "RayDirectionsTexture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "RTAORayGen"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "AO Result"
+                    }
+                },
+                "rayPayloadSize": 12
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "GBuffer Fill",
+                "editorPos": [
+                    517.0,
+                    3.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "GBufferVS"
+                },
+                "pixelShader": {
+                    "name": "GBufferPS"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {},
+                    {
+                        "arrayIndex": 1
+                    },
+                    {
+                        "arrayIndex": 2
+                    },
+                    {
+                        "arrayIndex": 3
+                    },
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Mesh",
+                    "pin": "resource"
+                },
+                "indexBuffer": {
+                    "node": "RayDirectionsTexture"
+                },
+                "instanceBuffer": {
+                    "node": "RayDirectionsTexture"
+                },
+                "colorTargets": [
+                    {
+                        "node": "GBuffer",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "GBuffer",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "GBuffer",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "GBuffer",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "RayDirectionsTexture"
+                    },
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Mesh",
+                "comment": "The rasterization scene",
+                "editorPos": [
+                    397.0,
+                    2.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "RayDirectionsTexture",
+                "editorPos": [
+                    487.0,
+                    -62.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        }
+    ],
+    "hitGroups": [
+        {
+            "name": "HitGroup0",
+            "closestHit": {
+                "name": "RTAOClosestHit"
+            }
+        }
+    ]
+}

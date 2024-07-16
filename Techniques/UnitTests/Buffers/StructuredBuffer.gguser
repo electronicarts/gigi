@@ -1,0 +1,19 @@
+{
+    "systemVars": {
+        "iFrameRate_varName": "frameDeltaTime",
+        "iFrame_varName": "frameIndex"
+    },
+    "resourceViewType": 3,
+    "resourceViewNodeIndex": 1,
+    "resourceViewResourceIndex": 1,
+    "importedResources": [
+        {
+            "nodeName": "buff",
+            "isATexture": false,
+            "buffer": {
+                "structIndex": 0,
+                "count": 2
+            }
+        }
+    ]
+}

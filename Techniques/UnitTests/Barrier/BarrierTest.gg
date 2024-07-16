@@ -1,0 +1,188 @@
+{
+    "$schema": "gigischema.json",
+    "name": "BarrierTest",
+    "version": "0.98b",
+    "shaders": [
+        {
+            "name": "Left",
+            "fileName": "BarrierTestLeft.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "Right",
+            "fileName": "BarrierTestRight.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "After",
+            "fileName": "BarrierTestAfter.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Draw Left",
+                "editorPos": [
+                    518.0,
+                    325.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Left"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    },
+                    "divide": [
+                        2,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Draw Right",
+                "editorPos": [
+                    515.0,
+                    402.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Right"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    },
+                    "divide": [
+                        2,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionBarrier": {
+                "name": "Output Barrier",
+                "editorPos": [
+                    723.0,
+                    351.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin 1",
+                        "dstNode": "Draw Left",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Pin 2",
+                        "dstNode": "Draw Right",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Pin 3"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    349.0,
+                    354.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "After",
+                "editorPos": [
+                    889.0,
+                    354.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output Barrier",
+                        "dstPin": "Pin 1"
+                    }
+                ],
+                "shader": {
+                    "name": "After"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        }
+    ]
+}

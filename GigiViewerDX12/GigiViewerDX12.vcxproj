@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{97c3ab97-49a6-4fb8-bbad-d7f06cdd6a1d}</ProjectGuid>
+    <RootNamespace>GigiViewerDX12</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>GigiViewerDX12</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(IncludePath)</IncludePath>
+    <OutDir>$(SolutionDir)</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>USE_PIX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>python310.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;WinPixEventRuntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(ProjectDir)Pix\bin\x64\;$(ProjectDir)python\Python310\libs\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>USE_PIX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>python310.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;WinPixEventRuntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+      <AdditionalLibraryDirectories>$(ProjectDir)Pix\bin\x64\;$(ProjectDir)python\Python310\libs\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\external\nativefiledialog\src\nfd_common.c" />
+    <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
+    <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
+    <ClCompile Include="DX12Utils\FBXCache.cpp" />
+    <ClCompile Include="DX12Utils\ObjCache.cpp" />
+    <ClCompile Include="DX12Utils\PLYCache.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="DX12Utils\CompileShaders_dxc.cpp" />
+    <ClCompile Include="DX12Utils\CompileShaders_fxc.cpp" />
+    <ClCompile Include="DX12Utils\CreateResources.cpp" />
+    <ClCompile Include="DX12Utils\FileCache.cpp" />
+    <ClCompile Include="DX12Utils\TextureCache.cpp" />
+    <ClCompile Include="DX12Utils\UploadBufferTracker.cpp" />
+    <ClCompile Include="ImGuiHelper.cpp" />
+    <ClCompile Include="Interpreter\GigiInterpreterPreviewWindowDX12.cpp" />
+    <ClCompile Include="Interpreter\GigiInterpreterPreviewWindowDX12_UI.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_ComputeShader.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_CopyResource.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_DrawCall.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_Barrier.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_RayShader.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_SubGraph.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Resource_Buffer.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Resource_ShaderConstants.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Resource_Texture.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="PreviewClient.cpp" />
+    <ClCompile Include="RecentFiles.cpp" />
+    <ClCompile Include="tinyexr\deps\miniz\miniz.c" />
+    <ClCompile Include="ViewerPython.cpp" />
+    <ClCompile Include="ViewerPython_GigiArray.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\external\nativefiledialog\src\common.h" />
+    <ClInclude Include="..\external\nativefiledialog\src\include\nfd.h" />
+    <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
+    <ClInclude Include="..\external\OpenFBX\ofbx.h" />
+    <ClInclude Include="DX12Utils\CompileShaders.h" />
+    <ClInclude Include="DX12Utils\CreateResources.h" />
+    <ClInclude Include="DX12Utils\DelayedReleaseTracker.h" />
+    <ClInclude Include="DX12Utils\DescriptorTableCache.h" />
+    <ClInclude Include="DX12Utils\FBXCache.h" />
+    <ClInclude Include="DX12Utils\FileCache.h" />
+    <ClInclude Include="DX12Utils\FileWatcher.h" />
+    <ClInclude Include="DX12Utils\FlattenedVertex.h" />
+    <ClInclude Include="DX12Utils\HeapAllocationTracker.h" />
+    <ClInclude Include="DX12Utils\ObjCache.h" />
+    <ClInclude Include="DX12Utils\PLYCache.h" />
+    <ClInclude Include="DX12Utils\Profiler.h" />
+    <ClInclude Include="DX12Utils\sRGB.h" />
+    <ClInclude Include="DX12Utils\TextureCache.h" />
+    <ClInclude Include="DX12Utils\TransitionTracker.h" />
+    <ClInclude Include="DX12Utils\UploadBufferTracker.h" />
+    <ClInclude Include="DX12Utils\Utils.h" />
+    <ClInclude Include="f16.h" />
+    <ClInclude Include="ImGuiHelper.h" />
+    <ClInclude Include="imgui\backends\imgui_impl_dx12.ps.hlsl.h" />
+    <ClInclude Include="Interpreter\GigiInterpreterPreviewWindowDX12.h" />
+    <ClInclude Include="Interpreter\NodesShared.h" />
+    <ClInclude Include="Interpreter\RuntimeNodeTypes.h" />
+    <ClInclude Include="PreviewClient.h" />
+    <ClInclude Include="prng.h" />
+    <ClInclude Include="RecentFiles.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="stb\stb_image.h" />
+    <ClInclude Include="stb\stb_image_write.h" />
+    <ClInclude Include="tinyexr\deps\miniz\miniz.h" />
+    <ClInclude Include="tinyobjloader\tiny_obj_loader.h" />
+    <ClInclude Include="ViewerPython.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GigiViewerDX12.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="iconWindow.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GigiCompilerLib\GigiCompilerLib.vcxproj">
+      <Project>{6a151f4e-efd3-4a58-a6f5-e07ed189a6f5}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets" Condition="Exists('..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets')" />
+  </ImportGroup>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets'))" />
+  </Target>
+</Project>

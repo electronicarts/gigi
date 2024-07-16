@@ -1,0 +1,59 @@
+{
+    "$schema": "gigischema.json",
+    "name": "TextureFormats",
+    "version": "0.98b",
+    "shaders": [
+        {
+            "name": "csmain",
+            "fileName": "TextureFormats.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "tex",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Texture",
+                "editorPos": [
+                    253.0,
+                    433.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ComputeShader",
+                "editorPos": [
+                    409.0,
+                    434.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "tex",
+                        "dstNode": "Texture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "csmain"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Texture"
+                    }
+                }
+            }
+        }
+    ]
+}

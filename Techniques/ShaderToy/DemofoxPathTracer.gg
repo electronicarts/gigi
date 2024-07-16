@@ -1,0 +1,343 @@
+{
+    "$schema": "gigischema.json",
+    "name": "DemofoxPathTracer",
+    "comment": "A port of: https://www.shadertoy.com/view/ttfyzN\nThe culmination of https://blog.demofox.org/2020/05/25/casual-shadertoy-path-tracing-1-basic-camera-diffuse-emissive/\nDoes not use DXR",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "Reset",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            },
+            "UIHint": "Button"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "scene",
+            "type": "Int",
+            "dflt": "Scene::RoughSpheres",
+            "visibility": "User",
+            "Enum": "Scene"
+        },
+        {
+            "name": "lightColor",
+            "type": "Float3",
+            "dflt": "1.0f, 0.9f, 0.7f",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Color"
+            },
+            "UIHint": "Color"
+        },
+        {
+            "name": "skybox",
+            "type": "Int",
+            "dflt": "Skybox::Arches_E_PineTree_3k",
+            "visibility": "User",
+            "Enum": "Skybox"
+        },
+        {
+            "name": "skyboxMultiplier",
+            "type": "Float",
+            "dflt": "1.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "exposure",
+            "comment": "In FStops. -inf to +inf",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "numBounces",
+            "type": "Int",
+            "dflt": "8",
+            "visibility": "User"
+        },
+        {
+            "name": "numSamplesPerFrame",
+            "type": "Int",
+            "dflt": "8",
+            "visibility": "User"
+        },
+        {
+            "name": "jitter",
+            "comment": "jitters pixel location to do anti aliasing",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "AcesToneMap",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "LinearToSRGB",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "RedBlue3D",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "RedBlue3DEyeDistance",
+            "type": "Float",
+            "dflt": "1.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "RedBlue3DColorLeftEye",
+            "comment": "See https://en.wikipedia.org/wiki/Anaglyph_3D#Anaglyphic_color_channels",
+            "type": "Float3",
+            "dflt": "1.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "RedBlue3DColorRightEye",
+            "comment": "See https://en.wikipedia.org/wiki/Anaglyph_3D#Anaglyphic_color_channels",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 1.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "main",
+            "fileName": "DemofoxPathTracer.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "output",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "accumulation",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "texSampler"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Node 1",
+                "editorPos": [
+                    547.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "accumulation",
+                        "dstNode": "Accumulation",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "main"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    },
+                    "indirectBuffer": {
+                        "node": "Accumulation"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Accumulation",
+                "editorPos": [
+                    387.0,
+                    338.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    397.0,
+                    258.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "Scene",
+            "items": [
+                {
+                    "label": "RoughSpheres"
+                },
+                {
+                    "label": "IORSpheres"
+                },
+                {
+                    "label": "OpaqueIORSpheres"
+                },
+                {
+                    "label": "AbsorbSpheres"
+                },
+                {
+                    "label": "FocusSpheres"
+                },
+                {
+                    "label": "DiffuseSpheres"
+                },
+                {
+                    "label": "RoughSpheres2"
+                }
+            ]
+        },
+        {
+            "name": "Skybox",
+            "items": [
+                {
+                    "label": "Arches_E_PineTree_3k"
+                },
+                {
+                    "label": "satara_night_4k_hdr"
+                },
+                {
+                    "label": "satara_night_4k_exr"
+                }
+            ]
+        }
+    ]
+}

@@ -1,0 +1,27 @@
+{
+    "resourceViewNodeIndex": 0,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "Input",
+            "texture": {
+                "fileName": "..\\..\\cabinsmall.png",
+                "size": [
+                    512,
+                    512,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "LoopIndex",
+            "value": "0"
+        },
+        {
+            "name": "sRGB",
+            "value": "true"
+        }
+    ]
+}

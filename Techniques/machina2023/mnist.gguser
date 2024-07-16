@@ -1,0 +1,82 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "Drawing_Canvas",
+        "iFrame_varName": ""
+    },
+    "resourceViewNodeIndex": 9,
+    "resourceViewResourceIndex": 17,
+    "importedResources": [
+        {
+            "nodeName": "Imported_Image",
+            "texture": {
+                "fileName": "9.png",
+                "size": [
+                    28,
+                    28,
+                    1
+                ],
+                "format": "R8_Unorm"
+            }
+        },
+        {
+            "nodeName": "NN_Weights",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Backprop_Weights.bin",
+                "type": "Float"
+            }
+        },
+        {
+            "nodeName": "Presentation_Canvas",
+            "texture": {
+                "size": [
+                    480,
+                    990,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Clear",
+            "value": "false"
+        },
+        {
+            "name": "PenSize",
+            "value": "10.000000"
+        },
+        {
+            "name": "UseImportedImage",
+            "value": "false"
+        },
+        {
+            "name": "NormalizeDrawing",
+            "value": "true"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Hidden Layer Activations",
+            "viewableResourceDisplayName": "Presentation.HiddenLayerActivations: Hidden_Layer_Activations (SRV)"
+        },
+        {
+            "name": "Output Layer Activations",
+            "viewableResourceDisplayName": "Presentation.OutputLayerActivations: Output_Layer_Activations (SRV)"
+        },
+        {
+            "name": "Input Layer",
+            "viewableResourceDisplayName": "Shrink.NNInput: NN_Input (UAV - After)"
+        },
+        {
+            "name": "Neural Network Weights",
+            "viewableResourceDisplayName": "NN_Weights.resource"
+        },
+        {
+            "name": "Demo",
+            "viewableResourceDisplayName": "Presentation.PresentationCanvas: Presentation_Canvas (UAV - After)"
+        }
+    ]
+}

@@ -1,0 +1,12 @@
+{
+    "resourceViewNodeIndex": 1,
+    "resourceViewResourceIndex": 1,
+    "importedResources": [
+        {
+            "nodeName": "Test",
+            "texture": {
+                "fileName": "..\\..\\cabinsmall.png"
+            }
+        }
+    ]
+}

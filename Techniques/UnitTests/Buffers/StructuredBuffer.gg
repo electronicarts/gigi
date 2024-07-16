@@ -1,0 +1,146 @@
+{
+    "$schema": "gigischema.json",
+    "name": "StructuredBuffer",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "frameIndex",
+            "type": "Int",
+            "dflt": "0"
+        },
+        {
+            "name": "frameDeltaTime",
+            "type": "Float",
+            "dflt": "0.0f"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "csmain",
+            "fileName": "StructuredBuffer.hlsl",
+            "entryPoint": "csmain",
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ],
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "buff",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Int",
+                        "typeStruct": {
+                            "name": "TheStructure"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "TheStructure",
+            "fields": [
+                {
+                    "name": "TheInt",
+                    "type": "Int",
+                    "dflt": "0"
+                },
+                {
+                    "name": "TheFloat",
+                    "type": "Float",
+                    "dflt": "0.0f"
+                },
+                {
+                    "name": "TheEnum",
+                    "type": "Int",
+                    "dflt": "True",
+                    "Enum": "Trinary"
+                },
+                {
+                    "name": "TheBool",
+                    "type": "Bool",
+                    "dflt": "true"
+                },
+                {
+                    "name": "TheUINT",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "TheFloat2",
+                    "type": "Float2",
+                    "dflt": "0.0f, 0.0f"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "buff",
+                "editorPos": [
+                    317.0,
+                    434.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "structureType": {
+                        "name": "TheStructure"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "csmain",
+                "editorPos": [
+                    419.0,
+                    434.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "buff",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "csmain"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "buff"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "Trinary",
+            "items": [
+                {
+                    "label": "True"
+                },
+                {
+                    "label": "False"
+                },
+                {
+                    "label": "Maybe"
+                }
+            ]
+        }
+    ]
+}

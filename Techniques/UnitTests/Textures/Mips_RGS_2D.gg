@@ -1,0 +1,96 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.98b",
+    "shaders": [
+        {
+            "name": "RayGen",
+            "fileName": "Mips_RGS_2D_RGS.hlsl",
+            "type": "RTRayGen",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "Scene",
+                    "type": "Buffer",
+                    "access": "RTScene"
+                }
+            ]
+        },
+        {
+            "name": "Miss",
+            "fileName": "Mips_RGS_2D_RGS.hlsl",
+            "type": "RTMiss",
+            "entryPoint": "Miss",
+            "copyFile": false
+        }
+    ],
+    "nodes": [
+        {
+            "actionRayShader": {
+                "name": "RayGen",
+                "editorPos": [
+                    117.0,
+                    82.0
+                ],
+                "linkProperties": [
+                    {
+                        "UAVMipIndex": 1
+                    },
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "MipTex",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Scene",
+                        "dstNode": "VertexBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "RayGen"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "MipTex"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "MipTex",
+                "editorPos": [
+                    -5.0,
+                    82.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VertexBuffer",
+                "editorPos": [
+                    -9.0,
+                    130.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float3"
+                }
+            }
+        }
+    ],
+    "hitGroups": [
+        {
+            "name": "EmptyHG"
+        }
+    ]
+}

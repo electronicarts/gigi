@@ -1,0 +1,87 @@
+{
+    "resourceViewNodeIndex": 6,
+    "resourceViewResourceIndex": 5,
+    "importedResources": [
+        {
+            "nodeName": "Albedo_Roughness",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Color_HDR",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "color": [
+                    0.0,
+                    0.0,
+                    0.0,
+                    1.0
+                ],
+                "format": "RGBA32_Float"
+            }
+        },
+        {
+            "nodeName": "Depth",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "R32_Float"
+            }
+        },
+        {
+            "nodeName": "Normal_Metallic_AO",
+            "texture": {
+                "size": [
+                    512,
+                    512,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        },
+        {
+            "nodeName": "Scene",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "..\\OBJAssets\\sphere.obj",
+                "type": "Float3",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Direction",
+            "value": "0.000000,0.000000,0.000000"
+        },
+        {
+            "name": "Color",
+            "value": "1.000000,1.000000,1.000000"
+        },
+        {
+            "name": "Intensity",
+            "value": "10.000000"
+        },
+        {
+            "name": "CastsShadows",
+            "value": "true"
+        },
+        {
+            "name": "DepthClearValue",
+            "value": "0.000000"
+        }
+    ]
+}

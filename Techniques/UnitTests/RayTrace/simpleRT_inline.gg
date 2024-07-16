@@ -1,0 +1,236 @@
+{
+    "$schema": "gigischema.json",
+    "name": "simpleRT_inline",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "enabled",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "clipToWorld",
+            "type": "Float4x4",
+            "visibility": "Host"
+        },
+        {
+            "name": "cameraPos",
+            "type": "Float3",
+            "visibility": "Host"
+        },
+        {
+            "name": "depthNearPlane",
+            "comment": "The depth value for the near plane.",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "hitColor",
+            "type": "Float3",
+            "dflt": "0.0f, 1.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "missColor",
+            "type": "Float3",
+            "dflt": "1.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "SimpleRTCS",
+            "fileName": "simpleRT_inline.hlsl",
+            "entryPoint": "SimpleRTCS",
+            "resources": [
+                {
+                    "name": "g_texture",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "g_scene",
+                    "type": "Buffer",
+                    "access": "RTScene"
+                },
+                {
+                    "name": "g_vertexBuffer",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexBuffer"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexBuffer",
+            "forceHostVisible": true,
+            "fields": [
+                {
+                    "name": "Color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                }
+            ]
+        },
+        {
+            "name": "VertexBufferSimple",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                }
+            ]
+        },
+        {
+            "name": "VertexBufferFull",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "Tangent",
+                    "type": "Float4",
+                    "semantic": "Tangent"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "MaterialID",
+                    "type": "Int",
+                    "dflt": "0",
+                    "semantic": "MaterialID"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Texture",
+                "comment": "The texture that is rendered to",
+                "editorPos": [
+                    109.0,
+                    -14.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Scene",
+                "comment": "The raytracing scene",
+                "editorPos": [
+                    109.0,
+                    34.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DoRT",
+                "editorPos": [
+                    243.0,
+                    0.0
+                ],
+                "condition": {
+                    "variable1": "enabled",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "g_texture",
+                        "dstNode": "Texture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "g_scene",
+                        "dstNode": "Scene",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "g_vertexBuffer",
+                        "dstNode": "Scene VB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "SimpleRTCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Texture"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Scene VB",
+                "editorPos": [
+                    104.0,
+                    82.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_5"
+        },
+        "frostbite": {
+            "shaderProgramsProviderVersion": 1340
+        }
+    }
+}

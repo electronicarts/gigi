@@ -1,0 +1,1937 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\FileCache.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\TextureCache.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\dxutils.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler_dxc.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler_fxc.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\tinyexr\deps\miniz\miniz.c">
+      <Filter>DX12Utils\tinyexr\deps\miniz</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\private\technique.cpp">
+      <Filter>UnitTests\Barrier\BarrierTest\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\private\technique.cpp">
+      <Filter>UnitTests\Buffers\MultipleUVMesh\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\private\technique.cpp">
+      <Filter>UnitTests\Buffers\StructuredBuffer\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\private\technique.cpp">
+      <Filter>UnitTests\Buffers\buffertest\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\private\technique.cpp">
+      <Filter>UnitTests\Compute\ReadbackSequence\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\private\technique.cpp">
+      <Filter>UnitTests\Compute\SlangAutoDiff\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\private\technique.cpp">
+      <Filter>UnitTests\Compute\boxblur\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\private\technique.cpp">
+      <Filter>UnitTests\Compute\simple\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest\private\technique.cpp">
+      <Filter>UnitTests\CopyResource\CopyResourceTest\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\private\technique.cpp">
+      <Filter>UnitTests\CopyResource\CopyResourceTest_FB\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\private\technique.cpp">
+      <Filter>UnitTests\Python\GPUWrite\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\private\technique.cpp">
+      <Filter>UnitTests\Python\profiling\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\private\technique.cpp">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\private\technique.cpp">
+      <Filter>UnitTests\Raster\Stencil\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private\technique.cpp">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\private\technique.cpp">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\private\technique.cpp">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\private\technique.cpp">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\private\technique.cpp">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\private\technique.cpp">
+      <Filter>UnitTests\Raster\simpleRaster\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\private\technique.cpp">
+      <Filter>UnitTests\Raster\simpleRaster2\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\AnyHit\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\IntersectionShader\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\TwoRayGens\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\simpleRT\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\private\technique.cpp">
+      <Filter>UnitTests\SubGraph\SubGraphTest\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\private\technique.cpp">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\private\technique.cpp">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\private\technique.cpp">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\private\technique.cpp">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\private\technique.cpp">
+      <Filter>UnitTests\Textures\TextureFormats\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_demo.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_draw.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_impl_dx12.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_impl_win32.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_tables.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_widgets.cpp">
+      <Filter>imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\main.cpp" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\private\technique.cpp">
+      <Filter>private</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\DelayedReleaseTracker.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\FileCache.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\HeapAllocationTracker.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\ParseCSV.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\ReadbackHelper.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\SRGB.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\TextureCache.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\dxutils.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\logfn.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\stb\stb_image.h">
+      <Filter>DX12Utils\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\stb\stb_image_write.h">
+      <Filter>DX12Utils\stb</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\tinyexr\deps\miniz\miniz.h">
+      <Filter>DX12Utils\tinyexr\deps\miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\tinyexr\tinyexr.h">
+      <Filter>DX12Utils\tinyexr</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTestLogic.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\private\technique.h">
+      <Filter>UnitTests\Barrier\BarrierTest\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\public\all.h">
+      <Filter>UnitTests\Barrier\BarrierTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\public\imgui.h">
+      <Filter>UnitTests\Barrier\BarrierTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\public\pythoninterface.h">
+      <Filter>UnitTests\Barrier\BarrierTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\public\technique.h">
+      <Filter>UnitTests\Barrier\BarrierTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestAfter.hlsl">
+      <Filter>UnitTests\Barrier\BarrierTest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestLeft.hlsl">
+      <Filter>UnitTests\Barrier\BarrierTest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestRight.hlsl">
+      <Filter>UnitTests\Barrier\BarrierTest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\private\technique.h">
+      <Filter>UnitTests\Buffers\MultipleUVMesh\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\all.h">
+      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\imgui.h">
+      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\pythoninterface.h">
+      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\technique.h">
+      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\private\technique.h">
+      <Filter>UnitTests\Buffers\StructuredBuffer\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\public\all.h">
+      <Filter>UnitTests\Buffers\StructuredBuffer\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\public\imgui.h">
+      <Filter>UnitTests\Buffers\StructuredBuffer\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\public\pythoninterface.h">
+      <Filter>UnitTests\Buffers\StructuredBuffer\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\public\technique.h">
+      <Filter>UnitTests\Buffers\StructuredBuffer\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\shaders\StructuredBuffer.hlsl">
+      <Filter>UnitTests\Buffers\StructuredBuffer\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\private\technique.h">
+      <Filter>UnitTests\Buffers\buffertest\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\public\all.h">
+      <Filter>UnitTests\Buffers\buffertest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\public\imgui.h">
+      <Filter>UnitTests\Buffers\buffertest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\public\pythoninterface.h">
+      <Filter>UnitTests\Buffers\buffertest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\public\technique.h">
+      <Filter>UnitTests\Buffers\buffertest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\shaders\BufferTest.hlsl">
+      <Filter>UnitTests\Buffers\buffertest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\private\technique.h">
+      <Filter>UnitTests\Compute\ReadbackSequence\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\public\all.h">
+      <Filter>UnitTests\Compute\ReadbackSequence\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\public\imgui.h">
+      <Filter>UnitTests\Compute\ReadbackSequence\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\public\pythoninterface.h">
+      <Filter>UnitTests\Compute\ReadbackSequence\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\public\technique.h">
+      <Filter>UnitTests\Compute\ReadbackSequence\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\shaders\ReadbackSequence.hlsl">
+      <Filter>UnitTests\Compute\ReadbackSequence\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\private\technique.h">
+      <Filter>UnitTests\Compute\SlangAutoDiff\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\public\all.h">
+      <Filter>UnitTests\Compute\SlangAutoDiff\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\public\imgui.h">
+      <Filter>UnitTests\Compute\SlangAutoDiff\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\public\pythoninterface.h">
+      <Filter>UnitTests\Compute\SlangAutoDiff\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\public\technique.h">
+      <Filter>UnitTests\Compute\SlangAutoDiff\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\shaders\SlangAutoDiff_Descend.hlsl">
+      <Filter>UnitTests\Compute\SlangAutoDiff\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\shaders\SlangAutoDiff_Initialize.hlsl">
+      <Filter>UnitTests\Compute\SlangAutoDiff\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\SlangAutoDiff\shaders\SlangAutoDiff_Render.hlsl">
+      <Filter>UnitTests\Compute\SlangAutoDiff\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\private\technique.h">
+      <Filter>UnitTests\Compute\boxblur\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\public\all.h">
+      <Filter>UnitTests\Compute\boxblur\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\public\imgui.h">
+      <Filter>UnitTests\Compute\boxblur\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\public\pythoninterface.h">
+      <Filter>UnitTests\Compute\boxblur\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\public\technique.h">
+      <Filter>UnitTests\Compute\boxblur\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\boxblur\shaders\boxblur.hlsl">
+      <Filter>UnitTests\Compute\boxblur\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\private\technique.h">
+      <Filter>UnitTests\Compute\simple\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\public\all.h">
+      <Filter>UnitTests\Compute\simple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\public\imgui.h">
+      <Filter>UnitTests\Compute\simple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\public\pythoninterface.h">
+      <Filter>UnitTests\Compute\simple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\public\technique.h">
+      <Filter>UnitTests\Compute\simple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\simple\shaders\simple.hlsl">
+      <Filter>UnitTests\Compute\simple\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest\private\technique.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest\public\all.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest\public\imgui.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest\public\pythoninterface.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest\public\technique.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\private\technique.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest_FB\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\all.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest_FB\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\imgui.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest_FB\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\pythoninterface.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest_FB\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\technique.h">
+      <Filter>UnitTests\CopyResource\CopyResourceTest_FB\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\private\technique.h">
+      <Filter>UnitTests\Python\GPUWrite\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\all.h">
+      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\imgui.h">
+      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\pythoninterface.h">
+      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\technique.h">
+      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\shaders\GPUWrite.hlsl">
+      <Filter>UnitTests\Python\GPUWrite\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\private\technique.h">
+      <Filter>UnitTests\Python\profiling\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\all.h">
+      <Filter>UnitTests\Python\profiling\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\imgui.h">
+      <Filter>UnitTests\Python\profiling\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\pythoninterface.h">
+      <Filter>UnitTests\Python\profiling\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\technique.h">
+      <Filter>UnitTests\Python\profiling\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\shaders\profiling.hlsl">
+      <Filter>UnitTests\Python\profiling\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\private\technique.h">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\public\all.h">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\public\imgui.h">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\public\technique.h">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\shaders\NoVertex_NoIndex_NoInstance_PS.hlsl">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\shaders\NoVertex_NoIndex_NoInstance_VS.hlsl">
+      <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\private\technique.h">
+      <Filter>UnitTests\Raster\Stencil\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\public\all.h">
+      <Filter>UnitTests\Raster\Stencil\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\public\imgui.h">
+      <Filter>UnitTests\Raster\Stencil\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\Stencil\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\public\technique.h">
+      <Filter>UnitTests\Raster\Stencil\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw1PS.hlsl">
+      <Filter>UnitTests\Raster\Stencil\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw1VS.hlsl">
+      <Filter>UnitTests\Raster\Stencil\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw2PS.hlsl">
+      <Filter>UnitTests\Raster\Stencil\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw2VS.hlsl">
+      <Filter>UnitTests\Raster\Stencil\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public\all.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public\imgui.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\shaders\YesVertexStruct_NoIndex_NoInstance_PS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\shaders\YesVertexStruct_NoIndex_NoInstance_VS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\private\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public\all.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public\imgui.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\shaders\YesVertexStruct_NoIndex_YesInstanceStruct_PS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\shaders\YesVertexStruct_NoIndex_YesInstanceStruct_VS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\private\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public\all.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public\imgui.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\shaders\YesVertexStruct_NoIndex_YesInstanceType_PS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\shaders\YesVertexStruct_NoIndex_YesInstanceType_VS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\private\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public\all.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public\imgui.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public\technique.h">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\shaders\YesVertexStruct_YesIndex_NoInstance_PS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\shaders\YesVertexStruct_YesIndex_NoInstance_VS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\private\technique.h">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public\all.h">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public\imgui.h">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public\technique.h">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\shaders\YesVertexType_NoIndex_NoInstance_PS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexType_NoIndex_NoInstance\shaders\YesVertexType_NoIndex_NoInstance_VS.hlsl">
+      <Filter>UnitTests\Raster\YesVertexType_NoIndex_NoInstance\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\private\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\public\all.h">
+      <Filter>UnitTests\Raster\simpleRaster\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\public\imgui.h">
+      <Filter>UnitTests\Raster\simpleRaster\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\simpleRaster\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\public\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\shaders\simpleRaster_PS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster\shaders\simpleRaster_VS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\private\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster2\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\public\all.h">
+      <Filter>UnitTests\Raster\simpleRaster2\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\public\imgui.h">
+      <Filter>UnitTests\Raster\simpleRaster2\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\simpleRaster2\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\public\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster2\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\shaders\simpleRaster_PS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster2\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\shaders\simpleRaster_VS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster2\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\private\technique.h">
+      <Filter>UnitTests\RayTrace\AnyHit\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\public\all.h">
+      <Filter>UnitTests\RayTrace\AnyHit\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\public\imgui.h">
+      <Filter>UnitTests\RayTrace\AnyHit\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\AnyHit\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\public\technique.h">
+      <Filter>UnitTests\RayTrace\AnyHit\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\shaders\AnyHit.hlsl">
+      <Filter>UnitTests\RayTrace\AnyHit\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\private\technique.h">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\public\all.h">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\public\imgui.h">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\public\technique.h">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHitSimple\shaders\AnyHitSimple.hlsl">
+      <Filter>UnitTests\RayTrace\AnyHitSimple\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\private\technique.h">
+      <Filter>UnitTests\RayTrace\IntersectionShader\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\public\all.h">
+      <Filter>UnitTests\RayTrace\IntersectionShader\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\public\imgui.h">
+      <Filter>UnitTests\RayTrace\IntersectionShader\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\IntersectionShader\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\public\technique.h">
+      <Filter>UnitTests\RayTrace\IntersectionShader\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\IntersectionShader\shaders\IntersectionShader.hlsl">
+      <Filter>UnitTests\RayTrace\IntersectionShader\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\private\technique.h">
+      <Filter>UnitTests\RayTrace\TwoRayGens\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\public\all.h">
+      <Filter>UnitTests\RayTrace\TwoRayGens\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\public\imgui.h">
+      <Filter>UnitTests\RayTrace\TwoRayGens\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\TwoRayGens\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\public\technique.h">
+      <Filter>UnitTests\RayTrace\TwoRayGens\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\shaders\TwoRayGens1.hlsl">
+      <Filter>UnitTests\RayTrace\TwoRayGens\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\shaders\TwoRayGens2.hlsl">
+      <Filter>UnitTests\RayTrace\TwoRayGens\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\private\technique.h">
+      <Filter>UnitTests\RayTrace\simpleRT\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\public\all.h">
+      <Filter>UnitTests\RayTrace\simpleRT\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\public\imgui.h">
+      <Filter>UnitTests\RayTrace\simpleRT\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\simpleRT\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\public\technique.h">
+      <Filter>UnitTests\RayTrace\simpleRT\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\shaders\simpleRT.hlsl">
+      <Filter>UnitTests\RayTrace\simpleRT\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\private\technique.h">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\public\all.h">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\public\imgui.h">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\public\technique.h">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\shaders\simpleRT_inline.hlsl">
+      <Filter>UnitTests\RayTrace\simpleRT_inline\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\private\technique.h">
+      <Filter>UnitTests\SubGraph\SubGraphTest\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\public\all.h">
+      <Filter>UnitTests\SubGraph\SubGraphTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\public\imgui.h">
+      <Filter>UnitTests\SubGraph\SubGraphTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\public\pythoninterface.h">
+      <Filter>UnitTests\SubGraph\SubGraphTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\public\technique.h">
+      <Filter>UnitTests\SubGraph\SubGraphTest\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\shaders\SubGraphTest_SwapColors.hlsl">
+      <Filter>UnitTests\SubGraph\SubGraphTest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\public\all.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\shaders\Texture2DArrayRW_CS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_CS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\public\all.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\shaders\Texture2DArrayRW_PS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_PS\shaders\Texture2DArrayRW_VS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\public\all.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\shaders\Texture2DArrayRW_CHS_MISS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_RGS\shaders\Texture2DArrayRW_RGS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DArrayRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\public\all.h">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_CS\shaders\Texture2DRW_CS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DRW_CS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\public\all.h">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\shaders\Texture2DRW_PS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_PS\shaders\Texture2DRW_VS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\public\all.h">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\shaders\Texture2DRW_CHS_MISS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DRW_RGS\shaders\Texture2DRW_RGS.hlsl">
+      <Filter>UnitTests\Textures\Texture2DRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\public\all.h">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_CS\shaders\Texture3DRW_CS.hlsl">
+      <Filter>UnitTests\Textures\Texture3DRW_CS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\public\all.h">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\shaders\Texture3DRW_PS.hlsl">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_PS\shaders\Texture3DRW_VS.hlsl">
+      <Filter>UnitTests\Textures\Texture3DRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\private\technique.h">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\public\all.h">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\public\imgui.h">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\public\technique.h">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\shaders\Texture3DRW_CHS_MISS.hlsl">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture3DRW_RGS\shaders\Texture3DRW_RGS.hlsl">
+      <Filter>UnitTests\Textures\Texture3DRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\private\technique.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\public\all.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\public\imgui.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\public\technique.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_CS\shaders\TextureCubeRW_CS.hlsl">
+      <Filter>UnitTests\Textures\TextureCubeRW_CS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\private\technique.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\public\all.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\public\imgui.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\public\technique.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\shaders\TextureCubeRW_PS.hlsl">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_PS\shaders\TextureCubeRW_VS.hlsl">
+      <Filter>UnitTests\Textures\TextureCubeRW_PS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\private\technique.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\public\all.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\public\imgui.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\public\technique.h">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\shaders\TextureCubeRW_CHS_MISS.hlsl">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureCubeRW_RGS\shaders\TextureCubeRW_RGS.hlsl">
+      <Filter>UnitTests\Textures\TextureCubeRW_RGS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\private\technique.h">
+      <Filter>UnitTests\Textures\TextureFormats\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\public\all.h">
+      <Filter>UnitTests\Textures\TextureFormats\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\public\imgui.h">
+      <Filter>UnitTests\Textures\TextureFormats\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\TextureFormats\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\public\technique.h">
+      <Filter>UnitTests\Textures\TextureFormats\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\TextureFormats\shaders\TextureFormats.hlsl">
+      <Filter>UnitTests\Textures\TextureFormats\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime\PIXEvents.h">
+      <Filter>WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime\PIXEventsCommon.h">
+      <Filter>WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime\pix3.h">
+      <Filter>WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime\pix3_win.h">
+      <Filter>WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imconfig.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_impl_dx12.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_impl_win32.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imgui_internal.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imstb_rectpack.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imstb_textedit.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\imgui\imstb_truetype.h">
+      <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\private\technique.h">
+      <Filter>private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\public\all.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\public\imgui.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\public\pythoninterface.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\public\technique.h">
+      <Filter>public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\async.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\async_logger-inl.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\async_logger.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\cfg\argv.h">
+      <Filter>spdlog\cfg</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\cfg\env.h">
+      <Filter>spdlog\cfg</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\cfg\helpers-inl.h">
+      <Filter>spdlog\cfg</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\cfg\helpers.h">
+      <Filter>spdlog\cfg</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\common-inl.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\common.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\backtracer-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\backtracer.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\circular_q.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\console_globals.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\file_helper-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\file_helper.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\fmt_helper.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\log_msg-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\log_msg.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\log_msg_buffer-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\log_msg_buffer.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\mpmc_blocking_q.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\null_mutex.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\os-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\os.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\periodic_worker-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\periodic_worker.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\registry-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\registry.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\synchronous_factory.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\tcp_client-windows.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\tcp_client.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\thread_pool-inl.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\thread_pool.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\udp_client-windows.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\udp_client.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\details\windows_include.h">
+      <Filter>spdlog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bin_to_hex.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\args.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\chrono.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\color.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\compile.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\core.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\format-inl.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\format.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\locale.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\os.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\ostream.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\printf.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\ranges.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\std.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\bundled\xchar.h">
+      <Filter>spdlog\fmt\bundled</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\chrono.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\compile.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\fmt.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\ostr.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\ranges.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\std.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fmt\xchar.h">
+      <Filter>spdlog\fmt</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\formatter.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\fwd.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\logger-inl.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\logger.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\pattern_formatter-inl.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\pattern_formatter.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\android_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\ansicolor_sink-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\ansicolor_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\base_sink-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\base_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\basic_file_sink-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\basic_file_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\daily_file_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\dist_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\dup_filter_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\hourly_file_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\mongo_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\msvc_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\null_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\ostream_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\qt_sinks.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\ringbuffer_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\rotating_file_sink-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\rotating_file_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\sink-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\stdout_color_sinks-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\stdout_color_sinks.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\stdout_sinks-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\stdout_sinks.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\syslog_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\systemd_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\tcp_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\udp_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\win_eventlog_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\wincolor_sink-inl.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\sinks\wincolor_sink.h">
+      <Filter>spdlog\sinks</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\spdlog-inl.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\spdlog.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\stopwatch.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\tweakme.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\version.h">
+      <Filter>spdlog</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="DX12Utils">
+      <UniqueIdentifier>{2B0BFC4A-486C-39AE-814C-41AC78D10C8B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DX12Utils\stb">
+      <UniqueIdentifier>{293EC35A-F7E1-3DC8-85EF-CE5A6EA5F50D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DX12Utils\tinyexr">
+      <UniqueIdentifier>{CFB9CBF3-DB2B-35C3-8FE6-D2079099772E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DX12Utils\tinyexr\deps">
+      <UniqueIdentifier>{BFA5F468-A722-3E14-97D7-1F9CC68B480F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DX12Utils\tinyexr\deps\miniz">
+      <UniqueIdentifier>{31ACED13-9E67-3F9A-A46F-A83C460CD108}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests">
+      <UniqueIdentifier>{72F27FE1-3ADE-328A-A726-8B09B71EB57D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Barrier">
+      <UniqueIdentifier>{396D5858-2ED6-34D3-A049-B35B9775CA45}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Barrier\BarrierTest">
+      <UniqueIdentifier>{FB4F3B22-7262-332C-84DB-72372F69EEF1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Barrier\BarrierTest\private">
+      <UniqueIdentifier>{A0628620-CBAB-3745-BBC7-5E8D00477E66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Barrier\BarrierTest\public">
+      <UniqueIdentifier>{E673F825-73F6-3FC3-A55D-580AFC1FEE49}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Barrier\BarrierTest\shaders">
+      <UniqueIdentifier>{4F4393BB-E3F3-3542-A3B0-FD28B33BDBB1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers">
+      <UniqueIdentifier>{076F3FB3-BD17-30BA-AC65-4DF4FD839513}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\MultipleUVMesh">
+      <UniqueIdentifier>{552FC072-5162-3F2C-8443-05C0555E3DFD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\MultipleUVMesh\private">
+      <UniqueIdentifier>{21667B78-B2C5-365F-836C-C93C8125108C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\MultipleUVMesh\public">
+      <UniqueIdentifier>{2785CF19-F1EE-3594-A0BC-398CD304E0EF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\StructuredBuffer">
+      <UniqueIdentifier>{496BCC56-0CA2-394E-80A1-A7BE012CBF6B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\StructuredBuffer\private">
+      <UniqueIdentifier>{1118174F-12CE-3856-980A-ACE5CAADBA39}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\StructuredBuffer\public">
+      <UniqueIdentifier>{0CCB9606-4A42-3E36-9658-F047E3E1A805}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\StructuredBuffer\shaders">
+      <UniqueIdentifier>{11F51A25-448B-3DD5-8BF7-31C62387CD87}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\buffertest">
+      <UniqueIdentifier>{55A17031-3E2F-3097-BA3D-F4939E2EE793}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\buffertest\private">
+      <UniqueIdentifier>{8B0D3F25-ACDC-3BA6-B8A2-0C047C91DBF2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\buffertest\public">
+      <UniqueIdentifier>{F3591C8A-88CE-380F-906A-BD03E3A403A4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Buffers\buffertest\shaders">
+      <UniqueIdentifier>{0A5FCB54-0AC0-3437-99A3-F7FFA673AFD7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute">
+      <UniqueIdentifier>{72C102CD-E25E-33E9-A9F0-56D7EE593105}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\ReadbackSequence">
+      <UniqueIdentifier>{97033A05-9A6B-3A7E-BA70-EBA74F6D03EC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\ReadbackSequence\private">
+      <UniqueIdentifier>{B24F575F-3CD6-33DC-88F8-95160FD9E70B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\ReadbackSequence\public">
+      <UniqueIdentifier>{410F017C-277E-37FD-AB04-22389A0D3B22}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\ReadbackSequence\shaders">
+      <UniqueIdentifier>{D115BB93-AE2B-3D7F-BFF3-05FBFACFABE2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\SlangAutoDiff">
+      <UniqueIdentifier>{E1B1105E-ED75-3912-8DC2-5043D02680E9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\SlangAutoDiff\private">
+      <UniqueIdentifier>{FE9D6BE9-C19A-346D-82C3-8A8620CFB1EA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\SlangAutoDiff\public">
+      <UniqueIdentifier>{4CED4910-1B17-3734-A7B3-8E9C972DEC26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\SlangAutoDiff\shaders">
+      <UniqueIdentifier>{727F55F7-A58D-349C-B822-14EEB3596725}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\boxblur">
+      <UniqueIdentifier>{7D28460A-C55D-3C48-B11E-7FFFD1F849AE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\boxblur\private">
+      <UniqueIdentifier>{FA1F5AFB-8506-38FF-8D93-5F45938AC871}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\boxblur\public">
+      <UniqueIdentifier>{D5E253DE-19AD-322C-9324-E5D47FC98BE3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\boxblur\shaders">
+      <UniqueIdentifier>{CC126E86-360F-3D0D-9A9B-214B094837BE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\simple">
+      <UniqueIdentifier>{F142B55C-AF12-33ED-95C2-EB3FFFC9783C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\simple\private">
+      <UniqueIdentifier>{6A4724F2-606D-3446-8A81-4FC694C26012}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\simple\public">
+      <UniqueIdentifier>{74DFD6A4-CF20-3028-BD30-9DD7348EECEC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\simple\shaders">
+      <UniqueIdentifier>{01897C40-62CE-3BB1-8264-5608023EBD7B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource">
+      <UniqueIdentifier>{DC5FA358-2C0D-32EC-9BF2-6B2588D98916}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource\CopyResourceTest">
+      <UniqueIdentifier>{C6A303E3-52F6-3033-B5F6-AAD0A4CAEAB7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource\CopyResourceTest\private">
+      <UniqueIdentifier>{2C16EA05-A79F-340C-8D6B-35551AB3DA16}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource\CopyResourceTest\public">
+      <UniqueIdentifier>{537E6788-8295-3D7C-87AC-E7B67A4DCC79}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource\CopyResourceTest_FB">
+      <UniqueIdentifier>{71D6400F-92F2-3EEB-84AC-4C958715F19D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource\CopyResourceTest_FB\private">
+      <UniqueIdentifier>{6FA941B6-953F-341B-A017-506A549AFDBD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\CopyResource\CopyResourceTest_FB\public">
+      <UniqueIdentifier>{E4B35409-1807-37A8-8239-EF05C5154662}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python">
+      <UniqueIdentifier>{6ED3BBE3-0854-3BB1-961F-77F6F360FFC1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\GPUWrite">
+      <UniqueIdentifier>{AAE155DE-1904-3658-ABEB-5B496F036C83}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\GPUWrite\private">
+      <UniqueIdentifier>{9ED0E3E5-E666-3067-B51C-280FDB2F84A5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\GPUWrite\public">
+      <UniqueIdentifier>{BB50B7CE-2C93-3DED-B574-6FA249C54BE4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\GPUWrite\shaders">
+      <UniqueIdentifier>{0E152780-0AC1-3032-B03B-ED64B9725B00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\profiling">
+      <UniqueIdentifier>{ECE1EEF1-EBF2-394F-A797-A05716C604A7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\profiling\private">
+      <UniqueIdentifier>{6026A820-00D9-3E37-8F64-008EF42595B2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\profiling\public">
+      <UniqueIdentifier>{C3A471A7-002E-3E43-870B-6732B36C833F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Python\profiling\shaders">
+      <UniqueIdentifier>{5876163C-CE5E-3FB7-9704-AB102A2B7A30}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster">
+      <UniqueIdentifier>{E667E1BE-9C50-35E5-9AD4-D973A0554C91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\NoVertex_NoIndex_NoInstance">
+      <UniqueIdentifier>{F02E8813-2EE5-39AE-BD12-56B85059B711}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\NoVertex_NoIndex_NoInstance\private">
+      <UniqueIdentifier>{963556CC-3F8C-3A5F-87AD-FE53E0AF563F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\NoVertex_NoIndex_NoInstance\public">
+      <UniqueIdentifier>{D0EFAC2A-5F4E-3E83-95E9-F37962B0729D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\NoVertex_NoIndex_NoInstance\shaders">
+      <UniqueIdentifier>{F1D63CFF-400F-37AC-BC62-48E4A436C1FA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\Stencil">
+      <UniqueIdentifier>{DF865736-589D-3991-8428-4A4247AFD4C8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\Stencil\private">
+      <UniqueIdentifier>{1F41EFAA-E6A3-3B59-81AC-457F427249C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\Stencil\public">
+      <UniqueIdentifier>{E35BA849-F605-3148-9782-6E29FFB03B6B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\Stencil\shaders">
+      <UniqueIdentifier>{05611104-D1F6-305B-BABC-4D978322976B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance">
+      <UniqueIdentifier>{01059507-6273-33CF-94FC-4B52222DB4C4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private">
+      <UniqueIdentifier>{77A09483-CBEF-3C42-864D-D17B03CB1FD2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public">
+      <UniqueIdentifier>{D62AFB8E-4D41-3A42-BBA7-4B8BF173DAB2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\shaders">
+      <UniqueIdentifier>{857EB54F-CC32-3AC5-A870-72A1CA947F62}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct">
+      <UniqueIdentifier>{62606DC0-82D8-3DF9-8331-42D53C5549B3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\private">
+      <UniqueIdentifier>{E6FD6516-8C75-3D64-A81F-FCF42B7CCC44}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public">
+      <UniqueIdentifier>{659A4E6F-5171-3096-A3C8-CD2E11B43299}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\shaders">
+      <UniqueIdentifier>{B3F5A5F6-A331-3414-B7D1-A3C7A1094C1F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType">
+      <UniqueIdentifier>{D2C38523-DF43-34F7-A763-21BEB44BFEA3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\private">
+      <UniqueIdentifier>{C2FFAD4B-340D-316E-8EBA-CF4F8E80CFE9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public">
+      <UniqueIdentifier>{089A1ED5-3C7E-3EAA-B87F-10910D8EE490}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\shaders">
+      <UniqueIdentifier>{C8ECFC54-108A-3D26-A9D1-B0C66448BED6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance">
+      <UniqueIdentifier>{64BAED24-AE56-3603-8D6B-51B3DDD15F74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\private">
+      <UniqueIdentifier>{835B624B-16F0-3C83-A4DE-5CC29E2550A3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public">
+      <UniqueIdentifier>{83C8576D-8202-3965-8FB2-0A13DC7B0EF4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\shaders">
+      <UniqueIdentifier>{4E3DF891-3BB4-36CF-8CC7-82E6E3801669}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexType_NoIndex_NoInstance">
+      <UniqueIdentifier>{54DE9AA0-84A2-327A-810A-78614966D349}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexType_NoIndex_NoInstance\private">
+      <UniqueIdentifier>{92280372-C567-3EF0-96FA-21B7B44A7350}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public">
+      <UniqueIdentifier>{CB9628A7-F2D6-3AF8-A667-EF0D55C319B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\YesVertexType_NoIndex_NoInstance\shaders">
+      <UniqueIdentifier>{ADE3AA2E-3DEA-3FF7-A098-E47CCDA28282}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster">
+      <UniqueIdentifier>{92FD3229-D759-36DC-B7A2-ED33B97131C9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster2">
+      <UniqueIdentifier>{CE6F311D-8408-37FF-99F6-D459D079BE7D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster2\private">
+      <UniqueIdentifier>{B4004B41-3996-37E2-A283-851B3B1A4D29}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster2\public">
+      <UniqueIdentifier>{6BE654F9-3E58-3452-BB50-69B88BE730D3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster2\shaders">
+      <UniqueIdentifier>{9BB7CA97-E7DA-352F-A1A4-C5FBAD390417}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster\private">
+      <UniqueIdentifier>{7FF7A58D-48A6-3FFC-936A-6AF4095A40AE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster\public">
+      <UniqueIdentifier>{E05357A9-D013-3D98-A2EF-D896AC100C91}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster\shaders">
+      <UniqueIdentifier>{95DDB547-024F-3234-8081-B4E93833E19B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace">
+      <UniqueIdentifier>{8CFB12D9-E562-3A51-AEA4-8B0706FF3F37}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHit">
+      <UniqueIdentifier>{A5548267-FB44-3264-9D99-EF59C75837F8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHitSimple">
+      <UniqueIdentifier>{9E834046-E5CA-388D-9FEE-B0F3BCD5A416}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHitSimple\private">
+      <UniqueIdentifier>{9D855E3B-592D-3FB2-BDFD-CC5FEF630EA9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHitSimple\public">
+      <UniqueIdentifier>{080557EE-993F-37CD-AE99-6214B22C5EAC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHitSimple\shaders">
+      <UniqueIdentifier>{600F28D9-DD6B-3B5E-8837-B0020234CB9B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHit\private">
+      <UniqueIdentifier>{8CAE8743-EB76-3D0B-94BF-4BC6480E86EA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHit\public">
+      <UniqueIdentifier>{1183E512-C761-3EC1-AE93-4EF586A09F42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\AnyHit\shaders">
+      <UniqueIdentifier>{38BB6265-BE8D-32FD-881F-55B53F05FB42}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\IntersectionShader">
+      <UniqueIdentifier>{94FA27E3-0A0E-38E0-BFE5-C3A3269C0E7A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\IntersectionShader\private">
+      <UniqueIdentifier>{1D62914C-6A02-30B0-AA63-32AE9A99F952}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\IntersectionShader\public">
+      <UniqueIdentifier>{17E087B0-9B92-3C31-915A-E778C26F0391}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\IntersectionShader\shaders">
+      <UniqueIdentifier>{828EAEEA-16FA-3035-A016-E72715CD3B58}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGens">
+      <UniqueIdentifier>{87E0C3C0-4835-3EFB-B5C2-6EB3A421896D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGens\private">
+      <UniqueIdentifier>{3F82FEEB-57DA-3705-8F3A-3FC292725553}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGens\public">
+      <UniqueIdentifier>{3010E0C2-7C07-3962-B7EA-E2FCB388B10A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGens\shaders">
+      <UniqueIdentifier>{E0D6C622-D087-3D09-BF5F-1545E83EFABC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT">
+      <UniqueIdentifier>{98B1A61A-2DE5-3E27-9831-311C166DF9B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT\private">
+      <UniqueIdentifier>{A82102F2-1381-3321-80B3-20AD9A966444}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT\public">
+      <UniqueIdentifier>{BC177C99-479E-3765-9C22-7E1BD9C87B0C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT\shaders">
+      <UniqueIdentifier>{A4847361-E7F4-3580-AC93-B40E3A516FD5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT_inline">
+      <UniqueIdentifier>{7E3AC0E0-AF6D-3424-BDB0-6F10586BE740}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT_inline\private">
+      <UniqueIdentifier>{43BAD434-0F53-36C9-A711-680D69E4064B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT_inline\public">
+      <UniqueIdentifier>{16A9C6FE-85E1-364E-B3BD-7233BD21CEA2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\simpleRT_inline\shaders">
+      <UniqueIdentifier>{94189AD4-AE39-3991-AF5E-486856CC8DC5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph">
+      <UniqueIdentifier>{D186FA3D-FBE5-3586-898C-17B9F932EFE4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphTest">
+      <UniqueIdentifier>{FF10AEF6-FB5F-3080-972A-6E34BF793A8C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphTest\private">
+      <UniqueIdentifier>{0BD7923B-A0F3-3175-A4A6-C4306AF95290}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphTest\public">
+      <UniqueIdentifier>{B86FF102-6B22-3A30-B790-9BF9D42ECD2C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphTest\shaders">
+      <UniqueIdentifier>{A68A1EEA-C731-338E-BFA2-2F72BED85ED1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures">
+      <UniqueIdentifier>{6C80C740-CD8A-3D60-848C-300D5F0207B3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_CS">
+      <UniqueIdentifier>{7CD9034B-44EF-3BCC-9D07-C62C818C9E7A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_CS\private">
+      <UniqueIdentifier>{246E4064-4529-3C54-8F1C-1AADB656EF50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_CS\public">
+      <UniqueIdentifier>{23B6FD24-F5FE-3E07-82EB-E2675D44ABCC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_CS\shaders">
+      <UniqueIdentifier>{C83BAB49-5D53-34BB-9A86-B0E10450663B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_PS">
+      <UniqueIdentifier>{3C08A9ED-8D95-3912-B8A7-B0F24902994A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_PS\private">
+      <UniqueIdentifier>{6FD2FB68-86F3-3BF1-9240-5C572F443814}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_PS\public">
+      <UniqueIdentifier>{26DA13EE-C26B-3AB0-B819-75421BDAB634}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_PS\shaders">
+      <UniqueIdentifier>{3D6EC154-CDC4-3459-A156-53A7ECC7BDC1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_RGS">
+      <UniqueIdentifier>{61CB32EA-30B2-3A64-9497-3F62461F6AF8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_RGS\private">
+      <UniqueIdentifier>{EB47F95F-88D0-3269-8F70-EEB519082F85}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_RGS\public">
+      <UniqueIdentifier>{9B8C7E20-08C6-324A-A824-66EE4FFFA9B2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DArrayRW_RGS\shaders">
+      <UniqueIdentifier>{621FF237-F917-3B55-B21D-A91D81CAC31C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_CS">
+      <UniqueIdentifier>{2EC9E3AB-A25A-323E-9315-DA2C06D4A3D7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_CS\private">
+      <UniqueIdentifier>{8ECF4530-67CD-38DA-A479-E90F7407C1D5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_CS\public">
+      <UniqueIdentifier>{F4805FB2-1E22-3AA2-814E-4F9651D9644C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_CS\shaders">
+      <UniqueIdentifier>{3B255887-5965-3773-BC2B-AD4E650035D2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_PS">
+      <UniqueIdentifier>{984A04AE-4ED0-30B6-AB55-691117378494}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_PS\private">
+      <UniqueIdentifier>{24A62134-B527-3698-9D86-BCBF69DF5E53}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_PS\public">
+      <UniqueIdentifier>{A10BA2CF-E88E-3D7A-BD9E-80E80740EE3B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_PS\shaders">
+      <UniqueIdentifier>{EDFCE340-1F75-3215-B5BC-AE8C7D56402A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_RGS">
+      <UniqueIdentifier>{AF2879B6-7BA9-38D1-BCF9-64030C8E7710}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_RGS\private">
+      <UniqueIdentifier>{9442CDB2-4714-317B-9CDF-27AA7D56F3A4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_RGS\public">
+      <UniqueIdentifier>{4F5CB1AA-4DE3-3CF9-BB87-38E19F4DBEAC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture2DRW_RGS\shaders">
+      <UniqueIdentifier>{47B9DF5B-FBD0-365D-98BC-E181964B80B4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_CS">
+      <UniqueIdentifier>{9D349DCE-C169-3B58-BEE7-9860CCE3D61B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_CS\private">
+      <UniqueIdentifier>{8B7BB06C-D429-39A1-8EB9-0F6384B2404C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_CS\public">
+      <UniqueIdentifier>{773BAE6B-E67C-3584-8D44-5C041601B4CC}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_CS\shaders">
+      <UniqueIdentifier>{66F8F6DA-5854-3B25-999C-CFA11B1D670D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_PS">
+      <UniqueIdentifier>{01C74819-FD18-3C5E-9183-D39B8E6A5697}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_PS\private">
+      <UniqueIdentifier>{46A59328-FEDB-3220-997A-AE307650B713}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_PS\public">
+      <UniqueIdentifier>{F58C454E-B665-32E1-83D7-111428BAB687}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_PS\shaders">
+      <UniqueIdentifier>{09407A91-F7AB-3293-A023-3923F6371474}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_RGS">
+      <UniqueIdentifier>{C2DCFA0C-1A0E-31F7-A0F3-A1C73779D785}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_RGS\private">
+      <UniqueIdentifier>{A1AC2FFD-759D-369B-BC8C-330674256C17}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_RGS\public">
+      <UniqueIdentifier>{7274E38D-D142-3D89-B8C6-61E5F50008B8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Texture3DRW_RGS\shaders">
+      <UniqueIdentifier>{098A869D-C356-32BB-8A13-46D87077A72D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_CS">
+      <UniqueIdentifier>{7F849F3F-BA91-3AE7-ACBF-475156F5E045}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_CS\private">
+      <UniqueIdentifier>{BFA004E7-9C15-339D-99D7-E0073957E740}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_CS\public">
+      <UniqueIdentifier>{039A0846-D6F8-3FF3-AC44-BE96785CF3F4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_CS\shaders">
+      <UniqueIdentifier>{356D6ED9-9D65-3EF7-A047-419319CA76E4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_PS">
+      <UniqueIdentifier>{748B2E05-492D-3725-A527-9B33635A88A0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_PS\private">
+      <UniqueIdentifier>{6CF98A78-6A11-3B89-B009-5A13956540C4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_PS\public">
+      <UniqueIdentifier>{BCF74D50-5A5C-3137-BE8B-8845E94FC5D1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_PS\shaders">
+      <UniqueIdentifier>{7CE2CA5F-34D5-34AD-8AB8-71A11BA6C15A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_RGS">
+      <UniqueIdentifier>{702B7833-AC34-321A-ACB3-9B94F70C8582}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_RGS\private">
+      <UniqueIdentifier>{56D6604A-A95E-3377-88A7-14C3F79B6795}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_RGS\public">
+      <UniqueIdentifier>{E1CB223D-4637-3C44-9317-EEB26A5DAFE2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureCubeRW_RGS\shaders">
+      <UniqueIdentifier>{89EC51F0-8086-3882-8BEE-F05D95F191F4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureFormats">
+      <UniqueIdentifier>{4168360A-B35A-33B1-A1F3-06E4281E887B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureFormats\private">
+      <UniqueIdentifier>{8615D04F-7B76-3DD1-9F20-FFD8A466186E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureFormats\public">
+      <UniqueIdentifier>{4E83DD51-169F-3475-8DC3-E2CB5DD32B4A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\TextureFormats\shaders">
+      <UniqueIdentifier>{402CBD23-4BB4-38A0-9B8C-92956F438665}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WinPixEventRuntime.1.0.230302001">
+      <UniqueIdentifier>{E2904E9D-8C00-346E-9F4D-CAA77D862C97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WinPixEventRuntime.1.0.230302001\Include">
+      <UniqueIdentifier>{3FB1D61E-E705-3EC8-BDBF-A5AE8A20260D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="WinPixEventRuntime.1.0.230302001\Include\WinPixEventRuntime">
+      <UniqueIdentifier>{0EE80D95-6650-3717-9478-BB30163436F0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="imgui">
+      <UniqueIdentifier>{19D799EF-41A2-33AD-8B00-49EDF15B7085}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="private">
+      <UniqueIdentifier>{B10F275C-B56F-3BA8-BF46-986ADD550EBD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="public">
+      <UniqueIdentifier>{C70C7932-7612-37CF-8DA4-061D57BFE0B0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spdlog">
+      <UniqueIdentifier>{3D94B855-B778-3E9F-82A2-30F7E9B0A3E9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spdlog\cfg">
+      <UniqueIdentifier>{61831B64-0AB3-3175-82EF-839545EB69F8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spdlog\details">
+      <UniqueIdentifier>{B1B2929D-5025-3DF8-A81A-C01DBEE00A26}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spdlog\fmt">
+      <UniqueIdentifier>{9B52652A-BD36-3DC0-80F2-6BE3B290D959}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spdlog\fmt\bundled">
+      <UniqueIdentifier>{40EAB6ED-AF62-3D1E-A71F-38191BA55444}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="spdlog\sinks">
+      <UniqueIdentifier>{C50368B5-DAF7-36DB-8F1F-55041E87C0AF}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

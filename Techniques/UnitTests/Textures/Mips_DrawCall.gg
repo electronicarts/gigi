@@ -1,0 +1,1049 @@
+{
+    "$schema": "gigischema.json",
+    "name": "simpleRaster",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "UseMips",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "512, 512",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "VertexShader",
+            "fileName": "Mips_DrawCall_VS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "VSMain"
+        },
+        {
+            "name": "PixelShader",
+            "fileName": "Mips_DrawCall_PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "PSMain"
+        },
+        {
+            "name": "VertexShaderSphere",
+            "fileName": "Mips_DrawCallSphere_VS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "VSMain"
+        },
+        {
+            "name": "PixelShaderSphere",
+            "fileName": "Mips_DrawCallSphere_PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "PSMain",
+            "resources": [
+                {
+                    "name": "MipTex",
+                    "type": "Texture",
+                    "access": "SRV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrap"
+                },
+                {
+                    "name": "PointWrap",
+                    "filter": "MinMagMipPoint"
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexFormat",
+            "forceHostVisible": true,
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "dflt": "0, 0, 0",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 0",
+                "editorPos": [
+                    499.0,
+                    434.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "VertexBuffer",
+                    "pin": "resource"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Color Buffer",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth Buffer",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VertexBuffer",
+                "editorPos": [
+                    343.0,
+                    450.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color Buffer",
+                "editorPos": [
+                    347.0,
+                    546.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        400,
+                        400,
+                        2
+                    ]
+                },
+                "numMips": 0,
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth Buffer",
+                "editorPos": [
+                    345.0,
+                    498.0
+                ],
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color Buffer"
+                    }
+                },
+                "numMips": 0,
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 1",
+                "editorPos": [
+                    709.0,
+                    435.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 1,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 1
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 0",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 0",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 0",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 2",
+                "editorPos": [
+                    933.0,
+                    435.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 2,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 2
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 1",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 1",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 1",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 3",
+                "editorPos": [
+                    1157.0,
+                    435.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 3,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 3
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 2",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 2",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 2",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 4",
+                "editorPos": [
+                    1346.0,
+                    435.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 4,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 4
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 3",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 3",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 3",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 5",
+                "editorPos": [
+                    1538.0,
+                    431.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 5,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 5
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 4",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 4",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 4",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 6",
+                "editorPos": [
+                    1730.0,
+                    435.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 6,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 6
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 5",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 5",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 5",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 7",
+                "editorPos": [
+                    1922.0,
+                    438.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 7,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 7
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 6",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 6",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 6",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Rasterize Mip 8",
+                "editorPos": [
+                    2114.0,
+                    434.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VertexShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "depthTargetClear": true,
+                "depthMipLevel": 8,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha",
+                        "mipLevel": 8
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Rasterize Mip 7",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Rasterize Mip 7",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Rasterize Mip 7",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Final Color Buffer",
+                "editorPos": [
+                    2317.0,
+                    658.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                },
+                "numMips": 0
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Final Depth Buffer",
+                "editorPos": [
+                    2313.0,
+                    594.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                },
+                "numMips": 0
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Draw Sphere",
+                "editorPos": [
+                    2517.0,
+                    428.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "MipTex",
+                        "dstNode": "Rasterize Mip 8",
+                        "dstPin": "colorTarget0"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "VertexShaderSphere"
+                },
+                "pixelShader": {
+                    "name": "PixelShaderSphere"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.5,
+                            0.5,
+                            0.5,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "SphereVB",
+                    "pin": "resource"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Final Color Buffer",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Final Depth Buffer",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "SphereVB",
+                "editorPos": [
+                    2363.0,
+                    546.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

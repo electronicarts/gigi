@@ -1,0 +1,41 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "Color_Buffer",
+        "camera": {
+            "reverseZ": false,
+            "startingCameraPos": [
+                -2.280210018157959,
+                0.5389089584350586,
+                2.548781633377075
+            ],
+            "startingCameraAltitudeAzimuth": [
+                0.05885862931609154,
+                3.751868724822998
+            ]
+        },
+        "ProjMtx_textureName": "Color_Buffer"
+    },
+    "resourceViewNodeIndex": 0,
+    "resourceViewResourceIndex": 4,
+    "importedResources": [
+        {
+            "nodeName": "VertexBuffer",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                "structIndex": 0
+            }
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "Output",
+            "viewableResourceDisplayName": "Rasterize.colorTarget0 (After)"
+        },
+        {
+            "name": "Vertex Buffer",
+            "viewableResourceDisplayName": "VertexBuffer.resource"
+        }
+    ]
+}

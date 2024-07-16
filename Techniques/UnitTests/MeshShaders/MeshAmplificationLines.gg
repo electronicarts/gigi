@@ -1,0 +1,348 @@
+{
+    "$schema": "gigischema.json",
+    "name": "MeshAmplificationLines",
+    "version": "0.98b",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "AmplificationCount",
+            "type": "Uint",
+            "dflt": "1, 1, 1",
+            "visibility": "User"
+        },
+        {
+            "name": "AmplificationSpacing",
+            "type": "Float",
+            "dflt": "5.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "Offset",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "PixelShader",
+            "fileName": "MeshAmplificationLines_PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "PSMain"
+        },
+        {
+            "name": "MeshShader",
+            "fileName": "MeshAmplificationLines_MS.hlsl",
+            "type": "Mesh",
+            "entryPoint": "MSMain",
+            "CSNumThreads": [
+                126,
+                1,
+                1
+            ],
+            "NumThreads": [
+                126,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "MeshVB",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexFormat"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "AmplificationShader",
+            "fileName": "MeshAmplificationLines_AS.hlsl",
+            "type": "Amplification",
+            "entryPoint": "ASMain",
+            "CSNumThreads": [
+                4,
+                4,
+                4
+            ],
+            "NumThreads": [
+                4,
+                4,
+                4
+            ],
+            "resources": [
+                {
+                    "name": "AmpVB",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexFormat"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexFormat",
+            "forceHostVisible": true,
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "dflt": "0, 0, 0",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "MeshAmplificationLines_Shared.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionDrawCall": {
+                "name": "Rasterize",
+                "editorPos": [
+                    487.0,
+                    434.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "AmpVB",
+                        "dstNode": "VertexBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "MeshVB",
+                        "dstNode": "VertexBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "amplificationShader": {
+                    "name": "AmplificationShader"
+                },
+                "meshShader": {
+                    "name": "MeshShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "meshShaderDispatchSize": {
+                    "variable": {
+                        "name": "AmplificationCount"
+                    }
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "colorTargets": [
+                    {
+                        "node": "Color Buffer",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth Buffer",
+                    "pin": "resource"
+                },
+                "geometryType": "LineList"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VertexBuffer",
+                "editorPos": [
+                    341.0,
+                    434.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color Buffer",
+                "editorPos": [
+                    347.0,
+                    482.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth Buffer",
+                "editorPos": [
+                    343.0,
+                    530.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color Buffer"
+                    }
+                }
+            }
+        }
+    ]
+}

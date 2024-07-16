@@ -1,0 +1,78 @@
+{
+    "systemVars": {
+        "camera": {
+            "FOV": 90.0,
+            "flySpeed": 2.5,
+            "startingCameraPos": [
+                -33.133609771728519,
+                3.6068527698516847,
+                -119.77476501464844
+            ],
+            "startingCameraAltitudeAzimuth": [
+                -0.3753398060798645,
+                5.7787604331970219
+            ]
+        },
+        "ProjMtx_textureName": "Output"
+    },
+    "resourceViewNodeIndex": 5,
+    "resourceViewResourceIndex": 4,
+    "vsync": false,
+    "importedResources": [
+        {
+            "nodeName": "Output",
+            "resetEveryFrame": false,
+            "texture": {
+                "size": [
+                    1024,
+                    720,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "Reset",
+            "value": "false"
+        },
+        {
+            "name": "exposure",
+            "value": "1.000000"
+        },
+        {
+            "name": "apertureRadius",
+            "value": "0.400000"
+        },
+        {
+            "name": "focalPlaneDistance",
+            "value": "80.000000"
+        },
+        {
+            "name": "numBounces",
+            "value": "4"
+        },
+        {
+            "name": "rayMarchSteps",
+            "value": "256"
+        },
+        {
+            "name": "minStepDistance",
+            "value": "0.100000"
+        },
+        {
+            "name": "ACESToneMapping",
+            "value": "true"
+        },
+        {
+            "name": "sRGB",
+            "value": "true"
+        }
+    ],
+    "bookmarks": [
+        {
+            "name": "output",
+            "viewableResourceDisplayName": "Bloom_Vertical_and_Finalize.output: Output (UAV - After)"
+        }
+    ]
+}

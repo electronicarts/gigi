@@ -1,0 +1,7 @@
+To build Gigi, open gigi.sln and build solution.
+
+GigiEdit is the editor, where you edit techniques.
+
+GigiViewerDX12 is the viewer where you can run, profile and debug your techniques.
+
+GigiCompiler is the command line interface to generate code from a .gg file.

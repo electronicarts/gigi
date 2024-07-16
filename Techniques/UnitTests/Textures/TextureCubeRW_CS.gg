@@ -1,0 +1,138 @@
+{
+    "$schema": "gigischema.json",
+    "name": "TextureCubeRW_CS",
+    "version": "0.98b",
+    "shaders": [
+        {
+            "name": "RWCS",
+            "fileName": "TextureCubeRW_CS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "nodeTexture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "importedTexture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "importedColor",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrap"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "NodeTexture",
+                "editorPos": [
+                    216.0,
+                    194.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        64,
+                        64,
+                        1
+                    ]
+                },
+                "dimension": "TextureCube"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "RW",
+                "editorPos": [
+                    387.0,
+                    223.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "nodeTexture",
+                        "dstNode": "NodeTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "importedTexture",
+                        "dstNode": "ImportedTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "importedColor",
+                        "dstNode": "ImportedColor",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "RWCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NodeTexture"
+                    },
+                    "multiply": [
+                        1,
+                        1,
+                        0
+                    ],
+                    "postAdd": [
+                        0,
+                        0,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ImportedTexture",
+                "editorPos": [
+                    194.0,
+                    242.0
+                ],
+                "visibility": "Imported",
+                "dimension": "TextureCube"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ImportedColor",
+                "editorPos": [
+                    206.0,
+                    290.0
+                ],
+                "visibility": "Imported",
+                "dimension": "TextureCube"
+            }
+        }
+    ]
+}

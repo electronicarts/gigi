@@ -1,0 +1,16 @@
+{
+    "systemVars": {
+        "ProjMtx_textureName": "Color_Buffer"
+    },
+    "resourceViewResourceIndex": 3,
+    "bookmarks": [
+        {
+            "name": "Output",
+            "viewableResourceDisplayName": "Rasterize.colorTarget0 (After)"
+        },
+        {
+            "name": "Depth",
+            "viewableResourceDisplayName": "Rasterize.depthTarget (After)"
+        }
+    ]
+}
