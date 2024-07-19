@@ -50,4 +50,8 @@ ENUM_BEGIN(TextureFormat, "")
     // Depth stencil formats
     ENUM_ITEM(D32_Float_S8, "32 bit depth, 8 bit stencil, and 24 more bits unused")
     ENUM_ITEM(D24_Unorm_S8, "24 bit depth, 8 bit stencil")
+
+    // Block compressed formats
+    ENUM_ITEM(BC7_Unorm, "RGB, alpha optional")
+    ENUM_ITEM(BC7_Unorm_sRGB, "RGB, alpha optional. sRGB")
 ENUM_END()

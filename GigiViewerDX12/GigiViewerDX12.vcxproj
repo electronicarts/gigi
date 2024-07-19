@@ -45,11 +45,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -91,6 +91,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\external\bc7enc\bc7decomp.cpp" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_common.c" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
@@ -130,6 +131,8 @@
     <ClCompile Include="ViewerPython_GigiArray.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\external\bc7enc\bc7decomp.h" />
+    <ClInclude Include="..\external\gli\gli\gli.hpp" />
     <ClInclude Include="..\external\nativefiledialog\src\common.h" />
     <ClInclude Include="..\external\nativefiledialog\src\include\nfd.h" />
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />

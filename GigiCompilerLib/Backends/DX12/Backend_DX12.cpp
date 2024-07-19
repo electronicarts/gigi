@@ -184,6 +184,8 @@ struct BackendDX12 : public BackendBase
             case TextureFormat::D16_Unorm: return "DXGI_FORMAT_D16_UNORM";
             case TextureFormat::D32_Float_S8: return "DXGI_FORMAT_D32_FLOAT_S8X24_UINT";
             case TextureFormat::D24_Unorm_S8: return "DXGI_FORMAT_R24_UNORM_X8_TYPELESS";
+            case TextureFormat::BC7_Unorm: return "DXGI_FORMAT_BC7_UNORM";
+            case TextureFormat::BC7_Unorm_sRGB: return "DXGI_FORMAT_BC7_UNORM_SRGB";
         }
 
         Assert(false, "Unhandled TextureFormat: %s (%i)", EnumToString(textureFormat), (int)textureFormat);
@@ -1482,7 +1484,7 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
                         }
                         else
                         {
-                            if (DataFieldTypeIsPOD(resource.buffer.type))
+                            if (DataFieldTypeIsPOD(resource.buffer.type) && !resource.buffer.PODAsStructuredBuffer)
                             {
                                 shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
                                     "\n" << typePrefix << "Buffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";

@@ -66,9 +66,6 @@
   TextureFormatFromString()
   TextureFormatToString()
 
-  RenderPassBookmarkFromString()
-  RenderPassBookmarkToString()
-
   PreviewMsgCS_Log_LevelFromString()
   PreviewMsgCS_Log_LevelToString()
 
@@ -101,12 +98,9 @@
   Backend:
     Host.Backend_FIRST = 0
     Host.Backend_DX12 = 0
-    Host.Backend_Halcyon = 1
-    Host.Backend_Frostbite = 2
-    Host.Backend_UE_5_3 = 3
-    Host.Backend_Interpreter = 4
-    Host.Backend_LAST = 4
-    Host.Backend_COUNT = 5
+    Host.Backend_Interpreter = 1
+    Host.Backend_LAST = 1
+    Host.Backend_COUNT = 2
 
   ShaderResourceType:
     Host.ShaderResourceType_FIRST = 0
@@ -379,45 +373,10 @@
     Host.TextureFormat_D16_Unorm = 26
     Host.TextureFormat_D32_Float_S8 = 27
     Host.TextureFormat_D24_Unorm_S8 = 28
-    Host.TextureFormat_LAST = 28
-    Host.TextureFormat_COUNT = 29
-
-  RenderPassBookmark:
-    Host.RenderPassBookmark_FIRST = 0
-    Host.RenderPassBookmark_CreateDrawViewJobs = 0
-    Host.RenderPassBookmark_CreateOccluderGatherJobs = 1
-    Host.RenderPassBookmark_PostCreateOccluderRasterJobs = 2
-    Host.RenderPassBookmark_PostResourceSync = 3
-    Host.RenderPassBookmark_Update = 4
-    Host.RenderPassBookmark_PreDepthPrepass = 5
-    Host.RenderPassBookmark_PostDepthPrepass = 6
-    Host.RenderPassBookmark_PostGBuffer = 7
-    Host.RenderPassBookmark_AccumulateSunShadow = 8
-    Host.RenderPassBookmark_MidDirectionalShadowUpdate = 9
-    Host.RenderPassBookmark_PreShadowCascade = 10
-    Host.RenderPassBookmark_PostDirectionalShadowUpdate = 11
-    Host.RenderPassBookmark_PostSunShadowMask = 12
-    Host.RenderPassBookmark_MidLocalLightShadowUpdate = 13
-    Host.RenderPassBookmark_PostLocalLightShadowUpdate = 14
-    Host.RenderPassBookmark_PreLightTilePass = 15
-    Host.RenderPassBookmark_PostLightTileCulling = 16
-    Host.RenderPassBookmark_PostLightTilePass = 17
-    Host.RenderPassBookmark_PostCompleteZBuffer = 18
-    Host.RenderPassBookmark_PreTransparentPass = 19
-    Host.RenderPassBookmark_PostTransparentPass = 20
-    Host.RenderPassBookmark_PostVelocity = 21
-    Host.RenderPassBookmark_PreCoc = 22
-    Host.RenderPassBookmark_PostDof = 23
-    Host.RenderPassBookmark_PostUpdate = 24
-    Host.RenderPassBookmark_Bloom = 25
-    Host.RenderPassBookmark_PostBloom = 26
-    Host.RenderPassBookmark_AfterPost = 27
-    Host.RenderPassBookmark_Debug = 28
-    Host.RenderPassBookmark_ProcessCustomReflectionViews = 29
-    Host.RenderPassBookmark_ProcessCustomGiViews = 30
-    Host.RenderPassBookmark_ProcessCustomObjectLayers = 31
-    Host.RenderPassBookmark_LAST = 31
-    Host.RenderPassBookmark_COUNT = 32
+    Host.TextureFormat_BC7_Unorm = 29
+    Host.TextureFormat_BC7_Unorm_sRGB = 30
+    Host.TextureFormat_LAST = 30
+    Host.TextureFormat_COUNT = 31
 
   PreviewMsgCS_Log_Level:
     Host.PreviewMsgCS_Log_Level_FIRST = 0

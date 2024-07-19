@@ -12,9 +12,6 @@ table, th, td, tr
 <table>
 <tr><th colspan=2>Backend</th></tr>
 <tr><td>DX12</td><td></td></tr>
-<tr><td>Halcyon</td><td></td></tr>
-<tr><td>Frostbite</td><td></td></tr>
-<tr><td>UE_5_3</td><td></td></tr>
 <tr><td>Interpreter</td><td></td></tr>
 </table>
 <br/>
@@ -311,44 +308,8 @@ table, th, td, tr
 <tr><td>D16_Unorm</td><td>16 bit unorm depth</td></tr>
 <tr><td>D32_Float_S8</td><td>32 bit depth, 8 bit stencil, and 24 more bits unused</td></tr>
 <tr><td>D24_Unorm_S8</td><td>24 bit depth, 8 bit stencil</td></tr>
-</table>
-<br/>
-
-<b>RenderPassBookmark : Specifies where this effect should go in the render pipeline. From FrameGraphBookmarksDefs.h.</b><br/><br/>
-<table>
-<tr><th colspan=2>RenderPassBookmark</th></tr>
-<tr><td>CreateDrawViewJobs</td><td></td></tr>
-<tr><td>CreateOccluderGatherJobs</td><td></td></tr>
-<tr><td>PostCreateOccluderRasterJobs</td><td></td></tr>
-<tr><td>PostResourceSync</td><td></td></tr>
-<tr><td>Update</td><td></td></tr>
-<tr><td>PreDepthPrepass</td><td></td></tr>
-<tr><td>PostDepthPrepass</td><td></td></tr>
-<tr><td>PostGBuffer</td><td></td></tr>
-<tr><td>AccumulateSunShadow</td><td></td></tr>
-<tr><td>MidDirectionalShadowUpdate</td><td></td></tr>
-<tr><td>PreShadowCascade</td><td></td></tr>
-<tr><td>PostDirectionalShadowUpdate</td><td></td></tr>
-<tr><td>PostSunShadowMask</td><td></td></tr>
-<tr><td>MidLocalLightShadowUpdate</td><td></td></tr>
-<tr><td>PostLocalLightShadowUpdate</td><td></td></tr>
-<tr><td>PreLightTilePass</td><td></td></tr>
-<tr><td>PostLightTileCulling</td><td></td></tr>
-<tr><td>PostLightTilePass</td><td></td></tr>
-<tr><td>PostCompleteZBuffer</td><td></td></tr>
-<tr><td>PreTransparentPass</td><td></td></tr>
-<tr><td>PostTransparentPass</td><td></td></tr>
-<tr><td>PostVelocity</td><td></td></tr>
-<tr><td>PreCoc</td><td></td></tr>
-<tr><td>PostDof</td><td></td></tr>
-<tr><td>PostUpdate</td><td></td></tr>
-<tr><td>Bloom</td><td></td></tr>
-<tr><td>PostBloom</td><td></td></tr>
-<tr><td>AfterPost</td><td></td></tr>
-<tr><td>Debug</td><td></td></tr>
-<tr><td>ProcessCustomReflectionViews</td><td></td></tr>
-<tr><td>ProcessCustomGiViews</td><td></td></tr>
-<tr><td>ProcessCustomObjectLayers</td><td></td></tr>
+<tr><td>BC7_Unorm</td><td>RGB, alpha optional</td></tr>
+<tr><td>BC7_Unorm_sRGB</td><td>RGB, alpha optional. sRGB</td></tr>
 </table>
 <br/>
 
@@ -674,6 +635,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>DataFieldType type</td><td>DataFieldType::Count</td><td>The data type of the buffer if a simple type</td></tr>
 <tr><td>StructReference typeStruct</td><td>{}</td><td>The data type of the buffer if a struct type</td></tr>
 <tr><td>bool raw</td><td>false</td><td>If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)</td></tr>
+<tr><td>bool PODAsStructuredBuffer</td><td>true</td><td>Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.</td></tr>
 </table>
 <br/>
 
@@ -1233,44 +1195,6 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
-<b>Frostbite_BlackboardInput : </b><br/><br/>
-<table>
-<tr><th colspan=3>Frostbite_BlackboardInput</th></tr>
-<tr><td>std::string resource</td><td>""</td><td>The name of the gigi resource</td></tr>
-<tr><td>std::string structName</td><td>""</td><td>The name of the blackboard struct</td></tr>
-<tr><td>std::string fieldName</td><td>""</td><td>The name of the field in the blackboard struct</td></tr>
-</table>
-<br/>
-
-<b>Frostbite_BlackboardOutput : </b><br/><br/>
-<table>
-<tr><th colspan=3>Frostbite_BlackboardOutput</th></tr>
-<tr><td>std::string resource</td><td>""</td><td>The name of the gigi resource</td></tr>
-<tr><td>std::string structName</td><td>""</td><td>The name of the blackboard struct</td></tr>
-<tr><td>std::string fieldName</td><td>""</td><td>The name of the field in the blackboard struct</td></tr>
-</table>
-<br/>
-
-<b>Frostbite_ResourceBlackboardLinks : </b><br/><br/>
-<table>
-<tr><th colspan=3>Frostbite_ResourceBlackboardLinks</th></tr>
-<tr><td>Frostbite_BlackboardInput inputs[]</td><td></td><td>These specify where imported resources should come from in the blackboard system before the technique runs. Optional. If not given, they must be hooked up in the generated code manually.</td></tr>
-<tr><td>Frostbite_BlackboardOutput outputs[]</td><td></td><td>These specify where imported and exported resources should go to in the blackboard system after the technique runs. Optional. If not given, they must be hooked up in the generated code manually.</td></tr>
-</table>
-<br/>
-
-<b>BackendSettings_Frostbite : Frostbite Settings</b><br/><br/>
-<table>
-<tr><th colspan=3>BackendSettings_Frostbite</th></tr>
-<tr><td>RenderPassBookmark bookmark</td><td>RenderPassBookmark::AfterPost</td><td>Where this technique goes in the render pipeline.</td></tr>
-<tr><td>int shaderProgramsProviderVersion</td><td>1338</td><td>This number needs to be incremented when certain changes are made.</td></tr>
-<tr><td>std::string shaderModelCs</td><td>"cs_5_1"</td><td>The default shader model to use for compute shaders</td></tr>
-<tr><td>std::string shaderModelVs</td><td>"vs_5_1"</td><td>The default shader model to use for vertex shaders</td></tr>
-<tr><td>std::string shaderModelPs</td><td>"ps_5_1"</td><td>The default shader model to use for pixel shaders</td></tr>
-<tr><td>Frostbite_ResourceBlackboardLinks blackboardLinks</td><td>{}</td><td>Links resources to the blackboard to automatically read and write them to the blackboard</td></tr>
-</table>
-<br/>
-
 <b>PreviewMsg_Ping : The client and server send this periodically to know the other is still alive. It fails to send if the connection closes.</b><br/><br/>
 <table>
 <tr><th colspan=3>PreviewMsg_Ping</th></tr>
@@ -1488,15 +1412,6 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
-<b>BackendSettings_Halcyon : Halcyon Settings</b><br/><br/>
-<table>
-<tr><th colspan=3>BackendSettings_Halcyon</th></tr>
-<tr><td>std::string shaderModelCs</td><td>"cs_5_1"</td><td>The default shader model to use for compute shaders</td></tr>
-<tr><td>std::string shaderModelVs</td><td>"vs_5_1"</td><td>The default shader model to use for vertex shaders</td></tr>
-<tr><td>std::string shaderModelPs</td><td>"ps_5_1"</td><td>The default shader model to use for pixel shaders</td></tr>
-</table>
-<br/>
-
 <b>BackendSettings_Common : Common Settings</b><br/><br/>
 <table>
 <tr><th colspan=3>BackendSettings_Common</th></tr>
@@ -1509,8 +1424,6 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <table>
 <tr><th colspan=3>BackendSettings</th></tr>
 <tr><td>BackendSettings_DX12 dx12</td><td>{}</td><td></td></tr>
-<tr><td>BackendSettings_Halcyon halcyon</td><td>{}</td><td></td></tr>
-<tr><td>BackendSettings_Frostbite frostbite</td><td>{}</td><td></td></tr>
 <tr><td>BackendSettings_Common common</td><td>{}</td><td></td></tr>
 </table>
 <br/>
@@ -1520,9 +1433,6 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>BuildSettings</th></tr>
 <tr><td>GigiCompileWarning disableWarnings[]</td><td></td><td>Warnings listed here will be suppressed</td></tr>
 <tr><td>std::string outDX12</td><td>"out/dx12/"</td><td>The output location for DX12</td></tr>
-<tr><td>std::string outHalcyon</td><td>"out/halcyon/"</td><td>The output location for Halcyon</td></tr>
-<tr><td>std::string outFrostbite</td><td>"out/frostbite/"</td><td>The output location for Frostbite</td></tr>
-<tr><td>std::string outUE_5_3</td><td>"out/UE_5_3/"</td><td>The output location for UE 5.3</td></tr>
 <tr><td><i>std::string outInterpreter</i></td><td>"out/interpreter/"</td><td>The output location for the interpreter backend</td></tr>
 </table>
 <br/>

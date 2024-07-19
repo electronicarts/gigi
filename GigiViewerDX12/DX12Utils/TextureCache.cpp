@@ -13,6 +13,8 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr/tinyexr.h"
 
+#include <gli/gli.hpp>
+
 #include <f16.h>
 
 TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileName_)
@@ -172,6 +174,25 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 				newTexture.pixels.resize(newTexture.width * newTexture.height * newTexture.channels * sizeof(float));
 				memcpy(newTexture.pixels.data(), rawPixels, newTexture.pixels.size());
 				stbi_image_free(rawPixels);
+			}
+		}
+		else if (p.extension().string() == ".dds")
+		{
+			gli::texture texture = gli::load_dds(fileData.GetBytes(), fileData.GetSize());
+
+			// Only supports 2d textures of this type for now
+			if (texture.target() == gli::texture::target_type::TARGET_2D &&
+				texture.format() == gli::texture::format_type::FORMAT_RGBA_BP_UNORM_BLOCK16)
+			{
+				//gli::swizzles desiredSwizzle = {gli::swizzle::SWIZZLE_RED, gli::swizzle::SWIZZLE_GREEN, gli::swizzle::SWIZZLE_BLUE, gli::swizzle::SWIZZLE_ALPHA};
+				//texture.swizzle(desiredSwizzle);
+
+				newTexture.type = Type::BC7;
+				newTexture.pixels.resize(texture.size());
+				memcpy(newTexture.pixels.data(), texture.data(), newTexture.pixels.size());
+				newTexture.width = texture.extent().x;
+				newTexture.height = texture.extent().y;
+				newTexture.channels = 4;
 			}
 		}
 		else

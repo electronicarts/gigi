@@ -254,6 +254,7 @@ STRUCT_BEGIN(ShaderResourceBuffer, "Data specific to buffers")
     STRUCT_FIELD(DataFieldType, type, DataFieldType::Count, "The data type of the buffer if a simple type", 0)
     STRUCT_FIELD(StructReference, typeStruct, {}, "The data type of the buffer if a struct type", 0)
     STRUCT_FIELD(bool, raw, false, "If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)", 0)
+    STRUCT_FIELD(bool, PODAsStructuredBuffer, true, "Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderResourceTexture, "Data specific to textures")

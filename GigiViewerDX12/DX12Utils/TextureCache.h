@@ -16,7 +16,8 @@ public:
 	enum class Type
 	{
 		U8,
-		F32
+		F32,
+		BC7
 	};
 
 	struct Texture

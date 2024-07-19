@@ -315,6 +315,17 @@ static bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_I
 
 bool ConvertPixelData(const std::vector<unsigned char>& src, const DXGI_FORMAT_Info& srcFormat_, std::vector<unsigned char>& dest, const DXGI_FORMAT_Info& destFormat)
 {
+	// We don't do conversion on compressed image formats
+	if (srcFormat_.isCompressed || destFormat.isCompressed)
+	{
+		if (srcFormat_.format == destFormat.format)
+		{
+			dest = src;
+			return true;
+		}
+		return false;
+	}
+
 	// Nothing to do if nothing to convert
 	DXGI_FORMAT_Info srcFormat = srcFormat_;
 	if (srcFormat.channelType == destFormat.channelType && srcFormat.sRGB == destFormat.sRGB && srcFormat.channelCount == destFormat.channelCount)
@@ -733,6 +744,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				{
 					case TextureCache::Type::U8: textureFormatInfo = DXGI_FORMAT_INFO(uint8_t, loadedTextures[0].channels, desc.texture.fileIsSRGB); break;
 					case TextureCache::Type::F32: textureFormatInfo = DXGI_FORMAT_INFO(float, loadedTextures[0].channels, desc.texture.fileIsSRGB); break;
+					case TextureCache::Type::BC7: textureFormatInfo = desc.texture.fileIsSRGB ? Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM_SRGB) : Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM); break;
 					default:
 					{
 						desc.state = ImportedResourceState::failed;
@@ -744,6 +756,13 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				std::vector<unsigned char> allTintedPixels;
 				if (desc.texture.color[0] != 1.0f || desc.texture.color[1] != 1.0f || desc.texture.color[2] != 1.0f || desc.texture.color[3] != 1.0f)
 				{
+					if (textureFormatInfo.isCompressed)
+					{
+						m_logFn(LogLevel::Error, "Texture \"%s\": cannot tint a compressed texture format", node.name.c_str());
+						desc.state = ImportedResourceState::failed;
+						return false;
+					}
+
 					std::vector<unsigned char> tintedPixels(loadedTextures[0].pixels.size());
 					for (const TextureCache::Texture& texture : loadedTextures)
 					{
@@ -847,6 +866,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				}
 			}
 
+			// We don't currently make mips for compressed texture formats
+			if (runtimeData.m_numMips > 1 && pixelsFormatInfo.isCompressed)
+			{
+				m_logFn(LogLevel::Error, "Texture \"%s\": Cannot make mips for a compressed texture format", node.name.c_str());
+				desc.state = ImportedResourceState::failed;
+				return false;
+			}
+
 			// only let proper depth formats be allowed for use as a depth texture
 			if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
 			{
@@ -860,7 +887,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			// UAV with stencil is not allowed
 			if (pixelsFormatInfo.isStencil && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
 			{
-				runtimeData.m_renderGraphText = "Cannot create because texture is a stencil format, but is used with UAV access";
+				runtimeData.m_renderGraphText = "Cannot create because texture is a stencil format, but is used with UAV access. This is not allowed.";
+				return true;
+			}
+
+			// UAV with compressed texture types is not allowed
+			if (pixelsFormatInfo.isCompressed && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
+			{
+				runtimeData.m_renderGraphText = "Cannot create because texture is a compressed format, but is used with UAV access. This is not allowed.";
 				return true;
 			}
 
@@ -894,86 +928,130 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			}
 
 			// copy everything to GPU
-			int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
-			for (int mipIndex = 0; mipIndex < runtimeData.m_numMips; ++mipIndex)
+			if (pixelsFormatInfo.isCompressed)
 			{
-				std::vector<unsigned char>& srcPixels = (mipIndex > 0)
-					? allPixelsMips[mipIndex - 1]
-					: allPixels;
+				// Make an upload buffer
+				int unalignedPitch = (int)allPixels.size();
+				int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
+				UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, alignedPitch, false);
 
-				// Set up variables to handle 3d textures (single sub resource) vs other times (a sub resource per 2d texture)
-				int arrayCount = 0;
-				int iyCount = mipDims[1];
-				int izCount = 0;
-				if (node.dimension == TextureDimensionType::Texture3D)
+				// write the pixels into the upload buffer
 				{
-					arrayCount = 1;
-					izCount = mipDims[2];
-				}
-				else
-				{
-					arrayCount = mipDims[2];
-					izCount = 1;
+					unsigned char* destPixels = nullptr;
+					HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
+					if (hr)
+						return false;
+
+					memcpy(destPixels, allPixels.data(), allPixels.size());
+
+					uploadBuffer->buffer->Unmap(0, nullptr);
 				}
 
-				int allPixelsStride = (int)srcPixels.size() / arrayCount;
-
-				for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+				// Copy the upload buffer into m_resourceInitialState
 				{
-					unsigned int arrayIndexStart = allPixelsStride * arrayIndex;
+					UINT subresourceIndex = D3D12CalcSubresource(0, 0, 0, 1, 1);
 
-					// Make an upload buffer
-					int unalignedPitch = mipDims[0] * pixelsFormatInfo.bytesPerPixel;
-					int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
-					UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, alignedPitch * iyCount * izCount, false);
+					D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resourceInitialState->GetDesc();
+					std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
+					D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
+					m_device->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
 
-					// write the pixels into the upload buffer
+					D3D12_TEXTURE_COPY_LOCATION src = {};
+					src.pResource = uploadBuffer->buffer;
+					src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+					src.PlacedFootprint = *layout;
+
+					D3D12_TEXTURE_COPY_LOCATION dest = {};
+					dest.pResource = runtimeData.m_resourceInitialState;
+					dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+					dest.SubresourceIndex = subresourceIndex;
+
+					m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+				}
+			}
+			else
+			{
+				int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
+				for (int mipIndex = 0; mipIndex < runtimeData.m_numMips; ++mipIndex)
+				{
+					std::vector<unsigned char>& srcPixels = (mipIndex > 0)
+						? allPixelsMips[mipIndex - 1]
+						: allPixels;
+
+					// Set up variables to handle 3d textures (single sub resource) vs other times (a sub resource per 2d texture)
+					int arrayCount = 0;
+					int iyCount = mipDims[1];
+					int izCount = 0;
+					if (node.dimension == TextureDimensionType::Texture3D)
 					{
-						unsigned char* destPixels = nullptr;
-						HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
-						if (hr)
-							return false;
+						arrayCount = 1;
+						izCount = mipDims[2];
+					}
+					else
+					{
+						arrayCount = mipDims[2];
+						izCount = 1;
+					}
 
-						for (int iz = 0; iz < izCount; ++iz)
+					int allPixelsStride = (int)srcPixels.size() / arrayCount;
+
+					for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+					{
+						unsigned int arrayIndexStart = allPixelsStride * arrayIndex;
+
+						// Make an upload buffer
+						int unalignedPitch = mipDims[0] * pixelsFormatInfo.bytesPerPixel;
+						int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
+						UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, alignedPitch * iyCount * izCount, false);
+
+						// write the pixels into the upload buffer
 						{
-							for (int iy = 0; iy < iyCount; ++iy)
+							unsigned char* destPixels = nullptr;
+							HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
+							if (hr)
+								return false;
+
+							for (int iz = 0; iz < izCount; ++iz)
 							{
-								const unsigned char* src = &srcPixels[arrayIndexStart + (iz * iyCount + iy) * unalignedPitch];
-								unsigned char* dest = &destPixels[(iz * iyCount + iy) * alignedPitch];
-								memcpy(dest, src, unalignedPitch);
+								for (int iy = 0; iy < iyCount; ++iy)
+								{
+									const unsigned char* src = &srcPixels[arrayIndexStart + (iz * iyCount + iy) * unalignedPitch];
+									unsigned char* dest = &destPixels[(iz * iyCount + iy) * alignedPitch];
+									memcpy(dest, src, unalignedPitch);
+								}
 							}
+
+							uploadBuffer->buffer->Unmap(0, nullptr);
 						}
 
-						uploadBuffer->buffer->Unmap(0, nullptr);
+						// Copy the upload buffer into m_resourceInitialState
+						{
+							UINT subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, runtimeData.m_numMips, arrayCount);
+
+							D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resourceInitialState->GetDesc();
+							std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
+							D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
+							m_device->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
+
+							D3D12_TEXTURE_COPY_LOCATION src = {};
+							src.pResource = uploadBuffer->buffer;
+							src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+							src.PlacedFootprint = *layout;
+
+							D3D12_TEXTURE_COPY_LOCATION dest = {};
+							dest.pResource = runtimeData.m_resourceInitialState;
+							dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+							dest.SubresourceIndex = subresourceIndex;
+
+							m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+						}
 					}
 
-					// Copy the upload buffer into m_resourceInitialState
-					{
-						UINT subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, runtimeData.m_numMips, arrayCount);
-
-						D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resourceInitialState->GetDesc();
-						std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
-						D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
-						m_device->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
-
-						D3D12_TEXTURE_COPY_LOCATION src = {};
-						src.pResource = uploadBuffer->buffer;
-						src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-						src.PlacedFootprint = *layout;
-
-						D3D12_TEXTURE_COPY_LOCATION dest = {};
-						dest.pResource = runtimeData.m_resourceInitialState;
-						dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-						dest.SubresourceIndex = subresourceIndex;
-
-						m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
-					}
+					mipDims[0] = max(mipDims[0] / 2, 1);
+					mipDims[1] = max(mipDims[1] / 2, 1);
+					if (node.dimension == TextureDimensionType::Texture3D)
+						mipDims[2] = max(mipDims[2] / 2, 1);
 				}
-
-				mipDims[0] = max(mipDims[0] / 2, 1);
-				mipDims[1] = max(mipDims[1] / 2, 1);
-				if (node.dimension == TextureDimensionType::Texture3D)
-					mipDims[2] = max(mipDims[2] / 2, 1);
 			}
 
 			// Note that the resource wants to be reset to the initial state.
@@ -1141,6 +1219,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 					{
 						case TextureCache::Type::U8: textureFormatInfo = DXGI_FORMAT_INFO(uint8_t, firstTexture.channels, node.loadFileNameAsSRGB); break;
 						case TextureCache::Type::F32: textureFormatInfo = DXGI_FORMAT_INFO(float, firstTexture.channels, node.loadFileNameAsSRGB); break;
+						case TextureCache::Type::BC7: textureFormatInfo = node.loadFileNameAsSRGB ? Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM_SRGB) : Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM); break;
 						default:
 						{
 							return false;

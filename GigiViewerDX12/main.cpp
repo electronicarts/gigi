@@ -50,6 +50,7 @@
 #include "RecentFiles.h"
 
 #include "f16.h"
+#include "external/bc7enc/bc7decomp.h"
 // clang-format on
 
 #include <thread>
@@ -2892,7 +2893,7 @@ void ShowImportedResources()
         if (desc.isATexture)
         {
             // Image File
-            if (ImGui_File("File", desc.texture.fileName, "jpeg,jpg,png,bmp,hdr,psd,tga,gif,pic,pgm,ppm,exr"))
+            if (ImGui_File("File", desc.texture.fileName, "jpeg,jpg,png,bmp,hdr,psd,tga,gif,pic,pgm,ppm,exr,dds"))
             {
                 desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
             }
@@ -3641,31 +3642,94 @@ void AutoHistogram(ID3D12Resource* readbackResource, DXGI_FORMAT format, int wid
     }
 }
 
-void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int x, int y, int z)
+std::vector<char> DecodeBC7Pixel(ID3D12Resource* readbackResource, int width, int height, int x, int y)
 {
+    // Make sure pixel is in range
     x = std::max(0, std::min(width - 1, x));
     y = std::max(0, std::min(height - 1, y));
 
-    int unalignedPitch = width * formatInfo.bytesPerPixel;
-    int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
+    // Calculate how many blocks there are
+    int numBlocksX = (width + 3) / 4;
+    int numBlocksY = (height + 3) / 4;
+    int numBlocks = numBlocksX * numBlocksY;
 
-    D3D12_RANGE readRange;
-    readRange.Begin = z * height * alignedPitch + y * alignedPitch + x * formatInfo.bytesPerPixel;
-    readRange.End = readRange.Begin + formatInfo.bytesPerPixel;
+    // Calculate which block we are decoding
+    int decodeBlockX = (x + 3) / 4;
+    int decodeBlockY = (x + 3) / 4;
+    int decodeBlock = decodeBlockY * numBlocksX + decodeBlockX;
 
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-
-    char* pixelUntyped = nullptr;
-    HRESULT hr = readbackResource->Map(0, &readRange, (void**)&pixelUntyped);
-    if (FAILED(hr))
+    // read back and decode the block that contains our pixel
+    std::vector<char> ret;
+    std::vector<char> decodedBlock(64);
     {
-        ImGui::TextUnformatted("Could not map resource");
-        return;
+        D3D12_RANGE readRange;
+        readRange.Begin = decodeBlock * 16;
+        readRange.End = (decodeBlock + 1) * 16;
+
+        char* readbackData = nullptr;
+        HRESULT hr = readbackResource->Map(0, &readRange, (void**)&readbackData);
+        if (FAILED(hr))
+        {
+            ImGui::TextUnformatted("Could not map resource");
+            return ret;
+        }
+
+        bc7decomp::unpack_bc7(&readbackData[decodeBlock * 16], (bc7decomp::color_rgba*)decodedBlock.data());
+
+        D3D12_RANGE writeRange;
+        writeRange.Begin = 1;
+        writeRange.End = 0;
+        readbackResource->Unmap(0, &writeRange);
     }
 
-    pixelUntyped = &pixelUntyped[readRange.Begin];
+    // copy our pixel out of the decoded block
+    int offsetX = (x % 4);
+    int offsetY = (y % 4);
+    const char* pixel = &decodedBlock[(offsetY * 4 + offsetX) * 4];
+    ret.resize(4);
+    memcpy(ret.data(), pixel, 4);
+
+    return ret;
+}
+
+void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int x, int y, int z)
+{
+    // read back the pixel data
+    std::vector<char> pixelUntypedData(formatInfo.bytesPerPixel);
+    if (formatInfo.isCompressed)
+    {
+        pixelUntypedData = DecodeBC7Pixel(readbackResource, width, height, x, y);
+    }
+    else
+    {
+        x = std::max(0, std::min(width - 1, x));
+        y = std::max(0, std::min(height - 1, y));
+        z = std::max(0, std::min(depth - 1, z));
+
+        int unalignedPitch = width * formatInfo.bytesPerPixel;
+        int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
+
+        D3D12_RANGE readRange;
+        readRange.Begin = z * height * alignedPitch + y * alignedPitch + x * formatInfo.bytesPerPixel;
+        readRange.End = readRange.Begin + formatInfo.bytesPerPixel;
+
+        char* readbackData = nullptr;
+        HRESULT hr = readbackResource->Map(0, &readRange, (void**)&readbackData);
+        if (FAILED(hr))
+        {
+            ImGui::TextUnformatted("Could not map resource");
+            return;
+        }
+        memcpy(pixelUntypedData.data(), &readbackData[readRange.Begin], formatInfo.bytesPerPixel);
+
+        D3D12_RANGE writeRange;
+        writeRange.Begin = 1;
+        writeRange.End = 0;
+        readbackResource->Unmap(0, &writeRange);
+    }
+    if (pixelUntypedData.size() < formatInfo.bytesPerPixel)
+        return;
+    const char* pixelUntyped = pixelUntypedData.data();
 
     float pixelColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
 
@@ -3787,8 +3851,6 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             }
         }
     }
-
-    readbackResource->Unmap(0, &writeRange);
 
     // show the actual pixel color
     if (formatInfo.sRGB)
@@ -4607,40 +4669,76 @@ void ShowStructuredBuffer(const RenderGraph& renderGraph, unsigned char* bytes, 
 
 void SaveAsPng(const char* fileName, ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z, bool forceRGBA)
 {
+    // TODO: bc7 treatment
+
     std::filesystem::path p(fileName);
     if (!p.has_extension() || p.extension() != ".png")
         p.replace_extension(".png");
 
-    int unalignedPitch = width * formatInfo.bytesPerPixel;
-    int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
+    unsigned char* pixels = nullptr;
+    readbackResource->Map(0, nullptr, (void**)&pixels);
+
+    if (formatInfo.isCompressed)
+    {
+        // Calculate how many blocks there are
+        int numBlocksX = (width + 3) / 4;
+        int numBlocksY = (height + 3) / 4;
+        int numBlocks = numBlocksX * numBlocksY;
+
+        std::vector<unsigned char> decodedPixels(width * height * 4, 0);
+        std::vector<unsigned char> decodedBlock(64);
+
+        for (int i = 0; i < numBlocks; ++i)
+        {
+            bc7decomp::unpack_bc7(&pixels[i * 16], (bc7decomp::color_rgba*)decodedBlock.data());
+
+            int blockX = i % numBlocksX;
+            int blockY = i / numBlocksX;
+
+            int outY = blockY * 4;
+            int outX = blockX * 4;
+
+            unsigned char* dest = &decodedPixels[(outY * width + outX) * 4];
+            unsigned char* src = decodedBlock.data();
+            for (int iy = 0; iy < 4; ++iy)
+            {
+                memcpy(dest, src, 16);
+                src += 16;
+                dest += width * 4;
+            }
+        }
+
+        stbi_write_png(p.string().c_str(), width, height, 4, decodedPixels.data(), 0);
+    }
+    else
+    {
+        int unalignedPitch = width * formatInfo.bytesPerPixel;
+        int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
+
+        if (forceRGBA)
+        {
+            std::vector<unsigned char> paddedPixels(width * height * 4, 0);
+            for (int i = 0; i < width * height; ++i)
+                paddedPixels[i * 4 + 3] = 255;
+
+            for (int i = 0; i < width * height; ++i)
+            {
+                unsigned char* dest = &paddedPixels[i * 4];
+                const unsigned char* src = &pixels[z * height * alignedPitch + i * formatInfo.channelCount];
+                memcpy(dest, src, formatInfo.channelCount);
+            }
+
+            stbi_write_png(p.string().c_str(), width, height, 4, paddedPixels.data(), 0);
+        }
+        else
+        {
+            stbi_write_png(p.string().c_str(), width, height, formatInfo.channelCount, &pixels[z * height * alignedPitch], alignedPitch);
+        }
+    }
 
     D3D12_RANGE writeRange;
     writeRange.Begin = 1;
     writeRange.End = 0;
-
-    unsigned char* pixels = nullptr;
-    readbackResource->Map(0, nullptr, (void**)&pixels);
-
-    if (forceRGBA)
-    {
-        std::vector<unsigned char> paddedPixels(width * height * 4, 0);
-        for (int i = 0; i < width * height; ++i)
-            paddedPixels[i * 4 + 3] = 255;
-
-        for (int i = 0; i < width * height; ++i)
-        {
-            unsigned char* dest = &paddedPixels[i * 4];
-            const unsigned char* src = &pixels[z * height * alignedPitch + i * formatInfo.channelCount];
-            memcpy(dest, src, formatInfo.channelCount);
-        }
-
-        stbi_write_png(p.string().c_str(), width, height, 4, paddedPixels.data(), 0);
-    }
-    else
-    {
-        stbi_write_png(p.string().c_str(), width, height, formatInfo.channelCount, &pixels[z * height * alignedPitch], alignedPitch);
-    }
-
     readbackResource->Unmap(0, &writeRange);
 }
 
@@ -4649,13 +4747,6 @@ void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, cons
     std::filesystem::path p(fileName);
     if (!p.has_extension() || p.extension() != ".csv")
         p.replace_extension(".csv");
-
-    int unalignedPitch = width * formatInfo.bytesPerPixel;
-    int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
-
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
 
     unsigned char* pixels = nullptr;
     readbackResource->Map(0, nullptr, (void**)&pixels);
@@ -4668,13 +4759,52 @@ void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, cons
         fprintf(file, "%s\"%c\"", (i > 0 ? "," : ""), c_channelNames[i]);
     fprintf(file, "\n");
 
+    // Decode the pixels if we need to
+    int pitch = width * formatInfo.bytesPerPixel;
+    std::vector<unsigned char> decodedPixels(width * height * 4, 0);
+    if (formatInfo.isCompressed)
+    {
+        // Calculate how many blocks there are
+        int numBlocksX = (width + 3) / 4;
+        int numBlocksY = (height + 3) / 4;
+        int numBlocks = numBlocksX * numBlocksY;
+
+        // decode the pixels
+        std::vector<unsigned char> decodedBlock(64);
+        for (int i = 0; i < numBlocks; ++i)
+        {
+            bc7decomp::unpack_bc7(&pixels[i * 16], (bc7decomp::color_rgba*)decodedBlock.data());
+
+            int blockX = i % numBlocksX;
+            int blockY = i / numBlocksX;
+
+            int outY = blockY * 4;
+            int outX = blockX * 4;
+
+            unsigned char* dest = &decodedPixels[(outY * width + outX) * 4];
+            unsigned char* src = decodedBlock.data();
+            for (int iy = 0; iy < 4; ++iy)
+            {
+                memcpy(dest, src, 16);
+                src += 16;
+                dest += width * 4;
+            }
+        }
+
+        pixels = decodedPixels.data();
+    }
+    else
+    {
+        pitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), pitch);
+    }
+
     switch (formatInfo.channelType)
     {
         case DXGI_FORMAT_Info::ChannelType::_uint8_t:
         {
             for (int i = 0; i < width * height; ++i)
             {
-                const unsigned char* src = &pixels[z * height * alignedPitch + i * formatInfo.channelCount * sizeof(uint8_t)];
+                const unsigned char* src = &pixels[z * height * pitch + i * formatInfo.channelCount * sizeof(uint8_t)];
                 for (int c = 0; c < formatInfo.channelCount; ++c)
                     fprintf(file, "%s\"%u\"", (c > 0 ? "," : ""), (unsigned int)src[c]);
                 fprintf(file, "\n");
@@ -4685,7 +4815,7 @@ void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, cons
         {
             for (int i = 0; i < width * height; ++i)
             {
-                const float* src = (float*)&pixels[z * height * alignedPitch + i * formatInfo.channelCount * sizeof(float)];
+                const float* src = (float*)&pixels[z * height * pitch + i * formatInfo.channelCount * sizeof(float)];
                 for (int c = 0; c < formatInfo.channelCount; ++c)
                     fprintf(file, "%s\"%f\"", (c > 0 ? "," : ""), src[c]);
                 fprintf(file, "\n");
@@ -4700,6 +4830,9 @@ void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, cons
 
     fclose(file);
 
+    D3D12_RANGE writeRange;
+    writeRange.Begin = 1;
+    writeRange.End = 0;
     readbackResource->Unmap(0, &writeRange);
 }
 

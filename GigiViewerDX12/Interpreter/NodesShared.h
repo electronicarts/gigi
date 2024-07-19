@@ -112,6 +112,8 @@ inline DXGI_FORMAT TextureFormatToDXGI_FORMAT(TextureFormat textureFormat)
 		case TextureFormat::D16_Unorm: return DXGI_FORMAT_D16_UNORM;
 		case TextureFormat::D32_Float_S8: return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		case TextureFormat::D24_Unorm_S8: return DXGI_FORMAT_D24_UNORM_S8_UINT;
+		case TextureFormat::BC7_Unorm: return DXGI_FORMAT_BC7_UNORM;
+		case TextureFormat::BC7_Unorm_sRGB: return DXGI_FORMAT_BC7_UNORM_SRGB;
 	}
 
 	Assert(false, "Unhandled TextureFormat");

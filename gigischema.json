@@ -64,7 +64,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                "enum": ["DX12", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -189,7 +189,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                "enum": ["DX12", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -240,6 +240,10 @@
                     "raw": {
                       "description": "If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)",
                       "type": "boolean"
+                    },
+                    "PODAsStructuredBuffer": {
+                      "description": "Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.",
+                      "type": "boolean"
                     }
                   }
                 },
@@ -268,7 +272,7 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                      "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                      "enum": ["DX12", "Interpreter"]
                       }
                     },
                     "isWhiteList": {
@@ -411,7 +415,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                "enum": ["DX12", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -454,7 +458,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -577,7 +581,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -655,7 +659,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -703,7 +707,7 @@
                   "format": {
                     "description": "A specific format can be specified",
                     "type": "string",
-                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8"]
+                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC7_Unorm", "BC7_Unorm_sRGB"]
                   },
                   "variable": {
                     "description": "The variable that holds the texture format. Assumed to be a uint32.",
@@ -807,7 +811,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -896,7 +900,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          "enum": ["DX12", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1048,7 +1052,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1137,7 +1141,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          "enum": ["DX12", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1269,7 +1273,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1358,7 +1362,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          "enum": ["DX12", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1417,7 +1421,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1506,7 +1510,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          "enum": ["DX12", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1972,7 +1976,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2061,7 +2065,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          "enum": ["DX12", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2174,7 +2178,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                    "enum": ["DX12", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2263,7 +2267,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Halcyon", "Frostbite", "UE_5_3", "Interpreter"]
+                          "enum": ["DX12", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2527,99 +2531,6 @@
             }
           }
         },
-        "halcyon": {
-          "description": "",
-          "type": "object",
-          "properties": {
-            "shaderModelCs": {
-              "description": "The default shader model to use for compute shaders",
-              "type": "string"
-            },
-            "shaderModelVs": {
-              "description": "The default shader model to use for vertex shaders",
-              "type": "string"
-            },
-            "shaderModelPs": {
-              "description": "The default shader model to use for pixel shaders",
-              "type": "string"
-            }
-          }
-        },
-        "frostbite": {
-          "description": "",
-          "type": "object",
-          "properties": {
-            "bookmark": {
-              "description": "Where this technique goes in the render pipeline.",
-              "type": "string",
-              "enum": ["CreateDrawViewJobs", "CreateOccluderGatherJobs", "PostCreateOccluderRasterJobs", "PostResourceSync", "Update", "PreDepthPrepass", "PostDepthPrepass", "PostGBuffer", "AccumulateSunShadow", "MidDirectionalShadowUpdate", "PreShadowCascade", "PostDirectionalShadowUpdate", "PostSunShadowMask", "MidLocalLightShadowUpdate", "PostLocalLightShadowUpdate", "PreLightTilePass", "PostLightTileCulling", "PostLightTilePass", "PostCompleteZBuffer", "PreTransparentPass", "PostTransparentPass", "PostVelocity", "PreCoc", "PostDof", "PostUpdate", "Bloom", "PostBloom", "AfterPost", "Debug", "ProcessCustomReflectionViews", "ProcessCustomGiViews", "ProcessCustomObjectLayers"]
-            },
-            "shaderProgramsProviderVersion": {
-              "description": "This number needs to be incremented when certain changes are made.",
-              "type": "integer"
-            },
-            "shaderModelCs": {
-              "description": "The default shader model to use for compute shaders",
-              "type": "string"
-            },
-            "shaderModelVs": {
-              "description": "The default shader model to use for vertex shaders",
-              "type": "string"
-            },
-            "shaderModelPs": {
-              "description": "The default shader model to use for pixel shaders",
-              "type": "string"
-            },
-            "blackboardLinks": {
-              "description": "Links resources to the blackboard to automatically read and write them to the blackboard",
-              "type": "object",
-              "properties": {
-                "inputs": {
-                  "description": "These specify where imported resources should come from in the blackboard system before the technique runs. Optional. If not given, they must be hooked up in the generated code manually.",
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "resource": {
-                        "description": "The name of the gigi resource",
-                        "type": "string"
-                      },
-                      "structName": {
-                        "description": "The name of the blackboard struct",
-                        "type": "string"
-                      },
-                      "fieldName": {
-                        "description": "The name of the field in the blackboard struct",
-                        "type": "string"
-                      }
-                    }
-                  }
-                },
-                "outputs": {
-                  "description": "These specify where imported and exported resources should go to in the blackboard system after the technique runs. Optional. If not given, they must be hooked up in the generated code manually.",
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "resource": {
-                        "description": "The name of the gigi resource",
-                        "type": "string"
-                      },
-                      "structName": {
-                        "description": "The name of the blackboard struct",
-                        "type": "string"
-                      },
-                      "fieldName": {
-                        "description": "The name of the field in the blackboard struct",
-                        "type": "string"
-                      }
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
         "common": {
           "description": "",
           "type": "object",
@@ -2650,18 +2561,6 @@
         },
         "outDX12": {
           "description": "The output location for DX12",
-          "type": "string"
-        },
-        "outHalcyon": {
-          "description": "The output location for Halcyon",
-          "type": "string"
-        },
-        "outFrostbite": {
-          "description": "The output location for Frostbite",
-          "type": "string"
-        },
-        "outUE_5_3": {
-          "description": "The output location for UE 5.3",
           "type": "string"
         }
       }

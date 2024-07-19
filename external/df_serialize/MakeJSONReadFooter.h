@@ -261,6 +261,17 @@ inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
             }
             renderGraph.version = "0.98b";
         }
+        else if (renderGraph.version == "0.98b")
+        {
+            // changing default behavior with this version, but want old versions to be unaffected.
+            // PODAsStructuredBuffer has a default of true, but old versions acted as if it was false.
+            for (Shader& shader : renderGraph.shaders)
+            {
+                for (ShaderResource& resource : shader.resources)
+                    resource.buffer.PODAsStructuredBuffer = false;
+            }
+            renderGraph.version = "0.99b";
+        }
         else
         {
             return false;

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "buffertest",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "gain",
@@ -45,7 +45,8 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -53,7 +54,8 @@
                     "type": "Buffer",
                     "access": "UAV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -63,7 +65,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "TestStruct"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -73,7 +76,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "TestStruct"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -82,7 +86,8 @@
                     "access": "SRV",
                     "buffer": {
                         "type": "Float",
-                        "raw": true
+                        "raw": true,
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -91,7 +96,8 @@
                     "access": "UAV",
                     "buffer": {
                         "type": "Float",
-                        "raw": true
+                        "raw": true,
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]

@@ -280,6 +280,10 @@ namespace DX12Utils
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R24_UNORM_X8_TYPELESS, uint32_t, 1, false, true, true, 0, 2);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X24_TYPELESS_G8_UINT, uint8_t, 1, false, true, true, 1, 2);
 
+		    // Block compressed formats
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM, uint8_t, 4, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1);
+
 		    default:
 		    {
                 logFn(LogLevel::Error, "Unhandled DXGI_FORMAT (%i)\n", format);
