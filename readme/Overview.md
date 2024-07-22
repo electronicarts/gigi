@@ -132,4 +132,4 @@ Finally, calling the Gigi compiler a compiler makes it sound a lot fancier than 
 
 Gigi lets you turn your ideas into reality more quickly.  It removes the need for error prone boilerplate of raw APIs and long compile times of huge engines. When you are finished however, it allows you to deploy your work to those very same places to share with others, where the rubber actually hits the road.
 
-By reducing the effort and time needed to do these things, our hope is that people will be able to learn more quickly, find better results more quickly, and most importantly be able to more easily share work with fellow practitioners across the landscape of modern engines and APIs.
+By reducing the effort and time needed to do these things, our hope is that people will be able to learn more rapidly, find better results more quickly, and most importantly be able to more easily share work with fellow practitioners across the landscape of modern engines and APIs.
