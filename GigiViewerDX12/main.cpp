@@ -1197,7 +1197,7 @@ void HandleMainMenu()
         if (ImGui::Button("Open Editor"))
         {
             char commandLine[1024];
-            sprintf_s(commandLine, "GigiEdit.exe %s", g_renderGraphFileName.c_str());
+            sprintf_s(commandLine, "GigiEdit.exe \"%s\"", g_renderGraphFileName.c_str());
 
             STARTUPINFOA si;
             ZeroMemory(&si, sizeof(si));

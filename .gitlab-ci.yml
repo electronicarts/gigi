@@ -14,8 +14,10 @@ win64_build_release:
       - GigiViewerDX12.pdb
       - GigiViewerDX12.exp
       - GigiViewerDX12.lib
+      - GigiViewerDX12.ico
       - GigiEdit.exe
       - GigiEdit.pdb
+      - GigiEdit.ico      
       - GigiCompiler.exe
       - GigiCompiler.pdb
       - python310.dll
@@ -26,7 +28,8 @@ win64_build_release:
       - slang.dll
       - gigihelp.html
       - gigischema.json
-      - LICENSE
+      - LICENSE.txt
+      - Install.nsi
       - MakeCode_UnitTests_DX12.bat
       - MakeCode_UnitTests_DX12.py
       - MakeCode_UnitTests_FB.bat

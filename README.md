@@ -38,6 +38,8 @@ TODO: link to tutorial video when recorded and uploaded
 
 The **Techniques/** folder of the repo contains some examples to help get you started.  The **Techniques/UnitTests/** folder contains the unit tests, which aims to exercise every possible piece of functionality.
 
+There are also documents in the **UserDocumentation** folder that explain the viewer python interface, Gigi shader tokens, and other things.
+
 # Reporting Bugs & Making Feature Requests
 
 For reporting bugs or making feature requests, create a new issue in this repo.

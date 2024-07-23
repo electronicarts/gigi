@@ -840,7 +840,7 @@ struct Example :
                     if (g_renderGraphFileName.empty())
                         sprintf_s(commandLine, "GigiViewerDX12.exe -paused %i", g_openPreviewWindowPaused ? 1 : 0);
                     else
-                        sprintf_s(commandLine, "GigiViewerDX12.exe -load %s -paused %i", g_renderGraphFileName.c_str(), g_openPreviewWindowPaused ? 1 : 0);
+                        sprintf_s(commandLine, "GigiViewerDX12.exe -load \"%s\" -paused %i", g_renderGraphFileName.c_str(), g_openPreviewWindowPaused ? 1 : 0);
 
                     STARTUPINFOA si;
                     ZeroMemory(&si, sizeof(si));
