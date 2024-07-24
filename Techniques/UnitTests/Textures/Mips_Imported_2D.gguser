@@ -3,7 +3,7 @@
         {
             "nodeName": "texture",
             "texture": {
-                "fileName": "..\\..\\..\\..\\gigi\\Techniques\\cabinsmall.png",
+                "fileName": "..\\..\\cabinsmall.png",
                 "makeMips": true
             }
         }

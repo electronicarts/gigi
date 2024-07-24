@@ -70,6 +70,7 @@
     createDirectory "$SMPROGRAMS\${APPNAME}"
     createShortCut "$SMPROGRAMS\${APPNAME}\GigiEdit.lnk" "$INSTDIR\GigiEdit.exe" "" "$INSTDIR\GigiEdit.ico"
     createShortCut "$SMPROGRAMS\${APPNAME}\GigiViewerDX12.lnk" "$INSTDIR\GigiViewerDX12.exe" "" "$INSTDIR\GigiViewerDX12.ico"
+    createShortCut "$SMPROGRAMS\${APPNAME}\Techniques.lnk" "$INSTDIR\Techniques\" "" ""
 
     # Registry information for add/remove programs
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME} ${APPNAME}" "DisplayName" "${APPNAME} - ${DESCRIPTION}"
