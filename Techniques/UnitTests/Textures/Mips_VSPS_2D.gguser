@@ -1,19 +1,6 @@
 {
     "resourceViewNodeIndex": 1,
     "resourceViewResourceIndex": 5,
-    "importedResources": [
-        {
-            "nodeName": "MipTex",
-            "texture": {
-                "makeMips": true,
-                "size": [
-                    64,
-                    64,
-                    1
-                ]
-            }
-        }
-    ],
     "savedVariables": [
         {
             "name": "RenderSize",

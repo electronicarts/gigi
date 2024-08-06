@@ -14,6 +14,8 @@ struct Struct__PixelShaderCB
 
 ConstantBuffer<Struct__PixelShaderCB> _PixelShaderCB : register(b0);
 
+#line 1
+
 
 struct PSInput // AKA VSOutput
 {

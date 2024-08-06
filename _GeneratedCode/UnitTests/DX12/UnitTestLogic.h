@@ -93,23 +93,23 @@ public:
         s_testResults.push_back(result);
     }
 
-    void VerifyReadbackPNG(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, int subResourceIndex, const char* fileName)
+    void VerifyReadbackPNG(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, int arrayIndex, int mipIndex, const char* fileName)
     {
         m_hasAddedReadback = true;
         VerifyReadback newReadback;
         newReadback.type = ReadbackType::PNG;
         newReadback.fileName = fileName;
-        newReadback.readbackId = m_readbackHelper.RequestReadback(device, commandList, resource, resourceState, subResourceIndex, m_logFn);
+        newReadback.readbackId = m_readbackHelper.RequestReadback(device, commandList, resource, resourceState, arrayIndex, mipIndex, m_logFn);
         m_readbacks.push_back(newReadback);
     }
 
-    void VerifyReadbackBinary(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, int subResourceIndex, const char* fileName)
+    void VerifyReadbackBinary(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, int arrayIndex, int mipIndex, const char* fileName)
     {
         m_hasAddedReadback = true;
         VerifyReadback newReadback;
         newReadback.type = ReadbackType::Binary;
         newReadback.fileName = fileName;
-        newReadback.readbackId = m_readbackHelper.RequestReadback(device, commandList, resource, resourceState, subResourceIndex, m_logFn);
+        newReadback.readbackId = m_readbackHelper.RequestReadback(device, commandList, resource, resourceState, arrayIndex, mipIndex, m_logFn);
         m_readbacks.push_back(newReadback);
     }
 
@@ -135,7 +135,22 @@ public:
                     {
                         // Get the readback data
                         D3D12_RESOURCE_DESC resourceDesc;
-                        std::vector<unsigned char> data = m_readbackHelper.GetReadbackData(readback.readbackId, resourceDesc);
+                        int arrayIndex = 0;
+                        int mipIndex = 0;
+                        std::vector<unsigned char> data = m_readbackHelper.GetReadbackData(readback.readbackId, resourceDesc, arrayIndex, mipIndex);
+
+                        // calculate readback size, taking into account mipIndex
+                        int readbackWidth = resourceDesc.Width;
+                        int readbackHeight = resourceDesc.Height;
+                        int readbackDepth = (resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) ? resourceDesc.DepthOrArraySize : 1;
+                        {
+                            for (int i = 0; i < mipIndex; ++i)
+                            {
+                                readbackWidth = max(readbackWidth / 2, 1);
+                                readbackHeight = max(readbackHeight / 2, 1);
+                                readbackDepth = max(readbackDepth / 2, 1);
+                            }
+                        }
 
                         switch (readback.type)
                         {
@@ -143,40 +158,74 @@ public:
                             {
                                 DX12Utils::DXGI_FORMAT_Info formatInfo = DX12Utils::Get_DXGI_FORMAT_Info(resourceDesc.Format, m_logFn);
 
-                                DX12Utils::TextureCache::Texture& texture = DX12Utils::TextureCache::Get(readback.fileName);
-                                if (!texture.Valid())
+                                std::vector< DX12Utils::TextureCache::Texture> textures;
+                                if (strstr(readback.fileName, "%i"))
+                                {
+                                    char fileName[1024];
+                                    int i = 0;
+                                    while (1)
+                                    {
+                                        sprintf(fileName, readback.fileName, i);
+                                        i++;
+                                        textures.push_back(DX12Utils::TextureCache::Get(fileName));
+                                        if (!textures.rbegin()->Valid())
+                                            break;
+                                    }
+                                }
+                                else
+                                {
+                                    textures.push_back(DX12Utils::TextureCache::Get(readback.fileName));
+                                }
+
+                                size_t totalLoadedTextureSize = 0;
+                                for (const auto& texture : textures)
+                                    totalLoadedTextureSize += texture.pixels.size();
+
+                                if (!textures.rbegin()->Valid())
+                                    textures.pop_back();
+
+                                if (textures.empty())
                                     Fail("Could not load gold image %s", readback.fileName);
 
                                 // compare dimensions
-                                if (texture.width != resourceDesc.Width || texture.height != resourceDesc.Height || texture.channels != formatInfo.channelCount || texture.pixels.size() != data.size())
+                                else if (textures[0].width != readbackWidth || textures[0].height != readbackHeight || textures.size() != readbackDepth || textures[0].channels != formatInfo.channelCount || totalLoadedTextureSize != data.size())
                                     Fail("Data size mismatch in %s", readback.fileName);
 
                                 // make sure the format type is correct
                                 else if (formatInfo.channelType != DX12Utils::DXGI_FORMAT_Info::ChannelType::_uint8_t)
                                     Fail("Data is wrong format in %s", readback.fileName);
 
-                                else if(texture.type != DX12Utils::TextureCache::Type::U8)
+                                else if(textures[0].type != DX12Utils::TextureCache::Type::U8)
                                     Fail("Loaded texture is wrong format in %s", readback.fileName);
 
                                 // compare data
-                                else if (memcmp(texture.pixels.data(), data.data(), data.size()))
+                                else
                                 {
-                                    Fail("Data is different in %s", readback.fileName);
-
-                                    // Uncomment to help debugging
-                                    /*
-                                    for (size_t i = 0; i < data.size(); ++i)
+                                    size_t offset = 0;
+                                    for (int i = 0; i < textures.size(); ++i)
                                     {
-                                        if (texture.pixels[i] != data[i])
+                                        if (memcmp(textures[i].pixels.data(), &data[offset], textures[i].pixels.size()))
                                         {
-                                            int ijkl = 0;
-                                        }
-                                    }
-                                    */
+                                            Fail("Data is different in %s [%i]", readback.fileName, i);
 
-                                    // Uncomment to help debugging
-                                    //stbi_write_png("gold.png", texture.width, texture.height, texture.channels, texture.pixels.data(), 0);
-                                    //stbi_write_png("readback.png", texture.width, texture.height, texture.channels, data.data(), 0);
+                                            // Uncomment to help debugging
+                                            /*
+                                            for (size_t i = 0; i < data.size(); ++i)
+                                            {
+                                                if (texture.pixels[i] != data[i])
+                                                {
+                                                    int ijkl = 0;
+                                                }
+                                            }
+
+                                            // Uncomment to help debugging
+                                            stbi_write_png("_gold.png", texture.width, texture.height, texture.channels, texture.pixels.data(), 0);
+                                            stbi_write_png("_readback.png", texture.width, texture.height, texture.channels, data.data(), 0);
+                                            */
+                                            break;
+                                        }
+                                        offset += textures[i].pixels.size();
+                                    }
                                 }
 
                                 break;
@@ -198,7 +247,7 @@ public:
 
                                     // Uncomment to help debugging
                                     /*
-                                    const char* fileData = file.GetBytes();
+                                    const unsigned char* fileData = (const unsigned char*)file.GetBytes();
                                     for (size_t i = 0; i < data.size(); ++i)
                                     {
                                         if (fileData[i] != data[i])
@@ -320,7 +369,13 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, BarrierTest::Context* context, UnitTestEvent event)
 {
     if (testContext.IsFirstPostExecute(event))
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Barrier\\BarrierTest\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Barrier\\BarrierTest\\0.png");
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, IndirectDispatch::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Render_Target, context->m_output.c_texture_Render_Target_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\IndirectDispatch\\out.png");
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, buffertest::Context* context, UnitTestEvent event)
@@ -469,16 +524,10 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputStructuredBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\1.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBufferRaw, D3D12_RESOURCE_STATE_COPY_DEST, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\2.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputStructuredBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBufferRaw, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\2.bin");
     }
-}
-
-void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, MultipleUVMesh::Context* context, UnitTestEvent event)
-{
-    // Nothing to do, this is strictly a viewer unit test
-    testContext.Pass();
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, StructuredBuffer::Context* context, UnitTestEvent event)
@@ -498,7 +547,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_input.buffer_buff, D3D12_RESOURCE_STATE_COPY_DEST, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\StructuredBuffer\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_input.buffer_buff, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\StructuredBuffer\\0.bin");
         // Note: not verifying contents of constant buffer, like the python unit test does. We don't have access to the constant buffer here, and it's a low enough risk thing that i'm not going to expose it right now.
     }
 }
@@ -526,41 +575,9 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\boxblur\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\boxblur\\0.png");
     }
 }
-
-// Commenting out until offset is supported in indirect buffer
-/*
-void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, IndirectDispatch::Context* context, UnitTestEvent event)
-{
-    if (testContext.IsFirstPreExecute(event))
-    {
-        uint32_t clearValue = (uint32_t)0xFFFFFFFF;
-
-        context->m_input.texture_Render_Target_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
-        context->m_input.texture_Render_Target_state = D3D12_RESOURCE_STATE_COPY_DEST;
-        context->m_input.texture_Render_Target_size[0] = 256;
-        context->m_input.texture_Render_Target_size[1] = 256;
-        context->m_input.texture_Render_Target_size[2] = 1;
-        context->m_input.texture_Render_Target = context->CreateManagedTextureAndClear(
-            device,
-            commandList,
-            context->m_input.texture_Render_Target_flags,
-            context->m_input.texture_Render_Target_format,
-            context->m_input.texture_Render_Target_size,
-            DX12Utils::ResourceType::Texture2D,
-            &clearValue, sizeof(clearValue),
-            context->GetTechniqueNameW()
-        );
-    }
-
-    if (testContext.IsFirstPostExecute(event))
-    {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Render_Target, context->m_input.texture_Render_Target_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\IndirectDispatch\\out.png");
-    }
-}
-*/
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, ReadbackSequence::Context* context, UnitTestEvent event)
 {
@@ -589,12 +606,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         context->m_input.texture_Output_size[0] = 64;
         context->m_input.texture_Output_size[1] = 64;
         context->m_input.texture_Output_size[2] = 1;
+        context->m_input.texture_Output_numMips = 1;
         context->m_input.texture_Output = context->CreateManagedTextureAndClear(
             device,
             commandList,
             context->m_input.texture_Output_flags,
             context->m_input.texture_Output_format,
             context->m_input.texture_Output_size,
+            context->m_input.texture_Output_numMips,
             DX12Utils::ResourceType::Texture2D,
             &clearValue, sizeof(clearValue),
             context->GetTechniqueNameW()
@@ -610,7 +629,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     {
         if (s_frameIndex < 10)
         {
-            testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Output, context->m_input.texture_Output_state, 0, fileNames[s_frameIndex]);
+            testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Output, context->m_input.texture_Output_state, 0, 0, fileNames[s_frameIndex]);
             s_frameIndex++;
         }
     }
@@ -638,7 +657,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Input, context->m_input.texture_Input_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\simple\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Input, context->m_input.texture_Input_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\simple\\0.png");
     }
 }
 
@@ -653,12 +672,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         context->m_input.texture_Output_size[0] = 512;
         context->m_input.texture_Output_size[1] = 512;
         context->m_input.texture_Output_size[2] = 1;
+        context->m_input.texture_Output_numMips = 1;
         context->m_input.texture_Output = context->CreateManagedTextureAndClear(
             device,
             commandList,
             context->m_input.texture_Output_flags,
             context->m_input.texture_Output_format,
             context->m_input.texture_Output_size,
+            context->m_input.texture_Output_numMips,
             DX12Utils::ResourceType::Texture2D,
             &clearValue, sizeof(clearValue),
             context->GetTechniqueNameW()
@@ -682,7 +703,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     {
         if (context->m_input.variable_FrameIndex == 1)
         {
-            testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Output, context->m_input.texture_Output_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\SlangAutoDiff\\0.png");
+            testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_Output, context->m_input.texture_Output_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\SlangAutoDiff\\0.png");
             // Note: not looking at 1.npy.  That has derivatives and ball position, but those are used to render 0.png so are already covered.
         }
 
@@ -755,10 +776,10 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Texture_From_Texture, context->m_output.c_texture_Texture_From_Texture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Texture_From_Buffer, context->m_output.c_texture_Texture_From_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\1.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_Buffer_From_Texture, context->m_output.c_buffer_Buffer_From_Texture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\2.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_Buffer_From_Buffer, context->m_output.c_buffer_Buffer_From_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\3.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Texture_From_Texture, context->m_output.c_texture_Texture_From_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Texture_From_Buffer, context->m_output.c_texture_Texture_From_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_Buffer_From_Texture, context->m_output.c_buffer_Buffer_From_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\2.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_Buffer_From_Buffer, context->m_output.c_buffer_Buffer_From_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest\\3.bin");
     }
 }
 
@@ -826,19 +847,169 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Texture_From_Texture, context->m_output.c_texture_Texture_From_Texture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest_FB\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_Buffer_From_Buffer, context->m_output.c_buffer_Buffer_From_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest_FB\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Texture_From_Texture, context->m_output.c_texture_Texture_From_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest_FB\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_Buffer_From_Buffer, context->m_output.c_buffer_Buffer_From_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\CopyResource\\CopyResourceTest_FB\\1.bin");
     }
 }
 
-void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, GPUWrite::Context* context, UnitTestEvent event)
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, VRS::Context* context, UnitTestEvent event)
 {
-    testContext.Pass(); // This is a unit test for python within the viewer, nothing to do here
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set VertexBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+
+            // Set up the vertex input layout for the vertex buffer
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+        }
+
+        // Making sure the matrix is the exact same as in the test.
+        // You can save as hex in the gigi viewer
+        uint32_t viewProjMtx[] = {
+            0xC01A35C1, 0x00000000, 0x3E19E5DC, 0xBF2D3533,
+            0xBA050FAE, 0x401A823F, 0xBC0554C1, 0xBF5DB8D7,
+            0x36D0E790, 0x34B556E5, 0x38D15403, 0x3DCB589F,
+            0xBD7EFC24, 0xBB5D56E8, 0xBF7F8083, 0x40E6563E
+        };
+        memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\VRS\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\VRS\\1.png");
+    }
 }
 
-void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, profiling::Context* context, UnitTestEvent event)
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mesh::Context* context, UnitTestEvent event)
 {
-    testContext.Pass(); // This is a unit test for python within the viewer, nothing to do here
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set VertexBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+        }
+
+        // Making sure the matrix is the exact same as in the test.
+        // You can save as hex in the gigi viewer
+        uint32_t viewProjMtx[] = {
+            0xBFFD3CFB, 0x00000000, 0xBFB118D6, 0xBF7C1BFF,
+            0xBDA6AEC6, 0x401A3DFA, 0x3DEE58AD, 0xBFE3F7B9,
+            0xB86FFB0C, 0xB6C5670B, 0x38AB943C, 0x3DCC21FA,
+            0x3F12753A, 0x3D70F21E, 0xBF516D16, 0x4056E7BA
+        };
+        memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\MeshShaders\\Mesh\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\MeshShaders\\Mesh\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, MeshAmplification::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set VertexBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+        }
+
+        // Making sure the matrix is the exact same as in the test.
+        // You can save as hex in the gigi viewer
+        uint32_t viewProjMtx[] = {
+            0xC01A4345, 0x00000000, 0x3E0BB24D, 0x40D6375E,
+            0x3C919674, 0x40193168, 0x3EA0C4AE, 0xC017F199,
+            0x36BC032B, 0xB75A94C2, 0x38CF9DDA, 0x3DC955A4,
+            0xBD657BFE, 0x3E0565E1, 0xBF7D69B3, 0x418827EE
+        };
+        memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\MeshShaders\\MeshAmplification\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\MeshShaders\\MeshAmplification\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, MeshAmplificationLines::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set VertexBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+        }
+
+        // Making sure the matrix is the exact same as in the test.
+        // You can save as hex in the gigi viewer
+        uint32_t viewProjMtx[] = {
+            0xBF83D523, 0x00000000, 0xC00BBE5D, 0x3FF6389F,
+            0x3E86F342, 0x4019613B, 0xBDFE9F01, 0xC0864C7F,
+            0xB8BC4E1F, 0x374A8ABE, 0x3831A51F, 0x3DCC99F6,
+            0x3F65D77A, 0xBDF73809, 0xBED8D483, 0x3F88E888
+        };
+        memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\MeshShaders\\MeshAmplificationLines\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\MeshShaders\\MeshAmplificationLines\\1.png");
+    }
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, NoVertex_NoIndex_NoInstance::Context* context, UnitTestEvent event)
@@ -858,8 +1029,94 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\NoVertex_NoIndex_NoInstance\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\NoVertex_NoIndex_NoInstance\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\NoVertex_NoIndex_NoInstance\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\NoVertex_NoIndex_NoInstance\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, simpleRaster_Points::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set VertexBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+
+            // Set up the vertex input layout for the vertex buffer
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+        }
+
+        // Making sure the matrix is the exact same as in the test.
+        // You can save as hex in the gigi viewer
+        uint32_t viewProjMtx[] = {
+            0xBFFD3CFB, 0x00000000, 0xBFB118D6, 0xBF7C1BFF,
+            0xBDA6AEC6, 0x401A3DFA, 0x3DEE58AD, 0xBFE3F7B9,
+            0xB86FFB0C, 0xB6C5670B, 0x38AB943C, 0x3DCC21FA,
+            0x3F12753A, 0x3D70F21E, 0xBF516D16, 0x4056E7BA
+        };
+        memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster_Points\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster_Points\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, simpleRaster_Lines::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set VertexBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Raster\\simpleRasterVB.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(simpleRaster::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+
+            // Set up the vertex input layout for the vertex buffer
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+        }
+
+        // Making sure the matrix is the exact same as in the test.
+        // You can save as hex in the gigi viewer
+        uint32_t viewProjMtx[] = {
+            0xBFFD3CFB, 0x00000000, 0xBFB118D6, 0xBF7C1BFF,
+            0xBDA6AEC6, 0x401A3DFA, 0x3DEE58AD, 0xBFE3F7B9,
+            0xB86FFB0C, 0xB6C5670B, 0x38AB943C, 0x3DCC21FA,
+            0x3F12753A, 0x3D70F21E, 0xBF516D16, 0x4056E7BA
+        };
+        memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster_Lines\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster_Lines\\1.png");
     }
 }
 
@@ -901,8 +1158,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster\\1.png");
     }
 }
 
@@ -944,8 +1201,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster2\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster2\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster2\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\simpleRaster2\\1.png");
     }
 }
 
@@ -988,7 +1245,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color, context->m_output.c_texture_Color_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\Stencil\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color, context->m_output.c_texture_Color_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\Stencil\\0.png");
     }
 }
 
@@ -1033,8 +1290,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_NoInstance\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_NoInstance\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_NoInstance\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_NoInstance\\1.png");
     }
 }
 
@@ -1100,8 +1357,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct\\1.png");
     }
 }
 
@@ -1166,8 +1423,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceType\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceType\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceType\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_NoIndex_YesInstanceType\\1.png");
     }
 }
 
@@ -1266,8 +1523,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_YesIndex_NoInstance\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_YesIndex_NoInstance\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_YesIndex_NoInstance\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexStruct_YesIndex_NoInstance\\1.png");
     }
 }
 
@@ -1327,8 +1584,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexType_NoIndex_NoInstance\\0.bin");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexType_NoIndex_NoInstance\\1.png");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_Depth_Buffer, context->m_output.c_texture_Depth_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexType_NoIndex_NoInstance\\0.bin");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color_Buffer, context->m_output.c_texture_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Raster\\YesVertexType_NoIndex_NoInstance\\1.png");
     }
 }
 
@@ -1379,7 +1636,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     }
 
     if (testContext.IsFirstPostExecute(event))
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\AnyHit\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\AnyHit\\0.png");
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, AnyHitSimple::Context* context, UnitTestEvent event)
@@ -1429,7 +1686,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     }
 
     if (testContext.IsFirstPostExecute(event))
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\AnyHitSimple\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\AnyHitSimple\\0.png");
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, IntersectionShader::Context* context, UnitTestEvent event)
@@ -1496,7 +1753,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     }
 
     if (testContext.IsFirstPostExecute(event))
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\IntersectionShader\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\IntersectionShader\\0.png");
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, TwoRayGens::Context* context, UnitTestEvent event)
@@ -1561,7 +1818,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     }
 
     if (testContext.IsFirstPostExecute(event))
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\TwoRayGens\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\TwoRayGens\\0.png");
 }
 
 
@@ -1641,7 +1898,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     if (testContext.IsFirstPostExecute(event))
     {
         // Note: not verifying the constant buffer. if that is wrong, the rendering will change
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\simpleRT\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\simpleRT\\1.png");
     }
 }
 
@@ -1705,7 +1962,99 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     if (testContext.IsFirstPostExecute(event))
     {
         // Note: not verifying the constant buffer. if that is wrong, the rendering will change
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\simpleRT_inline\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\simpleRT_inline\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, SubInSub::Context* context, UnitTestEvent event)
+{
+    static ID3D12Resource* texture_ImportedTexture_InitialState = nullptr;
+
+    if (testContext.IsFirstPreExecute(event))
+    {
+        context->m_input.texture_Input_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        context->m_input.texture_Input_state = D3D12_RESOURCE_STATE_COPY_DEST;
+        context->m_input.texture_Input = context->CreateManagedTextureFromFile(
+            device,
+            commandList,
+            context->m_input.texture_Input_flags,
+            context->m_input.texture_Input_format,
+            DX12Utils::ResourceType::Texture2D,
+            "..\\..\\..\\Techniques\\cabinsmall.png",
+            true,
+            context->m_input.texture_Input_size,
+            context->GetTechniqueNameW()
+        );
+
+        texture_ImportedTexture_InitialState = context->CreateManagedTextureFromFile(
+            device,
+            commandList,
+            context->m_input.texture_Input_flags,
+            context->m_input.texture_Input_format,
+            DX12Utils::ResourceType::Texture2D,
+            "..\\..\\..\\Techniques\\cabinsmall.png",
+            true,
+            context->m_input.texture_Input_size,
+            L"texture_ImportedTexture_InitialState",
+            D3D12_RESOURCE_STATE_COPY_SOURCE
+        );
+    }
+
+    // Reset imported texture to it's starting state every frame
+    if (event == UnitTestEvent::PreExecute)
+    {
+        commandList->CopyResource(context->m_input.texture_Input, texture_ImportedTexture_InitialState);
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Inner1_Inner2_Output, context->m_output.c_texture_Inner1_Inner2_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\SubGraph\\SubInSub\\0.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, SubGraphLoops::Context* context, UnitTestEvent event)
+{
+    static ID3D12Resource* texture_ImportedTexture_InitialState = nullptr;
+
+    if (testContext.IsFirstPreExecute(event))
+    {
+        context->m_input.texture_Input_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        context->m_input.texture_Input_state = D3D12_RESOURCE_STATE_COPY_DEST;
+        context->m_input.texture_Input = context->CreateManagedTextureFromFile(
+            device,
+            commandList,
+            context->m_input.texture_Input_flags,
+            context->m_input.texture_Input_format,
+            DX12Utils::ResourceType::Texture2D,
+            "..\\..\\..\\Techniques\\cabinsmall.png",
+            true,
+            context->m_input.texture_Input_size,
+            context->GetTechniqueNameW()
+        );
+
+        texture_ImportedTexture_InitialState = context->CreateManagedTextureFromFile(
+            device,
+            commandList,
+            context->m_input.texture_Input_flags,
+            context->m_input.texture_Input_format,
+            DX12Utils::ResourceType::Texture2D,
+            "..\\..\\..\\Techniques\\cabinsmall.png",
+            true,
+            context->m_input.texture_Input_size,
+            L"texture_ImportedTexture_InitialState",
+            D3D12_RESOURCE_STATE_COPY_SOURCE
+        );
+    }
+
+    // Reset imported texture to it's starting state every frame
+    if (event == UnitTestEvent::PreExecute)
+    {
+        commandList->CopyResource(context->m_input.texture_Input, texture_ImportedTexture_InitialState);
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_FilterSub_Iteration_4_Output, context->m_output.c_texture_FilterSub_Iteration_4_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\SubGraph\\SubGraphLoops\\0.png");
     }
 }
 
@@ -1751,7 +2100,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Inner_Exported_Tex, context->m_output.c_texture_Inner_Exported_Tex_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\SubGraph\\SubGraphTest\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Inner_Exported_Tex, context->m_output.c_texture_Inner_Exported_Tex_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\SubGraph\\SubGraphTest\\0.png");
     }
 }
 
@@ -1803,12 +2152,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 3;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture2DArray,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -1824,13 +2175,13 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\0_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\1_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\2_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\0_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\1_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\2_0.png");
 
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\0_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\1_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\2_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\0_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\1_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_CS\\2_1.png");
     }
 }
 
@@ -1882,12 +2233,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 3;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture2DArray,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -1903,19 +2256,18 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_Color_size[0] = 64;
             context->m_input.texture_Color_size[1] = 64;
             context->m_input.texture_Color_size[2] = 3;
+            context->m_input.texture_Color_numMips = 1;
             context->m_input.texture_Color = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_Color_flags,
                 context->m_input.texture_Color_format,
                 context->m_input.texture_Color_size,
+                context->m_input.texture_Color_numMips,
                 DX12Utils::ResourceType::Texture2DArray,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
             );
-
-            // Also make an RTV
-            context->CreateManagedRTV(device, context->m_input.texture_Color, context->m_input.texture_Color_format, D3D12_RTV_DIMENSION_TEXTURE2DARRAY, 0, context->m_input.texture_Color_rtv, context->GetTechniqueName());
         }
     }
 
@@ -1927,13 +2279,13 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\0_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\1_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\2_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\0_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\1_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\2_0.png");
 
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\0_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\1_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\2_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\0_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\1_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_PS\\2_1.png");
     }
 }
 
@@ -1952,12 +2304,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 3;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture2DArray,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2006,13 +2360,13 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\0_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\1_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\2_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\0_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\1_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\2_0.png");
 
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\0_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\1_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\2_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\0_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\1_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DArrayRW_RGS\\2_1.png");
     }
 }
 
@@ -2033,12 +2387,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 512;
             context->m_input.texture_ImportedColor_size[1] = 512;
             context->m_input.texture_ImportedColor_size[2] = 1;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2054,12 +2410,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedTexture_size[0] = 512;
             context->m_input.texture_ImportedTexture_size[1] = 512;
             context->m_input.texture_ImportedTexture_size[2] = 1;
+            context->m_input.texture_ImportedTexture_numMips = 1;
             context->m_input.texture_ImportedTexture = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedTexture_flags,
                 context->m_input.texture_ImportedTexture_format,
                 context->m_input.texture_ImportedTexture_size,
+                context->m_input.texture_ImportedTexture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2076,6 +2434,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
                 context->m_input.texture_ImportedTexture_flags,
                 context->m_input.texture_ImportedTexture_format,
                 context->m_input.texture_ImportedTexture_size,
+                context->m_input.texture_ImportedTexture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 L"texture_ImportedTexture_InitialState",
@@ -2092,8 +2451,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_CS\\0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_CS\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_CS\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_CS\\1.png");
     }
 }
 
@@ -2114,19 +2473,18 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_Color_size[0] = 512;
             context->m_input.texture_Color_size[1] = 512;
             context->m_input.texture_Color_size[2] = 1;
+            context->m_input.texture_Color_numMips = 1;
             context->m_input.texture_Color = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_Color_flags,
                 context->m_input.texture_Color_format,
                 context->m_input.texture_Color_size,
+                context->m_input.texture_Color_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
             );
-
-            // Also make an RTV
-            context->CreateManagedRTV(device, context->m_input.texture_Color, context->m_input.texture_Color_format, D3D12_RTV_DIMENSION_TEXTURE2D, 0, context->m_input.texture_Color_rtv, context->GetTechniqueName());
         }
 
         // Load and create ImportedColor
@@ -2138,12 +2496,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 512;
             context->m_input.texture_ImportedColor_size[1] = 512;
             context->m_input.texture_ImportedColor_size[2] = 1;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2159,12 +2519,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedTexture_size[0] = 512;
             context->m_input.texture_ImportedTexture_size[1] = 512;
             context->m_input.texture_ImportedTexture_size[2] = 1;
+            context->m_input.texture_ImportedTexture_numMips = 1;
             context->m_input.texture_ImportedTexture = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedTexture_flags,
                 context->m_input.texture_ImportedTexture_format,
                 context->m_input.texture_ImportedTexture_size,
+                context->m_input.texture_ImportedTexture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2181,6 +2543,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
                 context->m_input.texture_ImportedTexture_flags,
                 context->m_input.texture_ImportedTexture_format,
                 context->m_input.texture_ImportedTexture_size,
+                context->m_input.texture_ImportedTexture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 L"texture_ImportedTexture_InitialState",
@@ -2197,8 +2560,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_PS\\0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_PS\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_PS\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_PS\\1.png");
     }
 }
 
@@ -2219,12 +2582,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 512;
             context->m_input.texture_ImportedColor_size[1] = 512;
             context->m_input.texture_ImportedColor_size[2] = 1;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2240,12 +2605,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedTexture_size[0] = 512;
             context->m_input.texture_ImportedTexture_size[1] = 512;
             context->m_input.texture_ImportedTexture_size[2] = 1;
+            context->m_input.texture_ImportedTexture_numMips = 1;
             context->m_input.texture_ImportedTexture = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedTexture_flags,
                 context->m_input.texture_ImportedTexture_format,
                 context->m_input.texture_ImportedTexture_size,
+                context->m_input.texture_ImportedTexture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2262,6 +2629,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
                 context->m_input.texture_ImportedTexture_flags,
                 context->m_input.texture_ImportedTexture_format,
                 context->m_input.texture_ImportedTexture_size,
+                context->m_input.texture_ImportedTexture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 L"texture_ImportedTexture_InitialState",
@@ -2278,8 +2646,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_RGS\\0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_RGS\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_RGS\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture2DRW_RGS\\1.png");
     }
 }
 
@@ -2331,12 +2699,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 3;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture3D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2352,8 +2722,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_CS\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_CS\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_CS\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_CS\\1.bin");
     }
 }
 
@@ -2372,19 +2742,18 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_Color_size[0] = 64;
             context->m_input.texture_Color_size[1] = 64;
             context->m_input.texture_Color_size[2] = 1;
+            context->m_input.texture_Color_numMips = 1;
             context->m_input.texture_Color = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_Color_flags,
                 context->m_input.texture_Color_format,
                 context->m_input.texture_Color_size,
+                context->m_input.texture_Color_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
             );
-
-            // Also make an RTV
-            context->CreateManagedRTV(device, context->m_input.texture_Color, context->m_input.texture_Color_format, D3D12_RTV_DIMENSION_TEXTURE2D, 0, context->m_input.texture_Color_rtv, context->GetTechniqueName());
         }
 
         // Load and create ImportedColor
@@ -2396,12 +2765,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 3;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture3D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2450,8 +2821,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_PS\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_PS\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_PS\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_PS\\1.bin");
     }
 }
 
@@ -2503,12 +2874,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 3;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::Texture3D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2524,8 +2897,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_RGS\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_RGS\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_RGS\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Texture3DRW_RGS\\1.bin");
     }
 }
 
@@ -2544,12 +2917,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 6;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::TextureCube,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2598,19 +2973,19 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\0_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\1_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\2_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\3_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 4, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\4_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 5, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\5_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\0_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\1_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\2_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\3_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\4_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\5_0.png");
 
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\0_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\1_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\2_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\3_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 4, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\4_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 5, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\5_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\0_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\1_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\2_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\3_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\4_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_CS\\5_1.png");
     }
 }
 
@@ -2629,19 +3004,18 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_Color_size[0] = 64;
             context->m_input.texture_Color_size[1] = 64;
             context->m_input.texture_Color_size[2] = 1;
+            context->m_input.texture_Color_numMips = 1;
             context->m_input.texture_Color = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_Color_flags,
                 context->m_input.texture_Color_format,
                 context->m_input.texture_Color_size,
+                context->m_input.texture_Color_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
             );
-
-            // Also make an RTV
-            context->CreateManagedRTV(device, context->m_input.texture_Color, context->m_input.texture_Color_format, D3D12_RTV_DIMENSION_TEXTURE2D, 0, context->m_input.texture_Color_rtv, context->GetTechniqueName());
         }
 
         // Load and create ImportedColor
@@ -2653,12 +3027,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 6;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::TextureCube,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2707,19 +3083,19 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\0_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\1_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\2_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\3_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 4, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\4_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 5, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\5_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\0_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\1_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\2_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\3_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\4_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\5_0.png");
 
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\0_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\1_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\2_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\3_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 4, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\4_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 5, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\5_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\0_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\1_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\2_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\3_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\4_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_PS\\5_1.png");
     }
 }
 
@@ -2738,12 +3114,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_ImportedColor_size[0] = 64;
             context->m_input.texture_ImportedColor_size[1] = 64;
             context->m_input.texture_ImportedColor_size[2] = 6;
+            context->m_input.texture_ImportedColor_numMips = 1;
             context->m_input.texture_ImportedColor = context->CreateManagedTextureAndClear(
                 device,
                 commandList,
                 context->m_input.texture_ImportedColor_flags,
                 context->m_input.texture_ImportedColor_format,
                 context->m_input.texture_ImportedColor_size,
+                context->m_input.texture_ImportedColor_numMips,
                 DX12Utils::ResourceType::TextureCube,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
@@ -2792,19 +3170,204 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\0_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\1_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\2_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\3_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 4, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\4_0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 5, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\5_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\0_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\1_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\2_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\3_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\4_0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_state, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\5_0.png");
 
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\0_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\1_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\2_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\3_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 4, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\4_1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 5, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\5_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\0_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\1_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\2_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\3_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\4_1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_NodeTexture, context->m_output.c_texture_NodeTexture_endingState, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureCubeRW_RGS\\5_1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_CS_2D::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_CS_2D\\0.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_CS_2DArray::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_CS_2DArray\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 1, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_CS_2DArray\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_CS_Cube::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_CS_Cube\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 1, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_CS_Cube\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_CS_3D::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_CS_3D\\0.0.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_DrawCall::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set Vertex Buffer - Bunny
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Textures\\Mips_DrawCall_Bunny.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Textures\\Mips_DrawCall_Bunny.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_VertexBuffer_stride = sizeof(Mips_DrawCall::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_count = file.GetSize() / sizeof(Mips_DrawCall::Struct_VertexFormat);
+            context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_VertexBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_VertexBuffer_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+
+            // Set up the vertex input layout for the vertex buffer
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_VertexBuffer_vertexInputLayout.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+        }
+
+        // Load, create and set Vertex Buffer - Sphere
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Textures\\Mips_DrawCall_Sphere.bin");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Textures\\Mips_DrawCall_Sphere.bin");
+                return;
+            }
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_SphereVB_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_SphereVB_stride = sizeof(Mips_DrawCall::Struct_VertexFormat);
+            context->m_input.buffer_SphereVB_count = file.GetSize() / sizeof(Mips_DrawCall::Struct_VertexFormat);
+            context->m_input.buffer_SphereVB_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_SphereVB = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_SphereVB_flags, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW());
+
+            // Set up the vertex input layout for the vertex buffer
+            context->m_input.buffer_SphereVB_vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_SphereVB_vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            context->m_input.buffer_SphereVB_vertexInputLayout.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+
+            // Making sure the matrix is the exact same as in the test.
+            // You can save as hex in the gigi viewer
+            uint32_t viewProjMtx[] = {
+                0x3F7CDFB5, 0x00000000, 0x400CFC0F, 0xBE27456E,
+                0xBF4D915C, 0x400FE0EC, 0x3EB85B26, 0xBF255AC1,
+                0x38B2358B, 0x3818E824, 0xB81FD206, 0x3DCC5EFD,
+                0xBF5984CA, 0xBEBAA298, 0x3EC312E2, 0x400C6EEC
+            };
+
+            memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
+        }
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Final_Color_Buffer, context->m_output.c_texture_Final_Color_Buffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_DrawCall\\0.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_ShaderToken_2D::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_2D\\0.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_ShaderToken_2DArray::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_2DArray\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 1, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_2DArray\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_2DArray\\2.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_ShaderToken_Cube::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_Cube\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_Cube\\1.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_ShaderToken_3D::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.%i.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\1.%i.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\2.%i.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_RGS_2D::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Textures\\Mips_RGS_2D.bin");
+        if (!file.Valid())
+        {
+            testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Textures\\Mips_RGS_2D.bin");
+            return;
+        }
+
+        // Create a vertex buffer to hold the vertex data
+        ID3D12Resource* vertexData = context->CreateManagedBuffer(device, commandList, D3D12_RESOURCE_FLAG_NONE, file.GetBytes(), file.GetSize(), context->GetTechniqueNameW(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+        // Create the tlas buffer
+        context->m_input.buffer_VertexBuffer_format = DXGI_FORMAT_R32G32B32_FLOAT;
+        context->m_input.buffer_VertexBuffer_stride = 0;
+        context->m_input.buffer_VertexBuffer_count = file.GetSize() / (sizeof(float) * 3);
+        context->m_input.buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        context->CreateManagedTLAS(
+            device, commandList,
+            vertexData, context->m_input.buffer_VertexBuffer_count, false,
+            D3D12_RAYTRACING_GEOMETRY_FLAG_NONE,
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE,
+            DXGI_FORMAT_R32G32B32_FLOAT, 0, sizeof(float) * 3,
+            context->m_input.buffer_VertexBuffer_blas, context->m_input.buffer_VertexBuffer_blasSize,
+            context->m_input.buffer_VertexBuffer, context->m_input.buffer_VertexBuffer_tlasSize,
+            context->LogFn
+        );
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_MipTex, context->m_output.c_texture_MipTex_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_RGS_2D\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_MipTex, context->m_output.c_texture_MipTex_endingState, 0, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_RGS_2D\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_MipTex, context->m_output.c_texture_MipTex_endingState, 0, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_RGS_2D\\2.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Mips_VSPS_2D::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_MipTex, context->m_output.c_texture_MipTex_endingState, 0, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_VSPS_2D\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_MipTex, context->m_output.c_texture_MipTex_endingState, 0, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_VSPS_2D\\1.png");
     }
 }
 
@@ -2854,12 +3417,14 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.texture_Texture_size[0] = 16;
             context->m_input.texture_Texture_size[1] = 16;
             context->m_input.texture_Texture_size[2] = 1;
+            context->m_input.texture_Texture_numMips = 1;
             context->m_input.texture_Texture = context->CreateManagedTexture(
                 device,
                 commandList,
                 context->m_input.texture_Texture_flags,
                 context->m_input.texture_Texture_format,
                 context->m_input.texture_Texture_size,
+                context->m_input.texture_Texture_numMips,
                 DX12Utils::ResourceType::Texture2D,
                 nullptr,
                 context->GetTechniqueNameW()
@@ -2872,7 +3437,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         char buffer[1024];
         sprintf_s(buffer, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\TextureFormats\\%s.bin", s_formats[s_frameIndex].name);
         fileNames[s_frameIndex] = buffer;
-        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_Texture, context->m_input.texture_Texture_state, 0, fileNames[s_frameIndex].c_str());
+        testContext.VerifyReadbackBinary(device, commandList, context->m_input.texture_Texture, context->m_input.texture_Texture_state, 0, 0, fileNames[s_frameIndex].c_str());
         s_frameIndex++;
     }
 }

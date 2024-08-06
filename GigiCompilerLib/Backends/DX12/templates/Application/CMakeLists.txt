@@ -1,14 +1,15 @@
 cmake_minimum_required(VERSION 3.22)
 project(/*$(Name)*/)
+
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY  $<1:${CMAKE_SOURCE_DIR}>)
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY  $<1:${CMAKE_SOURCE_DIR}>)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY  $<1:${CMAKE_SOURCE_DIR}>)
+
 add_executable(/*$(Name)*/)
 target_compile_features(/*$(Name)*/ PRIVATE cxx_std_17)
 set(CMAKE_SUPPRESS_REGENERATION true)
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 set(CMAKE_SKIP_INSTALL_RULES True)
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 file(GLOB_RECURSE SOURCE_FILES
     *.h
@@ -25,6 +26,7 @@ list(FILTER SOURCE_FILES EXCLUDE REGEX "^${CMAKE_CURRENT_SOURCE_DIR}/CMakeFiles"
 
 target_include_directories(/*$(Name)*/ PRIVATE ./)
 target_include_directories(/*$(Name)*/ PRIVATE ./imgui/)
+/*$(if:DX12.AgilitySDKRequired:true)*/target_include_directories(/*$(Name)*/ PRIVATE ./AgilitySDK/include/)/*$(endif)*/
 target_include_directories(/*$(Name)*/ PRIVATE ./DX12Utils/tinyexr/)
 target_include_directories(/*$(Name)*/ PRIVATE ./DX12Utils/tinyexr/deps/miniz/)
 target_include_directories(/*$(Name)*/ PRIVATE ./WinPixEventRuntime.1.0.230302001/Include/)

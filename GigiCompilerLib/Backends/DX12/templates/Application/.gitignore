@@ -1,6 +1,9 @@
 /*$(Name)*/.dir/
-*.pdb
-*.user
+/*$(Name)*/.exe
+/*$(Name)*/.exp
+/*$(Name)*/.lib
+/*$(Name)*/.pdb
+*.vcxproj.user
 Debug/
 MinSizeRel/
 Release/

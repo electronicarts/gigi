@@ -1,0 +1,58 @@
+This directory includes software subject to the following licenses:
+
+Slang - MIT
+https://github.com/shader-slang/slang/blob/master/LICENSE
+
+Python3 - PSF
+https://docs.python.org/3/license.html#psf-license
+
+DXC - LLVM Release License
+https://github.com/microsoft/DirectXShaderCompiler/blob/main/LICENSE.TXT
+
+clang-format - Apache 2.0
+https://github.com/angular/clang-format/blob/master/LICENSE
+
+WinPixEventRuntime - MIT
+https://www.nuget.org/packages/WinPixEventRuntime/1.0.240308001/License
+
+tinyobjloader - MIT
+https://github.com/tinyobjloader/tinyobjloader/blob/release/LICENSE
+
+tinyexr -  BSD 3 Clause
+https://github.com/syoyo/tinyexr?tab=readme-ov-file#license
+
+STB - MIT
+https://github.com/nothings/stb/blob/master/LICENSE
+
+imgui - MIT
+https://github.com/ocornut/imgui/blob/master/LICENSE.txt
+
+spdlog - MIT
+https://github.com/gabime/spdlog/blob/v1.x/LICENSE
+
+AgilitySDK/bin - DirectX License (Distributable)
+https://www.nuget.org/packages/Microsoft.Direct3D.D3D12/1.614.0/License
+
+AgilitySDK/include - MIT
+https://www.nuget.org/packages/Microsoft.Direct3D.D3D12/1.614.0#readme-body-tab:~:text=LICENSE%2DCODE.txt%20%3A%20applies%20to%20all%20files%20under%20build/native/include/
+
+imgui-node-editor - MIT
+https://github.com/thedmd/imgui-node-editor/blob/master/LICENSE
+
+nativefiledialog - zlib
+https://github.com/mlabbe/nativefiledialog/blob/master/LICENSE
+
+openfbx - MIT
+https://github.com/nem0/OpenFBX/blob/master/LICENSE
+
+rapidjson - MIT
+https://github.com/Tencent/rapidjson/blob/master/license.txt
+
+tinyxml2 - zlib
+https://github.com/leethomason/tinyxml2/blob/master/LICENSE.txt
+
+GLI - MIT
+https://github.com/g-truc/gli/blob/master/manual.md#section0
+
+bc7enc - MIT
+https://github.com/richgel999/bc7enc/blob/master/LICENSE

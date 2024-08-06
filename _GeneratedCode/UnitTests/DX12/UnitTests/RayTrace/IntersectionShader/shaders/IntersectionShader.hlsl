@@ -13,6 +13,8 @@ Buffer<float> AABBs : register(t1);
 RWTexture2D<float4> Output : register(u0);
 ConstantBuffer<Struct__Ray_GenCB> _Ray_GenCB : register(b0);
 
+#line 2
+
 
 struct Payload
 {
@@ -26,6 +28,7 @@ struct HitAttributes
 };
 
 [shader("raygeneration")]
+#line 15
 void RayGen()
 {
 	uint2 px = DispatchRaysIndex().xy;
@@ -62,6 +65,7 @@ void RayGen()
 }
 
 [shader("miss")]
+#line 50
 void Miss(inout Payload payload : SV_RayPayload)
 {
 	payload.hit = false;
@@ -103,12 +107,14 @@ float TestSphereTrace(in float3 rayPos, in float3 rayDir, in float4 sphere, out 
 }
 
 [shader("closesthit")]
+#line 90
 void ClosestHit(inout Payload payload : SV_RayPayload, in HitAttributes intersection : SV_IntersectionAttributes)
 {
 	payload.normal = intersection.normal;
 }
 
 [shader("anyhit")]
+#line 95
 void AnyHit(inout Payload payload, in HitAttributes attr)
 {
 	if (attr.normal.y > 0.5f && attr.normal.y < 0.6f)
@@ -116,6 +122,7 @@ void AnyHit(inout Payload payload, in HitAttributes attr)
 }
 
 [shader("intersection")]
+#line 101
 void Intersection()
 {
 	HitAttributes attr;

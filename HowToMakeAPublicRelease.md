@@ -2,7 +2,7 @@
 
 This document explains how to make a public release of Gigi.
 
-In general, development should end up in the main branch of the private repo.  It should flow from there into the ExternalRelease branch, and then to the public github repo.  If development is done directly into the ExternalRelease branch or the public github repo, it will make merge development hell, so it is not recomended!
+In general, development should end up in the main branch of the private repo.  It should flow from there into the ExternalRelease branch, and then to the public github repo.  If development is done directly into the ExternalRelease branch or the public github repo, it will make merge development hell, so it is not recommended!
 
 * Private Repo (VPN): https://gitlab.ea.com/seed/gigi
 * Public Repo: https://github.com/electronicarts/gigi
@@ -41,8 +41,8 @@ In short, there is no need to update the version number in version.h.  Either it
 
 ## Making The Release
 
-In the private gitlab repo, find the job for the ExternalRelease branch and download the artifacts from the Release job when complete.  It will give you a file named artifacts.zip.  Rename it to Gigi-&lt;major&gt;.&lt;minor&gt;.&lt;build&gt;.x64.windows.zip, for example, Gigi-0.99.0.x64.windows.zip.  This will be one of the two files added to the public release.
+In the private gitlab repo, find the job for the ExternalRelease branch and download the artifacts from the Release job when complete.  It will give you a file named artifacts.zip.  Rename it to Gigi-&lt;major&gt;.&lt;minor&gt;.&lt;build&gt;.x64.windows.zip, for example, Gigi-0.99.0.x64.windows.zip.  This will be one of the two files manually added to the release as an asset.
 
-To make the installer, extract that zip file. Inside, open **Install.nsi** in a text editor and update the version numbers, save and close.  Next, right click **Install.nsi** and select "Compile NSIS Script".  If you don't have NSIS installed, you can download it from https://sourceforge.net/projects/nsis/.  This will make a file "Gigi Setup.exe".  This is the other file that will be added to the public release.  You can rename it using the version numbers to E.g. Gigi-0.99.0.x64.windows.installer.exe.
+To make the installer, extract that zip file. Inside, open **Install.nsi** in a text editor and update the version numbers, save and close.  Next, right click **Install.nsi** and select "Compile NSIS Script".  If you don't have NSIS installed, you can download it from https://sourceforge.net/projects/nsis/.  This will make a file named based on the version numbers E.g. Gigi-0.99.0.x64.windows.installer.exe.  This is the second file that needs to be manually added to the release as an asset.
 
 In the public github repo, create a new release through the web interface at https://github.com/electronicarts/gigi/releases/new.  You should create a new tag named from the version number (such as v0.99.0) and the release should be the same name.  You can put change notes into the description.  Then click "Publish release" and you are done!

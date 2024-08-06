@@ -15,12 +15,15 @@ RWTexture2D<float4> g_texture : register(u0);
 RaytracingAccelerationStructure g_scene : register(t0);
 ConstantBuffer<Struct__SimpleRTRayGenCB> _SimpleRTRayGenCB : register(b0);
 
+#line 1
+
 struct Payload
 {
 	float3 RGB;
 };
 
 [shader("raygeneration")]
+#line 7
 void RayGen()
 {
 	uint2 px = DispatchRaysIndex().xy;
@@ -53,12 +56,14 @@ void RayGen()
 }
 
 [shader("miss")]
+#line 38
 void Miss(inout Payload payload : SV_RayPayload)
 {
 	payload.RGB = _SimpleRTRayGenCB.missColor;
 }
 
 [shader("closesthit")]
+#line 43
 void ClosestHit(inout Payload payload : SV_RayPayload, in BuiltInTriangleIntersectionAttributes intersection : SV_IntersectionAttributes)
 {
 	payload.RGB = _SimpleRTRayGenCB.hitColor;

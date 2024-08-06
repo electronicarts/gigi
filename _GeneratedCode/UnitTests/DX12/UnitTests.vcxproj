@@ -59,25 +59,25 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UnitTests.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">UnitTests</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\Release\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UnitTests.dir\Release\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">UnitTests</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\MinSizeRel\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">UnitTests.dir\MinSizeRel\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">UnitTests</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">.exe</TargetExt>
     <LinkIncremental Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">false</LinkIncremental>
     <GenerateManifest Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">true</GenerateManifest>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\RelWithDebInfo\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">UnitTests.dir\RelWithDebInfo\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">UnitTests</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">.exe</TargetExt>
@@ -86,7 +86,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -103,10 +103,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;CMAKE_INTDIR=\"Debug\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -119,8 +119,8 @@
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/Debug/UnitTests.lib</ImportLibrary>
-      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/Debug/UnitTests.pdb</ProgramDataBaseFile>
+      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -129,7 +129,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
@@ -146,10 +146,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"Release\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -162,8 +162,8 @@
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/Release/UnitTests.lib</ImportLibrary>
-      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/Release/UnitTests.pdb</ProgramDataBaseFile>
+      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -172,7 +172,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='MinSizeRel|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
@@ -189,10 +189,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"MinSizeRel\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -205,8 +205,8 @@
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>false</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/MinSizeRel/UnitTests.lib</ImportLibrary>
-      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/MinSizeRel/UnitTests.pdb</ProgramDataBaseFile>
+      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -215,7 +215,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='RelWithDebInfo|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
@@ -231,10 +231,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR=\"RelWithDebInfo\"</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -247,8 +247,8 @@
       <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
-      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/RelWithDebInfo/UnitTests.lib</ImportLibrary>
-      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/RelWithDebInfo/UnitTests.pdb</ProgramDataBaseFile>
+      <ImportLibrary>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.lib</ImportLibrary>
+      <ProgramDataBaseFile>D:/dev/gitlab/gigi/_GeneratedCode/UnitTests/DX12/UnitTests.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
     </Link>
     <ProjectReference>
@@ -256,6 +256,27 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12compatibility.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12sdklayers.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12shader.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12video.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dcommon.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_barriers.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_check_feature_support.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_core.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_default.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_pipeline_state_stream.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_property_format_table.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_render_pass.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_resource_helpers.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_root_signature.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_state_object.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\dxgiformat.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\CompileShaders.h" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\CompileShaders_dxc.cpp" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\CompileShaders_fxc.cpp" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\DelayedReleaseTracker.h" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\FileCache.cpp" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\FileCache.h" />
@@ -268,9 +289,6 @@
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\dxutils.cpp" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\dxutils.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\logfn.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler.h" />
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler_dxc.cpp" />
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler_fxc.cpp" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\stb\stb_image.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\stb\stb_image_write.h" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\tinyexr\deps\miniz\miniz.c" />
@@ -288,14 +306,6 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestAfter.hlsl" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestLeft.hlsl" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestRight.hlsl" />
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\private\technique.cpp">
-      <ObjectFileName>$(IntDir)/UnitTests/Buffers/MultipleUVMesh/private/technique.cpp.obj</ObjectFileName>
-    </ClCompile>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\private\technique.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\all.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\imgui.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\pythoninterface.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\technique.h" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/Buffers/StructuredBuffer/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
@@ -314,6 +324,16 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\public\pythoninterface.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\public\technique.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\shaders\BufferTest.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Compute/IndirectDispatch/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\shaders\IndirectDispatch_Execute.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\shaders\IndirectDispatch_Fill.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/Compute/ReadbackSequence/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
@@ -368,24 +388,38 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\imgui.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\pythoninterface.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\technique.h" />
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\private\technique.cpp">
-      <ObjectFileName>$(IntDir)/UnitTests/Python/GPUWrite/private/technique.cpp.obj</ObjectFileName>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/MeshShaders/Mesh/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\private\technique.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\all.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\imgui.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\pythoninterface.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\technique.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\shaders\GPUWrite.hlsl" />
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\private\technique.cpp">
-      <ObjectFileName>$(IntDir)/UnitTests/Python/profiling/private/technique.cpp.obj</ObjectFileName>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\shaders\Mesh_MS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\shaders\Mesh_PS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/MeshShaders/MeshAmplification/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\private\technique.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\all.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\imgui.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\pythoninterface.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\technique.h" />
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\shaders\profiling.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\shaders\MeshAmplification_AS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\shaders\MeshAmplification_MS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\shaders\MeshAmplification_PS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/MeshShaders/MeshAmplificationLines/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\shaders\MeshAmplificationLines_AS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\shaders\MeshAmplificationLines_MS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\shaders\MeshAmplificationLines_PS.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/Raster/NoVertex_NoIndex_NoInstance/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
@@ -408,6 +442,21 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw1VS.hlsl" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw2PS.hlsl" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw2VS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Raster/VRS/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Quad_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Quad_VS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_ShadingRateCS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_VS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Vignette_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Vignette_VS.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/Raster/YesVertexStruct_NoIndex_NoInstance/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
@@ -478,6 +527,26 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\public\technique.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\shaders\simpleRaster_PS.hlsl" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\shaders\simpleRaster_VS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Raster/simpleRaster_Lines/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\shaders\simpleRaster_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\shaders\simpleRaster_VS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Raster/simpleRaster_Points/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\shaders\simpleRaster_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\shaders\simpleRaster_VS.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/RayTrace/AnyHit/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
@@ -533,6 +602,15 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\public\pythoninterface.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\public\technique.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\shaders\simpleRT_inline.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/SubGraph/SubGraphLoops/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\shaders\SubGraphLoopsInner\SubGraphLoopsBlur.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/SubGraph/SubGraphTest/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>
@@ -542,6 +620,122 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\public\pythoninterface.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\public\technique.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\shaders\SubGraphTest_SwapColors.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/SubGraph/SubInSub/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\shaders\SubInSubInner2\SubInSubInner2_CS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_CS_2D/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\shaders\Mips_CS_2D_Mip0CS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\shaders\Mips_CS_2D_MipNCS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_CS_2DArray/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\shaders\Mips_CS_2DArray_Mip0CS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\shaders\Mips_CS_2DArray_MipNCS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_CS_3D/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\shaders\Mips_CS_3D_Mip0CS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\shaders\Mips_CS_3D_MipNCS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_CS_Cube/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\shaders\Mips_CS_Cube_Mip0CS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\shaders\Mips_CS_Cube_MipNCS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_DrawCall/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCallSphere_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCallSphere_VS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCall_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCall_VS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_RGS_2D/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\shaders\Mips_RGS_2D_RGS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_ShaderToken_2D/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\shaders\Mips_ShaderToken_2D_CS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_ShaderToken_2DArray/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\shaders\Mips_ShaderToken_2DArray_CS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_ShaderToken_3D/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\shaders\Mips_ShaderToken_3D_CS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_ShaderToken_Cube/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\shaders\Mips_ShaderToken_Cube_CS.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/Textures/Mips_VSPS_2D/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\shaders\Mips_VSPS_2D_PS.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\shaders\Mips_VSPS_2D_VS.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/Textures/Texture2DArrayRW_CS/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>

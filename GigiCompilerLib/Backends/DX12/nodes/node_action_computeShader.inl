@@ -219,6 +219,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             if (dep.access == ShaderResourceAccessType::Indirect)
                 continue;
 
+            int UAVMipIndex = 0;
+            if (dep.pinIndex < node.linkProperties.size())
+                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             if (depCount > 0)
@@ -311,7 +315,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << " }";
+            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " }";
         }
 
         stringReplacementMap["/*$(Execute)*/"] <<
@@ -333,13 +337,36 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         Assert(renderGraph.nodes[indirectBufferResourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
         RenderGraphNode_Resource_Buffer& bufferNode = renderGraph.nodes[indirectBufferResourceNodeIndex].resourceBuffer;
 
+        if (node.dispatchSize.indirectOffsetVariable.variableIndex != -1)
+        {
+            const Variable& variable = renderGraph.variables[node.dispatchSize.indirectOffsetVariable.variableIndex];
+            if (variable.type == DataFieldType::Int)
+            {
+                stringReplacementMap["/*$(Execute)*/"] <<
+                    "\n"
+                    "\n            int executeIndirectOffset = " << VariableToString(variable, renderGraph) << ";"
+                    ;
+            }
+            else
+            {
+                Assert(false, "Unhandled data type \"%s\" for Indirect Offset variable \"%s\" in compute shader node \"%s\"", EnumToString(variable.type), variable.name.c_str(), node.name.c_str());
+            }
+        }
+        else
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            int executeIndirectOffset = " << node.dispatchSize.indirectOffsetValue << ";"
+                ;
+        }
+
         stringReplacementMap["/*$(Execute)*/"] <<
             "\n"
             "\n            commandList->ExecuteIndirect("
             "\n                ContextInternal::s_commandSignatureDispatch,"
             "\n                1,"
             "\n                context->" << GetResourceNodePathInContext(bufferNode.visibility) << "buffer_" << bufferNode.name.c_str() << ","
-            "\n                0,"
+            "\n                executeIndirectOffset * 4 * 4, // byte offset.  *4 because sizeof(UINT) is 4.  *4 again because of 4 items per dispatch."
             "\n                nullptr,"
             "\n                0);";
     }

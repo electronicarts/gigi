@@ -12,6 +12,8 @@ Buffer<float> Data : register(t0);
 RWTexture2D<float4> Output : register(u0);
 ConstantBuffer<Struct__RenderCB> _RenderCB : register(b0);
 
+#line 2
+
 
 static const float c_pi = 3.14159265359f;
 
@@ -35,6 +37,7 @@ float GetHeightAtPos(float x, float y, float2 gaussPos, float2 gaussSigma)
 }
 
 [numthreads(8, 8, 1)]
+#line 25
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	// get pixel location and UV

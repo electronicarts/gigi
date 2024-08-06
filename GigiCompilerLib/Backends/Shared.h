@@ -219,11 +219,23 @@ inline void ForEachToken(const std::string& fileContents, const LAMBDA& lambda)
             return;
 
         // call the lambda
-        lambda(fileContents.substr(start, end - start + 3));
+        lambda(fileContents.substr(start, end - start + 3), &fileContents[0], &fileContents[start]);
 
         // move past this token
         processed = end + 3;
     }
+}
+
+inline size_t CountLineNumber(const char* start, const char* cursor)
+{
+    size_t ret = 1;
+    while (*start && start < cursor)
+    {
+        if (*start == '\n')
+            ret++;
+        start++;
+    }
+    return ret;
 }
 
 inline size_t StringFindCaseInsensitive(const std::string& haystack, const std::string& needle, size_t offset)
@@ -244,7 +256,7 @@ inline void EnsureAllTokensEaten(const std::string& fileContents, std::unordered
 {
     // make sure all tokens appears in the map, even if there's nothing to replace them with.
     ForEachToken(fileContents,
-        [&] (const std::string& token)
+        [&] (const std::string& token, const char* stringStart, const char* cursor)
         {
             stringReplacementMap[token] << "";
         }
@@ -437,6 +449,13 @@ inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::s
             Backend backend;
             StringToEnum(value.c_str(), backend);
             conditionIsTrue = (backend != renderGraph.backend);
+        }
+        else if (!_stricmp(condition.c_str(), "DX12.AgilitySDKRequired"))
+        {
+            bool compareValue = false;
+            if (!_stricmp(value.c_str(), "true"))
+                compareValue = true;
+            conditionIsTrue = (compareValue == renderGraph.settings.dx12.AgilitySDKRequired);
         }
 
         // if the condition is true, we want to remove the conditional statements
@@ -829,11 +848,41 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
     {
         std::string ggconfigFileName = std::string(templateDir) + "ggconfig.json";
         ReadFromJSONFile(templateConfig, ggconfigFileName.c_str(), false);
-
-        // process the rename files
-        for (BackendTemplateFileProperties& fileProperties : templateConfig.fileProperties)
-            StringReplaceAll(fileProperties.renameTo, "/*$(Name)*/", renderGraph.name);
     }
+
+    // process the rename files
+    for (BackendTemplateFileProperties& fileProperties : templateConfig.fileProperties)
+        StringReplaceAll(fileProperties.renameTo, "/*$(Name)*/", renderGraph.name);
+
+    // Expand file properties that are for directories
+    for (size_t filePropertyIndex = 0; filePropertyIndex < templateConfig.fileProperties.size(); ++filePropertyIndex)
+    {
+        BackendTemplateFileProperties& fileProperties = templateConfig.fileProperties[filePropertyIndex];
+        if (!fileProperties.isDirectory)
+            continue;
+
+        std::filesystem::path p = std::filesystem::weakly_canonical(std::filesystem::path(templateDir) / fileProperties.fileName);
+
+        for (const std::filesystem::directory_entry it : std::filesystem::recursive_directory_iterator(p))
+        {
+            if (!it.is_regular_file())
+                continue;
+
+            BackendTemplateFileProperties newProperties = templateConfig.fileProperties[filePropertyIndex];
+            newProperties.isDirectory = false;
+            newProperties.fileName = std::filesystem::proximate(it.path(), templateDir).string();
+            templateConfig.fileProperties.push_back(newProperties);
+        }
+    }
+
+    // Erase all the isDirectory entries now that we've acted on them
+    templateConfig.fileProperties.erase(std::remove_if(templateConfig.fileProperties.begin(), templateConfig.fileProperties.end(),
+        [](const BackendTemplateFileProperties& fileProperties)
+        {
+            return fileProperties.isDirectory;
+        }),
+        templateConfig.fileProperties.end()
+    );
 
     // Process the template files
     for (const std::filesystem::directory_entry it : std::filesystem::recursive_directory_iterator(templateDir))
@@ -871,7 +920,15 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
             std::string extensionString = it.path().extension().string();
             const char* extension = extensionString.c_str();
 
-            isBinary = !_stricmp(extension, ".dll") || !_stricmp(extension, ".lib");
+            isBinary =
+                !_stricmp(extension, ".dll") ||
+                !_stricmp(extension, ".lib") ||
+                !_stricmp(extension, ".pdb") ||
+                !_stricmp(extension, ".exe") ||
+                !_stricmp(extension, ".p7s") ||
+                !_stricmp(extension, ".nupkg") ||
+                !_stricmp(extension, ".png")
+                ;
         }
 
         // Load the file data up
@@ -893,6 +950,9 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
                 relativeFileName = fileProperties.renameTo;
 
             if (fileProperties.onlyIncludeIfRaytracing && !renderGraph.usesRaytracing)
+                skipFile = true;
+
+            if (fileProperties.onlyIncludeIfDX12AgilitySDKRequired && !renderGraph.settings.dx12.AgilitySDKRequired)
                 skipFile = true;
 
             break;

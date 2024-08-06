@@ -3,6 +3,8 @@
 
 Texture2D<float4> _loadedTexture_0 : register(t0);
 
+#line 2
+
 
 struct PSInput // AKA VSOutput
 {

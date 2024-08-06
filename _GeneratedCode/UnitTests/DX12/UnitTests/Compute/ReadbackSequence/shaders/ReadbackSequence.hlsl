@@ -10,8 +10,11 @@ struct Struct__ReadbackSequenceCSCB
 RWTexture2D<float4> output : register(u0);
 ConstantBuffer<Struct__ReadbackSequenceCSCB> _ReadbackSequenceCSCB : register(b0);
 
+#line 2
+
 
 [numthreads(8, 8, 1)]
+#line 4
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	float3 c = float3(0.0f, 0.0f, 0.0f);

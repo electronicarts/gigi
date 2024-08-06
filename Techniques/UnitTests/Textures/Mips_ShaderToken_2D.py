@@ -5,7 +5,7 @@ from PIL import Image
 import os
 
 resources = [
-	[ "MakeOutput._loadedTexture_0: _loadedTexture_0 (SRV)", True, 0, 4 ],
+	[ "MakeOutput.Output: Output (UAV - After)", True, 0, 0 ],
 ]
 
 # don't save gguser files during this script execution

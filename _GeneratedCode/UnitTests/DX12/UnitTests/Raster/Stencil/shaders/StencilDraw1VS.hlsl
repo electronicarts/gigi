@@ -8,6 +8,8 @@ struct Struct__Draw1VSCB
 
 ConstantBuffer<Struct__Draw1VSCB> _Draw1VSCB : register(b0);
 
+#line 2
+
 
 struct VSInput
 {

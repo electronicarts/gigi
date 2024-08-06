@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SubInSubInner2",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "Mult",
@@ -19,12 +19,18 @@
                 {
                     "name": "Input",
                     "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -81,6 +87,7 @@
                     -149.0,
                     34.0
                 ],
+                "visibility": "Exported",
                 "format": {
                     "node": {
                         "name": "Input"

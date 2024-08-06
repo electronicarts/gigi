@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "RenderSize",
@@ -24,6 +24,9 @@
                     "name": "Output",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture3D"
                     }
@@ -44,6 +47,9 @@
                     "name": "Input",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture3D"
                     }
@@ -52,6 +58,9 @@
                     "name": "Output",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture3D"
                     }
@@ -67,6 +76,7 @@
                     -53.0,
                     2.0
                 ],
+                "visibility": "Exported",
                 "format": {
                     "format": "RGBA8_Unorm_sRGB"
                 },

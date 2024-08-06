@@ -2,5 +2,10 @@
     "$schema": "gigischema.json",
     "name": "UnitTests",
     "comment": "a no op technique, to call the unit test modules from",
-    "version": "0.98b"
+    "version": "0.99b",
+    "settings": {
+        "dx12": {
+            "AgilitySDKRequired": true
+        }
+    }
 }

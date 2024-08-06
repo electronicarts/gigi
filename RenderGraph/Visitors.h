@@ -1049,6 +1049,9 @@ struct ReferenceFixupVisitor
             return false;
         }
 
+        if (meshShader || amplificationShader)
+            renderGraph.settings.dx12.AgilitySDKRequired = true;
+
         // Get pin counts
         int vertexPinCount = vertexShader ? (int)vertexShader->resources.size() : 0;
         int pixelPinCount = (int)pixelShader.resources.size();
@@ -1982,7 +1985,7 @@ struct ShaderDataVisitor
 
         std::unordered_set<std::string> variablesAccessedUnsorted;
         ForEachToken((char*)fileContents.data(),
-            [&](const std::string& tokenStr)
+            [&](const std::string& tokenStr, const char* stringStart, const char* cursor)
             {
                 const char* token = tokenStr.c_str();
                 int tokenIndex = 0;
@@ -2123,8 +2126,10 @@ struct ShaderDataVisitor
                         if (node._index != RenderGraphNode::c_index_resourceTexture)
                             continue;
 
+                        int desiredMips = makeMips ? 0 : 1;
+
                         const RenderGraphNode_Resource_Texture& textureNode = node.resourceTexture;
-                        if (textureNode.loadFileName == fileName && textureNode.format.format == textureFormat && textureNode.dimension == dimensionType && textureNode.loadFileNameAsSRGB == loadFileNameAsSRGB && textureNode.loadFileMakeMips == makeMips)
+                        if (textureNode.loadFileName == fileName && textureNode.format.format == textureFormat && textureNode.dimension == dimensionType && textureNode.loadFileNameAsSRGB == loadFileNameAsSRGB && textureNode.numMips == desiredMips)
                         {
                             strcpy_s(textureLoadNodeName, textureNode.name.c_str());
                             createNewTexture = false;
@@ -2148,7 +2153,7 @@ struct ShaderDataVisitor
                             newTextureNode.resourceTexture.dimension = dimensionType;
                             newTextureNode.resourceTexture.loadFileName = fileName.c_str();
                             newTextureNode.resourceTexture.loadFileNameAsSRGB = loadFileNameAsSRGB;
-                            newTextureNode.resourceTexture.loadFileMakeMips = makeMips;
+                            newTextureNode.resourceTexture.numMips = makeMips ? 0 : 1;
                             newTextureNode.resourceTexture.name = textureLoadNodeName;
                             newTextureNode.resourceTexture.originalName = newTextureNode.resourceTexture.name;
                             newTextureNode.resourceTexture.transient = false;

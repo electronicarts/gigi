@@ -16,6 +16,8 @@ struct Struct__InitCB
 RWBuffer<float> Data : register(u0);
 ConstantBuffer<Struct__InitCB> _InitCB : register(b0);
 
+#line 2
+
 
 static const float c_pi = 3.14159265359f;
 
@@ -40,6 +42,7 @@ float wang_hash_float01(inout uint state)
 }
 
 [numthreads(1, 1, 1)]
+#line 26
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	// set the ball position on click

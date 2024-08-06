@@ -20,7 +20,7 @@ inline bool ShaderResourceTypeIsReadOnly(ShaderResourceAccessType access)
     switch (access)
     {
         case ShaderResourceAccessType::UAV: return false;
-        case ShaderResourceAccessType::RTScene:
+        case ShaderResourceAccessType::RTScene: return true;
         case ShaderResourceAccessType::SRV: return true;
         case ShaderResourceAccessType::CopySource: return true;
         case ShaderResourceAccessType::CopyDest: return false;

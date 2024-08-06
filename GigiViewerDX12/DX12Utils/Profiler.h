@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "WinPixEventRuntime/pix3.h"
+#include "pix3.h"
 
 class Profiler
 {

@@ -23,7 +23,10 @@ ByteAddressBuffer InputTypedRaw : register(t2);
 RWByteAddressBuffer OutputTypedRaw : register(u2);
 ConstantBuffer<Struct__BufferTestCB> _BufferTestCB : register(b0);
 
+#line 1
+
 [numthreads(64, 1, 1)]
+#line 2
 void Main(uint3 DTid : SV_DispatchThreadID)
 {
 	// Do FIR on the typed buffer

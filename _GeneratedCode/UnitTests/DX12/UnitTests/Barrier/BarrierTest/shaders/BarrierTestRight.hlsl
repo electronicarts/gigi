@@ -3,8 +3,11 @@
 
 RWTexture2D<float4> Output : register(u0);
 
+#line 2
+
 
 [numthreads(8, 8, 1)]
+#line 4
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	uint2 dims;

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "MeshAmplificationLines",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "MouseState",
@@ -96,19 +96,19 @@
         {
             "name": "AmplificationCount",
             "type": "Uint",
-            "dflt": "1, 1, 1",
+            "dflt": "4",
             "visibility": "User"
         },
         {
             "name": "AmplificationSpacing",
             "type": "Float",
-            "dflt": "5.0f",
+            "dflt": "2.0f",
             "visibility": "User"
         },
         {
             "name": "Offset",
             "type": "Float3",
-            "dflt": "0.0f, 0.0f, 0.0f",
+            "dflt": "0.0f, 1.0f, 0.0f",
             "visibility": "User"
         }
     ],
@@ -142,7 +142,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "VertexFormat"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -170,7 +171,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "VertexFormat"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]

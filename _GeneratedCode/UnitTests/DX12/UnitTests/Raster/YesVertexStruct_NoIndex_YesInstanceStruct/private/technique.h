@@ -3,6 +3,8 @@
 #include <d3d12.h>
 #include <array>
 #include <vector>
+#include <unordered_map>
+#include "DX12Utils/dxutils.h"
 
 namespace YesVertexStruct_NoIndex_YesInstanceStruct
 {
@@ -64,10 +66,10 @@ namespace YesVertexStruct_NoIndex_YesInstanceStruct
         ID3D12PipelineState* drawCall_Rasterize_pso = nullptr;
         ID3D12RootSignature* drawCall_Rasterize_rootSig = nullptr;
 
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_RTVCache;
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_DSVCache;
+
         // Freed on destruction of the context
         std::vector<ID3D12Resource*> m_managedResources;
-
-        std::vector<int> m_managedRTVs;
-        std::vector<int> m_managedDSVs;
     };
 };

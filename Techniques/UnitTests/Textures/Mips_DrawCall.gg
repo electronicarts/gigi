@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
-    "name": "simpleRaster",
-    "version": "0.98b",
+    "name": "Mips_DrawCall",
+    "version": "0.99b",
     "variables": [
         {
             "name": "MouseState",
@@ -134,7 +134,10 @@
                 {
                     "name": "MipTex",
                     "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ],
             "samplers": [

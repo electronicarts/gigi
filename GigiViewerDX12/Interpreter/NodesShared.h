@@ -135,6 +135,36 @@ inline D3D12_CULL_MODE DrawCullModeToD3D12_CULL_MODE(DrawCullMode cullMode)
 	}
 }
 
+inline D3D12_PRIMITIVE_TOPOLOGY GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY(GeometryType geometryType)
+{
+	switch (geometryType)
+	{
+		case GeometryType::TriangleList: return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		case GeometryType::LineList: return D3D_PRIMITIVE_TOPOLOGY_LINELIST;
+		case GeometryType::PointList: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
+		default:
+		{
+			Assert(false, "Unhandled GeometryType");
+			return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
+		}
+	}
+}
+
+inline D3D12_PRIMITIVE_TOPOLOGY_TYPE GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(GeometryType geometryType)
+{
+	switch (geometryType)
+	{
+		case GeometryType::TriangleList: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		case GeometryType::LineList: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;
+		case GeometryType::PointList: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
+		default:
+		{
+			Assert(false, "Unhandled GeometryType");
+			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
+		}
+	}
+}
+
 inline D3D12_COMPARISON_FUNC DepthTestFunctionToD3D12_COMPARISON_FUNC(DepthTestFunction function)
 {
 	switch (function)

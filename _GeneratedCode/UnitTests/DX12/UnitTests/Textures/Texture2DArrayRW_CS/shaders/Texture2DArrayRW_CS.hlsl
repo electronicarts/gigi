@@ -6,8 +6,11 @@ RWTexture2DArray<float4> importedTexture : register(u1);
 Texture2DArray<float4> importedColor : register(t0);
 Texture2DArray<float4> _loadedTexture_0 : register(t1);
 
+#line 2
+
 
 [numthreads(4, 4, 4)]
+#line 4
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	float3 loadedTexturePx = _loadedTexture_0[DTid.xyz].rgb;

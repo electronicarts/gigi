@@ -94,6 +94,67 @@ struct BackendDX12 : public BackendBase
         }
     }
 
+    static std::string TextureDimensionTypeToD3D12_RTV_DIMENSION(TextureDimensionType textureDimensionType)
+    {
+        switch (textureDimensionType)
+        {
+            case TextureDimensionType::Texture2D: return "D3D12_RTV_DIMENSION_TEXTURE2D";
+            case TextureDimensionType::Texture2DArray: return "D3D12_RTV_DIMENSION_TEXTURE2DARRAY";
+            case TextureDimensionType::Texture3D: return "D3D12_RTV_DIMENSION_TEXTURE3D";
+            case TextureDimensionType::TextureCube: return "D3D12_RTV_DIMENSION_TEXTURE2DARRAY";
+            default:
+            {
+                Assert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
+                return __FUNCTION__ " unhandled TextureDimensionType";
+            }
+        }
+    }
+
+    static std::string TextureDimensionTypeToD3D12_DSV_DIMENSION(TextureDimensionType textureDimensionType)
+    {
+        switch (textureDimensionType)
+        {
+            case TextureDimensionType::Texture2D: return "D3D12_DSV_DIMENSION_TEXTURE2D";
+            case TextureDimensionType::Texture2DArray: return "D3D12_DSV_DIMENSION_TEXTURE2DARRAY";
+            case TextureDimensionType::TextureCube: return "D3D12_DSV_DIMENSION_TEXTURE2DARRAY";
+            default:
+            {
+                Assert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
+                return __FUNCTION__ " unhandled TextureDimensionType";
+            }
+        }
+    }
+
+    static std::string GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY(GeometryType geometryType)
+    {
+        switch (geometryType)
+        {
+            case GeometryType::TriangleList: return "D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST";
+            case GeometryType::LineList: return "D3D_PRIMITIVE_TOPOLOGY_LINELIST";
+            case GeometryType::PointList: return "D3D_PRIMITIVE_TOPOLOGY_POINTLIST";
+            default:
+            {
+                Assert(false, "Unhandled GeometryType: %i (%s)", (int)geometryType, EnumToString(geometryType));
+                return __FUNCTION__ " unhandled GeometryType";
+            }
+        }
+    }
+
+    static std::string GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(GeometryType geometryType)
+    {
+        switch (geometryType)
+	    {
+		    case GeometryType::TriangleList: return "D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE";
+		    case GeometryType::LineList: return "D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE";
+		    case GeometryType::PointList: return "D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT";
+		    default:
+		    {
+                Assert(false, "Unhandled GeometryType: %i (%s)", (int)geometryType, EnumToString(geometryType));
+                return __FUNCTION__ " unhandled GeometryType";
+		    }
+	    }
+    }
+
     static std::string DepthTestFunctionToD3D12_COMPARISON_FUNC(DepthTestFunction function)
     {
         switch (function)
@@ -212,6 +273,38 @@ struct BackendDX12 : public BackendBase
 
         Assert(false, "Unhandled ShaderResourceType: %s (%i)", EnumToString(resourceType), (int)resourceType);
         return __FUNCTION__ " unknown resource type";
+    }
+
+    static const std::string ShadingRateToD3D12_SHADING_RATE(ShadingRate shadingRate)
+    {
+        switch (shadingRate)
+        {
+            case ShadingRate::_1x1: return "D3D12_SHADING_RATE_1X1";
+            case ShadingRate::_1x2: return "D3D12_SHADING_RATE_1X2";
+            case ShadingRate::_2x1: return "D3D12_SHADING_RATE_2X1";
+            case ShadingRate::_2x2: return "D3D12_SHADING_RATE_2X2";
+            case ShadingRate::_2x4: return "D3D12_SHADING_RATE_2X4";
+            case ShadingRate::_4x2: return "D3D12_SHADING_RATE_4X2";
+            case ShadingRate::_4x4: return "D3D12_SHADING_RATE_4X4";
+        }
+
+        Assert(false, "Unhandled ShadingRate: %s (%i)", EnumToString(shadingRate), (int)shadingRate);
+        return __FUNCTION__ " unknown ShadingRate";
+    }
+
+    static const std::string ShadingRateCombinerToD3D12_SHADING_RATE_COMBINER(ShadingRateCombiner shadingRateCombiner)
+    {
+        switch (shadingRateCombiner)
+        {
+            case ShadingRateCombiner::PassThrough: return "D3D12_SHADING_RATE_COMBINER_PASSTHROUGH";
+            case ShadingRateCombiner::Override: return "D3D12_SHADING_RATE_COMBINER_OVERRIDE";
+            case ShadingRateCombiner::Min: return "D3D12_SHADING_RATE_COMBINER_MIN";
+            case ShadingRateCombiner::Max: return "D3D12_SHADING_RATE_COMBINER_MAX";
+            case ShadingRateCombiner::Sum: return "D3D12_SHADING_RATE_COMBINER_SUM";
+        }
+
+        Assert(false, "Unhandled ShadingRateCombiner: %s (%i)", EnumToString(shadingRateCombiner), (int)shadingRateCombiner);
+        return __FUNCTION__ " unknown ShadingRateCombiner";
     }
 
     inline static std::string VariableToStringInsideContext(const Variable& variable, const RenderGraph& renderGraph)
@@ -1529,22 +1622,35 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
     shaderSpecificStringReplacementMap["/*$(RayTraceFn)*/"] << "TraceRay";
     std::string shaderFileContents = (char*)shaderFile.data();
     ForEachToken(shaderFileContents.c_str(),
-        [&](const std::string& token)
+        [&](const std::string& token, const char* stringStart, const char* cursor)
         {
+            size_t lineNumber = CountLineNumber(stringStart, cursor);
+
             std::string param;
-            if (GetTokenParameter(token.c_str(), "_compute", param))
+            if (token == "/*$(ShaderResources)*/")
+            {
+                std::string old = shaderSpecificStringReplacementMap[token].str();
+                shaderSpecificStringReplacementMap[token] = std::ostringstream();
+                shaderSpecificStringReplacementMap[token] <<
+                    old << "\n" <<
+                    "#line " << lineNumber << "\n"
+                    ;
+            }
+            else if (GetTokenParameter(token.c_str(), "_compute", param))
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]"
-                    "\nvoid " << param;
+                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << param;
             }
             else if (GetTokenParameter(token.c_str(), "_amplification", param))
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]"
-                    "\nvoid " << param;
+                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << param;
             }
             else if (GetTokenParameter(token.c_str(), "_mesh", param))
             {
@@ -1561,23 +1667,26 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
 
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]"
-                    "\n[OutputTopology(\"" << topology << "\")]"
-                    "\nvoid " << entryPoint;
+                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]\n"
+                    "[OutputTopology(\"" << topology << "\")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << entryPoint;
             }
             else if (GetTokenParameter(token.c_str(), "_raygeneration", param))
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"raygeneration\")]"
-                    "\nvoid " << param << "()";
+                    "[shader(\"raygeneration\")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << param << "()";
             }
             else if (GetTokenParameter(token.c_str(), "_miss", param))
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"miss\")]"
-                    "\nvoid " << param << "(inout Payload payload : SV_RayPayload)";
+                    "[shader(\"miss\")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << param << "(inout Payload payload : SV_RayPayload)";
             }
             else if (GetTokenParameter(token.c_str(), "_anyhit", param))
             {
@@ -1594,15 +1703,17 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
 
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"anyhit\")]"
-                    "\nvoid " << entryPoint << "(inout Payload payload, in " << attribStruct << " attr)";
+                    "[shader(\"anyhit\")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << entryPoint << "(inout Payload payload, in " << attribStruct << " attr)";
             }
             else if (GetTokenParameter(token.c_str(), "_intersection", param))
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"intersection\")]"
-                    "\nvoid " << param << "()";
+                    "[shader(\"intersection\")]\n"
+                    "#line " << lineNumber << "\n"
+                    "void " << param << "()";
             }
             else if (GetTokenParameter(token.c_str(), "_closesthit", param))
             {
@@ -1620,6 +1731,7 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] <<
                     "[shader(\"closesthit\")]\n"
+                    "#line " << lineNumber << "\n"
                     "void " << entryPoint << "(inout Payload payload : SV_RayPayload, in " << attribStruct << " intersection : SV_IntersectionAttributes)";
             }
             else if (GetTokenParameter(token.c_str(), "RTHitGroupIndex", param))
@@ -1738,26 +1850,6 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
 void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
 {
     const char* outFolder = renderGraph.outputDirectory.c_str();
-
-    for (const Shader& shader : renderGraph.shaders)
-    {
-        if (shader.type == ShaderType::Amplification)
-            ShowWarningMessage("Amplification shaders not currently supported by generated code, except in the viewer. (shader = \"%s\")", shader.name.c_str());
-        else if (shader.type == ShaderType::Mesh)
-            ShowWarningMessage("Mesh shaders not currently supported by generated code, except in the viewer. (shader = \"%s\")", shader.name.c_str());
-    }
-
-    for (const RenderGraphNode& nodeBase: renderGraph.nodes)
-    {
-        if (nodeBase._index != RenderGraphNode::c_index_actionDrawCall)
-            continue;
-
-        const RenderGraphNode_Action_DrawCall& node = nodeBase.actionDrawCall;
-        if (node.shadingRateImage.resourceNodeIndex != -1)
-        {
-            ShowWarningMessage("Shading rate images not currently supported by generated code, except in the viewer. (node = \"%s\")", node.name.c_str());
-        }
-    }
 
     if(renderGraph.generateGraphVizFlag){
         // make the graphviz

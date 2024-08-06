@@ -56,6 +56,7 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(std::string, shaderModelAs, "as_6_5", "The default shader model to use for amplification shaders", 0)
     STRUCT_FIELD(std::string, shaderModelMs, "ms_6_5", "The default shader model to use for mesh shaders", 0)
     STRUCT_FIELD(bool, DXC_HLSL_2021, false, "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021", 0)
+    STRUCT_FIELD(bool, AgilitySDKRequired, false, "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.", 0)
 STRUCT_END()
 
 

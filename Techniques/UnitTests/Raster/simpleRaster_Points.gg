@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
-    "name": "simpleRaster",
-    "version": "0.98b",
+    "name": "simpleRaster_Points",
+    "version": "0.99b",
     "variables": [
         {
             "name": "MouseState",

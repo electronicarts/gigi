@@ -568,15 +568,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			psoDesc.DepthStencilState.DepthWriteMask = node.depthWrite ? D3D12_DEPTH_WRITE_MASK_ALL : D3D12_DEPTH_WRITE_MASK_ZERO;
 			psoDesc.DepthStencilState.DepthFunc = DepthTestFunctionToD3D12_COMPARISON_FUNC(node.depthTest);
 			psoDesc.SampleMask = UINT_MAX;
-
-			D3D12_PRIMITIVE_TOPOLOGY_TYPE topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
-			switch (node.geometryType)
-			{
-				case GeometryType::TriangleList: topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;  break;
-				case GeometryType::LineList: topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_LINE;  break;
-				case GeometryType::PointList: topologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;  break;
-			}
-			psoDesc.PrimitiveTopologyType = topologyType;
+			psoDesc.PrimitiveTopologyType = GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(node.geometryType);
 
 			// Set the render targets
 			psoDesc.NumRenderTargets = 0;
@@ -652,7 +644,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			psoDesc.MS.pShaderBytecode = runtimeData.m_meshShaderBytes.data();
 			psoDesc.MS.BytecodeLength = (UINT)runtimeData.m_meshShaderBytes.size();
 
-			auto meshStreamDesc = CD3DX12_PIPELINE_MESH_STATE_STREAM(psoDesc);
+			CD3DX12_PIPELINE_MESH_STATE_STREAM meshStreamDesc = CD3DX12_PIPELINE_MESH_STATE_STREAM(psoDesc);
 
 			// Point to our populated stream desc
 			D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = {};
@@ -982,17 +974,17 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					// transition
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE, GetNodeName(resourceNode).c_str()) });
 
-					ID3D12GraphicsCommandList5* m_VRSCommandList = nullptr;
-					if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&m_VRSCommandList))))
+					ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
+					if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
 					{
 						m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
 						return false;
 					}
 
 					// Set the shading rate image
-					m_VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
+					VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
 
-					m_VRSCommandList->Release();
+					VRSCommandList->Release();
 				}
 			}
 		}
@@ -1504,23 +1496,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		m_commandList->RSSetViewports(1, &viewport);
 		m_commandList->RSSetScissorRects(1, &scissorRect);
 
-		D3D_PRIMITIVE_TOPOLOGY geometryType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
-		switch (node.geometryType)
-		{
-			case GeometryType::TriangleList: geometryType = D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST; break;
-			case GeometryType::LineList: geometryType = D3D_PRIMITIVE_TOPOLOGY_LINELIST; break;
-			case GeometryType::PointList: geometryType = D3D_PRIMITIVE_TOPOLOGY_POINTLIST; break;
-		}
-		m_commandList->IASetPrimitiveTopology(geometryType);
-
+		m_commandList->IASetPrimitiveTopology(GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY(node.geometryType));
 		m_commandList->OMSetRenderTargets((UINT)colorTargetHandles.size(), colorTargetHandles.data(), false, depthTargetHandlePtr);
-
 		m_commandList->OMSetStencilRef(node.stencilRef);
 
 		// variable rate shading - set sparse sampling
 		{
-			ID3D12GraphicsCommandList5* m_VRSCommandList = nullptr;
-			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&m_VRSCommandList))))
+			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
+			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
 			{
 				m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
 				return false;
@@ -1546,9 +1529,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				return false;
 			}
 
-			m_VRSCommandList->RSSetShadingRate(shadingRate, combiners);
+			VRSCommandList->RSSetShadingRate(shadingRate, combiners);
 
-			m_VRSCommandList->Release();
+			VRSCommandList->Release();
 		}
 
 		std::ostringstream ss;
@@ -1631,16 +1614,16 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			for (int i = 0; i < 3; ++i)
 				dispatchSize[i] = (dispatchSize[i] + node.meshShader.shader->NumThreads[i] - 1) / node.meshShader.shader->NumThreads[i];
 
-			ID3D12GraphicsCommandList6* m_meshCommandList = nullptr;
-			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&m_meshCommandList))))
+			ID3D12GraphicsCommandList6* meshCommandList = nullptr;
+			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&meshCommandList))))
 			{
 				m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList6*", node.name.c_str());
 				return false;
 			}
 
-			m_meshCommandList->DispatchMesh(dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+			meshCommandList->DispatchMesh(dispatchSize[0], dispatchSize[1], dispatchSize[2]);
 
-			m_meshCommandList->Release();
+			meshCommandList->Release();
 
 			ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
 			if (node.amplificationShader.shader)
@@ -1663,17 +1646,17 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 		// variable rate shading - set it back to dense sampling
 		{
-			ID3D12GraphicsCommandList5* m_VRSCommandList = nullptr;
-			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&m_VRSCommandList))))
+			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
+			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
 			{
 				m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
 				return false;
 			}
 
-			m_VRSCommandList->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
-			m_VRSCommandList->RSSetShadingRateImage(nullptr);
+			VRSCommandList->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
+			VRSCommandList->RSSetShadingRateImage(nullptr);
 
-			m_VRSCommandList->Release();
+			VRSCommandList->Release();
 		}
 
 		if (IsConditional(node.condition))

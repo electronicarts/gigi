@@ -35,12 +35,6 @@
     <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\dxutils.cpp">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\shadercompiler_fxc.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\shadercompiler_dxc.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
     <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui.cpp">
       <Filter>Backends\DX12\templates\Application\imgui</Filter>
     </ClCompile>
@@ -73,6 +67,12 @@
     </ClCompile>
     <ClCompile Include="..\external\timyxml2\tinyxml2.cpp">
       <Filter>external\timyxml2</Filter>
+    </ClCompile>
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_dxc.cpp">
+      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_fxc.cpp">
+      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -265,9 +265,6 @@
     <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\dxutils.h">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClInclude>
-    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\shadercompiler.h">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClInclude>
     <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\logfn.h">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClInclude>
@@ -323,6 +320,66 @@
       <Filter>external\timyxml2</Filter>
     </ClInclude>
     <ClInclude Include="ParseText.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12compatibility.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12sdklayers.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12shader.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\D3D12TokenizedProgramFormat.hpp">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12video.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dcommon.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\dxgiformat.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_barriers.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_check_feature_support.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_core.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_default.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_pipeline_state_stream.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_property_format_table.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_render_pass.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_resource_helpers.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_root_signature.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_state_object.h">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders.h">
+      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="schemas">
@@ -403,6 +460,18 @@
     <Filter Include="external\timyxml2">
       <UniqueIdentifier>{fa16a087-4567-426a-b093-af1421e05c99}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Backends\DX12\templates\Module\AgilitySDK">
+      <UniqueIdentifier>{a1018a8e-47c7-47bf-9f47-e02e857cf842}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\DX12\templates\Module\AgilitySDK\bin">
+      <UniqueIdentifier>{de471de0-e89e-4117-8453-b08fe2ba44d6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\DX12\templates\Module\AgilitySDK\include">
+      <UniqueIdentifier>{7693185f-aaf4-4c11-9451-0c0355679480}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12">
+      <UniqueIdentifier>{3771847f-1c21-43cf-be29-a8b4a140604a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Backends\DX12\nodes\node_action_barrier.inl">
@@ -459,6 +528,27 @@
     <None Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\readme.md">
       <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz</Filter>
     </None>
+    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
+    </None>
+    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.pdb">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
+    </None>
+    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3d12SDKLayers.dll">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
+    </None>
+    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3d12SDKLayers.pdb">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
+    </None>
+    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3dconfig.exe">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
+    </None>
+    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3dconfig.pdb">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
+    </None>
+    <None Include="Backends\DX12\templates\Module\ggconfig.json">
+      <Filter>Backends\DX12\templates\Module</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Backends\DX12\templates\Module\readme.txt">
@@ -473,5 +563,25 @@
     <Text Include="Backends\DX12\templates\Application\imgui\LICENSE.txt">
       <Filter>Backends\DX12\templates\Application\imgui</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.idl">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </Midl>
+    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12compatibility.idl">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </Midl>
+    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12sdklayers.idl">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </Midl>
+    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12video.idl">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </Midl>
+    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dcommon.idl">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </Midl>
+    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\dxgiformat.idl">
+      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
+    </Midl>
   </ItemGroup>
 </Project>

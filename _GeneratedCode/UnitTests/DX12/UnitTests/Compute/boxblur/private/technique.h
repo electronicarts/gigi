@@ -3,6 +3,8 @@
 #include <d3d12.h>
 #include <array>
 #include <vector>
+#include <unordered_map>
+#include "DX12Utils/dxutils.h"
 
 namespace boxblur
 {
@@ -36,6 +38,7 @@ namespace boxblur
         // An internal texture used during the blurring process
         ID3D12Resource* texture_PingPongTexture = nullptr;
         unsigned int texture_PingPongTexture_size[3] = { 0, 0, 0 };
+        unsigned int texture_PingPongTexture_numMips = 0;
         DXGI_FORMAT texture_PingPongTexture_format = DXGI_FORMAT_UNKNOWN;
         static const D3D12_RESOURCE_FLAGS texture_PingPongTexture_flags =  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         const D3D12_RESOURCE_STATES c_texture_PingPongTexture_endingState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
@@ -51,10 +54,10 @@ namespace boxblur
         static ID3D12PipelineState* computeShader_BlurV_pso;
         static ID3D12RootSignature* computeShader_BlurV_rootSig;
 
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_RTVCache;
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_DSVCache;
+
         // Freed on destruction of the context
         std::vector<ID3D12Resource*> m_managedResources;
-
-        std::vector<int> m_managedRTVs;
-        std::vector<int> m_managedDSVs;
     };
 };

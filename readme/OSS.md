@@ -1,6 +1,6 @@
 # Open Sourced Libraries Used By Gigi
 
-Gigi would not be possible without:
+Gigi would not be possible without the following:
 
 Library | URL | Use |
 :-----:|:------:|:--------:

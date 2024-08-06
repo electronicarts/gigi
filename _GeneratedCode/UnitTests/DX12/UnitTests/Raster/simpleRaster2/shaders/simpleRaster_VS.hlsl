@@ -8,6 +8,8 @@ struct Struct__VertexShaderCB
 
 ConstantBuffer<Struct__VertexShaderCB> _VertexShaderCB : register(b0);
 
+#line 2
+
 
 struct VSInput
 {

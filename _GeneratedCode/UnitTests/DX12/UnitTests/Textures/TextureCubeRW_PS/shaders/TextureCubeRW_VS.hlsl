@@ -2,6 +2,8 @@
 
 
 
+#line 2
+
 
 struct VSInput
 {

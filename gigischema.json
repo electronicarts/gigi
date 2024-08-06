@@ -2528,6 +2528,10 @@
             "DXC_HLSL_2021": {
               "description": "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021",
               "type": "boolean"
+            },
+            "AgilitySDKRequired": {
+              "description": "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.",
+              "type": "boolean"
             }
           }
         },

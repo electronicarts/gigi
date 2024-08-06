@@ -1,6 +1,9 @@
 UnitTests.dir/
-*.pdb
-*.user
+UnitTests.exe
+UnitTests.exp
+UnitTests.lib
+UnitTests.pdb
+*.vcxproj.user
 Debug/
 MinSizeRel/
 Release/

@@ -23,6 +23,8 @@ RaytracingAccelerationStructure g_scene : register(t0);
 StructuredBuffer<Struct_VertexBuffer> g_vertexBuffer : register(t1);
 ConstantBuffer<Struct__SimpleRTCSCB> _SimpleRTCSCB : register(b0);
 
+#line 1
+
 
 float3 LinearToSRGB(float3 linearCol)
 {
@@ -36,6 +38,7 @@ float3 LinearToSRGB(float3 linearCol)
 }
 
 [numthreads(8, 8, 1)]
+#line 14
 void SimpleRTCS(uint3 DTid : SV_DispatchThreadID)
 {
 	uint2 px = DTid.xy;

@@ -318,7 +318,6 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_Texture, RenderGraphNode_ResourceB
 
     STRUCT_FIELD(std::string, loadFileName, "", "If not empty, it load it as an image. This is currently not exposed to users, and is created when shaders use an image token", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(bool, loadFileNameAsSRGB, true, "If true, the source file is treated as sRGB", SCHEMA_FLAG_NO_SERIALIZE)
-    STRUCT_FIELD(bool, loadFileMakeMips, false, "If true, makes a full mip chain for the texture (only for loadFileName)", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 //========================================================

@@ -13,7 +13,7 @@ class ReadbackHelper
 {
 public:
 
-	int RequestReadback(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, int subResourceIndex, TLogFn logFn)
+	int RequestReadback(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, int arrayIndex, int mipIndex, TLogFn logFn)
 	{
 		if (resource == nullptr)
 		{
@@ -24,9 +24,24 @@ public:
 		// make a new request
 		ReadbackRequest newRequest;
 		newRequest.age = 0;
+		newRequest.resourceDesc = resource->GetDesc();
+		newRequest.arrayIndex = arrayIndex;
+		newRequest.mipIndex = mipIndex;
+
+		// calculate size, taking into account mipIndex
+		int readbackWidth = newRequest.resourceDesc.Width;
+		int readbackHeight = newRequest.resourceDesc.Height;
+		int readbackDepth = (newRequest.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) ? newRequest.resourceDesc.DepthOrArraySize : 1;
+		{
+			for (int i = 0; i < mipIndex; ++i)
+			{
+				readbackWidth = max(readbackWidth / 2, 1);
+				readbackHeight = max(readbackHeight / 2, 1);
+				readbackDepth = max(readbackDepth / 2, 1);
+			}
+		}
 
 		// Allocate a readback buffer
-		newRequest.resourceDesc = resource->GetDesc();
 		int bytesPerPixel = 1;
 		int planeCount = 1;
 		int planeIndex = 0;
@@ -37,10 +52,9 @@ public:
 			planeCount = formatInfo.planeCount;
 			planeIndex = formatInfo.planeIndex;
 		}
-		int unalignedPitch = newRequest.resourceDesc.Width * bytesPerPixel;
+		int unalignedPitch = readbackWidth * bytesPerPixel;
 		int alignedPitch = (newRequest.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER) ? unalignedPitch : ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * planeCount), unalignedPitch);
-		int readbackDepth = (newRequest.resourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D) ? newRequest.resourceDesc.DepthOrArraySize : 1;
-		newRequest.readbackResourceSize = alignedPitch * newRequest.resourceDesc.Height * readbackDepth;
+		newRequest.readbackResourceSize = alignedPitch * readbackHeight * readbackDepth;
 		newRequest.readbackResource = CreateBuffer(device, newRequest.readbackResourceSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, L"ReadbackHelper", logFn);
 		newRequest.unalignedPitch = unalignedPitch;
 		newRequest.alignedPitch = alignedPitch;
@@ -66,13 +80,14 @@ public:
 				unsigned char layoutMem[sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)];
 				D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem;
 
-				UINT firstSubResource = (0 * planeCount) + planeIndex;
+				DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(newRequest.resourceDesc.Format, logFn);
+				UINT firstSubResource = D3D12CalcSubresource(mipIndex, arrayIndex, resourceFormatInfo.planeIndex, newRequest.resourceDesc.MipLevels, newRequest.resourceDesc.DepthOrArraySize);
 				device->GetCopyableFootprints(&newRequest.resourceDesc, firstSubResource, 1, 0, layout, nullptr, nullptr, nullptr);
 
 				D3D12_TEXTURE_COPY_LOCATION src = {};
 				src.pResource = resource;
 				src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-				src.SubresourceIndex = subResourceIndex;
+				src.SubresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, resourceFormatInfo.planeIndex, newRequest.resourceDesc.MipLevels, newRequest.resourceDesc.DepthOrArraySize);
 
 				D3D12_TEXTURE_COPY_LOCATION dest = {};
 				dest.pResource = newRequest.readbackResource;
@@ -92,21 +107,24 @@ public:
 			{
 				D3D12_BOX srcBox;
 				srcBox.left = 0;
-				srcBox.right = newRequest.resourceDesc.Width;
+				srcBox.right = readbackWidth;
 				srcBox.top = 0;
-				srcBox.bottom = newRequest.resourceDesc.Height;
+				srcBox.bottom = readbackHeight;
 				srcBox.front = 0;
-				srcBox.back = newRequest.resourceDesc.DepthOrArraySize;
+				srcBox.back = readbackDepth;
 
 				D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
+				DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(newRequest.resourceDesc.Format, logFn);
+				UINT firstSubResource = D3D12CalcSubresource(mipIndex, arrayIndex, resourceFormatInfo.planeIndex, newRequest.resourceDesc.MipLevels, newRequest.resourceDesc.DepthOrArraySize);
+
 				unsigned char layoutMem[sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)];
 				D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem;
-				device->GetCopyableFootprints(&resourceDesc, 0, 1, 0, layout, nullptr, nullptr, nullptr);
+				device->GetCopyableFootprints(&resourceDesc, firstSubResource, 1, 0, layout, nullptr, nullptr, nullptr);
 
 				D3D12_TEXTURE_COPY_LOCATION src = {};
 				src.pResource = resource;
 				src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-				src.SubresourceIndex = 0;
+				src.SubresourceIndex = firstSubResource;
 
 				D3D12_TEXTURE_COPY_LOCATION dest = {};
 				dest.pResource = newRequest.readbackResource;
@@ -155,6 +173,8 @@ public:
 			{
 				// Prepare the memory to hold the read back data
 				ReadbackComplete data;
+				data.arrayIndex = it.second.arrayIndex;
+				data.mipIndex = it.second.mipIndex;
 				data.bytes.resize(it.second.readbackResourceSize);
 				data.resourceDesc = it.second.resourceDesc;
 
@@ -201,7 +221,7 @@ public:
 		return m_completeRequests.count(id) != 0;
 	}
 
-	std::vector<unsigned char> GetReadbackData(int id, D3D12_RESOURCE_DESC& resourceDesc)
+	std::vector<unsigned char> GetReadbackData(int id, D3D12_RESOURCE_DESC& resourceDesc, int& arrayIndex, int& mipIndex)
 	{
 		std::vector<unsigned char> ret;
 
@@ -209,6 +229,8 @@ public:
 			return ret;
 
 		resourceDesc = m_completeRequests[id].resourceDesc;
+		arrayIndex = m_completeRequests[id].arrayIndex;
+		mipIndex = m_completeRequests[id].mipIndex;
 		ret = m_completeRequests[id].bytes;
 
 		m_completeRequests.erase(id);
@@ -226,6 +248,8 @@ private:
 	{
 		int age = 0;
 		D3D12_RESOURCE_DESC resourceDesc;
+		int mipIndex = 0;
+		int arrayIndex = 0;
 		ID3D12Resource* readbackResource = nullptr;
 		unsigned int readbackResourceSize = 0;
 		int unalignedPitch = 0;
@@ -235,6 +259,8 @@ private:
 	struct ReadbackComplete
 	{
 		D3D12_RESOURCE_DESC resourceDesc;
+		int mipIndex = 0;
+		int arrayIndex = 0;
 		std::vector<unsigned char> bytes;
 	};
 

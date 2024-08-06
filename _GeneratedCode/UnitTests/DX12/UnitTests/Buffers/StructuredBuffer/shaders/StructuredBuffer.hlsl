@@ -28,8 +28,11 @@ struct Struct__csmainCB
 RWStructuredBuffer<Struct_TheStructure> buff : register(u0);
 ConstantBuffer<Struct__csmainCB> _csmainCB : register(b0);
 
+#line 2
+
 
 [numthreads(1, 1, 1)]
+#line 4
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	// Make a constant buffer show up

@@ -3,6 +3,8 @@
 #include <d3d12.h>
 #include <array>
 #include <vector>
+#include <unordered_map>
+#include "DX12Utils/dxutils.h"
 
 namespace Stencil
 {
@@ -39,6 +41,7 @@ namespace Stencil
 
         ID3D12Resource* texture__loadedTexture_0 = nullptr;
         unsigned int texture__loadedTexture_0_size[3] = { 0, 0, 0 };
+        unsigned int texture__loadedTexture_0_numMips = 0;
         DXGI_FORMAT texture__loadedTexture_0_format = DXGI_FORMAT_UNKNOWN;
         static const D3D12_RESOURCE_FLAGS texture__loadedTexture_0_flags =  D3D12_RESOURCE_FLAG_NONE;
         const D3D12_RESOURCE_STATES c_texture__loadedTexture_0_endingState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
@@ -46,10 +49,10 @@ namespace Stencil
         ID3D12PipelineState* drawCall_Draw_2_pso = nullptr;
         ID3D12RootSignature* drawCall_Draw_2_rootSig = nullptr;
 
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_RTVCache;
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_DSVCache;
+
         // Freed on destruction of the context
         std::vector<ID3D12Resource*> m_managedResources;
-
-        std::vector<int> m_managedRTVs;
-        std::vector<int> m_managedDSVs;
     };
 };

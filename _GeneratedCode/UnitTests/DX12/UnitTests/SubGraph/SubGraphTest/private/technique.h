@@ -3,6 +3,8 @@
 #include <d3d12.h>
 #include <array>
 #include <vector>
+#include <unordered_map>
+#include "DX12Utils/dxutils.h"
 
 namespace SubGraphTest
 {
@@ -29,10 +31,10 @@ namespace SubGraphTest
         static ID3D12PipelineState* computeShader_Swap_Colors_pso;
         static ID3D12RootSignature* computeShader_Swap_Colors_rootSig;
 
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_RTVCache;
+        std::unordered_map<DX12Utils::SubResourceHeapAllocationInfo, int, DX12Utils::SubResourceHeapAllocationInfo> m_DSVCache;
+
         // Freed on destruction of the context
         std::vector<ID3D12Resource*> m_managedResources;
-
-        std::vector<int> m_managedRTVs;
-        std::vector<int> m_managedDSVs;
     };
 };

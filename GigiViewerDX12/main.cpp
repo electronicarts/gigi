@@ -35,6 +35,7 @@
 #include <filesystem>
 #include <unordered_map>
 #include <unordered_set>
+#include <set>
 
 #include "DX12Utils/Utils.h"
 #include "DX12Utils/sRGB.h"
@@ -1163,6 +1164,7 @@ void HandleMainMenu()
         {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
             static int captureFrames = 1;
+            static std::string waitingToOpenFileName = "";
             static bool openCapture = true;
             if (ImGui::Button("Pix Capture"))
             {
@@ -1186,11 +1188,19 @@ void HandleMainMenu()
                 Log(LogLevel::Info, "Pix capture saved to %s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str());
 
                 if (openCapture)
-                    ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                    waitingToOpenFileName = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string();
+                else
+                    waitingToOpenFileName = "";
             }
             ImGui::SetNextItemWidth(50);
             ImGui::InputInt("Frames", &captureFrames, 0);
             ImGui::Checkbox("Open Capture", &openCapture);
+
+            if (!waitingToOpenFileName.empty() && FileExists(waitingToOpenFileName))
+            {
+                ShellExecuteA(NULL, "open", waitingToOpenFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                waitingToOpenFileName = "";
+            }
         }
 
         // Open Editor
@@ -2568,9 +2578,9 @@ void ShowShaders()
 
     // The list of unprocessed shaders
     {
-        ImGui::Separator();
         ImGui::Text("Shaders:");
         ImGui::PushID("Shaders:");
+        ImGui::Indent();
 
         // get a sorted list of scopes
         std::unordered_set<std::string> scopes;
@@ -2625,32 +2635,29 @@ void ShowShaders()
             }
         }
 
-        ImGui::PopID();
-    }
-
-    // The list of shader file copies (shader includes)
-    {
-        ImGui::Separator();
-        ImGui::Text("Shader File Copies:");
-        ImGui::PushID("Shader File Copies:");
-
+        // The list of unique shader file copies (shader includes)
+        std::set<std::string> uniqueShaderFileCopies;
         for (const FileCopy& fileCopy : renderGraph.fileCopies)
         {
             if (fileCopy.type != FileCopyType::Shader)
                 continue;
-
-            if (ImGui::Button(fileCopy.fileName.c_str()))
-                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileCopy.fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
+            uniqueShaderFileCopies.insert(fileCopy.fileName);
+        }
+        for (const std::string& fileName : uniqueShaderFileCopies)
+        {
+            if (ImGui::Button(fileName.c_str()))
+                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
         }
 
+        ImGui::Unindent();
         ImGui::PopID();
     }
 
     // The list of processed shaders
     {
-        ImGui::Separator();
         ImGui::Text("Processed Shaders:");
         ImGui::PushID("Processed Shaders:");
+        ImGui::Indent();
 
         // get a sorted list of scopes
         std::unordered_set<std::string> scopes;
@@ -2705,29 +2712,25 @@ void ShowShaders()
             }
         }
 
-        ImGui::PopID();
-    }
-
-    // The list of shader file copies (shader includes)
-    {
-        ImGui::Separator();
-        ImGui::Text("Processed Shader File Copies:");
-        ImGui::PushID("Processed Shader File Copies:");
-
+        // The list of unique shader file copies (shader includes)
+        std::set<std::string> uniqueShaderFileCopies;
         for (const FileCopy& fileCopy : renderGraph.fileCopies)
         {
             if (fileCopy.type != FileCopyType::Shader)
                 continue;
-
             std::string destFileName = (fileCopy.destFileName.empty()) ? fileCopy.fileName : fileCopy.destFileName;
-
+            uniqueShaderFileCopies.insert(destFileName);
+        }
+        for (const std::string& fileName : uniqueShaderFileCopies)
+        {
             char buffer[1024];
-            sprintf(buffer, "%s##Processed", destFileName.c_str());
+            sprintf(buffer, "%s##Processed", fileName.c_str());
 
             if (ImGui::Button(buffer))
-                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + destFileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
         }
 
+        ImGui::Unindent();
         ImGui::PopID();
     }
 

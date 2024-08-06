@@ -7,6 +7,8 @@ RWTexture2DArray<float4> importedTexture : register(u1);
 TextureCube<float4> importedColor : register(t0);
 TextureCube<float4> _loadedTexture_0 : register(t1);
 
+#line 2
+
 
 struct Payload
 {
@@ -14,6 +16,7 @@ struct Payload
 };
 
 [shader("raygeneration")]
+#line 9
 void rgsmain()
 {
 	uint2 px = DispatchRaysIndex().xy;

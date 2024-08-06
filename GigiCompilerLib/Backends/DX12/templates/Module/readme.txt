@@ -92,4 +92,20 @@ PyImport_AppendInittab("/*$(Name)*/", /*$(Name)*/::CreateModule);
 in the python module, you will need to "import /*$(Name)*/", and when will be able to set user exposed
 variables like:
 
-/*$(Name)*/.Set_<variable name>(<value>);
+/*$(Name)*/.Set_<variable name>(<value>);/*$(if:DX12.AgilitySDKRequired:true)*/
+
+=====================================================================================================
+12) Hook up Agility SDK
+=====================================================================================================
+
+The Agility SDK is needed for this technique, which is supplied in the AgilitySDK folder.
+
+The agility SDK is Microsoft's solution to being able to update directx more quickly than the windows SDK.
+
+To set it up, you need to add "AgilitySDK\include" to the include path, so it finds the "d3d12.h" in
+there instead of in the usual windows SDK location.
+
+You also need to add this to a single cpp file (such as where your main function exists):
+
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 613; }
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\AgilitySDK\\bin\\"; }/*$(endif)*/

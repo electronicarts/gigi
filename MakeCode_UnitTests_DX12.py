@@ -13,43 +13,21 @@ requiredTestPrefix = ""
 #requiredTestPrefix = "Raster\\NoVertex_NoIndex_NoInstance_NoImports"
 
 unsupportedTests = [
-    # Need to add mesh shader support to generated code, like it was added to the viewer
-    "MeshShaders\\Mesh",
-    "MeshShaders\\MeshAmplification",
-    "MeshShaders\\MeshAmplificationLines",
-
-    "Textures\\Mips_DrawCall",
-    "Textures\\Mips_Imported_2D",
-    "Textures\\Mips_Imported_2DArray",
-    "Textures\\Mips_Imported_3D",
-    "Textures\\Mips_Imported_Cube",
-    "Textures\\Mips_ShaderToken_2D",
-    "Textures\\Mips_ShaderToken_2DArray",
-    "Textures\\Mips_ShaderToken_3D",
-    "Textures\\Mips_ShaderToken_Cube",
-    "Textures\\Mips_CS_2D",
-    "Textures\\Mips_CS_2DArray",
-    "Textures\\Mips_CS_3D",
-    "Textures\\Mips_CS_Cube",
-    "Textures\\Mips_RGS_2D",
-    "Textures\\Mips_VSPS_2D",
-    
-    "Raster\\simpleRaster_Points",
-    "Raster\\simpleRaster_Lines",
-
-    "SubGraph\\SubGraphLoops",
-    "SubGraph\\SubInSub",
-
-    "Compute\\IndirectDispatch",
-
-    # Need to add VRS to generated code, like it was added to the viewer
-    "Raster\\VRS",
 
     # Viewer only
+    "Buffers\\MultipleUVMesh",
     "Data\\ply_cube_uv_struct",
     "Data\\ply_cube_binary_type",
     "Data\\binaryTexU8",
     "Data\\binaryTexF32",
+    "Python\\GPUWrite",
+    "Python\\profiling",
+
+    # Viewer Only - These make sure the viewer will make mips of imported textures when asked
+    "Textures\\Mips_Imported_2D",
+    "Textures\\Mips_Imported_2DArray",
+    "Textures\\Mips_Imported_3D",
+    "Textures\\Mips_Imported_Cube",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES
@@ -119,6 +97,7 @@ newString2 = ""
 for technique in techniqueList:
     newString1 += "\n#include \"" + technique[0] + "\\public\\technique.h\""
     newString1 += "\n#include \"" + technique[0] + "\\public\\imgui.h\""
+    newString1 += "\n#include \"" + technique[0] + "\\private\\technique.h\""
     newString2 += "\n" + technique[1] + "::Context* m_" + technique[1] + " = nullptr;"
 newString2 += "\n\n#include \"UnitTestLogic.h\""
 data = ReplaceSection(data, "// Gigi Modification Begin - Includes And Context", "// Gigi Modification End", newString1 + "\n" + newString2 + "\n")
@@ -172,9 +151,14 @@ data = ReplaceSection(data, "// Gigi Modification Begin - Destroy Contexts", "  
 with open(path + 'main.cpp', 'w') as f:
     f.write(data)
 
-# ==================== Delete all extraneous DX12Utils folders. Only need one copy.
+# ==================== Delete all extraneous DX12Utils and AgilitySDK folders. Only need one copy.
 
 for dirName in glob.glob(os.getcwd() + "/_GeneratedCode/UnitTests/DX12/**/DX12Utils/", recursive = True):
     relDirName = os.path.relpath(dirName, os.getcwd() + "/_GeneratedCode/UnitTests/DX12/")
     if (relDirName != "DX12Utils"):
+        shutil.rmtree(dirName)
+
+for dirName in glob.glob(os.getcwd() + "/_GeneratedCode/UnitTests/DX12/**/AgilitySDK/", recursive = True):
+    relDirName = os.path.relpath(dirName, os.getcwd() + "/_GeneratedCode/UnitTests/DX12/")
+    if (relDirName != "AgilitySDK"):
         shutil.rmtree(dirName)

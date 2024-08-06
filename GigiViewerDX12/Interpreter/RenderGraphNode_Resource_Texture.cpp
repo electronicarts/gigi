@@ -1165,7 +1165,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 
 			// Calculate desired mip count
 			int desiredMips = node.numMips;
-			if (desiredMips == 0 || (hasFileName && node.loadFileMakeMips))
+			if (desiredMips == 0)
 			{
 				int maxSize = max(desiredSize[0], desiredSize[1]);
 				desiredMips = 1;

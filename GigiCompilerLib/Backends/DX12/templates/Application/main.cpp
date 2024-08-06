@@ -24,9 +24,11 @@
 #ifdef _DEBUG
 #define DX12_ENABLE_DEBUG_LAYER
 // Gigi Modification Begin
+#define DX12_GPU_VALIDATION() false
 #define DX12_BREAK_ON_WARN() false
 #define DX12_BREAK_ON_CORRUPTION() true
 #define DX12_BREAK_ON_ERROR() true
+#define MAKE_PIX_CAPTURE() false // if true, will emit a pix capture for every frame the unit tests run.
 // Gigi Modification End
 #endif
 
@@ -35,7 +37,10 @@
 #pragma comment(lib, "dxguid.lib")
 #endif
 
-// Gigi Modification Begin
+// Gigi Modification Begin/*$(if:DX12.AgilitySDKRequired:true)*/
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 613; }
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\AgilitySDK\\bin\\"; }
+/*$(endif)*/
 #include "DX12Utils/FileCache.h"
 #include "spdlog/spdlog.h"
 #include "DX12Utils/logfn.h"
@@ -65,6 +70,52 @@ static void PerfEventEndFn(ID3D12GraphicsCommandList* commandList)
 {
     PIXEndEvent(commandList);
 }
+
+#if MAKE_PIX_CAPTURE()
+static bool GetLatestWinPixGpuCapturerPath(std::wstring& path)
+{
+    LPWSTR programFilesPath = nullptr;
+    SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
+
+    std::wstring pixSearchPath = programFilesPath + std::wstring(L"\\Microsoft PIX\\*");
+
+    WIN32_FIND_DATAW findData;
+    bool foundPixInstallation = false;
+    wchar_t newestVersionFound[MAX_PATH];
+
+    HANDLE hFind = FindFirstFileW(pixSearchPath.c_str(), &findData);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) &&
+                (findData.cFileName[0] != '.'))
+            {
+                if (!foundPixInstallation || wcscmp(newestVersionFound, findData.cFileName) <= 0)
+                {
+                    foundPixInstallation = true;
+                    StringCchCopyW(newestVersionFound, _countof(newestVersionFound), findData.cFileName);
+                }
+            }
+        } while (FindNextFileW(hFind, &findData) != 0);
+    }
+
+    FindClose(hFind);
+
+    if (!foundPixInstallation)
+    {
+        return false;
+    }
+
+    wchar_t output[MAX_PATH];
+    StringCchCopyW(output, pixSearchPath.length(), pixSearchPath.data());
+    StringCchCatW(output, MAX_PATH, &newestVersionFound[0]);
+    StringCchCatW(output, MAX_PATH, L"\\WinPixGpuCapturer.dll");
+
+    path = output;
+    return true;
+}
+#endif
 
 #include "DX12Utils/ReadbackHelper.h"
 static DX12Utils::ReadbackHelper    g_readbackHelper;
@@ -198,6 +249,20 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 // Main code
 int main(int, char**)
 {
+    // Gigi Modification Begin
+    #if MAKE_PIX_CAPTURE()
+        // Load WinPixGpuCapturer.dll so we can take programatic captures
+        if (GetModuleHandleW(L"WinPixGpuCapturer.dll") == 0)
+        {
+            std::wstring pixPath;
+            if (GetLatestWinPixGpuCapturerPath(pixPath))
+            {
+                LoadLibraryW(pixPath.c_str());
+            }
+        }
+    #endif
+    // Gigi Modification End
+
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
@@ -274,6 +339,20 @@ int main(int, char**)
     bool done = false;
     while (!done)
     {
+        // Gigi Modification Begin
+        #if MAKE_PIX_CAPTURE()
+        // Take a pix capture every frame
+        {
+            static int frameIndex = 0;
+            wchar_t fileName[256];
+
+            swprintf(fileName, L"_out.%i.wpix", frameIndex);
+            HRESULT hr = PIXGpuCaptureNextFrames(fileName, 1);
+            frameIndex++;
+        }
+        #endif
+        // Gigi Modification End
+
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
@@ -455,8 +534,20 @@ bool CreateDeviceD3D(HWND hWnd)
     // [DEBUG] Enable debug interface
 #ifdef DX12_ENABLE_DEBUG_LAYER
     ID3D12Debug* pdx12Debug = nullptr;
+    // Gigi Modification Begin
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pdx12Debug))))
+    {
         pdx12Debug->EnableDebugLayer();
+        #if DX12_GPU_VALIDATION()
+        ID3D12Debug1* pdx12Debug1 = nullptr;
+        if (SUCCEEDED(pdx12Debug->QueryInterface(IID_PPV_ARGS(&pdx12Debug1))))
+        {
+            pdx12Debug1->SetEnableGPUBasedValidation(true);
+            pdx12Debug1->Release();
+        }
+        #endif
+    }
+    // Gigi Modification End
 #endif
 
     // Create device

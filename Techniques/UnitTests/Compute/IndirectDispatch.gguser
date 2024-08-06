@@ -1,18 +1,6 @@
 {
-    "resourceViewNodeIndex": 4,
+    "resourceViewNodeIndex": 3,
     "resourceViewResourceIndex": 2,
-    "importedResources": [
-        {
-            "nodeName": "Render_Target",
-            "texture": {
-                "size": [
-                    256,
-                    256,
-                    1
-                ]
-            }
-        }
-    ],
     "savedVariables": [
         {
             "name": "Dispatch_Count_1",

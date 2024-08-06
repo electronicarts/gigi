@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "IndirectDispatch",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "Dispatch Count 1",
@@ -43,7 +43,8 @@
                     "type": "Buffer",
                     "access": "UAV",
                     "buffer": {
-                        "type": "Uint4"
+                        "type": "Uint4",
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -66,7 +67,10 @@
                 {
                     "name": "Render Target",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -79,7 +83,17 @@
                     755.0,
                     354.0
                 ],
-                "visibility": "Imported"
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        256,
+                        256,
+                        1
+                    ]
+                }
             }
         },
         {

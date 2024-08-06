@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SubInSubInner1",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "Inner1Mult",
@@ -19,6 +19,7 @@
                     -14.0
                 ],
                 "linkProperties": [
+                    {},
                     {}
                 ],
                 "connections": [
@@ -26,12 +27,18 @@
                         "srcPin": "Input",
                         "dstNode": "Input",
                         "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output"
                     }
                 ],
                 "fileName": "SubInSubInner2.gg",
                 "subGraphData": {
                     "importedResources": [
                         "Input"
+                    ],
+                    "exportedResources": [
+                        "Output"
                     ],
                     "variables": [
                         {

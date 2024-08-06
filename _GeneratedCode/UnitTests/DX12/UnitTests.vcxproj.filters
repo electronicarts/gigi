@@ -1,6 +1,12 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\CompileShaders_dxc.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\CompileShaders_fxc.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\FileCache.cpp">
       <Filter>DX12Utils</Filter>
     </ClCompile>
@@ -10,26 +16,20 @@
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\dxutils.cpp">
       <Filter>DX12Utils</Filter>
     </ClCompile>
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler_dxc.cpp">
-      <Filter>DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler_fxc.cpp">
-      <Filter>DX12Utils</Filter>
-    </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\tinyexr\deps\miniz\miniz.c">
       <Filter>DX12Utils\tinyexr\deps\miniz</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\private\technique.cpp">
       <Filter>UnitTests\Barrier\BarrierTest\private</Filter>
     </ClCompile>
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\private\technique.cpp">
-      <Filter>UnitTests\Buffers\MultipleUVMesh\private</Filter>
-    </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\private\technique.cpp">
       <Filter>UnitTests\Buffers\StructuredBuffer\private</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\private\technique.cpp">
       <Filter>UnitTests\Buffers\buffertest\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\private\technique.cpp">
+      <Filter>UnitTests\Compute\IndirectDispatch\private</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\private\technique.cpp">
       <Filter>UnitTests\Compute\ReadbackSequence\private</Filter>
@@ -49,17 +49,23 @@
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\private\technique.cpp">
       <Filter>UnitTests\CopyResource\CopyResourceTest_FB\private</Filter>
     </ClCompile>
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\private\technique.cpp">
-      <Filter>UnitTests\Python\GPUWrite\private</Filter>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\private\technique.cpp">
+      <Filter>UnitTests\MeshShaders\Mesh\private</Filter>
     </ClCompile>
-    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\private\technique.cpp">
-      <Filter>UnitTests\Python\profiling\private</Filter>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\private\technique.cpp">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\private\technique.cpp">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\private</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\private\technique.cpp">
       <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\private</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\private\technique.cpp">
       <Filter>UnitTests\Raster\Stencil\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\private\technique.cpp">
+      <Filter>UnitTests\Raster\VRS\private</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private\technique.cpp">
       <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private</Filter>
@@ -82,6 +88,12 @@
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\private\technique.cpp">
       <Filter>UnitTests\Raster\simpleRaster2\private</Filter>
     </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\private\technique.cpp">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\private\technique.cpp">
+      <Filter>UnitTests\Raster\simpleRaster_Points\private</Filter>
+    </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\private\technique.cpp">
       <Filter>UnitTests\RayTrace\AnyHit\private</Filter>
     </ClCompile>
@@ -100,8 +112,47 @@
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\private\technique.cpp">
       <Filter>UnitTests\RayTrace\simpleRT_inline\private</Filter>
     </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\private\technique.cpp">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\private</Filter>
+    </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\private\technique.cpp">
       <Filter>UnitTests\SubGraph\SubGraphTest\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\private\technique.cpp">
+      <Filter>UnitTests\SubGraph\SubInSub\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_CS_2D\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_CS_3D\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_DrawCall\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\private</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\private\technique.cpp">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\private</Filter>
     </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\private\technique.cpp">
       <Filter>UnitTests\Textures\Texture2DArrayRW_CS\private</Filter>
@@ -169,6 +220,63 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12compatibility.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12sdklayers.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12shader.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3d12video.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dcommon.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_barriers.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_check_feature_support.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_core.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_default.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_pipeline_state_stream.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_property_format_table.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_render_pass.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_resource_helpers.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_root_signature.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\d3dx12\d3dx12_state_object.h">
+      <Filter>AgilitySDK\include\d3dx12</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\AgilitySDK\include\dxgiformat.h">
+      <Filter>AgilitySDK\include</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\CompileShaders.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\DelayedReleaseTracker.h">
       <Filter>DX12Utils</Filter>
     </ClInclude>
@@ -194,9 +302,6 @@
       <Filter>DX12Utils</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\logfn.h">
-      <Filter>DX12Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\shadercompiler.h">
       <Filter>DX12Utils</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\DX12Utils\stb\stb_image.h">
@@ -236,21 +341,6 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Barrier\BarrierTest\shaders\BarrierTestRight.hlsl">
       <Filter>UnitTests\Barrier\BarrierTest\shaders</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\private\technique.h">
-      <Filter>UnitTests\Buffers\MultipleUVMesh\private</Filter>
-    </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\all.h">
-      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
-    </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\imgui.h">
-      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
-    </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\pythoninterface.h">
-      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
-    </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\MultipleUVMesh\public\technique.h">
-      <Filter>UnitTests\Buffers\MultipleUVMesh\public</Filter>
-    </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\StructuredBuffer\private\technique.h">
       <Filter>UnitTests\Buffers\StructuredBuffer\private</Filter>
     </ClInclude>
@@ -286,6 +376,27 @@
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Buffers\buffertest\shaders\BufferTest.hlsl">
       <Filter>UnitTests\Buffers\buffertest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\private\technique.h">
+      <Filter>UnitTests\Compute\IndirectDispatch\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\all.h">
+      <Filter>UnitTests\Compute\IndirectDispatch\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\imgui.h">
+      <Filter>UnitTests\Compute\IndirectDispatch\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\pythoninterface.h">
+      <Filter>UnitTests\Compute\IndirectDispatch\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\public\technique.h">
+      <Filter>UnitTests\Compute\IndirectDispatch\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\shaders\IndirectDispatch_Execute.hlsl">
+      <Filter>UnitTests\Compute\IndirectDispatch\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\IndirectDispatch\shaders\IndirectDispatch_Fill.hlsl">
+      <Filter>UnitTests\Compute\IndirectDispatch\shaders</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Compute\ReadbackSequence\private\technique.h">
       <Filter>UnitTests\Compute\ReadbackSequence\private</Filter>
@@ -395,41 +506,74 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\CopyResource\CopyResourceTest_FB\public\technique.h">
       <Filter>UnitTests\CopyResource\CopyResourceTest_FB\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\private\technique.h">
-      <Filter>UnitTests\Python\GPUWrite\private</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\private\technique.h">
+      <Filter>UnitTests\MeshShaders\Mesh\private</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\all.h">
-      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\all.h">
+      <Filter>UnitTests\MeshShaders\Mesh\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\imgui.h">
-      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\imgui.h">
+      <Filter>UnitTests\MeshShaders\Mesh\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\pythoninterface.h">
-      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\pythoninterface.h">
+      <Filter>UnitTests\MeshShaders\Mesh\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\public\technique.h">
-      <Filter>UnitTests\Python\GPUWrite\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\public\technique.h">
+      <Filter>UnitTests\MeshShaders\Mesh\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\GPUWrite\shaders\GPUWrite.hlsl">
-      <Filter>UnitTests\Python\GPUWrite\shaders</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\shaders\Mesh_MS.hlsl">
+      <Filter>UnitTests\MeshShaders\Mesh\shaders</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\private\technique.h">
-      <Filter>UnitTests\Python\profiling\private</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\Mesh\shaders\Mesh_PS.hlsl">
+      <Filter>UnitTests\MeshShaders\Mesh\shaders</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\all.h">
-      <Filter>UnitTests\Python\profiling\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\private\technique.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\private</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\imgui.h">
-      <Filter>UnitTests\Python\profiling\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\all.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\pythoninterface.h">
-      <Filter>UnitTests\Python\profiling\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\imgui.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\public\technique.h">
-      <Filter>UnitTests\Python\profiling\public</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\pythoninterface.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\public</Filter>
     </ClInclude>
-    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Python\profiling\shaders\profiling.hlsl">
-      <Filter>UnitTests\Python\profiling\shaders</Filter>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\public\technique.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\shaders\MeshAmplification_AS.hlsl">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\shaders\MeshAmplification_MS.hlsl">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplification\shaders\MeshAmplification_PS.hlsl">
+      <Filter>UnitTests\MeshShaders\MeshAmplification\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\private\technique.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\all.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\imgui.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\pythoninterface.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\public\technique.h">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\shaders\MeshAmplificationLines_AS.hlsl">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\shaders\MeshAmplificationLines_MS.hlsl">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\MeshShaders\MeshAmplificationLines\shaders\MeshAmplificationLines_PS.hlsl">
+      <Filter>UnitTests\MeshShaders\MeshAmplificationLines\shaders</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\NoVertex_NoIndex_NoInstance\private\technique.h">
       <Filter>UnitTests\Raster\NoVertex_NoIndex_NoInstance\private</Filter>
@@ -478,6 +622,42 @@
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\Stencil\shaders\StencilDraw2VS.hlsl">
       <Filter>UnitTests\Raster\Stencil\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\private\technique.h">
+      <Filter>UnitTests\Raster\VRS\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\all.h">
+      <Filter>UnitTests\Raster\VRS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\imgui.h">
+      <Filter>UnitTests\Raster\VRS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\VRS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\public\technique.h">
+      <Filter>UnitTests\Raster\VRS\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_PS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Quad_PS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Quad_VS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_ShadingRateCS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_VS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Vignette_PS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\VRS\shaders\VRS_Vignette_VS.hlsl">
+      <Filter>UnitTests\Raster\VRS\shaders</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private\technique.h">
       <Filter>UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private</Filter>
@@ -626,6 +806,48 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster2\shaders\simpleRaster_VS.hlsl">
       <Filter>UnitTests\Raster\simpleRaster2\shaders</Filter>
     </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\private\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\all.h">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\imgui.h">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\public\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\shaders\simpleRaster_PS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Lines\shaders\simpleRaster_VS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster_Lines\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\private\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster_Points\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\all.h">
+      <Filter>UnitTests\Raster\simpleRaster_Points\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\imgui.h">
+      <Filter>UnitTests\Raster\simpleRaster_Points\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\pythoninterface.h">
+      <Filter>UnitTests\Raster\simpleRaster_Points\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\public\technique.h">
+      <Filter>UnitTests\Raster\simpleRaster_Points\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\shaders\simpleRaster_PS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster_Points\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Raster\simpleRaster_Points\shaders\simpleRaster_VS.hlsl">
+      <Filter>UnitTests\Raster\simpleRaster_Points\shaders</Filter>
+    </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\AnyHit\private\technique.h">
       <Filter>UnitTests\RayTrace\AnyHit\private</Filter>
     </ClInclude>
@@ -737,6 +959,24 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT_inline\shaders\simpleRT_inline.hlsl">
       <Filter>UnitTests\RayTrace\simpleRT_inline\shaders</Filter>
     </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\private\technique.h">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\all.h">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\imgui.h">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\pythoninterface.h">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\public\technique.h">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphLoops\shaders\SubGraphLoopsInner\SubGraphLoopsBlur.hlsl">
+      <Filter>UnitTests\SubGraph\SubGraphLoops\shaders\SubGraphLoopsInner</Filter>
+    </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\private\technique.h">
       <Filter>UnitTests\SubGraph\SubGraphTest\private</Filter>
     </ClInclude>
@@ -754,6 +994,246 @@
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubGraphTest\shaders\SubGraphTest_SwapColors.hlsl">
       <Filter>UnitTests\SubGraph\SubGraphTest\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\private\technique.h">
+      <Filter>UnitTests\SubGraph\SubInSub\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\all.h">
+      <Filter>UnitTests\SubGraph\SubInSub\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\imgui.h">
+      <Filter>UnitTests\SubGraph\SubInSub\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\pythoninterface.h">
+      <Filter>UnitTests\SubGraph\SubInSub\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\public\technique.h">
+      <Filter>UnitTests\SubGraph\SubInSub\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\SubGraph\SubInSub\shaders\SubInSubInner2\SubInSubInner2_CS.hlsl">
+      <Filter>UnitTests\SubGraph\SubInSub\shaders\SubInSubInner2</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_2D\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\all.h">
+      <Filter>UnitTests\Textures\Mips_CS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_CS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_CS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\shaders\Mips_CS_2D_Mip0CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_2D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2D\shaders\Mips_CS_2D_MipNCS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_2D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\all.h">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\shaders\Mips_CS_2DArray_Mip0CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_2DArray\shaders\Mips_CS_2DArray_MipNCS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_2DArray\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_3D\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\all.h">
+      <Filter>UnitTests\Textures\Mips_CS_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_CS_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_CS_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\shaders\Mips_CS_3D_Mip0CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_3D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_3D\shaders\Mips_CS_3D_MipNCS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_3D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\all.h">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\shaders\Mips_CS_Cube_Mip0CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_CS_Cube\shaders\Mips_CS_Cube_MipNCS.hlsl">
+      <Filter>UnitTests\Textures\Mips_CS_Cube\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_DrawCall\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\all.h">
+      <Filter>UnitTests\Textures\Mips_DrawCall\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_DrawCall\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_DrawCall\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_DrawCall\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCallSphere_PS.hlsl">
+      <Filter>UnitTests\Textures\Mips_DrawCall\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCallSphere_VS.hlsl">
+      <Filter>UnitTests\Textures\Mips_DrawCall\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCall_PS.hlsl">
+      <Filter>UnitTests\Textures\Mips_DrawCall\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_DrawCall\shaders\Mips_DrawCall_VS.hlsl">
+      <Filter>UnitTests\Textures\Mips_DrawCall\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\all.h">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_RGS_2D\shaders\Mips_RGS_2D_RGS.hlsl">
+      <Filter>UnitTests\Textures\Mips_RGS_2D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\all.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2D\shaders\Mips_ShaderToken_2D_CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\all.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_2DArray\shaders\Mips_ShaderToken_2DArray_CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_2DArray\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\all.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_3D\shaders\Mips_ShaderToken_3D_CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_3D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\all.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_ShaderToken_Cube\shaders\Mips_ShaderToken_Cube_CS.hlsl">
+      <Filter>UnitTests\Textures\Mips_ShaderToken_Cube\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\private\technique.h">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\all.h">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\imgui.h">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\pythoninterface.h">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\public\technique.h">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\shaders\Mips_VSPS_2D_PS.hlsl">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Mips_VSPS_2D\shaders\Mips_VSPS_2D_VS.hlsl">
+      <Filter>UnitTests\Textures\Mips_VSPS_2D\shaders</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\Textures\Texture2DArrayRW_CS\private\technique.h">
       <Filter>UnitTests\Textures\Texture2DArrayRW_CS\private</Filter>
@@ -1369,6 +1849,15 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
+    <Filter Include="AgilitySDK">
+      <UniqueIdentifier>{8C8AB91C-5713-3E95-BD8B-E719C9B9B52D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AgilitySDK\include">
+      <UniqueIdentifier>{9038BA9C-7771-3258-900E-36D7BE624EDE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="AgilitySDK\include\d3dx12">
+      <UniqueIdentifier>{CACB3DEB-0698-3622-BFF4-52376C879DD6}</UniqueIdentifier>
+    </Filter>
     <Filter Include="DX12Utils">
       <UniqueIdentifier>{2B0BFC4A-486C-39AE-814C-41AC78D10C8B}</UniqueIdentifier>
     </Filter>
@@ -1405,15 +1894,6 @@
     <Filter Include="UnitTests\Buffers">
       <UniqueIdentifier>{076F3FB3-BD17-30BA-AC65-4DF4FD839513}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Buffers\MultipleUVMesh">
-      <UniqueIdentifier>{552FC072-5162-3F2C-8443-05C0555E3DFD}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="UnitTests\Buffers\MultipleUVMesh\private">
-      <UniqueIdentifier>{21667B78-B2C5-365F-836C-C93C8125108C}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="UnitTests\Buffers\MultipleUVMesh\public">
-      <UniqueIdentifier>{2785CF19-F1EE-3594-A0BC-398CD304E0EF}</UniqueIdentifier>
-    </Filter>
     <Filter Include="UnitTests\Buffers\StructuredBuffer">
       <UniqueIdentifier>{496BCC56-0CA2-394E-80A1-A7BE012CBF6B}</UniqueIdentifier>
     </Filter>
@@ -1440,6 +1920,18 @@
     </Filter>
     <Filter Include="UnitTests\Compute">
       <UniqueIdentifier>{72C102CD-E25E-33E9-A9F0-56D7EE593105}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\IndirectDispatch">
+      <UniqueIdentifier>{40A3C396-8FC5-349A-80B2-2C71C4CEB9BD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\IndirectDispatch\private">
+      <UniqueIdentifier>{959816B1-9F1E-31A4-BB51-87915DB94BBA}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\IndirectDispatch\public">
+      <UniqueIdentifier>{376E5B7E-2B42-39EC-AD3A-084E996D5DEF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Compute\IndirectDispatch\shaders">
+      <UniqueIdentifier>{F294D012-D676-3B28-8711-92D158DE3716}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnitTests\Compute\ReadbackSequence">
       <UniqueIdentifier>{97033A05-9A6B-3A7E-BA70-EBA74F6D03EC}</UniqueIdentifier>
@@ -1510,32 +2002,44 @@
     <Filter Include="UnitTests\CopyResource\CopyResourceTest_FB\public">
       <UniqueIdentifier>{E4B35409-1807-37A8-8239-EF05C5154662}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python">
-      <UniqueIdentifier>{6ED3BBE3-0854-3BB1-961F-77F6F360FFC1}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders">
+      <UniqueIdentifier>{E0233A99-6878-36E3-AB6B-386D4B46B136}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\GPUWrite">
-      <UniqueIdentifier>{AAE155DE-1904-3658-ABEB-5B496F036C83}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\Mesh">
+      <UniqueIdentifier>{5CF571AB-B44E-30E5-9622-18954E19E6F9}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\GPUWrite\private">
-      <UniqueIdentifier>{9ED0E3E5-E666-3067-B51C-280FDB2F84A5}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplification">
+      <UniqueIdentifier>{E368A272-770D-335F-ABF2-431148C4ECC6}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\GPUWrite\public">
-      <UniqueIdentifier>{BB50B7CE-2C93-3DED-B574-6FA249C54BE4}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplificationLines">
+      <UniqueIdentifier>{E389B39A-34A5-331B-96EB-F41AE023FF11}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\GPUWrite\shaders">
-      <UniqueIdentifier>{0E152780-0AC1-3032-B03B-ED64B9725B00}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplificationLines\private">
+      <UniqueIdentifier>{41F64E07-8456-30D1-8F99-2AE220B81C9A}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\profiling">
-      <UniqueIdentifier>{ECE1EEF1-EBF2-394F-A797-A05716C604A7}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplificationLines\public">
+      <UniqueIdentifier>{AFDE669B-2B19-3A07-B306-24881F6FD4C8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\profiling\private">
-      <UniqueIdentifier>{6026A820-00D9-3E37-8F64-008EF42595B2}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplificationLines\shaders">
+      <UniqueIdentifier>{B5B16A0B-B279-3FB7-89F3-ABB2CE4BDCB3}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\profiling\public">
-      <UniqueIdentifier>{C3A471A7-002E-3E43-870B-6732B36C833F}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplification\private">
+      <UniqueIdentifier>{5E529ECA-75EF-314D-8965-275BEFEEE931}</UniqueIdentifier>
     </Filter>
-    <Filter Include="UnitTests\Python\profiling\shaders">
-      <UniqueIdentifier>{5876163C-CE5E-3FB7-9704-AB102A2B7A30}</UniqueIdentifier>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplification\public">
+      <UniqueIdentifier>{A92A8F42-4B1C-36EB-BE71-A61B656E03DD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\MeshShaders\MeshAmplification\shaders">
+      <UniqueIdentifier>{2853F4BD-8DF4-35EB-AC74-869F81AF26CB}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\MeshShaders\Mesh\private">
+      <UniqueIdentifier>{090AA3D2-5C56-32F1-81A2-5E0D7F614135}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\MeshShaders\Mesh\public">
+      <UniqueIdentifier>{033FEF39-7F78-3927-B7D6-CB476796396A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\MeshShaders\Mesh\shaders">
+      <UniqueIdentifier>{B60075A0-287E-3BFE-8DE2-A4AA579AAD58}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnitTests\Raster">
       <UniqueIdentifier>{E667E1BE-9C50-35E5-9AD4-D973A0554C91}</UniqueIdentifier>
@@ -1563,6 +2067,18 @@
     </Filter>
     <Filter Include="UnitTests\Raster\Stencil\shaders">
       <UniqueIdentifier>{05611104-D1F6-305B-BABC-4D978322976B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\VRS">
+      <UniqueIdentifier>{81A5F039-E884-3B9F-9431-B25E4DC8E9B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\VRS\private">
+      <UniqueIdentifier>{FE90C865-BBE0-384B-BD4F-96AF1C29FD11}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\VRS\public">
+      <UniqueIdentifier>{C6160E27-5D35-30B2-8201-EF188082DE1B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\VRS\shaders">
+      <UniqueIdentifier>{416B272B-9371-365D-BC4D-CC5B1EEEE366}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance">
       <UniqueIdentifier>{01059507-6273-33CF-94FC-4B52222DB4C4}</UniqueIdentifier>
@@ -1648,6 +2164,30 @@
     <Filter Include="UnitTests\Raster\simpleRaster\shaders">
       <UniqueIdentifier>{95DDB547-024F-3234-8081-B4E93833E19B}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Lines">
+      <UniqueIdentifier>{8980D6A2-453E-39ED-9029-1991E93ABEA8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Lines\private">
+      <UniqueIdentifier>{F4894C40-C04E-3E0B-9E25-2AFEFE1EDE1C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Lines\public">
+      <UniqueIdentifier>{C9A04F61-5D26-3001-9BA6-DE96F54255A1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Lines\shaders">
+      <UniqueIdentifier>{5A45FE8B-91E0-3BB1-B1F0-37544EC06690}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Points">
+      <UniqueIdentifier>{230C4DE2-0637-341F-936E-7EBA1F1F291C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Points\private">
+      <UniqueIdentifier>{66EF8561-88B2-3E14-B2FB-2C2584819B1E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Points\public">
+      <UniqueIdentifier>{3FE82EBF-D8EB-3FD2-AFAA-C077B6DDD396}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Raster\simpleRaster_Points\shaders">
+      <UniqueIdentifier>{806B8F47-15E3-3205-8B4A-7F6700A84921}</UniqueIdentifier>
+    </Filter>
     <Filter Include="UnitTests\RayTrace">
       <UniqueIdentifier>{8CFB12D9-E562-3A51-AEA4-8B0706FF3F37}</UniqueIdentifier>
     </Filter>
@@ -1726,6 +2266,21 @@
     <Filter Include="UnitTests\SubGraph">
       <UniqueIdentifier>{D186FA3D-FBE5-3586-898C-17B9F932EFE4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphLoops">
+      <UniqueIdentifier>{B5EB750D-1845-3FD3-9205-BDA537521991}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphLoops\private">
+      <UniqueIdentifier>{AA3708AF-D326-36F3-9600-EFA199729B1E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphLoops\public">
+      <UniqueIdentifier>{BB3BFEAA-28B0-3E24-98E0-394685F67A8A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphLoops\shaders">
+      <UniqueIdentifier>{55D9F182-2D97-310E-8356-A1BF13722563}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubGraphLoops\shaders\SubGraphLoopsInner">
+      <UniqueIdentifier>{E775458C-7720-35CB-BE02-AEE7BD5518B2}</UniqueIdentifier>
+    </Filter>
     <Filter Include="UnitTests\SubGraph\SubGraphTest">
       <UniqueIdentifier>{FF10AEF6-FB5F-3080-972A-6E34BF793A8C}</UniqueIdentifier>
     </Filter>
@@ -1738,8 +2293,155 @@
     <Filter Include="UnitTests\SubGraph\SubGraphTest\shaders">
       <UniqueIdentifier>{A68A1EEA-C731-338E-BFA2-2F72BED85ED1}</UniqueIdentifier>
     </Filter>
+    <Filter Include="UnitTests\SubGraph\SubInSub">
+      <UniqueIdentifier>{393F3ECD-07B1-3B90-8CA9-20CCDD087A2E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubInSub\private">
+      <UniqueIdentifier>{B631066E-BD83-34D0-A341-A2C2C70B0000}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubInSub\public">
+      <UniqueIdentifier>{205A5C21-67A0-30FE-B016-3DBD9025F8C1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubInSub\shaders">
+      <UniqueIdentifier>{2BB89C93-B55E-3A24-9A42-E1C814EE1778}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\SubGraph\SubInSub\shaders\SubInSubInner2">
+      <UniqueIdentifier>{1E7054EC-95A5-327F-9D00-D36E06A24B6F}</UniqueIdentifier>
+    </Filter>
     <Filter Include="UnitTests\Textures">
       <UniqueIdentifier>{6C80C740-CD8A-3D60-848C-300D5F0207B3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2D">
+      <UniqueIdentifier>{1D043142-350D-3294-89FD-1C154E6E2404}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2DArray">
+      <UniqueIdentifier>{B154CE09-2671-3308-ABBB-0FB3B22E91F6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2DArray\private">
+      <UniqueIdentifier>{438A8DAC-BAA4-3DC8-9640-2C26D7DB4868}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2DArray\public">
+      <UniqueIdentifier>{BEAF7DCA-3A03-3C1D-96CF-7342575E64F3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2DArray\shaders">
+      <UniqueIdentifier>{05D1C669-79A9-3186-B13B-0BFD22827E9F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2D\private">
+      <UniqueIdentifier>{DA73C575-1F53-3472-929B-C37618C4932C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2D\public">
+      <UniqueIdentifier>{616B68F4-0253-3186-9AE5-BDD1AD7EEB2C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_2D\shaders">
+      <UniqueIdentifier>{0F9DFBD6-66D5-33B3-A3FB-AB32394309EE}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_3D">
+      <UniqueIdentifier>{7A14C862-BF0A-3A8B-8103-783A8B7764B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_3D\private">
+      <UniqueIdentifier>{60048949-B106-3E6B-8227-D22475D66891}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_3D\public">
+      <UniqueIdentifier>{9D70E4EC-319B-35B7-A307-6BE0D56C90B1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_3D\shaders">
+      <UniqueIdentifier>{786C4CEC-1091-3581-B1F5-2D4A7F05E360}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_Cube">
+      <UniqueIdentifier>{2D5F19FF-10F7-3C26-9973-73133A742CEF}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_Cube\private">
+      <UniqueIdentifier>{FE8B2DE1-CE61-3A0B-B866-2C0DE5706FE9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_Cube\public">
+      <UniqueIdentifier>{5DA692C7-AB5A-3179-82F5-DE281D49F854}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_CS_Cube\shaders">
+      <UniqueIdentifier>{F40347EF-2D77-3C52-85E6-9F77EC28D7BD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_DrawCall">
+      <UniqueIdentifier>{CE45ADC6-260F-3CB0-881B-16C46E9B5415}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_DrawCall\private">
+      <UniqueIdentifier>{9CA2F67E-307D-3C99-AF03-30EE2A1D5C80}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_DrawCall\public">
+      <UniqueIdentifier>{C8D95B53-D53B-33EB-9C64-17B743153F2A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_DrawCall\shaders">
+      <UniqueIdentifier>{DC8EE1A4-7E43-3403-BC06-199EBA38042E}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_RGS_2D">
+      <UniqueIdentifier>{1F6AF25B-B972-3581-9400-6F3022094999}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_RGS_2D\private">
+      <UniqueIdentifier>{CA6FA415-BB63-3285-9AE0-5EA6BAFCD09D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_RGS_2D\public">
+      <UniqueIdentifier>{C43C9567-E502-3905-A921-746065A2AC00}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_RGS_2D\shaders">
+      <UniqueIdentifier>{99386E1A-A72A-3835-BF37-6EBCBBA4CEE4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2D">
+      <UniqueIdentifier>{B8BE8108-CDF4-30B7-9036-A4CEA8D18495}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2DArray">
+      <UniqueIdentifier>{B648B5A6-5DA6-3382-A0D8-4D3073CB72C3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2DArray\private">
+      <UniqueIdentifier>{7CBA31FA-4A82-30CD-9EB4-B4E045C64F14}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2DArray\public">
+      <UniqueIdentifier>{6ED1FF4B-686D-3940-9D09-0E016569F23A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2DArray\shaders">
+      <UniqueIdentifier>{9BE8A4D0-3EC7-3839-82D7-1F99F47D48DD}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2D\private">
+      <UniqueIdentifier>{22E0B141-89D5-3F4A-B0DF-15BFE750D59C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2D\public">
+      <UniqueIdentifier>{39811FAC-485F-3602-89B8-B31DF7800692}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_2D\shaders">
+      <UniqueIdentifier>{DB6C167B-75C6-3688-AA52-988C46DC97B5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_3D">
+      <UniqueIdentifier>{9746BB50-F12E-31B5-A6ED-9651F96C426A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_3D\private">
+      <UniqueIdentifier>{4EA91A16-C1E5-3CE6-A311-4D3492144E7B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_3D\public">
+      <UniqueIdentifier>{01491D2A-03D6-3805-A2F1-AD501DFD54A3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_3D\shaders">
+      <UniqueIdentifier>{338FD986-1CF1-3111-ADE3-E52B4025AF74}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_Cube">
+      <UniqueIdentifier>{993B9964-99B9-35CB-B6AF-1E23D48B9E50}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_Cube\private">
+      <UniqueIdentifier>{50AE9D65-4EF5-3DEE-8B6A-E4191E8D13E5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_Cube\public">
+      <UniqueIdentifier>{57DBADAB-35B8-3FCB-A398-392D7FF41E97}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_ShaderToken_Cube\shaders">
+      <UniqueIdentifier>{9FCFA06B-9BC1-3A60-BE3E-881526DC750B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_VSPS_2D">
+      <UniqueIdentifier>{54E65FDB-DDFF-34B5-B5ED-6DD2C859B542}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_VSPS_2D\private">
+      <UniqueIdentifier>{806B6103-16CC-3973-BC8C-444C2311F750}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_VSPS_2D\public">
+      <UniqueIdentifier>{9AE271AE-1246-381A-B7B1-8BAB204C8BE4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\Textures\Mips_VSPS_2D\shaders">
+      <UniqueIdentifier>{4DC61872-07F0-37BA-882A-718E7C58FCF3}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnitTests\Textures\Texture2DArrayRW_CS">
       <UniqueIdentifier>{7CD9034B-44EF-3BCC-9D07-C62C818C9E7A}</UniqueIdentifier>

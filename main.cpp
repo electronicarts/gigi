@@ -71,10 +71,10 @@ int main(int argc, char** argv)
     if ((argc != 4 && argc != 5) || (argc == 5 && !GENERATE_GRAPHVIZ_FLAG))
     {
         printf("Version " GIGI_VERSION() " (" BUILD_FLAVOR() ")\n");
-        printf("Usage: GigiCompiler.exe <platform> <json file> <output directory>\n\nExample: GigiCompiler.exe dx12 Techniques/boxblur.gg ./out/ [-graphviz]\n\n");
+        printf("Usage: GigiCompiler.exe <platform> <json file> <output directory>\n\nExample: GigiCompiler.exe DX12_Module Techniques/boxblur.gg ./out/ [-graphviz]\n\n");
         printf("Backends Supported:\n");
         #include "external/df_serialize/_common.h"
-        #define GIGI_BUILD_FLAVOR(BACKEND, FLAVOR, INTERNAL) printf("  " #BACKEND "_" #FLAVOR "\n");
+        #define GIGI_BUILD_FLAVOR(BACKEND, FLAVOR, INTERNAL) if(!INTERNAL) { printf("  " #BACKEND "_" #FLAVOR "\n"); }
         #include "GigiCompilerLib/GigiBuildFlavorList.h"
         #undef GIGI_BUILD_FLAVOR
         printf("\n");

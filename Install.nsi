@@ -23,7 +23,7 @@
 ; General
 
   Name "${APPNAME}"
-  OutFile "${APPNAME} Setup.exe"
+  OutFile "Gigi-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}.x64.windows.installer.exe"
   InstallDir "$PROGRAMFILES\${APPNAME}"
   InstallDirRegKey HKCU "Software\${APPNAME}" ""
   RequestExecutionLevel admin

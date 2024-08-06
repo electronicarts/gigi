@@ -41,30 +41,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             "\n            return;"
             "\n        }"
             ;
-
-        if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::RenderTarget))
-        {
-            stringReplacementMap["/*$(ExecuteBegin)*/"] <<
-                "\n"
-                "\n        if (context->" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv == -1)"
-                "\n        {"
-                "\n            Context::LogFn(LogLevel::Error, \"" << renderGraph.name << ": Imported texture \\\"" << node.name << "\\\" needs an RTV. Use CreateManagedRTV to create one.\\n\");"
-                "\n            return;"
-                "\n        }"
-                ;
-        }
-
-        if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
-        {
-            stringReplacementMap["/*$(ExecuteBegin)*/"] <<
-                "\n"
-                "\n        if (context->" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv == -1)"
-                "\n        {"
-                "\n            Context::LogFn(LogLevel::Error, \"" << renderGraph.name << ": Imported texture \\\"" << node.name << "\\\" needs a DSV. Use CreateManagedDSV to create one.\\n\");"
-                "\n            return;"
-                "\n        }"
-                ;
-        }
     }
 
     // calculate D3D12_RESOURCE_FLAGs
@@ -107,15 +83,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         stringReplacementMap[location] <<
             "\n" << indent << "ID3D12Resource* texture_" << node.name << " = nullptr;"
             "\n" << indent << "unsigned int texture_" << node.name << "_size[3] = { 0, 0, 0 };"
+            "\n" << indent << "unsigned int texture_" << node.name << "_numMips = 0;"
             "\n" << indent << "DXGI_FORMAT texture_" << node.name << "_format = DXGI_FORMAT_UNKNOWN;"
             "\n" << indent << "static const D3D12_RESOURCE_FLAGS texture_" << node.name << "_flags = " << resourceFlags << ";"
             ;
-
-        if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::RenderTarget))
-            stringReplacementMap[location] << "\n" << indent << "int texture_" << node.name << "_rtv = -1;";
-
-        if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
-            stringReplacementMap[location] << "\n" << indent << "int texture_" << node.name << "_dsv = -1;";
 
         switch (node.visibility)
         {
@@ -246,6 +217,31 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                     ;
             }
 
+            // Get Desired Mip Count
+            if (node.numMips == 0)
+            {
+                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
+                    "\n"
+                    "\n                unsigned int desiredNumMips = 1;"
+                    "\n                {"
+                    "\n                    int maxSize = max(size[0], size[1]);"
+                    "\n                    while (maxSize > 1)"
+                    "\n                    {"
+                    "\n                        maxSize /= 2;"
+                    "\n                        desiredNumMips++;"
+                    "\n                    }"
+                    "\n                }"
+                    ;
+            }
+            else
+            {
+                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
+                    "\n"
+                    "\n                static const unsigned int desiredNumMips = " << node.numMips << ";"
+                    ;
+            }
+
+            // Create the texture
             stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
                 "\n"
                 "\n                // Create the texture"
@@ -253,134 +249,20 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[0] = size[0];"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[1] = size[1];"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[2] = size[2];"
-                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << " = DX12Utils::CreateTexture(device, size, " << TextureFormatToDXGIFormat(node.format.format) << ", " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_flags"
+                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_numMips = desiredNumMips;"
+                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << " = DX12Utils::CreateTexture(device, size, desiredNumMips, " << TextureFormatToDXGIFormat(node.format.format) << ", " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_flags"
                 ", D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::" << EnumToString(node.dimension) << ", (c_debugNames ? L\"" << (node.name) << "\" : nullptr), Context::LogFn);"
                 "\n"
                 ;
 
-            // 3d textures do a single copy because it's a single sub resource.
-            // 2d array textures do a copy for each slice
-            // Cube maps are just 2d array textures with 6 slices.
-
-            // 3D texture loading
-            if (node.dimension == TextureDimensionType::Texture3D)
-            {
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n                // Create an upload buffer"
-                    "\n                int unalignedPitch = loadedTextureSlices[0].width * DX12Utils::Get_DXGI_FORMAT_Info(" << TextureFormatToDXGIFormat(node.format.format) << ", Context::LogFn).bytesPerPixel;"
-                    "\n                int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);"
-                    "\n                DX12Utils::UploadBufferTracker::Buffer* uploadBuffer = s_ubTracker.GetBuffer(device, alignedPitch * loadedTextureSlices[0].height * loadedTextureSlices.size(), LogFn);"
-                    "\n"
-                    "\n                unsigned char* dest = nullptr;"
-                    "\n                D3D12_RANGE  readRange = { 0, 0 };"
-                    "\n                HRESULT hr = uploadBuffer->buffer->Map(0, &readRange, (void**)&dest);"
-                    "\n                if(hr)"
-                    "\n                    LogFn(LogLevel::Error, \"Could not map upload buffer\");"
-                    "\n"
-                    "\n                // Copy the pixels to the upload buffer"
-                    "\n                for (int sliceIndex = 0; sliceIndex < (int)loadedTextureSlices.size(); ++sliceIndex)"
-                    "\n                {"
-                    "\n                    DX12Utils::TextureCache::Texture loadedTextureSlice = DX12Utils::TextureCache::GetAs(indexedFileName, " << (node.loadFileNameAsSRGB ? "true" : "false") << ", desiredType, formatInfo.sRGB, formatInfo.channelCount);"
-                    "\n"
-                    "\n                    for (int y = 0; y < loadedTexture.height; ++y)"
-                    "\n                    {"
-                    "\n                        const unsigned char* src = &loadedTextureSlice.pixels[y * unalignedPitch];"
-                    "\n                        memcpy(&dest[sliceIndex * alignedPitch * loadedTexture.height + y * alignedPitch], src, unalignedPitch);"
-                    "\n                    }"
-                    "\n                }"
-                    "\n"
-                    "\n                uploadBuffer->buffer->Unmap(0, nullptr);"
-                    "\n"
-                    "\n                // copy the upload buffer into the texture"
-                    "\n                {"
-                    "\n                    D3D12_RESOURCE_DESC resourceDesc = " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "->GetDesc();"
-                    "\n                    std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));"
-                    "\n                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();"
-                    "\n                    device->GetCopyableFootprints(&resourceDesc, 0, 1, 0, layout, nullptr, nullptr, nullptr);"
-                    "\n"
-                    "\n                    D3D12_TEXTURE_COPY_LOCATION src = {};"
-                    "\n                    src.pResource = uploadBuffer->buffer;"
-                    "\n                    src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;"
-                    "\n                    src.PlacedFootprint = *layout;"
-                    "\n"
-                    "\n                    D3D12_TEXTURE_COPY_LOCATION dest = {};"
-                    "\n                    dest.pResource = " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ";"
-                    "\n                    dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;"
-                    "\n                    dest.SubresourceIndex = 0;"
-                    "\n"
-                    "\n                    commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);"
-                    "\n                }"
-                    ;
-            }
-            // 2D texture loading
-            else
-            {
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n                for (int sliceIndex = 0; sliceIndex < (int)loadedTextureSlices.size(); ++sliceIndex)"
-                    "\n                {"
-                    "\n                    DX12Utils::TextureCache::Texture& loadedTexture = loadedTextureSlices[sliceIndex];"
-                    "\n"
-                    "\n                    // Create an upload buffer"
-                    "\n                    int unalignedPitch = loadedTexture.width * DX12Utils::Get_DXGI_FORMAT_Info(" << TextureFormatToDXGIFormat(node.format.format) << ", Context::LogFn).bytesPerPixel;"
-                    "\n                    int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);"
-                    "\n                    DX12Utils::UploadBufferTracker::Buffer* uploadBuffer = s_ubTracker.GetBuffer(device, alignedPitch * loadedTexture.height, LogFn);"
-                    "\n"
-                    "\n                    // Copy the pixels to the upload buffer"
-                    "\n                    {"
-                    "\n                        unsigned char* dest = nullptr;"
-                    "\n                        D3D12_RANGE  readRange = { 0, 0 };"
-                    "\n                        HRESULT hr = uploadBuffer->buffer->Map(0, &readRange, (void**)&dest);"
-                    "\n                        if(hr)"
-                    "\n                            LogFn(LogLevel::Error, \"Could not map upload buffer\");"
-                    "\n"
-                    "\n                        for (int y = 0; y < loadedTexture.height; ++y)"
-                    "\n                        {"
-                    "\n                            const unsigned char* src = &loadedTexture.pixels[y * unalignedPitch];"
-                    "\n                            memcpy(&dest[y * alignedPitch], src, unalignedPitch);"
-                    "\n                        }"
-                    "\n                        uploadBuffer->buffer->Unmap(0, nullptr);"
-                    "\n                    }"
-                    "\n"
-                    "\n                    // copy the upload buffer into the texture"
-                    "\n                    {"
-                    "\n                        D3D12_RESOURCE_DESC resourceDesc = " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "->GetDesc();"
-                    "\n                        std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));"
-                    "\n                        D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();"
-                    "\n                        device->GetCopyableFootprints(&resourceDesc, 0, 1, 0, layout, nullptr, nullptr, nullptr);"
-                    "\n"
-                    "\n                        D3D12_TEXTURE_COPY_LOCATION src = {};"
-                    "\n                        src.pResource = uploadBuffer->buffer;"
-                    "\n                        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;"
-                    "\n                        src.PlacedFootprint = *layout;"
-                    "\n"
-                    "\n                        D3D12_TEXTURE_COPY_LOCATION dest = {};"
-                    "\n                        dest.pResource = " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ";"
-                    "\n                        dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;"
-                    "\n                        dest.SubresourceIndex = sliceIndex;"
-                    "\n"
-                    "\n                        commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);"
-                    "\n                    }"
-                    "\n                }"
-                    ;
-            }
-
-            if (node.finalState != ShaderResourceAccessType::CopyDest)
-            {
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n"
-                    "\n                // Transition the texture to the proper state"
-                    "\n                D3D12_RESOURCE_BARRIER barrier;"
-                    "\n                barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;"
-                    "\n                barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;"
-                    "\n                barrier.Transition.pResource = " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ";"
-                    "\n                barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;"
-                    "\n                barrier.Transition.StateAfter = " << ShaderResourceTypeToDX12ResourceState(node.finalState) << ";"
-                    "\n                barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;"
-                    "\n                commandList->ResourceBarrier(1, &barrier);"
-                    ;
-            }
-
+            // Upload the texture
             stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
+                "\n"
+                "\n                std::vector<unsigned char> pixels;"
+                "\n                for (const DX12Utils::TextureCache::Texture& texture : loadedTextureSlices)"
+                "\n                    pixels.insert(pixels.end(), texture.pixels.begin(), texture.pixels.end());"
+                "\n"
+                "\n                DX12Utils::UploadTextureToGPUAndMakeMips(device, commandList, s_ubTracker, " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ", pixels, size, desiredNumMips, D3D12_RESOURCE_STATE_COPY_DEST, " << ShaderResourceTypeToDX12ResourceState(node.finalState) << ", LogFn);"
                 "\n            }"
                 "\n        }"
                 ;
@@ -452,6 +334,30 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n            };"
             ;
 
+            // Get Desired Mip Count
+            if (node.numMips == 0)
+            {
+                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
+                    "\n"
+                    "\n            unsigned int desiredNumMips = 1;"
+                    "\n            {"
+                    "\n                int maxSize = max(desiredSize[0], desiredSize[1]);"
+                    "\n                while (maxSize > 1)"
+                    "\n                {"
+                    "\n                    maxSize /= 2;"
+                    "\n                    desiredNumMips++;"
+                    "\n                }"
+                    "\n            }"
+                    ;
+            }
+            else
+            {
+                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
+                    "\n"
+                    "\n            static const unsigned int desiredNumMips = " << node.numMips << ";"
+                    ;
+            }
+
             // Get desired format
             if (node.format.variable.variableIndex != -1)
             {
@@ -498,124 +404,20 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n               " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[0] != desiredSize[0] ||"
                 "\n               " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[1] != desiredSize[1] ||"
                 "\n               " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[2] != desiredSize[2] ||"
+                "\n               " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_numMips != desiredNumMips ||"
                 "\n               " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_format != desiredFormat)"
                 "\n            {"
                 "\n                dirty = true;"
                 "\n                if(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ")"
                 "\n                    s_delayedRelease.Add(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ");"
                 "\n"
-                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << " = DX12Utils::CreateTexture(device, desiredSize, desiredFormat, " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_flags"
+                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << " = DX12Utils::CreateTexture(device, desiredSize, desiredNumMips, desiredFormat, " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_flags"
                 ", " << ShaderResourceTypeToDX12ResourceState(node.finalState) << ", " << textureType << ", (c_debugNames ? L\"" << (node.name) << "\" : nullptr), Context::LogFn);"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[0] = desiredSize[0];"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[1] = desiredSize[1];"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[2] = desiredSize[2];"
+                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_numMips = desiredNumMips;"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_format = desiredFormat;"
-                ;
-
-            if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::RenderTarget))
-            {
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n"
-                    "\n                // Allocate a RTV handle"
-                    "\n                if(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv == -1 && !s_heapAllocationTrackerRTV.Allocate(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv, \"" << node.name << "\"))"
-                    "\n                    Context::LogFn(LogLevel::Error, \"Ran out of RTV descriptors, please increase c_numRTVDescriptors\");"
-                    "\n"
-                    "\n                // Create RTV"
-                    "\n                D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;"
-                    "\n                rtvDesc.Format = " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_format;"
-                    ;
-
-                switch (node.dimension)
-                {
-                    case TextureDimensionType::Texture2D:
-                    {
-                        stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                            "\n                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;"
-                            "\n                rtvDesc.Texture2D.MipSlice = 0;"
-                            "\n                rtvDesc.Texture2D.PlaneSlice = 0;"
-                            ;
-                        break;
-                    }
-                    case TextureDimensionType::Texture2DArray:
-                    {
-                        stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                            "\n                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;"
-                            "\n                rtvDesc.Texture2DArray.MipSlice = 0;"
-                            "\n                rtvDesc.Texture2DArray.PlaneSlice = 0;"
-                            "\n                rtvDesc.Texture2DArray.ArraySize = 1;"
-                            "\n                rtvDesc.Texture2DArray.FirstArraySlice = 0;"
-                            ;
-                        break;
-                    }
-                    case TextureDimensionType::Texture3D:
-                    {
-                        stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                            "\n                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;"
-                            "\n                rtvDesc.Texture3D.MipSlice = 0;"
-                            "\n                rtvDesc.Texture3D.WSize = 1;"
-                            "\n                rtvDesc.Texture3D.FirstWSlice = i;"
-                            ;
-                        break;
-                    }
-                    default:
-                    {
-                        Assert(false, "Cannot use a \"%s\" as a color target (node \"%s\")", EnumToString(node.dimension), node.name.c_str());
-                    }
-                }
-
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n                device->CreateRenderTargetView(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ", &rtvDesc, s_heapAllocationTrackerRTV.GetCPUHandle(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv));"
-                    ;
-
-            }
-
-            if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
-            {
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n"
-                    "\n                // Allocate a DSV handle"
-                    "\n                if(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv == -1 && !s_heapAllocationTrackerDSV.Allocate(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv, \"" << node.name << "\"))"
-                    "\n                    Context::LogFn(LogLevel::Error, \"Ran out of DSV descriptors, please increase c_numDSVDescriptors\");"
-                    "\n"
-                    "\n                // Create DSV"
-                    "\n                D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;"
-                    "\n                dsvDesc.Format = DX12Utils::DSV_Safe_DXGI_FORMAT(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_format);"
-                    "\n                dsvDesc.Flags = D3D12_DSV_FLAG_NONE;"
-                    ;
-
-                switch (node.dimension)
-                {
-                    case TextureDimensionType::Texture2D:
-                    {
-                        stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                            "\n                dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;"
-                            "\n                dsvDesc.Texture2D.MipSlice = 0;"
-                            ;
-                        break;
-                    }
-                    case TextureDimensionType::Texture2DArray:
-                    {
-                        stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                            "\n                dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;"
-                            "\n                dsvDesc.Texture2DArray.MipSlice = 0;"
-                            "\n                dsvDesc.Texture2DArray.FirstArraySlice = 0;"
-                            "\n                dsvDesc.Texture2DArray.ArraySize = 1;"
-                            ;
-
-                        break;
-                    }
-                    default:
-                    {
-                        Assert(false, "Cannot use a \"%s\" as a depth target (node \"%s\")", EnumToString(node.dimension), node.name.c_str());
-                    }
-                }
-
-                stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                    "\n                device->CreateDepthStencilView(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << ", &dsvDesc, s_heapAllocationTrackerDSV.GetCPUHandle(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv));"
-                    ;
-            }
-
-            stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
                 "\n            }"
                 "\n        }"
                 ;
@@ -636,29 +438,5 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             "\n            " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << " = nullptr;"
             "\n        }"
             ;
-
-        if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::RenderTarget))
-        {
-            stringReplacementMap["/*$(ContextDestructor)*/"] <<
-                "\n"
-                "\n        if(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv != -1)"
-                "\n        {"
-                "\n            s_heapAllocationTrackerRTV.Free(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv);"
-                "\n            " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_rtv = -1;"
-                "\n        }"
-                ;
-        }
-
-        if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
-        {
-            stringReplacementMap["/*$(ContextDestructor)*/"] <<
-                "\n"
-                "\n        if(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv != -1)"
-                "\n        {"
-                "\n            s_heapAllocationTrackerRTV.Free(" << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv);"
-                "\n            " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_dsv = -1;"
-                "\n        }"
-                ;
-        }
     }
 }

@@ -14,6 +14,8 @@ RWTexture2D<float4> g_texture : register(u0);
 RaytracingAccelerationStructure g_scene : register(t0);
 ConstantBuffer<Struct__TwoRayGens1CB> _TwoRayGens1CB : register(b0);
 
+#line 2
+
 
 struct Payload
 {
@@ -21,6 +23,7 @@ struct Payload
 };
 
 [shader("raygeneration")]
+#line 9
 void RayGen1()
 {
 	uint2 px = DispatchRaysIndex().xy;
@@ -56,12 +59,14 @@ void RayGen1()
 }
 
 [shader("miss")]
+#line 43
 void Miss1(inout Payload payload : SV_RayPayload)
 {
 	payload.hit = false;
 }
 
 [shader("closesthit")]
+#line 48
 void ClosestHit1(inout Payload payload : SV_RayPayload, in BuiltInTriangleIntersectionAttributes intersection : SV_IntersectionAttributes)
 {
 	payload.hit = true;

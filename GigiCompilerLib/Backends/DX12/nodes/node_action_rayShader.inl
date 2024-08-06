@@ -597,6 +597,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             if (dep.access == ShaderResourceAccessType::Indirect)
                 continue;
 
+            int UAVMipIndex = 0;
+            if (dep.pinIndex < node.linkProperties.size())
+                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             if (depCount > 0)
@@ -691,7 +695,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << " }";
+            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " }";
         }
 
         stringReplacementMap["/*$(Execute)*/"] <<

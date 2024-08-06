@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.98b",
+    "version": "0.99b",
     "shaders": [
         {
             "name": "CSMakeOutput",
@@ -10,7 +10,10 @@
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -23,6 +26,7 @@
                     -37.0,
                     -30.0
                 ],
+                "visibility": "Exported",
                 "format": {
                     "format": "RGBA8_Unorm_sRGB"
                 },

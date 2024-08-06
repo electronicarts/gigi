@@ -14,14 +14,16 @@ float3 LinearToSRGB(float3 linearCol)
 
 /*$(_compute:main)*/(uint3 DTid : SV_DispatchThreadID)
 {
+	static const int c_mipLevel = 4;
+
 	uint2 px = DTid.xy;
 
-	uint2 dims;
-	/*$(Image2D:../../cabinsmall.png:RGBA8_Unorm_sRGB:float4:true:true)*/.GetDimensions(dims.x, dims.y);
+	uint3 dims;
+	/*$(Image2D:../../cabinsmall.png:RGBA8_Unorm_sRGB:float4:true:true)*/.GetDimensions(c_mipLevel, dims.x, dims.y, dims.z);
 
-	uint2 readPos = px % dims;
+	uint2 readPos = px % dims.xy;
 
-	Output[px] = float4(LinearToSRGB(/*$(Image2D:../../cabinsmall.png:RGBA8_Unorm_sRGB:float4:true:true)*/[readPos].rgb), 1.0f);
+	Output[px] = float4(LinearToSRGB(/*$(Image2D:../../cabinsmall.png:RGBA8_Unorm_sRGB:float4:true:true)*/.Load(uint3(readPos, c_mipLevel)).rgb), 1.0f);
 }
 
 /*

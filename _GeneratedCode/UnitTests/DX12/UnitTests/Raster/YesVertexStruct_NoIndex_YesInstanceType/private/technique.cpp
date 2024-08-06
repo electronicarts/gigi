@@ -177,10 +177,10 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
         return ret;
     }
 
-    ID3D12Resource* Context::CreateManagedTexture(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, const unsigned int size[3], DX12Utils::ResourceType resourceType, const void* initialData, const wchar_t* debugName, D3D12_RESOURCE_STATES desiredState)
+    ID3D12Resource* Context::CreateManagedTexture(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, const unsigned int size[3], unsigned int numMips, DX12Utils::ResourceType resourceType, const void* initialData, const wchar_t* debugName, D3D12_RESOURCE_STATES desiredState)
     {
         // Create a texture
-        ID3D12Resource* ret = DX12Utils::CreateTexture(device, size, format, flags, D3D12_RESOURCE_STATE_COPY_DEST, resourceType, debugName, Context::LogFn);
+        ID3D12Resource* ret = DX12Utils::CreateTexture(device, size, numMips, format, flags, D3D12_RESOURCE_STATE_COPY_DEST, resourceType, debugName, Context::LogFn);
         AddManagedResource(ret);
 
         // copy initial data in, if we should
@@ -208,7 +208,7 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
         return ret;
     }
 
-    ID3D12Resource* Context::CreateManagedTextureAndClear(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, const unsigned int size[3], DX12Utils::ResourceType resourceType, void* clearValue, size_t clearValueSize, const wchar_t* debugName, D3D12_RESOURCE_STATES desiredState)
+    ID3D12Resource* Context::CreateManagedTextureAndClear(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, const unsigned int size[3], unsigned int numMips, DX12Utils::ResourceType resourceType, void* clearValue, size_t clearValueSize, const wchar_t* debugName, D3D12_RESOURCE_STATES desiredState)
     {
         // Make sure the clear value is the correct size
         DX12Utils::DXGI_FORMAT_Info formatInfo = DX12Utils::Get_DXGI_FORMAT_Info(format, Context::LogFn);
@@ -231,7 +231,7 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
         }
 
         // make and return the texture
-        return CreateManagedTexture(device, commandList, flags, format, size, resourceType, initialData, debugName, desiredState);
+        return CreateManagedTexture(device, commandList, flags, format, size, numMips, resourceType, initialData, debugName, desiredState);
     }
 
     ID3D12Resource* Context::CreateManagedTextureFromFile(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, D3D12_RESOURCE_FLAGS flags, DXGI_FORMAT format, DX12Utils::ResourceType resourceType, const char* fileName, bool sourceIsSRGB, unsigned int size[3], const wchar_t* debugName, D3D12_RESOURCE_STATES desiredState)
@@ -259,7 +259,7 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
             size[2] = 1;
 
             // make and return the texture
-            return CreateManagedTexture(device, commandList, flags, format, size, resourceType, texture.pixels.data(), debugName, desiredState);
+            return CreateManagedTexture(device, commandList, flags, format, size, 1, resourceType, texture.pixels.data(), debugName, desiredState);
         }
         else if (resourceType == DX12Utils::ResourceType::Texture2DArray ||
                  resourceType == DX12Utils::ResourceType::Texture3D ||
@@ -321,7 +321,7 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
                 allPixels.insert(allPixels.end(), texture.pixels.begin(), texture.pixels.end());
 
             // make and return the texture
-            return CreateManagedTexture(device, commandList, flags, format, size, resourceType, allPixels.data(), debugName, desiredState);
+            return CreateManagedTexture(device, commandList, flags, format, size, 1, resourceType, allPixels.data(), debugName, desiredState);
         }
         else
             return nullptr;
@@ -525,78 +525,64 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
         }
     }
 
-    bool Context::CreateManagedRTV(ID3D12Device* device, ID3D12Resource* resource, DXGI_FORMAT format, D3D12_RTV_DIMENSION dimension, int sliceIndex, int& rtvIndex, const char* debugText)
+    int Context::GetRTV(ID3D12Device* device, ID3D12Resource* resource, DXGI_FORMAT format, D3D12_RTV_DIMENSION dimension, int arrayIndex, int mipIndex, const char* debugName)
     {
-        if (dimension != D3D12_RTV_DIMENSION_TEXTURE2D && dimension != D3D12_RTV_DIMENSION_TEXTURE2DARRAY)
+        // Make the key
+        DX12Utils::SubResourceHeapAllocationInfo key;
+        key.resource = resource;
+        key.arrayIndex = arrayIndex;
+        key.mipIndex = mipIndex;
+
+        // If it already exists, use it
+        auto it = m_internal.m_RTVCache.find(key);
+        if (it != m_internal.m_RTVCache.end())
+            return it->second;
+
+        // Allocate an RTV index
+        int rtvIndex = -1;
+        if (!s_heapAllocationTrackerRTV.Allocate(rtvIndex, debugName))
+            return -1;
+
+        // Create the RTV
+        if (!DX12Utils::CreateRTV(device, resource, s_heapAllocationTrackerRTV.GetCPUHandle(rtvIndex), format, dimension, arrayIndex, mipIndex))
         {
-            Context::LogFn(LogLevel::Error, "unhandled RTV texture dimension type.");
-            return false;
+            s_heapAllocationTrackerRTV.Free(rtvIndex);
+            return -1;
         }
 
-        // Allocate handle
-        if (!s_heapAllocationTrackerRTV.Allocate(rtvIndex, debugText))
-            return false;
-
-        // Create RTV
-        D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-        rtvDesc.Format = format;
-        rtvDesc.ViewDimension = dimension;
-        if (dimension == D3D12_RTV_DIMENSION_TEXTURE2D)
-        {
-            rtvDesc.Texture2D.MipSlice = 0;
-            rtvDesc.Texture2D.PlaneSlice = 0;
-        }
-        else
-        {
-            rtvDesc.Texture2DArray.MipSlice = 0;
-            rtvDesc.Texture2DArray.PlaneSlice = 0;
-            rtvDesc.Texture2DArray.ArraySize = 1;
-            rtvDesc.Texture2DArray.FirstArraySlice = sliceIndex;
-        }
-
-        device->CreateRenderTargetView(resource, &rtvDesc, s_heapAllocationTrackerRTV.GetCPUHandle(rtvIndex));
-
-        m_internal.m_managedRTVs.push_back(rtvIndex);
-
-        return true;
+        // store the result
+        m_internal.m_RTVCache[key] = rtvIndex;
+        return rtvIndex;
     }
 
-    bool Context::CreateManagedDSV(ID3D12Device* device, ID3D12Resource* resource, DXGI_FORMAT format, D3D12_DSV_DIMENSION dimension, int sliceIndex, int& dsvIndex, const char* debugText)
+    int Context::GetDSV(ID3D12Device* device, ID3D12Resource* resource, DXGI_FORMAT format, D3D12_DSV_DIMENSION dimension, int arrayIndex, int mipIndex, const char* debugName)
     {
-        if (dimension != D3D12_DSV_DIMENSION_TEXTURE2D && dimension != D3D12_DSV_DIMENSION_TEXTURE2DARRAY)
+	    // Make the key
+        DX12Utils::SubResourceHeapAllocationInfo key;
+        key.resource = resource;
+        key.arrayIndex = arrayIndex;
+        key.mipIndex = mipIndex;
+
+	    // If it already exists, use it
+	    auto it = m_internal.m_DSVCache.find(key);
+	    if (it != m_internal.m_DSVCache.end())
+            return it->second;
+
+        // Allocate a DSV index
+        int dsvIndex = -1;
+        if (!s_heapAllocationTrackerDSV.Allocate(dsvIndex, debugName))
+            return -1;
+
+        // Create the DSV
+        if (!DX12Utils::CreateDSV(device, resource, s_heapAllocationTrackerDSV.GetCPUHandle(dsvIndex), format, dimension, arrayIndex, mipIndex))
         {
-            Context::LogFn(LogLevel::Error, "unhandled RTV texture dimension type.");
-            return false;
+            s_heapAllocationTrackerDSV.Free(dsvIndex);
+            return -1;
         }
 
-        // Allocate handle
-        if (!s_heapAllocationTrackerDSV.Allocate(dsvIndex, debugText))
-            return false;
-
-        // Create DSV
-        D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-        dsvDesc.Format = DX12Utils::DSV_Safe_DXGI_FORMAT(format);
-        dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-        dsvDesc.ViewDimension = dimension;
-
-        if (dimension == D3D12_RTV_DIMENSION_TEXTURE2D)
-        {
-            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-            dsvDesc.Texture2D.MipSlice = 0;
-        }
-        else
-        {
-            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-            dsvDesc.Texture2DArray.MipSlice = 0;
-            dsvDesc.Texture2DArray.FirstArraySlice = sliceIndex;
-            dsvDesc.Texture2DArray.ArraySize = 1;
-        }
-
-        device->CreateDepthStencilView(resource, &dsvDesc, s_heapAllocationTrackerDSV.GetCPUHandle(dsvIndex));
-
-        m_internal.m_managedDSVs.push_back(dsvIndex);
-
-        return true;
+        // store the result
+        m_internal.m_DSVCache[key] = dsvIndex;
+        return dsvIndex;
     }
 
     const ProfileEntry* Context::ReadbackProfileData(ID3D12CommandQueue* commandQueue, int& numItems)
@@ -628,13 +614,13 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
 
     Context::~Context()
     {
-        for (int index : m_internal.m_managedRTVs)
-            s_heapAllocationTrackerRTV.Free(index);
-        m_internal.m_managedRTVs.clear();
+        for (const auto& pair : m_internal.m_RTVCache)
+            s_heapAllocationTrackerRTV.Free(pair.second);
+        m_internal.m_RTVCache.clear();
 
-        for (int index : m_internal.m_managedDSVs)
-            s_heapAllocationTrackerDSV.Free(index);
-        m_internal.m_managedDSVs.clear();
+        for (const auto& pair : m_internal.m_DSVCache)
+            s_heapAllocationTrackerDSV.Free(pair.second);
+        m_internal.m_DSVCache.clear();
 
         for (ID3D12Resource* resource : m_internal.m_managedResources)
             resource->Release();
@@ -658,22 +644,10 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
             m_output.texture_Color_Buffer = nullptr;
         }
 
-        if(m_output.texture_Color_Buffer_rtv != -1)
-        {
-            s_heapAllocationTrackerRTV.Free(m_output.texture_Color_Buffer_rtv);
-            m_output.texture_Color_Buffer_rtv = -1;
-        }
-
         if(m_output.texture_Depth_Buffer)
         {
             s_delayedRelease.Add(m_output.texture_Depth_Buffer);
             m_output.texture_Depth_Buffer = nullptr;
-        }
-
-        if(m_output.texture_Depth_Buffer_dsv != -1)
-        {
-            s_heapAllocationTrackerRTV.Free(m_output.texture_Depth_Buffer_dsv);
-            m_output.texture_Depth_Buffer_dsv = -1;
         }
 
         // _VertexShaderCB
@@ -821,14 +795,14 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_internal.constantBuffer__PixelShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1 },
+                { context->m_internal.constantBuffer__PixelShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(1, descriptorTablePS);
@@ -863,13 +837,19 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
             // Clear Color_Buffer
             {
                  float clearValues[4] = { 0.200000f, 0.200000f, 0.200000f, 1.000000f };
-                 commandList->ClearRenderTargetView(s_heapAllocationTrackerRTV.GetCPUHandle(context->m_output.texture_Color_Buffer_rtv), clearValues, 0, nullptr);
+                 int rtvIndex = context->GetRTV(device, context->m_output.texture_Color_Buffer, context->m_output.texture_Color_Buffer_format, D3D12_RTV_DIMENSION_TEXTURE2D, 0, 0, "YesVertexStruct_NoIndex_YesInstanceType.Color_Buffer");
+                 if (rtvIndex == -1)
+                     Context::LogFn(LogLevel::Error, "Could not get RTV for YesVertexStruct_NoIndex_YesInstanceType.Color_Buffer");
+                 commandList->ClearRenderTargetView(s_heapAllocationTrackerRTV.GetCPUHandle(rtvIndex), clearValues, 0, nullptr);
             }
 
             // Clear Depth_Buffer
             {
-                D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAG_DEPTH;
-                commandList->ClearDepthStencilView(s_heapAllocationTrackerDSV.GetCPUHandle(context->m_output.texture_Depth_Buffer_dsv), clearFlags, 0.000000f, 0, 0, nullptr);
+                 D3D12_CLEAR_FLAGS clearFlags = D3D12_CLEAR_FLAG_DEPTH;
+                 int dsvIndex = context->GetDSV(device, context->m_output.texture_Depth_Buffer, context->m_output.texture_Depth_Buffer_format, D3D12_DSV_DIMENSION_TEXTURE2D, 0, 0, "YesVertexStruct_NoIndex_YesInstanceType.Depth_Buffer");
+                 if (dsvIndex == -1)
+                     Context::LogFn(LogLevel::Error, "Could not get DSV for YesVertexStruct_NoIndex_YesInstanceType.Depth_Buffer");
+                commandList->ClearDepthStencilView(s_heapAllocationTrackerDSV.GetCPUHandle(dsvIndex), clearFlags, 0.000000f, 0, 0, nullptr);
             }
 
             int renderWidth = context->m_output.texture_Color_Buffer_size[0];
@@ -877,12 +857,12 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
 
             D3D12_CPU_DESCRIPTOR_HANDLE colorTargetHandles[] =
             {
-                s_heapAllocationTrackerRTV.GetCPUHandle(context->m_output.texture_Color_Buffer_rtv),
+                s_heapAllocationTrackerRTV.GetCPUHandle(context->GetRTV(device, context->m_output.texture_Color_Buffer, context->m_output.texture_Color_Buffer_format, D3D12_RTV_DIMENSION_TEXTURE2D, 0, 0, "YesVertexStruct_NoIndex_YesInstanceType.Color_Buffer"))
             };
 
             int colorTargetHandleCount = _countof(colorTargetHandles);
 
-            D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = s_heapAllocationTrackerDSV.GetCPUHandle(context->m_output.texture_Depth_Buffer_dsv);
+            D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = s_heapAllocationTrackerDSV.GetCPUHandle(context->GetDSV(device, context->m_output.texture_Depth_Buffer, context->m_output.texture_Depth_Buffer_format, D3D12_DSV_DIMENSION_TEXTURE2D, 0, 0, "YesVertexStruct_NoIndex_YesInstanceType.Depth_Buffer"));
             D3D12_CPU_DESCRIPTOR_HANDLE* depthTargetHandlePtr = &depthTargetHandle;
 
             // clear viewport and scissor rect
@@ -960,35 +940,27 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
                 ((baseSize[2] + 0) * 1) / 1 + 0
             };
 
+            static const unsigned int desiredNumMips = 1;
+
             DXGI_FORMAT desiredFormat = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
             if(!m_output.texture_Color_Buffer ||
                m_output.texture_Color_Buffer_size[0] != desiredSize[0] ||
                m_output.texture_Color_Buffer_size[1] != desiredSize[1] ||
                m_output.texture_Color_Buffer_size[2] != desiredSize[2] ||
+               m_output.texture_Color_Buffer_numMips != desiredNumMips ||
                m_output.texture_Color_Buffer_format != desiredFormat)
             {
                 dirty = true;
                 if(m_output.texture_Color_Buffer)
                     s_delayedRelease.Add(m_output.texture_Color_Buffer);
 
-                m_output.texture_Color_Buffer = DX12Utils::CreateTexture(device, desiredSize, desiredFormat, m_output.texture_Color_Buffer_flags, D3D12_RESOURCE_STATE_RENDER_TARGET, DX12Utils::ResourceType::Texture2D, (c_debugNames ? L"Color_Buffer" : nullptr), Context::LogFn);
+                m_output.texture_Color_Buffer = DX12Utils::CreateTexture(device, desiredSize, desiredNumMips, desiredFormat, m_output.texture_Color_Buffer_flags, D3D12_RESOURCE_STATE_RENDER_TARGET, DX12Utils::ResourceType::Texture2D, (c_debugNames ? L"Color_Buffer" : nullptr), Context::LogFn);
                 m_output.texture_Color_Buffer_size[0] = desiredSize[0];
                 m_output.texture_Color_Buffer_size[1] = desiredSize[1];
                 m_output.texture_Color_Buffer_size[2] = desiredSize[2];
+                m_output.texture_Color_Buffer_numMips = desiredNumMips;
                 m_output.texture_Color_Buffer_format = desiredFormat;
-
-                // Allocate a RTV handle
-                if(m_output.texture_Color_Buffer_rtv == -1 && !s_heapAllocationTrackerRTV.Allocate(m_output.texture_Color_Buffer_rtv, "Color_Buffer"))
-                    Context::LogFn(LogLevel::Error, "Ran out of RTV descriptors, please increase c_numRTVDescriptors");
-
-                // Create RTV
-                D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-                rtvDesc.Format = m_output.texture_Color_Buffer_format;
-                rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-                rtvDesc.Texture2D.MipSlice = 0;
-                rtvDesc.Texture2D.PlaneSlice = 0;
-                device->CreateRenderTargetView(m_output.texture_Color_Buffer, &rtvDesc, s_heapAllocationTrackerRTV.GetCPUHandle(m_output.texture_Color_Buffer_rtv));
             }
         }
 
@@ -1006,35 +978,27 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
                 ((baseSize[2] + 0) * 1) / 1 + 0
             };
 
+            static const unsigned int desiredNumMips = 1;
+
             DXGI_FORMAT desiredFormat = DXGI_FORMAT_D32_FLOAT;
 
             if(!m_output.texture_Depth_Buffer ||
                m_output.texture_Depth_Buffer_size[0] != desiredSize[0] ||
                m_output.texture_Depth_Buffer_size[1] != desiredSize[1] ||
                m_output.texture_Depth_Buffer_size[2] != desiredSize[2] ||
+               m_output.texture_Depth_Buffer_numMips != desiredNumMips ||
                m_output.texture_Depth_Buffer_format != desiredFormat)
             {
                 dirty = true;
                 if(m_output.texture_Depth_Buffer)
                     s_delayedRelease.Add(m_output.texture_Depth_Buffer);
 
-                m_output.texture_Depth_Buffer = DX12Utils::CreateTexture(device, desiredSize, desiredFormat, m_output.texture_Depth_Buffer_flags, D3D12_RESOURCE_STATE_DEPTH_WRITE, DX12Utils::ResourceType::Texture2D, (c_debugNames ? L"Depth_Buffer" : nullptr), Context::LogFn);
+                m_output.texture_Depth_Buffer = DX12Utils::CreateTexture(device, desiredSize, desiredNumMips, desiredFormat, m_output.texture_Depth_Buffer_flags, D3D12_RESOURCE_STATE_DEPTH_WRITE, DX12Utils::ResourceType::Texture2D, (c_debugNames ? L"Depth_Buffer" : nullptr), Context::LogFn);
                 m_output.texture_Depth_Buffer_size[0] = desiredSize[0];
                 m_output.texture_Depth_Buffer_size[1] = desiredSize[1];
                 m_output.texture_Depth_Buffer_size[2] = desiredSize[2];
+                m_output.texture_Depth_Buffer_numMips = desiredNumMips;
                 m_output.texture_Depth_Buffer_format = desiredFormat;
-
-                // Allocate a DSV handle
-                if(m_output.texture_Depth_Buffer_dsv == -1 && !s_heapAllocationTrackerDSV.Allocate(m_output.texture_Depth_Buffer_dsv, "Depth_Buffer"))
-                    Context::LogFn(LogLevel::Error, "Ran out of DSV descriptors, please increase c_numDSVDescriptors");
-
-                // Create DSV
-                D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-                dsvDesc.Format = DX12Utils::DSV_Safe_DXGI_FORMAT(m_output.texture_Depth_Buffer_format);
-                dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
-                dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-                dsvDesc.Texture2D.MipSlice = 0;
-                device->CreateDepthStencilView(m_output.texture_Depth_Buffer, &dsvDesc, s_heapAllocationTrackerDSV.GetCPUHandle(m_output.texture_Depth_Buffer_dsv));
             }
         }
 
@@ -1173,11 +1137,12 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
             // Make the PSO desc
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};
             psoDesc.InputLayout = { vertexInputLayout.data(), (UINT)vertexInputLayout.size() };
-            psoDesc.pRootSignature = m_internal.drawCall_Rasterize_rootSig;
             psoDesc.VS.pShaderBytecode = byteCodeVS.data();
             psoDesc.VS.BytecodeLength = byteCodeVS.size();
             psoDesc.PS.pShaderBytecode = byteCodePS.data();
             psoDesc.PS.BytecodeLength = byteCodePS.size();
+            psoDesc.SampleDesc.Count = 1;
+            psoDesc.pRootSignature = m_internal.drawCall_Rasterize_rootSig;
             psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;
             psoDesc.RasterizerState.CullMode = D3D12_CULL_MODE_BACK;
             psoDesc.RasterizerState.FrontCounterClockwise = FALSE;
@@ -1280,8 +1245,9 @@ namespace YesVertexStruct_NoIndex_YesInstanceType
                 psoDesc.DepthStencilState.FrontFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
                 psoDesc.DepthStencilState.BackFace.StencilFunc = D3D12_COMPARISON_FUNC_ALWAYS;
             }
-            psoDesc.SampleDesc.Count = 1;
+
             hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_internal.drawCall_Rasterize_pso));
+
             if (FAILED(hr))
             {
                 Context::LogFn(LogLevel::Error, "Could not create PSO for Rasterize");

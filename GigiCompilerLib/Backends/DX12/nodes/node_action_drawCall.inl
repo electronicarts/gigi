@@ -17,6 +17,16 @@ struct SemanticEnumToString
     int m_semanticIndex = -1;
 };
 
+static bool VRSIsNoop(const RenderGraphNode_Action_DrawCall& node)
+{
+    return
+        node.shadingRate == ShadingRate::_1x1 &&
+        node.shadingRateCombiner1 == ShadingRateCombiner::PassThrough &&
+        node.shadingRateCombiner2 == ShadingRateCombiner::PassThrough &&
+        node.shadingRateImage.resourceNodeIndex == -1
+        ;
+}
+
 static void MakeStringReplacementForNode(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, RenderGraphNode_Action_DrawCall& node)
 {
     // Storage
@@ -58,60 +68,127 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n        if(!m_internal.drawCall_" << node.name << "_pso || !m_internal.drawCall_" << node.name << "_rootSig)"
         "\n        {";
 
-    // Samplers
-    int samplerCount = int(node.vertexShader.shader->samplers.size() + node.pixelShader.shader->samplers.size());
-    if (samplerCount > 0)
+    // Write out the samplers and count them at the same time
+    int samplerCount = 0;
     {
-        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            D3D12_STATIC_SAMPLER_DESC samplers[" << samplerCount << "];";
+        std::ostringstream samplerDefinitions;
 
-        for (size_t samplerIndex = 0; samplerIndex < node.vertexShader.shader->samplers.size(); ++samplerIndex)
+        if (node.vertexShader.shader)
         {
-            ShaderSampler& sampler = node.vertexShader.shader->samplers[samplerIndex];
+            for (size_t samplerIndex = 0; samplerIndex < node.vertexShader.shader->samplers.size(); ++samplerIndex)
+            {
+                samplerCount++;
+                ShaderSampler& sampler = node.vertexShader.shader->samplers[samplerIndex];
 
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            // " << sampler.name << " (VS)"
-                "\n            samplers[" << samplerIndex << "].Filter = " << SamplerFilterToD3D12_FILTER(sampler.filter) << ";"
-                "\n            samplers[" << samplerIndex << "].AddressU = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
-                "\n            samplers[" << samplerIndex << "].AddressV = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
-                "\n            samplers[" << samplerIndex << "].AddressW = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
-                "\n            samplers[" << samplerIndex << "].MipLODBias  = 0;"
-                "\n            samplers[" << samplerIndex << "].MaxAnisotropy  = 0;"
-                "\n            samplers[" << samplerIndex << "].ComparisonFunc  = D3D12_COMPARISON_FUNC_NEVER;"
-                "\n            samplers[" << samplerIndex << "].BorderColor  = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;"
-                "\n            samplers[" << samplerIndex << "].MinLOD = 0.0f;"
-                "\n            samplers[" << samplerIndex << "].MaxLOD = D3D12_FLOAT32_MAX;"
-                "\n            samplers[" << samplerIndex << "].ShaderRegister = " << samplerIndex << ";"
-                "\n            samplers[" << samplerIndex << "].RegisterSpace = 0;"
-                "\n            samplers[" << samplerIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;";
-            ;
+                samplerDefinitions <<
+                    "\n"
+                    "\n            // " << sampler.name << " (VS)"
+                    "\n            samplers[" << samplerIndex << "].Filter = " << SamplerFilterToD3D12_FILTER(sampler.filter) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressU = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressV = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressW = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].MipLODBias  = 0;"
+                    "\n            samplers[" << samplerIndex << "].MaxAnisotropy  = 0;"
+                    "\n            samplers[" << samplerIndex << "].ComparisonFunc  = D3D12_COMPARISON_FUNC_NEVER;"
+                    "\n            samplers[" << samplerIndex << "].BorderColor  = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;"
+                    "\n            samplers[" << samplerIndex << "].MinLOD = 0.0f;"
+                    "\n            samplers[" << samplerIndex << "].MaxLOD = D3D12_FLOAT32_MAX;"
+                    "\n            samplers[" << samplerIndex << "].ShaderRegister = " << samplerIndex << ";"
+                    "\n            samplers[" << samplerIndex << "].RegisterSpace = 0;"
+                    "\n            samplers[" << samplerIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_VERTEX;";
+                ;
+            }
         }
-        for (size_t samplerIndex = 0; samplerIndex < node.pixelShader.shader->samplers.size(); ++samplerIndex)
+        if (node.pixelShader.shader)
         {
-            ShaderSampler& sampler = node.pixelShader.shader->samplers[samplerIndex];
+            for (size_t samplerIndex = 0; samplerIndex < node.pixelShader.shader->samplers.size(); ++samplerIndex)
+            {
+                samplerCount++;
+                ShaderSampler& sampler = node.pixelShader.shader->samplers[samplerIndex];
 
+                samplerDefinitions <<
+                    "\n"
+                    "\n            // " << sampler.name << " (PS)"
+                    "\n            samplers[" << samplerIndex << "].Filter = " << SamplerFilterToD3D12_FILTER(sampler.filter) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressU = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressV = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressW = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].MipLODBias  = 0;"
+                    "\n            samplers[" << samplerIndex << "].MaxAnisotropy  = 0;"
+                    "\n            samplers[" << samplerIndex << "].ComparisonFunc  = D3D12_COMPARISON_FUNC_NEVER;"
+                    "\n            samplers[" << samplerIndex << "].BorderColor  = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;"
+                    "\n            samplers[" << samplerIndex << "].MinLOD = 0.0f;"
+                    "\n            samplers[" << samplerIndex << "].MaxLOD = D3D12_FLOAT32_MAX;"
+                    "\n            samplers[" << samplerIndex << "].ShaderRegister = " << samplerIndex << ";"
+                    "\n            samplers[" << samplerIndex << "].RegisterSpace = 1;"
+                    "\n            samplers[" << samplerIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;";
+                ;
+            }
+        }
+        if (node.amplificationShader.shader)
+        {
+            for (size_t samplerIndex = 0; samplerIndex < node.amplificationShader.shader->samplers.size(); ++samplerIndex)
+            {
+                samplerCount++;
+                ShaderSampler& sampler = node.amplificationShader.shader->samplers[samplerIndex];
+
+                samplerDefinitions <<
+                    "\n"
+                    "\n            // " << sampler.name << " (AS)"
+                    "\n            samplers[" << samplerIndex << "].Filter = " << SamplerFilterToD3D12_FILTER(sampler.filter) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressU = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressV = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressW = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].MipLODBias  = 0;"
+                    "\n            samplers[" << samplerIndex << "].MaxAnisotropy  = 0;"
+                    "\n            samplers[" << samplerIndex << "].ComparisonFunc  = D3D12_COMPARISON_FUNC_NEVER;"
+                    "\n            samplers[" << samplerIndex << "].BorderColor  = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;"
+                    "\n            samplers[" << samplerIndex << "].MinLOD = 0.0f;"
+                    "\n            samplers[" << samplerIndex << "].MaxLOD = D3D12_FLOAT32_MAX;"
+                    "\n            samplers[" << samplerIndex << "].ShaderRegister = " << samplerIndex << ";"
+                    "\n            samplers[" << samplerIndex << "].RegisterSpace = 1;"
+                    "\n            samplers[" << samplerIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_AMPLIFICATION;";
+                ;
+            }
+        }
+        if (node.meshShader.shader)
+        {
+            for (size_t samplerIndex = 0; samplerIndex < node.meshShader.shader->samplers.size(); ++samplerIndex)
+            {
+                samplerCount++;
+                ShaderSampler& sampler = node.meshShader.shader->samplers[samplerIndex];
+
+                samplerDefinitions <<
+                    "\n"
+                    "\n            // " << sampler.name << " (MS)"
+                    "\n            samplers[" << samplerIndex << "].Filter = " << SamplerFilterToD3D12_FILTER(sampler.filter) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressU = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressV = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].AddressW = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
+                    "\n            samplers[" << samplerIndex << "].MipLODBias  = 0;"
+                    "\n            samplers[" << samplerIndex << "].MaxAnisotropy  = 0;"
+                    "\n            samplers[" << samplerIndex << "].ComparisonFunc  = D3D12_COMPARISON_FUNC_NEVER;"
+                    "\n            samplers[" << samplerIndex << "].BorderColor  = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;"
+                    "\n            samplers[" << samplerIndex << "].MinLOD = 0.0f;"
+                    "\n            samplers[" << samplerIndex << "].MaxLOD = D3D12_FLOAT32_MAX;"
+                    "\n            samplers[" << samplerIndex << "].ShaderRegister = " << samplerIndex << ";"
+                    "\n            samplers[" << samplerIndex << "].RegisterSpace = 1;"
+                    "\n            samplers[" << samplerIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_MESH;";
+                ;
+            }
+        }
+
+        if (samplerCount > 0)
+        {
             stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            // " << sampler.name << " (PS)"
-                "\n            samplers[" << samplerIndex << "].Filter = " << SamplerFilterToD3D12_FILTER(sampler.filter) << ";"
-                "\n            samplers[" << samplerIndex << "].AddressU = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
-                "\n            samplers[" << samplerIndex << "].AddressV = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
-                "\n            samplers[" << samplerIndex << "].AddressW = " << SamplerAddressModeToD3D12_TEXTURE_ADDRESS_MODE(sampler.addressMode) << ";"
-                "\n            samplers[" << samplerIndex << "].MipLODBias  = 0;"
-                "\n            samplers[" << samplerIndex << "].MaxAnisotropy  = 0;"
-                "\n            samplers[" << samplerIndex << "].ComparisonFunc  = D3D12_COMPARISON_FUNC_NEVER;"
-                "\n            samplers[" << samplerIndex << "].BorderColor  = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;"
-                "\n            samplers[" << samplerIndex << "].MinLOD = 0.0f;"
-                "\n            samplers[" << samplerIndex << "].MaxLOD = D3D12_FLOAT32_MAX;"
-                "\n            samplers[" << samplerIndex << "].ShaderRegister = " << samplerIndex << ";"
-                "\n            samplers[" << samplerIndex << "].RegisterSpace = 1;"
-                "\n            samplers[" << samplerIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;";
-            ;
+                "\n            D3D12_STATIC_SAMPLER_DESC samplers[" << samplerCount << "];" <<
+                samplerDefinitions.str()
+                ;
         }
     }
 
-    // Vertex Descriptor table
-    int descriptorTableRangeCountVertex = (int)node.vertexShader.shader->resources.size();
+    // Vertex Shader Descriptor table
+    int descriptorTableRangeCountVertex = node.vertexShader.shader ? (int)node.vertexShader.shader->resources.size() : 0;
     if (descriptorTableRangeCountVertex > 0)
     {
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n\n            D3D12_DESCRIPTOR_RANGE rangesVertex[" << descriptorTableRangeCountVertex << "];";
@@ -143,8 +220,8 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         }
     }
 
-    // Pixel Descriptor table
-    int descriptorTableRangeCountPixel = (int)node.pixelShader.shader->resources.size();
+    // Pixel Shader Descriptor table
+    int descriptorTableRangeCountPixel = node.pixelShader.shader ? (int)node.pixelShader.shader->resources.size() : 0;
     if (descriptorTableRangeCountPixel > 0)
     {
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n\n            D3D12_DESCRIPTOR_RANGE rangesPixel[" << descriptorTableRangeCountPixel << "];";
@@ -176,7 +253,79 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         }
     }
 
-    int rootParamCount = 0 + (descriptorTableRangeCountVertex > 0 ? 1 : 0) + (descriptorTableRangeCountPixel > 0 ? 1 : 0);
+    // Amplification Shader Descriptor table
+    int descriptorTableRangeCountAmplification = node.amplificationShader.shader ? (int)node.amplificationShader.shader->resources.size() : 0;
+    if (descriptorTableRangeCountAmplification > 0)
+    {
+        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n\n            D3D12_DESCRIPTOR_RANGE rangesAmplification[" << descriptorTableRangeCountAmplification << "];";
+
+        for (size_t descriptorTableRangeIndex = 0; descriptorTableRangeIndex < node.amplificationShader.shader->resources.size(); ++descriptorTableRangeIndex)
+        {
+            ShaderResource& resource = node.amplificationShader.shader->resources[descriptorTableRangeIndex];
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n\n            // " << resource.name;
+
+            switch (resource.access)
+            {
+                case ShaderResourceAccessType::UAV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesAmplification[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;"; break;
+                case ShaderResourceAccessType::RTScene:
+                case ShaderResourceAccessType::SRV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesAmplification[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;"; break;
+                case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesAmplification[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
+                default:
+                {
+                    Assert(false, "Unhandled resource access type: %i", resource.access);
+                }
+            }
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n            rangesAmplification[" << descriptorTableRangeIndex << "].NumDescriptors = 1;"
+                "\n            rangesAmplification[" << descriptorTableRangeIndex << "].BaseShaderRegister = " << resource.registerIndex << ";"
+                "\n            rangesAmplification[" << descriptorTableRangeIndex << "].RegisterSpace = 0;"
+                "\n            rangesAmplification[" << descriptorTableRangeIndex << "].OffsetInDescriptorsFromTableStart = " << descriptorTableRangeIndex << ";"
+                ;
+        }
+    }
+
+    // Mesh Shader Descriptor table
+    int descriptorTableRangeCountMesh = node.meshShader.shader ? (int)node.meshShader.shader->resources.size() : 0;
+    if (descriptorTableRangeCountMesh > 0)
+    {
+        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n\n            D3D12_DESCRIPTOR_RANGE rangesMesh[" << descriptorTableRangeCountMesh << "];";
+
+        for (size_t descriptorTableRangeIndex = 0; descriptorTableRangeIndex < node.meshShader.shader->resources.size(); ++descriptorTableRangeIndex)
+        {
+            ShaderResource& resource = node.meshShader.shader->resources[descriptorTableRangeIndex];
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n\n            // " << resource.name;
+
+            switch (resource.access)
+            {
+                case ShaderResourceAccessType::UAV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesMesh[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;"; break;
+                case ShaderResourceAccessType::RTScene:
+                case ShaderResourceAccessType::SRV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesMesh[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;"; break;
+                case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesMesh[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
+                default:
+                {
+                    Assert(false, "Unhandled resource access type: %i", resource.access);
+                }
+            }
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n            rangesMesh[" << descriptorTableRangeIndex << "].NumDescriptors = 1;"
+                "\n            rangesMesh[" << descriptorTableRangeIndex << "].BaseShaderRegister = " << resource.registerIndex << ";"
+                "\n            rangesMesh[" << descriptorTableRangeIndex << "].RegisterSpace = 0;"
+                "\n            rangesMesh[" << descriptorTableRangeIndex << "].OffsetInDescriptorsFromTableStart = " << descriptorTableRangeIndex << ";"
+                ;
+        }
+    }
+
+    int rootParamCount = 
+        (descriptorTableRangeCountVertex > 0 ? 1 : 0) +
+        (descriptorTableRangeCountPixel > 0 ? 1 : 0) +
+        (descriptorTableRangeCountAmplification > 0 ? 1 : 0) +
+        (descriptorTableRangeCountMesh > 0 ? 1 : 0)
+        ;
+
     if (rootParamCount > 0)
     {
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
@@ -203,6 +352,28 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n            rootParams[" << rootParamIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_PIXEL;"
                 "\n            rootParams[" << rootParamIndex << "].DescriptorTable.NumDescriptorRanges = " << descriptorTableRangeCountPixel << ";"
                 "\n            rootParams[" << rootParamIndex << "].DescriptorTable.pDescriptorRanges = rangesPixel;"
+                ;
+            rootParamIndex++;
+        }
+        if (descriptorTableRangeCountAmplification > 0)
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            rootParams[" << rootParamIndex << "].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;"
+                "\n            rootParams[" << rootParamIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_AMPLIFICATION;"
+                "\n            rootParams[" << rootParamIndex << "].DescriptorTable.NumDescriptorRanges = " << descriptorTableRangeCountAmplification << ";"
+                "\n            rootParams[" << rootParamIndex << "].DescriptorTable.pDescriptorRanges = rangesAmplification;"
+                ;
+            rootParamIndex++;
+        }
+        if (descriptorTableRangeCountMesh > 0)
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            rootParams[" << rootParamIndex << "].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;"
+                "\n            rootParams[" << rootParamIndex << "].ShaderVisibility = D3D12_SHADER_VISIBILITY_MESH;"
+                "\n            rootParams[" << rootParamIndex << "].DescriptorTable.NumDescriptorRanges = " << descriptorTableRangeCountMesh << ";"
+                "\n            rootParams[" << rootParamIndex << "].DescriptorTable.pDescriptorRanges = rangesMesh;"
                 ;
             rootParamIndex++;
         }
@@ -264,80 +435,168 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n                m_internal.drawCall_" << node.name << "_rootSig->SetName(L\"" << node.name << "\");"
         ;
 
-    // Vertex Shader
-    if (node.defines.empty() && node.vertexShader.shader->defines.empty())
-    {
-        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n"
-            "\n            D3D_SHADER_MACRO* definesVS = nullptr;";
-    }
-    else
-    {
-        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n"
-            "\n            D3D_SHADER_MACRO definesVS[] = {";
-
-        for (const ShaderDefine& define : node.vertexShader.shader->defines)
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-        }
-
-        for (const ShaderDefine& define : node.defines)
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-        }
-
-        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n                { nullptr, nullptr }"
-            "\n            };";
-    }
-
+    // Shaders
     const char* shaderCompiler = (renderGraph.settings.dx12.shaderCompiler == DXShaderCompiler::DXC) ? "_DXC" : "_FXC";
-    stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-        "\n"
-        "\n            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.vertexShader.shader->destFileName << "\", \"" << node.vertexShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelVs << "\", definesVS, c_debugShaders, Context::LogFn);"
-        "\n            if (byteCodeVS.size() == 0)"
-        "\n                return false;"
-        ;
+
+    // Vertex Shader
+    if (node.vertexShader.shader)
+    {
+        if (node.defines.empty() && node.vertexShader.shader->defines.empty())
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            D3D_SHADER_MACRO* definesVS = nullptr;";
+        }
+        else
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            D3D_SHADER_MACRO definesVS[] = {";
+
+            for (const ShaderDefine& define : node.vertexShader.shader->defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            for (const ShaderDefine& define : node.defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n                { nullptr, nullptr }"
+                "\n            };";
+        }
+
+        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+            "\n"
+            "\n            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.vertexShader.shader->destFileName << "\", \"" << node.vertexShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelVs << "\", definesVS, c_debugShaders, Context::LogFn);"
+            "\n            if (byteCodeVS.size() == 0)"
+            "\n                return false;"
+            ;
+    }
 
     // Pixel Shader
-    if (node.defines.empty() && node.pixelShader.shader->defines.empty())
+    if (node.pixelShader.shader)
     {
-        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n"
-            "\n            D3D_SHADER_MACRO* definesPS = nullptr;";
-    }
-    else
-    {
-        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n"
-            "\n            D3D_SHADER_MACRO definesPS[] = {";
-
-        for (const ShaderDefine& define : node.pixelShader.shader->defines)
+        if (node.defines.empty() && node.pixelShader.shader->defines.empty())
         {
             stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+                "\n"
+                "\n            D3D_SHADER_MACRO* definesPS = nullptr;";
         }
-
-        for (const ShaderDefine& define : node.defines)
+        else
         {
             stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+                "\n"
+                "\n            D3D_SHADER_MACRO definesPS[] = {";
+
+            for (const ShaderDefine& define : node.pixelShader.shader->defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            for (const ShaderDefine& define : node.defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n                { nullptr, nullptr }"
+                "\n            };";
         }
 
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n                { nullptr, nullptr }"
-            "\n            };";
+            "\n"
+            "\n            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.pixelShader.shader->destFileName << "\", \"" << node.pixelShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelPs << "\", definesPS, c_debugShaders, Context::LogFn);"
+            "\n            if (byteCodePS.size() == 0)"
+            "\n                return false;"
+            ;
     }
 
-    stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-        "\n"
-        "\n            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.pixelShader.shader->destFileName << "\", \"" << node.pixelShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelPs << "\", definesPS, c_debugShaders, Context::LogFn);"
-        "\n            if (byteCodePS.size() == 0)"
-        "\n                return false;"
-        ;
+    // Amplification Shader
+    if (node.amplificationShader.shader)
+    {
+        if (node.defines.empty() && node.amplificationShader.shader->defines.empty())
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            D3D_SHADER_MACRO* definesAS = nullptr;";
+        }
+        else
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            D3D_SHADER_MACRO definesAS[] = {";
+
+            for (const ShaderDefine& define : node.amplificationShader.shader->defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            for (const ShaderDefine& define : node.defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n                { nullptr, nullptr }"
+                "\n            };";
+        }
+
+        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+            "\n"
+            "\n            std::vector<unsigned char> byteCodeAS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.amplificationShader.shader->destFileName << "\", \"" << node.amplificationShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelAs << "\", definesAS, c_debugShaders, Context::LogFn);"
+            "\n            if (byteCodeAS.size() == 0)"
+            "\n                return false;"
+            ;
+    }
+
+    // Mesg Shader
+    if (node.meshShader.shader)
+    {
+        if (node.defines.empty() && node.meshShader.shader->defines.empty())
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            D3D_SHADER_MACRO* definesMS = nullptr;";
+        }
+        else
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            D3D_SHADER_MACRO definesMS[] = {";
+
+            for (const ShaderDefine& define : node.meshShader.shader->defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            for (const ShaderDefine& define : node.defines)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
+            }
+
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n                { nullptr, nullptr }"
+                "\n            };";
+        }
+
+        stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+            "\n"
+            "\n            std::vector<unsigned char> byteCodeMS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.meshShader.shader->destFileName << "\", \"" << node.meshShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelMs << "\", definesMS, c_debugShaders, Context::LogFn);"
+            "\n            if (byteCodeMS.size() == 0)"
+            "\n                return false;"
+            ;
+    }
 
     // PSO
     {
@@ -505,16 +764,61 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             }
         }
 
+        // Make the PSO desc
+        if (node.meshShader.shader)
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            // Make the PSO desc"
+                "\n            D3DX12_MESH_SHADER_PIPELINE_STATE_DESC psoDesc = {};"
+                ;
+
+            if (node.meshShader.shader)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n            psoDesc.MS.pShaderBytecode = byteCodeMS.data();"
+                    "\n            psoDesc.MS.BytecodeLength = byteCodeMS.size();"
+                    ;
+            }
+
+            if (node.amplificationShader.shader)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n            psoDesc.AS.pShaderBytecode = byteCodeAS.data();"
+                    "\n            psoDesc.AS.BytecodeLength = byteCodeAS.size();"
+                    ;
+            }
+        }
+        else
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            // Make the PSO desc"
+                "\n            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};"
+                "\n            psoDesc.InputLayout = { vertexInputLayout.data(), (UINT)vertexInputLayout.size() };"
+                ;
+
+            if (node.vertexShader.shader)
+            {
+                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                    "\n            psoDesc.VS.pShaderBytecode = byteCodeVS.data();"
+                    "\n            psoDesc.VS.BytecodeLength = byteCodeVS.size();"
+                    ;
+            }
+        }
+
+        // Common PSO desc properties
+        if (node.pixelShader.shader)
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n            psoDesc.PS.pShaderBytecode = byteCodePS.data();"
+                "\n            psoDesc.PS.BytecodeLength = byteCodePS.size();"
+                ;
+        }
+
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n"
-            "\n            // Make the PSO desc"
-            "\n            D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};"
-            "\n            psoDesc.InputLayout = { vertexInputLayout.data(), (UINT)vertexInputLayout.size() };"
+            "\n            psoDesc.SampleDesc.Count = 1;"
             "\n            psoDesc.pRootSignature = m_internal.drawCall_" << node.name << "_rootSig;"
-            "\n            psoDesc.VS.pShaderBytecode = byteCodeVS.data();"
-            "\n            psoDesc.VS.BytecodeLength = byteCodeVS.size();"
-            "\n            psoDesc.PS.pShaderBytecode = byteCodePS.data();"
-            "\n            psoDesc.PS.BytecodeLength = byteCodePS.size();"
             "\n            psoDesc.RasterizerState.FillMode = D3D12_FILL_MODE_SOLID;"
             "\n            psoDesc.RasterizerState.CullMode = " << DrawCullModeToD3D12_CULL_MODE(node.cullMode) << ";"
             "\n            psoDesc.RasterizerState.FrontCounterClockwise = " << (node.frontIsCounterClockwise ? "TRUE" : "FALSE") << ";"
@@ -526,7 +830,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             "\n            psoDesc.RasterizerState.AntialiasedLineEnable = FALSE;"
             "\n            psoDesc.RasterizerState.ForcedSampleCount = 0;"
             "\n            psoDesc.RasterizerState.ConservativeRaster = " << (node.conservativeRasterization ? "D3D12_CONSERVATIVE_RASTERIZATION_MODE_ON" : "D3D12_CONSERVATIVE_RASTERIZATION_MODE_OFF") << ";"
-            "\n            psoDesc.BlendState.AlphaToCoverageEnable = FALSE;"
+            "\n            psoDesc.BlendState.AlphaToCoverageEnable = " << (node.alphaAsCoverage ? "TRUE" : "FALSE") << ";"
             "\n            psoDesc.BlendState.IndependentBlendEnable = " << (node.independentAlpha ? "TRUE" : "FALSE") << ";"
             ;
 
@@ -558,7 +862,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             "\n            psoDesc.DepthStencilState.DepthWriteMask = " << (node.depthWrite ? "D3D12_DEPTH_WRITE_MASK_ALL" : "D3D12_DEPTH_WRITE_MASK_ZERO") << ";"
             "\n            psoDesc.DepthStencilState.DepthFunc = " << DepthTestFunctionToD3D12_COMPARISON_FUNC(node.depthTest) << ";"
             "\n            psoDesc.SampleMask = UINT_MAX;"
-            "\n            psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;"
+            "\n            psoDesc.PrimitiveTopologyType = " << GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(node.geometryType) << ";"
             ;
 
         // Setup the render targets
@@ -629,9 +933,37 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             }
         }
 
+        if (node.meshShader.shader)
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            CD3DX12_PIPELINE_MESH_STATE_STREAM meshStreamDesc = CD3DX12_PIPELINE_MESH_STATE_STREAM(psoDesc);"
+                "\n            D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = {};"
+                "\n            streamDesc.SizeInBytes = sizeof(meshStreamDesc);"
+                "\n            streamDesc.pPipelineStateSubobjectStream = &meshStreamDesc;"
+                "\n"
+                "\n            ID3D12Device2* device2 = nullptr;"
+                "\n            if (FAILED(device->QueryInterface(IID_PPV_ARGS(&device2))))"
+                "\n            {"
+                "\n                Context::LogFn(LogLevel::Error, \"Could not get ID3D12Device2\");"
+                "\n                return false;"
+                "\n            }"
+                "\n"
+                "\n            hr = device2->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&m_internal.drawCall_" << node.name << "_pso));"
+                "\n"
+                "\n            device2->Release();"
+                ;
+        }
+        else
+        {
+            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+                "\n"
+                "\n            hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_internal.drawCall_" << node.name << "_pso));"
+                ;
+        }
+
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-            "\n            psoDesc.SampleDesc.Count = 1;"
-            "\n            hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&m_internal.drawCall_" << node.name << "_pso));"
+            "\n"
             "\n            if (FAILED(hr))"
             "\n            {"
             "\n                Context::LogFn(LogLevel::Error, \"Could not create PSO for " << node.name << "\");"
@@ -706,6 +1038,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
     // Vertex shader descriptor table
     int rootSigParamIndex = 0;
+    if (node.vertexShader.shader)
     {
         const Shader& shader = *node.vertexShader.shader;
         int pinOffset = 0;
@@ -729,6 +1062,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
+            int UAVMipIndex = 0;
+            if (dep.pinIndex < node.linkProperties.size())
+                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+
             const char* resourceTypeString = "";
             std::ostringstream rawAndStrideAndCount;
             switch (dep.type)
@@ -768,7 +1105,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                             "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_format,"
                             ;
                         resourceTypeString = "DX12Utils::ResourceType::Buffer";
-                        rawAndStrideAndCount << ", " << (shader.resources[depIndex].buffer.raw ? "true" : "false") << ", context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_stride, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_count";
+                        rawAndStrideAndCount << ", " << (shaderResource.buffer.raw ? "true" : "false") << ", context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_stride, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_count";
                     }
                     break;
                 }
@@ -781,7 +1118,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
 
                     rawAndStrideAndCount << ", false, 0, ";
-                    switch (shader.resources[depIndex].texture.dimension)
+                    switch (shaderResource.texture.dimension)
                     {
                         case TextureDimensionType::Texture2D: resourceTypeString = "DX12Utils::ResourceType::Texture2D"; rawAndStrideAndCount << "0"; break;
                         case TextureDimensionType::Texture2DArray: resourceTypeString = "DX12Utils::ResourceType::Texture2DArray"; rawAndStrideAndCount << "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_size[2]"; break;
@@ -789,7 +1126,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shader.resources[depIndex].texture.dimension), (int)shader.resources[depIndex].texture.dimension);
+                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
                             break;
                         }
                     }
@@ -815,7 +1152,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
             descriptorCount++;
         }
 
@@ -835,9 +1172,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     }
 
     // Pixel shader descriptor table
+    if (node.pixelShader.shader)
     {
         const Shader& shader = *node.pixelShader.shader;
-        int pinOffset = (int)node.vertexShader.shader->resources.size();
+        int pinOffset = node.vertexShader.shader ? (int)node.vertexShader.shader->resources.size() : 0;
 
         std::ostringstream descriptorsText;
         int descriptorCount = 0;
@@ -858,6 +1196,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
+            int UAVMipIndex = 0;
+            if (dep.pinIndex < node.linkProperties.size())
+                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+
             const char* resourceTypeString = "";
             std::ostringstream rawAndStrideAndCount;
             switch (dep.type)
@@ -897,7 +1239,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                             "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_format,"
                             ;
                         resourceTypeString = "DX12Utils::ResourceType::Buffer";
-                        rawAndStrideAndCount << ", " << (shader.resources[depIndex].buffer.raw ? "true" : "false") << ", context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_stride, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_count";
+                        rawAndStrideAndCount << ", " << (shaderResource.buffer.raw ? "true" : "false") << ", context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_stride, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_count";
                     }
                     break;
                 }
@@ -910,7 +1252,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
 
                     rawAndStrideAndCount << ", false, 0, ";
-                    switch (shader.resources[depIndex].texture.dimension)
+                    switch (shaderResource.texture.dimension)
                     {
                         case TextureDimensionType::Texture2D: resourceTypeString = "DX12Utils::ResourceType::Texture2D"; rawAndStrideAndCount << "0"; break;
                         case TextureDimensionType::Texture2DArray: resourceTypeString = "DX12Utils::ResourceType::Texture2DArray"; rawAndStrideAndCount << "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_size[2]"; break;
@@ -918,7 +1260,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shader.resources[depIndex].texture.dimension), (int)shader.resources[depIndex].texture.dimension);
+                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
                             break;
                         }
                     }
@@ -944,7 +1286,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
             descriptorCount++;
         }
 
@@ -958,6 +1300,281 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n            };"
                 "\n            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, " << descriptorCount << ", Context::LogFn);"
                 "\n            commandList->SetGraphicsRootDescriptorTable(" << rootSigParamIndex << ", descriptorTablePS);"
+                ;
+            rootSigParamIndex++;
+        }
+    }
+
+    // Amplification shader descriptor table
+    if (node.amplificationShader.shader)
+    {
+        const Shader& shader = *node.amplificationShader.shader;
+        int pinOffset =
+            (node.vertexShader.shader ? (int)node.vertexShader.shader->resources.size() : 0) +
+            (node.pixelShader.shader ? (int)node.pixelShader.shader->resources.size() : 0)
+            ;
+
+        std::ostringstream descriptorsText;
+        int descriptorCount = 0;
+        for (int resourceIndex = 0; resourceIndex < shader.resources.size(); ++resourceIndex)
+        {
+            const ShaderResource& shaderResource = shader.resources[resourceIndex];
+
+            int depIndex = 0;
+            while (depIndex < node.resourceDependencies.size() && node.resourceDependencies[depIndex].pinIndex != (resourceIndex + pinOffset))
+                depIndex++;
+
+            if (depIndex >= node.resourceDependencies.size())
+            {
+                Assert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+                return;
+            }
+            const ResourceDependency& dep = node.resourceDependencies[depIndex];
+
+            RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
+
+            int UAVMipIndex = 0;
+            if (dep.pinIndex < node.linkProperties.size())
+                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+
+            const char* resourceTypeString = "";
+            std::ostringstream rawAndStrideAndCount;
+            switch (dep.type)
+            {
+                case ShaderResourceType::ConstantBuffer:
+                {
+                    descriptorsText <<
+                        "\n                { " <<
+                        "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "constantBuffer_" << GetNodeName(depNode) << ", " <<
+                        "DXGI_FORMAT_UNKNOWN,"
+                        ;
+                    resourceTypeString = "DX12Utils::ResourceType::Buffer";
+
+                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
+                    size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
+                    rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
+                    break;
+                }
+                case ShaderResourceType::Buffer:
+                {
+                    if (dep.access == ShaderResourceAccessType::RTScene)
+                    {
+                        descriptorsText <<
+                            "\n                { " <<
+                            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "tlas, " <<
+                            "DXGI_FORMAT_UNKNOWN,"
+                            ;
+                        resourceTypeString = "DX12Utils::ResourceType::Buffer";
+                        rawAndStrideAndCount << ", false, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_tlasSize, 1";
+                    }
+                    else
+                    {
+                        descriptorsText <<
+                            "\n                { " <<
+                            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << ", " <<
+                            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_format,"
+                            ;
+                        resourceTypeString = "DX12Utils::ResourceType::Buffer";
+                        rawAndStrideAndCount << ", " << (shaderResource.buffer.raw ? "true" : "false") << ", context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_stride, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_count";
+                    }
+                    break;
+                }
+                case ShaderResourceType::Texture:
+                {
+                    descriptorsText <<
+                        "\n                { " <<
+                        "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << ", " <<
+                        "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_format,"
+                        ;
+
+                    rawAndStrideAndCount << ", false, 0, ";
+                    switch (shaderResource.texture.dimension)
+                    {
+                        case TextureDimensionType::Texture2D: resourceTypeString = "DX12Utils::ResourceType::Texture2D"; rawAndStrideAndCount << "0"; break;
+                        case TextureDimensionType::Texture2DArray: resourceTypeString = "DX12Utils::ResourceType::Texture2DArray"; rawAndStrideAndCount << "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_size[2]"; break;
+                        case TextureDimensionType::Texture3D: resourceTypeString = "DX12Utils::ResourceType::Texture3D"; rawAndStrideAndCount << "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_size[2]"; break;
+                        case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
+                        default:
+                        {
+                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                default:
+                {
+                    Assert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
+                    return;
+                }
+            }
+
+            const char* accessType = nullptr;
+            switch (dep.access)
+            {
+                case ShaderResourceAccessType::UAV: accessType = " DX12Utils::AccessType::UAV, "; break;
+                case ShaderResourceAccessType::RTScene:
+                case ShaderResourceAccessType::SRV: accessType = " DX12Utils::AccessType::SRV, "; break;
+                case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
+                default:
+                {
+                    Assert(false, "Unhandled resource type: %i", dep.access);
+                }
+            }
+
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
+            descriptorCount++;
+        }
+
+        if (descriptorCount > 0)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            DX12Utils::ResourceDescriptor descriptorsAS[] ="
+                "\n            {"
+                << descriptorsText.str() <<
+                "\n            };"
+                "\n            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableAS = GetDescriptorTable(device, s_srvHeap, descriptorsAS, " << descriptorCount << ", Context::LogFn);"
+                "\n            commandList->SetGraphicsRootDescriptorTable(" << rootSigParamIndex << ", descriptorTableAS);"
+                ;
+            rootSigParamIndex++;
+        }
+    }
+
+    // Mesh shader descriptor table
+    if (node.meshShader.shader)
+    {
+        const Shader& shader = *node.meshShader.shader;
+        int pinOffset =
+            (node.vertexShader.shader ? (int)node.vertexShader.shader->resources.size() : 0) +
+            (node.pixelShader.shader ? (int)node.pixelShader.shader->resources.size() : 0) +
+            (node.amplificationShader.shader ? (int)node.amplificationShader.shader->resources.size() : 0)
+            ;
+
+        std::ostringstream descriptorsText;
+        int descriptorCount = 0;
+        for (int resourceIndex = 0; resourceIndex < shader.resources.size(); ++resourceIndex)
+        {
+            const ShaderResource& shaderResource = shader.resources[resourceIndex];
+
+            int depIndex = 0;
+            while (depIndex < node.resourceDependencies.size() && node.resourceDependencies[depIndex].pinIndex != (resourceIndex + pinOffset))
+                depIndex++;
+
+            if (depIndex >= node.resourceDependencies.size())
+            {
+                Assert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+                return;
+            }
+            const ResourceDependency& dep = node.resourceDependencies[depIndex];
+
+            RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
+
+            int UAVMipIndex = 0;
+            if (dep.pinIndex < node.linkProperties.size())
+                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+
+            const char* resourceTypeString = "";
+            std::ostringstream rawAndStrideAndCount;
+            switch (dep.type)
+            {
+                case ShaderResourceType::ConstantBuffer:
+                {
+                    descriptorsText <<
+                        "\n                { " <<
+                        "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "constantBuffer_" << GetNodeName(depNode) << ", " <<
+                        "DXGI_FORMAT_UNKNOWN,"
+                        ;
+                    resourceTypeString = "DX12Utils::ResourceType::Buffer";
+
+                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
+                    size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
+                    rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
+                    break;
+                }
+                case ShaderResourceType::Buffer:
+                {
+                    if (dep.access == ShaderResourceAccessType::RTScene)
+                    {
+                        descriptorsText <<
+                            "\n                { " <<
+                            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "tlas, " <<
+                            "DXGI_FORMAT_UNKNOWN,"
+                            ;
+                        resourceTypeString = "DX12Utils::ResourceType::Buffer";
+                        rawAndStrideAndCount << ", false, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_tlasSize, 1";
+                    }
+                    else
+                    {
+                        descriptorsText <<
+                            "\n                { " <<
+                            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << ", " <<
+                            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_format,"
+                            ;
+                        resourceTypeString = "DX12Utils::ResourceType::Buffer";
+                        rawAndStrideAndCount << ", " << (shaderResource.buffer.raw ? "true" : "false") << ", context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_stride, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "buffer_" << GetNodeName(depNode) << "_count";
+                    }
+                    break;
+                }
+                case ShaderResourceType::Texture:
+                {
+                    descriptorsText <<
+                        "\n                { " <<
+                        "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << ", " <<
+                        "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_format,"
+                        ;
+
+                    rawAndStrideAndCount << ", false, 0, ";
+                    switch (shaderResource.texture.dimension)
+                    {
+                        case TextureDimensionType::Texture2D: resourceTypeString = "DX12Utils::ResourceType::Texture2D"; rawAndStrideAndCount << "0"; break;
+                        case TextureDimensionType::Texture2DArray: resourceTypeString = "DX12Utils::ResourceType::Texture2DArray"; rawAndStrideAndCount << "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_size[2]"; break;
+                        case TextureDimensionType::Texture3D: resourceTypeString = "DX12Utils::ResourceType::Texture3D"; rawAndStrideAndCount << "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depNode)) << "texture_" << GetNodeName(depNode) << "_size[2]"; break;
+                        case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
+                        default:
+                        {
+                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
+                            break;
+                        }
+                    }
+                    break;
+                }
+                default:
+                {
+                    Assert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
+                    return;
+                }
+            }
+
+            const char* accessType = nullptr;
+            switch (dep.access)
+            {
+                case ShaderResourceAccessType::UAV: accessType = " DX12Utils::AccessType::UAV, "; break;
+                case ShaderResourceAccessType::RTScene:
+                case ShaderResourceAccessType::SRV: accessType = " DX12Utils::AccessType::SRV, "; break;
+                case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
+                default:
+                {
+                    Assert(false, "Unhandled resource type: %i", dep.access);
+                }
+            }
+
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
+            descriptorCount++;
+        }
+
+        if (descriptorCount > 0)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            DX12Utils::ResourceDescriptor descriptorsMS[] ="
+                "\n            {"
+                << descriptorsText.str() <<
+                "\n            };"
+                "\n            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableMS = GetDescriptorTable(device, s_srvHeap, descriptorsMS, " << descriptorCount << ", Context::LogFn);"
+                "\n            commandList->SetGraphicsRootDescriptorTable(" << rootSigParamIndex << ", descriptorTableMS);"
                 ;
             rootSigParamIndex++;
         }
@@ -1131,7 +1748,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             "\n            // Clear " << colorTargetNode.name <<
             "\n            {"
             "\n                 float clearValues[4] = { " << std::fixed << ctSettings.clearColor[0] << "f, " << ctSettings.clearColor[1] << "f, " << ctSettings.clearColor[2] << "f, " << ctSettings.clearColor[3] << "f };"
-            "\n                 commandList->ClearRenderTargetView(s_heapAllocationTrackerRTV.GetCPUHandle(context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_rtv), clearValues, 0, nullptr);"
+            "\n                 int rtvIndex = context->GetRTV(device, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << ", "
+                                "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_format, " << TextureDimensionTypeToD3D12_RTV_DIMENSION(colorTargetNode.dimension) <<
+                                ", " << ctSettings.arrayIndex << ", " << ctSettings.mipLevel << ", \"" << renderGraph.name << "." << colorTargetNode.name << "\");"
+            "\n                 if (rtvIndex == -1)"
+            "\n                     Context::LogFn(LogLevel::Error, \"Could not get RTV for " << renderGraph.name << "." << colorTargetNode.name << "\");"
+            "\n                 commandList->ClearRenderTargetView(s_heapAllocationTrackerRTV.GetCPUHandle(rtvIndex), clearValues, 0, nullptr);"
             "\n            }"
             ;
     }
@@ -1150,7 +1772,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                     "\n"
                     "\n            // Clear " << depthTargetNode.name <<
                     "\n            {"
-                    "\n                D3D12_CLEAR_FLAGS clearFlags = ";
+                    "\n                 D3D12_CLEAR_FLAGS clearFlags = ";
                     ;
 
                 if (node.depthTargetClear && node.stencilClear)
@@ -1161,7 +1783,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                     stringReplacementMap["/*$(Execute)*/"] << "D3D12_CLEAR_FLAG_STENCIL;";
 
                 stringReplacementMap["/*$(Execute)*/"] <<
-                    "\n                commandList->ClearDepthStencilView(s_heapAllocationTrackerDSV.GetCPUHandle(context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depthTargetNodeBase)) << "texture_" << depthTargetNode.name << "_dsv), clearFlags, " << std::fixed << node.depthTargetClearValue << "f, " << (unsigned int)node.stencilClearValue << ", 0, nullptr);"
+                    "\n                 int dsvIndex = context->GetDSV(device, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depthTargetNodeBase)) << "texture_" << depthTargetNode.name << ", "
+                    "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depthTargetNodeBase)) << "texture_" << depthTargetNode.name << "_format, " << TextureDimensionTypeToD3D12_DSV_DIMENSION(depthTargetNode.dimension) <<
+                    ", " << node.depthArrayIndex << ", " << node.depthMipLevel << ", \"" << renderGraph.name << "." << depthTargetNode.name << "\");"
+                    "\n                 if (dsvIndex == -1)"
+                    "\n                     Context::LogFn(LogLevel::Error, \"Could not get DSV for " << renderGraph.name << "." << depthTargetNode.name << "\");"
+                    "\n                commandList->ClearDepthStencilView(s_heapAllocationTrackerDSV.GetCPUHandle(dsvIndex), clearFlags, " << std::fixed << node.depthTargetClearValue << "f, " << (unsigned int)node.stencilClearValue << ", 0, nullptr);"
                     "\n            }"
                     ;
             }
@@ -1180,14 +1807,34 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             if (colorTargetNodeBase._index != RenderGraphNode::c_index_resourceTexture)
                 break;
 
+            const ColorTargetSettings& ctSettings = node.colorTargetSettings[i];
+
             const RenderGraphNode_Resource_Texture colorTargetNode = colorTargetNodeBase.resourceTexture;
 
             if (first)
             {
+                if (ctSettings.mipLevel <= 0)
+                {
+                    stringReplacementMap["/*$(Execute)*/"] <<
+                        "\n"
+                        "\n            int renderWidth = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_size[0];"
+                        "\n            int renderHeight = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_size[1];"
+                        ;
+                }
+                else
+                {
+                    int divider = 1;
+                    for (int i = 0; i < ctSettings.mipLevel; ++i)
+                        divider *= 2;
+
+                    stringReplacementMap["/*$(Execute)*/"] <<
+                        "\n"
+                        "\n            int renderWidth = max(context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_size[0] / " << divider << ", 1);"
+                        "\n            int renderHeight = max(context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_size[1] / " << divider << ", 1);"
+                        ;
+                }
+
                 stringReplacementMap["/*$(Execute)*/"] <<
-                    "\n"
-                    "\n            int renderWidth = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_size[0];"
-                    "\n            int renderHeight = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_size[1];"
                     "\n"
                     "\n            D3D12_CPU_DESCRIPTOR_HANDLE colorTargetHandles[] ="
                     "\n            {"
@@ -1196,7 +1843,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             }
 
             stringReplacementMap["/*$(Execute)*/"] <<
-                "\n                s_heapAllocationTrackerRTV.GetCPUHandle(context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_rtv),"
+                "\n                s_heapAllocationTrackerRTV.GetCPUHandle(context->GetRTV(device, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << ", "
+                "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(colorTargetNodeBase)) << "texture_" << colorTargetNode.name << "_format, " << TextureDimensionTypeToD3D12_RTV_DIMENSION(colorTargetNode.dimension) <<
+                ", " << ctSettings.arrayIndex << ", " << ctSettings.mipLevel << ", \"" << renderGraph.name << "." << colorTargetNode.name << "\"))"
                 ;
         }
         if (first)
@@ -1234,7 +1883,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
                 stringReplacementMap["/*$(Execute)*/"] <<
                     "\n"
-                    "\n            D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = s_heapAllocationTrackerDSV.GetCPUHandle(context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depthTargetNodeBase)) << "texture_" << depthTargetNode.name << "_dsv);"
+                    "\n            D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle = s_heapAllocationTrackerDSV.GetCPUHandle(context->GetDSV(device, context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depthTargetNodeBase)) << "texture_" << depthTargetNode.name << ", "
+                    "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(depthTargetNodeBase)) << "texture_" << depthTargetNode.name << "_format, " << TextureDimensionTypeToD3D12_DSV_DIMENSION(depthTargetNode.dimension) <<
+                    ", " << node.depthArrayIndex << ", " << node.depthMipLevel << ", \"" << renderGraph.name << "." << depthTargetNode.name << "\"));"
                     "\n            D3D12_CPU_DESCRIPTOR_HANDLE* depthTargetHandlePtr = &depthTargetHandle;"
                     ;
             }
@@ -1256,14 +1907,144 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n            commandList->RSSetViewports(1, &viewport);"
         "\n            commandList->RSSetScissorRects(1, &scissorRect);"
         "\n"
-        "\n            commandList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);"
+        "\n            commandList->IASetPrimitiveTopology(" << GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY(node.geometryType) << ");"
         "\n            commandList->OMSetStencilRef(" << (unsigned int)node.stencilRef << ");"
         "\n"
         "\n            commandList->OMSetRenderTargets(colorTargetHandleCount, colorTargetHandles, false, depthTargetHandlePtr);"
         ;
 
+    // Set the shading rate and shading rate image
+    if (!VRSIsNoop(node))
+    {
+        stringReplacementMap["/*$(Execute)*/"] <<
+            "\n"
+            "\n            // Set the shading rate"
+            "\n            {"
+            "\n                ID3D12GraphicsCommandList5* commandList5 = nullptr;"
+            "\n                if (FAILED(commandList->QueryInterface(IID_PPV_ARGS(&commandList5))))"
+            "\n                {"
+            "\n                    Context::LogFn(LogLevel::Error, \"Could not get ID3D12GraphicsCommandList5\");"
+            "\n                }"
+            "\n                else"
+            "\n                {"
+            "\n                    D3D12_SHADING_RATE_COMBINER combiners[2] = { " << ShadingRateCombinerToD3D12_SHADING_RATE_COMBINER(node.shadingRateCombiner1) << ", " << ShadingRateCombinerToD3D12_SHADING_RATE_COMBINER(node.shadingRateCombiner2) << " };"
+            "\n                    commandList5->RSSetShadingRate(" << ShadingRateToD3D12_SHADING_RATE(node.shadingRate) << ", combiners);"
+            ;
+
+        if (node.shadingRateImage.resourceNodeIndex != -1)
+        {
+            const RenderGraphNode& nodeBase = renderGraph.nodes[node.shadingRateImage.resourceNodeIndex];
+
+            if (nodeBase._index == RenderGraphNode::c_index_resourceTexture)
+            {
+                const RenderGraphNode_Resource_Texture& shadingRateImage = nodeBase.resourceTexture;
+
+                stringReplacementMap["/*$(Execute)*/"] <<
+                    "\n                    commandList5->RSSetShadingRateImage(context->" << GetResourceNodePathInContext(shadingRateImage.visibility) << "texture_" << shadingRateImage.name.c_str() << ");"
+                    ;
+            }
+        }
+
+        stringReplacementMap["/*$(Execute)*/"] <<
+            "\n                    commandList5->Release();"
+            "\n                }"
+            "\n            }"
+            ;
+    }
+
+    // If we have a mesh shader, do a DispatchMesh call
+    if (node.meshShader.shader)
+    {
+        // Get dispatch size
+        if (node.meshShaderDispatchSize.node.textureNode)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            unsigned int baseDispatchSize[3] = {" <<
+                "\n                context->" << GetResourceNodePathInContext(node.meshShaderDispatchSize.node.textureNode->visibility) <<
+                "texture_" << node.meshShaderDispatchSize.node.textureNode->name.c_str() << "_size[0]," <<
+                "\n                context->" << GetResourceNodePathInContext(node.meshShaderDispatchSize.node.textureNode->visibility) <<
+                "texture_" << node.meshShaderDispatchSize.node.textureNode->name.c_str() << "_size[1]," <<
+                "\n                context->" << GetResourceNodePathInContext(node.meshShaderDispatchSize.node.textureNode->visibility) <<
+                "texture_" << node.meshShaderDispatchSize.node.textureNode->name.c_str() << "_size[2]" <<
+                "\n            };"
+                ;
+        }
+        else if (node.meshShaderDispatchSize.node.bufferNode)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            unsigned int baseDispatchSize[3] = { context->" << GetResourceNodePathInContext(node.meshShaderDispatchSize.node.bufferNode->visibility) << "buffer_" << node.meshShaderDispatchSize.node.bufferNode->name.c_str() << "_count, 1, 1 };"
+                ;
+        }
+        else if (node.meshShaderDispatchSize.variable.variableIndex != -1)
+        {
+            Variable& var = renderGraph.variables[node.meshShaderDispatchSize.variable.variableIndex];
+            switch (DataFieldTypeComponentCount(var.type))
+            {
+                case 1:
+                {
+                    stringReplacementMap["/*$(Execute)*/"] <<
+                        "\n"
+                        "\n            unsigned int baseDispatchSize[3] = { (unsigned int)" << VariableToString(var, renderGraph) << ", 1, 1 };";
+                    break;
+                }
+                case 2:
+                {
+                    stringReplacementMap["/*$(Execute)*/"] <<
+                        "\n"
+                        "\n            unsigned int baseDispatchSize[3] = { (unsigned int)" << VariableToString(var, renderGraph) << "[0], (unsigned int)" << VariableToString(var, renderGraph) << "[1], 1 };";
+                    break;
+                }
+                case 3:
+                {
+                    stringReplacementMap["/*$(Execute)*/"] <<
+                        "\n"
+                        "\n            unsigned int baseDispatchSize[3] = { (unsigned int)" << VariableToString(var, renderGraph) << "[0], (unsigned int)" << VariableToString(var, renderGraph) << "[1], (unsigned int)" << VariableToString(var, renderGraph) << "[2] };";
+                    break;
+                }
+                default:
+                {
+                    Assert(false, "Inappropriate variable type given for dispatch size.");
+                }
+            }
+        }
+        else
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            unsigned int baseDispatchSize[3] = { 1, 1, 1 };"
+                ;
+        }
+
+        stringReplacementMap["/*$(Execute)*/"] <<
+            "\n"
+            "\n            unsigned int dispatchSize[3] = {" <<
+            "\n                " << "(((baseDispatchSize[0] + " << node.meshShaderDispatchSize.preAdd[0] << ") * " << node.meshShaderDispatchSize.multiply[0] << ") / " <<
+            node.meshShaderDispatchSize.divide[0] << " + " << node.meshShaderDispatchSize.postAdd[0] << " + " << node.meshShader.shader->NumThreads[0] << " - 1) / " << node.meshShader.shader->NumThreads[0] << ","
+            "\n                (((baseDispatchSize[1] + " << node.meshShaderDispatchSize.preAdd[1] << ") * " << node.meshShaderDispatchSize.multiply[1] << ") / " <<
+            node.meshShaderDispatchSize.divide[1] << " + " << node.meshShaderDispatchSize.postAdd[1] << " + " << node.meshShader.shader->NumThreads[1] << " - 1) / " << node.meshShader.shader->NumThreads[1] << ","
+            "\n                (((baseDispatchSize[2] + " << node.meshShaderDispatchSize.preAdd[2] << ") * " << node.meshShaderDispatchSize.multiply[2] << ") / " <<
+            node.meshShaderDispatchSize.divide[2] << " + " << node.meshShaderDispatchSize.postAdd[2] << " + " << node.meshShader.shader->NumThreads[2] << " - 1) / " << node.meshShader.shader->NumThreads[2] <<
+            "\n            };"
+            ;
+
+        stringReplacementMap["/*$(Execute)*/"] <<
+            "\n"
+            "\n            ID3D12GraphicsCommandList6* commandList6 = nullptr;"
+            "\n            if (FAILED(commandList->QueryInterface(IID_PPV_ARGS(&commandList6))))"
+            "\n            {"
+            "\n                Context::LogFn(LogLevel::Error, \"Could not get ID3D12GraphicsCommandList6\");"
+            "\n            }"
+            "\n            else"
+            "\n            {"
+            "\n                commandList6->DispatchMesh(dispatchSize[0], dispatchSize[1], dispatchSize[2]);"
+            "\n                commandList6->Release();"
+            "\n            }"
+            ;
+    }
     // If we have an index buffer, do DrawIndexedInstanced
-    if (node.indexBuffer.resourceNodeIndex != -1)
+    else if (node.indexBuffer.resourceNodeIndex != -1)
     {
         stringReplacementMap["/*$(Execute)*/"] <<
             "\n"
@@ -1279,6 +2060,35 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             ;
     }
 
+    // Clear the shading rate and shading rate image
+    if (!VRSIsNoop(node))
+    {
+        stringReplacementMap["/*$(Execute)*/"] <<
+            "\n"
+            "\n            // Clear the shading rate"
+            "\n            {"
+            "\n                ID3D12GraphicsCommandList5* commandList5 = nullptr;"
+            "\n                if (FAILED(commandList->QueryInterface(IID_PPV_ARGS(&commandList5))))"
+            "\n                {"
+            "\n                    Context::LogFn(LogLevel::Error, \"Could not get ID3D12GraphicsCommandList5\");"
+            "\n                }"
+            "\n                else"
+            "\n                {"
+            "\n                    commandList5->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);"
+            ;
+
+        if (node.shadingRateImage.resourceNodeIndex != -1)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n                    commandList5->RSSetShadingRateImage(nullptr);"
+                ;
+        }
+        stringReplacementMap["/*$(Execute)*/"] <<
+            "\n                    commandList5->Release();"
+            "\n                }"
+            "\n            }"
+            ;
+    }
 
     stringReplacementMap["/*$(Execute)*/"] <<
         "\n"

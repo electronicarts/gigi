@@ -549,7 +549,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					GigiInterpreterPreviewWindowDX12::RuntimeVariable rtVar = GetRuntimeVariable(node.dispatchSize.indirectOffsetVariable.variableIndex);
 					switch (rtVar.variable->type)
 					{
-						case DataFieldType::Int: argumentBufferOffset = static_cast<DXGI_FORMAT>(*(int*)rtVar.storage.value); break;
+						case DataFieldType::Int: argumentBufferOffset = static_cast<UINT64>(*(int*)rtVar.storage.value); break;
 						default:
 						{
 							m_logFn(LogLevel::Error, "Unhandled data type \"%s\" for Indirect Offset variable \"%s\" in compute shader node \"%s\"", EnumToString(rtVar.variable->type), rtVar.variable->name.c_str(), node.name.c_str());

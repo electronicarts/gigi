@@ -1,6 +1,8 @@
 
 
 
+#line 1
+
 
 struct PSInput // AKA VSOutput
 {

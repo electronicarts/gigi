@@ -2,7 +2,10 @@
 
 RWTexture2D<float4> Input : register(u0);
 
+#line 1
+
 [numthreads(8, 8, 1)]
+#line 2
 void Main(uint3 DTid : SV_DispatchThreadID)
 {
     float4 pixel = Input[DTid.xy];

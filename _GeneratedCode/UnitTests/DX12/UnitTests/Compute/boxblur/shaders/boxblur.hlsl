@@ -11,6 +11,8 @@ Texture2D<float4> Input : register(t0);
 RWTexture2D<float4> Output : register(u0);
 ConstantBuffer<Struct__BoxBlurCB> _BoxBlurCB : register(b0);
 
+#line 1
+
 
 float3 LinearToSRGB(float3 linearCol)
 {
@@ -35,6 +37,7 @@ float3 SRGBToLinear(in float3 sRGBCol)
 }
 
 [numthreads(8, 8, 1)]
+#line 25
 void BlurH(uint3 DTid : SV_DispatchThreadID)
 {
     int radius = _BoxBlurCB.radius;
@@ -53,6 +56,7 @@ void BlurH(uint3 DTid : SV_DispatchThreadID)
 }
 
 [numthreads(8, 8, 1)]
+#line 42
 void BlurV(uint3 DTid : SV_DispatchThreadID)
 {
     int radius = _BoxBlurCB.radius;

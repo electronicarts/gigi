@@ -85,10 +85,21 @@ namespace DX12Utils
         }
     }
 
-    ID3D12Resource* CreateTexture(ID3D12Device* device, const unsigned int size[3], DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, LPCWSTR debugName, TLogFn logFn)
+    ID3D12Resource* CreateTexture(ID3D12Device* device, const unsigned int size[3], unsigned int numMips, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, LPCWSTR debugName, TLogFn logFn)
     {
+        if (numMips == 0)
+        {
+            int maxSize = max(size[0], size[1]);
+            numMips = 1;
+            while (maxSize > 1)
+            {
+                maxSize /= 2;
+                numMips++;
+            }
+        }
+
         D3D12_RESOURCE_DESC textureDesc = {};
-        textureDesc.MipLevels = 1;
+        textureDesc.MipLevels = numMips;
         textureDesc.Format = format;
         textureDesc.Width = size[0];
         textureDesc.Height = size[1];
@@ -311,15 +322,17 @@ namespace DX12Utils
         size_t hash5 = std::hash<size_t>()(static_cast<size_t>(v.m_access));
         size_t hash6 = std::hash<size_t>()(static_cast<size_t>(v.m_resourceType));
         size_t hash7 = std::hash<size_t>()(static_cast<size_t>(v.m_raw));
+        size_t hash8 = std::hash<size_t>()(static_cast<size_t>(v.m_UAVMipIndex));
 
         size_t hash12 = HashCombine(hash1, hash2);
         size_t hash34 = HashCombine(hash3, hash4);
         size_t hash56 = HashCombine(hash5, hash6);
+        size_t hash78 = HashCombine(hash7, hash8);
 
         size_t hash1234 = HashCombine(hash12, hash34);
-        size_t hash567 = HashCombine(hash56, hash7);
+        size_t hash5678 = HashCombine(hash56, hash78);
 
-        return HashCombine(hash1234, hash567);
+        return HashCombine(hash1234, hash5678);
     }
 
     inline void MakeDescriptorTable(ID3D12Device* device, Heap& srvHeap, const ResourceDescriptor* descriptors, size_t count, TLogFn logFn)
@@ -341,7 +354,7 @@ namespace DX12Utils
             if (descriptor.m_access == AccessType::SRV)
             {
                 D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
-                srvDesc.Format = descriptor.m_format;
+                srvDesc.Format = SRV_Safe_DXGI_FORMAT(descriptor.m_format);
                 srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
                 if (descriptor.m_resourceType == ResourceType::RTScene)
@@ -367,27 +380,31 @@ namespace DX12Utils
                         case ResourceType::Texture2D:
                         {
                             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                            srvDesc.Texture2D.MipLevels = 1;
+                            srvDesc.Texture2D.MipLevels = -1;
                             srvDesc.Texture2D.MostDetailedMip = 0;
-                            srvDesc.Texture2D.PlaneSlice = 0;
                             srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
+
+                            DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(srvDesc.Format, logFn);
+                            srvDesc.Texture2D.PlaneSlice = formatInfo.planeIndex;
                             break;
                         }
                         case ResourceType::Texture2DArray:
                         {
                             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-                            srvDesc.Texture2DArray.MipLevels = 1;
+                            srvDesc.Texture2DArray.MipLevels = -1;
                             srvDesc.Texture2DArray.MostDetailedMip = 0;
-                            srvDesc.Texture2DArray.PlaneSlice = 0;
                             srvDesc.Texture2DArray.ResourceMinLODClamp = 0;
                             srvDesc.Texture2DArray.FirstArraySlice = 0;
                             srvDesc.Texture2DArray.ArraySize = descriptor.m_count;
+
+                            DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(srvDesc.Format, logFn);
+                            srvDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
                             break;
                         }
                         case ResourceType::Texture3D:
                         {
                             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-                            srvDesc.Texture3D.MipLevels = 1;
+                            srvDesc.Texture3D.MipLevels = -1;
                             srvDesc.Texture3D.MostDetailedMip = 0;
                             srvDesc.Texture3D.ResourceMinLODClamp = 0;
                             break;
@@ -395,7 +412,7 @@ namespace DX12Utils
                         case ResourceType::TextureCube:
                         {
                             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-                            srvDesc.TextureCube.MipLevels = 1;
+                            srvDesc.TextureCube.MipLevels = -1;
                             srvDesc.TextureCube.MostDetailedMip = 0;
                             srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
                             break;
@@ -432,28 +449,44 @@ namespace DX12Utils
                     case ResourceType::Texture2D:
                     {
                         uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-                        uavDesc.Texture2D.MipSlice = 0;
-                        uavDesc.Texture2D.PlaneSlice = 0;
+                        uavDesc.Texture2D.MipSlice = descriptor.m_UAVMipIndex;
+
+                        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format, logFn);
+                        uavDesc.Texture2D.PlaneSlice = formatInfo.planeIndex;
                         break;
                     }
                     case ResourceType::Texture2DArray:
                     case ResourceType::TextureCube:
                     {
                         uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-                        uavDesc.Texture2DArray.MipSlice = 0;
-                        uavDesc.Texture2DArray.PlaneSlice = 0;
+                        uavDesc.Texture2DArray.MipSlice = descriptor.m_UAVMipIndex;
                         uavDesc.Texture2DArray.FirstArraySlice = 0;
                         uavDesc.Texture2DArray.ArraySize = (descriptor.m_resourceType == ResourceType::TextureCube) ? 6 : descriptor.m_count;
+
+                        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format, logFn);
+                        uavDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
                         break;
                     }
                     case ResourceType::Texture3D:
                     {
                         uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-                        uavDesc.Texture3D.MipSlice = 0;
+                        uavDesc.Texture3D.MipSlice = descriptor.m_UAVMipIndex;
                         uavDesc.Texture3D.FirstWSlice = 0;
-                        uavDesc.Texture3D.WSize = descriptor.m_count;
+
+                        int wsize = descriptor.m_count;
+                        for (UINT mipIndex = 0; mipIndex < descriptor.m_UAVMipIndex; ++mipIndex)
+                            wsize /= 2;
+                        if (wsize < 1)
+                            wsize = 1;
+
+                        uavDesc.Texture3D.WSize = wsize;
                         break;
                     }
+                }
+
+                if (!FormatSupportedForUAV(device, uavDesc.Format))
+                {
+                    logFn(LogLevel::Error, "invalid format for UAV: %s", Get_DXGI_FORMAT_Info(uavDesc.Format, logFn).name);
                 }
 
                 device->CreateUnorderedAccessView(descriptor.m_res, nullptr, &uavDesc, handle);
@@ -696,6 +729,476 @@ namespace DX12Utils
         dxrDevice->Release();
 
         return true;
+    }
+
+    bool CreateRTV(ID3D12Device* device, ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, DXGI_FORMAT format, D3D12_RTV_DIMENSION dimension, int arrayIndex, int mipIndex)
+    {
+	    // Create the RTV
+	    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+	    rtvDesc.Format = format;
+	    switch (dimension)
+	    {
+		    case D3D12_RTV_DIMENSION_TEXTURE2D:
+		    {
+			    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+			    rtvDesc.Texture2D.MipSlice = mipIndex;
+			    rtvDesc.Texture2D.PlaneSlice = 0;
+			    break;
+		    }
+		    case D3D12_RTV_DIMENSION_TEXTURE2DARRAY:
+		    {
+			    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+			    rtvDesc.Texture2DArray.MipSlice = mipIndex;
+			    rtvDesc.Texture2DArray.PlaneSlice = 0;
+			    rtvDesc.Texture2DArray.ArraySize = 1;
+			    rtvDesc.Texture2DArray.FirstArraySlice = arrayIndex;
+			    break;
+		    }
+		    case D3D12_RTV_DIMENSION_TEXTURE3D:
+		    {
+			    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+			    rtvDesc.Texture3D.MipSlice = mipIndex;
+			    rtvDesc.Texture3D.WSize = 1;
+			    rtvDesc.Texture3D.FirstWSlice = arrayIndex;
+                break;
+		    }
+		    default:
+		    {
+			    return false;
+		    }
+	    }
+
+	    device->CreateRenderTargetView(resource, &rtvDesc, rtvHandle);
+        return true;
+    }
+
+    bool CreateDSV(ID3D12Device* device, ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, DXGI_FORMAT format, D3D12_DSV_DIMENSION dimension, int arrayIndex, int mipIndex)
+    {
+	    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+	    dsvDesc.Format = DX12Utils::DSV_Safe_DXGI_FORMAT(format);
+	    dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+	    switch (dimension)
+	    {
+		    case D3D12_DSV_DIMENSION_TEXTURE2D:
+		    {
+			    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+			    dsvDesc.Texture2D.MipSlice = mipIndex;
+			    break;
+		    }
+		    case D3D12_DSV_DIMENSION_TEXTURE2DARRAY:
+		    {
+			    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+			    dsvDesc.Texture2DArray.MipSlice = mipIndex;
+			    dsvDesc.Texture2DArray.FirstArraySlice = arrayIndex;
+			    dsvDesc.Texture2DArray.ArraySize = 1;
+			    break;
+		    }
+		    default:
+		    {
+			    return false;
+		    }
+	    }
+
+	    device->CreateDepthStencilView(resource, &dsvDesc, dsvHandle);
+        return true;
+    }
+
+    static inline double Lerp(double A, double B, double t)
+    {
+        return A * (1.0 - t) + B * t;
+    }
+
+    template <typename T>
+    std::vector<double> ConvertToDoubles(const std::vector<unsigned char>& src, double multiplier)
+    {
+        const size_t valueCount = src.size() / sizeof(T);
+
+        std::vector<double> ret(valueCount, 0);
+
+        const T* srcValues = (const T*)src.data();
+        for (size_t index = 0; index < valueCount; ++index)
+            ret[index] = multiplier * (double)srcValues[index];
+
+        return ret;
+    }
+
+    template <typename T>
+    std::vector<double> ConvertToDoubles(const unsigned char* src, size_t valueCount, double multiplier)
+    {
+        std::vector<double> ret(valueCount, 0);
+
+        const T* srcValues = (const T*)src;
+        for (size_t index = 0; index < valueCount; ++index)
+            ret[index] = multiplier * (double)srcValues[index];
+
+        return ret;
+    }
+
+    static bool ConvertToDoubles(const std::vector<unsigned char>& src, DXGI_FORMAT_Info::ChannelType type, std::vector<double>& doubles)
+    {
+        switch (type)
+        {
+            case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, 1.0 / 255.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, 1.0 / 65535.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, 1.0 / 32767.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, 1.0 / 4294967296.0); break;
+            //case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, 1.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, 1.0); break;
+            default: return false;
+        }
+        return true;
+    }
+
+    static bool ConvertToDoubles(const unsigned char* src, size_t valueCount, DXGI_FORMAT_Info::ChannelType type, std::vector<double>& doubles)
+    {
+        switch (type)
+        {
+            case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, valueCount, 1.0 / 255.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, valueCount, 1.0 / 65535.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, valueCount, 1.0 / 32767.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, valueCount, 1.0 / 4294967296.0); break;
+            //case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, valueCount, 1.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, valueCount, 1.0); break;
+            default: return false;
+        }
+        return true;
+    }
+
+    template <typename T>
+    std::vector<unsigned char> ConvertFromDoubles(const std::vector<double>& src, double multiplier, double theMin, double theMax)
+    {
+        const size_t valueCount = src.size();
+
+        std::vector<unsigned char> ret(valueCount * sizeof(T), 0);
+
+        T* destValues = (T*)ret.data();
+        for (size_t index = 0; index < valueCount; ++index)
+            destValues[index] = (T)(max(min(src[index] * multiplier, theMax), theMin));
+
+        return ret;
+    }
+
+    static bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_Info::ChannelType type, std::vector<unsigned char>& dest)
+    {
+        switch (type)
+        {
+            case DXGI_FORMAT_Info::ChannelType::_uint8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_int8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_int16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint32_t: dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
+            //case DXGI_FORMAT_Info::ChannelType::_half: dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_float: dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
+            default: return false;
+        }
+        return true;
+    }
+
+    static bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_Info::ChannelType type, unsigned char* dest)
+    {
+        std::vector<unsigned char> _dest;
+        switch (type)
+        {
+            case DXGI_FORMAT_Info::ChannelType::_uint8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_int8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_int16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_uint32_t: _dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
+            //case DXGI_FORMAT_Info::ChannelType::_half: _dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
+            case DXGI_FORMAT_Info::ChannelType::_float: _dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
+            default: return false;
+        }
+
+        memcpy(dest, _dest.data(), _dest.size());
+
+        return true;
+    }
+
+    static void BilinearSample(const unsigned char* src, const DXGI_FORMAT_Info& formatInfo, const int dims[3], float U, float V, unsigned char* dest)
+    {
+        float srcX = U * float(dims[0]) - 0.5f;
+        float srcY = V * float(dims[1]) - 0.5f;
+
+        int x1 = int(srcX);
+        int y1 = int(srcY);
+        int x2 = (x1 + 1) % dims[0];
+        int y2 = (y1 + 1) % dims[1];
+
+        float fracX = std::fmod(srcX, 1.0f);
+        float fracY = std::fmod(srcY, 1.0f);
+
+        // read the source pixels
+        std::vector<double> P00Values, P01Values, P10Values, P11Values;
+        ConvertToDoubles(&src[(y1 * dims[0] + x1) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P00Values);
+        ConvertToDoubles(&src[(y1 * dims[0] + x2) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P10Values);
+        ConvertToDoubles(&src[(y2 * dims[0] + x1) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P01Values);
+        ConvertToDoubles(&src[(y2 * dims[0] + x2) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P11Values);
+
+        // Calculate the result
+        std::vector<double> result(formatInfo.channelCount);
+        for (size_t channelIndex = 0; channelIndex < formatInfo.channelCount; ++channelIndex)
+        {
+            double resultx0 = Lerp(P00Values[channelIndex], P10Values[channelIndex], fracX);
+            double resultx1 = Lerp(P01Values[channelIndex], P11Values[channelIndex], fracX);
+            result[channelIndex] = Lerp(resultx0, resultx1, fracY);
+        }
+
+        // Write the dest pixel
+        ConvertFromDoubles(result, formatInfo.channelType, dest);
+    }
+
+    static void TrilinearSample(const unsigned char* src, const DXGI_FORMAT_Info& formatInfo, const int dims[3], float U, float V, float W, unsigned char* dest)
+    {
+        float srcX = U * float(dims[0]) - 0.5f;
+        float srcY = V * float(dims[1]) - 0.5f;
+        float srcZ = W * float(dims[2]) - 0.5f;
+
+        int x1 = int(srcX);
+        int y1 = int(srcY);
+        int z1 = int(srcZ);
+        int x2 = (x1 + 1) % dims[0];
+        int y2 = (y1 + 1) % dims[1];
+        int z2 = (z1 + 1) % dims[2];
+
+        float fracX = std::fmod(srcX, 1.0f);
+        float fracY = std::fmod(srcY, 1.0f);
+        float fracZ = std::fmod(srcZ, 1.0f);
+
+        // read the source pixels
+        std::vector<double> P000Values, P010Values, P100Values, P110Values;
+        std::vector<double> P001Values, P011Values, P101Values, P111Values;
+        ConvertToDoubles(&src[(z1 * dims[1] * dims[0] + y1 * dims[0] + x1) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P000Values);
+        ConvertToDoubles(&src[(z1 * dims[1] * dims[0] + y1 * dims[0] + x2) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P100Values);
+        ConvertToDoubles(&src[(z1 * dims[1] * dims[0] + y2 * dims[0] + x1) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P010Values);
+        ConvertToDoubles(&src[(z1 * dims[1] * dims[0] + y2 * dims[0] + x2) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P110Values);
+        ConvertToDoubles(&src[(z2 * dims[1] * dims[0] + y1 * dims[0] + x1) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P001Values);
+        ConvertToDoubles(&src[(z2 * dims[1] * dims[0] + y1 * dims[0] + x2) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P101Values);
+        ConvertToDoubles(&src[(z2 * dims[1] * dims[0] + y2 * dims[0] + x1) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P011Values);
+        ConvertToDoubles(&src[(z2 * dims[1] * dims[0] + y2 * dims[0] + x2) * formatInfo.bytesPerPixel], formatInfo.channelCount, formatInfo.channelType, P111Values);
+
+        // Calculate the result
+        std::vector<double> result(formatInfo.channelCount);
+        for (size_t channelIndex = 0; channelIndex < formatInfo.channelCount; ++channelIndex)
+        {
+            double resultx00 = Lerp(P000Values[channelIndex], P100Values[channelIndex], fracX);
+            double resultx10 = Lerp(P010Values[channelIndex], P110Values[channelIndex], fracX);
+
+            double resultx01 = Lerp(P001Values[channelIndex], P101Values[channelIndex], fracX);
+            double resultx11 = Lerp(P011Values[channelIndex], P111Values[channelIndex], fracX);
+
+            double resultxy0 = Lerp(resultx00, resultx10, fracY);
+            double resultxy1 = Lerp(resultx01, resultx11, fracY);
+
+            result[channelIndex] = Lerp(resultxy0, resultxy1, fracZ);
+        }
+
+        // Write the dest pixel
+        ConvertFromDoubles(result, formatInfo.channelType, dest);
+    }
+
+    void MakeMip(const std::vector<unsigned char>& src, std::vector<unsigned char>& dest, const DXGI_FORMAT_Info& formatInfo, D3D12_RESOURCE_DIMENSION dimension, const int srcDims[3])
+    {
+        // calculate the size of the destination dims
+        bool is3D = (dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D);
+        int destDims[3] = { max(srcDims[0] / 2, 1), max(srcDims[1] / 2, 1), is3D ? max(srcDims[2] / 2, 1) : srcDims[2] };
+
+        // Allocate space for the mip
+        dest.resize(destDims[0] * destDims[1] * destDims[2] * formatInfo.bytesPerPixel, 0);
+
+        int srcUnalignedPitch = srcDims[0] * formatInfo.bytesPerPixel;
+        int destUnalignedPitch = destDims[0] * formatInfo.bytesPerPixel;
+
+        if (is3D)
+        {
+            // For each z slize
+            for (size_t destZ = 0; destZ < destDims[2]; ++destZ)
+            {
+                float W = (float(destZ) + 0.5f) / float(destDims[2]);
+
+                size_t destArrayOffset = destZ * destDims[1] * destUnalignedPitch;
+
+                // for each pixel
+                for (size_t destY = 0; destY < destDims[1]; ++destY)
+                {
+                    float V = (float(destY) + 0.5f) / float(destDims[1]);
+
+                    size_t destOffset = destArrayOffset + destY * destUnalignedPitch;
+
+                    for (size_t destX = 0; destX < destDims[0]; ++destX)
+                    {
+                        float U = (float(destX) + 0.5f) / float(destDims[0]);
+
+                        unsigned char* destPx = &dest[destOffset + destX * formatInfo.bytesPerPixel];
+
+                        // trilinear sample src[U, V, W] and write to dest
+                        TrilinearSample(src.data(), formatInfo, srcDims, U, V, W, destPx);
+                    }
+                }
+            }
+        }
+        else
+        {
+            // For each array slize
+            for (size_t iZ = 0; iZ < srcDims[2]; ++iZ)
+            {
+                size_t srcArrayOffset = iZ * srcDims[1] * srcUnalignedPitch;
+                size_t destArrayOffset = iZ * destDims[1] * destUnalignedPitch;
+
+                // for each pixel
+                for (size_t destY = 0; destY < destDims[1]; ++destY)
+                {
+                    float V = (float(destY) + 0.5f) / float(destDims[1]);
+
+                    size_t destOffset = destArrayOffset + destY * destUnalignedPitch;
+
+                    for (size_t destX = 0; destX < destDims[0]; ++destX)
+                    {
+                        float U = (float(destX) + 0.5f) / float(destDims[0]);
+
+                        unsigned char* destPx = &dest[destOffset + destX * formatInfo.bytesPerPixel];
+
+                        // bilinear sample src[U, V] and write to dest
+                        BilinearSample(&src[srcArrayOffset], formatInfo, srcDims, U, V, destPx);
+                    }
+                }
+            }
+        }
+    }
+
+    void UploadTextureToGPUAndMakeMips(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::UploadBufferTracker& uploadBufferTracker, ID3D12Resource* destResource, const std::vector<unsigned char>& pixels, const unsigned int size[3], unsigned int numMips, D3D12_RESOURCE_STATES state, D3D12_RESOURCE_STATES stateAfter, TLogFn logFn)
+    {
+        // Get information about destination resource
+        D3D12_RESOURCE_DESC destResourceDesc = destResource->GetDesc();
+        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(destResourceDesc.Format, logFn);
+        int mipSize[3] = { (int)size[0], (int)size[1], (int)size[2] };
+
+        // transition to copy dest if needed
+        if (state != D3D12_RESOURCE_STATE_COPY_DEST)
+        {
+            D3D12_RESOURCE_BARRIER barrier;
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barrier.Transition.pResource = destResource;
+            barrier.Transition.StateBefore = state;
+            barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            commandList->ResourceBarrier(1, &barrier);
+        }
+
+        // Upload each mip
+        std::vector<unsigned char> mipPixels[2];
+        for (unsigned int mipIndex = 0; mipIndex < numMips; ++mipIndex)
+        {
+            // Make the mip if we should
+            if (mipIndex > 0)
+            {
+                const std::vector<unsigned char>& src = (mipIndex > 1)
+                    ? mipPixels[mipIndex % 2]
+                    : pixels;
+
+                std::vector<unsigned char>& dest = mipPixels[(mipIndex - 1) % 2];
+
+                MakeMip(src, dest, formatInfo, destResourceDesc.Dimension, mipSize);
+
+                // Reduce mip size
+                mipSize[0] = max(mipSize[0] / 2, 1);
+                mipSize[1] = max(mipSize[1] / 2, 1);
+                if (destResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+                    mipSize[2] = max(mipSize[2] / 2, 1);
+            }
+
+            // Calculate dimension
+            // 3D textures have one subresource for all Z indices.
+            // Other textures have one subresource per each Z index;
+            int arrayCount = 0;
+            int iyCount = mipSize[1];
+            int izCount = 0;
+            if (destResourceDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D)
+            {
+                arrayCount = 1;
+                izCount = mipSize[2];
+            }
+            else
+            {
+                arrayCount = mipSize[2];
+                izCount = 1;
+            }
+
+            // Get our source pixels
+            const std::vector<unsigned char>& srcPixels = (mipIndex > 0)
+                ? mipPixels[(mipIndex - 1) % 2]
+                : pixels;
+
+            int srcPixelsStride = (int)srcPixels.size() / arrayCount;
+
+            for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+            {
+                unsigned int arrayIndexStart = srcPixelsStride * arrayIndex;
+
+                // Make an upload buffer
+                int unalignedPitch = mipSize[0] * formatInfo.bytesPerPixel;
+                int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
+                UploadBufferTracker::Buffer* uploadBuffer = uploadBufferTracker.GetBuffer(device, alignedPitch * iyCount * izCount, false);
+
+                // write the pixels into the upload buffer
+                {
+                    unsigned char* destPixels = nullptr;
+                    HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
+                    if (hr)
+                    {
+                        logFn(LogLevel::Error, __FUNCTION__ "(): Failed to map buffer to upload texture.");
+                        return;
+                    }
+
+                    for (int iz = 0; iz < izCount; ++iz)
+                    {
+                        for (int iy = 0; iy < iyCount; ++iy)
+                        {
+                            const unsigned char* src = &srcPixels[arrayIndexStart + (iz * iyCount + iy) * unalignedPitch];
+                            unsigned char* dest = &destPixels[(iz * iyCount + iy) * alignedPitch];
+                            memcpy(dest, src, unalignedPitch);
+                        }
+                    }
+
+                    uploadBuffer->buffer->Unmap(0, nullptr);
+                }
+
+                // Copy the upload buffer into m_resourceInitialState
+                {
+                    UINT subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, numMips, arrayCount);
+
+                    std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
+                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
+                    device->GetCopyableFootprints(&destResourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
+
+                    D3D12_TEXTURE_COPY_LOCATION src = {};
+                    src.pResource = uploadBuffer->buffer;
+                    src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+                    src.PlacedFootprint = *layout;
+
+                    D3D12_TEXTURE_COPY_LOCATION dest = {};
+                    dest.pResource = destResource;
+                    dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                    dest.SubresourceIndex = subresourceIndex;
+
+                    commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+                }
+            }
+        }
+
+        // transition to final state if needed
+        if (stateAfter != D3D12_RESOURCE_STATE_COPY_DEST)
+        {
+            D3D12_RESOURCE_BARRIER barrier;
+            barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barrier.Transition.pResource = destResource;
+            barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+            barrier.Transition.StateAfter = stateAfter;
+            barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+            commandList->ResourceBarrier(1, &barrier);
+        }
     }
 
 } // namespace DX12Utils

@@ -1077,7 +1077,6 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>TextureDimensionType dimension</td><td>TextureDimensionType::Texture2D</td><td>The dimensionality of the texture</td></tr>
 <tr><td><i>std::string loadFileName</i></td><td>""</td><td>If not empty, it load it as an image. This is currently not exposed to users, and is created when shaders use an image token</td></tr>
 <tr><td><i>bool loadFileNameAsSRGB</i></td><td>true</td><td>If true, the source file is treated as sRGB</td></tr>
-<tr><td><i>bool loadFileMakeMips</i></td><td>false</td><td>If true, makes a full mip chain for the texture (only for loadFileName)</td></tr>
 </table>
 <br/>
 
@@ -1372,7 +1371,9 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>BackendTemplateFileProperties</th></tr>
 <tr><td>std::string fileName</td><td>""</td><td>The name of the file this is the properties for.</td></tr>
 <tr><td>std::string renameTo</td><td>""</td><td>If not blank, what to rename the file to. May use the /*$(Name)*/ Gigi token.</td></tr>
+<tr><td>bool isDirectory</td><td>false</td><td>If this is a directory, set this to true to make this apply to all files in the directory recursively.</td></tr>
 <tr><td>bool onlyIncludeIfRaytracing</td><td>false</td><td>If a file should only be copied when the render graph uses raytracing, set this to true.</td></tr>
+<tr><td>bool onlyIncludeIfDX12AgilitySDKRequired</td><td>false</td><td>If a file should only be copied when the dx12 agility sdk is required, set this to true</td></tr>
 </table>
 <br/>
 
@@ -1409,6 +1410,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string shaderModelAs</td><td>"as_6_5"</td><td>The default shader model to use for amplification shaders</td></tr>
 <tr><td>std::string shaderModelMs</td><td>"ms_6_5"</td><td>The default shader model to use for mesh shaders</td></tr>
 <tr><td>bool DXC_HLSL_2021</td><td>false</td><td>When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021</td></tr>
+<tr><td>bool AgilitySDKRequired</td><td>false</td><td>True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.</td></tr>
 </table>
 <br/>
 

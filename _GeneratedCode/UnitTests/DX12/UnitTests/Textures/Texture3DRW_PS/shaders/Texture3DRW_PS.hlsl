@@ -6,6 +6,8 @@ RWTexture3D<float4> importedTexture : register(u1);
 Texture3D<float4> importedColor : register(t0);
 Texture2DArray<float4> _loadedTexture_0 : register(t1);
 
+#line 2
+
 
 struct PSInput // AKA VSOutput
 {

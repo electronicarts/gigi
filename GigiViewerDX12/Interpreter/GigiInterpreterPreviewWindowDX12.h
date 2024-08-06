@@ -25,7 +25,7 @@
 #include "DX12Utils/FBXCache.h"
 #include "DX12Utils/PLYCache.h"
 
-#include "WinPixEventRuntime/pix3.h"
+#include "pix3.h"
 
 #include "RuntimeNodeTypes.h"
 #include <chrono>

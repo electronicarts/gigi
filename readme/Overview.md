@@ -91,15 +91,15 @@ The viewer supports hot reloading of the .gg file being viewed, shader files, as
 
 A variety of formats are supported for loading data into textures and buffers, including standard image formats, binary files, common mesh formats, and csv.  The viewer also allows you to save resources out as a variety of formats.
 
-When more intensive debugging of a technique is needed, a single button click takes a pix capture and opens pix.  Gigi uses perf markers for each node, using the names you gave the nodes, so navigating the pix capture is very easy and convinient.
+When more intensive debugging of a technique is needed, a single button click takes a pix capture and opens pix.  Gigi uses perf markers for each node, using the names you gave the nodes, so navigating the pix capture is very easy and convenient.
 
 Another important feature of the Viewer is that it can be scripted by python scripts. The option to run a python script is under the file menu.  This is used to run the viewer unit tests (**Techniques/UnitTests/RunTests.py**), but has also been used at EA / SEED for gathering data and making diagrams for published research, such as [Filter-Adapted Spatio-Temporal Sampling for Real-Time Rendering](https://www.ea.com/seed/news/spatio-temporal-sampling).  We've found this extremely useful in research work and importantly, Gigi is deterministic by default.  An example of how you'd break determinism, is by adding a variable for the frame time, and using that variable in your shaders.
 
 Please see **UserDocumentation/GigiViewerDX12_Documentation.docx** for more information about the python interface, or have a look at the scripts in the unit tests folder.
 
-Lastly, there is a "System variables" tab in the viewer where you can specify things like details of the camera.  You can also specify which variables in your Gigi technique should recieve values that the viewer makes available.  As an example, many techniques want a view projection matrix for use in their rendering.  In the "System Variables" tab, you can specify which of your variables should recieve the view projection matrix provided by the viewer's camera, and then the camera will function within your technique.
+Lastly, there is a "System variables" tab in the viewer where you can specify things like details of the camera.  You can also specify which variables in your Gigi technique should receive values that the viewer makes available.  As an example, many techniques want a view projection matrix for use in their rendering.  In the "System Variables" tab, you can specify which of your variables should receive the view projection matrix provided by the viewer's camera, and then the camera will function within your technique.
 
-The systems variables also allows you to recieve mouse and keyboard data to make interactive demos.  The viewer has a "Hide UI" option under the view menu which helps it behave as a standalone demo.  To make the viewer function as a standalone demo, you can run it with a python file on the command line, where the python file loads the .gg file, hides the UI, and sets up the demo so that it's ready for a user to interact with.  The instructions to the user would just be to run the batch file to start the demo.
+The systems variables also allows you to receive mouse and keyboard data to make interactive demos.  The viewer has a "Hide UI" option under the view menu which helps it behave as a standalone demo.  To make the viewer function as a standalone demo, you can run it with a python file on the command line, where the python file loads the .gg file, hides the UI, and sets up the demo so that it's ready for a user to interact with.  The instructions to the user would just be to run the batch file to start the demo.
 
 ## Compiler
 
@@ -109,7 +109,7 @@ It's very important to us that the compiler generates good code, like a human wo
 
 We also feel it's important not to add foreign abstractions to the code generated. We believe "Nobody wants your abstraction". When writing code generation in Gigi, we ask ourselves "how would a human write this, on this platform, in this language?" and have it generate code that does it the same way.  This is fully true when writing towards an engine, which already has an abstraction for resource lifetime management etc, but when writing towards a raw API, we've found that ***light weight*** abstraction helps make more readable, and maintainable code.
 
-The generated code shouldn't just be readable generated code, it should be written maintainably too, just as if it actually was written by a human.
+The generated code shouldn't just be readable generated code, it should be maintainable too, just as if it actually was written by a human.
 
 Here is a snippet of C++ / DX12 code generated for the **Techniques/UnitTests/Compute/boxblur.gg** technique:
 

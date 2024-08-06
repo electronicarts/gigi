@@ -8,7 +8,7 @@
 // These are used by GigiCompiler, GigiCompilerLib and GigiEdit
 
 GIGI_BUILD_FLAVOR(DX12, Module, false)
-GIGI_BUILD_FLAVOR(DX12, Application, false)
+GIGI_BUILD_FLAVOR(DX12, Application, true)  // Hide this until generating an app uses the .gguser file to set up imported resources, camera, key bindings, etc.
 //GIGI_BUILD_FLAVOR(DX12, HeadlessApplication, false)
 GIGI_BUILD_FLAVOR(Interpreter, Interpreter, true)
 

@@ -24,9 +24,11 @@
 #ifdef _DEBUG
 #define DX12_ENABLE_DEBUG_LAYER
 // Gigi Modification Begin
+#define DX12_GPU_VALIDATION() false
 #define DX12_BREAK_ON_WARN() false
 #define DX12_BREAK_ON_CORRUPTION() true
 #define DX12_BREAK_ON_ERROR() true
+#define MAKE_PIX_CAPTURE() false // if true, will emit a pix capture for every frame the unit tests run.
 // Gigi Modification End
 #endif
 
@@ -36,6 +38,9 @@
 #endif
 
 // Gigi Modification Begin
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 613; }
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\AgilitySDK\\bin\\"; }
+
 #include "DX12Utils/FileCache.h"
 #include "spdlog/spdlog.h"
 #include "DX12Utils/logfn.h"
@@ -66,6 +71,52 @@ static void PerfEventEndFn(ID3D12GraphicsCommandList* commandList)
     PIXEndEvent(commandList);
 }
 
+#if MAKE_PIX_CAPTURE()
+static bool GetLatestWinPixGpuCapturerPath(std::wstring& path)
+{
+    LPWSTR programFilesPath = nullptr;
+    SHGetKnownFolderPath(FOLDERID_ProgramFiles, KF_FLAG_DEFAULT, NULL, &programFilesPath);
+
+    std::wstring pixSearchPath = programFilesPath + std::wstring(L"\\Microsoft PIX\\*");
+
+    WIN32_FIND_DATAW findData;
+    bool foundPixInstallation = false;
+    wchar_t newestVersionFound[MAX_PATH];
+
+    HANDLE hFind = FindFirstFileW(pixSearchPath.c_str(), &findData);
+    if (hFind != INVALID_HANDLE_VALUE)
+    {
+        do
+        {
+            if (((findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) &&
+                (findData.cFileName[0] != '.'))
+            {
+                if (!foundPixInstallation || wcscmp(newestVersionFound, findData.cFileName) <= 0)
+                {
+                    foundPixInstallation = true;
+                    StringCchCopyW(newestVersionFound, _countof(newestVersionFound), findData.cFileName);
+                }
+            }
+        } while (FindNextFileW(hFind, &findData) != 0);
+    }
+
+    FindClose(hFind);
+
+    if (!foundPixInstallation)
+    {
+        return false;
+    }
+
+    wchar_t output[MAX_PATH];
+    StringCchCopyW(output, pixSearchPath.length(), pixSearchPath.data());
+    StringCchCatW(output, MAX_PATH, &newestVersionFound[0]);
+    StringCchCatW(output, MAX_PATH, L"\\WinPixGpuCapturer.dll");
+
+    path = output;
+    return true;
+}
+#endif
+
 #include "DX12Utils/ReadbackHelper.h"
 static DX12Utils::ReadbackHelper    g_readbackHelper;
 // Gigi Modification End
@@ -73,103 +124,199 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 // Gigi Modification Begin - Includes And Context
 #include "UnitTests\Barrier\BarrierTest\public\technique.h"
 #include "UnitTests\Barrier\BarrierTest\public\imgui.h"
+#include "UnitTests\Barrier\BarrierTest\private\technique.h"
 #include "UnitTests\Buffers\buffertest\public\technique.h"
 #include "UnitTests\Buffers\buffertest\public\imgui.h"
-#include "UnitTests\Buffers\MultipleUVMesh\public\technique.h"
-#include "UnitTests\Buffers\MultipleUVMesh\public\imgui.h"
+#include "UnitTests\Buffers\buffertest\private\technique.h"
 #include "UnitTests\Buffers\StructuredBuffer\public\technique.h"
 #include "UnitTests\Buffers\StructuredBuffer\public\imgui.h"
+#include "UnitTests\Buffers\StructuredBuffer\private\technique.h"
 #include "UnitTests\Compute\boxblur\public\technique.h"
 #include "UnitTests\Compute\boxblur\public\imgui.h"
+#include "UnitTests\Compute\boxblur\private\technique.h"
+#include "UnitTests\Compute\IndirectDispatch\public\technique.h"
+#include "UnitTests\Compute\IndirectDispatch\public\imgui.h"
+#include "UnitTests\Compute\IndirectDispatch\private\technique.h"
 #include "UnitTests\Compute\ReadbackSequence\public\technique.h"
 #include "UnitTests\Compute\ReadbackSequence\public\imgui.h"
+#include "UnitTests\Compute\ReadbackSequence\private\technique.h"
 #include "UnitTests\Compute\simple\public\technique.h"
 #include "UnitTests\Compute\simple\public\imgui.h"
+#include "UnitTests\Compute\simple\private\technique.h"
 #include "UnitTests\Compute\SlangAutoDiff\public\technique.h"
 #include "UnitTests\Compute\SlangAutoDiff\public\imgui.h"
+#include "UnitTests\Compute\SlangAutoDiff\private\technique.h"
 #include "UnitTests\CopyResource\CopyResourceTest\public\technique.h"
 #include "UnitTests\CopyResource\CopyResourceTest\public\imgui.h"
+#include "UnitTests\CopyResource\CopyResourceTest\private\technique.h"
 #include "UnitTests\CopyResource\CopyResourceTest_FB\public\technique.h"
 #include "UnitTests\CopyResource\CopyResourceTest_FB\public\imgui.h"
-#include "UnitTests\Python\GPUWrite\public\technique.h"
-#include "UnitTests\Python\GPUWrite\public\imgui.h"
-#include "UnitTests\Python\profiling\public\technique.h"
-#include "UnitTests\Python\profiling\public\imgui.h"
+#include "UnitTests\CopyResource\CopyResourceTest_FB\private\technique.h"
+#include "UnitTests\MeshShaders\Mesh\public\technique.h"
+#include "UnitTests\MeshShaders\Mesh\public\imgui.h"
+#include "UnitTests\MeshShaders\Mesh\private\technique.h"
+#include "UnitTests\MeshShaders\MeshAmplification\public\technique.h"
+#include "UnitTests\MeshShaders\MeshAmplification\public\imgui.h"
+#include "UnitTests\MeshShaders\MeshAmplification\private\technique.h"
+#include "UnitTests\MeshShaders\MeshAmplificationLines\public\technique.h"
+#include "UnitTests\MeshShaders\MeshAmplificationLines\public\imgui.h"
+#include "UnitTests\MeshShaders\MeshAmplificationLines\private\technique.h"
 #include "UnitTests\Raster\NoVertex_NoIndex_NoInstance\public\technique.h"
 #include "UnitTests\Raster\NoVertex_NoIndex_NoInstance\public\imgui.h"
+#include "UnitTests\Raster\NoVertex_NoIndex_NoInstance\private\technique.h"
 #include "UnitTests\Raster\simpleRaster\public\technique.h"
 #include "UnitTests\Raster\simpleRaster\public\imgui.h"
+#include "UnitTests\Raster\simpleRaster\private\technique.h"
 #include "UnitTests\Raster\simpleRaster2\public\technique.h"
 #include "UnitTests\Raster\simpleRaster2\public\imgui.h"
+#include "UnitTests\Raster\simpleRaster2\private\technique.h"
+#include "UnitTests\Raster\simpleRaster_Lines\public\technique.h"
+#include "UnitTests\Raster\simpleRaster_Lines\public\imgui.h"
+#include "UnitTests\Raster\simpleRaster_Lines\private\technique.h"
+#include "UnitTests\Raster\simpleRaster_Points\public\technique.h"
+#include "UnitTests\Raster\simpleRaster_Points\public\imgui.h"
+#include "UnitTests\Raster\simpleRaster_Points\private\technique.h"
 #include "UnitTests\Raster\Stencil\public\technique.h"
 #include "UnitTests\Raster\Stencil\public\imgui.h"
+#include "UnitTests\Raster\Stencil\private\technique.h"
+#include "UnitTests\Raster\VRS\public\technique.h"
+#include "UnitTests\Raster\VRS\public\imgui.h"
+#include "UnitTests\Raster\VRS\private\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\public\imgui.h"
+#include "UnitTests\Raster\YesVertexStruct_NoIndex_NoInstance\private\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\public\imgui.h"
+#include "UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceStruct\private\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\public\imgui.h"
+#include "UnitTests\Raster\YesVertexStruct_NoIndex_YesInstanceType\private\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public\technique.h"
 #include "UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\public\imgui.h"
+#include "UnitTests\Raster\YesVertexStruct_YesIndex_NoInstance\private\technique.h"
 #include "UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public\technique.h"
 #include "UnitTests\Raster\YesVertexType_NoIndex_NoInstance\public\imgui.h"
+#include "UnitTests\Raster\YesVertexType_NoIndex_NoInstance\private\technique.h"
 #include "UnitTests\RayTrace\AnyHit\public\technique.h"
 #include "UnitTests\RayTrace\AnyHit\public\imgui.h"
+#include "UnitTests\RayTrace\AnyHit\private\technique.h"
 #include "UnitTests\RayTrace\AnyHitSimple\public\technique.h"
 #include "UnitTests\RayTrace\AnyHitSimple\public\imgui.h"
+#include "UnitTests\RayTrace\AnyHitSimple\private\technique.h"
 #include "UnitTests\RayTrace\IntersectionShader\public\technique.h"
 #include "UnitTests\RayTrace\IntersectionShader\public\imgui.h"
+#include "UnitTests\RayTrace\IntersectionShader\private\technique.h"
 #include "UnitTests\RayTrace\simpleRT\public\technique.h"
 #include "UnitTests\RayTrace\simpleRT\public\imgui.h"
+#include "UnitTests\RayTrace\simpleRT\private\technique.h"
 #include "UnitTests\RayTrace\simpleRT_inline\public\technique.h"
 #include "UnitTests\RayTrace\simpleRT_inline\public\imgui.h"
+#include "UnitTests\RayTrace\simpleRT_inline\private\technique.h"
 #include "UnitTests\RayTrace\TwoRayGens\public\technique.h"
 #include "UnitTests\RayTrace\TwoRayGens\public\imgui.h"
+#include "UnitTests\RayTrace\TwoRayGens\private\technique.h"
+#include "UnitTests\SubGraph\SubGraphLoops\public\technique.h"
+#include "UnitTests\SubGraph\SubGraphLoops\public\imgui.h"
+#include "UnitTests\SubGraph\SubGraphLoops\private\technique.h"
 #include "UnitTests\SubGraph\SubGraphTest\public\technique.h"
 #include "UnitTests\SubGraph\SubGraphTest\public\imgui.h"
+#include "UnitTests\SubGraph\SubGraphTest\private\technique.h"
+#include "UnitTests\SubGraph\SubInSub\public\technique.h"
+#include "UnitTests\SubGraph\SubInSub\public\imgui.h"
+#include "UnitTests\SubGraph\SubInSub\private\technique.h"
+#include "UnitTests\Textures\Mips_CS_2D\public\technique.h"
+#include "UnitTests\Textures\Mips_CS_2D\public\imgui.h"
+#include "UnitTests\Textures\Mips_CS_2D\private\technique.h"
+#include "UnitTests\Textures\Mips_CS_2DArray\public\technique.h"
+#include "UnitTests\Textures\Mips_CS_2DArray\public\imgui.h"
+#include "UnitTests\Textures\Mips_CS_2DArray\private\technique.h"
+#include "UnitTests\Textures\Mips_CS_3D\public\technique.h"
+#include "UnitTests\Textures\Mips_CS_3D\public\imgui.h"
+#include "UnitTests\Textures\Mips_CS_3D\private\technique.h"
+#include "UnitTests\Textures\Mips_CS_Cube\public\technique.h"
+#include "UnitTests\Textures\Mips_CS_Cube\public\imgui.h"
+#include "UnitTests\Textures\Mips_CS_Cube\private\technique.h"
+#include "UnitTests\Textures\Mips_DrawCall\public\technique.h"
+#include "UnitTests\Textures\Mips_DrawCall\public\imgui.h"
+#include "UnitTests\Textures\Mips_DrawCall\private\technique.h"
+#include "UnitTests\Textures\Mips_RGS_2D\public\technique.h"
+#include "UnitTests\Textures\Mips_RGS_2D\public\imgui.h"
+#include "UnitTests\Textures\Mips_RGS_2D\private\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_2D\public\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_2D\public\imgui.h"
+#include "UnitTests\Textures\Mips_ShaderToken_2D\private\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_2DArray\public\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_2DArray\public\imgui.h"
+#include "UnitTests\Textures\Mips_ShaderToken_2DArray\private\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_3D\public\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_3D\public\imgui.h"
+#include "UnitTests\Textures\Mips_ShaderToken_3D\private\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_Cube\public\technique.h"
+#include "UnitTests\Textures\Mips_ShaderToken_Cube\public\imgui.h"
+#include "UnitTests\Textures\Mips_ShaderToken_Cube\private\technique.h"
+#include "UnitTests\Textures\Mips_VSPS_2D\public\technique.h"
+#include "UnitTests\Textures\Mips_VSPS_2D\public\imgui.h"
+#include "UnitTests\Textures\Mips_VSPS_2D\private\technique.h"
 #include "UnitTests\Textures\Texture2DArrayRW_CS\public\technique.h"
 #include "UnitTests\Textures\Texture2DArrayRW_CS\public\imgui.h"
+#include "UnitTests\Textures\Texture2DArrayRW_CS\private\technique.h"
 #include "UnitTests\Textures\Texture2DArrayRW_PS\public\technique.h"
 #include "UnitTests\Textures\Texture2DArrayRW_PS\public\imgui.h"
+#include "UnitTests\Textures\Texture2DArrayRW_PS\private\technique.h"
 #include "UnitTests\Textures\Texture2DArrayRW_RGS\public\technique.h"
 #include "UnitTests\Textures\Texture2DArrayRW_RGS\public\imgui.h"
+#include "UnitTests\Textures\Texture2DArrayRW_RGS\private\technique.h"
 #include "UnitTests\Textures\Texture2DRW_CS\public\technique.h"
 #include "UnitTests\Textures\Texture2DRW_CS\public\imgui.h"
+#include "UnitTests\Textures\Texture2DRW_CS\private\technique.h"
 #include "UnitTests\Textures\Texture2DRW_PS\public\technique.h"
 #include "UnitTests\Textures\Texture2DRW_PS\public\imgui.h"
+#include "UnitTests\Textures\Texture2DRW_PS\private\technique.h"
 #include "UnitTests\Textures\Texture2DRW_RGS\public\technique.h"
 #include "UnitTests\Textures\Texture2DRW_RGS\public\imgui.h"
+#include "UnitTests\Textures\Texture2DRW_RGS\private\technique.h"
 #include "UnitTests\Textures\Texture3DRW_CS\public\technique.h"
 #include "UnitTests\Textures\Texture3DRW_CS\public\imgui.h"
+#include "UnitTests\Textures\Texture3DRW_CS\private\technique.h"
 #include "UnitTests\Textures\Texture3DRW_PS\public\technique.h"
 #include "UnitTests\Textures\Texture3DRW_PS\public\imgui.h"
+#include "UnitTests\Textures\Texture3DRW_PS\private\technique.h"
 #include "UnitTests\Textures\Texture3DRW_RGS\public\technique.h"
 #include "UnitTests\Textures\Texture3DRW_RGS\public\imgui.h"
+#include "UnitTests\Textures\Texture3DRW_RGS\private\technique.h"
 #include "UnitTests\Textures\TextureCubeRW_CS\public\technique.h"
 #include "UnitTests\Textures\TextureCubeRW_CS\public\imgui.h"
+#include "UnitTests\Textures\TextureCubeRW_CS\private\technique.h"
 #include "UnitTests\Textures\TextureCubeRW_PS\public\technique.h"
 #include "UnitTests\Textures\TextureCubeRW_PS\public\imgui.h"
+#include "UnitTests\Textures\TextureCubeRW_PS\private\technique.h"
 #include "UnitTests\Textures\TextureCubeRW_RGS\public\technique.h"
 #include "UnitTests\Textures\TextureCubeRW_RGS\public\imgui.h"
+#include "UnitTests\Textures\TextureCubeRW_RGS\private\technique.h"
 #include "UnitTests\Textures\TextureFormats\public\technique.h"
 #include "UnitTests\Textures\TextureFormats\public\imgui.h"
+#include "UnitTests\Textures\TextureFormats\private\technique.h"
 
 BarrierTest::Context* m_BarrierTest = nullptr;
 buffertest::Context* m_buffertest = nullptr;
-MultipleUVMesh::Context* m_MultipleUVMesh = nullptr;
 StructuredBuffer::Context* m_StructuredBuffer = nullptr;
 boxblur::Context* m_boxblur = nullptr;
+IndirectDispatch::Context* m_IndirectDispatch = nullptr;
 ReadbackSequence::Context* m_ReadbackSequence = nullptr;
 simple::Context* m_simple = nullptr;
 SlangAutoDiff::Context* m_SlangAutoDiff = nullptr;
 CopyResourceTest::Context* m_CopyResourceTest = nullptr;
 CopyResourceTest_FB::Context* m_CopyResourceTest_FB = nullptr;
-GPUWrite::Context* m_GPUWrite = nullptr;
-profiling::Context* m_profiling = nullptr;
+Mesh::Context* m_Mesh = nullptr;
+MeshAmplification::Context* m_MeshAmplification = nullptr;
+MeshAmplificationLines::Context* m_MeshAmplificationLines = nullptr;
 NoVertex_NoIndex_NoInstance::Context* m_NoVertex_NoIndex_NoInstance = nullptr;
 simpleRaster::Context* m_simpleRaster = nullptr;
 simpleRaster2::Context* m_simpleRaster2 = nullptr;
+simpleRaster_Lines::Context* m_simpleRaster_Lines = nullptr;
+simpleRaster_Points::Context* m_simpleRaster_Points = nullptr;
 Stencil::Context* m_Stencil = nullptr;
+VRS::Context* m_VRS = nullptr;
 YesVertexStruct_NoIndex_NoInstance::Context* m_YesVertexStruct_NoIndex_NoInstance = nullptr;
 YesVertexStruct_NoIndex_YesInstanceStruct::Context* m_YesVertexStruct_NoIndex_YesInstanceStruct = nullptr;
 YesVertexStruct_NoIndex_YesInstanceType::Context* m_YesVertexStruct_NoIndex_YesInstanceType = nullptr;
@@ -181,7 +328,20 @@ IntersectionShader::Context* m_IntersectionShader = nullptr;
 simpleRT::Context* m_simpleRT = nullptr;
 simpleRT_inline::Context* m_simpleRT_inline = nullptr;
 TwoRayGens::Context* m_TwoRayGens = nullptr;
+SubGraphLoops::Context* m_SubGraphLoops = nullptr;
 SubGraphTest::Context* m_SubGraphTest = nullptr;
+SubInSub::Context* m_SubInSub = nullptr;
+Mips_CS_2D::Context* m_Mips_CS_2D = nullptr;
+Mips_CS_2DArray::Context* m_Mips_CS_2DArray = nullptr;
+Mips_CS_3D::Context* m_Mips_CS_3D = nullptr;
+Mips_CS_Cube::Context* m_Mips_CS_Cube = nullptr;
+Mips_DrawCall::Context* m_Mips_DrawCall = nullptr;
+Mips_RGS_2D::Context* m_Mips_RGS_2D = nullptr;
+Mips_ShaderToken_2D::Context* m_Mips_ShaderToken_2D = nullptr;
+Mips_ShaderToken_2DArray::Context* m_Mips_ShaderToken_2DArray = nullptr;
+Mips_ShaderToken_3D::Context* m_Mips_ShaderToken_3D = nullptr;
+Mips_ShaderToken_Cube::Context* m_Mips_ShaderToken_Cube = nullptr;
+Mips_VSPS_2D::Context* m_Mips_VSPS_2D = nullptr;
 Texture2DArrayRW_CS::Context* m_Texture2DArrayRW_CS = nullptr;
 Texture2DArrayRW_PS::Context* m_Texture2DArrayRW_PS = nullptr;
 Texture2DArrayRW_RGS::Context* m_Texture2DArrayRW_RGS = nullptr;
@@ -236,6 +396,20 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 // Main code
 int main(int, char**)
 {
+    // Gigi Modification Begin
+    #if MAKE_PIX_CAPTURE()
+        // Load WinPixGpuCapturer.dll so we can take programatic captures
+        if (GetModuleHandleW(L"WinPixGpuCapturer.dll") == 0)
+        {
+            std::wstring pixPath;
+            if (GetLatestWinPixGpuCapturerPath(pixPath))
+            {
+                LoadLibraryW(pixPath.c_str());
+            }
+        }
+    #endif
+    // Gigi Modification End
+
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
@@ -314,16 +488,6 @@ int main(int, char**)
         printf("Could not create m_buffertest context");
         return 1;
     }
-    MultipleUVMesh::Context::LogFn = &LogFunction;
-    MultipleUVMesh::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    MultipleUVMesh::Context::PerfEventEndFn = &PerfEventEndFn;
-    MultipleUVMesh::Context::s_techniqueLocation = L".\\UnitTests\\Buffers\\MultipleUVMesh\\";
-    m_MultipleUVMesh = MultipleUVMesh::CreateContext(g_pd3dDevice);
-    if (!m_MultipleUVMesh)
-    {
-        printf("Could not create m_MultipleUVMesh context");
-        return 1;
-    }
     StructuredBuffer::Context::LogFn = &LogFunction;
     StructuredBuffer::Context::PerfEventBeginFn = &PerfEventBeginFn;
     StructuredBuffer::Context::PerfEventEndFn = &PerfEventEndFn;
@@ -342,6 +506,16 @@ int main(int, char**)
     if (!m_boxblur)
     {
         printf("Could not create m_boxblur context");
+        return 1;
+    }
+    IndirectDispatch::Context::LogFn = &LogFunction;
+    IndirectDispatch::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    IndirectDispatch::Context::PerfEventEndFn = &PerfEventEndFn;
+    IndirectDispatch::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\IndirectDispatch\\";
+    m_IndirectDispatch = IndirectDispatch::CreateContext(g_pd3dDevice);
+    if (!m_IndirectDispatch)
+    {
+        printf("Could not create m_IndirectDispatch context");
         return 1;
     }
     ReadbackSequence::Context::LogFn = &LogFunction;
@@ -394,24 +568,34 @@ int main(int, char**)
         printf("Could not create m_CopyResourceTest_FB context");
         return 1;
     }
-    GPUWrite::Context::LogFn = &LogFunction;
-    GPUWrite::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    GPUWrite::Context::PerfEventEndFn = &PerfEventEndFn;
-    GPUWrite::Context::s_techniqueLocation = L".\\UnitTests\\Python\\GPUWrite\\";
-    m_GPUWrite = GPUWrite::CreateContext(g_pd3dDevice);
-    if (!m_GPUWrite)
+    Mesh::Context::LogFn = &LogFunction;
+    Mesh::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mesh::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mesh::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\Mesh\\";
+    m_Mesh = Mesh::CreateContext(g_pd3dDevice);
+    if (!m_Mesh)
     {
-        printf("Could not create m_GPUWrite context");
+        printf("Could not create m_Mesh context");
         return 1;
     }
-    profiling::Context::LogFn = &LogFunction;
-    profiling::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    profiling::Context::PerfEventEndFn = &PerfEventEndFn;
-    profiling::Context::s_techniqueLocation = L".\\UnitTests\\Python\\profiling\\";
-    m_profiling = profiling::CreateContext(g_pd3dDevice);
-    if (!m_profiling)
+    MeshAmplification::Context::LogFn = &LogFunction;
+    MeshAmplification::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    MeshAmplification::Context::PerfEventEndFn = &PerfEventEndFn;
+    MeshAmplification::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\MeshAmplification\\";
+    m_MeshAmplification = MeshAmplification::CreateContext(g_pd3dDevice);
+    if (!m_MeshAmplification)
     {
-        printf("Could not create m_profiling context");
+        printf("Could not create m_MeshAmplification context");
+        return 1;
+    }
+    MeshAmplificationLines::Context::LogFn = &LogFunction;
+    MeshAmplificationLines::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    MeshAmplificationLines::Context::PerfEventEndFn = &PerfEventEndFn;
+    MeshAmplificationLines::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\MeshAmplificationLines\\";
+    m_MeshAmplificationLines = MeshAmplificationLines::CreateContext(g_pd3dDevice);
+    if (!m_MeshAmplificationLines)
+    {
+        printf("Could not create m_MeshAmplificationLines context");
         return 1;
     }
     NoVertex_NoIndex_NoInstance::Context::LogFn = &LogFunction;
@@ -444,6 +628,26 @@ int main(int, char**)
         printf("Could not create m_simpleRaster2 context");
         return 1;
     }
+    simpleRaster_Lines::Context::LogFn = &LogFunction;
+    simpleRaster_Lines::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    simpleRaster_Lines::Context::PerfEventEndFn = &PerfEventEndFn;
+    simpleRaster_Lines::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster_Lines\\";
+    m_simpleRaster_Lines = simpleRaster_Lines::CreateContext(g_pd3dDevice);
+    if (!m_simpleRaster_Lines)
+    {
+        printf("Could not create m_simpleRaster_Lines context");
+        return 1;
+    }
+    simpleRaster_Points::Context::LogFn = &LogFunction;
+    simpleRaster_Points::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    simpleRaster_Points::Context::PerfEventEndFn = &PerfEventEndFn;
+    simpleRaster_Points::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster_Points\\";
+    m_simpleRaster_Points = simpleRaster_Points::CreateContext(g_pd3dDevice);
+    if (!m_simpleRaster_Points)
+    {
+        printf("Could not create m_simpleRaster_Points context");
+        return 1;
+    }
     Stencil::Context::LogFn = &LogFunction;
     Stencil::Context::PerfEventBeginFn = &PerfEventBeginFn;
     Stencil::Context::PerfEventEndFn = &PerfEventEndFn;
@@ -452,6 +656,16 @@ int main(int, char**)
     if (!m_Stencil)
     {
         printf("Could not create m_Stencil context");
+        return 1;
+    }
+    VRS::Context::LogFn = &LogFunction;
+    VRS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    VRS::Context::PerfEventEndFn = &PerfEventEndFn;
+    VRS::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\VRS\\";
+    m_VRS = VRS::CreateContext(g_pd3dDevice);
+    if (!m_VRS)
+    {
+        printf("Could not create m_VRS context");
         return 1;
     }
     YesVertexStruct_NoIndex_NoInstance::Context::LogFn = &LogFunction;
@@ -564,6 +778,16 @@ int main(int, char**)
         printf("Could not create m_TwoRayGens context");
         return 1;
     }
+    SubGraphLoops::Context::LogFn = &LogFunction;
+    SubGraphLoops::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    SubGraphLoops::Context::PerfEventEndFn = &PerfEventEndFn;
+    SubGraphLoops::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubGraphLoops\\";
+    m_SubGraphLoops = SubGraphLoops::CreateContext(g_pd3dDevice);
+    if (!m_SubGraphLoops)
+    {
+        printf("Could not create m_SubGraphLoops context");
+        return 1;
+    }
     SubGraphTest::Context::LogFn = &LogFunction;
     SubGraphTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
     SubGraphTest::Context::PerfEventEndFn = &PerfEventEndFn;
@@ -572,6 +796,126 @@ int main(int, char**)
     if (!m_SubGraphTest)
     {
         printf("Could not create m_SubGraphTest context");
+        return 1;
+    }
+    SubInSub::Context::LogFn = &LogFunction;
+    SubInSub::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    SubInSub::Context::PerfEventEndFn = &PerfEventEndFn;
+    SubInSub::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubInSub\\";
+    m_SubInSub = SubInSub::CreateContext(g_pd3dDevice);
+    if (!m_SubInSub)
+    {
+        printf("Could not create m_SubInSub context");
+        return 1;
+    }
+    Mips_CS_2D::Context::LogFn = &LogFunction;
+    Mips_CS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_CS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_CS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_2D\\";
+    m_Mips_CS_2D = Mips_CS_2D::CreateContext(g_pd3dDevice);
+    if (!m_Mips_CS_2D)
+    {
+        printf("Could not create m_Mips_CS_2D context");
+        return 1;
+    }
+    Mips_CS_2DArray::Context::LogFn = &LogFunction;
+    Mips_CS_2DArray::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_CS_2DArray::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_CS_2DArray::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_2DArray\\";
+    m_Mips_CS_2DArray = Mips_CS_2DArray::CreateContext(g_pd3dDevice);
+    if (!m_Mips_CS_2DArray)
+    {
+        printf("Could not create m_Mips_CS_2DArray context");
+        return 1;
+    }
+    Mips_CS_3D::Context::LogFn = &LogFunction;
+    Mips_CS_3D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_CS_3D::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_CS_3D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_3D\\";
+    m_Mips_CS_3D = Mips_CS_3D::CreateContext(g_pd3dDevice);
+    if (!m_Mips_CS_3D)
+    {
+        printf("Could not create m_Mips_CS_3D context");
+        return 1;
+    }
+    Mips_CS_Cube::Context::LogFn = &LogFunction;
+    Mips_CS_Cube::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_CS_Cube::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_CS_Cube::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_Cube\\";
+    m_Mips_CS_Cube = Mips_CS_Cube::CreateContext(g_pd3dDevice);
+    if (!m_Mips_CS_Cube)
+    {
+        printf("Could not create m_Mips_CS_Cube context");
+        return 1;
+    }
+    Mips_DrawCall::Context::LogFn = &LogFunction;
+    Mips_DrawCall::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_DrawCall::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_DrawCall::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_DrawCall\\";
+    m_Mips_DrawCall = Mips_DrawCall::CreateContext(g_pd3dDevice);
+    if (!m_Mips_DrawCall)
+    {
+        printf("Could not create m_Mips_DrawCall context");
+        return 1;
+    }
+    Mips_RGS_2D::Context::LogFn = &LogFunction;
+    Mips_RGS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_RGS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_RGS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_RGS_2D\\";
+    m_Mips_RGS_2D = Mips_RGS_2D::CreateContext(g_pd3dDevice);
+    if (!m_Mips_RGS_2D)
+    {
+        printf("Could not create m_Mips_RGS_2D context");
+        return 1;
+    }
+    Mips_ShaderToken_2D::Context::LogFn = &LogFunction;
+    Mips_ShaderToken_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_ShaderToken_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_ShaderToken_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_2D\\";
+    m_Mips_ShaderToken_2D = Mips_ShaderToken_2D::CreateContext(g_pd3dDevice);
+    if (!m_Mips_ShaderToken_2D)
+    {
+        printf("Could not create m_Mips_ShaderToken_2D context");
+        return 1;
+    }
+    Mips_ShaderToken_2DArray::Context::LogFn = &LogFunction;
+    Mips_ShaderToken_2DArray::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_ShaderToken_2DArray::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_ShaderToken_2DArray::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_2DArray\\";
+    m_Mips_ShaderToken_2DArray = Mips_ShaderToken_2DArray::CreateContext(g_pd3dDevice);
+    if (!m_Mips_ShaderToken_2DArray)
+    {
+        printf("Could not create m_Mips_ShaderToken_2DArray context");
+        return 1;
+    }
+    Mips_ShaderToken_3D::Context::LogFn = &LogFunction;
+    Mips_ShaderToken_3D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_ShaderToken_3D::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_ShaderToken_3D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_3D\\";
+    m_Mips_ShaderToken_3D = Mips_ShaderToken_3D::CreateContext(g_pd3dDevice);
+    if (!m_Mips_ShaderToken_3D)
+    {
+        printf("Could not create m_Mips_ShaderToken_3D context");
+        return 1;
+    }
+    Mips_ShaderToken_Cube::Context::LogFn = &LogFunction;
+    Mips_ShaderToken_Cube::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_ShaderToken_Cube::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_ShaderToken_Cube::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_Cube\\";
+    m_Mips_ShaderToken_Cube = Mips_ShaderToken_Cube::CreateContext(g_pd3dDevice);
+    if (!m_Mips_ShaderToken_Cube)
+    {
+        printf("Could not create m_Mips_ShaderToken_Cube context");
+        return 1;
+    }
+    Mips_VSPS_2D::Context::LogFn = &LogFunction;
+    Mips_VSPS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    Mips_VSPS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+    Mips_VSPS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_VSPS_2D\\";
+    m_Mips_VSPS_2D = Mips_VSPS_2D::CreateContext(g_pd3dDevice);
+    if (!m_Mips_VSPS_2D)
+    {
+        printf("Could not create m_Mips_VSPS_2D context");
         return 1;
     }
     Texture2DArrayRW_CS::Context::LogFn = &LogFunction;
@@ -713,6 +1057,20 @@ int main(int, char**)
     bool done = false;
     while (!done)
     {
+        // Gigi Modification Begin
+        #if MAKE_PIX_CAPTURE()
+        // Take a pix capture every frame
+        {
+            static int frameIndex = 0;
+            wchar_t fileName[256];
+
+            swprintf(fileName, L"_out.%i.wpix", frameIndex);
+            HRESULT hr = PIXGpuCaptureNextFrames(fileName, 1);
+            frameIndex++;
+        }
+        #endif
+        // Gigi Modification End
+
         // Poll and handle messages (inputs, window resize, etc.)
         // See the WndProc() function below for our to dispatch events to the Win32 backend.
         MSG msg;
@@ -736,12 +1094,12 @@ int main(int, char**)
             BarrierTest::MakeUI(m_BarrierTest, g_pd3dCommandQueue);
         if (m_buffertest && ImGui::CollapsingHeader("buffertest"))
             buffertest::MakeUI(m_buffertest, g_pd3dCommandQueue);
-        if (m_MultipleUVMesh && ImGui::CollapsingHeader("MultipleUVMesh"))
-            MultipleUVMesh::MakeUI(m_MultipleUVMesh, g_pd3dCommandQueue);
         if (m_StructuredBuffer && ImGui::CollapsingHeader("StructuredBuffer"))
             StructuredBuffer::MakeUI(m_StructuredBuffer, g_pd3dCommandQueue);
         if (m_boxblur && ImGui::CollapsingHeader("boxblur"))
             boxblur::MakeUI(m_boxblur, g_pd3dCommandQueue);
+        if (m_IndirectDispatch && ImGui::CollapsingHeader("IndirectDispatch"))
+            IndirectDispatch::MakeUI(m_IndirectDispatch, g_pd3dCommandQueue);
         if (m_ReadbackSequence && ImGui::CollapsingHeader("ReadbackSequence"))
             ReadbackSequence::MakeUI(m_ReadbackSequence, g_pd3dCommandQueue);
         if (m_simple && ImGui::CollapsingHeader("simple"))
@@ -752,18 +1110,26 @@ int main(int, char**)
             CopyResourceTest::MakeUI(m_CopyResourceTest, g_pd3dCommandQueue);
         if (m_CopyResourceTest_FB && ImGui::CollapsingHeader("CopyResourceTest_FB"))
             CopyResourceTest_FB::MakeUI(m_CopyResourceTest_FB, g_pd3dCommandQueue);
-        if (m_GPUWrite && ImGui::CollapsingHeader("GPUWrite"))
-            GPUWrite::MakeUI(m_GPUWrite, g_pd3dCommandQueue);
-        if (m_profiling && ImGui::CollapsingHeader("profiling"))
-            profiling::MakeUI(m_profiling, g_pd3dCommandQueue);
+        if (m_Mesh && ImGui::CollapsingHeader("Mesh"))
+            Mesh::MakeUI(m_Mesh, g_pd3dCommandQueue);
+        if (m_MeshAmplification && ImGui::CollapsingHeader("MeshAmplification"))
+            MeshAmplification::MakeUI(m_MeshAmplification, g_pd3dCommandQueue);
+        if (m_MeshAmplificationLines && ImGui::CollapsingHeader("MeshAmplificationLines"))
+            MeshAmplificationLines::MakeUI(m_MeshAmplificationLines, g_pd3dCommandQueue);
         if (m_NoVertex_NoIndex_NoInstance && ImGui::CollapsingHeader("NoVertex_NoIndex_NoInstance"))
             NoVertex_NoIndex_NoInstance::MakeUI(m_NoVertex_NoIndex_NoInstance, g_pd3dCommandQueue);
         if (m_simpleRaster && ImGui::CollapsingHeader("simpleRaster"))
             simpleRaster::MakeUI(m_simpleRaster, g_pd3dCommandQueue);
         if (m_simpleRaster2 && ImGui::CollapsingHeader("simpleRaster2"))
             simpleRaster2::MakeUI(m_simpleRaster2, g_pd3dCommandQueue);
+        if (m_simpleRaster_Lines && ImGui::CollapsingHeader("simpleRaster_Lines"))
+            simpleRaster_Lines::MakeUI(m_simpleRaster_Lines, g_pd3dCommandQueue);
+        if (m_simpleRaster_Points && ImGui::CollapsingHeader("simpleRaster_Points"))
+            simpleRaster_Points::MakeUI(m_simpleRaster_Points, g_pd3dCommandQueue);
         if (m_Stencil && ImGui::CollapsingHeader("Stencil"))
             Stencil::MakeUI(m_Stencil, g_pd3dCommandQueue);
+        if (m_VRS && ImGui::CollapsingHeader("VRS"))
+            VRS::MakeUI(m_VRS, g_pd3dCommandQueue);
         if (m_YesVertexStruct_NoIndex_NoInstance && ImGui::CollapsingHeader("YesVertexStruct_NoIndex_NoInstance"))
             YesVertexStruct_NoIndex_NoInstance::MakeUI(m_YesVertexStruct_NoIndex_NoInstance, g_pd3dCommandQueue);
         if (m_YesVertexStruct_NoIndex_YesInstanceStruct && ImGui::CollapsingHeader("YesVertexStruct_NoIndex_YesInstanceStruct"))
@@ -786,8 +1152,34 @@ int main(int, char**)
             simpleRT_inline::MakeUI(m_simpleRT_inline, g_pd3dCommandQueue);
         if (m_TwoRayGens && ImGui::CollapsingHeader("TwoRayGens"))
             TwoRayGens::MakeUI(m_TwoRayGens, g_pd3dCommandQueue);
+        if (m_SubGraphLoops && ImGui::CollapsingHeader("SubGraphLoops"))
+            SubGraphLoops::MakeUI(m_SubGraphLoops, g_pd3dCommandQueue);
         if (m_SubGraphTest && ImGui::CollapsingHeader("SubGraphTest"))
             SubGraphTest::MakeUI(m_SubGraphTest, g_pd3dCommandQueue);
+        if (m_SubInSub && ImGui::CollapsingHeader("SubInSub"))
+            SubInSub::MakeUI(m_SubInSub, g_pd3dCommandQueue);
+        if (m_Mips_CS_2D && ImGui::CollapsingHeader("Mips_CS_2D"))
+            Mips_CS_2D::MakeUI(m_Mips_CS_2D, g_pd3dCommandQueue);
+        if (m_Mips_CS_2DArray && ImGui::CollapsingHeader("Mips_CS_2DArray"))
+            Mips_CS_2DArray::MakeUI(m_Mips_CS_2DArray, g_pd3dCommandQueue);
+        if (m_Mips_CS_3D && ImGui::CollapsingHeader("Mips_CS_3D"))
+            Mips_CS_3D::MakeUI(m_Mips_CS_3D, g_pd3dCommandQueue);
+        if (m_Mips_CS_Cube && ImGui::CollapsingHeader("Mips_CS_Cube"))
+            Mips_CS_Cube::MakeUI(m_Mips_CS_Cube, g_pd3dCommandQueue);
+        if (m_Mips_DrawCall && ImGui::CollapsingHeader("Mips_DrawCall"))
+            Mips_DrawCall::MakeUI(m_Mips_DrawCall, g_pd3dCommandQueue);
+        if (m_Mips_RGS_2D && ImGui::CollapsingHeader("Mips_RGS_2D"))
+            Mips_RGS_2D::MakeUI(m_Mips_RGS_2D, g_pd3dCommandQueue);
+        if (m_Mips_ShaderToken_2D && ImGui::CollapsingHeader("Mips_ShaderToken_2D"))
+            Mips_ShaderToken_2D::MakeUI(m_Mips_ShaderToken_2D, g_pd3dCommandQueue);
+        if (m_Mips_ShaderToken_2DArray && ImGui::CollapsingHeader("Mips_ShaderToken_2DArray"))
+            Mips_ShaderToken_2DArray::MakeUI(m_Mips_ShaderToken_2DArray, g_pd3dCommandQueue);
+        if (m_Mips_ShaderToken_3D && ImGui::CollapsingHeader("Mips_ShaderToken_3D"))
+            Mips_ShaderToken_3D::MakeUI(m_Mips_ShaderToken_3D, g_pd3dCommandQueue);
+        if (m_Mips_ShaderToken_Cube && ImGui::CollapsingHeader("Mips_ShaderToken_Cube"))
+            Mips_ShaderToken_Cube::MakeUI(m_Mips_ShaderToken_Cube, g_pd3dCommandQueue);
+        if (m_Mips_VSPS_2D && ImGui::CollapsingHeader("Mips_VSPS_2D"))
+            Mips_VSPS_2D::MakeUI(m_Mips_VSPS_2D, g_pd3dCommandQueue);
         if (m_Texture2DArrayRW_CS && ImGui::CollapsingHeader("Texture2DArrayRW_CS"))
             Texture2DArrayRW_CS::MakeUI(m_Texture2DArrayRW_CS, g_pd3dCommandQueue);
         if (m_Texture2DArrayRW_PS && ImGui::CollapsingHeader("Texture2DArrayRW_PS"))
@@ -884,20 +1276,24 @@ int main(int, char**)
         // Gigi Modification Begin - OnNewFrame and Execute
         BarrierTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         buffertest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        MultipleUVMesh::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         StructuredBuffer::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         boxblur::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        IndirectDispatch::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         ReadbackSequence::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         simple::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         SlangAutoDiff::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         CopyResourceTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         CopyResourceTest_FB::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        GPUWrite::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        profiling::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mesh::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        MeshAmplification::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        MeshAmplificationLines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         NoVertex_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         simpleRaster::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         simpleRaster2::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        simpleRaster_Lines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        simpleRaster_Points::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         Stencil::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        VRS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         YesVertexStruct_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         YesVertexStruct_NoIndex_YesInstanceStruct::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         YesVertexStruct_NoIndex_YesInstanceType::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
@@ -909,7 +1305,20 @@ int main(int, char**)
         simpleRT::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         simpleRT_inline::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         TwoRayGens::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        SubGraphLoops::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         SubGraphTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        SubInSub::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_CS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_CS_2DArray::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_CS_3D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_CS_Cube::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_DrawCall::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_RGS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_ShaderToken_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_ShaderToken_2DArray::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_ShaderToken_3D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_ShaderToken_Cube::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        Mips_VSPS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         Texture2DArrayRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         Texture2DArrayRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         Texture2DArrayRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
@@ -926,20 +1335,24 @@ int main(int, char**)
 
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BarrierTest, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MultipleUVMesh, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ReadbackSequence, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest_FB, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_GPUWrite, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_profiling, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mesh, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplification, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplificationLines, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_NoVertex_NoIndex_NoInstance, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster2, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Lines, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Points, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Stencil, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VRS, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_NoInstance, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceStruct, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceType, UnitTestEvent::PreExecute);
@@ -951,7 +1364,20 @@ int main(int, char**)
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2D, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2DArray, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_3D, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_Cube, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_DrawCall, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_RGS_2D, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2D, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2DArray, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_3D, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_Cube, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_VSPS_2D, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_CS, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_PS, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_RGS, UnitTestEvent::PreExecute);
@@ -970,12 +1396,12 @@ int main(int, char**)
             BarrierTest::Execute(m_BarrierTest, g_pd3dDevice, g_pd3dCommandList);
         if (m_buffertest)
             buffertest::Execute(m_buffertest, g_pd3dDevice, g_pd3dCommandList);
-        if (m_MultipleUVMesh)
-            MultipleUVMesh::Execute(m_MultipleUVMesh, g_pd3dDevice, g_pd3dCommandList);
         if (m_StructuredBuffer)
             StructuredBuffer::Execute(m_StructuredBuffer, g_pd3dDevice, g_pd3dCommandList);
         if (m_boxblur)
             boxblur::Execute(m_boxblur, g_pd3dDevice, g_pd3dCommandList);
+        if (m_IndirectDispatch)
+            IndirectDispatch::Execute(m_IndirectDispatch, g_pd3dDevice, g_pd3dCommandList);
         if (m_ReadbackSequence)
             ReadbackSequence::Execute(m_ReadbackSequence, g_pd3dDevice, g_pd3dCommandList);
         if (m_simple)
@@ -986,18 +1412,26 @@ int main(int, char**)
             CopyResourceTest::Execute(m_CopyResourceTest, g_pd3dDevice, g_pd3dCommandList);
         if (m_CopyResourceTest_FB)
             CopyResourceTest_FB::Execute(m_CopyResourceTest_FB, g_pd3dDevice, g_pd3dCommandList);
-        if (m_GPUWrite)
-            GPUWrite::Execute(m_GPUWrite, g_pd3dDevice, g_pd3dCommandList);
-        if (m_profiling)
-            profiling::Execute(m_profiling, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mesh)
+            Mesh::Execute(m_Mesh, g_pd3dDevice, g_pd3dCommandList);
+        if (m_MeshAmplification)
+            MeshAmplification::Execute(m_MeshAmplification, g_pd3dDevice, g_pd3dCommandList);
+        if (m_MeshAmplificationLines)
+            MeshAmplificationLines::Execute(m_MeshAmplificationLines, g_pd3dDevice, g_pd3dCommandList);
         if (m_NoVertex_NoIndex_NoInstance)
             NoVertex_NoIndex_NoInstance::Execute(m_NoVertex_NoIndex_NoInstance, g_pd3dDevice, g_pd3dCommandList);
         if (m_simpleRaster)
             simpleRaster::Execute(m_simpleRaster, g_pd3dDevice, g_pd3dCommandList);
         if (m_simpleRaster2)
             simpleRaster2::Execute(m_simpleRaster2, g_pd3dDevice, g_pd3dCommandList);
+        if (m_simpleRaster_Lines)
+            simpleRaster_Lines::Execute(m_simpleRaster_Lines, g_pd3dDevice, g_pd3dCommandList);
+        if (m_simpleRaster_Points)
+            simpleRaster_Points::Execute(m_simpleRaster_Points, g_pd3dDevice, g_pd3dCommandList);
         if (m_Stencil)
             Stencil::Execute(m_Stencil, g_pd3dDevice, g_pd3dCommandList);
+        if (m_VRS)
+            VRS::Execute(m_VRS, g_pd3dDevice, g_pd3dCommandList);
         if (m_YesVertexStruct_NoIndex_NoInstance)
             YesVertexStruct_NoIndex_NoInstance::Execute(m_YesVertexStruct_NoIndex_NoInstance, g_pd3dDevice, g_pd3dCommandList);
         if (m_YesVertexStruct_NoIndex_YesInstanceStruct)
@@ -1020,8 +1454,34 @@ int main(int, char**)
             simpleRT_inline::Execute(m_simpleRT_inline, g_pd3dDevice, g_pd3dCommandList);
         if (m_TwoRayGens)
             TwoRayGens::Execute(m_TwoRayGens, g_pd3dDevice, g_pd3dCommandList);
+        if (m_SubGraphLoops)
+            SubGraphLoops::Execute(m_SubGraphLoops, g_pd3dDevice, g_pd3dCommandList);
         if (m_SubGraphTest)
             SubGraphTest::Execute(m_SubGraphTest, g_pd3dDevice, g_pd3dCommandList);
+        if (m_SubInSub)
+            SubInSub::Execute(m_SubInSub, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_CS_2D)
+            Mips_CS_2D::Execute(m_Mips_CS_2D, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_CS_2DArray)
+            Mips_CS_2DArray::Execute(m_Mips_CS_2DArray, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_CS_3D)
+            Mips_CS_3D::Execute(m_Mips_CS_3D, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_CS_Cube)
+            Mips_CS_Cube::Execute(m_Mips_CS_Cube, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_DrawCall)
+            Mips_DrawCall::Execute(m_Mips_DrawCall, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_RGS_2D)
+            Mips_RGS_2D::Execute(m_Mips_RGS_2D, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_ShaderToken_2D)
+            Mips_ShaderToken_2D::Execute(m_Mips_ShaderToken_2D, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_ShaderToken_2DArray)
+            Mips_ShaderToken_2DArray::Execute(m_Mips_ShaderToken_2DArray, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_ShaderToken_3D)
+            Mips_ShaderToken_3D::Execute(m_Mips_ShaderToken_3D, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_ShaderToken_Cube)
+            Mips_ShaderToken_Cube::Execute(m_Mips_ShaderToken_Cube, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Mips_VSPS_2D)
+            Mips_VSPS_2D::Execute(m_Mips_VSPS_2D, g_pd3dDevice, g_pd3dCommandList);
         if (m_Texture2DArrayRW_CS)
             Texture2DArrayRW_CS::Execute(m_Texture2DArrayRW_CS, g_pd3dDevice, g_pd3dCommandList);
         if (m_Texture2DArrayRW_PS)
@@ -1051,20 +1511,24 @@ int main(int, char**)
 
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BarrierTest, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MultipleUVMesh, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ReadbackSequence, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest_FB, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_GPUWrite, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_profiling, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mesh, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplification, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplificationLines, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_NoVertex_NoIndex_NoInstance, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster2, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Lines, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Points, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Stencil, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VRS, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_NoInstance, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceStruct, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceType, UnitTestEvent::PostExecute);
@@ -1076,7 +1540,20 @@ int main(int, char**)
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2D, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2DArray, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_3D, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_Cube, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_DrawCall, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_RGS_2D, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2D, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2DArray, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_3D, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_Cube, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_VSPS_2D, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_CS, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_PS, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_RGS, UnitTestEvent::PostExecute);
@@ -1137,11 +1614,6 @@ int main(int, char**)
         buffertest::DestroyContext(m_buffertest);
         m_buffertest = nullptr;
     }
-    if (m_MultipleUVMesh)
-    {
-        MultipleUVMesh::DestroyContext(m_MultipleUVMesh);
-        m_MultipleUVMesh = nullptr;
-    }
     if (m_StructuredBuffer)
     {
         StructuredBuffer::DestroyContext(m_StructuredBuffer);
@@ -1151,6 +1623,11 @@ int main(int, char**)
     {
         boxblur::DestroyContext(m_boxblur);
         m_boxblur = nullptr;
+    }
+    if (m_IndirectDispatch)
+    {
+        IndirectDispatch::DestroyContext(m_IndirectDispatch);
+        m_IndirectDispatch = nullptr;
     }
     if (m_ReadbackSequence)
     {
@@ -1177,15 +1654,20 @@ int main(int, char**)
         CopyResourceTest_FB::DestroyContext(m_CopyResourceTest_FB);
         m_CopyResourceTest_FB = nullptr;
     }
-    if (m_GPUWrite)
+    if (m_Mesh)
     {
-        GPUWrite::DestroyContext(m_GPUWrite);
-        m_GPUWrite = nullptr;
+        Mesh::DestroyContext(m_Mesh);
+        m_Mesh = nullptr;
     }
-    if (m_profiling)
+    if (m_MeshAmplification)
     {
-        profiling::DestroyContext(m_profiling);
-        m_profiling = nullptr;
+        MeshAmplification::DestroyContext(m_MeshAmplification);
+        m_MeshAmplification = nullptr;
+    }
+    if (m_MeshAmplificationLines)
+    {
+        MeshAmplificationLines::DestroyContext(m_MeshAmplificationLines);
+        m_MeshAmplificationLines = nullptr;
     }
     if (m_NoVertex_NoIndex_NoInstance)
     {
@@ -1202,10 +1684,25 @@ int main(int, char**)
         simpleRaster2::DestroyContext(m_simpleRaster2);
         m_simpleRaster2 = nullptr;
     }
+    if (m_simpleRaster_Lines)
+    {
+        simpleRaster_Lines::DestroyContext(m_simpleRaster_Lines);
+        m_simpleRaster_Lines = nullptr;
+    }
+    if (m_simpleRaster_Points)
+    {
+        simpleRaster_Points::DestroyContext(m_simpleRaster_Points);
+        m_simpleRaster_Points = nullptr;
+    }
     if (m_Stencil)
     {
         Stencil::DestroyContext(m_Stencil);
         m_Stencil = nullptr;
+    }
+    if (m_VRS)
+    {
+        VRS::DestroyContext(m_VRS);
+        m_VRS = nullptr;
     }
     if (m_YesVertexStruct_NoIndex_NoInstance)
     {
@@ -1262,10 +1759,75 @@ int main(int, char**)
         TwoRayGens::DestroyContext(m_TwoRayGens);
         m_TwoRayGens = nullptr;
     }
+    if (m_SubGraphLoops)
+    {
+        SubGraphLoops::DestroyContext(m_SubGraphLoops);
+        m_SubGraphLoops = nullptr;
+    }
     if (m_SubGraphTest)
     {
         SubGraphTest::DestroyContext(m_SubGraphTest);
         m_SubGraphTest = nullptr;
+    }
+    if (m_SubInSub)
+    {
+        SubInSub::DestroyContext(m_SubInSub);
+        m_SubInSub = nullptr;
+    }
+    if (m_Mips_CS_2D)
+    {
+        Mips_CS_2D::DestroyContext(m_Mips_CS_2D);
+        m_Mips_CS_2D = nullptr;
+    }
+    if (m_Mips_CS_2DArray)
+    {
+        Mips_CS_2DArray::DestroyContext(m_Mips_CS_2DArray);
+        m_Mips_CS_2DArray = nullptr;
+    }
+    if (m_Mips_CS_3D)
+    {
+        Mips_CS_3D::DestroyContext(m_Mips_CS_3D);
+        m_Mips_CS_3D = nullptr;
+    }
+    if (m_Mips_CS_Cube)
+    {
+        Mips_CS_Cube::DestroyContext(m_Mips_CS_Cube);
+        m_Mips_CS_Cube = nullptr;
+    }
+    if (m_Mips_DrawCall)
+    {
+        Mips_DrawCall::DestroyContext(m_Mips_DrawCall);
+        m_Mips_DrawCall = nullptr;
+    }
+    if (m_Mips_RGS_2D)
+    {
+        Mips_RGS_2D::DestroyContext(m_Mips_RGS_2D);
+        m_Mips_RGS_2D = nullptr;
+    }
+    if (m_Mips_ShaderToken_2D)
+    {
+        Mips_ShaderToken_2D::DestroyContext(m_Mips_ShaderToken_2D);
+        m_Mips_ShaderToken_2D = nullptr;
+    }
+    if (m_Mips_ShaderToken_2DArray)
+    {
+        Mips_ShaderToken_2DArray::DestroyContext(m_Mips_ShaderToken_2DArray);
+        m_Mips_ShaderToken_2DArray = nullptr;
+    }
+    if (m_Mips_ShaderToken_3D)
+    {
+        Mips_ShaderToken_3D::DestroyContext(m_Mips_ShaderToken_3D);
+        m_Mips_ShaderToken_3D = nullptr;
+    }
+    if (m_Mips_ShaderToken_Cube)
+    {
+        Mips_ShaderToken_Cube::DestroyContext(m_Mips_ShaderToken_Cube);
+        m_Mips_ShaderToken_Cube = nullptr;
+    }
+    if (m_Mips_VSPS_2D)
+    {
+        Mips_VSPS_2D::DestroyContext(m_Mips_VSPS_2D);
+        m_Mips_VSPS_2D = nullptr;
     }
     if (m_Texture2DArrayRW_CS)
     {
@@ -1366,8 +1928,20 @@ bool CreateDeviceD3D(HWND hWnd)
     // [DEBUG] Enable debug interface
 #ifdef DX12_ENABLE_DEBUG_LAYER
     ID3D12Debug* pdx12Debug = nullptr;
+    // Gigi Modification Begin
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pdx12Debug))))
+    {
         pdx12Debug->EnableDebugLayer();
+        #if DX12_GPU_VALIDATION()
+        ID3D12Debug1* pdx12Debug1 = nullptr;
+        if (SUCCEEDED(pdx12Debug->QueryInterface(IID_PPV_ARGS(&pdx12Debug1))))
+        {
+            pdx12Debug1->SetEnableGPUBasedValidation(true);
+            pdx12Debug1->Release();
+        }
+        #endif
+    }
+    // Gigi Modification End
 #endif
 
     // Create device

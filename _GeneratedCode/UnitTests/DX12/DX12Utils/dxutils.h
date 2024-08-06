@@ -4,7 +4,7 @@
 #include <vector>
 #include <cmath>
 #include <unordered_map>
-#include "shadercompiler.h"
+#include "CompileShaders.h"
 #include "logfn.h"
 #include "SRGB.h"
 
@@ -86,10 +86,40 @@ namespace DX12Utils
         std::vector<Buffer*> free;
     };
 
+    struct SubResourceHeapAllocationInfo
+    {
+        ID3D12Resource* resource = nullptr;
+        int arrayIndex = 0;
+        int mipIndex = 0;
+
+        static inline size_t hash_combine(size_t A, size_t B)
+        {
+            return A ^ (0x9e3779b9 + (A << 6) + (A >> 2));
+        }
+
+        size_t operator()(const SubResourceHeapAllocationInfo& key) const
+        {
+            size_t hash0 = std::hash<void*>()(key.resource);
+            size_t hash1 = std::hash<int>()(key.arrayIndex);
+            size_t hash2 = std::hash<int>()(key.mipIndex);
+
+            size_t hash01 = hash_combine(hash0, hash1);
+            return hash_combine(hash01, hash2);
+        }
+
+        bool operator == (const SubResourceHeapAllocationInfo& other) const
+        {
+            return
+                resource == other.resource &&
+                arrayIndex == other.arrayIndex &&
+                mipIndex == other.mipIndex;
+        }
+    };
+
     bool CreateHeap(Heap& heap, ID3D12Device* device, int numDescriptors, D3D12_DESCRIPTOR_HEAP_TYPE type, D3D12_DESCRIPTOR_HEAP_FLAGS flags, TLogFn logFn);
     void DestroyHeap(Heap& heap);
 
-    ID3D12Resource* CreateTexture(ID3D12Device* device, const unsigned int size[3], DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, LPCWSTR debugName, TLogFn logFn);
+    ID3D12Resource* CreateTexture(ID3D12Device* device, const unsigned int size[3], unsigned int numMips, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, LPCWSTR debugName, TLogFn logFn);
     ID3D12Resource* CreateBuffer(ID3D12Device* device, unsigned int size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, D3D12_HEAP_TYPE heapType, LPCWSTR debugName, TLogFn logFn);
 
     bool CopyConstantsCPUToGPU(UploadBufferTracker& tracker, ID3D12Device* device, ID3D12GraphicsCommandList* commandList,ID3D12Resource* resource, void* data, size_t dataSize, TLogFn logFn);
@@ -112,18 +142,26 @@ namespace DX12Utils
 
     struct ResourceDescriptor
     {
-        ID3D12Resource* m_res;
-        DXGI_FORMAT m_format;
-        AccessType m_access;
-        ResourceType m_resourceType;
-        bool m_raw;
+        ID3D12Resource* m_res = nullptr;
+        DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;
+        AccessType m_access = AccessType::SRV;
+        ResourceType m_resourceType = ResourceType::Texture2D;
+        bool m_raw = false;
 
         // used by buffers, constant buffers, texture2darrays and texture3ds
-        UINT m_stride;
+        UINT m_stride = 0;
 
         // used by buffers
-        UINT m_count;
+        UINT m_count = 0;
+
+        // Used by textures
+        UINT m_UAVMipIndex = 0;
     };
+
+    inline constexpr UINT D3D12CalcSubresource(UINT MipSlice, UINT ArraySlice, UINT PlaneSlice, UINT MipLevels, UINT ArraySize) noexcept
+    {
+        return MipSlice + ArraySlice * MipLevels + PlaneSlice * MipLevels * ArraySize;
+    }
 
     D3D12_GPU_DESCRIPTOR_HANDLE GetDescriptorTable(ID3D12Device* device, Heap& srvHeap, const ResourceDescriptor* descriptors, size_t count, TLogFn logFn);
 
@@ -163,6 +201,55 @@ namespace DX12Utils
 		    default: return format;
 	    }
     }
+
+	// https://learn.microsoft.com/en-us/windows/win32/direct3d12/typed-unordered-access-view-loads
+	inline bool FormatSupportedForUAV(ID3D12Device* device, DXGI_FORMAT format)
+	{
+		switch (format)
+		{
+			case DXGI_FORMAT_UNKNOWN:
+			case DXGI_FORMAT_R32_FLOAT:
+			case DXGI_FORMAT_R32_UINT:
+			case DXGI_FORMAT_R32_SINT:
+			case DXGI_FORMAT_R32_TYPELESS:
+				return true;
+		}
+
+		D3D12_FEATURE_DATA_D3D12_OPTIONS FeatureData;
+		ZeroMemory(&FeatureData, sizeof(FeatureData));
+		HRESULT hr = device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &FeatureData, sizeof(FeatureData));
+		if (FAILED(hr) || !FeatureData.TypedUAVLoadAdditionalFormats)
+			return false;
+
+		switch (format)
+		{
+			case DXGI_FORMAT_R32G32B32A32_FLOAT:
+			case DXGI_FORMAT_R32G32B32A32_UINT:
+			case DXGI_FORMAT_R32G32B32A32_SINT:
+			case DXGI_FORMAT_R32G32B32A32_TYPELESS:
+			case DXGI_FORMAT_R16G16B16A16_FLOAT:
+			case DXGI_FORMAT_R16G16B16A16_UINT:
+			case DXGI_FORMAT_R16G16B16A16_SINT:
+			case DXGI_FORMAT_R16G16B16A16_TYPELESS:
+			case DXGI_FORMAT_R8G8B8A8_UNORM:
+			case DXGI_FORMAT_R8G8B8A8_UINT:
+			case DXGI_FORMAT_R8G8B8A8_SINT:
+			case DXGI_FORMAT_R8G8B8A8_TYPELESS:
+			case DXGI_FORMAT_R16_FLOAT:
+			case DXGI_FORMAT_R16_UINT:
+			case DXGI_FORMAT_R16_SINT:
+			case DXGI_FORMAT_R16_TYPELESS:
+			case DXGI_FORMAT_R8_UNORM:
+			case DXGI_FORMAT_R8_UINT:
+			case DXGI_FORMAT_R8_SINT:
+			case DXGI_FORMAT_R8_TYPELESS:
+				return true;
+		}
+
+		D3D12_FEATURE_DATA_FORMAT_SUPPORT FormatSupport = { format, D3D12_FORMAT_SUPPORT1_NONE, D3D12_FORMAT_SUPPORT2_NONE };
+		hr = device->CheckFeatureSupport(D3D12_FEATURE_FORMAT_SUPPORT, &FormatSupport, sizeof(FormatSupport));
+		return (SUCCEEDED(hr) && (FormatSupport.Support2 & D3D12_FORMAT_SUPPORT2_UAV_TYPED_LOAD) != 0);
+	}
 
     struct DXGI_FORMAT_Info
     {
@@ -258,6 +345,8 @@ namespace DX12Utils
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_FLOAT, uint16_t, 1, false, false, false, 0, 1);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_FLOAT, uint16_t, 2, false, false, false, 0, 1);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_FLOAT, uint16_t, 4, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_UNORM, uint16_t, 4, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_SNORM, int16_t, 4, false, false, false, 0, 1);
 
 		    // 32 bit float
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_FLOAT, float, 1, false, false, false, 0, 1);
@@ -294,5 +383,12 @@ namespace DX12Utils
 
     // The caller is responsible for freeing scratch and instanceDescs when they are no longer in used by an in flight command list.
     bool CreateTLAS(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* vertexBuffer, int vertexBufferCount, bool isAABBs, D3D12_RAYTRACING_GEOMETRY_FLAGS geometryFlags, D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS buildFlags, DXGI_FORMAT vertexPositionFormat, unsigned int vertexPositionOffset, unsigned int vertexPositionStride, ID3D12Resource*& blas, unsigned int& blasSize, ID3D12Resource*& tlas, unsigned int& tlasSize, ID3D12Resource*& scratch, ID3D12Resource*& instanceDescs, TLogFn logFn);
+
+    bool CreateRTV(ID3D12Device* device, ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, DXGI_FORMAT format, D3D12_RTV_DIMENSION dimension, int arrayIndex, int mipIndex);
+    bool CreateDSV(ID3D12Device* device, ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, DXGI_FORMAT format, D3D12_DSV_DIMENSION dimension, int arrayIndex, int mipIndex);
+
+    void MakeMip(const std::vector<unsigned char>& src, std::vector<unsigned char>& dest, const DXGI_FORMAT_Info& formatInfo, D3D12_RESOURCE_DIMENSION dimension, const int srcDims[3]);
+
+    void UploadTextureToGPUAndMakeMips(ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::UploadBufferTracker& uploadBufferTracker, ID3D12Resource* destResource, const std::vector<unsigned char>& pixels, const unsigned int size[3], unsigned int numMips, D3D12_RESOURCE_STATES state, D3D12_RESOURCE_STATES stateAfter, TLogFn logFn);
 
 } // namespace DX12Utils
