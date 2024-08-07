@@ -976,6 +976,7 @@ namespace Texture2DRW_CS
                 m_internal.texture__loadedTexture_0_size[1] = size[1];
                 m_internal.texture__loadedTexture_0_size[2] = size[2];
                 m_internal.texture__loadedTexture_0_numMips = desiredNumMips;
+                m_internal.texture__loadedTexture_0_format = DXGI_FORMAT_R8G8B8A8_UNORM;
                 m_internal.texture__loadedTexture_0 = DX12Utils::CreateTexture(device, size, desiredNumMips, DXGI_FORMAT_R8G8B8A8_UNORM, m_internal.texture__loadedTexture_0_flags, D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::Texture2D, (c_debugNames ? L"_loadedTexture_0" : nullptr), Context::LogFn);
 
 

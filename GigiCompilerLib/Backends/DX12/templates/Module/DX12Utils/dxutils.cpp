@@ -1139,7 +1139,7 @@ namespace DX12Utils
                 // Make an upload buffer
                 int unalignedPitch = mipSize[0] * formatInfo.bytesPerPixel;
                 int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
-                UploadBufferTracker::Buffer* uploadBuffer = uploadBufferTracker.GetBuffer(device, alignedPitch * iyCount * izCount, false);
+                UploadBufferTracker::Buffer* uploadBuffer = uploadBufferTracker.GetBuffer(device, alignedPitch * iyCount * izCount, logFn, false);
 
                 // write the pixels into the upload buffer
                 {

@@ -144,16 +144,16 @@
                 float alpha = 0.0f;
                 switch(index)
                 {
-                    case 0: alpha = /*$(Image:0.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 1: alpha = /*$(Image:1.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 2: alpha = /*$(Image:2.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 3: alpha = /*$(Image:3.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 4: alpha = /*$(Image:4.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 5: alpha = /*$(Image:5.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 6: alpha = /*$(Image:6.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 7: alpha = /*$(Image:7.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 8: alpha = /*$(Image:8.png:R8_Unorm:float:false)*/[relPos]; break;
-                    case 9: alpha = /*$(Image:9.png:R8_Unorm:float:false)*/[relPos]; break;
+                    case 0: alpha = /*$(Image:0.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 1: alpha = /*$(Image:1.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 2: alpha = /*$(Image:2.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 3: alpha = /*$(Image:3.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 4: alpha = /*$(Image:4.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 5: alpha = /*$(Image:5.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 6: alpha = /*$(Image:6.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 7: alpha = /*$(Image:7.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 8: alpha = /*$(Image:8.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
+                    case 9: alpha = /*$(Image:9.png:RGBA8_Unorm_sRGB:float:true)*/[relPos].r; break;
                 }
 
                 if (alpha > 0.0f)
@@ -173,7 +173,7 @@
 
         if (relPos.x >= 0 && relPos.y >= 0 && relPos.x < c_instructionsSize.x && relPos.y < c_instructionsSize.y)
         {
-            PresentationCanvas[DTid.xy] = float4(/*$(Image:instructions.png:R8_Unorm:float:true)*/[relPos.xy].rrr, 1.0f);
+            PresentationCanvas[DTid.xy] = float4(/*$(Image:instructions.png:RGBA8_Unorm_sRGB:float:true)*/[relPos.xy].rrr, 1.0f);
             return;
         }
 

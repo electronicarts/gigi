@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "mnist",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "Clear",
@@ -148,6 +148,9 @@
                     "name": "Canvas",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -159,7 +162,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "DrawExtents"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -173,6 +177,9 @@
                     "name": "Canvas",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -184,13 +191,17 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "DrawExtents"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
                     "name": "NNInput",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -199,6 +210,9 @@
                     "name": "ImportedImage",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -224,6 +238,9 @@
                     "name": "NNInput",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -233,7 +250,8 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -241,7 +259,8 @@
                     "type": "Buffer",
                     "access": "UAV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -266,7 +285,8 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -274,7 +294,8 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -282,7 +303,8 @@
                     "type": "Buffer",
                     "access": "UAV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -296,6 +318,9 @@
                     "name": "DrawCanvas",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -304,6 +329,9 @@
                     "name": "NNInput",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -313,7 +341,8 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -321,7 +350,8 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     },
                     "texture": {
                         "viewType": "Float"
@@ -330,7 +360,10 @@
                 {
                     "name": "PresentationCanvas",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
@@ -343,6 +376,9 @@
                     "name": "Canvas",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "viewType": "Float"
                     }
@@ -354,7 +390,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "DrawExtents"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]

@@ -250,6 +250,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[1] = size[1];"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_size[2] = size[2];"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_numMips = desiredNumMips;"
+                "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_format = " << TextureFormatToDXGIFormat(node.format.format) << ";"
                 "\n                " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << " = DX12Utils::CreateTexture(device, size, desiredNumMips, " << TextureFormatToDXGIFormat(node.format.format) << ", " << GetResourceNodePathInContext(node.visibility) << "texture_" << node.name << "_flags"
                 ", D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::" << EnumToString(node.dimension) << ", (c_debugNames ? L\"" << (node.name) << "\" : nullptr), Context::LogFn);"
                 "\n"

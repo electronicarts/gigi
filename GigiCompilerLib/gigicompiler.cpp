@@ -187,10 +187,8 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
         return GigiCompileResult::NoBackend;
     }
 
-    if (outputDir.empty())
-        ShowInfoMessage("Building %s as %s", jsonFile.c_str(), EnumToString(buildFlavor));
-    else
-        ShowInfoMessage("Building %s as %s, to %s...", jsonFile.c_str(), EnumToString(buildFlavor), outputDir.c_str());
+    std::filesystem::path absoluteOutputDir = std::filesystem::weakly_canonical(std::filesystem::path("./")) / std::filesystem::path(outputDir);
+    ShowInfoMessage("Building %s as %s, to %s...", jsonFile.c_str(), EnumToString(buildFlavor), absoluteOutputDir.string().c_str());
 
     // Load the render graph
     RenderGraph renderGraph_;
@@ -331,7 +329,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     //WriteToJSONFile(renderGraph, "Optimized.gg");
 
     // Run the backend code
-    renderGraph.outputDirectory = outputDir;
+    renderGraph.outputDirectory = absoluteOutputDir.string();
     switch (renderGraph.backend)
     {
         // clang-format off
