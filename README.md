@@ -24,7 +24,7 @@ Currently, only dx12 code generation is available in this public version of Gigi
 
 Cloning this repo and then building gigi.sln is all that is needed to build Gigi Editor, Viewer and Compiler.
 
-To use prebuilt binaries, go to the releases tab https://github.com/electronicarts/gigi/releases/.  You can either download the .zip file, and extract that to the location of your choice, or you can download and run the installer exe 
+To use prebuilt binaries, go to the releases tab https://github.com/electronicarts/gigi/releases/.  You can either download the .zip file, and extract that to the location of your choice, or you can download and run the installer exe.
 
 There will be three executables in the root folder:
 

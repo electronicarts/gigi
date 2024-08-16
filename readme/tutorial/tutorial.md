@@ -12,7 +12,7 @@ The source code and binaries for Gigi are available at https://github.com/electr
 
 To build from source, clone the repo and build gigi.sln in visual studio.  I use vs2022, but vs2019 worked as well, last I tried.
 
-To use prebuilt binaries, go to the releases tab https://github.com/electronicarts/gigi/releases/.  You can either download the .zip file, and extract that to the location of your choice, or you can download and run the installer exe 
+To use prebuilt binaries, go to the releases tab https://github.com/electronicarts/gigi/releases/.  You can either download the .zip file, and extract that to the location of your choice, or you can download and run the installer exe.
 
 ![](releases.png)
 
