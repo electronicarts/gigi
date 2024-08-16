@@ -34,6 +34,8 @@ You can then run the appropriate solution, which makes an executable of the same
 
 TODO: link to tutorial video when recorded and uploaded
 
+[Box Blur Post FX Tutorial (Text)](readme/tutorial/tutorial.md)
+
 [Discord: Gigi Rapid Graphics Development](https://discord.gg/HPzqAw2H3k)
 
 The **Techniques/** folder of the repo contains some examples to help get you started.  The **Techniques/UnitTests/** folder contains the unit tests, which aims to exercise every possible piece of functionality.
