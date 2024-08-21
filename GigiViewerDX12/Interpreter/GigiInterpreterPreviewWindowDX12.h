@@ -233,7 +233,7 @@ public:
 		}
 	}
 
-	void ShowUI(bool minimalUI);
+	void ShowUI(bool minimalUI, bool paused);
 
 	void OnPreCompile() override final
 	{

@@ -22,7 +22,7 @@ static void ShowToolTip(const char* tooltip)
 		ImGui::SetTooltip("%s", tooltip);
 }
 
-static void ShowUI_Int(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Int(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.enumIndex != -1)
 	{
@@ -71,7 +71,7 @@ static void ShowUI_Int(const RenderGraph& renderGraph, const Variable& variable,
 	}
 }
 
-static void ShowUI_Int2(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Int2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
@@ -107,7 +107,7 @@ static void ShowUI_Int2(const RenderGraph& renderGraph, const Variable& variable
 		ImGui::InputInt2(variable.originalName.c_str(), (int*)storage);
 }
 
-static void ShowUI_Int3(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Int3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
@@ -143,7 +143,7 @@ static void ShowUI_Int3(const RenderGraph& renderGraph, const Variable& variable
 		ImGui::InputInt3(variable.originalName.c_str(), (int*)storage);
 }
 
-static void ShowUI_Int4(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Int4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
@@ -179,7 +179,7 @@ static void ShowUI_Int4(const RenderGraph& renderGraph, const Variable& variable
 		ImGui::InputInt4(variable.originalName.c_str(), (int*)storage);
 }
 
-static void ShowUI_Uint(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Uint(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0] };
@@ -220,7 +220,7 @@ static void ShowUI_Uint(const RenderGraph& renderGraph, const Variable& variable
 	v2[0] = v[0];
 }
 
-static void ShowUI_Uint2(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Uint2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0], (int)v2[1] };
@@ -262,7 +262,7 @@ static void ShowUI_Uint2(const RenderGraph& renderGraph, const Variable& variabl
 	v2[1] = v[1];
 }
 
-static void ShowUI_Uint3(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Uint3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0], (int)v2[1], (int)v2[2] };
@@ -305,7 +305,7 @@ static void ShowUI_Uint3(const RenderGraph& renderGraph, const Variable& variabl
 	v2[2] = v[2];
 }
 
-static void ShowUI_Uint4(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Uint4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0], (int)v2[1], (int)v2[2], (int)v2[3] };
@@ -349,7 +349,7 @@ static void ShowUI_Uint4(const RenderGraph& renderGraph, const Variable& variabl
 	v2[3] = v[3];
 }
 
-static void ShowUI_Float(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Float(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Angle)
 	{
@@ -391,7 +391,7 @@ static void ShowUI_Float(const RenderGraph& renderGraph, const Variable& variabl
 	}
 }
 
-static void ShowUI_Float2(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Float2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
@@ -429,7 +429,7 @@ static void ShowUI_Float2(const RenderGraph& renderGraph, const Variable& variab
 	}
 }
 
-static void ShowUI_Float3(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Float3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Color)
 		ImGui::ColorEdit3(variable.originalName.c_str(), (float*)storage);
@@ -469,7 +469,7 @@ static void ShowUI_Float3(const RenderGraph& renderGraph, const Variable& variab
 	}
 }
 
-static void ShowUI_Float4(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Float4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	if (variable.UISettings.UIHint == VariableUIHint::Color)
 		ImGui::ColorEdit4(variable.originalName.c_str(), (float*)storage, ImGuiColorEditFlags_AlphaPreview);
@@ -509,15 +509,15 @@ static void ShowUI_Float4(const RenderGraph& renderGraph, const Variable& variab
 	}
 }
 
-static void ShowUI_Bool(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Bool(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
-	if (variable.UISettings.UIHint == VariableUIHint::Button)
+	if (!paused && variable.UISettings.UIHint == VariableUIHint::Button)
 		*(bool*)storage = ImGui::Button(variable.originalName.c_str());
 	else
 		ImGui_Checkbox(variable.originalName.c_str(), (bool*)storage);
 }
 
-static void ShowUI_Float4x4(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Float4x4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	ImGui::Text(variable.originalName.c_str());
 	ImGui::InputFloat4("row 0", (float*)storage + 0);
@@ -526,7 +526,7 @@ static void ShowUI_Float4x4(const RenderGraph& renderGraph, const Variable& vari
 	ImGui::InputFloat4("row 3", (float*)storage + 12);
 }
 
-static void ShowUI_Uint_16(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	uint16_t* v2  = (uint16_t*)storage;
 	int		  v[] = { (int)v2[0] };
@@ -567,12 +567,12 @@ static void ShowUI_Uint_16(const RenderGraph& renderGraph, const Variable& varia
 	v2[0] = v[0];
 }
 
-static void ShowUI_Count(const RenderGraph& renderGraph, const Variable& variable, void* storage)
+static void ShowUI_Count(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	// No-op. Shouldn't ever happen
 }
 
-void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI)
+void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 {
 	// Minimal UI only shows public variables.
 	// If there are none, and this is minimalUI, exit early so there's no variables window.
@@ -702,7 +702,7 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI)
 					{
 #include "external/df_serialize/_common.h"
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
-	case DataFieldType::_NAME: ShowUI_##_NAME(m_renderGraph, *variable.variable, variable.storage.value); break;
+	case DataFieldType::_NAME: ShowUI_##_NAME(m_renderGraph, paused, *variable.variable, variable.storage.value); break;
 						// clang-format off
 #include "external/df_serialize/_fillunsetdefines.h"
 #include "Schemas/DataFieldTypes.h"

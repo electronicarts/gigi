@@ -403,6 +403,7 @@ GigiInterpreterPreviewWindowDX12 g_interpreter;
 int g_executeTechniqueCount = 0;
 int g_executeTechniqueCountRemain = 0;
 bool g_executeTechnique = true;
+bool g_techniquePaused = false;
 
 std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
@@ -1152,8 +1153,11 @@ void HandleMainMenu()
             }
             else
             {
-                if (ImGui::Button(g_executeTechnique ? "Pause" : "Play"))
-                    g_executeTechnique = !g_executeTechnique;
+                if (ImGui::Button(g_techniquePaused ? "Play" : "Pause"))
+                {
+                    g_techniquePaused = !g_techniquePaused;
+                    g_executeTechnique = !g_techniquePaused;
+                }
             }
 
             ImGui::SetNextItemWidth(50);
@@ -3235,6 +3239,21 @@ void ShowImGuiWindows()
                 ImGui::EndTable();
             }
         }
+        if (ImGui::Button("Copy"))
+        {
+            std::ostringstream text;
+            for (size_t i = 0; i < runtimeData.materials.size(); ++i)
+            {
+                const auto& materialInfo = runtimeData.materials[i];
+                text << i << " " << materialInfo.name;
+                if (!materialInfo.used)
+                    text << " (unused)";
+                text << "\n";
+
+            }
+            std::string textStr = text.str();
+            SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
+        }
         //if (ImGui::Button("OK"))
             //ImGui::CloseCurrentPopup();
 
@@ -4670,6 +4689,39 @@ void ShowStructuredBuffer(const RenderGraph& renderGraph, unsigned char* bytes, 
     }
 }
 
+std::vector<unsigned char> DecodeBc7(unsigned char* pixels, int width, int height)
+{
+    // Calculate how many blocks there are
+    int numBlocksX = (width + 3) / 4;
+    int numBlocksY = (height + 3) / 4;
+    int numBlocks = numBlocksX * numBlocksY;
+
+    std::vector<unsigned char> decodedPixels(width * height * 4, 0);
+    std::vector<unsigned char> decodedBlock(64);
+
+    for (int i = 0; i < numBlocks; ++i)
+    {
+        bc7decomp::unpack_bc7(&pixels[i * 16], (bc7decomp::color_rgba*)decodedBlock.data());
+
+        int blockX = i % numBlocksX;
+        int blockY = i / numBlocksX;
+
+        int outY = blockY * 4;
+        int outX = blockX * 4;
+
+        unsigned char* dest = &decodedPixels[(outY * width + outX) * 4];
+        unsigned char* src = decodedBlock.data();
+        for (int iy = 0; iy < 4; ++iy)
+        {
+            memcpy(dest, src, 16);
+            src += 16;
+            dest += width * 4;
+        }
+    }
+
+    return decodedPixels;
+}
+
 void SaveAsPng(const char* fileName, ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z, bool forceRGBA)
 {
     // TODO: bc7 treatment
@@ -4683,34 +4735,7 @@ void SaveAsPng(const char* fileName, ID3D12Resource* readbackResource, const DXG
 
     if (formatInfo.isCompressed)
     {
-        // Calculate how many blocks there are
-        int numBlocksX = (width + 3) / 4;
-        int numBlocksY = (height + 3) / 4;
-        int numBlocks = numBlocksX * numBlocksY;
-
-        std::vector<unsigned char> decodedPixels(width * height * 4, 0);
-        std::vector<unsigned char> decodedBlock(64);
-
-        for (int i = 0; i < numBlocks; ++i)
-        {
-            bc7decomp::unpack_bc7(&pixels[i * 16], (bc7decomp::color_rgba*)decodedBlock.data());
-
-            int blockX = i % numBlocksX;
-            int blockY = i / numBlocksX;
-
-            int outY = blockY * 4;
-            int outX = blockX * 4;
-
-            unsigned char* dest = &decodedPixels[(outY * width + outX) * 4];
-            unsigned char* src = decodedBlock.data();
-            for (int iy = 0; iy < 4; ++iy)
-            {
-                memcpy(dest, src, 16);
-                src += 16;
-                dest += width * 4;
-            }
-        }
-
+        std::vector<unsigned char> decodedPixels = DecodeBc7(pixels, width, height);
         stbi_write_png(p.string().c_str(), width, height, 4, decodedPixels.data(), 0);
     }
     else
@@ -4724,11 +4749,14 @@ void SaveAsPng(const char* fileName, ID3D12Resource* readbackResource, const DXG
             for (int i = 0; i < width * height; ++i)
                 paddedPixels[i * 4 + 3] = 255;
 
-            for (int i = 0; i < width * height; ++i)
+            for (int y = 0; y < height; ++y)
             {
-                unsigned char* dest = &paddedPixels[i * 4];
-                const unsigned char* src = &pixels[z * height * alignedPitch + i * formatInfo.channelCount];
-                memcpy(dest, src, formatInfo.channelCount);
+                for (int x = 0; x < width; ++x)
+                {
+                    unsigned char* dest = &paddedPixels[(x + y * width) * 4];
+                    const unsigned char* src = &pixels[z * height * alignedPitch + y * alignedPitch + x * formatInfo.channelCount];
+                    memcpy(dest, src, formatInfo.channelCount);
+                }
             }
 
             stbi_write_png(p.string().c_str(), width, height, 4, paddedPixels.data(), 0);
@@ -4767,33 +4795,7 @@ void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, cons
     std::vector<unsigned char> decodedPixels(width * height * 4, 0);
     if (formatInfo.isCompressed)
     {
-        // Calculate how many blocks there are
-        int numBlocksX = (width + 3) / 4;
-        int numBlocksY = (height + 3) / 4;
-        int numBlocks = numBlocksX * numBlocksY;
-
-        // decode the pixels
-        std::vector<unsigned char> decodedBlock(64);
-        for (int i = 0; i < numBlocks; ++i)
-        {
-            bc7decomp::unpack_bc7(&pixels[i * 16], (bc7decomp::color_rgba*)decodedBlock.data());
-
-            int blockX = i % numBlocksX;
-            int blockY = i / numBlocksX;
-
-            int outY = blockY * 4;
-            int outX = blockX * 4;
-
-            unsigned char* dest = &decodedPixels[(outY * width + outX) * 4];
-            unsigned char* src = decodedBlock.data();
-            for (int iy = 0; iy < 4; ++iy)
-            {
-                memcpy(dest, src, 16);
-                src += 16;
-                dest += width * 4;
-            }
-        }
-
+        std::vector<unsigned char> decodedPixels = DecodeBc7(pixels, width, height);
         pixels = decodedPixels.data();
     }
     else
@@ -4832,6 +4834,94 @@ void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, cons
     }
 
     fclose(file);
+
+    D3D12_RANGE writeRange;
+    writeRange.Begin = 1;
+    writeRange.End = 0;
+    readbackResource->Unmap(0, &writeRange);
+}
+
+void CopyImageToClipBoard(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z)
+{
+    unsigned char* pixels = nullptr;
+    readbackResource->Map(0, nullptr, (void**)&pixels);
+
+    constexpr uint32_t kBytesPerPixel = 4;
+    constexpr WORD kBitsPerPixel = 8 * kBytesPerPixel;
+    BITMAPV5HEADER header = {
+        .bV5Size = sizeof(header),
+        .bV5Width = width,
+        .bV5Height = height,
+        .bV5Planes = 1,
+        .bV5BitCount = kBitsPerPixel,
+        .bV5Compression = BI_BITFIELDS,
+        .bV5RedMask = 0x000000ff,
+        .bV5GreenMask = 0x0000ff00,
+        .bV5BlueMask = 0x00ff0000,
+        .bV5AlphaMask = 0xff000000,
+        .bV5CSType = LCS_WINDOWS_COLOR_SPACE,
+    };
+
+    HGLOBAL hglob = GlobalAlloc(GMEM_MOVEABLE, sizeof(header) + width * height * 4);
+    if (hglob)
+    {
+        void* buffer = GlobalLock(hglob);
+        if (buffer)
+        {
+            CopyMemory(buffer, &header, sizeof(header));
+
+            if (formatInfo.isCompressed)
+            {
+                std::vector<unsigned char> decodedPixels = DecodeBc7(pixels, width, height);
+                for (int i = 0; i < height; i++) {
+                    CopyMemory((unsigned char*)buffer + sizeof(header) + i * width * kBytesPerPixel, decodedPixels.data() + (height - 1 - i) * width * kBytesPerPixel, width * kBytesPerPixel);
+                }
+            }
+            else
+            {
+                int unalignedPitch = width * formatInfo.bytesPerPixel;
+                int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
+
+                if (formatInfo.channelCount == 4)
+                {
+                    for (int y = 0; y < height; ++y)
+                    {
+                        CopyMemory((unsigned char*)buffer + sizeof(header) + (height - 1 - y) * width * formatInfo.bytesPerPixel, &pixels[z * height * alignedPitch + y * alignedPitch], unalignedPitch);
+                    }
+                }
+                else
+                {
+                    for (int y = 0; y < height; ++y)
+                    {
+                        for (int x = 0; x < width; ++x)
+                        {
+                            unsigned char values[4] = {};
+                            values[3] = 255;
+                            memcpy(values, &pixels[z * height * alignedPitch + y * alignedPitch + x * formatInfo.channelCount], formatInfo.channelCount);
+                            CopyMemory((unsigned char*)buffer + sizeof(header) + (height - 1 - y) * width * kBytesPerPixel + x * kBytesPerPixel, values, kBytesPerPixel);
+                        }
+                    }
+                }
+            }
+
+            GlobalUnlock(hglob);
+        }
+        else
+        {
+            GlobalFree(hglob);
+        }
+
+        if (OpenClipboard(g_hwnd))
+        {
+            EmptyClipboard();
+            SetClipboardData(CF_DIBV5, hglob);
+            CloseClipboard();
+        }
+        else
+        {
+            GlobalFree(hglob);
+        }
+    }
 
     D3D12_RANGE writeRange;
     writeRange.Begin = 1;
@@ -5209,6 +5299,12 @@ void ShowResourceView()
 
                                 static bool forceRGBA = false;
                                 static bool saveAllVertically = false;
+
+                                ImGui::SameLine();
+                                if (ImGui::Button("Copy Image To ClipBoard"))
+                                {
+                                    CopyImageToClipBoard(res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
+                                }
 
                                 ImGui::SameLine();
                                 if (ImGui::Button("Save as ...") && NFD_SaveDialog("png;csv", "", &outPath) == NFD_OKAY)
@@ -6866,7 +6962,7 @@ void RenderFrame(bool forceExecute)
     ShowRenderGraphWindow();
     ShowResourceView();
 
-    g_interpreter.ShowUI(g_hideUI);
+    g_interpreter.ShowUI(g_hideUI, g_techniquePaused);
 
     ShowLog();
 
