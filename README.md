@@ -78,6 +78,9 @@ Tristan Calderbank
 
 # Contributing
 
+Before you can contribute, EA must have a Contributor License Agreement (CLA) on file that has been signed by each contributor.
+You can sign here: http://bit.ly/electronic-arts-cla
+
 Any contribution - large or small - is much appreciated and earns you a spot on the contributors list. Just add your name to the list (alpha sorted) as part of your pull request!
 
 As far as coding standards, we need to write them up and automate them as much as we can, but for now, try to make your code look like other code.
