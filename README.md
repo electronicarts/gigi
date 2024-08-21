@@ -34,9 +34,9 @@ There will be three executables in the root folder:
 
 # Learning & Support
 
-TODO: link to tutorial video when recorded and uploaded
-
-[Box Blur Post FX Tutorial (Text)](readme/tutorial/tutorial.md)
+Introductory Gigi Tutorial: Make a box blur post processing effect.
+* [Text Version](readme/tutorial/tutorial.md)
+* [25 minute Video](https://www.youtube.com/watch?v=qknK-tahICE)
 
 [Discord: Gigi Rapid Graphics Development](https://discord.gg/HPzqAw2H3k)
 
