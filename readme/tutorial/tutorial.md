@@ -10,7 +10,7 @@ Note: Gigi is currently windows only.  The editor and compiler would port to oth
 
 The source code and binaries for Gigi are available at https://github.com/electronicarts/gigi.
 
-To build from source, clone the repo and build gigi.sln in visual studio.  I use vs2022, but vs2019 worked as well, last I tried.
+To build from source, clone the repo and build gigi.sln in visual studio.  Make sure and build the whole solution (all projects). I use vs2022, but vs2019 worked as well, last I tried.
 
 To use prebuilt binaries, go to the releases tab https://github.com/electronicarts/gigi/releases/.  You can either download the .zip file, and extract that to the location of your choice, or you can download and run the installer exe.
 
@@ -25,7 +25,7 @@ After downloading or building Gigi there are three executables in the root direc
 
 <img align="right" src="builtin.png"/>
 
-Gigi comes with several built in techniques inside of the **Techniques/** folder that you can load from the viewer.  Within the **Techniques/UnitTests/** folder are Gigi techniques meant to exercise every piece of functionality Gigi has to offer.  They are a nice place to find examples of how to do things.
+Gigi comes with several built-in techniques inside of the **Techniques/** folder that you can load from the viewer.  Within the **Techniques/UnitTests/** folder are Gigi techniques meant to exercise every piece of functionality Gigi has to offer.  They are a nice place to find examples of how to do things.
 
 The **Techniques/ShaderToy/** folder contains a few shadertoys I made in years past and ported to Gigi.  They include a stylized path tracer you can fly around in, a playable mine sweeper game, and a playable 2d verlet physics car game.  These were made using Gigi, so there is no C++ or scripting languages involved - just nodes in a node graph, and hlsl shader files.
 
@@ -43,9 +43,9 @@ There is also a machine learning demo (real time inference) at **Techniques/mach
 
 Run GigiEditor.exe to launch the editor and save the technique in the **Techniques/** folder as **BoxBlur.gg**.
 
-The editor controls in the central grid render  graph area are:
+The editor controls in the central grid render graph area are:
 * Drag right mouse button to pan camera.
-* Mouse wheeel to zoom in and out
+* Mouse wheel to zoom in and out
 * Press "F" to focus on the selection, or the entire graph if nothing selected.
 
 We are going to make a technique which takes in an input texture, blurs it, and gives the result as an output texture.  First we'll make the textures.
@@ -90,9 +90,9 @@ Click the edit button to open the shader file in your default shader editor. For
 
 In the skeleton shader file that Gigi made for you, you'll notice a couple strange looking tokens.  Before sending your shader to the shader compiler, Gigi processes the shader file for string replacement.
 
-* **/\*$(ShaderResources)\*/** - This is where Gigi will put the declarations of accessed resources (SRVs, UAVs, CBVs) that you declared in the resources section of the shader. The reason Gigi inserts these instead of getting them from the shader by reflection is because different target APIs or engines want resources declared in different ways.  When Gigi inserts them, it's able to generate shader files that work on those platforms.
+* `/*$(ShaderResources)*/` - This is where Gigi will put the declarations of accessed resources (SRVs, UAVs, CBVs) that you declared in the resources section of the shader. The reason Gigi inserts these instead of getting them from the shader by reflection is because different target APIs or engines want resources declared in different ways.  When Gigi inserts them, it's able to generate shader files that work on those platforms.
 
-* **/\*$(_compute:csmain)\*/** - This declares a compute shader entry point named "csmain". Gigi will write out the numthreads declaration and such when doing the string replacement processing.
+* `/*$(_compute:csmain)*/` - This declares a compute shader entry point named "csmain". Gigi will write out the numthreads declaration and such when doing the string replacement processing.
 
 Next we write the shader, which loops through a 3x3 area for each input pixel, sums up the color, and the count (as weight), divides the color by the weight to make it the average color, and finally writes that averaged color to the output. Enter the code below, save, and go back to the editor.
 
@@ -130,6 +130,8 @@ Now that we have our shader written, we need to create a compute shader action n
 2. In the "Shader" drop down, choose our new shader "DoBlurCS". After this, our resources "input" and "output" will appear as pins.
 3. Under the "Dispatch Size" section, set the "Node" drop down to "Input" which means the dispatch will be the size of the "Input" texture.  That will be divided by the "Num Threads" setting on the shader, and rounded up, like you'd expect.
 4. Connect the textures to the compute shader.
+
+Save the project.
 
 ![](CreatedCSNode.png)
 
@@ -214,7 +216,7 @@ To add a blur radius parameter to our technique, we are going to go back to the 
 
 The visibility setting of a variable defines who or what can read and write the value.  "Internal" means only the technique can read or write the variable.  "Host" means that the host application running the technique can also modify the variable.  "User" means that the variable should show up in the UI, script interface, console variables, or similar, as available on the target platform.
 
-To read this variable from the shader, we use the token **/\*$(Variable:BlurRadius)\*/**.  So, double click the compute shader node, and change the for loops from looping between +/-1, to +/- BlurRadius like this:
+To read this variable from the shader, we use the token `/*$(Variable:BlurRadius)*/`.  So, double click the compute shader node, and change the for loops from looping between +/-1, to +/- BlurRadius like this:
 
 ```c++
 // Unnamed technique, shader DoBlurCS
@@ -343,7 +345,7 @@ Make sure and set it back to non const and save before continuing with the rest 
 
 Being able to set a variable as constant like this is good for when you want to be able to tweak a value during development time, but at runtime, you want the cost of a dynamic choice to go away.  Also useful for masking out debug operations.
 
-Similarly to reading variables in shaders, you can also specify the file name of an image to read in a shader, and Gigi will load it, and pass it to your shader, like this: **/\*$(Image2D:../Textures/splitsum.png:RGBA8_UNorm:float4:false)\*/**.  This feature is useful with noise textures, VFX textures, and similar. Please see **UserDocumentation/GigiShaders_Documentation.docx** for more information about tokens available in shaders.
+Similarly to reading variables in shaders, you can also specify the file name of an image to read in a shader, and Gigi will load it, and pass it to your shader, like this: `/*$(Image2D:../Textures/splitsum.png:RGBA8_UNorm:float4:false)*/`.  This feature is useful with noise textures, VFX textures, and similar. Please see **UserDocumentation/GigiShaders_Documentation.docx** for more information about tokens available in shaders.
 
 ## Using Our Technique In Another Technique
 

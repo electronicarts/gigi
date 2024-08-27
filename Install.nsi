@@ -3,6 +3,7 @@
 
   !include "MUI2.nsh"
   !include "logiclib.nsh"
+  !include "x64.nsh"
 
 ;--------------------------------
 ; Custom defines
@@ -10,7 +11,7 @@
   !define DESCRIPTION "Rapid Graphics Development Platform"
   !define VERSIONMAJOR 0
   !define VERSIONMINOR 99
-  !define VERSIONBUILD 0
+  !define VERSIONBUILD 1
   !define SLUG "${APPNAME} v${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
 
   # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
@@ -24,7 +25,7 @@
 
   Name "${APPNAME}"
   OutFile "Gigi-${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}.x64.windows.installer.exe"
-  InstallDir "$PROGRAMFILES\${APPNAME}"
+  InstallDir "$PROGRAMFILES64\${APPNAME}"
   InstallDirRegKey HKCU "Software\${APPNAME}" ""
   RequestExecutionLevel admin
 

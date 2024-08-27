@@ -80,6 +80,8 @@ bool g_openPreviewWindowPaused = false;
 ed::NodeId g_contextMenuNodeId;
 ed::LinkId g_contextMenuLinkId;
 
+int g_createdNodeIndex = -1;
+
 struct DataWindowState
 {
     bool show = true;
@@ -732,10 +734,11 @@ struct Example :
 
                 // very useful during development (e.g. find examples, find style name or tweak theme),
                 // could be compiled out in Release
+                #ifdef _DEBUG
                 ImGui::MenuItem("ImGui Demo", nullptr, &imguiDemoOpen);
 				ImGui::MenuItem("Struct Parser Test", nullptr, &structParserTest);
-
 				ImGui::Separator();
+                #endif
 
                 if (ImGui::MenuItem("Exit"))
                 {
@@ -2090,6 +2093,12 @@ struct Example :
         ShowNodePropertiesWindow();
         ShowNodesWindow();
 
+        if (g_createdNodeIndex != -1 && ed::NodeExists(g_createdNodeIndex))
+        {
+            ed::SelectNode(g_createdNodeIndex);
+            g_createdNodeIndex = -1;
+        }
+
         ImGui::Begin("Graph");
 
         ed::Begin("Graph", ImVec2(0.0, 0.0f));
@@ -2511,6 +2520,7 @@ struct Example :
 
             ImGui::EndPopup();
         }
+
         if (ImGui::BeginPopup("Create New Node"))
         {
             auto newNodePostion = openPopupPosition;
@@ -2519,20 +2529,14 @@ struct Example :
 
             ImGui::Separator();
 
-            ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
-
-            // to put separator between resources and actions
-            // -1:action, 0:unknown, 1:resource
-            int newType = 0, lastType = 0;
-
             #include "external/df_serialize/_common.h"
             #define VARIANT_SEP()
             #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
-                newType = _TYPE::c_isResourceNode ? 1 : -1;\
-                if(lastType && lastType != newType)\
-					ImGui::Separator();\
-				lastType = newType;\
-                if (_TYPE::c_showInEditor && ImGui::MenuItem(#_NAME)) \
+                if (_TYPE::c_isResourceNode) \
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 255, 255)); \
+                else \
+                    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 128, 64, 255)); \
+                if (_TYPE::c_showInEditor && ImGui::MenuItem(_TYPE::c_editorName.c_str())) \
                 { \
                     char newNodeName[64]; \
                     int nextNodeIndex = 0; \
@@ -2558,13 +2562,13 @@ struct Example :
                     g_renderGraph.nodes.push_back(newNode); \
                     m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion; \
                     g_renderGraphDirty = true; \
-                }
+                    g_createdNodeIndex = (int)g_renderGraph.nodes.size(); \
+                } \
+                ImGui::PopStyleColor();
             // clang-format off
             #include "external/df_serialize/_fillunsetdefines.h"
             #include "Schemas/RenderGraphNodesVariant.h"
             // clang-format on
-
-            ImGui::PopStyleColor();
 
             ImGui::EndPopup();
         }

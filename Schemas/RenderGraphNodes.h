@@ -286,6 +286,7 @@ STRUCT_END()
 //========================================================
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_Buffer, RenderGraphNode_ResourceBase, "Declares a buffer")
+    STRUCT_CONST(std::string, c_editorName, "Buffer", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Buffer", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Buff", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -296,6 +297,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_Buffer, RenderGraphNode_ResourceBa
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_ShaderConstants, RenderGraphNode_ResourceBase, "Declares a shader constant buffer")
+    STRUCT_CONST(std::string, c_editorName, "Constants", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Constants", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Const", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, false, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -306,6 +308,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_ShaderConstants, RenderGraphNode_R
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_Texture, RenderGraphNode_ResourceBase, "Declares a texture")
+    STRUCT_CONST(std::string, c_editorName, "Texture", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Texture", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Tex", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -325,6 +328,7 @@ STRUCT_END()
 //========================================================
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_ComputeShader, RenderGraphNode_ActionBase, "Executes a compute shader")
+    STRUCT_CONST(std::string, c_editorName, "Compute Shader", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Compute", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "CS", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -337,6 +341,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_ComputeShader, RenderGraphNode_Actio
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_RayShader, RenderGraphNode_ActionBase, "Executes a dispatch rays shader")
+    STRUCT_CONST(std::string, c_editorName, "Ray Gen Shader", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "RayGen", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "RGS", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -352,6 +357,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_RayShader, RenderGraphNode_ActionBas
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_ActionBase, "Copies a resource to another resource")
+    STRUCT_CONST(std::string, c_editorName, "Copy Resource", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Copy", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Copy", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -361,6 +367,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_Action
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase, "Rasterization")
+    STRUCT_CONST(std::string, c_editorName, "Draw Call", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Draw", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Draw", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -428,6 +435,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_SubGraph, RenderGraphNode_ActionBase, "Runs another Gigi technique")
+    STRUCT_CONST(std::string, c_editorName, "Subgraph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Subgraph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Sub", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -443,6 +451,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_SubGraph, RenderGraphNode_ActionBase
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_Barrier, RenderGraphNode_ActionBase, "Causes all input operations to be executed before anything plugged into the output")
+    STRUCT_CONST(std::string, c_editorName, "Barrier", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Barrier", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Bar", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)

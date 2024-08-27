@@ -340,6 +340,8 @@ struct ResourceViewState
 {
     void Texture(int _nodeIndex, int _resourceIndex, RuntimeTypes::ViewableResource::Type textureType)
     {
+        StoreLast();
+
         type = textureType;
         nodeIndex = _nodeIndex;
         resourceIndex = _resourceIndex;
@@ -347,6 +349,8 @@ struct ResourceViewState
 
     void ConstantBuffer(int _nodeIndex, int _resourceIndex)
     {
+        StoreLast();
+
         type = RuntimeTypes::ViewableResource::Type::ConstantBuffer;
         nodeIndex = _nodeIndex;
         resourceIndex = _resourceIndex;
@@ -354,14 +358,30 @@ struct ResourceViewState
 
     void Buffer(int _nodeIndex, int _resourceIndex)
     {
+        StoreLast();
+
         type = RuntimeTypes::ViewableResource::Type::Buffer;
         nodeIndex = _nodeIndex;
         resourceIndex = _resourceIndex;
     }
 
+    void ViewLast()
+    {
+        if (nodeIndex == -1 || lastNodeIndex == -1 || resourceIndex == -1 || lastResourceIndex == -1)
+            return;
+
+        std::swap(type, lastType);
+        std::swap(nodeIndex, lastNodeIndex);
+        std::swap(resourceIndex, lastResourceIndex);
+    }
+
     RuntimeTypes::ViewableResource::Type type = RuntimeTypes::ViewableResource::Type::Texture2D;
     int nodeIndex = -1;
     int resourceIndex = -1;
+
+    RuntimeTypes::ViewableResource::Type lastType = RuntimeTypes::ViewableResource::Type::Texture2D;
+    int lastNodeIndex = -1;
+    int lastResourceIndex = -1;
 
     int mousePosX = 0;
     int mousePosY = 0;
@@ -372,6 +392,14 @@ struct ResourceViewState
     float systemVarMouse[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     float systemVarMouseState[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     float systemVarMouseStateLastFrame[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+private:
+    void StoreLast()
+    {
+        lastType = type;
+        lastNodeIndex = nodeIndex;
+        lastResourceIndex = resourceIndex;
+    }
 };
 static ResourceViewState g_resourceView;
 
@@ -409,7 +437,6 @@ std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
 
 int g_syncInterval = 1;
-bool g_vsync = true;
 bool g_debugLayerOn = DX12_VALIDATION_ON_BY_DEFAULT();
 bool g_debugLayerShown = DX12_VALIDATION_LOG_ON_BY_DEFAULT();
 bool g_GPUValidation = DX12_GPUVALIDATION_ON_BY_DEFAULT();
@@ -671,7 +698,6 @@ void SaveGGUserFile()
     ggUserData.resourceViewType = (int)g_resourceView.type;
     ggUserData.resourceViewNodeIndex = g_resourceView.nodeIndex;
     ggUserData.resourceViewResourceIndex = g_resourceView.resourceIndex;
-    ggUserData.vsync = g_vsync;
     ggUserData.syncInterval = g_syncInterval;
     for (const auto& it : g_interpreter.m_importedResources)
         ggUserData.importedResources.push_back(ImportedResourceDesc_To_GGUserFile_ImportedResource(it.first, it.second, renderGraphDir));
@@ -767,7 +793,6 @@ GGUserFile LoadGGUserFile()
     g_resourceView.type = (RuntimeTypes::ViewableResource::Type)ggUserData.resourceViewType;
     g_resourceView.nodeIndex = ggUserData.resourceViewNodeIndex;
     g_resourceView.resourceIndex = ggUserData.resourceViewResourceIndex;
-    g_vsync = ggUserData.vsync;
     g_syncInterval = ggUserData.syncInterval;
     g_interpreter.m_importedResources.clear();
     for (const GGUserFile_ImportedResource& inDesc : ggUserData.importedResources)
@@ -1061,22 +1086,25 @@ void HandleMainMenu()
 
             ImGui::MenuItem("DX12 Capabilities", "", &g_showCapsWindow);
 
+            #ifdef _DEBUG
             ImGui::Separator();
-
             ImGui::MenuItem("ImGui Demo Window", "", &show_demo_window);
             //ImGui::MenuItem("ImGui Simple Window", "", &show_simple_window);
             //ImGui::MenuItem("ImGui Other Window", "", &show_another_window);
+            #endif
 
             ImGui::EndMenu();
         }
 
         if (ImGui::BeginMenu("Settings"))
         {
-            ImGui::MenuItem("VSync", "", &g_vsync);
-
             if (ImGui::BeginMenu("Sync Interval"))
             {
                 bool selected = false;
+
+                selected = (g_syncInterval == 0);
+                if (ImGui::MenuItem("0 (VSync Off)", "", &selected))
+                    g_syncInterval = 0;
 
                 selected = (g_syncInterval == 1);
                 if (ImGui::MenuItem("1 (Full FPS)", "", &selected))
@@ -5259,6 +5287,13 @@ void ShowResourceView()
 
             if (!g_hideUI)
             {
+                ImGui::SameLine();
+                if (ImGui::Button("A/B"))
+                    g_resourceView.ViewLast();
+            }
+
+            if (!g_hideUI)
+            {
                 const char* typeLabel = "";
                 switch (res.m_type)
                 {
@@ -5272,7 +5307,7 @@ void ShowResourceView()
                 ImGui::Text("%s: %s", typeLabel, res.m_displayName.empty() ? nodeName.c_str() : res.m_displayName.c_str());
 
 //                ImGui::SameLine();
-                if (ImGui::Button("Copy Name To ClipBoard"))
+                if (ImGui::Button("Copy Name"))
                     SetClipboardDataEx(CF_TEXT, (void*)res.m_displayName.c_str(), (DWORD)res.m_displayName.length() + 1);
             }
 
@@ -5301,7 +5336,7 @@ void ShowResourceView()
                                 static bool saveAllVertically = false;
 
                                 ImGui::SameLine();
-                                if (ImGui::Button("Copy Image To ClipBoard"))
+                                if (ImGui::Button("Copy Image"))
                                 {
                                     CopyImageToClipBoard(res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
                                 }
@@ -5565,6 +5600,14 @@ void ShowResourceView()
                             ImGui::SameLine();
                             ImGui::SetNextItemWidth(50.0f);
                             ImGui::InputFloat("Zoom", &g_imageZoom);
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("Fit"))
+                            {
+                                float scaleX = g_contentRegionSize.x / (float)res.m_size[0];
+                                float scaleY = g_contentRegionSize.y / (float)res.m_size[1];
+                                g_imageZoom = std::min(scaleX, scaleY);
+                            }
 
                             ImGui::SameLine();
                             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -6114,7 +6157,7 @@ public:
 
     void SetVSync(bool set) override final
     {
-        g_vsync = set;
+        g_syncInterval = set ? 1 : 0;
     }
 
     void SetSyncInterval(int syncInterval) override final
@@ -7021,7 +7064,7 @@ void RenderFrame(bool forceExecute)
         ImGui::RenderPlatformWindowsDefault(NULL, (void*)g_pd3dCommandList);
     }
 
-    g_pSwapChain->Present((g_vsync && !g_profileMode) ? g_syncInterval : 0, 0);
+    g_pSwapChain->Present((!g_profileMode) ? g_syncInterval : 0, 0);
 
     UINT64 fenceValue = g_fenceLastSignaledValue + 1;
     g_pd3dCommandQueue->Signal(g_fence, fenceValue);

@@ -1044,6 +1044,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Resource_Buffer : Declares a buffer</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Resource_Buffer - Inherits from RenderGraphNode_ResourceBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Buffer"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Buffer"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Buff"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1056,6 +1057,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Resource_ShaderConstants : Declares a shader constant buffer</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Resource_ShaderConstants - Inherits from RenderGraphNode_ResourceBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Constants"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Constants"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Const"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>false</td><td>Used by the editor.</td></tr>
@@ -1067,6 +1069,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Resource_Texture : Declares a texture</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Resource_Texture - Inherits from RenderGraphNode_ResourceBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Texture"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Texture"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Tex"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1083,6 +1086,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Action_ComputeShader : Executes a compute shader</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Action_ComputeShader - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Compute Shader"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Compute"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"CS"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1096,6 +1100,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Action_RayShader : Executes a dispatch rays shader</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Action_RayShader - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Ray Gen Shader"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"RayGen"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"RGS"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1111,6 +1116,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Action_CopyResource : Copies a resource to another resource</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Action_CopyResource - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Copy Resource"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Copy"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Copy"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1122,6 +1128,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Action_DrawCall : Rasterization</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Action_DrawCall - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Draw Call"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Draw"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Draw"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1174,6 +1181,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Action_SubGraph : Runs another Gigi technique</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Action_SubGraph - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Subgraph"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Subgraph"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Sub"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1188,6 +1196,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RenderGraphNode_Action_Barrier : Causes all input operations to be executed before anything plugged into the output</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Action_Barrier - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Barrier"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Barrier"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Bar"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
@@ -1357,7 +1366,6 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>int resourceViewType</td><td>0</td><td>The type of resource being viewed</td></tr>
 <tr><td>int resourceViewNodeIndex</td><td>-1</td><td>The index of the node bieng viewed</td></tr>
 <tr><td>int resourceViewResourceIndex</td><td>-1</td><td>The index of that resource within that node being used</td></tr>
-<tr><td>bool vsync</td><td>true</td><td>Whether or not vsync is on</td></tr>
 <tr><td>int syncInterval</td><td>true</td><td>IDXGISwapChain::Present() parameter: Synchronize presentation after the nth vertical blank.</td></tr>
 <tr><td>GGUserFile_ImportedResource importedResources[]</td><td></td><td></td></tr>
 <tr><td>GGUserFile_SavedVariable savedVariables[]</td><td></td><td></td></tr>

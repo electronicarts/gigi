@@ -369,6 +369,8 @@ IMGUI_NODE_EDITOR_API void SelectLink(LinkId linkId, bool append = false);
 IMGUI_NODE_EDITOR_API void DeselectNode(NodeId nodeId);
 IMGUI_NODE_EDITOR_API void DeselectLink(LinkId linkId);
 
+IMGUI_NODE_EDITOR_API bool NodeExists(NodeId nodeId);
+
 IMGUI_NODE_EDITOR_API bool DeleteNode(NodeId nodeId);
 IMGUI_NODE_EDITOR_API bool DeleteLink(LinkId linkId);
 

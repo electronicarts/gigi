@@ -1598,8 +1598,15 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, std::string& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
+    // Show "Dflt" as "Default" in the editor, instead.
+    // default is a reserved word so we couldn't use it, but we can show it as a friendlier label!
+    if (!_stricmp(label, "Dflt"))
+    {
+        dirtyFlag |= ShowUI(renderGraph, "Default", tooltip, value, path);
+        return UIOverrideResult::Finished;
+    }
     // Show a variable drop down for SubGraphVariableSettings.ReplaceWithStr, and call it "Replace With" instead.
-    if (!_stricmp(label, "Replace With Str"))
+    else if (!_stricmp(label, "Replace With Str"))
     {
         VariableReference dummyRef;
         dummyRef.name = value;

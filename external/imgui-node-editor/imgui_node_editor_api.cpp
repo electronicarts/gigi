@@ -530,6 +530,11 @@ void ax::NodeEditor::DeselectLink(LinkId linkId)
         s_Editor->DeselectObject(link);
 }
 
+bool ax::NodeEditor::NodeExists(NodeId nodeId)
+{
+    return s_Editor->FindNode(nodeId) != nullptr;
+}
+
 bool ax::NodeEditor::DeleteNode(NodeId nodeId)
 {
     if (auto node = s_Editor->FindNode(nodeId))
