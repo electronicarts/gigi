@@ -11,8 +11,8 @@ There are two samples in the 'Usages' folder. One is a bloom filter, the other i
 
 # Sample Images
 The images provided are high dynamic range (.exr) files. Their sources are highlighted below:
-1. From Unreal Engine
-    1. [BloomKernel](https://dev.epicgames.com/documentation/en-us/unreal-engine/bloom-in-unreal-engine)
+1. From thunderpoly.gumroad.com
+    1. [BloomKernel](https://thunderpoly.gumroad.com/l/bloomfree)
 2. From Polyhaven
     1. [leadenhall_market_2k](https://polyhaven.com/a/leadenhall_market)
 3. From [OpenEXR](https://openexr.com/en/latest/test_images/index.html)
