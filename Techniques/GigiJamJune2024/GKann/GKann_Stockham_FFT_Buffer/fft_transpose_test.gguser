@@ -1,0 +1,18 @@
+{
+    "resourceViewNodeIndex": 6,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "InputTexture",
+            "texture": {
+                "fileName": "Usages\\leadenhall_market_2k.hdr"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "PartialFFTBufferSize",
+            "value": "1024"
+        }
+    ]
+}

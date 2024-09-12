@@ -1,0 +1,100 @@
+{
+    "systemVars": {
+        "iTime_varName": "TimeSeconds",
+        "camera": {
+            "startingCameraPos": [
+                2.687647819519043,
+                0.7952373623847961,
+                -0.2931469678878784
+            ],
+            "startingCameraAltitudeAzimuth": [
+                -0.18093767762184144,
+                1.2517104148864747
+            ]
+        }
+    },
+    "resourceViewNodeIndex": 9,
+    "resourceViewResourceIndex": 3,
+    "savedVariables": [
+        {
+            "name": "Reset",
+            "value": "false"
+        },
+        {
+            "name": "NumVerts",
+            "value": "4"
+        },
+        {
+            "name": "Point0",
+            "value": "0.000000,0.000000,0.000000"
+        },
+        {
+            "name": "Point1",
+            "value": "0.500000,1.000000,0.500000"
+        },
+        {
+            "name": "Point2",
+            "value": "1.000000,0.000000,0.000000"
+        },
+        {
+            "name": "Point3",
+            "value": "0.500000,0.000000,1.000000"
+        },
+        {
+            "name": "Point4",
+            "value": "0.500000,0.500000,0.500000"
+        },
+        {
+            "name": "Point5",
+            "value": "0.500000,0.500000,0.500000"
+        },
+        {
+            "name": "Point6",
+            "value": "0.500000,0.500000,0.500000"
+        },
+        {
+            "name": "Point7",
+            "value": "0.500000,0.500000,0.500000"
+        },
+        {
+            "name": "Point8",
+            "value": "0.500000,0.500000,0.500000"
+        },
+        {
+            "name": "Point9",
+            "value": "0.500000,0.500000,0.500000"
+        },
+        {
+            "name": "Fraction",
+            "value": "0.500000"
+        },
+        {
+            "name": "SkipCount",
+            "value": "5"
+        },
+        {
+            "name": "NumCursors",
+            "value": "1024"
+        },
+        {
+            "name": "RenderSize",
+            "value": "768,768"
+        },
+        {
+            "name": "RNGMode",
+            "value": "0"
+        },
+        {
+            "name": "NumPoints",
+            "value": "100000"
+        },
+        {
+            "name": "RedBlue3D",
+            "value": "false"
+        },
+        {
+            "name": "RedBlue3DEyeDistance",
+            "value": "-0.100000"
+        }
+    ]
+}

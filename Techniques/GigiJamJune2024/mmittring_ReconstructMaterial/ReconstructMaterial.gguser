@@ -1,0 +1,32 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "Output",
+        "iFrame_varName": "FrameIndex"
+    },
+    "resourceViewNodeIndex": 4,
+    "resourceViewResourceIndex": 4,
+    "savedVariables": [
+        {
+            "name": "UseBackwardAD",
+            "value": "false"
+        }
+    ],
+    "importedResourcePresets": [
+        {
+            "name": "test2",
+            "importedResources": [
+                {
+                    "nodeName": "Output",
+                    "texture": {
+                        "size": [
+                            512,
+                            512,
+                            1
+                        ],
+                        "format": "RGBA8_Unorm"
+                    }
+                }
+            ]
+        }
+    ]
+}

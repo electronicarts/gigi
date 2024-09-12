@@ -1,0 +1,31 @@
+{
+    "resourceViewType": 5,
+    "resourceViewNodeIndex": 5,
+    "resourceViewResourceIndex": 9,
+    "importedResources": [
+        {
+            "nodeName": "edgeIndices",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "edgeLengths",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "vertexColorData",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\vertexColoringData.csv",
+                "CSVHeaderRow": false,
+                "type": "Uint",
+                "BLASOpaque": true
+            }
+        }
+    ]
+}

@@ -1,0 +1,1001 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "init",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            }
+        },
+        {
+            "name": "pressureStrength",
+            "type": "Float",
+            "dflt": "0",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0",
+                "max": "20"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "calculateColors",
+            "fileName": "calculateColors.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexColoringData",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexColors",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "vbdIntegrate",
+            "fileName": "vbdIntegrate.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexPositions",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexVelocities",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexFrameStartPositions",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "vbdTargetPosition",
+            "fileName": "vbdTargetPosition.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexFrameStartPosition",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexVelocity",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexTargetPosition",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexCandidatePositions",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexPreviousVelocities",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexNormals",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Int",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "computeNormals",
+            "fileName": "computeNormals2.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "triangleIndices",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexPositions",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexNormals",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Int",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "setZero",
+            "fileName": "setZero.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "buf",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Int",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "candidatePositions",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "targetPositions",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "init",
+            "fileName": "init.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexVelocities",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "vertexPrevVelocities",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexFormat",
+            "fields": [
+                {
+                    "name": "position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "simpleRenderCommon.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionSubGraph": {
+                "name": "simpleRender",
+                "editorPos": [
+                    1061.0,
+                    -68.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "triangleIndices",
+                        "dstNode": "triangleIndices",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "CandidateToDynamic",
+                        "dstPin": "dest"
+                    }
+                ],
+                "fileName": "simpleRender.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "triangleIndices",
+                        "vertexPositions"
+                    ],
+                    "variables": [
+                        {
+                            "name": "ViewProjMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "resolution",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "lightDir",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "skyColor",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "groundColor",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "equatorColor",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "lightColor",
+                            "visibility": "Host"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "ViewProjMtx",
+                        "visibility": "Host",
+                        "replaceWithStr": "ViewProjMtx",
+                        "replaceWith": {
+                            "name": "ViewProjMtx"
+                        }
+                    },
+                    {
+                        "name": "resolution",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "lightDir",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "skyColor",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "groundColor",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "equatorColor",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "lightColor",
+                        "visibility": "Host"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "triangleIndices",
+                "editorPos": [
+                    -455.0,
+                    -94.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexPositions",
+                "editorPos": [
+                    -937.0,
+                    -94.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float4"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "edgeIndices",
+                "editorPos": [
+                    250.0,
+                    -334.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint2"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexColoringData",
+                "editorPos": [
+                    209.0,
+                    -430.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "vbdIterations",
+                "editorPos": [
+                    421.0,
+                    -337.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vertexColoringData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "Node 1",
+                        "dstPin": "Pin 1"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "edgeIndices",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "edgeLengths",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vertexEdgeData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "Node 1",
+                        "dstPin": "Pin 0"
+                    }
+                ],
+                "fileName": "vbdIteration.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "vertexColorData",
+                        "vertexPositions",
+                        "edgeIndices",
+                        "edgeLengths",
+                        "vertexEdgeData",
+                        "vertexTargetPositions"
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "edgeLengths",
+                "editorPos": [
+                    248.0,
+                    -286.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexEdgeData",
+                "editorPos": [
+                    213.0,
+                    -222.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": " vertexVelocities",
+                "editorPos": [
+                    -945.0,
+                    2.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "vertexPositions"
+                    },
+                    "type": "Float4"
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbdInterate",
+                "editorPos": [
+                    661.0,
+                    -228.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbdIterations",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexVelocities",
+                        "dstNode": "vbdTargetPosition",
+                        "dstPin": "vertexVelocity"
+                    },
+                    {
+                        "srcPin": "vertexFrameStartPositions",
+                        "dstNode": "vbdTargetPosition",
+                        "dstPin": "vertexFrameStartPosition"
+                    }
+                ],
+                "shader": {
+                    "name": "vbdIntegrate"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "vertexPositions"
+                    },
+                    "indirectBuffer": {
+                        "node": "vertexPreviousVelocities"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexFrameStartPositions",
+                "editorPos": [
+                    -999.0,
+                    98.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "recordFrameStartPositions",
+                "editorPos": [
+                    -283.0,
+                    -17.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "initPositions",
+                    "pin": "dest"
+                },
+                "dest": {
+                    "node": "vertexFrameStartPositions",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbdTargetPosition",
+                "editorPos": [
+                    -11.0,
+                    51.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexFrameStartPosition",
+                        "dstNode": "recordFrameStartPositions",
+                        "dstPin": "dest"
+                    },
+                    {
+                        "srcPin": "vertexVelocity",
+                        "dstNode": "initVelocities",
+                        "dstPin": "vertexVelocities"
+                    },
+                    {
+                        "srcPin": "vertexTargetPosition",
+                        "dstNode": "zeroNormals",
+                        "dstPin": "targetPositions"
+                    },
+                    {
+                        "srcPin": "vertexCandidatePositions",
+                        "dstNode": "zeroNormals",
+                        "dstPin": "candidatePositions"
+                    },
+                    {
+                        "srcPin": "vertexPreviousVelocities",
+                        "dstNode": "initVelocities",
+                        "dstPin": "vertexPrevVelocities"
+                    },
+                    {
+                        "srcPin": "vertexNormals",
+                        "dstNode": "computeNormals",
+                        "dstPin": "vertexNormals"
+                    }
+                ],
+                "shader": {
+                    "name": "vbdTargetPosition"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "vertexPositions"
+                    },
+                    "indirectBuffer": {
+                        "node": "vertexPreviousVelocities"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexTargetPositions",
+                "editorPos": [
+                    -828.0,
+                    162.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexCandidatePosition",
+                "editorPos": [
+                    -764.0,
+                    338.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CandidateToDynamic",
+                "editorPos": [
+                    917.0,
+                    -161.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "vbdInterate",
+                    "pin": "vertexPositions"
+                },
+                "dest": {
+                    "node": "recordFrameStartPositions",
+                    "pin": "source"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexPreviousVelocities",
+                "editorPos": [
+                    -990.0,
+                    50.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "computeNormals",
+                "editorPos": [
+                    -203.0,
+                    233.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "triangleIndices",
+                        "dstNode": "triangleIndices",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "recordFrameStartPositions",
+                        "dstPin": "dest"
+                    },
+                    {
+                        "srcPin": "vertexNormals",
+                        "dstNode": "zeroNormals",
+                        "dstPin": "buf"
+                    }
+                ],
+                "shader": {
+                    "name": "computeNormals"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "triangleIndices"
+                    },
+                    "indirectBuffer": {
+                        "node": "computeNormals"
+                    },
+                    "divide": [
+                        3,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexNormals",
+                "editorPos": [
+                    -710.0,
+                    274.0
+                ],
+                "format": {
+                    "type": "Int"
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    },
+                    "multiply": 3
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "zeroNormals",
+                "editorPos": [
+                    -541.0,
+                    156.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "buf",
+                        "dstNode": "vertexNormals",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "candidatePositions",
+                        "dstNode": "vertexCandidatePosition",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "targetPositions",
+                        "dstNode": "vertexTargetPositions",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "setZero"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "vertexNormals"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexDynamicPositions",
+                "editorPos": [
+                    -987.0,
+                    -46.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "vertexPositions"
+                    },
+                    "type": "Float4"
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "initPositions",
+                "editorPos": [
+                    -716.0,
+                    -97.0
+                ],
+                "condition": {
+                    "variable1": "init",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "vertexPositions",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "vertexDynamicPositions",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "initVelocities",
+                "editorPos": [
+                    -715.0,
+                    -30.0
+                ],
+                "condition": {
+                    "variable1": "init",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexPrevVelocities",
+                        "dstNode": "vertexPreviousVelocities",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexVelocities",
+                        "dstNode": " vertexVelocities",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "init"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionBarrier": {
+                "name": "Node 1",
+                "editorPos": [
+                    251.0,
+                    79.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin 0",
+                        "dstNode": "vbdTargetPosition",
+                        "dstPin": "vertexTargetPosition"
+                    },
+                    {
+                        "srcPin": "Pin 1",
+                        "dstNode": "vbdTargetPosition",
+                        "dstPin": "vertexCandidatePositions"
+                    },
+                    {
+                        "srcPin": "Pin 2"
+                    }
+                ]
+            }
+        }
+    ]
+}

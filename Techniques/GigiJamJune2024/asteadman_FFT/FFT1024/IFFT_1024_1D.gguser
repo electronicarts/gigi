@@ -1,0 +1,16 @@
+{
+    "resourceViewType": 5,
+    "resourceViewNodeIndex": 0,
+    "resourceViewResourceIndex": 2,
+    "importedResources": [
+        {
+            "nodeName": "InputVals",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "TestData\\1d_test_out.csv",
+                "structIndex": 0,
+                "BLASOpaque": true
+            }
+        }
+    ]
+}

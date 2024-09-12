@@ -1,0 +1,469 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.96b",
+    "variables": [
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1",
+            "visibility": "Host"
+        },
+        {
+            "name": "resolution",
+            "type": "Int2",
+            "dflt": "512, 512",
+            "visibility": "Host",
+            "UISettings": {
+                "min": "1",
+                "max": "2048"
+            }
+        },
+        {
+            "name": "lightDir",
+            "type": "Float3",
+            "dflt": "-1, -1, -1",
+            "visibility": "Host",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "-1",
+                "max": "1"
+            }
+        },
+        {
+            "name": "skyColor",
+            "type": "Float3",
+            "dflt": "0.1, 0.1, 0.3",
+            "visibility": "Host",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "groundColor",
+            "type": "Float3",
+            "dflt": "0.3, 0.1, 0.1",
+            "visibility": "Host",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "equatorColor",
+            "type": "Float3",
+            "dflt": "0.1, 0.1, 0.1",
+            "visibility": "Host",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "lightColor",
+            "type": "Float3",
+            "dflt": "0.8, 0.8, 0.4",
+            "visibility": "Host",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Vertex",
+            "fileName": "vertex.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vsMain"
+        },
+        {
+            "name": "Pixel",
+            "fileName": "pixel.hlsl",
+            "type": "Pixel",
+            "entryPoint": "psMain"
+        },
+        {
+            "name": "copyVertices",
+            "fileName": "copyVertices.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexPositions",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                },
+                {
+                    "name": "vertexNormals",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Int"
+                    }
+                },
+                {
+                    "name": "vertexColors",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float3"
+                    }
+                },
+                {
+                    "name": "vertices",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexFormat"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "computeNormals",
+            "fileName": "computeNormals.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexPositions",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                },
+                {
+                    "name": "triangleIndices",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "vertexNormals",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Int"
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexFormat",
+            "forceHostVisible": true,
+            "fields": [
+                {
+                    "name": "position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "simpleRenderCommon.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "triangleIndices",
+                "editorPos": [
+                    -519.0,
+                    -30.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "simpleRender",
+                "editorPos": [
+                    213.0,
+                    -78.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "Vertex"
+                },
+                "pixelShader": {
+                    "name": "Pixel"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "cullMode": "Front",
+                "vertexBuffer": {
+                    "node": "copyVerts",
+                    "pin": "vertices"
+                },
+                "indexBuffer": {
+                    "node": "triangleIndices",
+                    "pin": "resource"
+                },
+                "colorTargets": [
+                    {
+                        "node": "colorTexture",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "depthTexture",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "colorTexture",
+                "editorPos": [
+                    11.0,
+                    66.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "resolution"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "depthTexture",
+                "editorPos": [
+                    8.0,
+                    18.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "resolution"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexPositions",
+                "editorPos": [
+                    -521.0,
+                    -366.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float4"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "copyVerts",
+                "editorPos": [
+                    3.0,
+                    -260.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "copyVertices"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                },
+                "connections": [
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vertexPositions",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexNormals",
+                        "dstNode": "computeNormals",
+                        "dstPin": "vertexNormals"
+                    },
+                    {
+                        "srcPin": "vertexColors",
+                        "dstNode": "vertexColors",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertices",
+                        "dstNode": "vertices",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexColors",
+                "editorPos": [
+                    -505.0,
+                    -158.0
+                ],
+                "format": {
+                    "type": "Float3"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertices",
+                "editorPos": [
+                    -117.0,
+                    -158.0
+                ],
+                "format": {
+                    "structureType": {
+                        "name": "VertexFormat"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "computeNormals",
+                "editorPos": [
+                    -347.0,
+                    -279.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "computeNormals"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "triangleIndices"
+                    },
+                    "divide": [
+                        3,
+                        1,
+                        1
+                    ]
+                },
+                "connections": [
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vertexPositions",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "triangleIndices",
+                        "dstNode": "triangleIndices",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexNormals",
+                        "dstNode": "vertexNormals",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexNormals",
+                "editorPos": [
+                    -518.0,
+                    -206.0
+                ],
+                "format": {
+                    "type": "Int"
+                },
+                "count": {
+                    "node": {
+                        "name": "vertexPositions"
+                    },
+                    "multiply": 3
+                }
+            }
+        }
+    ]
+}

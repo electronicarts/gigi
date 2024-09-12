@@ -1,0 +1,1012 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Space Battle",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "JitteredProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvJitteredProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "JitteredViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvJitteredViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraJitter",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ShadingRateImageTileSize",
+            "type": "Uint",
+            "dflt": "16",
+            "visibility": "Host"
+        },
+        {
+            "name": "EntityCount",
+            "type": "Uint",
+            "dflt": "100"
+        },
+        {
+            "name": "TeamCount",
+            "type": "Uint",
+            "dflt": "2",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "1",
+                "max": "4",
+                "step": "1"
+            }
+        },
+        {
+            "name": "LaserRateOfFire",
+            "type": "Float",
+            "dflt": "0.5"
+        },
+        {
+            "name": "BlurRadius",
+            "type": "Float",
+            "dflt": "5"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "RenderShipsMS",
+            "fileName": "RenderMS.hlsl",
+            "type": "Mesh",
+            "entryPoint": "msShips",
+            "defines": [
+                {
+                    "name": "SHADER_MS"
+                }
+            ],
+            "CSNumThreads": [
+                126,
+                1,
+                1
+            ],
+            "NumThreads": [
+                4,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "EntityStatesMS",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "EntityState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RenderLasersMS",
+            "fileName": "RenderMS.hlsl",
+            "type": "Mesh",
+            "entryPoint": "msLasers",
+            "defines": [
+                {
+                    "name": "SHADER_MS"
+                }
+            ],
+            "CSNumThreads": [
+                126,
+                1,
+                1
+            ],
+            "NumThreads": [
+                4,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "EntityStatesMS",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "EntityState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RenderExplosionsMS",
+            "fileName": "RenderMS.hlsl",
+            "type": "Mesh",
+            "entryPoint": "msExplosions",
+            "defines": [
+                {
+                    "name": "SHADER_MS"
+                }
+            ],
+            "CSNumThreads": [
+                126,
+                1,
+                1
+            ],
+            "NumThreads": [
+                6,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "EntityStatesMS",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "EntityState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RenderPS",
+            "fileName": "RenderPS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "psmain",
+            "defines": [
+                {
+                    "name": "SHADER_PS"
+                }
+            ],
+            "resources": [
+                {
+                    "name": "EntityStatesPS",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "EntityState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Sim",
+            "fileName": "Simulate.hlsl",
+            "entryPoint": "simSpawn",
+            "resources": [
+                {
+                    "name": "EntityStates",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "EntityState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "PostProcess",
+            "fileName": "PostProcess.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "EntityState",
+            "fields": [
+                {
+                    "name": "Id",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Position",
+                    "type": "Float2",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Rotation",
+                    "type": "Float",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Size",
+                    "type": "Float",
+                    "dflt": "0.1"
+                },
+                {
+                    "name": "IsAlive",
+                    "type": "Bool",
+                    "dflt": "false"
+                },
+                {
+                    "name": "Team",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Lives",
+                    "type": "Uint",
+                    "dflt": "0"
+                },
+                {
+                    "name": "LaserStart",
+                    "type": "Float2"
+                },
+                {
+                    "name": "LaserEnd",
+                    "type": "Float2"
+                },
+                {
+                    "name": "LastLaserFireTime",
+                    "type": "Float"
+                },
+                {
+                    "name": "SpawnTime",
+                    "type": "Float"
+                },
+                {
+                    "name": "DeathTime",
+                    "type": "Float"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "RenderCommon.hlsli",
+            "type": "Shader",
+            "destFileName": "RenderCommon.hlsli"
+        },
+        {
+            "fileName": "BattleConstants.hlsli",
+            "type": "Shader",
+            "destFileName": "BattleConstants.hlsli"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    1579.0,
+                    626.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        2048,
+                        2048,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Entity States",
+                "editorPos": [
+                    -226.0,
+                    242.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "EntityState"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "EntityCount"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Render Lasers",
+                "editorPos": [
+                    853.0,
+                    243.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStatesPS",
+                        "dstNode": "Die",
+                        "dstPin": "EntityStates"
+                    },
+                    {
+                        "srcPin": "EntityStatesMS",
+                        "dstNode": "Die",
+                        "dstPin": "EntityStates"
+                    }
+                ],
+                "meshShader": {
+                    "name": "RenderLasersMS"
+                },
+                "pixelShader": {
+                    "name": "RenderPS"
+                },
+                "meshShaderDispatchSize": {
+                    "variable": {
+                        "name": "EntityCount"
+                    },
+                    "multiply": [
+                        4,
+                        1,
+                        1
+                    ]
+                },
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shadingRateImage": {
+                    "node": "Spawn"
+                },
+                "vertexBuffer": {
+                    "node": "Spawn"
+                },
+                "indexBuffer": {
+                    "node": "Spawn"
+                },
+                "instanceBuffer": {
+                    "node": "Spawn"
+                },
+                "colorTargets": [
+                    {
+                        "node": "RenderTarget0",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "Spawn"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Spawn"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Spawn",
+                "editorPos": [
+                    -101.0,
+                    242.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStates",
+                        "dstNode": "Entity States",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Sim"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Entity States"
+                    },
+                    "indirectBuffer": {
+                        "node": "Spawn"
+                    }
+                },
+                "entryPoint": "simSpawn"
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Render Explosions",
+                "editorPos": [
+                    1266.0,
+                    243.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStatesPS",
+                        "dstNode": "Render Ships",
+                        "dstPin": "EntityStatesPS"
+                    },
+                    {
+                        "srcPin": "EntityStatesMS",
+                        "dstNode": "Render Ships",
+                        "dstPin": "EntityStatesMS"
+                    }
+                ],
+                "meshShader": {
+                    "name": "RenderExplosionsMS"
+                },
+                "pixelShader": {
+                    "name": "RenderPS"
+                },
+                "meshShaderDispatchSize": {
+                    "variable": {
+                        "name": "EntityCount"
+                    },
+                    "multiply": [
+                        4,
+                        1,
+                        1
+                    ]
+                },
+                "colorTargetSettings": [
+                    {
+                        "clearColor": [
+                            0.012299999594688416,
+                            0.013000000268220902,
+                            0.009100000374019146,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shadingRateImage": {
+                    "node": "Spawn"
+                },
+                "vertexBuffer": {
+                    "node": "Spawn"
+                },
+                "indexBuffer": {
+                    "node": "Spawn"
+                },
+                "instanceBuffer": {
+                    "node": "Spawn"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Render Ships",
+                        "pin": "colorTarget0"
+                    },
+                    {
+                        "node": "Spawn"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Spawn"
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Render Ships",
+                "editorPos": [
+                    1058.0,
+                    243.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStatesPS",
+                        "dstNode": "Render Lasers",
+                        "dstPin": "EntityStatesPS"
+                    },
+                    {
+                        "srcPin": "EntityStatesMS",
+                        "dstNode": "Render Lasers",
+                        "dstPin": "EntityStatesMS"
+                    }
+                ],
+                "meshShader": {
+                    "name": "RenderShipsMS"
+                },
+                "pixelShader": {
+                    "name": "RenderPS"
+                },
+                "meshShaderDispatchSize": {
+                    "variable": {
+                        "name": "EntityCount"
+                    },
+                    "multiply": [
+                        4,
+                        1,
+                        1
+                    ]
+                },
+                "colorTargetSettings": [
+                    {
+                        "clearColor": [
+                            0.012299999594688416,
+                            0.013000000268220902,
+                            0.009100000374019146,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shadingRateImage": {
+                    "node": "Spawn"
+                },
+                "vertexBuffer": {
+                    "node": "Spawn"
+                },
+                "indexBuffer": {
+                    "node": "Spawn"
+                },
+                "instanceBuffer": {
+                    "node": "Spawn"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Render Lasers",
+                        "pin": "colorTarget0"
+                    },
+                    {
+                        "node": "Spawn"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Spawn"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Move",
+                "editorPos": [
+                    75.0,
+                    242.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStates",
+                        "dstNode": "Spawn",
+                        "dstPin": "EntityStates"
+                    }
+                ],
+                "shader": {
+                    "name": "Sim"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Entity States"
+                    }
+                },
+                "entryPoint": "simMove"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Shoot",
+                "editorPos": [
+                    241.0,
+                    239.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStates",
+                        "dstNode": "Move",
+                        "dstPin": "EntityStates"
+                    }
+                ],
+                "shader": {
+                    "name": "Sim"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Entity States"
+                    }
+                },
+                "entryPoint": "simShoot"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Die",
+                "editorPos": [
+                    411.0,
+                    242.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "EntityStates",
+                        "dstNode": "Shoot",
+                        "dstPin": "EntityStates"
+                    }
+                ],
+                "shader": {
+                    "name": "Sim"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Entity States"
+                    }
+                },
+                "entryPoint": "simDie"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Post",
+                "editorPos": [
+                    1723.0,
+                    492.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Blur",
+                        "dstPin": "Output"
+                    }
+                ],
+                "shader": {
+                    "name": "PostProcess"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "entryPoint": "csPost"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "RenderTarget0",
+                "editorPos": [
+                    704.0,
+                    482.0
+                ],
+                "format": {
+                    "format": "RGBA16_Float"
+                },
+                "size": {
+                    "multiply": [
+                        2048,
+                        2048,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "RenderTarget1",
+                "editorPos": [
+                    704.0,
+                    530.0
+                ],
+                "format": {
+                    "format": "RGBA16_Float"
+                },
+                "size": {
+                    "multiply": [
+                        2048,
+                        2048,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Blur",
+                "editorPos": [
+                    1557.0,
+                    495.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "RenderTarget1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Render Explosions",
+                        "dstPin": "colorTarget0"
+                    }
+                ],
+                "shader": {
+                    "name": "PostProcess"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "entryPoint": "csBlur"
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "EntityBehaviour",
+            "items": [
+                {
+                    "label": "Idle"
+                },
+                {
+                    "label": "Hunting"
+                },
+                {
+                    "label": "Evading"
+                }
+            ]
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "DXC_HLSL_2021": true
+        }
+    }
+}

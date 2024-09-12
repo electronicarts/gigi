@@ -1,0 +1,99 @@
+{
+    "systemVars": {
+        "camera": {
+            "farPlane": 10000.0
+        }
+    },
+    "resourceViewNodeIndex": 15,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "Rules",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "PlantRules.csv",
+                "CSVHeaderRow": false,
+                "type": "Int",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "StartingSymbol",
+            "value": "0"
+        },
+        {
+            "name": "RedBlue3D",
+            "value": "false"
+        },
+        {
+            "name": "Initialize",
+            "value": "false"
+        },
+        {
+            "name": "Step",
+            "value": "false"
+        },
+        {
+            "name": "RenderSize",
+            "value": "768,768"
+        },
+        {
+            "name": "SymbolsSizeMax",
+            "value": "150000"
+        },
+        {
+            "name": "RulesMax",
+            "value": "256"
+        },
+        {
+            "name": "LinesMax",
+            "value": "150000"
+        },
+        {
+            "name": "RedBlue3DEyeDistance",
+            "value": "-0.300000"
+        },
+        {
+            "name": "EraseSymbolsWithoutRules",
+            "value": "false"
+        },
+        {
+            "name": "CursorStateStackDepth",
+            "value": "100"
+        },
+        {
+            "name": "CursorRotationDegrees",
+            "value": "30.000000"
+        },
+        {
+            "name": "ForceBoundingBox",
+            "value": "true"
+        },
+        {
+            "name": "BBMin",
+            "value": "-3.000000"
+        },
+        {
+            "name": "BBMax",
+            "value": "3.000000"
+        },
+        {
+            "name": "DrawBoundingBox",
+            "value": "false"
+        },
+        {
+            "name": "CursorXAxis",
+            "value": "1.000000,0.000000,0.000000"
+        },
+        {
+            "name": "CursorYAxis",
+            "value": "0.000000,1.000000,0.000000"
+        },
+        {
+            "name": "CursorPos",
+            "value": "0.000000,0.000000,0.000000"
+        }
+    ]
+}

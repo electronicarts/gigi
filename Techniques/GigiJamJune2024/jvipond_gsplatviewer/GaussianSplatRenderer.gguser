@@ -1,0 +1,148 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "BackBuffer",
+        "ProjMtx_textureName": "BackBuffer"
+    },
+    "resourceViewNodeIndex": 16,
+    "resourceViewResourceIndex": 2,
+    "importedResources": [
+        {
+            "nodeName": "ChunkData",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "ColorData",
+            "resetEveryFrame": false
+        },
+        {
+            "nodeName": "IndexBuffer",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "OtherData",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "PosData",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "ShData",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "_SplatCount",
+            "value": "0"
+        },
+        {
+            "name": "RenderSize",
+            "value": "1280,720"
+        },
+        {
+            "name": "_SplatFormat",
+            "value": "196610"
+        },
+        {
+            "name": "_SplatChunkCount",
+            "value": "22793"
+        },
+        {
+            "name": "_MatrixObjectToWorld",
+            "value": "1.000000,0.000000,0.000000,0.000000,0.000000,-0.970296,-0.241922,0.000000,0.000000,-0.241922,0.970296,0.000000,0.000000,0.000000,0.000000,1.000000"
+        },
+        {
+            "name": "_SplatOpacityScale",
+            "value": "1.000000"
+        },
+        {
+            "name": "_SplatScale",
+            "value": "1.000000"
+        },
+        {
+            "name": "_MatrixWorldToObject",
+            "value": "1.000000,0.000000,0.000000,0.000000,0.000000,-0.970296,-0.241922,0.000000,0.000000,-0.241922,0.970296,0.000000,0.000000,0.000000,0.000000,1.000000"
+        },
+        {
+            "name": "_SHOrder",
+            "value": "3"
+        },
+        {
+            "name": "_SHOnly",
+            "value": "0"
+        },
+        {
+            "name": "shift0",
+            "value": "0"
+        },
+        {
+            "name": "shift4",
+            "value": "4"
+        },
+        {
+            "name": "shift8",
+            "value": "8"
+        },
+        {
+            "name": "shift12",
+            "value": "12"
+        },
+        {
+            "name": "shift16",
+            "value": "16"
+        },
+        {
+            "name": "shift20",
+            "value": "20"
+        },
+        {
+            "name": "shift24",
+            "value": "24"
+        },
+        {
+            "name": "shift28",
+            "value": "28"
+        },
+        {
+            "name": "numBlocksPerThreadGroup",
+            "value": "0"
+        },
+        {
+            "name": "numThreadGroups",
+            "value": "0"
+        },
+        {
+            "name": "numThreadGroupsWithAdditionalBlocks",
+            "value": "0"
+        },
+        {
+            "name": "numReduceThreadgroupPerBin",
+            "value": "0"
+        },
+        {
+            "name": "numScanValues",
+            "value": "0"
+        }
+    ]
+}

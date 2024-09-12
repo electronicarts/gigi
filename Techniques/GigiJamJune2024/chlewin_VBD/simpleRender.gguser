@@ -1,0 +1,62 @@
+{
+    "resourceViewNodeIndex": 1,
+    "resourceViewResourceIndex": 6,
+    "importedResources": [
+        {
+            "nodeName": "triangleIndices",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\faces.csv",
+                "CSVHeaderRow": false,
+                "type": "Uint",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "vertexColors",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\vertexPositions.csv",
+                "CSVHeaderRow": false,
+                "type": "Float3",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "vertexPositions",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\vertexPositions.csv",
+                "CSVHeaderRow": false,
+                "type": "Float4",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "resolution",
+            "value": "512,512"
+        },
+        {
+            "name": "lightDir",
+            "value": "-1.000000,-1.000000,-1.000000"
+        },
+        {
+            "name": "skyColor",
+            "value": "0.130190,0.130190,0.308824"
+        },
+        {
+            "name": "groundColor",
+            "value": "0.303922,0.151260,0.104287"
+        },
+        {
+            "name": "equatorColor",
+            "value": "0.122549,0.119545,0.119545"
+        },
+        {
+            "name": "lightColor",
+            "value": "0.872549,0.872549,0.799837"
+        }
+    ]
+}

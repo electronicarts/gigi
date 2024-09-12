@@ -1,0 +1,2 @@
+gauss_fft.bin filter=lfs diff=lfs merge=lfs -text
+gauss_fft_4k.bin filter=lfs diff=lfs merge=lfs -text

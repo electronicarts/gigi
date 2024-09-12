@@ -1,0 +1,10 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "FFTBuffer"
+        },
+        {
+            "nodeName": "OutputTexture"
+        }
+    ]
+}

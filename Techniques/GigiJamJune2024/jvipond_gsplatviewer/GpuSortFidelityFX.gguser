@@ -1,0 +1,62 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "PayloadScratchBuffer",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "SortScratchBuffer",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "SourceKeyBuffer",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "SourcePayloadBuffer",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "numBlocksPerThreadGroup",
+            "value": "14"
+        },
+        {
+            "name": "numThreadGroups",
+            "value": "800"
+        },
+        {
+            "name": "numThreadGroupsWithAdditionalBlocks",
+            "value": "197"
+        },
+        {
+            "name": "numReduceThreadgroupPerBin",
+            "value": "2"
+        },
+        {
+            "name": "numScanValues",
+            "value": "40"
+        },
+        {
+            "name": "shift",
+            "value": "0"
+        },
+        {
+            "name": "_SplatCount",
+            "value": "0"
+        }
+    ]
+}

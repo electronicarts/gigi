@@ -1,0 +1,24 @@
+{
+    "resourceViewNodeIndex": 7,
+    "resourceViewResourceIndex": 2,
+    "importedResources": [
+        {
+            "nodeName": "InputTexture",
+            "texture": {
+                "fileName": "..\\..\\Assets\\PrismsLenses.exr",
+                "fileIsSRGB": false,
+                "format": "RGBA32_Float"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "effectMultiplier",
+            "value": "0.245000"
+        },
+        {
+            "name": "effectSelection",
+            "value": "0"
+        }
+    ]
+}

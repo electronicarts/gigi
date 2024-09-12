@@ -1,0 +1,8 @@
+Title: L Systems
+
+Credit: Demofox (awolfe@ea.com)
+
+Description:
+L systems were created by a Hungarian botanist in the late 60s as a way to explain and explore how plants grow, with an algorithm that is essentially string substitution.
+Load the .gg file and run a python file to start a demo. Click initialize then repeatedly click step to visualize the L system grow over time.
+See instructions.txt for more information.

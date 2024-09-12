@@ -1,0 +1,774 @@
+{
+    "$schema": "gigischema.json",
+    "name": "2D FFT With Texture",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "N",
+            "type": "Uint",
+            "Const": true,
+            "dflt": "1024",
+            "UISettings": {
+                "min": "1024",
+                "max": "1024"
+            }
+        },
+        {
+            "name": "N2",
+            "type": "Uint",
+            "Const": true,
+            "dflt": "4",
+            "UISettings": {
+                "min": "1024",
+                "max": "1024"
+            }
+        },
+        {
+            "name": "NT",
+            "type": "Uint",
+            "Const": true,
+            "dflt": "4096",
+            "UISettings": {
+                "min": "1024",
+                "max": "1024"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "TextureSampler",
+            "fileName": "texture_sampler_4k.hlsl",
+            "entryPoint": "csMain",
+            "resources": [
+                {
+                    "name": "InputTexture",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputRealR",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputRealG",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputRealB",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RealTextureCombiner",
+            "fileName": "texture_combine_4k.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                16,
+                16,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Red",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Green",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Blue",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutTexture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComplexMultiply",
+            "fileName": "complex_multiply_4k.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexInOut",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "ComplexRef",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "Complex",
+            "fields": [
+                {
+                    "name": "Re",
+                    "type": "Float",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Im",
+                    "type": "Float",
+                    "dflt": "0"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputTexture",
+                "editorPos": [
+                    -101.0,
+                    66.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "RedBuf",
+                "editorPos": [
+                    -133.0,
+                    114.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "NT"
+                    },
+                    "multiply": 4096
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GreenBuf",
+                "editorPos": [
+                    -133.0,
+                    162.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "NT"
+                    },
+                    "multiply": 4096
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "BlueBuf",
+                "editorPos": [
+                    -133.0,
+                    210.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "NT"
+                    },
+                    "multiply": 4096
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    690.0,
+                    338.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "size": {
+                    "multiply": [
+                        4096,
+                        4096,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Texture Splitter",
+                "editorPos": [
+                    55.0,
+                    121.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture",
+                        "dstNode": "InputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputRealR",
+                        "dstNode": "RedBuf",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputRealG",
+                        "dstNode": "GreenBuf",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputRealB",
+                        "dstNode": "BlueBuf",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "TextureSampler"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputTexture"
+                    },
+                    "indirectBuffer": {
+                        "node": "FFT RED"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT RED",
+                "editorPos": [
+                    248.0,
+                    50.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputVals",
+                        "dstNode": "Texture Splitter",
+                        "dstPin": "OutputRealR"
+                    },
+                    {
+                        "srcPin": "OutFreqs"
+                    }
+                ],
+                "fileName": "FFT4096\\FFT_4096_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputVals"
+                    ],
+                    "exportedResources": [
+                        "OutFreqs"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "IFFT RED",
+                "editorPos": [
+                    705.0,
+                    66.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputFreqs",
+                        "dstNode": "Filter Red",
+                        "dstPin": "ComplexInOut"
+                    },
+                    {
+                        "srcPin": "OutVals"
+                    }
+                ],
+                "fileName": "FFT4096\\IFFT_4096_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputFreqs"
+                    ],
+                    "exportedResources": [
+                        "OutVals"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Texture Combin",
+                "editorPos": [
+                    923.0,
+                    124.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Red",
+                        "dstNode": "IFFT RED",
+                        "dstPin": "OutVals"
+                    },
+                    {
+                        "srcPin": "Green",
+                        "dstNode": "IFFT GREEN",
+                        "dstPin": "OutVals"
+                    },
+                    {
+                        "srcPin": "Blue",
+                        "dstNode": "IFFT BLUE",
+                        "dstPin": "OutVals"
+                    },
+                    {
+                        "srcPin": "OutTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "RealTextureCombiner"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "FFT RED"
+                    },
+                    "multiply": [
+                        4096,
+                        4096,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT GREEN",
+                "editorPos": [
+                    248.0,
+                    114.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputVals",
+                        "dstNode": "Texture Splitter",
+                        "dstPin": "OutputRealG"
+                    },
+                    {
+                        "srcPin": "OutFreqs"
+                    }
+                ],
+                "fileName": "FFT4096\\FFT_4096_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputVals"
+                    ],
+                    "exportedResources": [
+                        "OutFreqs"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT BLUE",
+                "editorPos": [
+                    248.0,
+                    178.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputVals",
+                        "dstNode": "Texture Splitter",
+                        "dstPin": "OutputRealB"
+                    },
+                    {
+                        "srcPin": "OutFreqs"
+                    }
+                ],
+                "fileName": "FFT4096\\FFT_4096_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputVals"
+                    ],
+                    "exportedResources": [
+                        "OutFreqs"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "IFFT GREEN",
+                "editorPos": [
+                    705.0,
+                    130.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputFreqs",
+                        "dstNode": "Filter Green ",
+                        "dstPin": "ComplexInOut"
+                    },
+                    {
+                        "srcPin": "OutVals"
+                    }
+                ],
+                "fileName": "FFT4096\\IFFT_4096_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputFreqs"
+                    ],
+                    "exportedResources": [
+                        "OutVals"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "IFFT BLUE",
+                "editorPos": [
+                    705.0,
+                    194.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputFreqs",
+                        "dstNode": "Filter Blue",
+                        "dstPin": "ComplexInOut"
+                    },
+                    {
+                        "srcPin": "OutVals"
+                    }
+                ],
+                "fileName": "FFT4096\\IFFT_4096_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputFreqs"
+                    ],
+                    "exportedResources": [
+                        "OutVals"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Filter Red",
+                "editorPos": [
+                    447.0,
+                    31.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ComplexInOut",
+                        "dstNode": "FFT RED",
+                        "dstPin": "OutFreqs"
+                    },
+                    {
+                        "srcPin": "ComplexRef",
+                        "dstNode": "Gaussian Freqs",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ComplexMultiply"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Gaussian Freqs"
+                    },
+                    "multiply": [
+                        131072,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Filter Green ",
+                "editorPos": [
+                    437.0,
+                    130.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ComplexInOut",
+                        "dstNode": "FFT GREEN",
+                        "dstPin": "OutFreqs"
+                    },
+                    {
+                        "srcPin": "ComplexRef",
+                        "dstNode": "Gaussian Freqs",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ComplexMultiply"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Gaussian Freqs"
+                    },
+                    "multiply": [
+                        131072,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Filter Blue",
+                "editorPos": [
+                    437.0,
+                    220.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ComplexInOut",
+                        "dstNode": "FFT BLUE",
+                        "dstPin": "OutFreqs"
+                    },
+                    {
+                        "srcPin": "ComplexRef",
+                        "dstNode": "Gaussian Freqs",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ComplexMultiply"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Gaussian Freqs"
+                    },
+                    "multiply": [
+                        131072,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Gaussian Freqs",
+                "editorPos": [
+                    198.0,
+                    -62.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "NT"
+                    },
+                    "multiply": 4096
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_0"
+        }
+    }
+}

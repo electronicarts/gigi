@@ -1,0 +1,2000 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "_SplatCount",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "JitteredProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvJitteredProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "JitteredViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvJitteredViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraJitter",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ShadingRateImageTileSize",
+            "type": "Uint",
+            "dflt": "16",
+            "visibility": "Host"
+        },
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "1280, 720",
+            "visibility": "User"
+        },
+        {
+            "name": "_SplatFormat",
+            "type": "Uint",
+            "dflt": "196610"
+        },
+        {
+            "name": "_SplatChunkCount",
+            "type": "Uint",
+            "dflt": "22793"
+        },
+        {
+            "name": "_MatrixObjectToWorld",
+            "type": "Float4x4",
+            "dflt": "1.000000,0.000000,0.000000,0.000000,0.000000,-0.970296,-0.241922,0.000000,0.000000,-0.241922,0.970296,0.000000,0.000000,0.000000,0.000000,1.000000"
+        },
+        {
+            "name": "_SplatOpacityScale",
+            "type": "Float",
+            "dflt": "1.0",
+            "visibility": "User"
+        },
+        {
+            "name": "_SplatScale",
+            "type": "Float",
+            "dflt": "1.0",
+            "visibility": "User"
+        },
+        {
+            "name": "_MatrixWorldToObject",
+            "type": "Float4x4",
+            "dflt": "1.000000,0.000000,0.000000,0.000000,0.000000,-0.970296,-0.241922,0.000000,0.000000,-0.241922,0.970296,0.000000,0.000000,0.000000,0.000000,1.000000"
+        },
+        {
+            "name": "_SHOrder",
+            "type": "Uint",
+            "dflt": "3"
+        },
+        {
+            "name": "_SHOnly",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "shift0",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "shift4",
+            "type": "Uint",
+            "dflt": "4"
+        },
+        {
+            "name": "shift8",
+            "type": "Uint",
+            "dflt": "8"
+        },
+        {
+            "name": "shift12",
+            "type": "Uint",
+            "dflt": "12"
+        },
+        {
+            "name": "shift16",
+            "type": "Uint",
+            "dflt": "16"
+        },
+        {
+            "name": "shift20",
+            "type": "Uint",
+            "dflt": "20"
+        },
+        {
+            "name": "shift24",
+            "type": "Uint",
+            "dflt": "24"
+        },
+        {
+            "name": "shift28",
+            "type": "Uint",
+            "dflt": "28"
+        },
+        {
+            "name": "numBlocksPerThreadGroup",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "numThreadGroups",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "numThreadGroupsWithAdditionalBlocks",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "numReduceThreadgroupPerBin",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "numScanValues",
+            "type": "Uint",
+            "dflt": "0"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "SetIndices",
+            "fileName": "SetIndices.hlsl",
+            "entryPoint": "SetIndices",
+            "NumThreads": [
+                1024,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "_SplatSortKeys",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RenderSplatVertex",
+            "fileName": "RenderSplatsVertex.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vert",
+            "resources": [
+                {
+                    "name": "_OrderBuffer",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatViewData",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GaussianSplatViewData"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RenderSplatFragment",
+            "fileName": "RenderSplatsFragment.hlsl",
+            "type": "Pixel",
+            "entryPoint": "frag"
+        },
+        {
+            "name": "CalculateDistances",
+            "fileName": "CalculateDistances.hlsl",
+            "entryPoint": "CSCalcDistances",
+            "NumThreads": [
+                1024,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "_SplatSortDistances",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatSortKeys",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatPos",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "raw": true,
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatChunks",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GaussianSplatChunkInfo"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "CalculateViewData",
+            "fileName": "CalculateViewData.hlsl",
+            "entryPoint": "CSCalcViewData",
+            "NumThreads": [
+                1024,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "_SplatViewData",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GaussianSplatViewData"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatOther",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "raw": true,
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatSH",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "raw": true,
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatPos",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "raw": true,
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatColor",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "_SplatChunks",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GaussianSplatChunkInfo"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComposeToScreenFragment",
+            "fileName": "ComposeToScreenFragment.hlsl",
+            "type": "Pixel",
+            "entryPoint": "frag",
+            "resources": [
+                {
+                    "name": "ColorTarget",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComposeToScreenVertex",
+            "fileName": "ComposeToScreenVertex.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vert"
+        }
+    ],
+    "structs": [
+        {
+            "name": "GaussianSplatViewData",
+            "fields": [
+                {
+                    "name": "pos",
+                    "type": "Float4"
+                },
+                {
+                    "name": "axis1",
+                    "type": "Float2"
+                },
+                {
+                    "name": "axis2",
+                    "type": "Float2"
+                },
+                {
+                    "name": "color1",
+                    "type": "Uint"
+                },
+                {
+                    "name": "color2",
+                    "type": "Uint"
+                }
+            ]
+        },
+        {
+            "name": "GaussianSplatChunkInfo",
+            "fields": [
+                {
+                    "name": "colR",
+                    "type": "Uint"
+                },
+                {
+                    "name": "colG",
+                    "type": "Uint"
+                },
+                {
+                    "name": "colB",
+                    "type": "Uint"
+                },
+                {
+                    "name": "colA",
+                    "type": "Uint"
+                },
+                {
+                    "name": "posX",
+                    "type": "Float2"
+                },
+                {
+                    "name": "posY",
+                    "type": "Float2"
+                },
+                {
+                    "name": "posZ",
+                    "type": "Float2"
+                },
+                {
+                    "name": "sclX",
+                    "type": "Uint"
+                },
+                {
+                    "name": "sclY",
+                    "type": "Uint"
+                },
+                {
+                    "name": "sclZ",
+                    "type": "Uint"
+                },
+                {
+                    "name": "shR",
+                    "type": "Uint"
+                },
+                {
+                    "name": "shG",
+                    "type": "Uint"
+                },
+                {
+                    "name": "shB",
+                    "type": "Uint"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "PosData",
+                "editorPos": [
+                    859.0,
+                    207.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OtherData",
+                "editorPos": [
+                    987.0,
+                    735.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "ShData",
+                "editorPos": [
+                    990.0,
+                    796.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "ChunkData",
+                "editorPos": [
+                    1243.0,
+                    386.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "structureType": {
+                        "name": "GaussianSplatChunkInfo"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IndexBuffer",
+                "editorPos": [
+                    2427.0,
+                    578.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint_16"
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ColorData",
+                "editorPos": [
+                    987.0,
+                    879.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "size": {
+                    "multiply": [
+                        2048,
+                        2864,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GaussianSplatSortKeys",
+                "editorPos": [
+                    1229.0,
+                    -126.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GaussianSplatGpuView",
+                "editorPos": [
+                    862.0,
+                    604.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "GaussianSplatViewData"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GaussianSplatSortDistances",
+                "editorPos": [
+                    1567.0,
+                    -398.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "SetIndices",
+                "editorPos": [
+                    1422.0,
+                    -142.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "_SplatSortKeys",
+                        "dstNode": "GaussianSplatSortKeys",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "SetIndices"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    },
+                    "preAdd": [
+                        1,
+                        0,
+                        0
+                    ]
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "RenderSplats",
+                "editorPos": [
+                    2722.0,
+                    466.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "_OrderBuffer",
+                        "dstNode": "GpuSortFidelityFXShift28",
+                        "dstPin": "PayloadScratchBuffer"
+                    },
+                    {
+                        "srcPin": "_SplatViewData",
+                        "dstNode": "CalculateViewData",
+                        "dstPin": "_SplatViewData"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "RenderSplatVertex"
+                },
+                "pixelShader": {
+                    "name": "RenderSplatFragment"
+                },
+                "instanceCount": -1,
+                "depthWrite": false,
+                "depthTest": "Always",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "InvDestAlpha",
+                        "destBlend": "One",
+                        "srcBlendAlpha": "InvDestAlpha",
+                        "destBlendAlpha": "One"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexBuffer": {
+                    "node": "PosData",
+                    "pin": "resource"
+                },
+                "indexBuffer": {
+                    "node": "IndexBuffer",
+                    "pin": "resource"
+                },
+                "instanceBuffer": {
+                    "node": "GaussianSplatSortKeys",
+                    "pin": "resource"
+                },
+                "colorTargets": [
+                    {
+                        "node": "ColorTarget",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ColorTarget",
+                "editorPos": [
+                    2587.0,
+                    610.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA16_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "CalculateDistances",
+                "editorPos": [
+                    1605.0,
+                    89.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "_SplatSortDistances",
+                        "dstNode": "GaussianSplatSortDistances",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatSortKeys",
+                        "dstNode": "SetIndices",
+                        "dstPin": "_SplatSortKeys"
+                    },
+                    {
+                        "srcPin": "_SplatPos",
+                        "dstNode": "PosData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatChunks",
+                        "dstNode": "ChunkData",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CalculateDistances"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "CalculateViewData",
+                "editorPos": [
+                    1461.0,
+                    598.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "_SplatViewData",
+                        "dstNode": "GaussianSplatGpuView",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatOther",
+                        "dstNode": "OtherData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatSH",
+                        "dstNode": "ShData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatPos",
+                        "dstNode": "PosData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatColor",
+                        "dstNode": "ColorData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "_SplatChunks",
+                        "dstNode": "ChunkData",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CalculateViewData"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift0",
+                "editorPos": [
+                    1940.0,
+                    18.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "SortScratchBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "PayloadScratchBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "CalculateDistances",
+                        "dstPin": "_SplatSortDistances"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "CalculateDistances",
+                        "dstPin": "_SplatSortKeys"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift0",
+                        "replaceWith": {
+                            "name": "shift0"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "SortScratchBuffer",
+                "editorPos": [
+                    1740.0,
+                    -78.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "node": {
+                        "name": "GaussianSplatSortKeys"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "PayloadScratchBuffer",
+                "editorPos": [
+                    1669.0,
+                    -14.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "node": {
+                        "name": "GaussianSplatSortKeys"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift4",
+                "editorPos": [
+                    2181.0,
+                    18.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift0",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift0",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift0",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift0",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift4",
+                        "replaceWith": {
+                            "name": "shift4"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift8",
+                "editorPos": [
+                    2421.0,
+                    12.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift4",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift4",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift4",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift4",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift8",
+                        "replaceWith": {
+                            "name": "shift8"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift12",
+                "editorPos": [
+                    2660.0,
+                    12.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift8",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift8",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift8",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift8",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift12",
+                        "replaceWith": {
+                            "name": "shift12"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift16",
+                "editorPos": [
+                    2884.0,
+                    9.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift12",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift12",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift12",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift12",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift16",
+                        "replaceWith": {
+                            "name": "shift16"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift20",
+                "editorPos": [
+                    3108.0,
+                    9.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift16",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift16",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift16",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift16",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift20",
+                        "replaceWith": {
+                            "name": "shift20"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift24",
+                "editorPos": [
+                    3333.0,
+                    9.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift20",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift20",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift20",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift20",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift24",
+                        "replaceWith": {
+                            "name": "shift24"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GpuSortFidelityFXShift28",
+                "editorPos": [
+                    3556.0,
+                    9.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SortScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift24",
+                        "dstPin": "SourceKeyBuffer"
+                    },
+                    {
+                        "srcPin": "PayloadScratchBuffer",
+                        "dstNode": "GpuSortFidelityFXShift24",
+                        "dstPin": "SourcePayloadBuffer"
+                    },
+                    {
+                        "srcPin": "SourceKeyBuffer",
+                        "dstNode": "GpuSortFidelityFXShift24",
+                        "dstPin": "SortScratchBuffer"
+                    },
+                    {
+                        "srcPin": "SourcePayloadBuffer",
+                        "dstNode": "GpuSortFidelityFXShift24",
+                        "dstPin": "PayloadScratchBuffer"
+                    }
+                ],
+                "fileName": "GpuSortFidelityFX.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "SortScratchBuffer",
+                        "PayloadScratchBuffer",
+                        "SourceKeyBuffer",
+                        "SourcePayloadBuffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "numBlocksPerThreadGroup"
+                        },
+                        {
+                            "name": "numThreadGroups"
+                        },
+                        {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        },
+                        {
+                            "name": "numReduceThreadgroupPerBin"
+                        },
+                        {
+                            "name": "numScanValues"
+                        },
+                        {
+                            "name": "shift"
+                        },
+                        {
+                            "name": "_SplatCount"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "numBlocksPerThreadGroup",
+                        "replaceWithStr": "numBlocksPerThreadGroup",
+                        "replaceWith": {
+                            "name": "numBlocksPerThreadGroup"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroups",
+                        "replaceWithStr": "numThreadGroups",
+                        "replaceWith": {
+                            "name": "numThreadGroups"
+                        }
+                    },
+                    {
+                        "name": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWithStr": "numThreadGroupsWithAdditionalBlocks",
+                        "replaceWith": {
+                            "name": "numThreadGroupsWithAdditionalBlocks"
+                        }
+                    },
+                    {
+                        "name": "numReduceThreadgroupPerBin",
+                        "replaceWithStr": "numReduceThreadgroupPerBin",
+                        "replaceWith": {
+                            "name": "numReduceThreadgroupPerBin"
+                        }
+                    },
+                    {
+                        "name": "numScanValues",
+                        "replaceWithStr": "numScanValues",
+                        "replaceWith": {
+                            "name": "numScanValues"
+                        }
+                    },
+                    {
+                        "name": "shift",
+                        "replaceWithStr": "shift28",
+                        "replaceWith": {
+                            "name": "shift28"
+                        }
+                    },
+                    {
+                        "name": "_SplatCount",
+                        "replaceWithStr": "_SplatCount",
+                        "replaceWith": {
+                            "name": "_SplatCount"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "ComposeToScreen",
+                "editorPos": [
+                    3026.0,
+                    473.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ColorTarget",
+                        "dstNode": "RenderSplats",
+                        "dstPin": "colorTarget0"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "ComposeToScreenVertex"
+                },
+                "pixelShader": {
+                    "name": "ComposeToScreenFragment"
+                },
+                "countPerInstance": 3,
+                "depthWrite": false,
+                "depthTest": "Always",
+                "colorTargets": [
+                    {
+                        "node": "BackBuffer",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BackBuffer",
+                "editorPos": [
+                    2891.0,
+                    706.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_0",
+            "shaderModelVs": "vs_6_0",
+            "shaderModelPs": "ps_6_0"
+        }
+    }
+}

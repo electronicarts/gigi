@@ -1,0 +1,68 @@
+To view the L system demos
+
+1) Load LSystem.gg
+2) Run any of the python files from within the viewer to set up a demo
+3) Click "Initialize" to set the starting state
+4) Click "Step" to do a single step of simulation. repeat.
+
+============ Rules CSV Format ============
+
+A rule begins with the symbol that it is the rule for.
+Then is the encoded command to do for that symbol. See next section for details on commands.
+After that are the symbols it should be replaced with (0 or more) and then a -1 meaning end of rule.
+
+Example:
+
+13,95,13,48,-1,
+48,95,48,-1,
+
+The first line says that for symbol 13, do command "95" (draw forward), and replace it with a 13 and a 48.
+The second line says that for symbol 48, do command "95" (draw forward) and replace it with a 48.
+
+Note that you can use spaces to help make it more readable:
+
+13, 95,   13, 48, -1,
+48, 95,   48, -1,
+
+If "Erase Symbols Without Rules" is checked, any symbol that doesn't have a rule will be erased.
+If that is unchecked, any symbol without a rule will be left alone, as if they have a rule to replace their value with their own value.
+
+============ Commands < 324 ============
+
+Commands < 324 are encoded as below.
+
+CursorMoveAxis     : 0,1,2 meaning X,Y,Z
+CursorMoveDistance : 0,1,2 meaning 0,1,-1
+CursorRotAxis      : 0,1,2 meaning X,Y,Z
+CursorRotDistance  : 0,1,2 meaning 0,1,-1
+Absolute           : 0,1 specifying whether to move in absolute or cursor relative coordinates.
+Draw               : 0,1 specifying whether to draw a line or not
+
+Symbol = CursorMoveAxis + CursorMoveDistance*3 + CursorRotAxis*9 + CursorRotDistance*27 + Absolute*81 + Draw*162
+
+Useful commands:
+0 - "Do nothing"
+
+167 - "Draw forward (Z+)" (2+3+162)
+170 - "Draw back (Z-)" (2+6+162)
+165 - "Draw right (X+)" (0+3+162)
+168 - "Draw left (X-)" (0+6+162)
+166 - "Draw up (Y+)" (1+3+162)
+169 - "Draw down (Y-)" (1+6+162)
+
+27 - "rotate X+" (0+27)
+54 - "rotate X-" (0+54)
+36 - "rotate Y+" (9+27)
+63 - "rotate Y-" (9+54)
+45 - "rotate Z+" (18+27)
+72 - "rotate Z-" (18+54)
+
+167, 8 - "Draw forward (Z+) then go backward (Z-) without drawing"
+
+============ Commands >= 324 ============
+
+324 - Cursor State Push
+325 - Cursor State Pop
+
+Cursor state push / pop lets you store and recall cursor position and orientation.
+

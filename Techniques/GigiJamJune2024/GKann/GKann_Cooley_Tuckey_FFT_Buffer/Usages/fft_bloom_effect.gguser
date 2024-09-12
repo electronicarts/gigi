@@ -1,0 +1,39 @@
+{
+    "resourceViewNodeIndex": 18,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "BloomKernel",
+            "texture": {
+                "fileName": "..\\..\\Assets\\BloomKernel.exr",
+                "format": "RGBA32_Float"
+            }
+        },
+        {
+            "nodeName": "InputTexture",
+            "texture": {
+                "fileName": "..\\..\\Assets\\PrismsLenses.exr",
+                "fileIsSRGB": false,
+                "format": "RGBA32_Float"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "effectMultiplier",
+            "value": "0.000000"
+        },
+        {
+            "name": "FFT_Forward_Transformation_PartialFFTBufferSize",
+            "value": "865"
+        },
+        {
+            "name": "FFT_Inverse_Transformation_PartialFFTBufferSize",
+            "value": "865"
+        },
+        {
+            "name": "FFT_Kernal_Forward_Transformation__PartialFFTBufferSize",
+            "value": "865"
+        }
+    ]
+}

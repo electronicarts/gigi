@@ -1,0 +1,5 @@
+Title: Space Battle
+
+Credit: Martin Palko
+
+Description: A space battle simulator! Teams of boids battle it out to be the last ones standing. Just open with the Gigi viewer and enjoy. No user input necessary. Settings can be tweaked both in the code and as variables to change the simulation parameters.

@@ -1,0 +1,10 @@
+Title: Chaos Game
+
+Credit: Demofox (awolfe@ea.com)
+
+Description:
+The chaos game is a way to make fractals through a random walk.
+You start with vertices and initialize a cursor to a random vertex.
+From there, you pick a vertex at random again and move towards that vertex some percentage amount and plot a point. Repeat many many times and you'll get a fractal.
+Using different numbers of points in different configurations with different percentage movements results in different fractals.
+Python scripts are provided to view different fractals.

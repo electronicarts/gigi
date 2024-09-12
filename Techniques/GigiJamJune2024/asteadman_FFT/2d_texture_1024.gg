@@ -1,0 +1,882 @@
+{
+    "$schema": "gigischema.json",
+    "name": "2D FFT With Texture",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "N",
+            "type": "Uint",
+            "Const": true,
+            "dflt": "1024",
+            "UISettings": {
+                "min": "1024",
+                "max": "1024"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "TextureSampler",
+            "fileName": "texture_sampler.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                16,
+                16,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "InputTexture",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputComplexRG",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputRealB",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "RealTextureCombiner",
+            "fileName": "texture_combine.hlsl",
+            "entryPoint": "csMain",
+            "resources": [
+                {
+                    "name": "RedGreen",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Blue",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutTexture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComplexMultiply",
+            "fileName": "complex_multiply.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexInOut",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "ComplexRef",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Real FFT 1024",
+            "fileName": "FFT1024\\realfft1024.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "RealInput",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "ComplexOutput",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComplexTranspose1024",
+            "fileName": "FFT1024\\complex_square_transpose_1k.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexSquareMatrix",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Complex FFT 1024",
+            "fileName": "FFT1024\\complexfft1024.hlsl",
+            "entryPoint": "csMain",
+            "defines": [
+                {
+                    "name": "COMPLEX_INPUT",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexInput",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "ComplexOutput",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Fusion (FFT, Mult)",
+            "fileName": "fusion_1024.hlsl",
+            "entryPoint": "csMain",
+            "defines": [
+                {
+                    "name": "COMPLEX_INPUT",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexInput",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "ComplexRef",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "ComplexOutput",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "Complex",
+            "fields": [
+                {
+                    "name": "Re",
+                    "type": "Float",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Im",
+                    "type": "Float",
+                    "dflt": "0"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputTexture",
+                "editorPos": [
+                    -869.0,
+                    114.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "size": {
+                    "variable": {
+                        "name": "N"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Texture Splitter",
+                "editorPos": [
+                    -729.0,
+                    114.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture",
+                        "dstNode": "InputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputComplexRG",
+                        "dstNode": "RedGreenBuf",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputRealB",
+                        "dstNode": "BlueBuf",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "TextureSampler"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputTexture"
+                    },
+                    "indirectBuffer": {
+                        "node": "RedGreenBuf"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "RedGreenBuf",
+                "editorPos": [
+                    -885.0,
+                    162.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "BlueBuf",
+                "editorPos": [
+                    -869.0,
+                    210.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "TextureCombine",
+                "editorPos": [
+                    1019.0,
+                    159.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "RedGreen",
+                        "dstNode": "IFFT - R+G",
+                        "dstPin": "OutVals"
+                    },
+                    {
+                        "srcPin": "Blue",
+                        "dstNode": "IFFT - BLUE",
+                        "dstPin": "OutVals"
+                    },
+                    {
+                        "srcPin": "OutTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "RealTextureCombiner"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "GaussianFreqs"
+                    },
+                    "multiply": [
+                        1024,
+                        1024,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    850.0,
+                    402.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "size": {
+                    "multiply": [
+                        1024,
+                        1024,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GaussianFreqs",
+                "editorPos": [
+                    10.0,
+                    -158.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IntermediateRedFreqs",
+                "editorPos": [
+                    -432.0,
+                    -30.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Transpose R+G",
+                "editorPos": [
+                    -62.0,
+                    -33.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ComplexSquareMatrix",
+                        "dstNode": "Horizontal FFT #1 - R+G",
+                        "dstPin": "ComplexOutput"
+                    }
+                ],
+                "shader": {
+                    "name": "ComplexTranspose1024"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        16384,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FUSION FFT - R+G",
+                "editorPos": [
+                    229.0,
+                    -33.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "RealInput"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "IntermediateRedFreqs2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ComplexInput",
+                        "dstNode": "Transpose R+G",
+                        "dstPin": "ComplexSquareMatrix"
+                    },
+                    {
+                        "srcPin": "ComplexRef",
+                        "dstNode": "GaussianFreqs",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Fusion (FFT, Mult)"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        32768,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IntermediateRedFreqs2",
+                "editorPos": [
+                    -39.0,
+                    34.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IntermediateBlueFreqs",
+                "editorPos": [
+                    -437.0,
+                    290.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IntermediateBlueFreqs2",
+                "editorPos": [
+                    -44.0,
+                    354.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 1024
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Horizontal FFT #1 - BLUE",
+                "editorPos": [
+                    -251.0,
+                    268.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "RealInput",
+                        "dstNode": "Texture Splitter",
+                        "dstPin": "OutputRealB"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "IntermediateBlueFreqs",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Real FFT 1024"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        32768,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Transpose Blue",
+                "editorPos": [
+                    -59.0,
+                    290.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ComplexSquareMatrix",
+                        "dstNode": "Horizontal FFT #1 - BLUE",
+                        "dstPin": "ComplexOutput"
+                    }
+                ],
+                "shader": {
+                    "name": "ComplexTranspose1024"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        16384,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FUSION FFT - BLUE ",
+                "editorPos": [
+                    229.0,
+                    290.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "RealInput"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "IntermediateBlueFreqs2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ComplexInput",
+                        "dstNode": "Transpose Blue",
+                        "dstPin": "ComplexSquareMatrix"
+                    },
+                    {
+                        "srcPin": "ComplexRef",
+                        "dstNode": "GaussianFreqs",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Fusion (FFT, Mult)"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        32768,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Horizontal FFT #1 - R+G",
+                "editorPos": [
+                    -235.0,
+                    -46.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "RealInput"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "IntermediateRedFreqs",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ComplexInput",
+                        "dstNode": "Texture Splitter",
+                        "dstPin": "OutputComplexRG"
+                    }
+                ],
+                "shader": {
+                    "name": "Complex FFT 1024"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        32768,
+                        8,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "IFFT - R+G",
+                "editorPos": [
+                    576.0,
+                    64.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputFreqs",
+                        "dstNode": "FUSION FFT - R+G",
+                        "dstPin": "ComplexOutput"
+                    },
+                    {
+                        "srcPin": "OutVals"
+                    }
+                ],
+                "fileName": "FFT1024\\IFFT_1024_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputFreqs"
+                    ],
+                    "exportedResources": [
+                        "OutVals"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "IFFT - BLUE",
+                "editorPos": [
+                    577.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputFreqs",
+                        "dstNode": "FUSION FFT - BLUE ",
+                        "dstPin": "ComplexOutput"
+                    },
+                    {
+                        "srcPin": "OutVals"
+                    }
+                ],
+                "fileName": "FFT1024\\IFFT_1024_2D.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputFreqs"
+                    ],
+                    "exportedResources": [
+                        "OutVals"
+                    ],
+                    "variables": [
+                        {
+                            "name": "N"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "N"
+                    }
+                ]
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_0"
+        }
+    }
+}

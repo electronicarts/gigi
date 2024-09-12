@@ -1,0 +1,433 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "effectMultiplier",
+            "type": "Float",
+            "dflt": "15",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0",
+                "max": "50",
+                "step": "0.1"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "bloom_effect",
+            "fileName": "fft_bloom_effect.hlsl",
+            "entryPoint": "applyBloomEffect",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                },
+                {
+                    "name": "BloomKernel",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "..\\fft_core.hlsl",
+            "type": "Shader",
+            "destFileName": "fft_core.hlsl"
+        },
+        {
+            "fileName": "..\\fft_consts.hlsl",
+            "type": "Shader",
+            "destFileName": "fft_consts.hlsl"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputTexture",
+                "editorPos": [
+                    -5.0,
+                    -78.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Bloom Pass RG",
+                "editorPos": [
+                    421.0,
+                    -30.0
+                ],
+                "condition": {
+                    "comparison": "IsFalse",
+                    "value2": "false"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "BloomKernel",
+                        "dstNode": "FFT Kernal Forward Transformation ",
+                        "dstPin": "FFTBufferRG"
+                    },
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFT Forward Transformation",
+                        "dstPin": "FFTBufferRG"
+                    }
+                ],
+                "shader": {
+                    "name": "bloom_effect"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    },
+                    "multiply": [
+                        1,
+                        2048,
+                        1
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Forward Transformation",
+                "editorPos": [
+                    178.0,
+                    -49.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture",
+                        "dstNode": "InputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferRG",
+                        "dstNode": "FFTBufferRG",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferB",
+                        "dstNode": "FFTBufferB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "..\\fft_forward_graph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputTexture",
+                        "FFTBufferRG",
+                        "FFTBufferB"
+                    ],
+                    "variables": [
+                        {
+                            "name": "PartialFFTBufferSize"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "PartialFFTBufferSize"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Inverse Transformation",
+                "editorPos": [
+                    629.0,
+                    28.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "OutputTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferRG",
+                        "dstNode": "Bloom Pass RG",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "FFTBufferB",
+                        "dstNode": "Bloom Pass B",
+                        "dstPin": "FFTBuffer"
+                    }
+                ],
+                "fileName": "..\\fft_inverse_graph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "OutputTexture",
+                        "FFTBufferRG",
+                        "FFTBufferB"
+                    ],
+                    "variables": [
+                        {
+                            "name": "PartialFFTBufferSize"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "PartialFFTBufferSize"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    482.0,
+                    -78.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BloomKernel",
+                "editorPos": [
+                    -8.0,
+                    82.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Kernal Forward Transformation ",
+                "editorPos": [
+                    133.0,
+                    82.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture",
+                        "dstNode": "BloomKernel",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferRG",
+                        "dstNode": "FFTKernelBufferRG",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferB",
+                        "dstNode": "FFTKernelBufferB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "..\\fft_forward_graph_kernel.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputTexture",
+                        "FFTBufferRG",
+                        "FFTBufferB"
+                    ],
+                    "variables": [
+                        {
+                            "name": "PartialFFTBufferSize"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "PartialFFTBufferSize"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTBufferRG",
+                "editorPos": [
+                    -7.0,
+                    -30.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float2"
+                },
+                "count": {
+                    "multiply": 4194304
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTBufferB",
+                "editorPos": [
+                    -5.0,
+                    18.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTKernelBufferRG",
+                "editorPos": [
+                    -44.0,
+                    130.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTKernelBufferB",
+                "editorPos": [
+                    -36.0,
+                    178.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Bloom Pass B",
+                "editorPos": [
+                    421.0,
+                    98.0
+                ],
+                "condition": {
+                    "comparison": "IsFalse",
+                    "value2": "false"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "BloomKernel",
+                        "dstNode": "FFT Kernal Forward Transformation ",
+                        "dstPin": "FFTBufferB"
+                    },
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFT Forward Transformation",
+                        "dstPin": "FFTBufferB"
+                    }
+                ],
+                "shader": {
+                    "name": "bloom_effect"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    },
+                    "multiply": [
+                        1,
+                        2048,
+                        1
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ]
+                }
+            }
+        }
+    ]
+}

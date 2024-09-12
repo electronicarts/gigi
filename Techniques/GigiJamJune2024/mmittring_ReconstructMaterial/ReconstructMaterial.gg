@@ -1,0 +1,343 @@
+{
+    "$schema": "gigischema.json",
+    "name": "SlangAutoDiff",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "Reset",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User",
+            "transient": true,
+            "UISettings": {
+                "UIHint": "Drag"
+            },
+            "UIHint": "Button"
+        },
+        {
+            "name": "initialized",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "FrameIndex",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "UseBackwardAD",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "Size",
+            "comment": "width and height of the image",
+            "type": "Uint2",
+            "Const": true,
+            "dflt": "256,256"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "GenInputImage",
+            "fileName": "GenInputImage.hlsl",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "Data",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComputeGradient",
+            "fileName": "ComputeGradient.hlsl",
+            "entryPoint": "main",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "OutputGradient",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "StateA",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "StateB",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Overview",
+            "fileName": "Overview.hlsl",
+            "entryPoint": "main",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "OutputGradient",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "StateA",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "StateB",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OverviewImage",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "common.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "ComputeGradient",
+                "editorPos": [
+                    789.0,
+                    386.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "OutputGradient",
+                        "dstNode": "DebugGradient",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "StateA",
+                        "dstNode": "StateA",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "StateB",
+                        "dstNode": "StateB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ComputeGradient"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "Size"
+                    }
+                },
+                "entryPoint": "main"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "DebugGradient",
+                "editorPos": [
+                    460.0,
+                    418.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Size"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "StateB",
+                "editorPos": [
+                    459.0,
+                    530.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Size"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "StateA",
+                "editorPos": [
+                    459.0,
+                    482.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Size"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Overview",
+                "editorPos": [
+                    1029.0,
+                    380.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "OutputGradient",
+                        "dstNode": "ComputeGradient",
+                        "dstPin": "OutputGradient"
+                    },
+                    {
+                        "srcPin": "StateA",
+                        "dstNode": "ComputeGradient",
+                        "dstPin": "StateA"
+                    },
+                    {
+                        "srcPin": "StateB",
+                        "dstNode": "ComputeGradient",
+                        "dstPin": "StateB"
+                    },
+                    {
+                        "srcPin": "OverviewImage",
+                        "dstNode": "OverviewImage",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Overview"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "OverviewImage"
+                    }
+                },
+                "entryPoint": "main"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OverviewImage",
+                "editorPos": [
+                    858.0,
+                    530.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        0,
+                        0,
+                        1
+                    ],
+                    "postAdd": [
+                        2048,
+                        512,
+                        0
+                    ]
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "initialized"
+            },
+            "AVar": {
+                "name": "Reset"
+            },
+            "op": "BitwiseNot",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "Reset"
+            },
+            "ALiteral": "false",
+            "op": "Noop",
+            "setBefore": false,
+            "condition": {
+                "variable1": "initialized",
+                "comparison": "IsFalse"
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderCompiler": "FXC",
+            "shaderModelCs": "cs_5_1",
+            "shaderModelVs": "vs_5_1",
+            "shaderModelPs": "ps_5_1"
+        }
+    }
+}

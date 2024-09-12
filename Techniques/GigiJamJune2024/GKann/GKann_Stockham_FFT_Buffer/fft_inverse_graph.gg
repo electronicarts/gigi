@@ -1,0 +1,510 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "PartialFFTBufferSize",
+            "type": "Uint"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "fft_writeback",
+            "fileName": "fft_writeback.hlsl",
+            "entryPoint": "fftWriteback",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "OutputTexture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "FFTBufferRG",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                },
+                {
+                    "name": "FFTBufferB",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ifft_horizontal",
+            "fileName": "ifft_horizontal.hlsl",
+            "entryPoint": "ifftHorizontal",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "fft_transpose",
+            "fileName": "fft_transpose.hlsl",
+            "entryPoint": "fftTranspose",
+            "NumThreads": [
+                32,
+                32,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBufferOrigin",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "FFTBufferTarget",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "fft_core.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "fft_consts.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    450.0,
+                    -110.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Writeback Resources",
+                "editorPos": [
+                    645.0,
+                    -20.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture"
+                    },
+                    {
+                        "srcPin": "FFTBufferRG",
+                        "dstNode": "FFT RG ",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "FFTBufferB",
+                        "dstNode": "FFT B ",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "OutputTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "fft_writeback"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    },
+                    "multiply": [
+                        1,
+                        2048,
+                        1
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT RG",
+                "editorPos": [
+                    21.0,
+                    -65.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFTBufferRG",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ifft_horizontal"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    },
+                    "multiply": [
+                        256,
+                        0,
+                        0
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ],
+                    "postAdd": [
+                        0,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT RG ",
+                "editorPos": [
+                    421.0,
+                    -46.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "Transpose RG",
+                        "dstPin": "FFTBufferTarget"
+                    }
+                ],
+                "shader": {
+                    "name": "ifft_horizontal"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "PartialFFTBufferRG"
+                    },
+                    "multiply": [
+                        256,
+                        0,
+                        0
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ],
+                    "postAdd": [
+                        0,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTBufferRG",
+                "editorPos": [
+                    -103.0,
+                    -62.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTBufferB",
+                "editorPos": [
+                    -101.0,
+                    50.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT B",
+                "editorPos": [
+                    21.0,
+                    47.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFTBufferB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ifft_horizontal"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferB"
+                    },
+                    "indirectBuffer": {
+                        "node": "Writeback Resources"
+                    },
+                    "multiply": [
+                        256,
+                        0,
+                        0
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ],
+                    "postAdd": [
+                        0,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT B ",
+                "editorPos": [
+                    421.0,
+                    66.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "Transpose B",
+                        "dstPin": "FFTBufferTarget"
+                    }
+                ],
+                "shader": {
+                    "name": "ifft_horizontal"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "PartialFFTBufferB"
+                    },
+                    "indirectBuffer": {
+                        "node": "Writeback Resources"
+                    },
+                    "multiply": [
+                        256,
+                        0,
+                        0
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ],
+                    "postAdd": [
+                        0,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Transpose RG",
+                "editorPos": [
+                    229.0,
+                    -65.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBufferOrigin",
+                        "dstNode": "FFT RG",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "FFTBufferTarget",
+                        "dstNode": "PartialFFTBufferRG",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "fft_transpose"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        66560,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Transpose B",
+                "editorPos": [
+                    229.0,
+                    47.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBufferOrigin",
+                        "dstNode": "FFT B",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "FFTBufferTarget",
+                        "dstNode": "PartialFFTBufferB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "fft_transpose"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        66560,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "PartialFFTBufferRG",
+                "editorPos": [
+                    19.0,
+                    2.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "PartialFFTBufferSize"
+                    },
+                    "multiply": 2048
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "PartialFFTBufferB",
+                "editorPos": [
+                    27.0,
+                    114.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "PartialFFTBufferSize"
+                    },
+                    "multiply": 2048
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "PartialFFTBufferSize"
+            },
+            "AVarIndex": 1,
+            "ANode": {
+                "name": "OutputTexture"
+            }
+        }
+    ]
+}

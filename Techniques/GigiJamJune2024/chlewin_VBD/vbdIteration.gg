@@ -1,0 +1,1118 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.96b",
+    "shaders": [
+        {
+            "name": "setIndirectArgs",
+            "fileName": "setIndirectArgs.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexColorData",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs0",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs1",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs2",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs3",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs4",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs5",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs6",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs7",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs8",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "indirectArgs9",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "vbd",
+            "fileName": "vbd.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "vertexEdgeData",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "vertexColorData",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "edgeIndices",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint2"
+                    }
+                },
+                {
+                    "name": "edgeLengths",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "vertexPositions",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                },
+                {
+                    "name": "vertexTargetPositions",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "vertexColorData",
+                "editorPos": [
+                    -238.0,
+                    -158.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexPositions",
+                "editorPos": [
+                    -233.0,
+                    -110.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd0",
+                "editorPos": [
+                    171.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs0"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "0"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vertexColorData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "edgeIndices",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "edgeLengths",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vertexPositions",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vertexEdgeData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vertexTargetPositions",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "edgeIndices",
+                "editorPos": [
+                    -198.0,
+                    -254.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "setIndirectArgs",
+                "editorPos": [
+                    -82.0,
+                    23.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "setIndirectArgs"
+                },
+                "dispatchSize": {
+                    "preAdd": [
+                        9,
+                        0,
+                        0
+                    ]
+                },
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vertexColorData",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs0",
+                        "dstNode": "indirectArgs0",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs1",
+                        "dstNode": "indirectArgs1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs2",
+                        "dstNode": "indirectArgs2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs3",
+                        "dstNode": "indirectArgs3",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs4",
+                        "dstNode": "indirectArgs4",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs5",
+                        "dstNode": "indirectArgs5",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs6",
+                        "dstNode": "indirectArgs6",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs8",
+                        "dstNode": "indirectArgs8",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs9",
+                        "dstNode": "indirectArgs9",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "indirectArgs7",
+                        "dstNode": "indirectArgs7",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "edgeLengths",
+                "editorPos": [
+                    -216.0,
+                    -206.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd1",
+                "editorPos": [
+                    360.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs1"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "1"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd0",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd0",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd0",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd0",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd0",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd0",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd2",
+                "editorPos": [
+                    552.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs2"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "2"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd1",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd1",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd1",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd1",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd1",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd1",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd3",
+                "editorPos": [
+                    744.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs3"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "3"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd2",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd2",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd2",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd2",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd2",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd2",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd4",
+                "editorPos": [
+                    936.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs4"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "4"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd3",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd3",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd3",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd3",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd3",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd3",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd5",
+                "editorPos": [
+                    1125.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs5"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "5"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd4",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd4",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd4",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd4",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd4",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd4",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd6",
+                "editorPos": [
+                    1320.0,
+                    -158.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs6"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "6"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd5",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd5",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd5",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd5",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd5",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd5",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd7",
+                "editorPos": [
+                    1509.0,
+                    -157.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs7"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "7"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd6",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd6",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd6",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd6",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd6",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd6",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs0",
+                "editorPos": [
+                    -285.0,
+                    2.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs1",
+                "editorPos": [
+                    -285.0,
+                    50.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs2",
+                "editorPos": [
+                    -285.0,
+                    98.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs3",
+                "editorPos": [
+                    -285.0,
+                    146.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs4",
+                "editorPos": [
+                    -285.0,
+                    194.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs5",
+                "editorPos": [
+                    -285.0,
+                    242.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs6",
+                "editorPos": [
+                    -285.0,
+                    290.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs7",
+                "editorPos": [
+                    -285.0,
+                    338.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexEdgeData",
+                "editorPos": [
+                    -219.0,
+                    -302.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexTargetPositions",
+                "editorPos": [
+                    -268.0,
+                    -62.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd8",
+                "editorPos": [
+                    1712.0,
+                    -157.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs8"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "8"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd7",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd7",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd7",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd7",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd7",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd7",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "vbd9",
+                "editorPos": [
+                    1909.0,
+                    -157.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "vbd"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "setIndirectArgs",
+                        "pin": "indirectArgs9"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "VERTEX_COLOR",
+                        "value": "9"
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "vertexColorData",
+                        "dstNode": "vbd8",
+                        "dstPin": "vertexColorData"
+                    },
+                    {
+                        "srcPin": "edgeIndices",
+                        "dstNode": "vbd8",
+                        "dstPin": "edgeIndices"
+                    },
+                    {
+                        "srcPin": "edgeLengths",
+                        "dstNode": "vbd8",
+                        "dstPin": "edgeLengths"
+                    },
+                    {
+                        "srcPin": "vertexPositions",
+                        "dstNode": "vbd8",
+                        "dstPin": "vertexPositions"
+                    },
+                    {
+                        "srcPin": "vertexEdgeData",
+                        "dstNode": "vbd8",
+                        "dstPin": "vertexEdgeData"
+                    },
+                    {
+                        "srcPin": "vertexTargetPositions",
+                        "dstNode": "vbd8",
+                        "dstPin": "vertexTargetPositions"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs8",
+                "editorPos": [
+                    -285.0,
+                    386.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "indirectArgs9",
+                "editorPos": [
+                    -285.0,
+                    434.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "preAdd": 3
+                }
+            }
+        }
+    ]
+}

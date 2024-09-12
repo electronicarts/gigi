@@ -1,0 +1,25 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "RenderTarget"
+    },
+    "resourceViewNodeIndex": 12,
+    "resourceViewResourceIndex": 3,
+    "savedVariables": [
+        {
+            "name": "EntityCount",
+            "value": "250"
+        },
+        {
+            "name": "TeamCount",
+            "value": "2"
+        },
+        {
+            "name": "LaserRateOfFire",
+            "value": "0.500000"
+        },
+        {
+            "name": "BlurRadius",
+            "value": "20.000000"
+        }
+    ]
+}

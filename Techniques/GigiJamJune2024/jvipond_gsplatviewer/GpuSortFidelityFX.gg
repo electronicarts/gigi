@@ -1,0 +1,626 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "numBlocksPerThreadGroup",
+            "type": "Int",
+            "dflt": "14"
+        },
+        {
+            "name": "numThreadGroups",
+            "type": "Uint",
+            "dflt": "800"
+        },
+        {
+            "name": "numThreadGroupsWithAdditionalBlocks",
+            "type": "Uint",
+            "dflt": "197"
+        },
+        {
+            "name": "numReduceThreadgroupPerBin",
+            "type": "Uint",
+            "dflt": "2"
+        },
+        {
+            "name": "numScanValues",
+            "type": "Uint",
+            "dflt": "32"
+        },
+        {
+            "name": "shift",
+            "type": "Uint",
+            "dflt": "0"
+        },
+        {
+            "name": "_SplatCount",
+            "type": "Uint",
+            "dflt": "0"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "FfxParallelSortCount",
+            "fileName": "FfxParallelSortCount.hlsl",
+            "entryPoint": "FfxParallelSortCount",
+            "defines": [
+                {
+                    "name": "SOURCE_KEYS",
+                    "value": "1"
+                },
+                {
+                    "name": "SUM_TABLE",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                128,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "rw_source_keys",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_sum_table",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "FfxParallelSortReduce",
+            "fileName": "FfxParallelSortReduce.hlsl",
+            "entryPoint": "FfxParallelSortReduce",
+            "defines": [
+                {
+                    "name": "SUM_TABLE",
+                    "value": "1"
+                },
+                {
+                    "name": "REDUCE_TABLE",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                128,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "rw_sum_table",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_reduce_table",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "FfxParallelSortScan",
+            "fileName": "FfxParallelSortScan.hlsl",
+            "entryPoint": "FfxParallelSortScan",
+            "defines": [
+                {
+                    "name": "SCAN_SOURCE",
+                    "value": "1"
+                },
+                {
+                    "name": "SCAN_DEST",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                128,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "rw_scan_source",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_scan_dest",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "FfxParallelSortScanAdd",
+            "fileName": "FfxParallelSortScanAdd.hlsl",
+            "entryPoint": "FfxParallelSortScanAdd",
+            "defines": [
+                {
+                    "name": "SCAN_SOURCE",
+                    "value": "1"
+                },
+                {
+                    "name": "SCAN_DEST",
+                    "value": "1"
+                },
+                {
+                    "name": "SCAN_SCRATCH",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                128,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "rw_scan_source",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_scan_dest",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_scan_scratch",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "FfxParallelSortScatter",
+            "fileName": "FfxParallelSortScatter.hlsl",
+            "entryPoint": "FfxParallelSortScatter",
+            "defines": [
+                {
+                    "name": "SOURCE_KEYS",
+                    "value": "1"
+                },
+                {
+                    "name": "DEST_KEYS",
+                    "value": "1"
+                },
+                {
+                    "name": "SUM_TABLE",
+                    "value": "1"
+                },
+                {
+                    "name": "SOURCE_PAYLOADS",
+                    "value": "1"
+                },
+                {
+                    "name": "DEST_PAYLOADS",
+                    "value": "1"
+                }
+            ],
+            "NumThreads": [
+                128,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "rw_source_keys",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_dest_keys",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_sum_table",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_source_payloads",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "rw_dest_payloads",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "GpuSortFidelityFx.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "SortScratchBuffer",
+                "editorPos": [
+                    1068.0,
+                    18.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "PayloadScratchBuffer",
+                "editorPos": [
+                    1157.0,
+                    306.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "ScratchBuffer",
+                "editorPos": [
+                    -510.0,
+                    98.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "ReducedScratchBuffer",
+                "editorPos": [
+                    -158.0,
+                    178.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "_SplatCount"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "SourceKeyBuffer",
+                "editorPos": [
+                    -511.0,
+                    34.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "SourcePayloadBuffer",
+                "editorPos": [
+                    1064.0,
+                    226.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FfxParallelSortCount",
+                "editorPos": [
+                    -328.0,
+                    79.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "rw_source_keys",
+                        "dstNode": "SourceKeyBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "rw_sum_table",
+                        "dstNode": "ScratchBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FfxParallelSortCount"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "numThreadGroups"
+                    },
+                    "multiply": [
+                        128,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FfxParallelSortReduce",
+                "editorPos": [
+                    35.0,
+                    82.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "rw_sum_table",
+                        "dstNode": "FfxParallelSortCount",
+                        "dstPin": "rw_sum_table"
+                    },
+                    {
+                        "srcPin": "rw_reduce_table",
+                        "dstNode": "ReducedScratchBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FfxParallelSortReduce"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "numScanValues"
+                    },
+                    "multiply": [
+                        128,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FfxParallelSortScan",
+                "editorPos": [
+                    295.0,
+                    194.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "rw_scan_source",
+                        "dstNode": "FfxParallelSortReduce",
+                        "dstPin": "rw_reduce_table"
+                    },
+                    {
+                        "srcPin": "rw_scan_dest",
+                        "dstNode": "FfxParallelSortReduce",
+                        "dstPin": "rw_reduce_table"
+                    }
+                ],
+                "shader": {
+                    "name": "FfxParallelSortScan"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        128,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FfxParallelSortScanAdd",
+                "editorPos": [
+                    804.0,
+                    220.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "rw_scan_source",
+                        "dstNode": "FfxParallelSortReduce",
+                        "dstPin": "rw_sum_table"
+                    },
+                    {
+                        "srcPin": "rw_scan_dest",
+                        "dstNode": "FfxParallelSortReduce",
+                        "dstPin": "rw_sum_table"
+                    },
+                    {
+                        "srcPin": "rw_scan_scratch",
+                        "dstNode": "FfxParallelSortScan",
+                        "dstPin": "rw_scan_dest"
+                    }
+                ],
+                "shader": {
+                    "name": "FfxParallelSortScanAdd"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "numScanValues"
+                    },
+                    "multiply": [
+                        128,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FfxParallelSortScatter",
+                "editorPos": [
+                    1445.0,
+                    -78.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "rw_source_keys",
+                        "dstNode": "SourceKeyBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "rw_dest_keys",
+                        "dstNode": "SortScratchBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "rw_sum_table",
+                        "dstNode": "FfxParallelSortScanAdd",
+                        "dstPin": "rw_scan_source"
+                    },
+                    {
+                        "srcPin": "rw_source_payloads",
+                        "dstNode": "SourcePayloadBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "rw_dest_payloads",
+                        "dstNode": "PayloadScratchBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FfxParallelSortScatter"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "numThreadGroups"
+                    },
+                    "multiply": [
+                        128,
+                        1,
+                        1
+                    ]
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_0"
+        }
+    }
+}

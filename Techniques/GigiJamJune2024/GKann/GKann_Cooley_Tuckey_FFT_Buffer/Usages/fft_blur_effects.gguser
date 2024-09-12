@@ -1,0 +1,32 @@
+{
+    "resourceViewNodeIndex": 15,
+    "resourceViewResourceIndex": 3,
+    "importedResources": [
+        {
+            "nodeName": "InputTexture",
+            "resetEveryFrame": false,
+            "texture": {
+                "fileName": "..\\..\\Assets\\leadenhall_market_2k.hdr",
+                "format": "RGBA32_Float"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "effectMultiplier",
+            "value": "0.213000"
+        },
+        {
+            "name": "effectSelection",
+            "value": "0"
+        },
+        {
+            "name": "FFT_Forward_Transformation_PartialFFTBufferSize",
+            "value": "1024"
+        },
+        {
+            "name": "FFT_Inverse_Transformation_PartialFFTBufferSize",
+            "value": "1024"
+        }
+    ]
+}

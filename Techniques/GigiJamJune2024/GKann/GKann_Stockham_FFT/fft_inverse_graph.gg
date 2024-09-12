@@ -1,0 +1,250 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "shaders": [
+        {
+            "name": "fft_writeback",
+            "fileName": "fft_writeback.hlsl",
+            "entryPoint": "fftWriteback",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                },
+                {
+                    "name": "OutputTexture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ifft_horizontal",
+            "fileName": "ifft_horizontal.hlsl",
+            "entryPoint": "ifftHorizontal",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ifft_vertical",
+            "fileName": "ifft_vertical.hlsl",
+            "entryPoint": "ifftVertical",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "fft_core.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "fft_consts.hlsl",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    754.0,
+                    50.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Writeback",
+                "editorPos": [
+                    895.0,
+                    -30.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "Inverse Horizontal Pass",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "OutputTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "fft_writeback"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBuffer"
+                    },
+                    "divide": [
+                        1,
+                        1,
+                        3
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Inverse Horizontal Pass",
+                "editorPos": [
+                    704.0,
+                    -30.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "Inverse Vertical Pass",
+                        "dstPin": "FFTBuffer"
+                    }
+                ],
+                "shader": {
+                    "name": "ifft_horizontal"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBuffer"
+                    },
+                    "multiply": [
+                        256,
+                        0,
+                        1
+                    ],
+                    "divide": [
+                        1,
+                        1,
+                        3
+                    ],
+                    "postAdd": [
+                        0,
+                        1,
+                        0
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Inverse Vertical Pass",
+                "editorPos": [
+                    533.0,
+                    -30.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFTBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ifft_vertical"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBuffer"
+                    },
+                    "multiply": [
+                        256,
+                        0,
+                        1
+                    ],
+                    "divide": [
+                        1,
+                        1,
+                        3
+                    ],
+                    "postAdd": [
+                        0,
+                        1,
+                        0
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "FFTBuffer",
+                "editorPos": [
+                    411.0,
+                    -30.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "format": "RG32_Float"
+                },
+                "dimension": "Texture2DArray"
+            }
+        }
+    ]
+}

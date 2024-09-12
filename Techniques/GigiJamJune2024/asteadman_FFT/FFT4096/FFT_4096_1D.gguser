@@ -1,0 +1,19 @@
+{
+    "resourceViewType": 5,
+    "resourceViewNodeIndex": 2,
+    "resourceViewResourceIndex": 2,
+    "vsync": false,
+    "importedResources": [
+        {
+            "nodeName": "InputVals",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "fileName": "TestData\\1d_test.csv",
+                "CSVHeaderRow": false,
+                "type": "Float",
+                "BLASOpaque": true
+            }
+        }
+    ]
+}

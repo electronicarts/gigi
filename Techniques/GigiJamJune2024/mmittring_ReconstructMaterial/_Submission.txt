@@ -1,0 +1,27 @@
+The title of your creation:
+
+                                "Reconstruct Material"
+
+  How you would like to be credited - name(s) or handle(s)
+
+                                Martin Mittring   MMittring@ea.com   
+
+  A description, including user instructions if needed
+
+                                Thanks to Gigi having Slang integration I can experiment with differentiable rendering. This is an experiment to reconstruct the material properties from shaded pixels.
+
+A application for this would be to generate the PBR textures from light stage input images with varying light direction.
+
+The current implementation produces some good results which are very close. With extra work this can be made faster (currently takes multiple seconds).
+
+  A screenshot
+
+                                The state visualized in images (GBufferA is baseColor&roughness and GBufferB is normal&metallic)
+
+                                Left to right: targetGBufferA, targetGBufferB, shaded image from target G Buffer, reconstructedGBufferA, reconstructedGBufferB, shaded with reconstructedGBuffer
+
+                                Top: RGB channel, Bottom: A channel
+
+  link to Gitlab
+
+https://gitlab.ea.com/seed/gigi/-/tree/mmittring/ReconstructMaterial/Techniques/ReconstructMaterial?ref_type=heads         

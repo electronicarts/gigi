@@ -1,0 +1,31 @@
+{
+    "resourceViewNodeIndex": 4,
+    "resourceViewResourceIndex": 3,
+    "vsync": false,
+    "importedResources": [
+        {
+            "nodeName": "GaussianFreqs",
+            "resetEveryFrame": false,
+            "isATexture": false,
+            "buffer": {
+                "fileName": "gauss_fft.bin",
+                "CSVHeaderRow": false,
+                "structIndex": 0,
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "InputTexture",
+            "resetEveryFrame": false,
+            "texture": {
+                "fileName": "awesome.png",
+                "size": [
+                    1024,
+                    1024,
+                    1
+                ],
+                "format": "RGBA8_Unorm"
+            }
+        }
+    ]
+}

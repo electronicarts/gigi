@@ -1,0 +1,373 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Demofox_ChaosGame",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "Reset",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            }
+        },
+        {
+            "name": "NumVerts",
+            "comment": "How many vertices in the polygon",
+            "type": "Uint",
+            "dflt": "3",
+            "visibility": "User",
+            "UISettings": {
+                "min": "2",
+                "max": "10"
+            }
+        },
+        {
+            "name": "Point0",
+            "comment": "Location of Vertex (red)",
+            "type": "Float2",
+            "dflt": "0.1f, 0.1f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point1",
+            "comment": "Location of Vertex (blue)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.9f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point2",
+            "comment": "Location of Vertex (yellow green)",
+            "type": "Float2",
+            "dflt": "0.9f, 0.1f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point3",
+            "comment": "Location of Vertex (magenta)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point4",
+            "comment": "Location of Vertex (teal)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point5",
+            "comment": "Location of Vertex (orange)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point6",
+            "comment": "Location of Vertex (purple)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point7",
+            "comment": "Location of Vertex (green)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point8",
+            "comment": "Location of Vertex (pink)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Point9",
+            "comment": "Location of Vertex (light blue)",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "Fraction",
+            "comment": "How far to move from the current point to the selected vertex",
+            "type": "Float",
+            "dflt": "0.5",
+            "visibility": "User"
+        },
+        {
+            "name": "FrameIndex",
+            "type": "Uint",
+            "dflt": "0",
+            "transient": true
+        },
+        {
+            "name": "TimeSeconds",
+            "type": "Float",
+            "dflt": "0.0f"
+        },
+        {
+            "name": "SkipCount",
+            "comment": "The number of initial points to skip",
+            "type": "Uint",
+            "dflt": "5",
+            "visibility": "User"
+        },
+        {
+            "name": "NumCursors",
+            "comment": "How many cursors are running at once",
+            "type": "Uint",
+            "dflt": "1024",
+            "visibility": "User"
+        },
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "768, 768",
+            "visibility": "User"
+        },
+        {
+            "name": "RNGMode",
+            "type": "Int",
+            "dflt": "UniformWhite",
+            "visibility": "User",
+            "Enum": "RNGModes"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "CSStep",
+            "fileName": "CSStep.hlsl",
+            "entryPoint": "main",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Screen",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "State",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "StateStruct"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "CSInit",
+            "fileName": "CSInit.hlsl",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "Screen",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "StateStruct",
+            "fields": [
+                {
+                    "name": "RngState",
+                    "type": "Uint",
+                    "dflt": "0",
+                    "comment": "The rng state used by wang hash"
+                },
+                {
+                    "name": "GRState",
+                    "type": "Float",
+                    "comment": "Golden Ratio RNG State"
+                },
+                {
+                    "name": "Pos",
+                    "type": "Float2",
+                    "comment": "The location of the cursor"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "WangHash.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "SRGB.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "IndexToColor.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Step",
+                "editorPos": [
+                    245.0,
+                    -30.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Screen",
+                        "dstNode": "Init",
+                        "dstPin": "Screen"
+                    },
+                    {
+                        "srcPin": "State",
+                        "dstNode": "State",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CSStep"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "NumCursors"
+                    },
+                    "indirectBuffer": {
+                        "node": "Screen"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Screen",
+                "editorPos": [
+                    -37.0,
+                    -30.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "State",
+                "editorPos": [
+                    123.0,
+                    50.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "StateStruct"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "NumCursors"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Init",
+                "editorPos": [
+                    85.0,
+                    -30.0
+                ],
+                "condition": {
+                    "variable1": "FrameIndex",
+                    "comparison": "Equals",
+                    "value2": "0"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Screen",
+                        "dstNode": "Screen",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CSInit"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Screen"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "RNGModes",
+            "items": [
+                {
+                    "label": "UniformWhite"
+                },
+                {
+                    "label": "GoldenRatio"
+                }
+            ]
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "FrameIndex"
+            },
+            "AVar": {
+                "name": "FrameIndex"
+            },
+            "BLiteral": "1",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "FrameIndex"
+            },
+            "ALiteral": "0",
+            "op": "Noop",
+            "setBefore": false,
+            "condition": {
+                "variable1": "Reset",
+                "comparison": "IsTrue"
+            }
+        }
+    ]
+}

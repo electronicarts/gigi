@@ -1,0 +1,139 @@
+{
+    "$schema": "gigischema.json",
+    "name": "FFT4096",
+    "version": "0.97b",
+    "variables": [
+        {
+            "name": "N",
+            "type": "Uint",
+            "Const": true,
+            "Static": true,
+            "dflt": "4096"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "FFT4096",
+            "fileName": "realfft4096.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                16,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "RealInput",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "ComplexOutput",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "Complex",
+            "fields": [
+                {
+                    "name": "Re",
+                    "type": "Float",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Im",
+                    "type": "Float",
+                    "dflt": "0"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "InputVals",
+                "editorPos": [
+                    -245.0,
+                    2.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FreqVals",
+                "editorPos": [
+                    -245.0,
+                    50.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT4096",
+                "editorPos": [
+                    -88.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "FFT4096"
+                },
+                "connections": [
+                    {
+                        "srcPin": "RealInput",
+                        "dstNode": "InputVals",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "FreqVals",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_0"
+        }
+    }
+}

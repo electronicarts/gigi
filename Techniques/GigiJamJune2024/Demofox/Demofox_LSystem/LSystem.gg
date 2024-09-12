@@ -1,0 +1,1149 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "StartingSymbol",
+            "type": "Uint",
+            "dflt": "0",
+            "visibility": "User"
+        },
+        {
+            "name": "RedBlue3D",
+            "type": "Bool",
+            "visibility": "User"
+        },
+        {
+            "name": "Initialize",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            }
+        },
+        {
+            "name": "Step",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            }
+        },
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "768, 768",
+            "visibility": "User"
+        },
+        {
+            "name": "SymbolsSizeMax",
+            "type": "Uint",
+            "dflt": "100000",
+            "visibility": "User"
+        },
+        {
+            "name": "RulesMax",
+            "type": "Uint",
+            "dflt": "256",
+            "visibility": "User"
+        },
+        {
+            "name": "LinesMax",
+            "type": "Uint",
+            "dflt": "100000",
+            "visibility": "User"
+        },
+        {
+            "name": "RedBlue3DEyeDistance",
+            "type": "Float",
+            "dflt": "-0.3f",
+            "visibility": "User"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "EraseSymbolsWithoutRules",
+            "comment": "If true, erases symbols without rules. Else it leaves them in place.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "CursorStateStackDepth",
+            "type": "Uint",
+            "dflt": "100",
+            "visibility": "User"
+        },
+        {
+            "name": "CursorRotationDegrees",
+            "comment": "How much the cursor rotates by when it rotates",
+            "type": "Float",
+            "dflt": "11.25",
+            "visibility": "User"
+        },
+        {
+            "name": "ForceBoundingBox",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "BBMin",
+            "type": "Float",
+            "dflt": "-1",
+            "visibility": "User"
+        },
+        {
+            "name": "BBMax",
+            "type": "Float",
+            "dflt": "1",
+            "visibility": "User"
+        },
+        {
+            "name": "DrawBoundingBox",
+            "type": "Bool",
+            "visibility": "User"
+        },
+        {
+            "name": "CursorXAxis",
+            "comment": "Initial X axis of cursor. Z is made by cross(xaxis, yaxis)",
+            "type": "Float3",
+            "dflt": "1.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "CursorYAxis",
+            "comment": "Initial Y axis of cursor. Z is made by cross(xaxis, yaxis)",
+            "type": "Float3",
+            "dflt": "0.0f, 1.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "CursorPos",
+            "comment": "The initial position of the cursor",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Initialize",
+            "fileName": "Initialize.hlsl",
+            "entryPoint": "main",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "GlobalState",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Symbols",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Rules",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Int",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "RulesIndex",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Step",
+            "fileName": "Step.hlsl",
+            "entryPoint": "main",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "GlobalState",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Symbols",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Rules",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Int",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "RulesIndex",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "SymbolsNext",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "MakeLineList",
+            "fileName": "MakeLineList.hlsl",
+            "entryPoint": "main",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "GlobalState",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Symbols",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Rules",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Int",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "RulesIndex",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "LineList",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexStruct"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "CursorStateStack",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "CursorState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "VS",
+            "fileName": "VS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "GlobalState",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "PS",
+            "fileName": "PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "main"
+        },
+        {
+            "name": "Combine",
+            "fileName": "combine.hlsl",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "SecondEye",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "BBVS",
+            "fileName": "BBVS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "main",
+            "resources": [
+                {
+                    "name": "GlobalState",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "GState"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "BBPS",
+            "fileName": "BBPS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "main"
+        }
+    ],
+    "structs": [
+        {
+            "name": "GState",
+            "fields": [
+                {
+                    "name": "SymbolsCount",
+                    "type": "Uint"
+                },
+                {
+                    "name": "LineListCount",
+                    "type": "Uint"
+                },
+                {
+                    "name": "Debug1",
+                    "type": "Float4"
+                },
+                {
+                    "name": "Debug2",
+                    "type": "Float4"
+                },
+                {
+                    "name": "Debug3",
+                    "type": "Float4"
+                },
+                {
+                    "name": "Debug4",
+                    "type": "Float4"
+                },
+                {
+                    "name": "CursorStateStackOverflow",
+                    "type": "Bool"
+                },
+                {
+                    "name": "LinesBBMin",
+                    "type": "Float3"
+                },
+                {
+                    "name": "LinesBBMax",
+                    "type": "Float3"
+                },
+                {
+                    "name": "CursorEndPosition",
+                    "type": "Float3"
+                },
+                {
+                    "name": "CursorEndXAxis",
+                    "type": "Float3"
+                },
+                {
+                    "name": "CursorEndYAxis",
+                    "type": "Float3"
+                },
+                {
+                    "name": "CursorEndZAxis",
+                    "type": "Float3"
+                }
+            ]
+        },
+        {
+            "name": "VertexStruct",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Color",
+                    "type": "Float4",
+                    "semantic": "Color"
+                }
+            ]
+        },
+        {
+            "name": "CursorState",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3"
+                },
+                {
+                    "name": "XAxis",
+                    "type": "Float3"
+                },
+                {
+                    "name": "YAxis",
+                    "type": "Float3"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "Symbols",
+                "editorPos": [
+                    -53.0,
+                    2.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "SymbolsSizeMax"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Rules",
+                "editorPos": [
+                    -53.0,
+                    50.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Int"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Initialize",
+                "editorPos": [
+                    123.0,
+                    -14.0
+                ],
+                "condition": {
+                    "variable1": "Initialize",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "GlobalState",
+                        "dstNode": "GlobalState",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Symbols",
+                        "dstNode": "Symbols",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "RulesIndex",
+                        "dstNode": "RulesIndex",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "RulesIndex"
+                    },
+                    {
+                        "srcPin": "Rules",
+                        "dstNode": "Rules",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Initialize"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Depth"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "GlobalState",
+                "editorPos": [
+                    -53.0,
+                    -46.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "GState"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "RulesIndex",
+                "editorPos": [
+                    -53.0,
+                    98.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "RulesMax"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Step",
+                "editorPos": [
+                    294.0,
+                    -14.0
+                ],
+                "condition": {
+                    "variable1": "Step",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "GlobalState",
+                        "dstNode": "Initialize",
+                        "dstPin": "GlobalState"
+                    },
+                    {
+                        "srcPin": "SymbolsNext",
+                        "dstNode": "SymbolsNext",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Rules",
+                        "dstNode": "Initialize",
+                        "dstPin": "Rules"
+                    },
+                    {
+                        "srcPin": "RulesIndex",
+                        "dstNode": "Initialize",
+                        "dstPin": "RulesIndex"
+                    },
+                    {
+                        "srcPin": "SymbolsNext"
+                    },
+                    {
+                        "srcPin": "SymbolsNext"
+                    },
+                    {
+                        "srcPin": "Symbols",
+                        "dstNode": "Initialize",
+                        "dstPin": "Symbols"
+                    }
+                ],
+                "shader": {
+                    "name": "Step"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Depth"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "SymbolsNext",
+                "editorPos": [
+                    139.0,
+                    162.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "variable": {
+                        "name": "SymbolsSizeMax"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopySymbolsStep",
+                "editorPos": [
+                    517.0,
+                    -49.0
+                ],
+                "condition": {
+                    "variable1": "Step",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Step",
+                    "pin": "SymbolsNext"
+                },
+                "dest": {
+                    "node": "Step",
+                    "pin": "Symbols"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "MakeLineList",
+                "editorPos": [
+                    689.0,
+                    -14.0
+                ],
+                "condition": {
+                    "variable1": "Step",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "GlobalState",
+                        "dstNode": "Step",
+                        "dstPin": "GlobalState"
+                    },
+                    {
+                        "srcPin": "Symbols",
+                        "dstNode": "CopySymbolsStep",
+                        "dstPin": "dest"
+                    },
+                    {
+                        "srcPin": "LineList",
+                        "dstNode": "LineList",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "CursorStateStack",
+                        "dstNode": "CursorStateStack",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "RulesIndex",
+                        "dstNode": "Step",
+                        "dstPin": "RulesIndex"
+                    },
+                    {
+                        "srcPin": "Rules",
+                        "dstNode": "Step",
+                        "dstPin": "Rules"
+                    }
+                ],
+                "shader": {
+                    "name": "MakeLineList"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Depth"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "LineList",
+                "editorPos": [
+                    523.0,
+                    98.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "VertexStruct"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "LinesMax"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Render",
+                "editorPos": [
+                    914.0,
+                    28.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "GlobalState",
+                        "dstNode": "MakeLineList",
+                        "dstPin": "GlobalState"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shadingRateImage": {
+                    "node": "Depth"
+                },
+                "vertexBuffer": {
+                    "node": "MakeLineList",
+                    "pin": "LineList"
+                },
+                "indexBuffer": {
+                    "node": "Depth"
+                },
+                "instanceBuffer": {
+                    "node": "Depth"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Color",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth",
+                    "pin": "resource"
+                },
+                "geometryType": "LineList"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    747.0,
+                    162.0
+                ],
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    747.0,
+                    210.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Render Other Eye",
+                "editorPos": [
+                    1426.0,
+                    28.0
+                ],
+                "condition": {
+                    "variable1": "RedBlue3D",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "GlobalState",
+                        "dstNode": "BoundingBox",
+                        "dstPin": "GlobalState"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "defines": [
+                    {
+                        "name": "SECOND_EYE",
+                        "value": "1"
+                    }
+                ],
+                "vertexBuffer": {
+                    "node": "Render",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Color2",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "BoundingBox",
+                    "pin": "depthTarget"
+                },
+                "geometryType": "LineList"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color2",
+                "editorPos": [
+                    1259.0,
+                    306.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Combine",
+                "editorPos": [
+                    1733.0,
+                    204.0
+                ],
+                "condition": {
+                    "variable1": "RedBlue3D",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "SecondEye",
+                        "dstNode": "Render Other Eye",
+                        "dstPin": "colorTarget0"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "BoundingBox",
+                        "dstPin": "colorTarget0"
+                    }
+                ],
+                "shader": {
+                    "name": "Combine"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "CursorStateStack",
+                "editorPos": [
+                    496.0,
+                    146.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "CursorState"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "CursorStateStackDepth"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "BoundingBox",
+                "editorPos": [
+                    1173.0,
+                    105.0
+                ],
+                "condition": {
+                    "variable1": "DrawBoundingBox",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "GlobalState",
+                        "dstNode": "Render",
+                        "dstPin": "GlobalState"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "BBVS"
+                },
+                "pixelShader": {
+                    "name": "BBPS"
+                },
+                "countPerInstance": 30,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "colorTargets": [
+                    {
+                        "node": "Render",
+                        "pin": "colorTarget0"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Render",
+                    "pin": "depthTarget"
+                },
+                "geometryType": "LineList"
+            }
+        }
+    ]
+}

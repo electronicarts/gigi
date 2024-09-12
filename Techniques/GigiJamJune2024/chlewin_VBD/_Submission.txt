@@ -1,0 +1,3 @@
+Title: inflatable pig head
+Credited as: Chris Lewin
+Description: This is an implementation of Vertex Block Descent, which is a physics sim technique that will be presented at this year's siggraph.

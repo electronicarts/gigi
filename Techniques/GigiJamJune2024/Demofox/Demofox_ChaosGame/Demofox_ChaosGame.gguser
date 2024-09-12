@@ -1,0 +1,77 @@
+{
+    "systemVars": {
+        "iTime_varName": "TimeSeconds"
+    },
+    "resourceViewNodeIndex": 0,
+    "resourceViewResourceIndex": 3,
+    "savedVariables": [
+        {
+            "name": "Reset",
+            "value": "false"
+        },
+        {
+            "name": "NumVerts",
+            "value": "8"
+        },
+        {
+            "name": "Point0",
+            "value": "0.100000,0.100000"
+        },
+        {
+            "name": "Point1",
+            "value": "0.100000,0.900000"
+        },
+        {
+            "name": "Point2",
+            "value": "0.900000,0.900000"
+        },
+        {
+            "name": "Point3",
+            "value": "0.900000,0.100000"
+        },
+        {
+            "name": "Point4",
+            "value": "0.100000,0.500000"
+        },
+        {
+            "name": "Point5",
+            "value": "0.500000,0.100000"
+        },
+        {
+            "name": "Point6",
+            "value": "0.900000,0.500000"
+        },
+        {
+            "name": "Point7",
+            "value": "0.500000,0.900000"
+        },
+        {
+            "name": "Point8",
+            "value": "0.500000,0.500000"
+        },
+        {
+            "name": "Point9",
+            "value": "0.500000,0.500000"
+        },
+        {
+            "name": "Fraction",
+            "value": "0.666660"
+        },
+        {
+            "name": "SkipCount",
+            "value": "5"
+        },
+        {
+            "name": "NumCursors",
+            "value": "1024"
+        },
+        {
+            "name": "RenderSize",
+            "value": "768,768"
+        },
+        {
+            "name": "RNGMode",
+            "value": "0"
+        }
+    ]
+}

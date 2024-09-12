@@ -1,0 +1,328 @@
+{
+    "$schema": "gigischema.json",
+    "name": "FFT_Blur_Cooley_Tuckey",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "effectMultiplier",
+            "type": "Float",
+            "dflt": "0.15",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0",
+                "max": "1",
+                "step": "0.05"
+            }
+        },
+        {
+            "name": "effectSelection",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0",
+                "max": "2",
+                "step": "1"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "blur_effects",
+            "fileName": "fft_blur_effects.hlsl",
+            "entryPoint": "applyBlurEffects",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float2",
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "..\\fft_consts.hlsl",
+            "type": "Shader",
+            "destFileName": "fft_consts.hlsl"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputTexture",
+                "editorPos": [
+                    11.0,
+                    -78.0
+                ],
+                "transient": false,
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Forward Transformation",
+                "editorPos": [
+                    149.0,
+                    -49.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture",
+                        "dstNode": "InputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferRG",
+                        "dstNode": "FFTBufferRG",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferB",
+                        "dstNode": "FFTBufferB",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "..\\fft_forward_graph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputTexture",
+                        "FFTBufferRG",
+                        "FFTBufferB"
+                    ],
+                    "variables": [
+                        {
+                            "name": "PartialFFTBufferSize"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "PartialFFTBufferSize"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTBufferRG",
+                "editorPos": [
+                    11.0,
+                    -30.0
+                ],
+                "transient": false,
+                "format": {
+                    "type": "Float2"
+                },
+                "count": {
+                    "multiply": 4194304
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FFTBufferB",
+                "editorPos": [
+                    11.0,
+                    18.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Inverse Transformation",
+                "editorPos": [
+                    565.0,
+                    -49.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "OutputTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBufferRG",
+                        "dstNode": "Blur Pass Red",
+                        "dstPin": "FFTBuffer"
+                    },
+                    {
+                        "srcPin": "FFTBufferB",
+                        "dstNode": "Blur Pass Blue",
+                        "dstPin": "FFTBuffer"
+                    }
+                ],
+                "fileName": "..\\fft_inverse_graph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "OutputTexture",
+                        "FFTBufferRG",
+                        "FFTBufferB"
+                    ],
+                    "variables": [
+                        {
+                            "name": "PartialFFTBufferSize"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "PartialFFTBufferSize"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    402.0,
+                    -110.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Blur Pass Red",
+                "editorPos": [
+                    363.0,
+                    -65.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFT Forward Transformation",
+                        "dstPin": "FFTBufferRG"
+                    }
+                ],
+                "shader": {
+                    "name": "blur_effects"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    },
+                    "multiply": [
+                        1,
+                        2048,
+                        1
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Blur Pass Blue",
+                "editorPos": [
+                    363.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFT Forward Transformation",
+                        "dstPin": "FFTBufferB"
+                    }
+                ],
+                "shader": {
+                    "name": "blur_effects"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBufferRG"
+                    },
+                    "multiply": [
+                        1,
+                        2048,
+                        1
+                    ],
+                    "divide": [
+                        2048,
+                        1,
+                        1
+                    ]
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "AVarIndex": 0,
+            "ANode": {
+                "name": "InputTexture"
+            },
+            "op": "Divide",
+            "BVarIndex": 1,
+            "BNode": {
+                "name": "InputTexture"
+            }
+        },
+        {}
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_5"
+        }
+    }
+}

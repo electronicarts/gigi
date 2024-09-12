@@ -1,0 +1,3 @@
+Title: Gaussian Splat Viewer
+Credited as: James Vipond
+Description: A Gigi port of the Gaussian Splat viewer from https://github.com/aras-p/UnityGaussianSplatting. To use Run Python Script in the GigiViewer and select gaussian_splat_loader.py. It will then ask you to select GaussianSplatLoader.exe (located in the same directory as gaussian_splat_loader.py) and then you can select a gaussian splat ply file to load. You can download some from https://repo-sam.inria.fr/fungraph/3d-gaussian-splatting/datasets/pretrained/models.zip.

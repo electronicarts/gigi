@@ -1,0 +1,292 @@
+{
+    "$schema": "gigischema.json",
+    "name": "FFT4096 (2d)",
+    "version": "0.97b",
+    "variables": [
+        {
+            "name": "N",
+            "type": "Uint",
+            "Const": true,
+            "Static": true,
+            "dflt": "4096"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Real FFT4096",
+            "fileName": "realfft4096.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                16,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "RealInput",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "ComplexOutput",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComplexTranspose",
+            "fileName": "complex_square_transpose_4k.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                8,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexSquareMatrix",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Complex FFT4096",
+            "fileName": "complexfft4096.hlsl",
+            "entryPoint": "csMain",
+            "NumThreads": [
+                32,
+                16,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "ComplexInput",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        }
+                    }
+                },
+                {
+                    "name": "ComplexOutput",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Complex"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "Complex",
+            "fields": [
+                {
+                    "name": "Re",
+                    "type": "Float",
+                    "dflt": "0"
+                },
+                {
+                    "name": "Im",
+                    "type": "Float",
+                    "dflt": "0"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "InputVals",
+                "editorPos": [
+                    -245.0,
+                    2.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 4096
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "FreqVals",
+                "editorPos": [
+                    -245.0,
+                    50.0
+                ],
+                "transient": false,
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 4096
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT4096 (Horizontal)",
+                "editorPos": [
+                    -88.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "Real FFT4096"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        131072,
+                        1,
+                        1
+                    ]
+                },
+                "connections": [
+                    {
+                        "srcPin": "RealInput",
+                        "dstNode": "InputVals",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "FreqVals",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ComplexInput"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Transpose (4096x4096)",
+                "editorPos": [
+                    117.0,
+                    15.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "ComplexTranspose"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        262144,
+                        1,
+                        1
+                    ]
+                },
+                "connections": [
+                    {
+                        "srcPin": "ComplexSquareMatrix",
+                        "dstNode": "FFT4096 (Horizontal)",
+                        "dstPin": "ComplexOutput"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FFT4096 (Horizontal #2)",
+                "editorPos": [
+                    392.0,
+                    15.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "Complex FFT4096"
+                },
+                "dispatchSize": {
+                    "multiply": [
+                        131072,
+                        1,
+                        1
+                    ]
+                },
+                "connections": [
+                    {
+                        "srcPin": "ComplexInput",
+                        "dstNode": "Transpose (4096x4096)",
+                        "dstPin": "ComplexSquareMatrix"
+                    },
+                    {
+                        "srcPin": "ComplexOutput",
+                        "dstNode": "OutFreqs",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutFreqs",
+                "editorPos": [
+                    219.0,
+                    98.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "structureType": {
+                        "name": "Complex"
+                    }
+                },
+                "count": {
+                    "variable": {
+                        "name": "N"
+                    },
+                    "multiply": 4096
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_0"
+        }
+    }
+}

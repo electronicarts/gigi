@@ -1,0 +1,223 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "effectMultiplier",
+            "type": "Float",
+            "dflt": "0.15",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0",
+                "max": "1",
+                "step": "0.05"
+            }
+        },
+        {
+            "name": "effectSelection",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0",
+                "max": "2",
+                "step": "1"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "blur_effects",
+            "fileName": "fft_blur_effects.hlsl",
+            "entryPoint": "applyBlurEffects",
+            "NumThreads": [
+                256,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "FFTBuffer",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray",
+                        "viewType": "Float2"
+                    }
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "..\\fft_consts.hlsl",
+            "type": "Shader",
+            "destFileName": "fft_consts.hlsl"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "InputTexture",
+                "editorPos": [
+                    11.0,
+                    -46.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Apply Blur Effect",
+                "editorPos": [
+                    345.0,
+                    -30.0
+                ],
+                "condition": {
+                    "comparison": "IsFalse",
+                    "value2": "false"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFT Forward Transformation",
+                        "dstPin": "FFTBuffer"
+                    }
+                ],
+                "shader": {
+                    "name": "blur_effects"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FFTBuffer"
+                    },
+                    "divide": [
+                        1,
+                        1,
+                        3
+                    ]
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Forward Transformation",
+                "editorPos": [
+                    133.0,
+                    -49.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTexture",
+                        "dstNode": "InputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "FFTBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "..\\fft_forward_graph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "InputTexture",
+                        "FFTBuffer"
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "FFTBuffer",
+                "editorPos": [
+                    11.0,
+                    2.0
+                ],
+                "format": {
+                    "format": "RG32_Float"
+                },
+                "size": {
+                    "multiply": [
+                        2048,
+                        2048,
+                        3
+                    ]
+                },
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "FFT Inverse Transformation",
+                "editorPos": [
+                    534.0,
+                    -46.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "OutputTexture",
+                        "dstNode": "OutputTexture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FFTBuffer",
+                        "dstNode": "Apply Blur Effect",
+                        "dstPin": "FFTBuffer"
+                    }
+                ],
+                "fileName": "..\\fft_inverse_graph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "OutputTexture",
+                        "FFTBuffer"
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputTexture",
+                "editorPos": [
+                    386.0,
+                    -94.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "InputTexture"
+                    }
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderCompiler": "FXC",
+            "shaderModelCs": "cs_5_1",
+            "shaderModelVs": "vs_5_1",
+            "shaderModelPs": "ps_5_1"
+        }
+    }
+}

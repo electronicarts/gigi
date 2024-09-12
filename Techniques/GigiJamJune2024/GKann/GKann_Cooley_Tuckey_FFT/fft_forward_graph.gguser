@@ -1,0 +1,9 @@
+{
+    "resourceViewNodeIndex": 3,
+    "resourceViewResourceIndex": 1,
+    "importedResources": [
+        {
+            "nodeName": "InputTexture"
+        }
+    ]
+}

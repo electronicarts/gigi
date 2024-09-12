@@ -1,0 +1,27 @@
+{
+    "resourceViewNodeIndex": 9,
+    "resourceViewResourceIndex": 2,
+    "importedResources": [
+        {
+            "nodeName": "BloomKernel",
+            "texture": {
+                "fileName": "..\\..\\Assets\\BloomKernel.exr",
+                "format": "RGBA32_Float"
+            }
+        },
+        {
+            "nodeName": "InputTexture",
+            "texture": {
+                "fileName": "..\\..\\Assets\\CandleGlass.exr",
+                "fileIsSRGB": false,
+                "format": "RGBA32_Float"
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "effectMultiplier",
+            "value": "0.000000"
+        }
+    ]
+}

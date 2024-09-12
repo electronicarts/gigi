@@ -1,0 +1,100 @@
+{
+    "resourceViewNodeIndex": 22,
+    "resourceViewResourceIndex": 6,
+    "importedResources": [
+        {
+            "nodeName": "edgeIndices",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\edgeIndices.csv",
+                "CSVHeaderRow": false,
+                "type": "Uint2",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "edgeLengths",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\edgeLengths.csv",
+                "CSVHeaderRow": false,
+                "type": "Float",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "triangleIndices",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\faces.csv",
+                "CSVHeaderRow": false,
+                "type": "Uint",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "vertexColoringData",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\vertexColoringData.csv",
+                "CSVHeaderRow": false,
+                "type": "Uint",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "vertexEdgeData",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\vertexEdgeData.csv",
+                "CSVHeaderRow": false,
+                "type": "Uint",
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "vertexPositions",
+            "isATexture": false,
+            "buffer": {
+                "fileName": "Data\\vertexPositions.csv",
+                "CSVHeaderRow": false,
+                "type": "Float4",
+                "BLASOpaque": true
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "init",
+            "value": "false"
+        },
+        {
+            "name": "pressureStrength",
+            "value": "11.429000"
+        },
+        {
+            "name": "simpleRender_resolution",
+            "value": "1024,1024"
+        },
+        {
+            "name": "simpleRender_lightDir",
+            "value": "-1.000000,-1.000000,-1.000000"
+        },
+        {
+            "name": "simpleRender_skyColor",
+            "value": "0.100000,0.100000,0.300000"
+        },
+        {
+            "name": "simpleRender_groundColor",
+            "value": "0.300000,0.100000,0.100000"
+        },
+        {
+            "name": "simpleRender_equatorColor",
+            "value": "0.100000,0.100000,0.100000"
+        },
+        {
+            "name": "simpleRender_lightColor",
+            "value": "0.800000,0.800000,0.909804"
+        }
+    ]
+}

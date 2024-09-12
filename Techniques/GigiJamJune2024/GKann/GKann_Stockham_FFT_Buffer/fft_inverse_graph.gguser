@@ -1,0 +1,27 @@
+{
+    "importedResources": [
+        {
+            "nodeName": "FFTBufferB",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "FFTBufferRG",
+            "isATexture": false,
+            "buffer": {
+                "BLASOpaque": true
+            }
+        },
+        {
+            "nodeName": "OutputTexture"
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "PartialFFTBufferSize",
+            "value": "0"
+        }
+    ]
+}
