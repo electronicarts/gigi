@@ -2,6 +2,8 @@ import numpy as np
 from scipy import signal
 import math
 
+# Generate a standard 2d gaussian kernel
+# credit: thomasaarholt - https://gist.github.com/thomasaarholt/267ec4fff40ca9dff1106490ea3b7567
 def gaussian_kernel(n, std, normalised=False):
     '''
     Generates a n x n matrix with a centered gaussian 
