@@ -1,0 +1,17 @@
+Description
+
+First a sphere is ray marched as an SDF in a compute shader. Then a normal is calculated with finite differences and lambert diffuse lighting is added. 
+The surface is then displaced using 4 stacked frequencies of 3D Perlin noise. Color is then blended in based on displacement value.
+
+Instructions
+
+Open Explosion.gg in GigiViewer
+
+Under Render Graph select Explosion.output
+
+Credit:
+
+Based on these guides:
+
+https://github.com/ssloy/tinykaboom/wiki/KABOOM!-in-180-lines-of-code
+https://www.youtube.com/watch?v=welK2U7UkzE

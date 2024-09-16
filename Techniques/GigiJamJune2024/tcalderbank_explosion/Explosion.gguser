@@ -1,0 +1,89 @@
+{
+    "systemVars": {
+        "iResolution_textureName": "Input"
+    },
+    "resourceViewNodeIndex": 2,
+    "resourceViewResourceIndex": 7,
+    "importedResources": [
+        {
+            "nodeName": "Input",
+            "texture": {
+                "size": [
+                    1280,
+                    960,
+                    1
+                ]
+            }
+        }
+    ],
+    "savedVariables": [
+        {
+            "name": "AnimateRadius",
+            "value": "true"
+        },
+        {
+            "name": "Rotate",
+            "value": "false"
+        },
+        {
+            "name": "RotationSpeed",
+            "value": "0.250000"
+        },
+        {
+            "name": "SphereRadius",
+            "value": "1.500000"
+        },
+        {
+            "name": "Color1",
+            "value": "1.700000,1.300000,1.000000"
+        },
+        {
+            "name": "Color2",
+            "value": "1.000000,0.600000,0.000000"
+        },
+        {
+            "name": "Color3",
+            "value": "1.000000,0.000000,0.000000"
+        },
+        {
+            "name": "Color4",
+            "value": "0.200000,0.200000,0.200000"
+        },
+        {
+            "name": "Color5",
+            "value": "0.400000,0.400000,0.400000"
+        },
+        {
+            "name": "ColorThresholds",
+            "value": "0.250000,0.500000,0.750000"
+        },
+        {
+            "name": "NoiseFreq1",
+            "value": "2.000000"
+        },
+        {
+            "name": "NoiseFreq2",
+            "value": "4.000000"
+        },
+        {
+            "name": "NoiseFreq3",
+            "value": "8.000000"
+        },
+        {
+            "name": "NoiseFreq4",
+            "value": "16.000000"
+        },
+        {
+            "name": "NoiseWeights",
+            "value": "0.500000,0.250000,0.125000,0.062500"
+        },
+        {
+            "name": "NoiseAmplitude",
+            "value": "1.000000"
+        },
+        {
+            "name": "NoiseBias",
+            "value": "-0.050000"
+        }
+    ]
+}

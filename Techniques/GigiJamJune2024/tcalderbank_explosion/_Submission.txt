@@ -1,0 +1,4 @@
+Title: Explosion
+Name: Tristan Calderbank (tcalderbank@ea.com)
+Description:
+First a sphere is ray marched as an SDF in a compute shader. Then a normal is calculated with finite differences and lambert diffuse lighting is added. The surface is then displaced using 4 stacked frequencies of 3D Perlin noise. Color is then blended in based on displacement value and animation of the radius is added.

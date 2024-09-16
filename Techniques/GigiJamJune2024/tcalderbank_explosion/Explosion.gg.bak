@@ -1,0 +1,382 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Explosion",
+    "version": "0.97b",
+    "variables": [
+        {
+            "name": "AnimateRadius",
+            "type": "Bool",
+            "dflt": "true"
+        },
+        {
+            "name": "Rotate",
+            "type": "Bool",
+            "dflt": "false"
+        },
+        {
+            "name": "RotationSpeed",
+            "type": "Float",
+            "dflt": "0.25"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3"
+        },
+        {
+            "name": "SphereRadius",
+            "type": "Float",
+            "dflt": "1.5"
+        },
+        {
+            "name": "Color1",
+            "type": "Float3",
+            "dflt": "1.7, 1.3, 1.0",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "Color2",
+            "type": "Float3",
+            "dflt": "1.0, 0.6, 0.0",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "Color3",
+            "type": "Float3",
+            "dflt": "1.0, 0.0, 0.0",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "Color4",
+            "type": "Float3",
+            "dflt": "0.2, 0.2, 0.2",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "Color5",
+            "type": "Float3",
+            "dflt": "0.4, 0.4, 0.4",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "ColorThresholds",
+            "type": "Float3",
+            "dflt": "0.25, 0.5, 0.75"
+        },
+        {
+            "name": "NoiseFreq1",
+            "type": "Float",
+            "dflt": "2.0"
+        },
+        {
+            "name": "NoiseFreq2",
+            "type": "Float",
+            "dflt": "4.0"
+        },
+        {
+            "name": "NoiseFreq3",
+            "type": "Float",
+            "dflt": "8.0"
+        },
+        {
+            "name": "NoiseFreq4",
+            "type": "Float",
+            "dflt": "16.0"
+        },
+        {
+            "name": "NoiseWeights",
+            "type": "Float4",
+            "dflt": "0.5, 0.25, 0.125, 0.0625"
+        },
+        {
+            "name": "NoiseAmplitude",
+            "type": "Float",
+            "dflt": "1.0",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0.0",
+                "max": "5.0"
+            }
+        },
+        {
+            "name": "NoiseBias",
+            "type": "Float",
+            "dflt": "-0.05",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "-1.0",
+                "max": "1.0"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Explosion",
+            "fileName": "ExplosionCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "output",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "perlin1",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "perlin2",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "perlin3",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "perlin4",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    -17.0,
+                    -5.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -21.0,
+                    50.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Explosion",
+                "editorPos": [
+                    149.0,
+                    -1.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "shader": {
+                    "name": "Explosion"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "connections": [
+                    {
+                        "srcPin": "output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "perlin1",
+                        "dstNode": "Perlin1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "perlin2",
+                        "dstNode": "Perlin2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "perlin3",
+                        "dstNode": "Perlin3",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "perlin4",
+                        "dstNode": "Perlin4",
+                        "dstPin": "resource"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Perlin1",
+                "editorPos": [
+                    -21.0,
+                    178.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Perlin2",
+                "editorPos": [
+                    -21.0,
+                    226.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Perlin3",
+                "editorPos": [
+                    -21.0,
+                    274.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Perlin4",
+                "editorPos": [
+                    -21.0,
+                    322.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "Blur",
+                "editorPos": [
+                    327.0,
+                    18.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "fileName": "..\\BoxBlur\\BoxBlur.gg",
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Explosion",
+                        "dstPin": "output"
+                    },
+                    {
+                        "srcPin": "Output"
+                    }
+                ],
+                "subGraphData": {
+                    "importedResources": [
+                        "Input"
+                    ],
+                    "exportedResources": [
+                        "Output"
+                    ],
+                    "variables": [
+                        {
+                            "name": "BlurRadius",
+                            "type": "Int",
+                            "dflt": "1",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "BlurRadius",
+                        "visibility": "User"
+                    }
+                ]
+            }
+        }
+    ]
+}
