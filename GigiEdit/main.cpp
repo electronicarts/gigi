@@ -1757,10 +1757,13 @@ struct Example :
             EnsureVariableExists("JitteredProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("InvJitteredProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("ViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+            EnsureVariableExists("PrevViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+            EnsureVariableExists("PrevInvViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("InvViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("JitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("InvJitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("CameraPos", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
+            EnsureVariableExists("PrevCameraPos", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
             EnsureVariableExists("CameraChanged", VariableVisibility::Host, DataFieldType::Bool, "false");
             EnsureVariableExists("CameraJitter", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
             EnsureVariableExists("ShadingRateImageTileSize", VariableVisibility::Host, DataFieldType::Uint, "16");

@@ -733,12 +733,15 @@ void SaveGGUserFile()
             rtVar.variable->name == g_systemVariables.ProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.InvProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.ViewProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.PrevViewProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.PrevInvViewProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.InvViewProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.JitteredProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.InvJitteredProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.JitteredViewProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.InvJitteredViewProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.CameraPos_varName ||
+            rtVar.variable->name == g_systemVariables.PrevCameraPos_varName ||
             rtVar.variable->name == g_systemVariables.CameraChanged_varName ||
             rtVar.variable->name == g_systemVariables.CameraJitter_varName ||
             rtVar.variable->name == g_systemVariables.WindowSize_varName ||
@@ -1952,9 +1955,13 @@ void UpdateSystemVariables()
         AssignVariable(g_systemVariables.InvJitteredProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredProjMtx));
 
         DirectX::XMMATRIX viewProjMtx = viewMtx * projMtx;
+        static DirectX::XMMATRIX prevViewProjMtx = viewProjMtx;
         DirectX::XMMATRIX invViewProjMtx = XMMatrixInverse(nullptr, viewProjMtx);
+        static DirectX::XMMATRIX prevInvViewProjMtx = invViewProjMtx;
 
         AssignVariable(g_systemVariables.ViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(viewProjMtx));
+        AssignVariable(g_systemVariables.PrevViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(prevViewProjMtx));
+        AssignVariable(g_systemVariables.PrevInvViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(prevInvViewProjMtx));
         AssignVariable(g_systemVariables.InvViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invViewProjMtx));
 
         DirectX::XMMATRIX jitteredViewProjMtx = viewMtx * jitteredProjMtx;
@@ -1962,12 +1969,18 @@ void UpdateSystemVariables()
 
         AssignVariable(g_systemVariables.JitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(jitteredViewProjMtx));
         AssignVariable(g_systemVariables.InvJitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredViewProjMtx));
-
+        
+        static Vec3 prevCameraPos = g_systemVariables.camera.cameraPos;
         AssignVariable(g_systemVariables.CameraPos_varName.c_str(), DataFieldType::Float3, g_systemVariables.camera.cameraPos);
+        AssignVariable(g_systemVariables.PrevCameraPos_varName.c_str(), DataFieldType::Float3, prevCameraPos);
 
         AssignVariable(g_systemVariables.CameraJitter_varName.c_str(), DataFieldType::Float2, jitter);
 
         AssignVariable(g_systemVariables.ShadingRateImageTileSize_varName.c_str(), DataFieldType::Uint, g_interpreter.GetOptions6().ShadingRateImageTileSize);
+
+        prevViewProjMtx = viewProjMtx;
+        prevInvViewProjMtx = invViewProjMtx;
+        prevCameraPos = g_systemVariables.camera.cameraPos;
     }
 }
 
