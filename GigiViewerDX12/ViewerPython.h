@@ -69,6 +69,13 @@ public:
 	virtual void ForceEnableProfiling(bool forceEnable) = 0;
 	virtual std::vector<ProfilingData> GetProfilingData() = 0;
 
+	virtual void SetShaderAssertsLogging(bool set) = 0;
+	virtual int GetCollectedShaderAssertsCount() = 0;
+	virtual int GetShaderAssertFormatStrId(int i) = 0;
+	virtual std::string GetShaderAssertFormatString(int i) = 0;
+	virtual std::string GetShaderAssertDisplayName(int i) = 0;
+	virtual std::string GetShaderAssertMsg(int i) = 0;
+
 	virtual void Log(LogLevel level, const char* msg, ...) = 0;
 	virtual void OnExecuteFinished() = 0;
 

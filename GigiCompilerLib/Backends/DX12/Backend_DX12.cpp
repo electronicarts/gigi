@@ -1815,6 +1815,9 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
         }
     );
 
+    for (const TokenReplacement& replacement : shader.tokenReplacements)
+        shaderSpecificStringReplacementMap[replacement.name] << replacement.value;
+
     // Replace the strings
     ProcessStringReplacement(shaderFileContents, shaderSpecificStringReplacementMap, stringReplacementMap, renderGraph);
 

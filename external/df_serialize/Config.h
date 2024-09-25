@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <unordered_set>
 #include "GigiAssert.h"
 
 // flags used by struct fields

@@ -480,6 +480,18 @@ public:
 		return m_profiler.GetProfilingData();
 	}
 
+	struct FiredAssertInfo
+	{
+		uint32_t formatStringId;
+		std::string fmt;
+		std::string displayName;
+		std::string msg;
+	};
+	const std::vector<FiredAssertInfo>& getCollectedShaderAsserts() const { return collectedAsserts; }
+	std::vector<RuntimeTypes::ViewableResource*> MarkShaderAssertsForReadback();
+	void CollectShaderAsserts(const std::vector<RuntimeTypes::ViewableResource*>& assertsBuffers);
+	void LogCollectedShaderAsserts() const;
+
 public:
 	bool m_showVariablesUI = true;
 	bool m_compileShadersForDebug = false;
@@ -681,6 +693,8 @@ private:
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
 	bool DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates);
+
+	std::vector<FiredAssertInfo> collectedAsserts;
 
 	ID3D12Device2* m_device = nullptr;
 	ID3D12CommandQueue* m_commandQueue = nullptr;

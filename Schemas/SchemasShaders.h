@@ -292,6 +292,11 @@ STRUCT_BEGIN(ShaderDefine, "A shader define as part of shader compilation")
     STRUCT_FIELD(std::string, value, "", "The value of the define.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(TokenReplacement, "A shader token replacement")
+    STRUCT_FIELD(std::string, name, "", "The token string.", 0)
+    STRUCT_FIELD(std::string, value, "", "The replacement.", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(LoadedTextureReference, "Information about a loaded texture referenced by this shader.")
     STRUCT_FIELD(std::string, token, "", "The token as it appears in the shader.", 0)
     STRUCT_FIELD(std::string, resourceName, "", "The name of the resource to replace it with.", 0)
@@ -331,6 +336,7 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint.", 0)
     STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
+    STRUCT_DYNAMIC_ARRAY(TokenReplacement, tokenReplacements, "The token replacements specific for the shader.", SCHEMA_FLAG_NO_SERIALIZE)
 
     // deprecated in 0.95b
     // replaced by NumThreads

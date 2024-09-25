@@ -1,0 +1,83 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "shaders": [
+        {
+            "name": "noFmtStringAssert_CS",
+            "fileName": "noFmtStringAssertWithStub_cs.hlsl",
+            "entryPoint": "main_cs",
+            "resources": [
+                {
+                    "name": "stub_uav",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "MainNode",
+                "editorPos": [
+                    -91.0,
+                    18.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "stub_uav",
+                        "dstNode": "Node 2",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "noFmtStringAssert_CS"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Node 2",
+                "editorPos": [
+                    -245.0,
+                    82.0
+                ],
+                "format": {
+                    "type": "Float"
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "SubGraphNode",
+                "editorPos": [
+                    132.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "stub_res_node",
+                        "dstNode": "MainNode",
+                        "dstPin": "stub_uav"
+                    }
+                ],
+                "fileName": "noFmtStringSubgraph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "stub_res_node"
+                    ]
+                }
+            }
+        }
+    ]
+}

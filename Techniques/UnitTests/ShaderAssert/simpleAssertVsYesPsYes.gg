@@ -1,0 +1,80 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "shaders": [
+        {
+            "name": "simpleAssertYES_VS",
+            "fileName": "simpleAssertYES_vs.hlsl",
+            "type": "Vertex",
+            "entryPoint": "main_vs"
+        },
+        {
+            "name": "simpleAssertYES_PS",
+            "fileName": "simpleAssertYES_ps.hlsl",
+            "type": "Pixel",
+            "entryPoint": "main_ps"
+        }
+    ],
+    "nodes": [
+        {
+            "actionDrawCall": {
+                "name": "Node 1",
+                "editorPos": [
+                    612.0,
+                    1063.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "simpleAssertYES_VS"
+                },
+                "pixelShader": {
+                    "name": "simpleAssertYES_PS"
+                },
+                "countPerInstance": 4,
+                "depthWrite": false,
+                "colorTargets": [
+                    {
+                        "node": "Node 2",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "geometryType": "PointList"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Node 2",
+                "editorPos": [
+                    443.0,
+                    1170.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        256,
+                        256,
+                        1
+                    ]
+                }
+            }
+        }
+    ]
+}

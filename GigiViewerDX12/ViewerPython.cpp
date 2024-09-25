@@ -696,6 +696,80 @@ static PyObject* Python_GetGPUString(PyObject* self, PyObject* args)
     return Py_BuildValue("s", g_interface->GetGPUString().c_str());
 }
 
+static PyObject* Python_SetShaderAssertsLogging(PyObject* self, PyObject* args)
+{
+    int value = 1;
+    if (!PyArg_ParseTuple(args, "p:Python_SetShaderAssertsLogging", &value))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetShaderAssertsLogging(value == 1);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_GetCollectedShaderAssertsCount(PyObject* self, PyObject* args)
+{
+    const int count = g_interface->GetCollectedShaderAssertsCount();
+    return Py_BuildValue("i", count);
+}
+
+static PyObject* Python_GetShaderAssertFormatStrId(PyObject* self, PyObject* args)
+{
+    int assertId = 1;
+    if (!PyArg_ParseTuple(args, "i:Python_GetShaderAssertFormatStrId", &assertId))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    const int count = (int)g_interface->GetCollectedShaderAssertsCount();
+    if (assertId >= count)
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "(). OOB access (id:%d, asserts count: %d)", assertId, count);
+
+    const int strId = g_interface->GetShaderAssertFormatStrId(assertId);
+    return Py_BuildValue("i", strId);
+}
+
+static PyObject* Python_GetShaderAssertFormatString(PyObject* self, PyObject* args)
+{
+    int assertId = 1;
+    if (!PyArg_ParseTuple(args, "i:Python_GetShaderAssertFormatString", &assertId))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    const int count = (int)g_interface->GetCollectedShaderAssertsCount();
+    if (assertId >= count)
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "(). OOB access (id:%d, asserts count: %d)", assertId, count);
+
+    const std::string fmt = g_interface->GetShaderAssertFormatString(assertId);
+    return Py_BuildValue("s", fmt.c_str());
+}
+
+static PyObject* Python_GetShaderAssertDisplayName(PyObject* self, PyObject* args)
+{
+    int assertId = 1;
+    if (!PyArg_ParseTuple(args, "i:Python_GetShaderAssertDisplayName", &assertId))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    const int count = (int)g_interface->GetCollectedShaderAssertsCount();
+    if (assertId >= count)
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "(). OOB access (id:%d, asserts count: %d)", assertId, count);
+
+    const std::string displayName = g_interface->GetShaderAssertDisplayName(assertId);
+    return Py_BuildValue("s", displayName.c_str());
+}
+
+static PyObject* Python_GetShaderAssertMsg(PyObject* self, PyObject* args)
+{
+    int assertId = 1;
+    if (!PyArg_ParseTuple(args, "i:Python_GetShaderAssertMsg", &assertId))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    const int count = (int)g_interface->GetCollectedShaderAssertsCount();
+    if (assertId >= count)
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "(). OOB access (id:%d, asserts count: %d)", assertId, count);
+
+    const std::string msg = g_interface->GetShaderAssertMsg(assertId);
+    return Py_BuildValue("s", msg.c_str());
+}
+
 // Enum FromString
 #include "external/df_serialize/_common.h"
 #define ENUM_BEGIN(_NAME, _DESCRIPTION) \
@@ -831,7 +905,12 @@ void PythonInit(PythonInterface* interface, int argc, char** argv, int firstPyth
         {"GGEnumLabel", Python_GGEnumLabel, METH_VARARGS, "Gets the string label of an enum defined in the loaded .gg file."},
         {"GGEnumCount", Python_GGEnumCount, METH_VARARGS, "Returns the number of enum values for an enum defined in the loaded .gg file."},
         {"GetGPUString", Python_GetGPUString, METH_VARARGS, "Returns the name of the gpu and driver version."},
-
+        {"SetShaderAssertsLogging", Python_SetShaderAssertsLogging, METH_VARARGS, "Toggles auto error logging of the collected shader asserts after a technique execution."},
+        {"GetCollectedShaderAssertsCount", Python_GetCollectedShaderAssertsCount, METH_VARARGS, "Returns the number of collected shader asserts. Assert getters works with this collection."},
+        {"GetShaderAssertFormatStrId", Python_GetShaderAssertFormatStrId, METH_VARARGS, "Returns the ID of format string of the specified shader assert."},
+        {"GetShaderAssertFormatString", Python_GetShaderAssertFormatString, METH_VARARGS, "Returns the format string of the specified shader assert."},
+        {"GetShaderAssertDisplayName", Python_GetShaderAssertDisplayName, METH_VARARGS, "Returns the display name of the specified shader assert."},
+        {"GetShaderAssertMsg", Python_GetShaderAssertMsg, METH_VARARGS, "Returns the message of the specified assert."},
         // Enum FromString and ToString functions
         #include "external/df_serialize/_common.h"
         #define ENUM_BEGIN(_NAME, _DESCRIPTION) \

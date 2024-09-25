@@ -403,3 +403,108 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 		}
 	}
 }
+
+std::vector<RuntimeTypes::ViewableResource*> GigiInterpreterPreviewWindowDX12::MarkShaderAssertsForReadback()
+{
+	std::vector<RuntimeTypes::ViewableResource*> assertsBuffers;
+	const size_t nodesCount = m_renderGraph.nodes.size();
+	for (size_t i = 0; i < nodesCount; ++i)
+	{
+		std::vector<RuntimeTypes::ViewableResource>* viewableResources = nullptr;
+		RuntimeNodeDataLambda(
+			m_renderGraph.nodes[i],
+			[&](auto node, auto* runtimeData)
+			{
+				std::string renderGraphText;
+
+				if (runtimeData)
+					viewableResources = &(runtimeData->m_viewableResources);
+			}
+		);
+
+		if (!viewableResources)
+			continue;
+
+		for (RuntimeTypes::ViewableResource& res : *viewableResources)
+		{
+			std::string_view displayName = res.m_displayName;
+			const bool isAssertBuf = displayName.find("__GigiAssertUAV") != displayName.npos;
+			const bool isAfter = displayName.ends_with("(UAV - After)");
+			if (isAssertBuf && isAfter)
+			{
+				res.m_wantsToBeViewed = true;
+				res.m_wantsToBeReadBack = true;
+
+				assertsBuffers.push_back(&res);
+			}
+		}
+	}
+
+	return assertsBuffers;
+}
+
+void GigiInterpreterPreviewWindowDX12::CollectShaderAsserts(const std::vector<RuntimeTypes::ViewableResource*>& assertsBuffers)
+{
+	collectedAsserts.clear();
+
+	for (const RuntimeTypes::ViewableResource* res : assertsBuffers)
+	{
+		if (res->m_resourceReadback)
+		{
+			std::vector<unsigned char> bytes(res->m_size[0]);
+			unsigned char* data = nullptr;
+			res->m_resourceReadback->Map(0, nullptr, reinterpret_cast<void**>(&data));
+			if (!data)
+				continue;
+
+			memcpy(bytes.data(), data, res->m_size[0]);
+			res->m_resourceReadback->Unmap(0, nullptr);
+
+			const uint32_t* assertBufData = reinterpret_cast<uint32_t*>(bytes.data());
+			const uint32_t isFired = assertBufData[0];
+			const uint32_t fmtId = assertBufData[1];
+
+			const std::vector<std::string>& fmtStrings = m_renderGraph.assertsFormatStrings;
+			if (fmtId >= fmtStrings.size())
+			{
+				Assert(false, "OOB in asserts format strings array");
+				return;
+			}
+
+			const char* fmt = fmtStrings[fmtId].c_str();
+			std::unordered_set<std::string>& firedAsserts = m_renderGraph.firedAssertsIdentifiers;
+			const bool isNewAssert = firedAsserts.find(res->m_displayName) == firedAsserts.end();
+
+			if (isFired && isNewAssert)
+			{
+				firedAsserts.insert(res->m_displayName);
+
+				std::string context = res->m_displayName.substr(0, res->m_displayName.find(':'));
+
+				const float* v = reinterpret_cast<float*>(bytes.data() + 2 * sizeof(uint32_t));
+
+				const int fmtSize = std::snprintf(nullptr, 0, fmt, v[0], v[1], v[2], v[3], v[4], v[5]);
+				if (fmtSize <= 0)
+				{
+					Assert(false, "Failed to format the assert message '%s'", fmt);
+					return;
+				}
+
+				std::string assertMsg;
+				assertMsg.resize(fmtSize+1);
+				std::snprintf(assertMsg.data(), fmtSize+1, fmt, v[0], v[1], v[2], v[3], v[4], v[5]);
+
+				collectedAsserts.push_back({fmtId, fmt, std::move(context), std::move(assertMsg)});
+			}
+		}
+	}
+}
+
+void GigiInterpreterPreviewWindowDX12::LogCollectedShaderAsserts() const
+{
+	for (const FiredAssertInfo& a : collectedAsserts)
+	{
+		std::string msgHeader = "ASSERT FAILED: [" + a.displayName + "]";
+		ShowErrorMessage("%s\nmsg: %s", msgHeader.data(), a.msg.data());
+	}
+}

@@ -433,6 +433,8 @@ int g_executeTechniqueCountRemain = 0;
 bool g_executeTechnique = true;
 bool g_techniquePaused = false;
 
+bool g_logCollectedShaderAsserts = true;
+
 std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
 
@@ -2624,7 +2626,7 @@ void ShowShaders()
         std::sort(scopesSorted.begin(), scopesSorted.end());
 
         // for each scope
-        for const std::string& scope: scopesSorted)
+        for (const std::string& scope: scopesSorted)
         {
             // get a sorted list of shaders in this scope
             std::vector<const Shader*> sortedShaders;
@@ -6863,6 +6865,40 @@ public:
         return ret;
     }
 
+    void SetShaderAssertsLogging(bool set) override final
+    {
+        g_logCollectedShaderAsserts = set;
+    }
+
+    int GetCollectedShaderAssertsCount() override final
+    {
+        return (int)g_interpreter.getCollectedShaderAsserts().size();
+    }
+
+    int GetShaderAssertFormatStrId(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return (int)asserts[i].formatStringId;
+    }
+
+    std::string GetShaderAssertFormatString(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return asserts[i].fmt;
+    }
+
+    std::string GetShaderAssertDisplayName(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return asserts[i].displayName;
+    }
+
+    std::string GetShaderAssertMsg(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return asserts[i].msg;
+    }
+
     int GGEnumValue(const char* enumName, const char* enumLabel) override final
     {
         const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
@@ -7024,6 +7060,8 @@ void RenderFrame(bool forceExecute)
 
     g_pd3dCommandList->Reset(frameCtx->CommandAllocator, NULL);
 
+    std::vector<RuntimeTypes::ViewableResource*> assertsBuffers = g_interpreter.MarkShaderAssertsForReadback();
+
     // Run the Gigi technique if we should
     g_python.Tick();
     g_interpreter.Tick();
@@ -7033,6 +7071,10 @@ void RenderFrame(bool forceExecute)
         g_interpreter.Execute(g_pd3dCommandList);
         g_techniqueFrameIndex++;
     }
+
+    g_interpreter.CollectShaderAsserts(assertsBuffers);
+    if (g_logCollectedShaderAsserts)
+        g_interpreter.LogCollectedShaderAsserts();
 
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
