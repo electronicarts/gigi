@@ -1,0 +1,217 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "Sigma",
+            "comment": "Strength of blur. Standard deviation of gaussian distribution.",
+            "type": "Float",
+            "dflt": "1.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "Support",
+            "comment": "From 0 to 1. Controls the size of the filter by specifying how much of the Gaussian distribution to account for. 1 is infinitely large. 0.995 is more reasonable.",
+            "type": "Float",
+            "dflt": "0.995",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "comment": "set to true if input is an sRGB format texture",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "Disable",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "GaussBlurCS",
+            "fileName": "GaussBlurCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "DoBlurH",
+                "editorPos": [
+                    -31.0,
+                    1.0
+                ],
+                "condition": {
+                    "variable1": "Disable",
+                    "comparison": "IsFalse"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Temp",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "GaussBlurCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "BLURH",
+                        "value": "1"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    -181.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    11.0,
+                    98.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "DontBlur",
+                "editorPos": [
+                    324.0,
+                    -1.0
+                ],
+                "condition": {
+                    "variable1": "Disable",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "DoBlurH",
+                    "pin": "Input"
+                },
+                "dest": {
+                    "node": "DoBlurV",
+                    "pin": "Output"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DoBlurV",
+                "editorPos": [
+                    149.0,
+                    44.0
+                ],
+                "condition": {
+                    "variable1": "Disable",
+                    "comparison": "IsFalse"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "DoBlurH",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "GaussBlurCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "BLURH",
+                        "value": "0"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Temp",
+                "editorPos": [
+                    -181.0,
+                    50.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        }
+    ]
+}

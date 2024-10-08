@@ -1,0 +1,114 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "Alpha",
+            "comment": "For exponential moving average. From 0 to 1. TAA commonly uses 0.1.",
+            "type": "Float",
+            "dflt": "0.1f",
+            "visibility": "User"
+        },
+        {
+            "name": "Enabled",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "Reset",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Accumulate",
+            "fileName": "Accumulate.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Accum",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    -37.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DoAccum",
+                "editorPos": [
+                    75.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Accum",
+                        "dstNode": "Accum",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Accumulate"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Accum",
+                "editorPos": [
+                    -37.0,
+                    50.0
+                ],
+                "transient": false,
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Input"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        }
+    ]
+}

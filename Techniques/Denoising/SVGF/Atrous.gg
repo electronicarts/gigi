@@ -1,0 +1,237 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "PhiColor",
+            "type": "Float",
+            "dflt": "10.0f"
+        },
+        {
+            "name": "PhiNormal",
+            "type": "Float",
+            "dflt": "128.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "LoopIndex",
+            "type": "Int",
+            "visibility": "Host"
+        },
+        {
+            "name": "FeedbackTap",
+            "type": "Int",
+            "dflt": "1",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "AtrousCS",
+            "fileName": "SVGFAtrous.ps.slang",
+            "entryPoint": "csmain",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "gAlbedo",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gLinearZAndNormal",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gHistoryLength",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gIllumination",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Albedo",
+                "editorPos": [
+                    -21.0,
+                    18.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearZAndNormal",
+                "editorPos": [
+                    -60.0,
+                    66.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "HistoryLength",
+                "editorPos": [
+                    -28.0,
+                    114.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "PingPongFbo_0",
+                "editorPos": [
+                    -33.0,
+                    162.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "PingPongFbo_1 ",
+                "editorPos": [
+                    -37.0,
+                    210.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Atrous",
+                "editorPos": [
+                    233.0,
+                    66.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gIllumination",
+                        "dstNode": "PingPongFbo_0",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gAlbedo",
+                        "dstNode": "Albedo",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gHistoryLength",
+                        "dstNode": "HistoryLength",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gLinearZAndNormal",
+                        "dstNode": "LinearZAndNormal",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "PingPongFbo_1 ",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "AtrousCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Albedo"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "Swap",
+                "editorPos": [
+                    677.0,
+                    114.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "A",
+                        "dstNode": "Atrous",
+                        "dstPin": "gIllumination"
+                    },
+                    {
+                        "srcPin": "B",
+                        "dstNode": "FeedbackTap",
+                        "dstPin": "source"
+                    }
+                ],
+                "fileName": "SwapTextures.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "A",
+                        "B"
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "FilteredPastFbo",
+                "editorPos": [
+                    298.0,
+                    226.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "FeedbackTap",
+                "editorPos": [
+                    485.0,
+                    162.0
+                ],
+                "condition": {
+                    "variable1": "FeedbackTap",
+                    "comparison": "Equals",
+                    "variable2": "LoopIndex"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Atrous",
+                    "pin": "Output"
+                },
+                "dest": {
+                    "node": "FilteredPastFbo",
+                    "pin": "resource"
+                }
+            }
+        }
+    ]
+}

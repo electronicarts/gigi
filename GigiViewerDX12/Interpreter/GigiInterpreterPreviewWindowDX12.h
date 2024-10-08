@@ -480,6 +480,18 @@ public:
 		return m_profiler.GetProfilingData();
 	}
 
+	struct FiredAssertInfo
+	{
+		uint32_t formatStringId;
+		std::string fmt;
+		std::string displayName;
+		std::string msg;
+	};
+	const std::vector<FiredAssertInfo>& getCollectedShaderAsserts() const { return collectedAsserts; }
+	std::vector<RuntimeTypes::ViewableResource*> MarkShaderAssertsForReadback();
+	void CollectShaderAsserts(const std::vector<RuntimeTypes::ViewableResource*>& assertsBuffers);
+	void LogCollectedShaderAsserts() const;
+
 public:
 	bool m_showVariablesUI = true;
 	bool m_compileShadersForDebug = false;
@@ -648,13 +660,15 @@ public:
 
 	enum class FileWatchOwner
 	{
-		FileCache,
+		FileCache = 0,
 		Shaders,
 		TextureCache,
 		ObjCache,
 		FBXCache,
 		PLYCache,
 		GGFile,
+
+		Count
 	};
 
 	FileWatcher<FileWatchOwner> getFileWatcher()
@@ -681,6 +695,8 @@ private:
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
 	bool DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates);
+
+	std::vector<FiredAssertInfo> collectedAsserts;
 
 	ID3D12Device2* m_device = nullptr;
 	ID3D12CommandQueue* m_commandQueue = nullptr;
@@ -739,3 +755,18 @@ private:
 	D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
 };
+
+inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)
+{
+	switch (e)
+	{
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::FileCache: return "FileCache";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::Shaders: return "Shaders";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::TextureCache: return "TextureCache";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::ObjCache: return "ObjCache";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::FBXCache: return "FBXCache";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::PLYCache: return "PLYCache";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::GGFile: return "GGFile";
+		default: return "<unknown>";
+	}
+}

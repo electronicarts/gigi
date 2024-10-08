@@ -359,6 +359,7 @@ table, th, td, tr
 <tr><td>WrongVersion</td><td></td></tr>
 <tr><td>WrongParams</td><td></td></tr>
 <tr><td>CantLoadRenderGraph</td><td></td></tr>
+<tr><td>ShaderAsserts</td><td></td></tr>
 <tr><td>ShaderReflection</td><td></td></tr>
 <tr><td>Validation</td><td></td></tr>
 <tr><td>ReferenceFixup</td><td></td></tr>
@@ -412,6 +413,8 @@ table, th, td, tr
 <tr><td>Divide</td><td>/</td></tr>
 <tr><td>Modulo</td><td>%</td></tr>
 <tr><td>PowerOf2GE</td><td>The next power of two, greater or equal to the current value</td></tr>
+<tr><td>Minimum</td><td>min(A,B)</td></tr>
+<tr><td>Maximum</td><td>max(A,B)</td></tr>
 <tr><td>BitwiseOr</td><td>A | B</td></tr>
 <tr><td>BitwiseAnd</td><td>A & B</td></tr>
 <tr><td>BitwiseXor</td><td>A ^ B</td></tr>
@@ -443,6 +446,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>VariableReferenceNoConst : A reference to a variable. No const variables allowed.</b><br/><br/>
 <table>
 <tr><th colspan=3>VariableReferenceNoConst</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The name of the variable.</td></tr>
+<tr><td><i>int variableIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+</table>
+<br/>
+
+<b>VariableReferenceConstOnly : A reference to a variable. Only const variables allowed.</b><br/><br/>
+<table>
+<tr><th colspan=3>VariableReferenceConstOnly</th></tr>
 <tr><td>std::string name</td><td>""</td><td>The name of the variable.</td></tr>
 <tr><td><i>int variableIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
 </table>
@@ -687,6 +698,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>TokenReplacement : A shader token replacement</b><br/><br/>
+<table>
+<tr><th colspan=3>TokenReplacement</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The token string.</td></tr>
+<tr><td>std::string value</td><td>""</td><td>The replacement.</td></tr>
+</table>
+<br/>
+
 <b>LoadedTextureReference : Information about a loaded texture referenced by this shader.</b><br/><br/>
 <table>
 <tr><th colspan=3>LoadedTextureReference</th></tr>
@@ -723,6 +742,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>ShaderType type</td><td>ShaderType::Compute</td><td>The type of shader it is</td></tr>
 <tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint.</td></tr>
 <tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with.</td></tr>
+<tr><td><i>TokenReplacement tokenReplacements[]</i></td><td></td><td>The token replacements specific for the shader.</td></tr>
 <tr><td>int CSNumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 <tr><td>int NumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 <tr><td>bool copyFile</td><td>true</td><td>if false, will not copy the file over. A hackaround for when you have multiple raytracing shaders in the same file. TODO: resolve this better.</td></tr>
@@ -756,12 +776,13 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>DataFieldType type</td><td>DataFieldType::Count</td><td>The type of the variable</td></tr>
 <tr><td>bool Const</td><td>false</td><td>If true, the variable is declared const and cannot change at runtime</td></tr>
 <tr><td>bool Static</td><td>false</td><td>If true, the variable has the same value for all instances of the technique</td></tr>
-<tr><td>std::string dflt</td><td>""</td><td>The default value of the variable</td></tr>
+<tr><td>std::string dflt</td><td>""</td><td>The default value of the variable. The default memory is zero initialized before this is parsed, so if you don't give it enough initializers, it will use zero for the unlisted fields.</td></tr>
 <tr><td>VariableVisibility visibility</td><td>VariableVisibility::Internal</td><td>Who can see and interact with this variable</td></tr>
 <tr><td>std::string Enum</td><td>""</td><td>Integer types can specify an enum, which will then make symbols in both C++ and shader code.</td></tr>
 <tr><td>BackendRestriction backends</td><td>{}</td><td>This variable can be limited to specific backends</td></tr>
 <tr><td>bool transient</td><td>false</td><td>If true, the variable should not be saved between runs of this technique. The Gigi viewer uses this to decide if it should save it in the gguser file or not, for example.</td></tr>
 <tr><td>VariableUISettings UISettings</td><td>{}</td><td>UI Settings.</td></tr>
+<tr><td>std::string UIGroup</td><td>""</td><td>Used to organize variables into folders in the viewer. separate folders with dots.  For instance: settings.controls</td></tr>
 <tr><td><i>int enumIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
 <tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
@@ -993,6 +1014,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string name</td><td>""</td><td>variable name</td></tr>
 <tr><td>VariableVisibility visibility</td><td>VariableVisibility::Internal</td><td>Who can see and interact with this variable</td></tr>
 <tr><td>std::string replaceWithStr</td><td>{}</td><td>If set, the subgraph variable will be deleted and all references will use this parent graph variable instead.</td></tr>
+<tr><td>std::string replaceWithValue</td><td>{}</td><td>Replace the variable with a literal value. At gigi compile time it makes an internal private variable of the correct type with this string as the default value.</td></tr>
 <tr><td>bool isLoopIndex</td><td>false</td><td>If true, this variable will recieve the loop index.</td></tr>
 <tr><td>VariableReference replaceWith</td><td>{}</td><td>If set, the subgraph variable will be deleted and all references will use this parent graph variable instead.</td></tr>
 </table>
@@ -1014,7 +1036,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>float editorPos[2]</td><td>{ 0.0f , 0.0f }</td><td>The position of the node in the editor</td></tr>
 <tr><td><i>std::unordered_map<std::string COMMA int> inputPinIds</i></td><td>{}</td><td></td></tr>
 <tr><td><i>std::unordered_map<std::string COMMA int> outputPinIds</i></td><td>{}</td><td></td></tr>
-<tr><td><i>int nodeIndex</i></td><td>-1</td><td>The index in the list of render graph nodes</td></tr>
+<tr><td><i>int nodeIndex</i></td><td>-1</td><td>The index in the list of render graph nodes. This is filled in after loading by the ReferenceFixupVisitor and is in [0,N) with no gaps.</td></tr>
 <tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
 </table>
 <br/>
@@ -1189,6 +1211,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>SubGraphData subGraphData</td><td>{}</td><td>A cache of the interface of the other graph.</td></tr>
 <tr><td>SubGraphVariableSettings variableSettings[]</td><td></td><td>Per variable settings for subgraph variables.</td></tr>
 <tr><td>int loopCount</td><td>1</td><td>Number of times to execute the technique.</td></tr>
+<tr><td>VariableReferenceConstOnly loopCountVariable</td><td>{}</td><td>The variable to use for the loopCount. Only const variables supported currently.</td></tr>
 <tr><td><i>int loopIndex</i></td><td>-1</td><td>When unrolling subgraph loops, the loop index of the node is stored here.</td></tr>
 </table>
 <br/>
@@ -1327,6 +1350,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string JitteredViewProjMtx_varName</td><td>"JitteredViewProjMtx"</td><td>ViewProjMtx with jitter.</td></tr>
 <tr><td>std::string InvJitteredViewProjMtx_varName</td><td>"InvJitteredViewProjMtx"</td><td>Inverted ViewProjMtx with jitter.</td></tr>
 <tr><td>std::string CameraPos_varName</td><td>"CameraPos"</td><td></td></tr>
+<tr><td>std::string CameraAltitudeAzimuth_varName</td><td>"CameraAltitudeAzimuth"</td><td></td></tr>
 <tr><td>std::string CameraChanged_varName</td><td>"CameraChanged"</td><td></td></tr>
 <tr><td>std::string CameraJitter_varName</td><td>"CameraJitter"</td><td></td></tr>
 <tr><td>std::string ShadingRateImageTileSize_varName</td><td>"ShadingRateImageTileSize"</td><td></td></tr>
@@ -1342,35 +1366,53 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
-<b>GGUserFile_Bookmark : A bookmark for resources to show up in a short list, to be more quickly found.</b><br/><br/>
+<b>GGUserFileV1 : The contents of a .gguser file</b><br/><br/>
 <table>
-<tr><th colspan=3>GGUserFile_Bookmark</th></tr>
-<tr><td>std::string name</td><td>""</td><td></td></tr>
-<tr><td>std::string viewableResourceDisplayName</td><td>""</td><td></td></tr>
-</table>
-<br/>
-
-<b>GGUserFile_ImportedResourcePreset : A preset of imported resource settings</b><br/><br/>
-<table>
-<tr><th colspan=3>GGUserFile_ImportedResourcePreset</th></tr>
-<tr><td>std::string name</td><td>""</td><td></td></tr>
-<tr><td>GGUserFile_ImportedResource importedResources[]</td><td></td><td></td></tr>
-</table>
-<br/>
-
-<b>GGUserFile : The contents of a .gguser file</b><br/><br/>
-<table>
-<tr><th colspan=3>GGUserFile</th></tr>
+<tr><th colspan=3>GGUserFileV1</th></tr>
 <tr><td>std::string version</td><td>"1.0"</td><td>The version of the .gguser file</td></tr>
 <tr><td>GGUserFile_SystemVars systemVars</td><td>{}</td><td></td></tr>
 <tr><td>int resourceViewType</td><td>0</td><td>The type of resource being viewed</td></tr>
 <tr><td>int resourceViewNodeIndex</td><td>-1</td><td>The index of the node bieng viewed</td></tr>
 <tr><td>int resourceViewResourceIndex</td><td>-1</td><td>The index of that resource within that node being used</td></tr>
-<tr><td>int syncInterval</td><td>true</td><td>IDXGISwapChain::Present() parameter: Synchronize presentation after the nth vertical blank.</td></tr>
+<tr><td>int syncInterval</td><td>1</td><td>IDXGISwapChain::Present() parameter: Synchronize presentation after the nth vertical blank.</td></tr>
 <tr><td>GGUserFile_ImportedResource importedResources[]</td><td></td><td></td></tr>
 <tr><td>GGUserFile_SavedVariable savedVariables[]</td><td></td><td></td></tr>
-<tr><td>GGUserFile_Bookmark bookmarks[]</td><td></td><td></td></tr>
-<tr><td>GGUserFile_ImportedResourcePreset importedResourcePresets[]</td><td></td><td></td></tr>
+</table>
+<br/>
+
+<b>GGUserFileV2Snapshot : The snapshot of a GGUserFileV2</b><br/><br/>
+<table>
+<tr><th colspan=3>GGUserFileV2Snapshot</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The snapshot name</td></tr>
+<tr><td>int resourceViewType</td><td>0</td><td>The type of resource being viewed</td></tr>
+<tr><td>int resourceViewNodeIndex</td><td>-1</td><td>The index of the node bieng viewed</td></tr>
+<tr><td>int resourceViewResourceIndex</td><td>-1</td><td>The index of that resource within that node being used</td></tr>
+<tr><td>bool loadVars</td><td>true</td><td>Whether variables will be loaded from this snapshot</td></tr>
+<tr><td>bool loadCamera</td><td>true</td><td>Whether the camera will be loaded from this snapshot</td></tr>
+<tr><td>bool loadResources</td><td>true</td><td>Whether imported resources will be loaded from this snapshot</td></tr>
+<tr><td>bool loadView</td><td>true</td><td>Whether the resource viewed will be loaded from this snapshot</td></tr>
+<tr><td>float cameraPos[3]</td><td>{ 0.0f , 0.0f , - 10.0f }</td><td>Used by snapshots to capture the camera position</td></tr>
+<tr><td>float cameraAltitudeAzimuth[2]</td><td>{ 0.0f , 0.0f }</td><td>Used by snapshots to capture the camera orientation</td></tr>
+<tr><td>GGUserFile_ImportedResource importedResources[]</td><td></td><td></td></tr>
+<tr><td>GGUserFile_SavedVariable savedVariables[]</td><td></td><td></td></tr>
+</table>
+<br/>
+
+<b>GGUserFileV2 : The contents of a .gguser file</b><br/><br/>
+<table>
+<tr><th colspan=3>GGUserFileV2</th></tr>
+<tr><td>std::string version</td><td>"2.0"</td><td>The version of the .gguser file</td></tr>
+<tr><td>int syncInterval</td><td>1</td><td>IDXGISwapChain::Present() parameter: Synchronize presentation after the nth vertical blank.</td></tr>
+<tr><td>GGUserFile_SystemVars systemVars</td><td>{}</td><td></td></tr>
+<tr><td>GGUserFileV2Snapshot snapshot</td><td>{}</td><td></td></tr>
+<tr><td>GGUserFileV2Snapshot snapshots[]</td><td></td><td></td></tr>
+</table>
+<br/>
+
+<b>GGUserFileVersionOnly : Only the version of the .gguser file</b><br/><br/>
+<table>
+<tr><th colspan=3>GGUserFileVersionOnly</th></tr>
+<tr><td>std::string version</td><td>"1.0"</td><td>The version of the .gguser file</td></tr>
 </table>
 <br/>
 
@@ -1542,6 +1584,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>std::string versionUpgradedMessage</i></td><td>""</td><td>Text to show about the version upgrade</td></tr>
 <tr><td><i>BackendTemplateConfig templateConfig</i></td><td>{}</td><td>Code generation template config</td></tr>
 <tr><td><i>bool generateGraphVizFlag</i></td><td>false</td><td>Set to true if the generating GraphViz. Should be set to true from a command line parameter</td></tr>
+<tr><td><i>std::vector<std::string> assertsFormatStrings</i></td><td>{}</td><td>The unique formatting strings of the asserts messages</td></tr>
+<tr><td><i>std::unordered_set<std::string> firedAssertsIdentifiers</i></td><td>{}</td><td>The identifiers of the fired asserts to ignore them later on</td></tr>
 </table>
 <br/>
 

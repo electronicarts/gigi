@@ -874,11 +874,51 @@ static bool InlineSubGraph(RenderGraph& parentGraph, RenderGraphNode_Action_SubG
     // Handle variable replacement
     // This is when subgraph variables are replaced by parent graph variables
     {
+        // Handle "replaceWithValue" - make a constant var with that as the default, and set replaceWithStr to it
+        {
+            for (SubGraphVariableSettings& variableSettings : subGraphNode.variableSettings)
+            {
+                if (variableSettings.replaceWithValue.empty())
+                    continue;
+
+                int childVariableIndex = GetVariableIndex(childGraph, variableSettings.name.c_str());
+                if (childVariableIndex == -1)
+                {
+                    ShowErrorMessage("Could not find variable \"%s\" in \"%s\" for node \"%s\".", variableSettings.name.c_str(), childFileName.c_str(), subGraphNode.name.c_str());
+                    continue;
+                }
+
+                // make a unique name for the new variable
+                char variableName[1024];
+                int index = 0;
+                do
+                {
+                    sprintf_s(variableName, "__literal_%i", index);
+                    index++;
+                }
+                while (VariableNameExists(parentGraph, variableName));
+
+                // make a new variable in the parent graph
+                Variable newVariable;
+                newVariable.name = variableName;
+                newVariable.comment = "Made to replace variable \"" + variableSettings.name + "\" with a constant value in subgraph node \"" + subGraphNode.name + "\"";
+                newVariable.type = childGraph.variables[childVariableIndex].type;
+                newVariable.Const = true;
+                newVariable.dflt = variableSettings.replaceWithValue;
+                newVariable.transient = true;
+                parentGraph.variables.push_back(newVariable);
+
+                // tell the subgraph to use this new variable instead
+                variableSettings.replaceWithStr = variableName;
+            }
+        }
+
         // Replace variable references
         {
             RenameData renameData;
             for (const SubGraphVariableSettings& variableSettings : subGraphNode.variableSettings)
             {
+                // if no variable replacement to do, skip this
                 if (variableSettings.replaceWithStr.empty() && !variableSettings.isLoopIndex)
                     continue;
 
@@ -1077,10 +1117,25 @@ bool ExpandLoopedSubgraphs(RenderGraph& renderGraph)
 
 		const RenderGraphNode_Action_SubGraph& subGraph = node.actionSubGraph;
 
-		if (subGraph.loopCount > 1)
+        // Get the loop count
+        // If a variable is specified, it overrides the literal value given.
+        int loopCount = subGraph.loopCount;
+        if (!subGraph.loopCountVariable.name.empty())
+        {
+            for (const Variable& var : renderGraph.variables)
+            {
+                if (var.name == subGraph.loopCountVariable.name)
+                {
+                    sscanf_s(var.dflt.c_str(), "%i", &loopCount);
+                    break;
+                }
+            }
+        }
+
+		if (loopCount > 1)
 		{
 			// Loop over the number of iterations we want
-			for (int loopIdx = 0; loopIdx < subGraph.loopCount; ++loopIdx)
+			for (int loopIdx = 0; loopIdx < loopCount; ++loopIdx)
 			{
 				// Copy the original node
 				RenderGraphNode loopNode = node;
@@ -1111,7 +1166,7 @@ bool ExpandLoopedSubgraphs(RenderGraph& renderGraph)
 
 				// If this is the last iteration, other nodes in the parent graph need to have references
 				// to the original subgraph updated to point to the last iteration.
-				if (loopIdx == subGraph.loopCount-1)
+				if (loopIdx == loopCount-1)
 				{
 					renameData.m_nodeRenames[oldName] = loopSubGraph.name;
 				}
@@ -1304,8 +1359,15 @@ bool InlineSubGraphs(RenderGraph& renderGraph)
         // detect and report the error of not being able to make progress
         if (subgraphNodesRemain && !madeProgress)
         {
-            ShowErrorMessage("Unable to make progress inlining subgraphs");
-            return false;
+            for (int nodeIndex = 0; nodeIndex < renderGraph.nodes.size(); ++nodeIndex)
+            {
+                RenderGraphNode& node = renderGraph.nodes[nodeIndex];
+                if (node._index != RenderGraphNode::c_index_actionSubGraph)
+                    continue;
+
+                ShowErrorMessage("Unable to make progress inlining subgraphs. Node \"%s\" could not be inlined, are all of it's inputs plugged in?", node.actionSubGraph.name.c_str());
+                return false;
+            }
         }
     }
 

@@ -1,0 +1,147 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "MaxBlurSize",
+            "comment": "Maximum radius of the CoC",
+            "type": "Float",
+            "dflt": "20.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "FocalLength",
+            "comment": "How far from the camera should be in focus",
+            "type": "Float",
+            "dflt": "1.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "FocusScale",
+            "comment": "How quickly the CoC scales over distance",
+            "type": "Float",
+            "dflt": "100.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "RadiusScale",
+            "comment": "How fast the points spiral out. smaller = nicer. larger = faster.",
+            "type": "Float",
+            "dflt": "0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "comment": "Set to true if the input texture is an sRGB texture",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "DOF",
+            "fileName": "dof.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "LinearDepth",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "DOF",
+                "editorPos": [
+                    13.0,
+                    -21.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Color",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "LinearDepth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "DOF"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    -197.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearDepth",
+                "editorPos": [
+                    -197.0,
+                    50.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -181.0,
+                    114.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Color"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        }
+    ]
+}

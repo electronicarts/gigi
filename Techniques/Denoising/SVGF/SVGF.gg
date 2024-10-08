@@ -1,0 +1,1343 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "BuffersNeedClear",
+            "type": "Bool",
+            "dflt": "true"
+        },
+        {
+            "name": "Alpha",
+            "type": "Float",
+            "dflt": "0.05f",
+            "visibility": "User"
+        },
+        {
+            "name": "MomentsAlpha",
+            "type": "Float",
+            "dflt": "0.2f",
+            "visibility": "User"
+        },
+        {
+            "name": "PhiColor",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "PhiNormal",
+            "type": "Float",
+            "dflt": "128.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "FilterIterations",
+            "comment": "For atrous filtering",
+            "type": "Int",
+            "Const": true,
+            "dflt": "4",
+            "visibility": "User"
+        },
+        {
+            "name": "FeedbackTap",
+            "comment": "When do to the feedback tap in the atrous loop. -1 to use the illumination.",
+            "type": "Int",
+            "dflt": "1",
+            "visibility": "User"
+        },
+        {
+            "name": "FeedbackTapMax",
+            "type": "Int"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "ClearBuffersCS",
+            "fileName": "ClearBuffersCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "LinearZAndNormal",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "PrevLinearZAndNormal",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "FilteredPastFbo",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "PrevReprojFbo_0",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "PrevReprojFbo_1",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "PrevReprojFbo_2",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "CurReprojFbo_0",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "CurReprojFbo_1",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "CurReprojFbo_2",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "PingPongFbo_0",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "PingPongFbo_1",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "Final_Fbo",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "ComputeLinearZAndNormal",
+            "fileName": "SVGFPackLinearZAndNormal.ps.slang",
+            "entryPoint": "csmain",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "gLinearZ",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gNormal",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "LinearZAndNormalFbo",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "ComputeReprojectionCS",
+            "fileName": "SVGFReproject.ps.slang",
+            "entryPoint": "csmain",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "gMotion",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gColor",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gEmission",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gAlbedo",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gPositionNormalFwidth",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gLinearZAndNormal",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gPrevLinearZAndNormal",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gPrevIllum",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gPrevMoments",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gPrevHistoryLength",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "CurReprojFbo_0",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "CurReprojFbo_1",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float2"
+                    }
+                },
+                {
+                    "name": "CurReprojFbo_2",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "ComputeFilteredMomentsCS",
+            "fileName": "SVGFFilterMoments.ps.slang",
+            "entryPoint": "csmain",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "gLinearZAndNormal",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gIllumination",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gMoments",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gHistoryLength",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "PingPongFbo_0",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "FinalModulateCS",
+            "fileName": "SVGFFinalModulate.ps.slang",
+            "entryPoint": "csmain",
+            "slangOptions": {
+                "process": true
+            },
+            "resources": [
+                {
+                    "name": "gEmission",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gAlbedo",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "gIllumination",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "FinalFbo",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "MathHelpers.slang",
+            "type": "Shader"
+        },
+        {
+            "fileName": "MathConstants.slangh",
+            "type": "Shader"
+        },
+        {
+            "fileName": "ColorHelpers.slang",
+            "type": "Shader"
+        },
+        {
+            "fileName": "SVGFCommon.slang",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "ClearBuffers",
+                "editorPos": [
+                    -251.0,
+                    -30.0
+                ],
+                "condition": {
+                    "variable1": "BuffersNeedClear",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "LinearZAndNormal",
+                        "dstNode": "Internal_LinearZAndNormalFbo",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FilteredPastFbo",
+                        "dstNode": "Internal_FilteredPastFbo",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PrevReprojFbo_0",
+                        "dstNode": "Internal_PrevReprojFbo_0",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PrevReprojFbo_1",
+                        "dstNode": "Internal_PrevReprojFbo_1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PrevReprojFbo_2",
+                        "dstNode": "Internal_PrevReprojFbo_2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PrevReprojFbo_1"
+                    },
+                    {
+                        "srcPin": "PrevReprojFbo_0"
+                    },
+                    {
+                        "srcPin": "CurReprojFbo_1",
+                        "dstNode": "Internal_CurReprojFbo_1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "CurReprojFbo_2",
+                        "dstNode": "Internal_CurReprojFbo_2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "CurReprojFbo_0",
+                        "dstNode": "Internal_CurReprojFbo_0",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PrevLinearZAndNormal",
+                        "dstNode": "Internal_PrevLinearZAndNormal",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PingPongFbo_1",
+                        "dstNode": "Internal_PingPongFbo_1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "PingPongFbo_0",
+                        "dstNode": "Internal_PingPongFbo_0",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Final_Fbo",
+                        "dstNode": "Internal_FinalFbo",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ClearBuffersCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_LinearZAndNormalFbo",
+                "editorPos": [
+                    -575.0,
+                    -158.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearZ",
+                "editorPos": [
+                    -117.0,
+                    -142.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "WorldNormal",
+                "editorPos": [
+                    -123.0,
+                    -94.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ComputeLinearZAndNormal",
+                "editorPos": [
+                    32.0,
+                    -81.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gLinearZ",
+                        "dstNode": "LinearZ",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gNormal",
+                        "dstNode": "WorldNormal",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "LinearZAndNormalFbo",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "LinearZAndNormal"
+                    }
+                ],
+                "shader": {
+                    "name": "ComputeLinearZAndNormal"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_CurReprojFbo_0",
+                "comment": "index 0 is illumination",
+                "editorPos": [
+                    -536.0,
+                    130.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_CurReprojFbo_1",
+                "comment": "index 1 is moments",
+                "editorPos": [
+                    -536.0,
+                    178.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RG32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_CurReprojFbo_2",
+                "comment": "index 2 is history length",
+                "editorPos": [
+                    -536.0,
+                    226.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "R32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ComputeReprojection",
+                "editorPos": [
+                    357.0,
+                    -110.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gEmission",
+                        "dstNode": "Emission",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gMotion",
+                        "dstNode": "MotionVector",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gColor",
+                        "dstNode": "Color",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gAlbedo",
+                        "dstNode": "Albedo",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gPrevMoments",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "PrevReprojFbo_1"
+                    },
+                    {
+                        "srcPin": "gPositionNormalFwidth",
+                        "dstNode": "PosNormalFwidth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "gPrevIllum",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "FilteredPastFbo"
+                    },
+                    {
+                        "srcPin": "gPrevHistoryLength",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "PrevReprojFbo_2"
+                    },
+                    {
+                        "srcPin": "gLinearZAndNormal",
+                        "dstNode": "ComputeLinearZAndNormal",
+                        "dstPin": "LinearZAndNormalFbo"
+                    },
+                    {
+                        "srcPin": "gPrevLinearZAndNormal",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "PrevLinearZAndNormal"
+                    },
+                    {
+                        "srcPin": "CurReprojFbo_2",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "CurReprojFbo_2"
+                    },
+                    {
+                        "srcPin": "CurReprojFbo_0",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "CurReprojFbo_0"
+                    },
+                    {
+                        "srcPin": "CurReprojFbo_1",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "CurReprojFbo_1"
+                    }
+                ],
+                "shader": {
+                    "name": "ComputeReprojectionCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "MotionVector",
+                "editorPos": [
+                    86.0,
+                    -334.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    91.0,
+                    -286.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Emission",
+                "editorPos": [
+                    91.0,
+                    -238.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Albedo",
+                "editorPos": [
+                    91.0,
+                    -190.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "PosNormalFwidth",
+                "editorPos": [
+                    62.0,
+                    -142.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_FilteredPastFbo",
+                "editorPos": [
+                    -536.0,
+                    -62.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_PrevReprojFbo_0",
+                "comment": "index 0 is illumination",
+                "editorPos": [
+                    -542.0,
+                    -14.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_PrevReprojFbo_1",
+                "comment": "index 1 is moments",
+                "editorPos": [
+                    -542.0,
+                    34.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RG32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_PrevReprojFbo_2",
+                "comment": "index 2 is history length",
+                "editorPos": [
+                    -542.0,
+                    82.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "R32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_PrevLinearZAndNormal",
+                "editorPos": [
+                    -580.0,
+                    -110.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ComputeFilteredMoments",
+                "editorPos": [
+                    613.0,
+                    82.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gIllumination",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "CurReprojFbo_0"
+                    },
+                    {
+                        "srcPin": "gHistoryLength",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "CurReprojFbo_2"
+                    },
+                    {
+                        "srcPin": "gLinearZAndNormal",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "gLinearZAndNormal"
+                    },
+                    {
+                        "srcPin": "gMoments",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "CurReprojFbo_1"
+                    },
+                    {
+                        "srcPin": "PingPongFbo_0",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "PingPongFbo_0"
+                    }
+                ],
+                "shader": {
+                    "name": "ComputeFilteredMomentsCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_PingPongFbo_0",
+                "editorPos": [
+                    -531.0,
+                    274.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_PingPongFbo_1",
+                "editorPos": [
+                    -531.0,
+                    322.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "ComputeAtrousDecomposition",
+                "editorPos": [
+                    933.0,
+                    -20.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Albedo",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "gAlbedo"
+                    },
+                    {
+                        "srcPin": "LinearZAndNormal",
+                        "dstNode": "ComputeFilteredMoments",
+                        "dstPin": "gLinearZAndNormal"
+                    },
+                    {
+                        "srcPin": "HistoryLength",
+                        "dstNode": "ComputeFilteredMoments",
+                        "dstPin": "gHistoryLength"
+                    },
+                    {
+                        "srcPin": "PingPongFbo_0",
+                        "dstNode": "ComputeFilteredMoments",
+                        "dstPin": "PingPongFbo_0"
+                    },
+                    {
+                        "srcPin": "PingPongFbo_1 ",
+                        "dstNode": "PingPongFbo_1_A",
+                        "dstPin": "Pin 0"
+                    },
+                    {
+                        "srcPin": "FilteredPastFbo",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "gPrevIllum"
+                    }
+                ],
+                "fileName": "Atrous.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Albedo",
+                        "LinearZAndNormal",
+                        "HistoryLength",
+                        "PingPongFbo_0",
+                        "PingPongFbo_1 ",
+                        "FilteredPastFbo"
+                    ],
+                    "variables": [
+                        {
+                            "name": "PhiColor"
+                        },
+                        {
+                            "name": "PhiNormal",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "LoopIndex",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "FeedbackTap",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "PhiColor",
+                        "visibility": "User",
+                        "replaceWithStr": "PhiColor"
+                    },
+                    {
+                        "name": "PhiNormal",
+                        "visibility": "User",
+                        "replaceWithStr": "PhiNormal"
+                    },
+                    {
+                        "name": "LoopIndex",
+                        "isLoopIndex": true
+                    },
+                    {
+                        "name": "FeedbackTap",
+                        "visibility": "User",
+                        "replaceWithStr": "FeedbackTap"
+                    }
+                ],
+                "loopCountVariable": {
+                    "name": "FilterIterations"
+                }
+            }
+        },
+        {
+            "actionBarrier": {
+                "name": "PingPongFbo_1_A",
+                "comment": "Just to route the lines more cleanly",
+                "editorPos": [
+                    667.0,
+                    242.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin 0",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "PingPongFbo_1"
+                    },
+                    {
+                        "srcPin": "Pin 1"
+                    }
+                ]
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "FeedbackTapOuter",
+                "editorPos": [
+                    1201.0,
+                    130.0
+                ],
+                "condition": {
+                    "variable1": "FeedbackTap",
+                    "comparison": "LT",
+                    "value2": "0"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "ComputeFilteredMoments",
+                    "pin": "gIllumination"
+                },
+                "dest": {
+                    "node": "ComputeAtrousDecomposition",
+                    "pin": "FilteredPastFbo"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FinalModulate",
+                "editorPos": [
+                    1419.0,
+                    -74.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "gAlbedo",
+                        "dstNode": "ComputeAtrousDecomposition",
+                        "dstPin": "Albedo"
+                    },
+                    {
+                        "srcPin": "gEmission",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "gEmission"
+                    },
+                    {
+                        "srcPin": "gIllumination",
+                        "dstNode": "ComputeAtrousDecomposition",
+                        "dstPin": "PingPongFbo_0"
+                    },
+                    {
+                        "srcPin": "FinalFbo",
+                        "dstNode": "Final_Fbo_A",
+                        "dstPin": "Pin 0"
+                    }
+                ],
+                "shader": {
+                    "name": "FinalModulateCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Internal_FinalFbo",
+                "editorPos": [
+                    -496.0,
+                    370.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "actionBarrier": {
+                "name": "Final_Fbo_A",
+                "editorPos": [
+                    661.0,
+                    322.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin 0",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "Final_Fbo"
+                    },
+                    {
+                        "srcPin": "Pin 1"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    1547.0,
+                    95.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "LinearZ"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "BlitToOutput",
+                "editorPos": [
+                    1685.0,
+                    -17.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "FinalModulate",
+                    "pin": "FinalFbo"
+                },
+                "dest": {
+                    "node": "Output",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "SwapReprojFbo_0",
+                "editorPos": [
+                    1301.0,
+                    -206.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "A",
+                        "dstNode": "FeedbackTapOuter",
+                        "dstPin": "source"
+                    },
+                    {
+                        "srcPin": "B",
+                        "dstNode": "PrevReprojFbo_0_A",
+                        "dstPin": "Pin 0"
+                    }
+                ],
+                "fileName": "SwapTextures.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "A",
+                        "B"
+                    ]
+                }
+            }
+        },
+        {
+            "actionBarrier": {
+                "name": "PrevReprojFbo_0_A",
+                "editorPos": [
+                    661.0,
+                    418.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin 0",
+                        "dstNode": "ClearBuffers",
+                        "dstPin": "PrevReprojFbo_0"
+                    },
+                    {
+                        "srcPin": "Pin 1"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "SwapReprojFbo_1",
+                "editorPos": [
+                    943.0,
+                    -206.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "A",
+                        "dstNode": "ComputeFilteredMoments",
+                        "dstPin": "gMoments"
+                    },
+                    {
+                        "srcPin": "B",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "gPrevMoments"
+                    }
+                ],
+                "fileName": "SwapTextures.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "A",
+                        "B"
+                    ]
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "SwapReprojFbo_2",
+                "editorPos": [
+                    1125.0,
+                    -206.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "A",
+                        "dstNode": "ComputeAtrousDecomposition",
+                        "dstPin": "HistoryLength"
+                    },
+                    {
+                        "srcPin": "B",
+                        "dstNode": "ComputeReprojection",
+                        "dstPin": "gPrevHistoryLength"
+                    }
+                ],
+                "fileName": "SwapTextures.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "A",
+                        "B"
+                    ]
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopyLinearZAndNormalFbo",
+                "editorPos": [
+                    1509.0,
+                    -206.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "ComputeAtrousDecomposition",
+                    "pin": "LinearZAndNormal"
+                },
+                "dest": {
+                    "node": "ComputeReprojection",
+                    "pin": "gPrevLinearZAndNormal"
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "BuffersNeedClear"
+            },
+            "ALiteral": "false",
+            "op": "Noop",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "FeedbackTapMax"
+            },
+            "AVar": {
+                "name": "FilterIterations"
+            },
+            "op": "Subtract",
+            "BLiteral": "1"
+        },
+        {
+            "destination": {
+                "name": "FeedbackTap"
+            },
+            "AVar": {
+                "name": "FeedbackTap"
+            },
+            "op": "Minimum",
+            "BVar": {
+                "name": "FeedbackTapMax"
+            }
+        },
+        {
+            "destination": {
+                "name": "FeedbackTap"
+            },
+            "AVar": {
+                "name": "FeedbackTap"
+            },
+            "op": "Maximum",
+            "BLiteral": "-1"
+        }
+    ]
+}

@@ -22,6 +22,7 @@ unsupportedTests = [
     "Data\\binaryTexF32",
     "Python\\GPUWrite",
     "Python\\profiling",
+    "ShaderAssert\\assertsTest",
 
     # Viewer Only - These make sure the viewer will make mips of imported textures when asked
     "Textures\\Mips_Imported_2D",

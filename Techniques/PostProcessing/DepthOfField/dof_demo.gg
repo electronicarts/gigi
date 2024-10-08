@@ -1,0 +1,959 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "1024, 768",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "comment": "Set to true if the input texture is an sRGB texture",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ToneMapper",
+            "type": "Int",
+            "dflt": "ACES",
+            "visibility": "User",
+            "Enum": "ToneMappingOperation"
+        },
+        {
+            "name": "ExposureFStops",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "DepthNearPlane",
+            "type": "Float",
+            "dflt": "0.1f",
+            "visibility": "User"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "SpheresPositionStart",
+            "comment": "Where the spheres start. In world space.",
+            "type": "Float3",
+            "dflt": "-1300.000000,200.000000,-100.000000",
+            "visibility": "User"
+        },
+        {
+            "name": "SpheresPositionEnd",
+            "comment": "Where the spheres end In world space.",
+            "type": "Float3",
+            "dflt": "-1300.000000,200.000000,-100.000000",
+            "visibility": "User"
+        },
+        {
+            "name": "SphereCount",
+            "type": "Uint",
+            "dflt": "5",
+            "visibility": "User"
+        },
+        {
+            "name": "SphereRadius",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "SphereColor",
+            "type": "Float3",
+            "dflt": "1.0f, 1.0f, 1.0f",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "SphereBrightness",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "VS",
+            "fileName": "dof_demo_vs.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vsmain"
+        },
+        {
+            "name": "PS",
+            "fileName": "dof_demo_ps.hlsl",
+            "type": "Pixel",
+            "entryPoint": "psmain",
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "Tonemap",
+            "fileName": "dof_demo_tonemap.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "HDR",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "SDR",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "BrightLight",
+            "fileName": "dof_demo_brightlight.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "LinearDepth",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "Vertex",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "MaterialID",
+                    "type": "Int",
+                    "semantic": "MaterialID"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionDrawCall": {
+                "name": "Draw Opaque",
+                "editorPos": [
+                    -57.0,
+                    4.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "defines": [
+                    {
+                        "name": "OPAQUE_PASS",
+                        "value": "1"
+                    }
+                ],
+                "cullMode": "Back",
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "VertexBuffer",
+                    "pin": "resource"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Color",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "LinearDepth",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VertexBuffer",
+                "editorPos": [
+                    -217.0,
+                    18.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    -213.0,
+                    130.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    -213.0,
+                    82.0
+                ],
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearDepth",
+                "editorPos": [
+                    -213.0,
+                    194.0
+                ],
+                "format": {
+                    "format": "R32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Draw Transparent",
+                "editorPos": [
+                    146.0,
+                    3.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "depthWrite": false,
+                "depthTest": "Greater",
+                "independentAlpha": true,
+                "colorTargetSettings": [
+                    {
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {
+                        "clearColor": [
+                            0.0,
+                            1.0,
+                            1.0,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            false,
+                            false,
+                            false,
+                            false
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "defines": [
+                    {
+                        "name": "OPAQUE_PASS",
+                        "value": "0"
+                    }
+                ],
+                "cullMode": "Back",
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Draw Opaque",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Draw Opaque",
+                        "pin": "colorTarget0"
+                    },
+                    {
+                        "node": "Draw Opaque",
+                        "pin": "colorTarget1"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Draw Opaque",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "IW2007",
+                "editorPos": [
+                    609.0,
+                    -52.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "BrightLight",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "BrightLight",
+                        "dstPin": "LinearDepth"
+                    },
+                    {
+                        "srcPin": "Output"
+                    }
+                ],
+                "fileName": "IW2007\\dof.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Color",
+                        "LinearDepth"
+                    ],
+                    "exportedResources": [
+                        "Output"
+                    ],
+                    "variables": [
+                        {
+                            "name": "DepthScale",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "EqNear",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "EqFar",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FarToNearRadiusRatio",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "fadeDistances",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "sRGB",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "DepthScale",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "EqNear",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "EqFar",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FarToNearRadiusRatio",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "fadeDistances",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "sRGB",
+                        "visibility": "User",
+                        "replaceWithStr": "sRGB"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "Gustafsson2018",
+                "editorPos": [
+                    608.0,
+                    98.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "BrightLight",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "BrightLight",
+                        "dstPin": "LinearDepth"
+                    },
+                    {
+                        "srcPin": "Output"
+                    }
+                ],
+                "fileName": "Gustafsson2018\\dof.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Color",
+                        "LinearDepth"
+                    ],
+                    "exportedResources": [
+                        "Output"
+                    ],
+                    "variables": [
+                        {
+                            "name": "MaxBlurSize",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FocalLength",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FocusScale",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "RadiusScale",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "sRGB",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "MaxBlurSize",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FocalLength",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FocusScale",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "RadiusScale",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "sRGB",
+                        "visibility": "User",
+                        "replaceWithStr": "sRGB"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "IW2007Output",
+                "editorPos": [
+                    757.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "HDR",
+                        "dstNode": "IW2007",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "SDR",
+                        "dstNode": "SDR1",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Tonemap"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Gustafsson2018Output",
+                "editorPos": [
+                    757.0,
+                    140.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "HDR",
+                        "dstNode": "Gustafsson2018",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "SDR",
+                        "dstNode": "SDR2",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Tonemap"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SDR1",
+                "editorPos": [
+                    613.0,
+                    34.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SDR2",
+                "editorPos": [
+                    613.0,
+                    194.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BrightLight",
+                "editorPos": [
+                    341.0,
+                    98.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "Draw Transparent",
+                        "dstPin": "colorTarget1"
+                    },
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Draw Transparent",
+                        "dstPin": "colorTarget0"
+                    }
+                ],
+                "shader": {
+                    "name": "BrightLight"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "GatherDOF2018",
+                "editorPos": [
+                    598.0,
+                    252.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "BrightLight",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "BrightLight",
+                        "dstPin": "LinearDepth"
+                    },
+                    {
+                        "srcPin": "Output"
+                    }
+                ],
+                "fileName": "GatherDOF2018\\dof.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Color",
+                        "LinearDepth"
+                    ],
+                    "exportedResources": [
+                        "Output"
+                    ],
+                    "variables": [
+                        {
+                            "name": "FocalDistance",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FocalRegion",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FocalLength",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "NearTransitionRegion",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FarTransitionRegion",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "Scale",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "DoFarField",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "DoFarFieldFloodFill",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "DoNearField",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "DoNearFieldFloodFill",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "KernelSize",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "BlurTapCount",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "FloodFillTapCount",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "sRGB",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "FocalDistance",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FocalRegion",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FocalLength",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "NearTransitionRegion",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FarTransitionRegion",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "Scale",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "DoFarField",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "DoFarFieldFloodFill",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "DoNearField",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "DoNearFieldFloodFill",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "KernelSize",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "BlurTapCount",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "FloodFillTapCount",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "sRGB",
+                        "visibility": "User",
+                        "replaceWithStr": "sRGB"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SDR3",
+                "editorPos": [
+                    619.0,
+                    354.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "GatherDOF2018Output",
+                "editorPos": [
+                    763.0,
+                    300.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "HDR",
+                        "dstNode": "GatherDOF2018",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "SDR",
+                        "dstNode": "SDR3",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Tonemap"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "ToneMappingOperation",
+            "items": [
+                {
+                    "label": "None"
+                },
+                {
+                    "label": "Reinhard_Simple"
+                },
+                {
+                    "label": "ACES_Luminance"
+                },
+                {
+                    "label": "ACES"
+                }
+            ]
+        }
+    ]
+}

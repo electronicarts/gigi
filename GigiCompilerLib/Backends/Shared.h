@@ -393,7 +393,7 @@ inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<
 
 inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph)
 {
-    // Gigi "preprocessor"
+    // Gigi preprocessor
     size_t offset = 0;
     while (1)
     {

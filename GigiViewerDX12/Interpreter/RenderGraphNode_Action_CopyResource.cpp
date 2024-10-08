@@ -12,6 +12,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 	if (nodeAction == NodeAction::Execute)
 	{
+		std::ostringstream ss;
+		if (IsConditional(node.condition))
+			ss << "\nCondition: " << (EvaluateCondition(node.condition) ? "true" : "false");
+		runtimeData.m_renderGraphText = ss.str();
+
 		bool executionConditionMet = EvaluateCondition(node.condition);
 		if (!executionConditionMet)
 			return true;

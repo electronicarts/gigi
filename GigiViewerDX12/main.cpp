@@ -149,12 +149,6 @@ static bool g_imageLinearFilter = true;
 static bool g_hideUI = false;
 static bool g_hideResourceNodes = true;  // in profiler, and render graph window. To reduce clutter of things that we don't care about.
 static bool g_onlyShowWrites = true;     // Hide SRV, UAV before, etc. Only show the result of writes.
-static bool g_hideFileCacheDetails = true;  // in internal variables. To reduce clutter of things that we don't care about.
-static bool g_hideTrackedFilesDetails = true;  // in internal variables. To reduce clutter of things that we don't care about.
-static bool g_hideObjectCacheDetails = true;  // in internal variables. To reduce clutter of things that we don't care about.
-static bool g_hideFBXCacheDetails = true;  // in internal variables. To reduce clutter of things that we don't care about.
-static bool g_hidePLYCacheDetails = true;  // in internal variables. To reduce clutter of things that we don't care about.
-static bool g_hideTextureCacheDetails = true;  // in internal variables. To reduce clutter of things that we don't care about.
 
 static bool g_fullscreen = false;
 
@@ -393,7 +387,6 @@ struct ResourceViewState
     float systemVarMouseState[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     float systemVarMouseStateLastFrame[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
-private:
     void StoreLast()
     {
         lastType = type;
@@ -404,9 +397,8 @@ private:
 static ResourceViewState g_resourceView;
 
 static GGUserFile_SystemVars g_systemVariables;
-static std::vector<GGUserFile_Bookmark> g_bookmarks;
-static std::vector<GGUserFile_ImportedResourcePreset> g_importedResourcePresets;
-static char g_importedResourcePresetsName[1024] = { 0 };
+static std::vector<GGUserFileV2Snapshot> g_userSnapshots;
+static int g_userSnapshotIndex = -1;
 
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
@@ -432,6 +424,8 @@ int g_executeTechniqueCount = 0;
 int g_executeTechniqueCountRemain = 0;
 bool g_executeTechnique = true;
 bool g_techniquePaused = false;
+
+bool g_logCollectedShaderAsserts = true;
 
 std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
@@ -666,6 +660,125 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
     return outDesc;
 }
 
+void ScatterSnapshotData(const GGUserFileV2Snapshot& snapshot, bool switchingSnapshots, bool loadCamera, bool loadView, bool loadResources)
+{
+    if (loadCamera)
+    {
+        g_systemVariables.camera.cameraPos = snapshot.cameraPos;
+        g_systemVariables.camera.cameraAltitudeAzimuth = snapshot.cameraAltitudeAzimuth;
+        g_systemVariables.camera.cameraChanged = true;
+    }
+
+    if (loadView)
+    {
+        g_resourceView.type = (RuntimeTypes::ViewableResource::Type)snapshot.resourceViewType;
+        g_resourceView.nodeIndex = snapshot.resourceViewNodeIndex;
+        g_resourceView.resourceIndex = snapshot.resourceViewResourceIndex;
+    }
+
+    if (loadResources)
+    {
+        std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
+        for (const GGUserFile_ImportedResource& inDesc : snapshot.importedResources)
+        {
+            GigiInterpreterPreviewWindowDX12::ImportedResourceDesc desc = GGUserFile_ImportedResource_To_ImportedResourceDesc(inDesc, renderGraphDir);
+
+            if (!switchingSnapshots)
+                desc.stale = true;
+
+            desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+            if (g_interpreter.m_importedResources.count(inDesc.nodeName) > 0)
+            {
+                desc.nodeIndex = g_interpreter.m_importedResources[inDesc.nodeName].nodeIndex;
+                desc.resourceIndex = g_interpreter.m_importedResources[inDesc.nodeName].resourceIndex;
+            }
+
+            g_interpreter.m_importedResources[inDesc.nodeName] = desc;
+        }
+    }
+}
+
+void ScatterSnapshotVariables(const GGUserFileV2Snapshot& snapshot)
+{
+    for (const auto& savedVariable : snapshot.savedVariables)
+    {
+        int rtVarIndex = g_interpreter.GetRuntimeVariableIndex(savedVariable.name.c_str());
+        if (rtVarIndex == -1)
+            continue;
+        g_interpreter.SetRuntimeVariableFromString(rtVarIndex, savedVariable.value.c_str());
+    }
+}
+
+void GatherSnapshotData(GGUserFileV2Snapshot& snapshot)
+{
+    snapshot.resourceViewType = (int)g_resourceView.type;
+    snapshot.resourceViewNodeIndex = g_resourceView.nodeIndex;
+    snapshot.resourceViewResourceIndex = g_resourceView.resourceIndex;
+
+    snapshot.cameraPos = g_systemVariables.camera.cameraPos;
+    snapshot.cameraAltitudeAzimuth = g_systemVariables.camera.cameraAltitudeAzimuth;
+
+    std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
+    snapshot.importedResources.clear();
+    for (const auto& it : g_interpreter.m_importedResources)
+        snapshot.importedResources.push_back(ImportedResourceDesc_To_GGUserFile_ImportedResource(it.first, it.second, renderGraphDir));
+
+    // sort the names of the imported resources so we can save them in a stable (alphabetical) order
+    std::sort(snapshot.importedResources.begin(), snapshot.importedResources.end(),
+        [](const GGUserFile_ImportedResource& a, const GGUserFile_ImportedResource& b)
+        {
+            return a.nodeName < b.nodeName;
+        }
+    );
+
+    // Fill out the variables
+    for (int varIndex = 0; varIndex < g_interpreter.GetRuntimeVariableCount(); ++varIndex)
+    {
+        const auto& rtVar = g_interpreter.GetRuntimeVariable(varIndex);
+
+        // don't save const vars
+        if (rtVar.variable->Const)
+            continue;
+
+        // don't save transient vars
+        if (rtVar.variable->transient)
+            continue;
+
+        // don't save system variables
+        if (rtVar.variable->name == g_systemVariables.iResolution_varName ||
+            rtVar.variable->name == g_systemVariables.iTime_varName ||
+            rtVar.variable->name == g_systemVariables.iTimeDelta_varName ||
+            rtVar.variable->name == g_systemVariables.iFrameRate_varName ||
+            rtVar.variable->name == g_systemVariables.iFrame_varName ||
+            rtVar.variable->name == g_systemVariables.iMouse_varName ||
+            rtVar.variable->name == g_systemVariables.MouseState_varName ||
+            rtVar.variable->name == g_systemVariables.MouseStateLastFrame_varName ||
+            rtVar.variable->name == g_systemVariables.ViewMtx_varName ||
+            rtVar.variable->name == g_systemVariables.InvViewMtx_varName ||
+            rtVar.variable->name == g_systemVariables.ProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.InvProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.ViewProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.InvViewProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.JitteredProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.InvJitteredProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.JitteredViewProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.InvJitteredViewProjMtx_varName ||
+            rtVar.variable->name == g_systemVariables.CameraPos_varName ||
+            rtVar.variable->name == g_systemVariables.CameraAltitudeAzimuth_varName ||
+            rtVar.variable->name == g_systemVariables.CameraChanged_varName ||
+            rtVar.variable->name == g_systemVariables.CameraJitter_varName ||
+            rtVar.variable->name == g_systemVariables.WindowSize_varName ||
+            rtVar.variable->name == g_systemVariables.ShadingRateImageTileSize_varName)
+            continue;
+
+        GGUserFile_SavedVariable var;
+        var.name = rtVar.variable->name;
+        var.value = g_interpreter.GetRuntimeVariableValueAsString(varIndex);
+        snapshot.savedVariables.push_back(var);
+    }
+}
+
 void SaveGGUserFile()
 {
     // if saving gguser files is disabled by script, don't do it
@@ -693,77 +806,36 @@ void SaveGGUserFile()
         ggUserFileName = g_renderGraphFileName + ".gguser";
 
     // Fill out the GGUserFile
-    std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
-    GGUserFile ggUserData;
-    ggUserData.resourceViewType = (int)g_resourceView.type;
-    ggUserData.resourceViewNodeIndex = g_resourceView.nodeIndex;
-    ggUserData.resourceViewResourceIndex = g_resourceView.resourceIndex;
+    GGUserFileV2 ggUserData;
+    GatherSnapshotData(ggUserData.snapshot);
     ggUserData.syncInterval = g_syncInterval;
-    for (const auto& it : g_interpreter.m_importedResources)
-        ggUserData.importedResources.push_back(ImportedResourceDesc_To_GGUserFile_ImportedResource(it.first, it.second, renderGraphDir));
-
-    // sort the names of the imported resources so we can save them in a stable (alphabetical) order
-    std::sort(ggUserData.importedResources.begin(), ggUserData.importedResources.end(),
-        [](const GGUserFile_ImportedResource& a, const GGUserFile_ImportedResource& b)
-        {
-            return a.nodeName < b.nodeName;
-        }
-    );
-
     ggUserData.systemVars = g_systemVariables;
-    ggUserData.bookmarks = g_bookmarks;
-    ggUserData.importedResourcePresets = g_importedResourcePresets;
-
-    // Fill out the variables
-    for (int varIndex = 0; varIndex < g_interpreter.GetRuntimeVariableCount(); ++varIndex)
-    {
-        const auto& rtVar = g_interpreter.GetRuntimeVariable(varIndex);
-
-        // don't save system variables
-        if (rtVar.variable->name == g_systemVariables.iResolution_varName ||
-            rtVar.variable->name == g_systemVariables.iTime_varName ||
-            rtVar.variable->name == g_systemVariables.iTimeDelta_varName ||
-            rtVar.variable->name == g_systemVariables.iFrameRate_varName ||
-            rtVar.variable->name == g_systemVariables.iFrame_varName ||
-            rtVar.variable->name == g_systemVariables.iMouse_varName ||
-            rtVar.variable->name == g_systemVariables.MouseState_varName ||
-            rtVar.variable->name == g_systemVariables.MouseStateLastFrame_varName ||
-            rtVar.variable->name == g_systemVariables.ViewMtx_varName ||
-            rtVar.variable->name == g_systemVariables.InvViewMtx_varName ||
-            rtVar.variable->name == g_systemVariables.ProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.InvProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.ViewProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.InvViewProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.JitteredProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.InvJitteredProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.JitteredViewProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.InvJitteredViewProjMtx_varName ||
-            rtVar.variable->name == g_systemVariables.CameraPos_varName ||
-            rtVar.variable->name == g_systemVariables.CameraChanged_varName ||
-            rtVar.variable->name == g_systemVariables.CameraJitter_varName ||
-            rtVar.variable->name == g_systemVariables.WindowSize_varName ||
-            rtVar.variable->name == g_systemVariables.ShadingRateImageTileSize_varName)
-            continue;
-
-        // don't save const vars, or transient vars
-        if (rtVar.variable->Const || rtVar.variable->transient)
-            continue;
-
-        GGUserFile_SavedVariable var;
-        var.name = rtVar.variable->name;
-        var.value = g_interpreter.GetRuntimeVariableValueAsString(varIndex);
-        ggUserData.savedVariables.push_back(var);
-    }
+    ggUserData.snapshots = g_userSnapshots;
 
     // Save the data
     WriteToJSONFile(ggUserData, ggUserFileName.c_str());
 }
 
-GGUserFile LoadGGUserFile()
+// When we have more version we can string these conversions together
+bool ConvertGGUserFile(const GGUserFileV1& oldFile, GGUserFileV2& newFile)
+{
+    newFile.syncInterval = oldFile.syncInterval;
+    newFile.systemVars = oldFile.systemVars;
+
+    newFile.snapshot.resourceViewType = oldFile.resourceViewType;
+    newFile.snapshot.resourceViewNodeIndex = oldFile.resourceViewNodeIndex;
+    newFile.snapshot.resourceViewResourceIndex = oldFile.resourceViewResourceIndex;
+    newFile.snapshot.importedResources = oldFile.importedResources;
+    newFile.snapshot.savedVariables = oldFile.savedVariables;
+
+    return true;
+}
+
+GGUserFileV2 LoadGGUserFile()
 {
     // nothing to do if no file name
     if (g_renderGraphFileName.empty())
-        return GGUserFile();
+        return GGUserFileV2();
 
     // make .gguser file name
     std::string extension;
@@ -778,34 +850,45 @@ GGUserFile LoadGGUserFile()
         ggUserFileName = g_renderGraphFileName + ".gguser";
 
     // only try to load it if the file exists
-    GGUserFile ggUserData;
+    GGUserFileV2 ggUserData;
     FILE* file = nullptr;
     fopen_s(&file, ggUserFileName.c_str(), "rb");
+    bool loadFailed = false;
     if (file)
     {
         fclose(file);
-        if (!ReadFromJSONFile(ggUserData, ggUserFileName.c_str()))
-            ggUserData = GGUserFile();
+        GGUserFileVersionOnly ggUserDataVersion;
+        if (ReadFromJSONFile(ggUserDataVersion, ggUserFileName.c_str()))
+        {
+            if (ggUserDataVersion.version == "1.0")
+            {
+                GGUserFileV1 ggUserDataOld;
+
+                if (!ReadFromJSONFile(ggUserDataOld, ggUserFileName.c_str()) || !ConvertGGUserFile(ggUserDataOld, ggUserData))
+                    loadFailed = true;
+            }
+            else if (ggUserDataVersion.version == "2.0")
+            {
+                if (!ReadFromJSONFile(ggUserData, ggUserFileName.c_str()))
+                    loadFailed = true;
+            }
+            else
+            {
+                loadFailed = true;
+            }
+        }
+
+        if (loadFailed)
+            ggUserData = GGUserFileV2();
     }
 
     // restore the saved data
-    std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
-    g_resourceView.type = (RuntimeTypes::ViewableResource::Type)ggUserData.resourceViewType;
-    g_resourceView.nodeIndex = ggUserData.resourceViewNodeIndex;
-    g_resourceView.resourceIndex = ggUserData.resourceViewResourceIndex;
-    g_syncInterval = ggUserData.syncInterval;
     g_interpreter.m_importedResources.clear();
-    for (const GGUserFile_ImportedResource& inDesc : ggUserData.importedResources)
-    {
-        GigiInterpreterPreviewWindowDX12::ImportedResourceDesc desc = GGUserFile_ImportedResource_To_ImportedResourceDesc(inDesc, renderGraphDir);
-        desc.stale = true;
-        g_interpreter.m_importedResources[inDesc.nodeName] = desc;
-    }
-
+    ScatterSnapshotData(ggUserData.snapshot, false, true, true, true);
+    g_syncInterval = ggUserData.syncInterval;
     g_systemVariables = ggUserData.systemVars;
-    g_bookmarks = ggUserData.bookmarks;
-    g_importedResourcePresets = ggUserData.importedResourcePresets;
-    g_importedResourcePresetsName[0] = 0;
+    g_userSnapshots = ggUserData.snapshots;
+    g_userSnapshotIndex = -1;
 
     g_systemVariables.camera.cameraPos = g_systemVariables.camera.startingCameraPos;
     g_systemVariables.camera.cameraAltitudeAzimuth = g_systemVariables.camera.startingCameraAltitudeAzimuth;
@@ -829,7 +912,7 @@ bool LoadGGFile(const char* fileName, bool preserveState)
     // save the old gg user file, and then load the new one after we change our file name
     SaveGGUserFile();
     g_renderGraphFileName = fileName;
-    GGUserFile ggUserData = LoadGGUserFile();
+    auto ggUserData = LoadGGUserFile();
 
     // clear if we should
     if (g_renderGraphFileName.empty())
@@ -862,14 +945,7 @@ bool LoadGGFile(const char* fileName, bool preserveState)
         return false;
     }
 
-    // Load the saved variable values from the GGUser file, now that the render graph is loaded and compiled
-    for (const auto& savedVariable : ggUserData.savedVariables)
-    {
-        int rtVarIndex = g_interpreter.GetRuntimeVariableIndex(savedVariable.name.c_str());
-        if (rtVarIndex == -1)
-            continue;
-        g_interpreter.SetRuntimeVariableFromString(rtVarIndex, savedVariable.value.c_str());
-    }
+    ScatterSnapshotVariables(ggUserData.snapshot);
 
     // Set all const variables to their const value
     for (const Variable& variable : g_interpreter.GetRenderGraph().variables)
@@ -1239,7 +1315,10 @@ void HandleMainMenu()
         if (ImGui::Button("Open Editor"))
         {
             char commandLine[1024];
-            sprintf_s(commandLine, "GigiEdit.exe \"%s\"", g_renderGraphFileName.c_str());
+            if (g_renderGraphFileName.empty())
+                sprintf_s(commandLine, "GigiEdit.exe");
+            else
+                sprintf_s(commandLine, "GigiEdit.exe \"%s\"", g_renderGraphFileName.c_str());
 
             STARTUPINFOA si;
             ZeroMemory(&si, sizeof(si));
@@ -1628,6 +1707,7 @@ void ShowNodeDropDown(const std::string& label, int nodeType, std::string& value
         value = labelsStr[selection];
 }
 
+// if assignVariable is false, it will assign "value" the value from the variable
 template <typename T>
 bool AssignVariable(const char* name, DataFieldType type, T value)
 {
@@ -1660,7 +1740,7 @@ DirectX::XMMATRIX GetViewMatrix()
     return DirectX::XMMatrixTranslation(-g_systemVariables.camera.cameraPos[0], -g_systemVariables.camera.cameraPos[1], -g_systemVariables.camera.cameraPos[2]) * rot;
 }
 
-void UpdateSystemVariables()
+void SynchronizeSystemVariables()
 {
     auto context = ImGui::GetCurrentContext();
 
@@ -1695,19 +1775,24 @@ void UpdateSystemVariables()
         AssignVariable(g_systemVariables.WindowSize_varName.c_str(), DataFieldType::Float2, size);
     }
 
+    // Time
     AssignVariable(g_systemVariables.iTime_varName.c_str(), DataFieldType::Float, (float)(context->Time - g_startTime));
 
-    if (g_forcedFrameDeltaTime > 0.0f)
+    // Frame Delta
     {
-        AssignVariable(g_systemVariables.iTimeDelta_varName.c_str(), DataFieldType::Float, g_forcedFrameDeltaTime);
-        AssignVariable(g_systemVariables.iFrameRate_varName.c_str(), DataFieldType::Float, 1.0f / g_forcedFrameDeltaTime);
-    }
-    else
-    {
-        AssignVariable(g_systemVariables.iTimeDelta_varName.c_str(), DataFieldType::Float, (float)context->IO.DeltaTime);
-        AssignVariable(g_systemVariables.iFrameRate_varName.c_str(), DataFieldType::Float, (float)context->IO.Framerate);
+        if (g_forcedFrameDeltaTime > 0.0f)
+        {
+            AssignVariable(g_systemVariables.iTimeDelta_varName.c_str(), DataFieldType::Float, g_forcedFrameDeltaTime);
+            AssignVariable(g_systemVariables.iFrameRate_varName.c_str(), DataFieldType::Float, 1.0f / g_forcedFrameDeltaTime);
+        }
+        else
+        {
+            AssignVariable(g_systemVariables.iTimeDelta_varName.c_str(), DataFieldType::Float, context->IO.DeltaTime);
+            AssignVariable(g_systemVariables.iFrameRate_varName.c_str(), DataFieldType::Float, context->IO.Framerate);
+        }
     }
 
+    // Frame Index
     AssignVariable(g_systemVariables.iFrame_varName.c_str(), DataFieldType::Int, g_techniqueFrameIndex);
 
     // Mouse
@@ -1934,40 +2019,48 @@ void UpdateSystemVariables()
             }
         }
 
-        DirectX::XMMATRIX invProjMtx = DirectX::XMMatrixInverse(nullptr, projMtx);
-        DirectX::XMMATRIX invJitteredProjMtx = DirectX::XMMatrixInverse(nullptr, jitteredProjMtx);
+        {
+            DirectX::XMMATRIX invProjMtx = DirectX::XMMatrixInverse(nullptr, projMtx);
+            DirectX::XMMATRIX invJitteredProjMtx = DirectX::XMMatrixInverse(nullptr, jitteredProjMtx);
 
-        DirectX::XMMATRIX viewMtx = GetViewMatrix();
-        DirectX::XMMATRIX invViewMtx = DirectX::XMMatrixInverse(nullptr, viewMtx);
+            DirectX::XMMATRIX viewMtx = GetViewMatrix();
+            DirectX::XMMATRIX invViewMtx = DirectX::XMMatrixInverse(nullptr, viewMtx);
 
-        // Send all the camera info to the appropriate variables
+            DirectX::XMMATRIX viewProjMtx = viewMtx * projMtx;
+            DirectX::XMMATRIX invViewProjMtx = XMMatrixInverse(nullptr, viewProjMtx);
 
-        AssignVariable(g_systemVariables.ViewMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(viewMtx));
-        AssignVariable(g_systemVariables.InvViewMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invViewMtx));
+            DirectX::XMMATRIX jitteredViewProjMtx = viewMtx * jitteredProjMtx;
+            DirectX::XMMATRIX invJitteredViewProjMtx = XMMatrixInverse(nullptr, jitteredViewProjMtx);
 
-        AssignVariable(g_systemVariables.ProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(projMtx));
-        AssignVariable(g_systemVariables.InvProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invProjMtx));
+            // Camera Matrices
+            {
+                AssignVariable(g_systemVariables.ViewMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(viewMtx));
+                AssignVariable(g_systemVariables.InvViewMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invViewMtx));
 
-        AssignVariable(g_systemVariables.JitteredProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(jitteredProjMtx));
-        AssignVariable(g_systemVariables.InvJitteredProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredProjMtx));
+                AssignVariable(g_systemVariables.ProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(projMtx));
+                AssignVariable(g_systemVariables.InvProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invProjMtx));
 
-        DirectX::XMMATRIX viewProjMtx = viewMtx * projMtx;
-        DirectX::XMMATRIX invViewProjMtx = XMMatrixInverse(nullptr, viewProjMtx);
+                AssignVariable(g_systemVariables.JitteredProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(jitteredProjMtx));
+                AssignVariable(g_systemVariables.InvJitteredProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredProjMtx));
 
-        AssignVariable(g_systemVariables.ViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(viewProjMtx));
-        AssignVariable(g_systemVariables.InvViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invViewProjMtx));
+                AssignVariable(g_systemVariables.ViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(viewProjMtx));
+                AssignVariable(g_systemVariables.InvViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invViewProjMtx));
 
-        DirectX::XMMATRIX jitteredViewProjMtx = viewMtx * jitteredProjMtx;
-        DirectX::XMMATRIX invJitteredViewProjMtx = XMMatrixInverse(nullptr, jitteredViewProjMtx);
+                AssignVariable(g_systemVariables.JitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(jitteredViewProjMtx));
+                AssignVariable(g_systemVariables.InvJitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredViewProjMtx));
+            }
 
-        AssignVariable(g_systemVariables.JitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(jitteredViewProjMtx));
-        AssignVariable(g_systemVariables.InvJitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredViewProjMtx));
+            // Camera Position and altitude azimuth
+            // Variables read/write
+            AssignVariable(g_systemVariables.CameraPos_varName.c_str(), DataFieldType::Float3, g_systemVariables.camera.cameraPos);
+            AssignVariable(g_systemVariables.CameraAltitudeAzimuth_varName.c_str(), DataFieldType::Float2, g_systemVariables.camera.cameraAltitudeAzimuth);
 
-        AssignVariable(g_systemVariables.CameraPos_varName.c_str(), DataFieldType::Float3, g_systemVariables.camera.cameraPos);
+            // camera jitter
+            AssignVariable(g_systemVariables.CameraJitter_varName.c_str(), DataFieldType::Float2, jitter);
 
-        AssignVariable(g_systemVariables.CameraJitter_varName.c_str(), DataFieldType::Float2, jitter);
-
-        AssignVariable(g_systemVariables.ShadingRateImageTileSize_varName.c_str(), DataFieldType::Uint, g_interpreter.GetOptions6().ShadingRateImageTileSize);
+            // Shading rate image tile size
+            AssignVariable(g_systemVariables.ShadingRateImageTileSize_varName.c_str(), DataFieldType::Uint, g_interpreter.GetOptions6().ShadingRateImageTileSize);
+        }
     }
 }
 
@@ -2158,10 +2251,7 @@ void ShowInternalVariables()
         ImGui::EndTable();
     }
 
-    ImGui::SeparatorText("");
-    ImGui::Checkbox("Hide File Cache Details", &g_hideFileCacheDetails);
-
-    if (!g_hideFileCacheDetails)
+    if (ImGui::CollapsingHeader("File Cache"))
     {
         //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
         static std::vector<std::string> c_file_cache_details_file_display;
@@ -2200,54 +2290,20 @@ void ShowInternalVariables()
         }
     }
 
-    ImGui::SeparatorText("");
-    ImGui::Checkbox("Hide Tracked Files Details", &g_hideTrackedFilesDetails);
-
-    if (!g_hideTrackedFilesDetails)
+    if (ImGui::CollapsingHeader("Tracked Files"))
     {
-        //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
-        static std::vector<std::string> c_file_watcher_details_file_display;
-        static std::vector<std::string> c_file_watcher_details_file_type;
-        if (has_elapsed || c_file_watcher_details_file_display.size() == 0) {
-            c_file_watcher_details_file_display = {};
-            c_file_watcher_details_file_type = {};
-            for (auto const& ent1 : g_interpreter.getFileWatcher().getTrackedFiles()) {
-                auto const& key = ent1.first;
-                auto const& val = ent1.second;
-                auto const& type_data = val.data;
-                std::string base_filename = key.substr(key.find_last_of("/\\") + 1);
-                const char* for_display_name = base_filename.c_str();
-                std::string for_display_type_tmp;
-                //TODO: can't properly display enum values of type GigiInterpreterPreviewWindowDX12::FileWatchOwner, so using it's index value to convert for now
-                int value_loc = static_cast<int>(type_data);
-                switch (value_loc)
-                {
-                case 0:
-                    for_display_type_tmp = "FileCache";
-                    break;
-                case 1:
-                    for_display_type_tmp = "Shaders";
-                    break;
-                case 2:
-                    for_display_type_tmp = "TextureCache";
-                    break;
-                case 3:
-                    for_display_type_tmp = "ObjCache";
-                    break;
-                case 4:
-                    for_display_type_tmp = "FBXCache";
-                    break;
-                case 5:
-                    for_display_type_tmp = "PLYCache";
-                    break;
-                case 6:
-                    for_display_type_tmp = "GGFile";
-                    break;
-                }
-                const char* for_display_type = for_display_type_tmp.c_str();
-                c_file_watcher_details_file_display.push_back(for_display_name);
-                c_file_watcher_details_file_type.push_back(for_display_type);
+        static int filterSelected = -1;
+        if (ImGui::BeginCombo("Type", filterSelected == -1 ? "All" : EnumToString((GigiInterpreterPreviewWindowDX12::FileWatchOwner)filterSelected)))
+        {
+            if (ImGui::Selectable("All", filterSelected == -1))
+                filterSelected = -1;
+
+            for (int typeIndex = 0; typeIndex < (int)GigiInterpreterPreviewWindowDX12::FileWatchOwner::Count; ++typeIndex)
+            {
+                if (ImGui::Selectable(EnumToString((GigiInterpreterPreviewWindowDX12::FileWatchOwner)typeIndex), filterSelected == typeIndex))
+                    filterSelected = typeIndex;
             }
+            ImGui::EndCombo();
         }
 
         if (ImGui::BeginTable("tracked files details", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
@@ -2258,25 +2314,31 @@ void ShowInternalVariables()
             ImGui::TableHeadersRow();
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            for (int rowCtr = 0; rowCtr < c_file_watcher_val; rowCtr++) {
-                ImGui::Text("%d", rowCtr + 1);
-                const char* file_name = c_file_watcher_details_file_display[rowCtr].c_str();
-                const char* file_type = c_file_watcher_details_file_type[rowCtr].c_str();
+
+            int index = 0;
+            for (auto const& entry : g_interpreter.getFileWatcher().getTrackedFiles())
+            {
+                auto const& key = entry.first;
+                auto const& val = entry.second;
+
+                if (filterSelected != -1 && (int)val.data != filterSelected)
+                    continue;
+
+                ImGui::Text("%d", index);
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(file_name);
+                ImGui::TextUnformatted(key.substr(key.find_last_of("/\\") + 1).c_str());
+                ShowToolTip(key.c_str());
                 ImGui::TableNextColumn();
-                ImGui::TextUnformatted(file_type);
+                ImGui::TextUnformatted(EnumToString(val.data));
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
+                index++;
             }
             ImGui::EndTable();
         }
     }
 
-    ImGui::SeparatorText("");
-    ImGui::Checkbox("Hide Object Cache Details", &g_hideObjectCacheDetails);
-
-    if (!g_hideObjectCacheDetails)
+    if (ImGui::CollapsingHeader("OBJ Cache"))
     {
         //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
         static std::vector<std::string> c_obj_cache_details_file_display;
@@ -2327,10 +2389,7 @@ void ShowInternalVariables()
         }
     }
 
-    ImGui::SeparatorText("");
-    ImGui::Checkbox("Hide FBX Cache Details", &g_hideFBXCacheDetails);
-
-    if (!g_hideFBXCacheDetails)
+    if (ImGui::CollapsingHeader("FBX Cache"))
     {
         //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
         static std::vector<std::string> c_fbx_cache_details_file_display;
@@ -2370,10 +2429,7 @@ void ShowInternalVariables()
         }
     }
 
-    ImGui::SeparatorText("");
-    ImGui::Checkbox("Hide PLY Cache Details", &g_hidePLYCacheDetails);
-
-    if (!g_hidePLYCacheDetails)
+    if (ImGui::CollapsingHeader("PLY Cache"))
     {
         //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
         static std::vector<std::string> c_ply_cache_details_file_display;
@@ -2416,10 +2472,7 @@ void ShowInternalVariables()
         }
     }
 
-    ImGui::SeparatorText("");
-    ImGui::Checkbox("Hide Texture Cache Details", &g_hideTextureCacheDetails);
-
-    if (!g_hideTextureCacheDetails)
+    if (ImGui::CollapsingHeader("Texture Cache"))
     {
         //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
         static std::vector<std::string> c_texture_cache_details_file_display;
@@ -2530,6 +2583,7 @@ void ShowSystemVariables()
         ImGui::SeparatorText("Camera Variables");
 
         ShowVariableDropDown("CameraPos", DataFieldType::Float3, g_systemVariables.CameraPos_varName);
+        ShowVariableDropDown("CameraAltitudeAzimuth", DataFieldType::Float2, g_systemVariables.CameraAltitudeAzimuth_varName);
         ShowVariableDropDown("Camera Changed", DataFieldType::Bool, g_systemVariables.CameraChanged_varName);
 
         ShowVariableDropDown("View Matrix", DataFieldType::Float4x4, g_systemVariables.ViewMtx_varName);
@@ -2624,7 +2678,7 @@ void ShowShaders()
         std::sort(scopesSorted.begin(), scopesSorted.end());
 
         // for each scope
-        for const std::string& scope: scopesSorted)
+        for (const std::string& scope: scopesSorted)
         {
             // get a sorted list of shaders in this scope
             std::vector<const Shader*> sortedShaders;
@@ -2778,101 +2832,6 @@ void ShowImportedResources()
     {
         ImGui::End();
         return;
-    }
-
-    // Show imported resource preset drop down
-    {
-        std::vector<const char*> presets;
-        for (const GGUserFile_ImportedResourcePreset& preset : g_importedResourcePresets)
-            presets.push_back(preset.name.c_str());
-
-        std::sort(presets.begin(), presets.end(), [](const char* A, const char* B) { return strcmp(A, B) < 0; });
-        presets.insert(presets.begin(), "Presets");
-
-        float comboWidth = 0.0f;
-        for (const char* s : presets)
-            comboWidth = std::max(comboWidth, ImGui::CalcTextSize(s).x + ImGui::GetStyle().FramePadding.x * 2.0f);
-
-        ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
-        int selectedIndex = 0;
-        if (ImGui::Combo("##Presets", &selectedIndex, presets.data(), (int)presets.size()))
-        {
-            selectedIndex--;
-            if (selectedIndex >= 0 && selectedIndex < presets.size())
-            {
-                std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
-
-                // map the index from the alpha sorted list back to the unsorted list
-                for (size_t i = 0; i < g_importedResourcePresets.size(); ++i)
-                {
-                    if (g_importedResourcePresets[i].name == presets[selectedIndex + 1])
-                    {
-                        selectedIndex = (int)i;
-                        break;
-                    }
-                }
-
-                // Set the preset name box
-                strcpy(g_importedResourcePresetsName, g_importedResourcePresets[selectedIndex].name.c_str());
-
-                // Load the preset
-                for (const GGUserFile_ImportedResource& preset : g_importedResourcePresets[selectedIndex].importedResources)
-                {
-                    if (g_interpreter.m_importedResources.count(preset.nodeName) == 0)
-                        continue;
-
-                    GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& importedResource = g_interpreter.m_importedResources[preset.nodeName];
-
-                    int nodeIndex = importedResource.nodeIndex;
-                    int resourceIndex = importedResource.resourceIndex;
-
-                    importedResource = GGUserFile_ImportedResource_To_ImportedResourceDesc(preset, renderGraphDir);
-                    importedResource.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
-
-                    importedResource.nodeIndex = nodeIndex;
-                    importedResource.resourceIndex = resourceIndex;
-                }
-            }
-        }
-    }
-
-    // Preset name and save button
-    {
-        ImGui::InputText("##Preset", g_importedResourcePresetsName, _countof(g_importedResourcePresetsName));
-
-        ImGui::SameLine();
-        if (ImGui::Button("Save"))
-        {
-            std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
-
-            // Find the index (by name) to over write, or make a new index for it
-            int index = 0;
-            while (index < g_importedResourcePresets.size() && _stricmp(g_importedResourcePresets[index].name.c_str(), g_importedResourcePresetsName))
-                index++;
-            if (index == g_importedResourcePresets.size())
-                g_importedResourcePresets.resize(index + 1);
-            GGUserFile_ImportedResourcePreset& preset = g_importedResourcePresets[index];
-
-            // save the data
-            preset.name = g_importedResourcePresetsName;
-            preset.importedResources.clear();
-            for (auto& it : g_interpreter.m_importedResources)
-                preset.importedResources.push_back(ImportedResourceDesc_To_GGUserFile_ImportedResource(it.first, it.second, renderGraphDir));
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button("Delete"))
-        {
-            g_importedResourcePresets.erase(
-                std::remove_if(g_importedResourcePresets.begin(), g_importedResourcePresets.end(),
-                    [&](const GGUserFile_ImportedResourcePreset& preset)
-                    {
-                        return preset.name == g_importedResourcePresetsName;
-                    }
-                ),
-                g_importedResourcePresets.end()
-            );
-        }
     }
 
     // Put the imported resources into alphabetical order
@@ -3455,6 +3414,19 @@ void ShowLog()
         return;
     }
 
+    if (ImGui::Button("Copy"))
+    {
+        std::ostringstream text;
+        constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
+        for (const auto& msg : g_log)
+            text << msgType[static_cast<int>(msg.level)] << msg.msg.c_str() << "\n";
+
+        std::string textStr = text.str();
+
+        SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
+    }
+
+    ImGui::SameLine();
     if (ImGui::Button("Clear"))
         g_log.clear();
 
@@ -5145,68 +5117,143 @@ void ShowResourceView()
         return;
     }
 
-    if (!g_hideUI || g_bookmarks.size() > 1) // only show the bookmark drop down in hide ui mode if there is more than 1 book mark
+    // show snapshot drop down, even when UI is hidden, as that user may want to use it.
     {
-        // Show the bookmark drop down
+        std::vector<const char*> snapshots;
+        for (const GGUserFileV2Snapshot& snapshot : g_userSnapshots)
+            snapshots.push_back(snapshot.name.c_str());
+
+        std::sort(snapshots.begin(), snapshots.end(), [](const char* A, const char* B) { return strcmp(A, B) < 0; });
+
+        float comboWidth = ImGui::CalcTextSize("Snapshots").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+
+        int deleteIndex = -1;
+        if (ImGui::BeginCombo("##Snapshots", "Snapshots", ImGuiComboFlags_HeightLargest))
         {
-            // make a list of bookmarks for the drop down
-            std::vector<const char*> bookmarks;
-            for (const GGUserFile_Bookmark& bookmark : g_bookmarks)
-                bookmarks.push_back(bookmark.name.c_str());
-
-            // sort bookmarks alphabetically
-            std::sort(bookmarks.begin(), bookmarks.end(), [](const char* A, const char* B) { return strcmp(A, B) < 0; });
-            bookmarks.insert(bookmarks.begin(), "Bookmarks");
-
-            float comboWidth = 0.0f;
-            for (const char* s : bookmarks)
-                comboWidth = std::max(comboWidth, ImGui::CalcTextSize(s).x + ImGui::GetStyle().FramePadding.x * 2.0f);
-
-            ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
-            int selected = 0;
-            if (ImGui::Combo("##Bookmarks", &selected, bookmarks.data(), (int)bookmarks.size()))
+            if (ImGui::BeginTable("snapshots", 2, ImGuiTableFlags_None))
             {
-                int selectedBookmarkIndex = -1;
-                for (const GGUserFile_Bookmark& bookmark : g_bookmarks)
-                {
-                    selectedBookmarkIndex++;
-                    if (bookmark.name == bookmarks[selected])
-                        break;
-                }
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthStretch);
+                ImGui::TableSetupColumn("", ImGuiTableColumnFlags_WidthFixed);
 
-                bool found = false;
-                if (selectedBookmarkIndex >= 0)
-                for (int nodeIndex : renderGraph.flattenedNodeList)
+                for (int snapShotNameIndex = 0; snapShotNameIndex < snapshots.size(); ++snapShotNameIndex)
                 {
-                    g_interpreter.RuntimeNodeDataLambda(
-                        renderGraph.nodes[nodeIndex],
-                        [&](auto node, auto* runtimeData)
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+
+                    const char* snapshotName = snapshots[snapShotNameIndex];
+
+                    ImGui::Text(snapshotName);
+
+                    ImGui::TableNextColumn();
+
+                    ImGui::PushID(snapShotNameIndex);
+
+                    for (int i = 0; i < g_userSnapshots.size(); ++i)
+                    {
+                        if (!strcmp(g_userSnapshots[i].name.c_str(), snapshotName))
                         {
-                            int resourceIndex = -1;
-                            for (const RuntimeTypes::ViewableResource& viewableResource : runtimeData->m_viewableResources)
+                            ImGui::Checkbox("Vars", &g_userSnapshots[i].loadVars);
+                            ImGui::SameLine();
+
+                            ImGui::Checkbox("Camera", &g_userSnapshots[i].loadCamera);
+                            ImGui::SameLine();
+
+                            ImGui::Checkbox("Resources", &g_userSnapshots[i].loadResources);
+                            ImGui::SameLine();
+
+                            ImGui::Checkbox("View", &g_userSnapshots[i].loadView);
+                            ImGui::SameLine();
+
+                            break;
+                        }
+                    }
+
+                    if (ImGui::Button("Load"))
+                    {
+                        for (int i = 0; i < g_userSnapshots.size(); ++i)
+                        {
+                            if (!strcmp(g_userSnapshots[i].name.c_str(), snapshotName))
                             {
-                                resourceIndex++;
-                                if (viewableResource.m_displayName == g_bookmarks[selectedBookmarkIndex].viewableResourceDisplayName)
-                                {
-                                    found = true;
-                                    switch (viewableResource.m_type)
-                                    {
-                                        case RuntimeTypes::ViewableResource::Type::Texture2D:
-                                        case RuntimeTypes::ViewableResource::Type::Texture2DArray:
-                                        case RuntimeTypes::ViewableResource::Type::Texture3D: 
-                                        case RuntimeTypes::ViewableResource::Type::TextureCube: g_resourceView.Texture(node.nodeIndex, resourceIndex, viewableResource.m_type); break;
-                                        case RuntimeTypes::ViewableResource::Type::ConstantBuffer: g_resourceView.ConstantBuffer(node.nodeIndex, resourceIndex); break;
-                                        case RuntimeTypes::ViewableResource::Type::Buffer: g_resourceView.Buffer(node.nodeIndex, resourceIndex); break;
-                                    }
-                                }
+                                if (g_userSnapshots[i].loadView) // make this work with the A/B button
+                                    g_resourceView.StoreLast();
+
+                                ScatterSnapshotData(g_userSnapshots[i], true, g_userSnapshots[i].loadCamera, g_userSnapshots[i].loadView, g_userSnapshots[i].loadResources);
+
+                                if (g_userSnapshots[i].loadVars)
+                                    ScatterSnapshotVariables(g_userSnapshots[i]);
+                                break;
                             }
                         }
-                    );
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Save"))
+                    {
+                        for (int i = 0; i < g_userSnapshots.size(); ++i)
+                        {
+                            if (!strcmp(g_userSnapshots[i].name.c_str(), snapshotName))
+                            {
+                                GatherSnapshotData(g_userSnapshots[i]);
+                                break;
+                            }
+                        }
+                    }
+                    ImGui::SameLine();
+                    if (ImGui::Button("Delete"))
+                        deleteIndex = snapShotNameIndex;
+
+                    ImGui::PopID();
                 }
 
-                // if the bookmark selected wasn't found, delete it
-                if (!found && selectedBookmarkIndex >= 0)
-                    g_bookmarks.erase(g_bookmarks.begin() + selectedBookmarkIndex);
+                ImGui::TableNextRow();
+                ImGui::TableNextColumn();
+
+                static char newSnapshotName[512] = { 0 };
+                ImGui::InputText("##NewSnapshot", newSnapshotName, _countof(newSnapshotName));
+                ImGui::SameLine();
+                if (ImGui::Button("Save") && newSnapshotName[0] != 0)
+                {
+                    int existingIndex = -1;
+                    for (int i = 0; i < g_userSnapshots.size(); ++i)
+                    {
+                        if (!strcmp(g_userSnapshots[i].name.c_str(), newSnapshotName))
+                        {
+                            existingIndex = i;
+                            break;
+                        }
+                    }
+
+                    if (existingIndex == -1)
+                    {
+                        existingIndex = (int)g_userSnapshots.size();
+                        g_userSnapshots.resize(existingIndex + 1);
+                        g_userSnapshots[existingIndex].name = newSnapshotName;
+                    }
+
+                    GatherSnapshotData(g_userSnapshots[existingIndex]);
+
+                    newSnapshotName[0] = 0;
+                }
+
+                ImGui::TableNextColumn();
+
+                ImGui::EndTable();
+
+                ImGui::EndCombo();
+
+                if (deleteIndex >= 0)
+                {
+                    g_userSnapshots.erase(
+                        std::remove_if(g_userSnapshots.begin(), g_userSnapshots.end(),
+                            [&](const GGUserFileV2Snapshot& snapshot)
+                            {
+                                return snapshot.name == snapshots[deleteIndex];
+                            }
+                        ),
+                        g_userSnapshots.end()
+                    );
+                }
             }
         }
     }
@@ -5234,55 +5281,6 @@ void ShowResourceView()
             {
                 res.m_wantsToBeViewed = true;
                 res.m_wantsToBeReadBack = true;
-            }
-
-            // Let the user edit the bookmark name of this resource
-            if (!g_hideUI)
-            {
-                char bookmarkName[1024];
-                bookmarkName[0] = 0;
-                int existingBookmarkIndex = -1;
-                for (int bookmarkIndex = 0; bookmarkIndex < g_bookmarks.size(); ++bookmarkIndex)
-                {
-                    const GGUserFile_Bookmark& bookmark = g_bookmarks[bookmarkIndex];
-
-                    if (bookmark.viewableResourceDisplayName == res.m_displayName)
-                    {
-                        existingBookmarkIndex = bookmarkIndex;
-                        strcpy(bookmarkName, bookmark.name.c_str());
-                        break;
-                    }
-                }
-
-                ImGui::SameLine();
-                ImGui::SetNextItemWidth(200.0f);
-                if (ImGui::InputText("Bookmark", bookmarkName, 1024))
-                {
-                    // If there is a bookmark name
-                    if (strlen(bookmarkName) > 0)
-                    {
-                        // Add a new bookmark if it doesn't already exist
-                        if (existingBookmarkIndex == -1)
-                        {
-                            GGUserFile_Bookmark newBookmark;
-                            newBookmark.name = bookmarkName;
-                            newBookmark.viewableResourceDisplayName = res.m_displayName;
-                            g_bookmarks.push_back(newBookmark);
-                        }
-                        // else update it
-                        else
-                        {
-                            g_bookmarks[existingBookmarkIndex].name = bookmarkName;
-                        }
-                    }
-                    // else there is not a bookmark name
-                    else
-                    {
-                        // If there is a bookmark, we need to remove it
-                        if (existingBookmarkIndex != -1)
-                            g_bookmarks.erase(g_bookmarks.begin() + existingBookmarkIndex);
-                    }
-                }
             }
 
             if (!g_hideUI)
@@ -6863,6 +6861,40 @@ public:
         return ret;
     }
 
+    void SetShaderAssertsLogging(bool set) override final
+    {
+        g_logCollectedShaderAsserts = set;
+    }
+
+    int GetCollectedShaderAssertsCount() override final
+    {
+        return (int)g_interpreter.getCollectedShaderAsserts().size();
+    }
+
+    int GetShaderAssertFormatStrId(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return (int)asserts[i].formatStringId;
+    }
+
+    std::string GetShaderAssertFormatString(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return asserts[i].fmt;
+    }
+
+    std::string GetShaderAssertDisplayName(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return asserts[i].displayName;
+    }
+
+    std::string GetShaderAssertMsg(int i) override final
+    {
+        const auto& asserts = g_interpreter.getCollectedShaderAsserts();
+        return asserts[i].msg;
+    }
+
     int GGEnumValue(const char* enumName, const char* enumLabel) override final
     {
         const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
@@ -6987,7 +7019,7 @@ Python g_python;
 
 void RenderFrame(bool forceExecute)
 {
-    UpdateSystemVariables();
+    SynchronizeSystemVariables();
 
     // Start the Dear ImGui frame
     ImGui_ImplDX12_NewFrame();
@@ -7024,6 +7056,8 @@ void RenderFrame(bool forceExecute)
 
     g_pd3dCommandList->Reset(frameCtx->CommandAllocator, NULL);
 
+    std::vector<RuntimeTypes::ViewableResource*> assertsBuffers = g_interpreter.MarkShaderAssertsForReadback();
+
     // Run the Gigi technique if we should
     g_python.Tick();
     g_interpreter.Tick();
@@ -7033,6 +7067,10 @@ void RenderFrame(bool forceExecute)
         g_interpreter.Execute(g_pd3dCommandList);
         g_techniqueFrameIndex++;
     }
+
+    g_interpreter.CollectShaderAsserts(assertsBuffers);
+    if (g_logCollectedShaderAsserts)
+        g_interpreter.LogCollectedShaderAsserts();
 
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;

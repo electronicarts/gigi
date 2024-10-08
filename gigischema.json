@@ -43,7 +43,7 @@
             "type": "boolean"
           },
           "dflt": {
-            "description": "The default value of the variable",
+            "description": "The default value of the variable. The default memory is zero initialized before this is parsed, so if you don't give it enough initializers, it will use zero for the unlisted fields.",
             "type": "string"
           },
           "visibility": {
@@ -99,6 +99,10 @@
                 "type": "string"
               }
             }
+          },
+          "UIGroup": {
+            "description": "Used to organize variables into folders in the viewer. separate folders with dots.  For instance: settings.controls",
+            "type": "string"
           },
           "UIHint": {
             "description": "Any hints for UI",
@@ -2138,6 +2142,10 @@
                       "description": "If set, the subgraph variable will be deleted and all references will use this parent graph variable instead.",
                       "type": "string"
                     },
+                    "replaceWithValue": {
+                      "description": "Replace the variable with a literal value. At gigi compile time it makes an internal private variable of the correct type with this string as the default value.",
+                      "type": "string"
+                    },
                     "isLoopIndex": {
                       "description": "If true, this variable will recieve the loop index.",
                       "type": "boolean"
@@ -2158,6 +2166,16 @@
               "loopCount": {
                 "description": "Number of times to execute the technique.",
                 "type": "integer"
+              },
+              "loopCountVariable": {
+                "description": "The variable to use for the loopCount. Only const variables supported currently.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the variable.",
+                    "type": "string"
+                  }
+                }
               }
             }
           },
@@ -2369,7 +2387,7 @@
           "op": {
             "description": "",
             "type": "string",
-            "enum": ["Add", "Subtract", "Multiply", "Divide", "Modulo", "PowerOf2GE", "BitwiseOr", "BitwiseAnd", "BitwiseXor", "BitwiseNot", "Noop"]
+            "enum": ["Add", "Subtract", "Multiply", "Divide", "Modulo", "PowerOf2GE", "Minimum", "Maximum", "BitwiseOr", "BitwiseAnd", "BitwiseXor", "BitwiseNot", "Noop"]
           },
           "BVar": {
             "description": "The variable on the right side of the operator",

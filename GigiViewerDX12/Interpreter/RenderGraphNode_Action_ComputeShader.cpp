@@ -329,7 +329,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				if (!desc.m_resource)
 				{
 					std::ostringstream ss;
-					ss << "Cannot run due to resource not existing:\n" << GetNodeTypeString(resourceNode) << " " << GetNodeName(resourceNode) << " (" << GetNodeOriginalName(resourceNode) << ")";
+					ss << "Cannot run due to resource not existing:\n" << GetNodeTypeString(resourceNode) << " \"" << GetNodeName(resourceNode) << "\" (\"" << GetNodeOriginalName(resourceNode) << "\")";
 					runtimeData.m_renderGraphText = ss.str();
 					return true;
 				}

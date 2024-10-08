@@ -17,6 +17,7 @@ ENUM_BEGIN(GigiCompileResult, "")
     ENUM_ITEM(WrongVersion, "")
     ENUM_ITEM(WrongParams, "")
     ENUM_ITEM(CantLoadRenderGraph, "")
+    ENUM_ITEM(ShaderAsserts, "")
     ENUM_ITEM(ShaderReflection, "")
     ENUM_ITEM(Validation, "")
     ENUM_ITEM(ReferenceFixup, "")
@@ -118,6 +119,9 @@ ENUM_BEGIN(SetVariableOperator, "")
 
     ENUM_ITEM(PowerOf2GE, "The next power of two, greater or equal to the current value")
 
+    ENUM_ITEM(Minimum, "min(A,B)")
+    ENUM_ITEM(Maximum, "max(A,B)")
+
     ENUM_ITEM(BitwiseOr, "A | B")
     ENUM_ITEM(BitwiseAnd, "A & B")
     ENUM_ITEM(BitwiseXor, "A ^ B")
@@ -195,4 +199,7 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
 
     STRUCT_FIELD(BackendTemplateConfig, templateConfig, {}, "Code generation template config", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(bool, generateGraphVizFlag, false, "Set to true if the generating GraphViz. Should be set to true from a command line parameter", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(std::vector<std::string>, assertsFormatStrings, {}, "The unique formatting strings of the asserts messages", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(std::unordered_set<std::string>, firedAssertsIdentifiers, {}, "The identifiers of the fired asserts to ignore them later on", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()

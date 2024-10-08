@@ -623,6 +623,14 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 						psoDesc.DepthStencilState.FrontFace.StencilFunc = DepthTestFunctionToD3D12_COMPARISON_FUNC(node.frontFaceStencilFunc);
 						psoDesc.DepthStencilState.BackFace.StencilFunc = DepthTestFunctionToD3D12_COMPARISON_FUNC(node.backFaceStencilFunc);
 					}
+					if (!textureInfoFormatInfo.isDepth)
+					{
+						static bool erroredHere = false;
+						if (!erroredHere)
+							m_logFn(LogLevel::Error, "Depth texture \"%s\" is not a valid depth format: %s", resourceNode.resourceTexture.name.c_str(), textureInfoFormatInfo.name);
+						erroredHere = true;
+						return SetupPSODescRet::False;
+					}
 				}
 			}
 

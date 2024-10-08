@@ -1069,7 +1069,7 @@ struct BackendDX12 : public BackendBase
                     stringReplacementMap[destinationString] << " = ";
                 }
 
-                // Handle SetVariableOperator::BitwiseNot
+                // Handle operations which require a prefix to the operands
                 if (setVar.op == SetVariableOperator::BitwiseNot)
                 {
                     const Variable& destVar = renderGraph.variables[setVar.destination.variableIndex];
@@ -1081,6 +1081,14 @@ struct BackendDX12 : public BackendBase
                 else if (setVar.op == SetVariableOperator::PowerOf2GE)
                 {
                     stringReplacementMap[destinationString] << "Pow2GE(";
+                }
+                else if (setVar.op == SetVariableOperator::Minimum)
+                {
+                    stringReplacementMap[destinationString] << "min(";
+                }
+                else if (setVar.op == SetVariableOperator::Maximum)
+                {
+                    stringReplacementMap[destinationString] << "max(";
                 }
 
                 // Write out the first operand
@@ -1120,6 +1128,9 @@ struct BackendDX12 : public BackendBase
                         case SetVariableOperator::Divide: stringReplacementMap[destinationString] << " / "; break;
                         case SetVariableOperator::Modulo: stringReplacementMap[destinationString] << " % "; break;
 
+                        case SetVariableOperator::Minimum:
+                        case SetVariableOperator::Maximum: stringReplacementMap[destinationString] << ", "; break;
+
                         case SetVariableOperator::BitwiseOr: stringReplacementMap[destinationString] << (destVarIsBool ? " || " : " | "); break;
                         case SetVariableOperator::BitwiseAnd: stringReplacementMap[destinationString] << (destVarIsBool ? " && " : " & "); break;
                         case SetVariableOperator::BitwiseXor: stringReplacementMap[destinationString] << " ^ "; break;
@@ -1141,6 +1152,11 @@ struct BackendDX12 : public BackendBase
                     else
                     {
                         stringReplacementMap[destinationString] << setVar.BLiteral;
+                    }
+
+                    if (setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
+                    {
+                        stringReplacementMap[destinationString] << ")";
                     }
                 }
 
@@ -1814,6 +1830,9 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
             }
         }
     );
+
+    for (const TokenReplacement& replacement : shader.tokenReplacements)
+        shaderSpecificStringReplacementMap[replacement.name] << replacement.value;
 
     // Replace the strings
     ProcessStringReplacement(shaderFileContents, shaderSpecificStringReplacementMap, stringReplacementMap, renderGraph);

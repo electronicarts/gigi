@@ -1676,6 +1676,24 @@ struct Example :
                     name << ")";
                     break;
                 }
+                case SetVariableOperator::Minimum:
+                {
+                    name << "Min(";
+                    name << GetRHS(item.ALiteral, item.ANode, item.AVar, item.AVarIndex);
+                    name << ",";
+                    name << GetRHS(item.BLiteral, item.BNode, item.BVar, item.BVarIndex);
+                    name << ")";
+                    break;
+                }
+                case SetVariableOperator::Maximum:
+                {
+                    name << "Max(";
+                    name << GetRHS(item.ALiteral, item.ANode, item.AVar, item.AVarIndex);
+                    name << ",";
+                    name << GetRHS(item.BLiteral, item.BNode, item.BVar, item.BVarIndex);
+                    name << ")";
+                    break;
+                }
                 case SetVariableOperator::BitwiseOr:
                 {
                     name << GetRHS(item.ALiteral, item.ANode, item.AVar, item.AVarIndex);
@@ -1761,6 +1779,7 @@ struct Example :
             EnsureVariableExists("JitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("InvJitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
             EnsureVariableExists("CameraPos", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
+            EnsureVariableExists("CameraAltitudeAzimuth", VariableVisibility::Host, DataFieldType::Float2, "0.0f, 0.0f");
             EnsureVariableExists("CameraChanged", VariableVisibility::Host, DataFieldType::Bool, "false");
             EnsureVariableExists("CameraJitter", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
             EnsureVariableExists("ShadingRateImageTileSize", VariableVisibility::Host, DataFieldType::Uint, "16");

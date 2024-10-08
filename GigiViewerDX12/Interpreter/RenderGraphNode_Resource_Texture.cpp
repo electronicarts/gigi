@@ -1077,7 +1077,31 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 		bool hasFileName = !node.loadFileName.empty() && FileNameSafe(node.loadFileName.c_str());
 		std::string fullLoadFileName = m_tempDirectory + "assets\\" + node.loadFileName;
 
-		if (desiredFormat != DXGI_FORMAT_FORCE_UINT && (hasSize || hasFileName) && !runtimeData.m_failed)
+		if (!(desiredFormat != DXGI_FORMAT_FORCE_UINT && (hasSize || hasFileName) && !runtimeData.m_failed))
+		{
+			std::ostringstream ss;
+			ss << "Texture can't be created:";
+
+			if (desiredFormat == DXGI_FORMAT_FORCE_UINT)
+			{
+				ss << "\nCould not determine desired format of texture";
+			}
+
+			if (!(hasSize || hasFileName))
+			{
+				ss << "\nCould not determine size of texture";
+				if (!hasFileName && desiredSize[2] == 0)
+					ss << "\nThe z component of the texture size is 0, should be > 0.";
+			}
+
+			if (runtimeData.m_failed)
+			{
+				ss << "\nCreation Failed";
+			}
+
+			runtimeData.m_renderGraphText = ss.str();
+		}
+		else
 		{
 			std::vector<TextureCache::Texture> loadedTextures;
 

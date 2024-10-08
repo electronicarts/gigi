@@ -1,0 +1,502 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "DepthScale",
+            "comment": "Divides EqNear and EqFar by this amount. Useful for large scenes to not work with very tiny numbers.",
+            "type": "Float",
+            "dflt": "1.0",
+            "visibility": "User"
+        },
+        {
+            "name": "EqNear",
+            "comment": "CoC = (EqWorld.x * depth + EqWorld.y)",
+            "type": "Float2",
+            "visibility": "User"
+        },
+        {
+            "name": "EqFar",
+            "comment": "CoC = (EqFar.x * depth + EqFar.y)",
+            "type": "Float2",
+            "visibility": "User"
+        },
+        {
+            "name": "FarToNearRadiusRatio",
+            "type": "Float",
+            "dflt": "1.0",
+            "visibility": "User"
+        },
+        {
+            "name": "fadeDistances",
+            "comment": "Let the unblurred sample to small blur fade happen over distance d0, the small to medium blur over distance d1, and the medium to large blur over distance d2, where d0 + d1 + d2 = 1.",
+            "type": "Float3",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "comment": "Set to true if the input texture is an sRGB texture",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "DownSampleCoC",
+            "fileName": "dof_downsample_coc.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "LinearDepth",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "DownsampledCoC",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "GaussBlur",
+            "fileName": "dof_gauss_blur.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "DownsampledCoC",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "BlurredDownsampledCoC",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "CalculateNearCoC",
+            "fileName": "dof_calculate_near_coc.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "shrunkSampler",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "blurredSampler",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "BlurNearCoC",
+            "fileName": "dof_blur_near_coc.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "CalculatedNearCoC",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearClampSampler",
+                    "addressMode": "Clamp"
+                }
+            ]
+        },
+        {
+            "name": "ApplyDOF",
+            "fileName": "dof_apply_dof.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "LinearDepth",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "LargeBlur",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "SmallBlur",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    -36.0,
+                    -4.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearDepth",
+                "editorPos": [
+                    -37.0,
+                    50.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DownsampleCoC",
+                "editorPos": [
+                    123.0,
+                    34.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Color",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "LinearDepth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "DownsampledCoC",
+                        "dstNode": "DownsampledCoC",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "DownSampleCoC"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "DownsampledCoC"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "DownsampledCoC",
+                "editorPos": [
+                    -36.0,
+                    162.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        4,
+                        4,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "GaussBlur",
+                "editorPos": [
+                    341.0,
+                    89.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "DownsampledCoC",
+                        "dstNode": "DownsampleCoC",
+                        "dstPin": "DownsampledCoC"
+                    },
+                    {
+                        "srcPin": "BlurredDownsampledCoC",
+                        "dstNode": "BlurredDownsampledCoC",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "GaussBlur"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "DownsampledCoC"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BlurredDownsampledCoC",
+                "editorPos": [
+                    129.0,
+                    162.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        4,
+                        4,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "CalculateNearCoC",
+                "editorPos": [
+                    613.0,
+                    89.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "shrunkSampler",
+                        "dstNode": "GaussBlur",
+                        "dstPin": "DownsampledCoC"
+                    },
+                    {
+                        "srcPin": "blurredSampler",
+                        "dstNode": "GaussBlur",
+                        "dstPin": "BlurredDownsampledCoC"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "CalculatedNearCoC",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CalculateNearCoC"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "DownsampledCoC"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "CalculatedNearCoC",
+                "editorPos": [
+                    366.0,
+                    204.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        4,
+                        4,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BlurNearCoC",
+                "editorPos": [
+                    821.0,
+                    143.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "CalculatedNearCoC",
+                        "dstNode": "CalculateNearCoC",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "BlurredNearCoC",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BlurNearCoC"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "DownsampledCoC"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BlurredNearCoC",
+                "editorPos": [
+                    646.0,
+                    204.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        4,
+                        4,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ApplyDOF",
+                "editorPos": [
+                    1093.0,
+                    28.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "DownsampleCoC",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "SmallBlur",
+                        "dstNode": "BlurNearCoC",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "LargeBlur",
+                        "dstNode": "CalculateNearCoC",
+                        "dstPin": "blurredSampler"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "LinearDepth",
+                        "dstNode": "DownsampleCoC",
+                        "dstPin": "LinearDepth"
+                    }
+                ],
+                "shader": {
+                    "name": "ApplyDOF"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    891.0,
+                    242.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Color"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        }
+    ]
+}

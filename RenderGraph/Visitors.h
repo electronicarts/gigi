@@ -594,7 +594,9 @@ struct ReferenceFixupVisitor
 {
     ReferenceFixupVisitor(RenderGraph& renderGraph_)
         : renderGraph(renderGraph_)
-    { }
+    {
+        visitedNode.resize(renderGraph.nodes.size(), false);
+    }
 
     template <typename TDATA>
     bool Visit(TDATA& data, const std::string& path)
@@ -847,6 +849,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Resource_Buffer& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         if (data.visibility == ResourceVisibility::Internal)
             return true;
 
@@ -863,6 +869,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Action_ComputeShader& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         int connectionIndex = -1;
         Shader& shader = *data.shader.shader;
         for (NodePinConnection& connection : data.connections)
@@ -915,6 +925,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Action_RayShader& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         // Remember that this render graph uses ray tracing!
         renderGraph.usesRaytracing = true;
 
@@ -970,6 +984,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Action_SubGraph& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         for (int connectionIndex = 0; connectionIndex < (int)data.connections.size(); ++connectionIndex)
         {
             // set the source pin
@@ -997,6 +1015,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Action_Barrier& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         for (int connectionIndex = 0; connectionIndex < (int)data.connections.size(); ++connectionIndex)
         {
             // set the source pin
@@ -1024,6 +1046,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Action_CopyResource& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         Visit(data.source, path + ".source");
         Visit(data.dest, path + ".dest");
         return true;
@@ -1031,6 +1057,10 @@ struct ReferenceFixupVisitor
 
     bool Visit(RenderGraphNode_Action_DrawCall& data, const std::string& path)
     {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
         int connectionIndex = -1;
         Shader* vertexShader = data.vertexShader.shader;
         Shader& pixelShader = *data.pixelShader.shader;
@@ -1257,6 +1287,26 @@ struct ReferenceFixupVisitor
         return false;
     }
 
+    bool Visit(VariableReferenceConstOnly& data, const std::string& path)
+    {
+        if (data.name.empty())
+            return true;
+
+        for (size_t index = 0; index < renderGraph.variables.size(); ++index)
+        {
+            const Variable& variable = renderGraph.variables[index];
+
+            if (!_stricmp(data.name.c_str(), variable.name.c_str()))
+            {
+                data.variableIndex = (int)index;
+                return true;
+            }
+        }
+
+        Assert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
     bool Visit(StructReference& data, const std::string& path)
     {
         if (data.name.empty())
@@ -1333,6 +1383,7 @@ struct ReferenceFixupVisitor
     }
 
     RenderGraph& renderGraph;
+    std::vector<bool> visitedNode;
 
     // Helpers
     int GetNodeIndexByName(const char* name)
@@ -1851,6 +1902,12 @@ struct SanitizeVisitor
         return true;
     }
 
+    bool Visit(VariableReferenceConstOnly& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
     bool Visit(NodePinReference& data, const std::string& path)
     {
         Sanitize(data.node);
@@ -1944,6 +2001,413 @@ struct SanitizeVisitor
     }
 
     RenderGraph& renderGraph;
+};
+
+struct ShaderAssertsVisitor
+{
+    constexpr static std::string_view AssertUavSuffix = "__GigiAssertUAV";
+
+    ShaderAssertsVisitor(RenderGraph& renderGraph_)
+        :renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(RenderGraphNode& node, const std::string& path)
+    {
+        std::vector<Shader*> shadersWithAsserts;
+        std::string actionNodeName;
+
+        if (node._index == RenderGraphNode::c_index_actionComputeShader)
+        {
+            RenderGraphNode_Action_ComputeShader& shaderNode = node.actionComputeShader;
+            actionNodeName = shaderNode.name;
+
+            if (!ProcessNodeShader(shaderNode.shader.shader, shadersWithAsserts, path))
+                return false;
+        }
+
+        if (node._index == RenderGraphNode::c_index_actionDrawCall)
+        {
+            RenderGraphNode_Action_DrawCall& shaderNode = node.actionDrawCall;
+            actionNodeName = shaderNode.name;
+
+            if (!ProcessNodeShader(shaderNode.amplificationShader.shader, shadersWithAsserts, path))
+                return false;
+
+            if (!ProcessNodeShader(shaderNode.meshShader.shader, shadersWithAsserts, path))
+                return false;
+
+            if (!ProcessNodeShader(shaderNode.vertexShader.shader, shadersWithAsserts, path))
+                return false;
+
+            if (!ProcessNodeShader(shaderNode.pixelShader.shader, shadersWithAsserts, path))
+                return false;
+        }
+
+        if (!shadersWithAsserts.empty())
+        {
+            const size_t currentNodeId = std::distance(renderGraph.nodes.data(), &node);
+            const StructReference& structRef = InsertAssertUAVStruct();
+
+            for (Shader* shader : shadersWithAsserts)
+            {
+                RenderGraphNode* newUAVBufNode = InsertAssertsUAVNode(*shader, actionNodeName, structRef);
+                if (!AddResourceReference(renderGraph.nodes[currentNodeId], shader, newUAVBufNode->resourceBuffer))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    bool ProcessNodeShader(Shader* shader, std::vector<Shader*>& shaderWithAssert, const std::string& path)
+    {
+        if (shader)
+        {
+            const auto [isValid, hasAsserts] = ProcessShader(*shader, path);
+            if (!isValid)
+                return false;
+
+            if (hasAsserts)
+                shaderWithAssert.push_back(shader);
+        }
+
+        return true;
+    }
+
+    struct ShaderProcessResult
+    {
+        bool isValid = false;
+        bool hasAsserts = false;
+    };
+
+    struct ShaderParsingResult
+    {
+        bool isValid = false;
+        std::unordered_map<std::string, std::string> uniqueAssertsCalls;
+    };
+
+    ShaderProcessResult ProcessShader(Shader& shader, const std::string& path)
+    {
+        auto [isValid, uniqueAssertsCalls] = ParseShader(shader, path);
+        if (!isValid)
+            return {};
+
+        const bool hasAsserts = !uniqueAssertsCalls.empty();
+        if (hasAsserts)
+            InsertStringReplacements(shader, uniqueAssertsCalls);
+
+        return { true, hasAsserts };
+    }
+
+    ShaderParsingResult ParseShader(Shader& shader, const std::string& path)
+    {
+        std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
+
+        std::vector<unsigned char> fileContents;
+        if (!LoadFile(fileName, fileContents))
+        {
+            Assert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            return {};
+        }
+        fileContents.push_back(0);
+
+        auto BeginsWith = [](const char* haystack, const char* needle) -> bool
+        {
+            size_t needleLen = strlen(needle);
+            if (_strnicmp(haystack, needle, needleLen) != 0)
+                return false;
+            return true;
+        };
+
+        auto GetCondition = [](std::string_view& content)
+        {
+            const size_t commaPos = content.find_first_of(',');
+            const bool isLastArg = commaPos == content.npos;
+
+            const size_t argLen = isLastArg
+                ? content.length()
+                : commaPos;
+
+            std::string_view res = content.substr(0, argLen);
+            content = content.substr(argLen);
+
+            return res;
+        };
+
+        auto GetFmt = [](std::string_view& content)
+        {
+            const size_t firstQuotaPos = content.find_first_of('"');
+
+            std::string_view res;
+            if (firstQuotaPos != content.npos)
+            {
+                const size_t lastQuotaPos = content.find_first_of('"', firstQuotaPos + 1);
+                const size_t substrLen = lastQuotaPos != content.npos ? lastQuotaPos - firstQuotaPos + 1 : content.npos;
+
+                std::string_view res = content.substr(firstQuotaPos, substrLen);
+                content = content.substr(firstQuotaPos + substrLen);
+
+                return res;
+            }
+
+            return std::string_view{};
+        };
+
+        auto GetFmtArgs = [](const std::string_view content)
+        {
+            const size_t commaPos = content.find(',');
+            if (commaPos != content.npos)
+                return content.substr(commaPos + 1);
+
+            return std::string_view{};
+        };
+
+        auto CountFmtArgs = [](const std::string_view fmt, const std::string_view args)
+        {
+            size_t requestedFmtArgsCount = 0;
+            for (const char ch : fmt)
+                if (ch == '%')
+                    ++requestedFmtArgsCount;
+
+            size_t providedFmtArgsCount = 0;
+            size_t hasChars = 0;
+            for (const char ch : args)
+            {
+                hasChars |= !!iswalnum(ch);
+                if (ch == ',')
+                    ++providedFmtArgsCount;
+            }
+            providedFmtArgsCount += hasChars;
+
+            return std::pair{ requestedFmtArgsCount, providedFmtArgsCount };
+        };
+
+        auto AcquireFormatStringId = [this](const std::string_view fmtStr)
+        {
+            std::string str(fmtStr);
+
+            const auto it = fmtStrToId.find(str);
+            if (it != fmtStrToId.end())
+                return it->second;
+
+            const size_t newId = renderGraph.assertsFormatStrings.size();
+            renderGraph.assertsFormatStrings.push_back(str);
+            fmtStrToId.insert({ str, newId });
+
+            return newId;
+        };
+
+        bool hasValidDeclarations = true;
+        std::unordered_map<std::string, std::string> uniqueAssertsCalls;
+
+        ForEachToken((char*)fileContents.data(),
+            [&](const std::string& tokenStr, const char* stringStart, const char* cursor)
+            {
+                const auto declError = [&](const char* error)
+                {
+                    ShowErrorMessage("'%s' has an invalid declaration, %s", tokenStr.c_str(), error);
+                    hasValidDeclarations = false;
+                };
+
+                std::string_view token(tokenStr);
+                const std::string_view prefix("/*$(Assert:");
+                const std::string_view suffix(")*/");
+
+                if (!BeginsWith(token.data(), prefix.data()))
+                    return;
+
+                std::string_view arguments = token.substr(prefix.length(), token.length() - prefix.length() - suffix.length());
+                if (arguments.empty())
+                {
+                    declError("missed arguments");
+                    return;
+                }
+
+                const std::string_view condition = GetCondition(arguments);
+
+                if (condition.empty() || condition.find_first_of('"') != condition.npos)
+                {
+                    declError("invalid condition");
+                    return;
+                }
+
+                const std::string_view fmtStr = GetFmt(arguments);
+                if (!fmtStr.empty() && (fmtStr.back() != '"'))
+                {
+                    declError("format string misses closing \"");
+                    return;
+                }
+
+                const std::string_view fmtArgs = !fmtStr.empty() ? GetFmtArgs(arguments) : "";
+                const auto [requestedArgsCount, providedArgsCount] = CountFmtArgs(fmtStr, fmtArgs);
+                if (requestedArgsCount != providedArgsCount)
+                {
+                    declError("invalid number of the format arguments");
+                    return;
+                }
+
+                //store assert token to the function call replacement
+                {
+                    std::string replValue = "__gigiAssert(";
+                    replValue += condition;
+
+                    const std::string formatIdStr = std::to_string(AcquireFormatStringId(fmtStr.empty() ? condition : fmtStr));
+                    replValue += ", " + formatIdStr;
+
+                    if (!fmtStr.empty() && !fmtArgs.empty())
+                    {
+                        replValue += ", ";
+                        replValue += fmtArgs;
+                    }
+
+                    replValue += ");";
+                    uniqueAssertsCalls.insert({ std::string(token), std::move(replValue) });
+                }
+            });
+
+        return { hasValidDeclarations, std::move(uniqueAssertsCalls) };
+    }
+
+    std::string GetShaderAssertUAVName(const Shader shader)
+    {
+        return "__" + shader.name + AssertUavSuffix.data();
+    }
+
+    void InsertStringReplacements(Shader& shader, std::unordered_map<std::string, std::string>& uniqueAssertsCalls)
+    {
+        for (const auto& [tokenName, tokenReplacement] : uniqueAssertsCalls)
+        {
+            TokenReplacement replacement;
+            replacement.name = tokenName;
+            replacement.value = tokenReplacement;
+            shader.tokenReplacements.push_back(std::move(replacement));
+        }
+
+        const std::string assertBufName = GetShaderAssertUAVName(shader);
+
+        TokenReplacement replacement;
+        replacement.name = "/*$(ShaderResources)*/";
+        replacement.value =
+            "\nvoid __gigiAssert(bool condition, uint fmtId,"
+            "\n  float v1 = 0, float v2 = 0, float v3 = 0,"
+            "\n  float v4 = 0, float v5 = 0, float v6 = 0)"
+            "\n{"
+            "\n  if (!condition)"
+            "\n  {"
+            "\n     uint wasFired;"
+            "\n     InterlockedExchange(" + assertBufName + "[0].isFired, 1, wasFired); "
+            "\n     if (wasFired)"
+            "\n       return;"
+            "\n"
+            "\n     Struct_GigiAssert newAssert = (Struct_GigiAssert)0;"
+            "\n     newAssert.isFired = 1;"
+            "\n     newAssert.fmtId = fmtId;"
+            "\n     newAssert.v1 = v1;"
+            "\n     newAssert.v2 = v2;"
+            "\n     newAssert.v3 = v3;"
+            "\n     newAssert.v4 = v4;"
+            "\n     newAssert.v5 = v5;"
+            "\n     newAssert.v6 = v6;"
+            "\n     " + assertBufName + "[0] = newAssert; "
+            "\n     "
+            "\n  }"
+            "\n}";
+        shader.tokenReplacements.push_back(std::move(replacement));
+    }
+
+    const StructReference& InsertAssertUAVStruct()
+    {
+        if (assertStructRef.structIndex >= 0)
+            return assertStructRef;
+
+        Struct assertStruct;
+        assertStruct.name = "GigiAssert";
+
+        auto makeStructField = [](const char* name, DataFieldType type)
+            {
+                StructField newField;
+                newField.name = name;
+                newField.type = type;
+                return newField;
+            };
+
+        assertStruct.fields.push_back(makeStructField("isFired", DataFieldType::Uint));
+        assertStruct.fields.push_back(makeStructField("fmtId", DataFieldType::Uint));
+        assertStruct.fields.push_back(makeStructField("v1", DataFieldType::Float));
+        assertStruct.fields.push_back(makeStructField("v2", DataFieldType::Float));
+        assertStruct.fields.push_back(makeStructField("v3", DataFieldType::Float));
+        assertStruct.fields.push_back(makeStructField("v4", DataFieldType::Float));
+        assertStruct.fields.push_back(makeStructField("v5", DataFieldType::Float));
+        assertStruct.fields.push_back(makeStructField("v6", DataFieldType::Float));
+
+        assertStructRef.name = assertStruct.name;
+        assertStructRef.structIndex = (int)renderGraph.structs.size();
+
+        renderGraph.structs.push_back(std::move(assertStruct));
+
+        return assertStructRef;
+    }
+
+    RenderGraphNode* InsertAssertsUAVNode(const Shader& shader, const std::string& actionNodeName, const StructReference& assertStructRef)
+    {
+        BufferFormatDesc format;
+        format.structureType = assertStructRef;
+
+        BufferCountDesc countDesc;
+        countDesc.multiply = 1;
+
+        RenderGraphNode newBufferNode;
+        newBufferNode._index = RenderGraphNode::c_index_resourceBuffer;
+        newBufferNode.resourceBuffer.visibility = ResourceVisibility::Internal;
+        newBufferNode.resourceBuffer.format = format;
+        newBufferNode.resourceBuffer.count = countDesc;
+        newBufferNode.resourceBuffer.transient = true;
+        newBufferNode.resourceBuffer.name = actionNodeName + "__GigiAssertUAV_" + shader.name;
+        newBufferNode.resourceBuffer.originalName = newBufferNode.resourceBuffer.name;
+
+        renderGraph.nodes.push_back(newBufferNode);
+
+        return &renderGraph.nodes.back();
+    }
+
+    bool AddResourceReference(RenderGraphNode& node, Shader* shader, RenderGraphNode_Resource_Buffer& resourceBuffer)
+    {
+        ShaderResource newResource;
+        newResource.name = GetShaderAssertUAVName(*shader);
+        newResource.type = ShaderResourceType::Buffer;
+        newResource.access = ShaderResourceAccessType::UAV;
+        newResource.buffer.typeStruct = resourceBuffer.format.structureType;
+
+        NodePinConnection newConnection;
+        newConnection.srcPin = newResource.name;
+        newConnection.dstNode = resourceBuffer.name;
+        newConnection.dstPin = "resource";
+
+        shader->resources.push_back(std::move(newResource));
+
+        if (node._index == RenderGraphNode::c_index_actionComputeShader)
+            node.actionComputeShader.connections.push_back(std::move(newConnection));
+        else if (node._index == RenderGraphNode::c_index_actionDrawCall)
+            node.actionDrawCall.connections.push_back(std::move(newConnection));
+        else
+        {
+            ShowErrorMessage("Shaders Assert: failed to add node connection: unsupported node type '%d'", node._index);
+            return false;
+        }
+
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+
+    StructReference assertStructRef;
+    std::unordered_map<std::string, size_t> fmtStrToId;
 };
 
 struct ShaderDataVisitor
@@ -2455,6 +2919,9 @@ struct ShaderDataVisitor
 
         for (const ShaderResource& resource : shader.resources)
         {
+            if (resource.name.find(ShaderAssertsVisitor::AssertUavSuffix) != std::string::npos)
+                continue;
+
             if (fileContents.find(resource.name) == std::string::npos)
             {
                 bool isLoadedTexture = false;
@@ -2530,3 +2997,4 @@ struct ResolveBackendRestrictions
 
     RenderGraph& renderGraph;
 };
+

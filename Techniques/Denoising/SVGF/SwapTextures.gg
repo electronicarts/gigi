@@ -1,0 +1,108 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "A",
+                "editorPos": [
+                    11.0,
+                    2.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "B",
+                "editorPos": [
+                    171.0,
+                    -30.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Temp",
+                "editorPos": [
+                    11.0,
+                    66.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "A"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "A"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Temp = A",
+                "editorPos": [
+                    165.0,
+                    34.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "A",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Temp",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "A = B",
+                "editorPos": [
+                    309.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "B",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "Temp = A",
+                    "pin": "source"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "B = Temp",
+                "editorPos": [
+                    453.0,
+                    34.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Temp = A",
+                    "pin": "dest"
+                },
+                "dest": {
+                    "node": "A = B",
+                    "pin": "dest"
+                }
+            }
+        }
+    ]
+}

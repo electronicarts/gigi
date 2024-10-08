@@ -1,0 +1,172 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 41,
+        "resourceViewResourceIndex": 2,
+        "importedResources": [
+            {
+                "nodeName": "Albedo",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        0.501960813999176,
+                        1.0,
+                        0.501960813999176,
+                        1.0
+                    ]
+                }
+            },
+            {
+                "nodeName": "Color",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        1.0,
+                        0.501960813999176,
+                        0.501960813999176,
+                        1.0
+                    ]
+                }
+            },
+            {
+                "nodeName": "Emission",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "format": "RGBA32_Float"
+                }
+            },
+            {
+                "nodeName": "LinearZ",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        0.501960813999176,
+                        1.0,
+                        1.0,
+                        1.0
+                    ],
+                    "format": "R32_Float"
+                }
+            },
+            {
+                "nodeName": "MotionVector",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "format": "RGBA32_Float"
+                }
+            },
+            {
+                "nodeName": "PosNormalFwidth",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        0.0,
+                        0.0,
+                        0.0,
+                        0.0
+                    ],
+                    "format": "RGBA32_Float"
+                }
+            },
+            {
+                "nodeName": "WorldNormal",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "color": [
+                        0.0,
+                        1.0,
+                        0.0,
+                        1.0
+                    ],
+                    "format": "RGBA32_Float"
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "BuffersNeedClear",
+                "value": "false"
+            },
+            {
+                "name": "Alpha",
+                "value": "0.050000"
+            },
+            {
+                "name": "MomentsAlpha",
+                "value": "0.200000"
+            },
+            {
+                "name": "PhiColor",
+                "value": "10.000000"
+            },
+            {
+                "name": "PhiNormal",
+                "value": "128.000000"
+            },
+            {
+                "name": "FeedbackTap",
+                "value": "1"
+            },
+            {
+                "name": "FeedbackTapMax",
+                "value": "3"
+            },
+            {
+                "name": "ComputeAtrousDecomposition_Iteration_0_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "ComputeAtrousDecomposition_Iteration_1_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "ComputeAtrousDecomposition_Iteration_2_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "ComputeAtrousDecomposition_Iteration_3_LoopIndex",
+                "value": "0"
+            }
+        ]
+    }
+}

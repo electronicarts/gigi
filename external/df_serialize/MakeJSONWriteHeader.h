@@ -62,7 +62,7 @@ enum class JSONWriteOverrideResult
         if (((_FLAGS) & SCHEMA_FLAG_NO_SERIALIZE) == 0) \
         { \
             static const _TYPE c_defaultValue = _DEFAULT; \
-            if (value._NAME != c_defaultValue) \
+            if (value._NAME != c_defaultValue || (((_FLAGS) & SCHEMA_FLAG_SERIALIZE_DFLT) != 0)) \
                 ret.AddMember(#_NAME, MakeJSONValue(value._NAME, allocator), allocator); \
         }
 
@@ -91,7 +91,7 @@ enum class JSONWriteOverrideResult
                     break; \
                 } \
             } \
-            if (different) \
+            if (different || (((_FLAGS) & SCHEMA_FLAG_SERIALIZE_DFLT) != 0)) \
             { \
                 rapidjson::Value arr; \
                 arr.SetArray(); \

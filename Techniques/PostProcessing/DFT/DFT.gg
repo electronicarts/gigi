@@ -1,0 +1,193 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "ChannelDotProduct",
+            "comment": "A DFT needs a scalar value. Pixel values are dotted against this vector to turn the vectors into a scalar.",
+            "type": "Float4",
+            "dflt": "0.25f, 0.25f, 0.25f, 0.25f",
+            "visibility": "User"
+        },
+        {
+            "name": "RemoveDC",
+            "comment": "DC (0hz) is often a large spike that makes it hard to see the rest of the frequencies. Use this to set DC to zero.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "LogSpaceMagnitude",
+            "comment": "If true, show magnitude in log space",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "DFTCS",
+            "fileName": "DFTCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Input",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float2"
+                    }
+                },
+                {
+                    "name": "MaxMagnitude",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "NormalizeCS",
+            "fileName": "NormalizeCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "DFTMagnitude",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "MaxMagnitude",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Input",
+                "editorPos": [
+                    11.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "DFTMagnitude",
+                "editorPos": [
+                    -5.0,
+                    50.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "R32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DFT",
+                "editorPos": [
+                    149.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "DFTMagnitude",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "MaxMagnitude",
+                        "dstNode": "MaxMagnitude",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "DFTCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "MaxMagnitude",
+                "editorPos": [
+                    -22.0,
+                    114.0
+                ],
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Normalize",
+                "editorPos": [
+                    341.0,
+                    18.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "DFTMagnitude",
+                        "dstNode": "DFT",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "MaxMagnitude",
+                        "dstNode": "DFT",
+                        "dstPin": "MaxMagnitude"
+                    }
+                ],
+                "shader": {
+                    "name": "NormalizeCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "DFTMagnitude"
+                    }
+                }
+            }
+        }
+    ]
+}

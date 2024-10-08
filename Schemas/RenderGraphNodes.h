@@ -231,6 +231,7 @@ STRUCT_BEGIN(SubGraphVariableSettings, "Cached data about a subgraph")
     STRUCT_FIELD(std::string, name, "", "variable name", SCHEMA_FLAG_UI_CONST)
     STRUCT_FIELD(VariableVisibility, visibility, VariableVisibility::Internal, "Who can see and interact with this variable", 0)
     STRUCT_FIELD(std::string, replaceWithStr, {}, "If set, the subgraph variable will be deleted and all references will use this parent graph variable instead.", 0)
+    STRUCT_FIELD(std::string, replaceWithValue, {}, "Replace the variable with a literal value. At gigi compile time it makes an internal private variable of the correct type with this string as the default value.", 0)
     STRUCT_FIELD(bool, isLoopIndex, false, "If true, this variable will recieve the loop index.", 0)
 
     // deprecated in 0.97b
@@ -255,7 +256,7 @@ STRUCT_BEGIN(RenderGraphNode_Base, "The base type of all node types")
     STRUCT_FIELD(std::unordered_map<std::string COMMA int>, inputPinIds, {}, "", SCHEMA_FLAG_NO_UI | SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::unordered_map<std::string COMMA int>, outputPinIds, {}, "", SCHEMA_FLAG_NO_UI | SCHEMA_FLAG_NO_SERIALIZE)
 
-    STRUCT_FIELD(int, nodeIndex, -1, "The index in the list of render graph nodes", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(int, nodeIndex, -1, "The index in the list of render graph nodes. This is filled in after loading by the ReferenceFixupVisitor and is in [0,N) with no gaps.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(std::string, originalName, "", "The name before renames and sanitization", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
@@ -446,6 +447,8 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_SubGraph, RenderGraphNode_ActionBase
     STRUCT_DYNAMIC_ARRAY(SubGraphVariableSettings, variableSettings, "Per variable settings for subgraph variables.", 0)
 
     STRUCT_FIELD(int, loopCount, 1, "Number of times to execute the technique.", 0)
+
+    STRUCT_FIELD(VariableReferenceConstOnly, loopCountVariable, {}, "The variable to use for the loopCount. Only const variables supported currently.", 0)
 
     STRUCT_FIELD(int, loopIndex, -1, "When unrolling subgraph loops, the loop index of the node is stored here.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()

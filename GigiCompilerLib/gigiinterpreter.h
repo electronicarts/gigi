@@ -376,6 +376,9 @@ public:
 				break;
 			}
 
+			case SetVariableOperator::Minimum: dest = std::min(A, B); break;
+			case SetVariableOperator::Maximum: dest = std::max(A, B); break;
+
 			case SetVariableOperator::Noop: dest = A; break;
 		}
 	}
@@ -409,6 +412,9 @@ public:
 				dest = std::pow(2.0f, f);
 				break;
 			}
+
+			case SetVariableOperator::Minimum: dest = std::min(A, B); break;
+			case SetVariableOperator::Maximum: dest = std::max(A, B); break;
 
 			case SetVariableOperator::Noop: dest = A; break;
 		}

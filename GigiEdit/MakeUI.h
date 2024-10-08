@@ -1483,7 +1483,58 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
         // Sort the list of variables
         std::vector<std::string> vars;
         for (const Variable& var : renderGraph.variables)
+        {
+            if (var.Const)
+                continue;
             vars.push_back(var.name);
+        }
+        CaseInsensitiveSort(vars);
+
+        // add a blank to the beginning
+        vars.insert(vars.begin(), "");
+
+        // Show a drop down
+        for (const std::string& label : vars)
+        {
+            bool is_selected = value.name == label;
+            std::string safeLabel = label + "##";
+            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
+            {
+                value.name = label;
+                dirtyFlag = true;
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+
+        ImGui::EndCombo();
+    }
+    ShowUIToolTip(tooltip);
+
+    ImGui::SameLine();
+    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+        OnGoToVariable(value.name.c_str());
+    ShowUIToolTip("Go to Variable");
+
+    ImGui::PopID();
+
+    return UIOverrideResult::Finished;
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceConstOnly& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    ImGui::PushID(label);
+
+    if (ImGui::BeginCombo(label, value.name.c_str()))
+    {
+        // Sort the list of variables
+        std::vector<std::string> vars;
+        for (const Variable& var : renderGraph.variables)
+        {
+            if (!var.Const)
+                continue;
+            vars.push_back(var.name);
+        }
         CaseInsensitiveSort(vars);
 
         // add a blank to the beginning
@@ -1922,6 +1973,8 @@ struct ShaderTypeCodeGenerator
             "struct VSInput\n"
             "{\n"
             "\tfloat3 position   : POSITION;\n"
+            "\tuint   vertexID   : SV_VertexID;\n"
+            "\tuint   instanceId : SV_InstanceID;\n"
             "\t//TODO: fill this out\n"
             "};\n"
             "\n"

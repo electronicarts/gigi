@@ -572,6 +572,22 @@ static void ShowUI_Count(const RenderGraph& renderGraph, const bool paused, cons
 	// No-op. Shouldn't ever happen
 }
 
+static std::string VariableUIScope(const Variable& variable)
+{
+	std::string ret;
+
+	ret = variable.scope;
+
+	if (!variable.UIGroup.empty())
+	{
+		if (!ret.empty())
+			ret += ".";
+		ret += variable.UIGroup + ".";
+	}
+
+	return ret;
+}
+
 void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 {
 	// Minimal UI only shows public variables.
@@ -626,25 +642,26 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 			ImGui::PushID(variableGroup.label);
 
 			// get the list of scopes in this group of variables
-			std::unordered_set<std::string> scopes;
+			std::unordered_set<std::string> UIScopes;
 			for (const RuntimeVariable& variable : m_runtimeVariables)
 			{
 				if (variable.variable->visibility != variableGroup.visibility)
 					continue;
 
-				scopes.insert(variable.variable->scope);
+				std::string UIScope = VariableUIScope(*variable.variable);
+				UIScopes.insert(UIScope);
 			}
 
 			// make an alpha sorted list of scopes
-			std::vector<std::string> scopesSorted;
-			for (const std::string& scope : scopes)
-				scopesSorted.push_back(scope);
-			std::sort(scopesSorted.begin(), scopesSorted.end());
+			std::vector<std::string> UIScopesSorted;
+			for (const std::string& UIScope : UIScopes)
+				UIScopesSorted.push_back(UIScope);
+			std::sort(UIScopesSorted.begin(), UIScopesSorted.end());
 
 			// show the scopes, one at a time, in alpha order
 			bool visibilityHeaderShown = false;
 			bool visibilityHeaderOpen  = true;
-			for (const std::string& scope : scopesSorted)
+			for (const std::string& currentUIScope : UIScopesSorted)
 			{
 				// If this visibility header is closed, nothing to do
 				if (!visibilityHeaderOpen)
@@ -654,7 +671,7 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 				std::vector<const RuntimeVariable*> runtimeVariablesSorted;
 				for (const RuntimeVariable& variable : m_runtimeVariables)
 				{
-					if (variable.variable->visibility != variableGroup.visibility || variable.variable->scope != scope)
+					if (variable.variable->visibility != variableGroup.visibility || VariableUIScope(*variable.variable) != currentUIScope)
 						continue;
 
 					runtimeVariablesSorted.push_back(&variable);
@@ -678,15 +695,15 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 				}
 
 				// if the scope isn't empty, indent and make a collapsing header
-				if (!scope.empty())
+				if (!currentUIScope.empty())
 				{
-					std::string scopeLabel = scope.substr(0, scope.length() - 1); // trim off the dot
+					std::string scopeLabel = currentUIScope.substr(0, currentUIScope.length() - 1); // trim off the dot
 					if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
 						continue;
 				}
 
 				// push the scope to make the variable imgui IDs unique
-				ImGui::PushID(scope.c_str());
+				ImGui::PushID(currentUIScope.c_str());
 
 				// Show variable labels and value
 				for (const RuntimeVariable* var : runtimeVariablesSorted)

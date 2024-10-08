@@ -1,0 +1,1 @@
+This was adapted to Gigi from https://github.com/NVIDIAGameWorks/Falcor/tree/master/Source/RenderPasses/SVGFPass

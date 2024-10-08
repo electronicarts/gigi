@@ -259,6 +259,21 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     if (PostLoad)
         PostLoad(renderGraph);
 
+    // Shader references need to be resolved first
+    {
+        ShaderReferenceFixupVisitor visitor(renderGraph);
+        if (!Visit(renderGraph, visitor, "renderGraph"))
+            return GigiCompileResult::ReferenceFixup;
+    }
+
+    // Process Asserts declarations inside shaders
+    if (backend == Backend::Interpreter)
+    {
+       ShaderAssertsVisitor visitor{ renderGraph };
+       if (!Visit(renderGraph, visitor, "renderGraph"))
+           return GigiCompileResult::ShaderAsserts;
+    }
+
     // Get data from shaders
     {
         ShaderDataVisitor visitor(renderGraph);
@@ -271,13 +286,6 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
         ValidationVisitor visitor(renderGraph);
         if (!Visit(renderGraph, visitor, "renderGraph"))
             return GigiCompileResult::Validation;
-    }
-
-    // Shader references need to be resolved first
-    {
-        ShaderReferenceFixupVisitor visitor(renderGraph);
-        if (!Visit(renderGraph, visitor, "renderGraph"))
-            return GigiCompileResult::ReferenceFixup;
     }
 
     // resolve the node references from names into indices

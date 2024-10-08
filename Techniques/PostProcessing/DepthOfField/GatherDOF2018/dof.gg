@@ -1,0 +1,1058 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "FocalDistance",
+            "comment": "Anything closer than this is considered near field",
+            "type": "Float",
+            "dflt": "500.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "FocalRegion",
+            "comment": "The size in world units of the middle range which is in focus",
+            "type": "Float",
+            "dflt": "100.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "FocalLength",
+            "comment": "Focal length in mm (Camera property e.g. 75mm)",
+            "type": "Float",
+            "dflt": "75.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "NearTransitionRegion",
+            "comment": "Fade distance in world units",
+            "type": "Float",
+            "dflt": "50",
+            "visibility": "User"
+        },
+        {
+            "name": "FarTransitionRegion",
+            "comment": "Fade distance in world units",
+            "type": "Float",
+            "dflt": "200",
+            "visibility": "User"
+        },
+        {
+            "name": "Scale",
+            "comment": "Camera property e.g. 0.5f, like aperture",
+            "type": "Float",
+            "dflt": "0.5f",
+            "visibility": "User"
+        },
+        {
+            "name": "DoFarField",
+            "comment": "Whether or not to do the far field",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "DoFarFieldFloodFill",
+            "comment": "Whether to do flood fill on the far field",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "DoNearField",
+            "comment": "Whether or not to do the near field",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "DoNearFieldFloodFill",
+            "comment": "Whether to do flood fill on the near field",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "KernelSize",
+            "comment": "x = size of the bokeh blur radius in texel space. y = rotation in radius to apply to the bokeh shape. z = Number of edge of the polygon (number of blades). 0: circle. 4: square, 6: hexagon...",
+            "type": "Float4",
+            "dflt": "10.0f, 15.0f, 5.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "BlurTapCount",
+            "comment": "8 for high quality, 6 for low quality. Used in a double for loop, so it's this number squared.",
+            "type": "Uint",
+            "dflt": "8",
+            "visibility": "User"
+        },
+        {
+            "name": "FloodFillTapCount",
+            "comment": "4 for high quality, 3 for low quality. Used in a double for loop, so it's this number squared.",
+            "type": "Uint",
+            "dflt": "4",
+            "visibility": "User"
+        },
+        {
+            "name": "sRGB",
+            "comment": "Set to true if the input texture is an sRGB texture",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "SetupCS",
+            "fileName": "SetupCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "FarFieldColorCoC",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "NearFieldColorCoC",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "NearMaxCocTilemap",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "BlurFarCS",
+            "fileName": "BlurFarCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "FarFieldColorCoC",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "BlurredFarFieldColorAlpha",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearClampSampler",
+                    "addressMode": "Clamp"
+                }
+            ]
+        },
+        {
+            "name": "FloodFillFarCS",
+            "fileName": "FloodFillFarCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "MaxCoCTileMap",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "ColorCoc",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "BlurredFieldColorAlpha",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearClampSampler",
+                    "addressMode": "Clamp"
+                }
+            ]
+        },
+        {
+            "name": "DownscaleTileMapCS",
+            "fileName": "DownscaleTileMap_1_4.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Source",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "Dest",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "NearHaloCS",
+            "fileName": "NearHaloCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "NearMaxCocTilemap_1_8",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "NearMaxCocTilemap_1_8_Halo",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "NearBorderCS",
+            "fileName": "NearBorderCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "NearFieldColorCoC",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "NearFieldColorCoCBorder",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        },
+        {
+            "name": "NearBlur",
+            "fileName": "NearBlurCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "NearFieldColorCoCBorder",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "NearmaxCoCTilemap_1_8_Halo",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "NearFieldColorCoCBorderBlurred",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearClampSampler",
+                    "addressMode": "Clamp"
+                }
+            ]
+        },
+        {
+            "name": "RecombineCS",
+            "fileName": "RecombineCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "NearField",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Depth",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "viewType": "Float"
+                    }
+                },
+                {
+                    "name": "FarField",
+                    "type": "Texture",
+                    "access": "SRV"
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearClampSampler",
+                    "addressMode": "Clamp"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "Common.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    -165.0,
+                    -62.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearDepth",
+                "editorPos": [
+                    -165.0,
+                    -14.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    1595.0,
+                    66.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Color"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Setup",
+                "editorPos": [
+                    5.0,
+                    -58.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Color",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "LinearDepth",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "FarFieldColorCoC",
+                        "dstNode": "FarFieldColorCoC",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "NearFieldColorCoC",
+                        "dstNode": "NearFieldColorCoC",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "NearMaxCocTilemap",
+                        "dstNode": "NearMaxCocTilemap",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "SetupCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "FarFieldColorCoC",
+                "editorPos": [
+                    -191.0,
+                    34.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearFieldColorCoC",
+                "editorPos": [
+                    -201.0,
+                    82.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearMaxCocTilemap",
+                "editorPos": [
+                    -204.0,
+                    130.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BlurFar",
+                "editorPos": [
+                    277.0,
+                    172.0
+                ],
+                "condition": {
+                    "variable1": "DoFarField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "FarFieldColorCoC",
+                        "dstNode": "Setup",
+                        "dstPin": "FarFieldColorCoC"
+                    },
+                    {
+                        "srcPin": "BlurredFarFieldColorAlpha",
+                        "dstNode": "BlurredFarFieldColorAlpha",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BlurFarCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FarFieldColorCoC"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BlurredFarFieldColorAlpha",
+                "editorPos": [
+                    27.0,
+                    290.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FloodFillFar",
+                "editorPos": [
+                    597.0,
+                    114.0
+                ],
+                "condition": {
+                    "variable1": "DoFarField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ColorCoc",
+                        "dstNode": "BlurFar",
+                        "dstPin": "BlurredFarFieldColorAlpha"
+                    },
+                    {
+                        "srcPin": "MaxCoCTileMap",
+                        "dstNode": "Setup",
+                        "dstPin": "NearMaxCocTilemap"
+                    },
+                    {
+                        "srcPin": "BlurredFieldColorAlpha",
+                        "dstNode": "FloodFilledBlurredFarFieldColorAlpha",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FloodFillFarCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FarFieldColorCoC"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "COC_TILEMAP",
+                        "value": "0"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "FloodFilledBlurredFarFieldColorAlpha",
+                "editorPos": [
+                    268.0,
+                    274.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DownscaleTileMap_1_4",
+                "editorPos": [
+                    863.0,
+                    229.0
+                ],
+                "condition": {
+                    "variable1": "DoNearField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Source",
+                        "dstNode": "FloodFillFar",
+                        "dstPin": "MaxCoCTileMap"
+                    },
+                    {
+                        "srcPin": "Dest",
+                        "dstNode": "NearMaxCocTilemap_1_4",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "DownscaleTileMapCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NearMaxCocTilemap_1_4"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearMaxCocTilemap_1_4",
+                "editorPos": [
+                    632.0,
+                    341.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "node": {
+                        "name": "NearMaxCocTilemap"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearMaxCocTilemap_1_8",
+                "editorPos": [
+                    856.0,
+                    341.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "node": {
+                        "name": "NearMaxCocTilemap_1_4"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "DownscaleTileMap_1_8",
+                "editorPos": [
+                    1077.0,
+                    229.0
+                ],
+                "condition": {
+                    "variable1": "DoNearField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Source",
+                        "dstNode": "DownscaleTileMap_1_4",
+                        "dstPin": "Dest"
+                    },
+                    {
+                        "srcPin": "Dest",
+                        "dstNode": "NearMaxCocTilemap_1_8",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "DownscaleTileMapCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NearMaxCocTilemap_1_8"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "NearHalo",
+                "editorPos": [
+                    1317.0,
+                    226.0
+                ],
+                "condition": {
+                    "variable1": "DoNearField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "NearMaxCocTilemap_1_8",
+                        "dstNode": "DownscaleTileMap_1_8",
+                        "dstPin": "Dest"
+                    },
+                    {
+                        "srcPin": "NearMaxCocTilemap_1_8_Halo",
+                        "dstNode": "NearMaxCocTilemap_1_8_Halo",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "NearHaloCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NearMaxCocTilemap_1_8"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearMaxCocTilemap_1_8_Halo",
+                "editorPos": [
+                    1064.0,
+                    341.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "NearMaxCocTilemap_1_8"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "NearMaxCocTilemap_1_8"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "NearBorder",
+                "editorPos": [
+                    797.0,
+                    -308.0
+                ],
+                "condition": {
+                    "variable1": "DoNearField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "NearFieldColorCoCBorder",
+                        "dstNode": "NearFieldColorCoCBorder",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "NearFieldColorCoCBorder"
+                    },
+                    {
+                        "srcPin": "NearFieldColorCoC",
+                        "dstNode": "Setup",
+                        "dstPin": "NearFieldColorCoC"
+                    }
+                ],
+                "shader": {
+                    "name": "NearBorderCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NearFieldColorCoC"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearFieldColorCoCBorder",
+                "editorPos": [
+                    576.0,
+                    -193.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "NearBlur",
+                "editorPos": [
+                    1109.0,
+                    -308.0
+                ],
+                "condition": {
+                    "variable1": "DoNearField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "NearFieldColorCoCBorderBlurred",
+                        "dstNode": "NearFieldColorCoCBorderBlurred",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "NearmaxCoCTilemap_1_8_Halo",
+                        "dstNode": "NearHalo",
+                        "dstPin": "NearMaxCocTilemap_1_8_Halo"
+                    },
+                    {
+                        "srcPin": "NearFieldColorCoCBorderBlurred"
+                    },
+                    {
+                        "srcPin": "NearFieldColorCoCBorder",
+                        "dstNode": "NearBorder",
+                        "dstPin": "NearFieldColorCoCBorder"
+                    }
+                ],
+                "shader": {
+                    "name": "NearBlur"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "NearFieldColorCoCBorder"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "NearFieldColorCoCBorderBlurred",
+                "editorPos": [
+                    789.0,
+                    -193.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FloodFillNear",
+                "editorPos": [
+                    1434.0,
+                    -289.0
+                ],
+                "condition": {
+                    "variable1": "DoNearField",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ColorCoc",
+                        "dstNode": "NearBlur",
+                        "dstPin": "NearFieldColorCoCBorderBlurred"
+                    },
+                    {
+                        "srcPin": "MaxCoCTileMap",
+                        "dstNode": "NearBlur",
+                        "dstPin": "NearmaxCoCTilemap_1_8_Halo"
+                    },
+                    {
+                        "srcPin": "BlurredFieldColorAlpha",
+                        "dstNode": "FloodFilledBlurredNearFieldColorAlpha",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FloodFillFarCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "FarFieldColorCoC"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "COC_TILEMAP",
+                        "value": "1"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "FloodFilledBlurredNearFieldColorAlpha",
+                "editorPos": [
+                    1112.0,
+                    -177.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    },
+                    "divide": [
+                        2,
+                        2,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Recombine",
+                "editorPos": [
+                    1781.0,
+                    -87.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Setup",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "FarField",
+                        "dstNode": "FloodFillFar",
+                        "dstPin": "BlurredFieldColorAlpha"
+                    },
+                    {
+                        "srcPin": "NearField",
+                        "dstNode": "FloodFillNear",
+                        "dstPin": "BlurredFieldColorAlpha"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Depth",
+                        "dstNode": "Setup",
+                        "dstPin": "Depth"
+                    }
+                ],
+                "shader": {
+                    "name": "RecombineCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        }
+    ]
+}

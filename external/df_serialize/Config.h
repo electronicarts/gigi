@@ -34,6 +34,7 @@
 #include <string>
 #include <vector>
 #include <array>
+#include <unordered_set>
 #include "GigiAssert.h"
 
 // flags used by struct fields
@@ -42,6 +43,7 @@
 #define SCHEMA_FLAG_UI_COLLAPSABLE			((size_t) (1 << 1))  // This field should have a collapsable header
 #define SCHEMA_FLAG_UI_ARRAY_FATITEMS		((size_t) (1 << 2))  // If true, puts all items on the same line.
 #define SCHEMA_FLAG_NO_SERIALIZE			((size_t) (1 << 3))  // Don't load / save. Also don't show in UI, and don't generate equality tests.
-#define SCHEMA_FLAG_UI_MULTILINETEXT		((size_t) (1 << 4))  // if true, the text edit box is multiline
-#define SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX		((size_t) (1 << 5))  // If true, does not show the index of array items
-#define SCHEMA_FLAG_UI_CONST				((size_t) (1 << 6))  // If true, does not allow field to be edited
+#define SCHEMA_FLAG_SERIALIZE_DFLT			((size_t) (1 << 4))  // Write value, even if it's the default value
+#define SCHEMA_FLAG_UI_MULTILINETEXT		((size_t) (1 << 5))  // if true, the text edit box is multiline
+#define SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX		((size_t) (1 << 6))  // If true, does not show the index of array items
+#define SCHEMA_FLAG_UI_CONST				((size_t) (1 << 7))  // If true, does not allow field to be edited
