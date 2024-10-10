@@ -4,6 +4,8 @@ Gigi is software designed for rapid prototyping and rapid development of real ti
 
 The goal is to allow work at the speed of thought, and then easily use what was created in real applications using various APIs or engines.
 
+[Hear what people say about using Gigi](readme/testimonials.md)
+
 Gigi is made of three components:
 
 1. Editor - Author a rendering technique
