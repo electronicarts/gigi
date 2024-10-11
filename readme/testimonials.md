@@ -16,7 +16,7 @@ Thank you!
 
 *-- Andrew Steadman, Electronic Arts*
 
-"Gigi has quickly become my favorite tool for prototyping and learning GPU programming, as it is very user friendly and fun to use. Growing up with RenderMonkey, FX Composerwith a fond memory, I see Gigi as a modernized version of these wonderful tools, and I'm looking forward to see it grow even further."
+"Gigi has quickly become my favorite tool for prototyping and learning GPU programming, as it is very user friendly and fun to use. Growing up with RenderMonkey and FX Composer with a fond memory, I see Gigi as a modernized version of these wonderful tools, and I'm looking forward to see it grow even further."
 
 *-- Wittawat Aik Keawchaoroen, Frostbite*
 
