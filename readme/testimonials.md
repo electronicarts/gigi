@@ -20,3 +20,6 @@ Thank you!
 
 *-- Wittawat Aik Keawchaoroen, Frostbite*
 
+"Gigi is the shortest path between my brain and the GPU. It has become an indispensable part of my workflow for rapidly prototyping ideas and sharing them with game teams across different engines. Using gigi we were able to rapidly deploy a standalone tool for generating FAST noise textures on the GPU -- the code was simpler and orders of magnitude faster than our CPU prototype."
+
+*-- William Donnelly, SEED - Electronic Arts*
