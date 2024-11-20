@@ -96,6 +96,7 @@
     <ClCompile Include="..\external\bc7enc\bc7decomp.cpp" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_common.c" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
+    <ClCompile Include="..\external\OpenFBX\libdeflate.c" />
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
     <ClCompile Include="DX12Utils\FBXCache.cpp" />
     <ClCompile Include="DX12Utils\ObjCache.cpp" />
@@ -138,6 +139,7 @@
     <ClInclude Include="..\external\nativefiledialog\src\common.h" />
     <ClInclude Include="..\external\nativefiledialog\src\include\nfd.h" />
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
+    <ClInclude Include="..\external\OpenFBX\libdeflate.h" />
     <ClInclude Include="..\external\OpenFBX\ofbx.h" />
     <ClInclude Include="DX12Utils\CompileShaders.h" />
     <ClInclude Include="DX12Utils\CreateResources.h" />
