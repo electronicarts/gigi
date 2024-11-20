@@ -131,7 +131,7 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 					size_t nextGeometryIndex = geometry.size();
 					geometry.resize(nextGeometryIndex + 1);
 					FlattenedVertex& newVertex = geometry[nextGeometryIndex];
-					newVertex.shapeIndex = meshIndex;
+					newVertex.shapeIndex = static_cast<int>(meshIndex);
 
 					int vertexIndex = tmpTriIndices[i];
 
@@ -180,7 +180,7 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 				// Calculate tangents and bitangents, using uv0
 				std::vector<Vec3> tangents(indexCount, Vec3{ 0.0f, 0.0f, 0.0f });
 				std::vector<Vec3> bitangents(indexCount, Vec3{ 0.0f, 0.0f, 0.0f });
-				for (int i = 0; i < indexCount; i += 3)
+				for (int i = 0; i < static_cast<int>(indexCount); i += 3)
 				{
 					int vertexIndex1 = tmpTriIndices[i + 0];
 					int vertexIndex2 = tmpTriIndices[i + 1];
