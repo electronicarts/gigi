@@ -59,7 +59,7 @@
       <PreprocessorDefinitions>USE_PIX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;$(SolutionDir)external\RenderDoc\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -79,7 +79,7 @@
       <PreprocessorDefinitions>USE_PIX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;$(SolutionDir)external\RenderDoc\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
