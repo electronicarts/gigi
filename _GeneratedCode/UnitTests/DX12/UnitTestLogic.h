@@ -158,7 +158,7 @@ public:
                             {
                                 DX12Utils::DXGI_FORMAT_Info formatInfo = DX12Utils::Get_DXGI_FORMAT_Info(resourceDesc.Format, m_logFn);
 
-                                std::vector< DX12Utils::TextureCache::Texture> textures;
+                                std::vector<DX12Utils::TextureCache::Texture> textures;
                                 if (strstr(readback.fileName, "%i"))
                                 {
                                     char fileName[1024];
@@ -1815,12 +1815,106 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         memcpy(&context->m_input.variable_clipToWorld, clipToWorld, sizeof(clipToWorld));
 
         context->m_input.variable_depthNearPlane = 0.0f;
+
+        // Load the BlueChannel texture
+        context->m_input.texture_BlueChannel_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        context->m_input.texture_BlueChannel_state = D3D12_RESOURCE_STATE_COPY_DEST;
+        context->m_input.texture_BlueChannel = context->CreateManagedTextureFromFile(
+            device,
+            commandList,
+            context->m_input.texture_BlueChannel_flags,
+            context->m_input.texture_BlueChannel_format,
+            DX12Utils::ResourceType::Texture2D,
+            "..\\..\\..\\Techniques\\cabinsmall.png",
+            true,
+            context->m_input.texture_BlueChannel_size,
+            context->GetTechniqueNameW()
+        );
     }
 
     if (testContext.IsFirstPostExecute(event))
         testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\TwoRayGens\\0.png");
 }
 
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, TwoRayGensSubgraph::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPreExecute(event))
+    {
+        DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\RayTrace\\SimpleRT_VertexBufferSimple.csv");
+        if (!file.Valid())
+        {
+            testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\RayTrace\\SimpleRT_VertexBufferSimple.csv");
+            return;
+        }
+
+        std::vector<float> inputTypedBufferData;
+
+        bool result = DX12Utils::ParseCSV::ForEachValue(file.GetBytes(), true,
+            [&inputTypedBufferData](int tokenIndex, const char* token)
+            {
+                // skip empty tokens, caused by trailing commas
+                if (token[0] == 0)
+                    return true;
+
+                float f;
+                sscanf(token, "%f", &f);
+                inputTypedBufferData.push_back(f);
+                return true;
+            }
+        );
+
+        if (!result)
+            testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\RayTrace\\SimpleRT_VertexBufferSimple.csv");
+
+        // Create a vertex buffer. the technique doesn't want it
+        ID3D12Resource* vertexBuffer = context->CreateManagedBuffer(device, commandList, D3D12_RESOURCE_FLAG_NONE, inputTypedBufferData, context->GetTechniqueNameW(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+
+        // Create the tlas buffer
+        context->m_input.buffer_Scene_format = DXGI_FORMAT_R32_FLOAT;
+        context->m_input.buffer_Scene_stride = 0;
+        context->m_input.buffer_Scene_count = inputTypedBufferData.size();
+        context->m_input.buffer_Scene_state = D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE;
+        context->CreateManagedTLAS(
+            device, commandList,
+            vertexBuffer, context->m_input.buffer_Scene_count / 3, false,
+            D3D12_RAYTRACING_GEOMETRY_FLAG_OPAQUE,
+            D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE,
+            DXGI_FORMAT_R32G32B32_FLOAT, 0, 12,
+            context->m_input.buffer_Scene_blas, context->m_input.buffer_Scene_blasSize,
+            context->m_input.buffer_Scene, context->m_input.buffer_Scene_tlasSize,
+            context->LogFn
+        );
+
+        // Making sure the values are the exact same as in the test.
+        // You can save as hex in the gigi viewer
+
+        uint32_t cameraPos[] = { 0x00000000, 0x00000000, 0xC1200000 };
+        memcpy(&context->m_input.variable_cameraPos, cameraPos, sizeof(cameraPos));
+
+        uint32_t clipToWorld[] = { 0x3ED413CD, 0x80000000, 0x80000000, 0x00000000, 0x80000000, 0x3ED413CD, 0x80000000, 0x80000000, 0x80000000, 0x80000000, 0xC2C7FAE1, 0x3F7D70A3, 0x80000000, 0x80000000, 0x411FFBE7, 0x3A83126F };
+        memcpy(&context->m_input.variable_clipToWorld, clipToWorld, sizeof(clipToWorld));
+
+        context->m_input.variable_depthNearPlane = 0.0f;
+
+        // Load the BlueChannel texture
+        context->m_input.texture_BlueChannel_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+        context->m_input.texture_BlueChannel_state = D3D12_RESOURCE_STATE_COPY_DEST;
+        context->m_input.texture_BlueChannel = context->CreateManagedTextureFromFile(
+            device,
+            commandList,
+            context->m_input.texture_BlueChannel_flags,
+            context->m_input.texture_BlueChannel_format,
+            DX12Utils::ResourceType::Texture2D,
+            "..\\..\\..\\Techniques\\cabinsmall.png",
+            true,
+            context->m_input.texture_BlueChannel_size,
+            context->GetTechniqueNameW()
+        );
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\TwoRayGensSubgraph\\0.png");
+}
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, simpleRT::Context* context, UnitTestEvent event)
 {

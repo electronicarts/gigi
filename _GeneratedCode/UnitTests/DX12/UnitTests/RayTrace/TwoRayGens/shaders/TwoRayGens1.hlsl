@@ -48,7 +48,7 @@ void RayGen1()
 		0xFF, // Ray mask
 		0,
 		0,
-		1,
+		0,
 		ray,
 		payload);
 

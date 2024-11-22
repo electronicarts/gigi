@@ -97,6 +97,30 @@ namespace FrontEndNodes
 #include "resource_shaderconstants.h"
 #include "resource_texture.h"
 
+inline int GetHitGroupIndex(const RenderGraph& renderGraph, const char* name)
+{
+    int ret = 0;
+    for (const RTHitGroup& hitGroup : renderGraph.hitGroups)
+    {
+        if (!_stricmp(hitGroup.name.c_str(), name))
+            return ret;
+        ret++;
+    }
+    return -1;
+}
+
+inline int GetShaderIndex(const RenderGraph& renderGraph, const char* name)
+{
+    int ret = 0;
+    for (const Shader& shader : renderGraph.shaders)
+    {
+        if (!_stricmp(shader.name.c_str(), name))
+            return ret;
+        ret++;
+    }
+    return -1;
+}
+
 template <typename LAMBDA>
 void ExecuteOnNode(RenderGraphNode& node, const LAMBDA& lambda)
 {

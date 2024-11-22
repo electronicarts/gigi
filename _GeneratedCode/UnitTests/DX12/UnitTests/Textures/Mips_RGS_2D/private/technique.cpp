@@ -998,10 +998,12 @@ namespace Mips_RGS_2D
             dispatchDesc.Depth = ((baseDispatchSize[2] + 0) * 1) / 1 + 0;
             dispatchDesc.RayGenerationShaderRecord.StartAddress = ContextInternal::rayShader_RayGen_shaderTableRayGen->GetGPUVirtualAddress();
             dispatchDesc.RayGenerationShaderRecord.SizeInBytes = ContextInternal::rayShader_RayGen_shaderTableRayGenSize;
-            dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_RayGen_shaderTableMiss->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_RayGen_shaderTableMiss)
+                dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_RayGen_shaderTableMiss->GetGPUVirtualAddress();
             dispatchDesc.MissShaderTable.SizeInBytes = ContextInternal::rayShader_RayGen_shaderTableMissSize;
             dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-            dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_RayGen_shaderTableHitGroup->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_RayGen_shaderTableHitGroup)
+                dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_RayGen_shaderTableHitGroup->GetGPUVirtualAddress();
             dispatchDesc.HitGroupTable.SizeInBytes = ContextInternal::rayShader_RayGen_shaderTableHitGroupSize;
             dispatchDesc.HitGroupTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 

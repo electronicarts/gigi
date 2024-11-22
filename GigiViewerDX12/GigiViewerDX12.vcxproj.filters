@@ -103,6 +103,9 @@
     <ClCompile Include="..\external\bc7enc\bc7decomp.cpp">
       <Filter>external\bc7enc</Filter>
     </ClCompile>
+    <ClCompile Include="..\external\OpenFBX\libdeflate.c">
+      <Filter>external\OpenFBX</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">
@@ -239,6 +242,9 @@
     </ClInclude>
     <ClInclude Include="..\external\bc7enc\bc7decomp.h">
       <Filter>external\bc7enc</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\OpenFBX\libdeflate.h">
+      <Filter>external\OpenFBX</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

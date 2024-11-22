@@ -1,0 +1,220 @@
+{
+    "$schema": "gigischema.json",
+    "name": "TwoRayGensSubgraphA",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "clipToWorld",
+            "type": "Float4x4",
+            "visibility": "Host"
+        },
+        {
+            "name": "cameraPos",
+            "type": "Float3",
+            "visibility": "Host"
+        },
+        {
+            "name": "depthNearPlane",
+            "comment": "The depth value for the near plane.",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "hitColor",
+            "type": "Float3",
+            "dflt": "0.0f, 1.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "missColor",
+            "type": "Float3",
+            "dflt": "1.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "TwoRayGens1",
+            "fileName": "TwoRayGens1.hlsl",
+            "type": "RTRayGen",
+            "entryPoint": "RayGen1",
+            "resources": [
+                {
+                    "name": "g_texture",
+                    "type": "Texture",
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "g_scene",
+                    "type": "Buffer",
+                    "access": "RTScene",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "TwoRayGensMiss1",
+            "fileName": "TwoRayGens1.hlsl",
+            "type": "RTMiss",
+            "entryPoint": "Miss1",
+            "copyFile": false
+        },
+        {
+            "name": "TwoRayGensClosestHit1",
+            "fileName": "TwoRayGens1.hlsl",
+            "type": "RTClosestHit",
+            "entryPoint": "ClosestHit1",
+            "copyFile": false
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexBuffer",
+            "fields": [
+                {
+                    "name": "Color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                }
+            ]
+        },
+        {
+            "name": "VertexBufferSimple",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                }
+            ]
+        },
+        {
+            "name": "VertexBufferFull",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "Tangent",
+                    "type": "Float4",
+                    "semantic": "Tangent"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "MaterialID",
+                    "type": "Int",
+                    "dflt": "0",
+                    "semantic": "MaterialID"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Texture",
+                "comment": "The texture that is rendered to",
+                "editorPos": [
+                    125.0,
+                    -14.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        256,
+                        256,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Scene",
+                "comment": "The raytracing scene",
+                "editorPos": [
+                    125.0,
+                    34.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionRayShader": {
+                "name": "DoRT1",
+                "editorPos": [
+                    243.0,
+                    0.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "g_texture",
+                        "dstNode": "Texture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "g_scene",
+                        "dstNode": "Scene",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "TwoRayGens1"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Texture"
+                    }
+                },
+                "rayPayloadSize": 12
+            }
+        }
+    ],
+    "hitGroups": [
+        {
+            "name": "HitGroup1",
+            "closestHit": {
+                "name": "TwoRayGensClosestHit1"
+            }
+        }
+    ],
+    "settings": {
+        "frostbite": {
+            "shaderProgramsProviderVersion": 1340
+        }
+    }
+}

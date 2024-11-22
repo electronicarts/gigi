@@ -106,6 +106,9 @@
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\private\technique.cpp">
       <Filter>UnitTests\RayTrace\TwoRayGens\private</Filter>
     </ClCompile>
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\private\technique.cpp">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\private</Filter>
+    </ClCompile>
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\private\technique.cpp">
       <Filter>UnitTests\RayTrace\simpleRT\private</Filter>
     </ClCompile>
@@ -922,6 +925,27 @@
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\shaders\TwoRayGens2.hlsl">
       <Filter>UnitTests\RayTrace\TwoRayGens\shaders</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\private\technique.h">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\private</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\all.h">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\imgui.h">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\pythoninterface.h">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\technique.h">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\public</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphA\TwoRayGens1.hlsl">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphA</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphB\TwoRayGens2.hlsl">
+      <Filter>UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphB</Filter>
     </ClInclude>
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\private\technique.h">
       <Filter>UnitTests\RayTrace\simpleRT\private</Filter>
@@ -2229,6 +2253,24 @@
     </Filter>
     <Filter Include="UnitTests\RayTrace\TwoRayGens">
       <UniqueIdentifier>{87E0C3C0-4835-3EFB-B5C2-6EB3A421896D}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGensSubgraph">
+      <UniqueIdentifier>{A4C50BD4-452D-395B-9B68-6BB463AEEB8F}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGensSubgraph\private">
+      <UniqueIdentifier>{3E7884B7-1B2E-36D0-8304-3F343F13A9F5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGensSubgraph\public">
+      <UniqueIdentifier>{28E1EDCB-EFBD-395C-B367-1DDB3272678C}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGensSubgraph\shaders">
+      <UniqueIdentifier>{317110CB-D35C-3133-906A-188AEA8C3825}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphA">
+      <UniqueIdentifier>{B08B1EA7-C9C8-3A94-9680-633556E1D940}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphB">
+      <UniqueIdentifier>{B8081C9C-A633-3284-A2EB-762C52E3A47A}</UniqueIdentifier>
     </Filter>
     <Filter Include="UnitTests\RayTrace\TwoRayGens\private">
       <UniqueIdentifier>{3F82FEEB-57DA-3705-8F3A-3FC292725553}</UniqueIdentifier>

@@ -12,6 +12,7 @@ struct Struct__TwoRayGens2CB
 
 RWTexture2D<float4> g_texture : register(u0);
 RaytracingAccelerationStructure g_scene : register(t0);
+Texture2D<float4> g_blueChannel : register(t1);
 ConstantBuffer<Struct__TwoRayGens2CB> _TwoRayGens2CB : register(b0);
 
 #line 2
@@ -20,10 +21,11 @@ ConstantBuffer<Struct__TwoRayGens2CB> _TwoRayGens2CB : register(b0);
 struct Payload
 {
 	bool hit;
+	float blueChannelMultiplier;
 };
 
 [shader("raygeneration")]
-#line 9
+#line 10
 void RayGen2()
 {
 	uint2 px = DispatchRaysIndex().xy;
@@ -43,37 +45,55 @@ void RayGen2()
 
 	Payload payload = (Payload)0;
 
+	int missShaderIndex = (px.y < dimensions.y / 2) ? 0 : 1;
+
 	TraceRay(g_scene, // Scene (TLAS) buffer
 		RAY_FLAG_FORCE_OPAQUE, // Ray flags
 		0xFF, // Ray mask
-		1,
 		0,
-		1,
+		0,
+		missShaderIndex,
 		ray,
 		payload);
 
 	float4 color = g_texture[px];
 	color.a = 1.0f;
 	color.g = payload.hit ? 1.0f : 0.0f;
+
+	uint2 blueChannelDims;
+	g_blueChannel.GetDimensions(blueChannelDims.x, blueChannelDims.y);
+	color.b = dot(g_blueChannel[px % blueChannelDims].rgb, float3(0.3f, 0.59f, 0.11f)) * payload.blueChannelMultiplier;
+
 	g_texture[px] = color;
 }
 
 [shader("miss")]
-#line 43
-void Miss2(inout Payload payload : SV_RayPayload)
+#line 51
+void Miss2A(inout Payload payload : SV_RayPayload)
 {
 	payload.hit = false;
+	payload.blueChannelMultiplier = 0.25f;
+}
+
+[shader("miss")]
+#line 57
+void Miss2B(inout Payload payload : SV_RayPayload)
+{
+	payload.hit = false;
+	payload.blueChannelMultiplier = 1.0f;
 }
 
 [shader("closesthit")]
-#line 48
+#line 63
 void ClosestHit2(inout Payload payload : SV_RayPayload, in BuiltInTriangleIntersectionAttributes intersection : SV_IntersectionAttributes)
 {
 	payload.hit = true;
+	payload.blueChannelMultiplier = 0.0f;
 }
 
 /*
 Shader Resources:
 	Texture g_texture (as UAV)
 	Buffer g_scene (as RTScene)
+	Texture g_blueChannel (as SRV)
 */

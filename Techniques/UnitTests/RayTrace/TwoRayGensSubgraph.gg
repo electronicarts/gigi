@@ -1,0 +1,317 @@
+{
+    "$schema": "gigischema.json",
+    "name": "TwoRayGensSubgraph",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "clipToWorld",
+            "type": "Float4x4",
+            "visibility": "Host"
+        },
+        {
+            "name": "cameraPos",
+            "type": "Float3",
+            "visibility": "Host"
+        },
+        {
+            "name": "depthNearPlane",
+            "comment": "The depth value for the near plane.",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "hitColor",
+            "type": "Float3",
+            "dflt": "0.0f, 1.0f, 0.0f",
+            "visibility": "User"
+        },
+        {
+            "name": "missColor",
+            "type": "Float3",
+            "dflt": "1.0f, 0.0f, 0.0f",
+            "visibility": "User"
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexBuffer",
+            "fields": [
+                {
+                    "name": "Color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                }
+            ]
+        },
+        {
+            "name": "VertexBufferSimple",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                }
+            ]
+        },
+        {
+            "name": "VertexBufferFull",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Color",
+                    "type": "Float3",
+                    "semantic": "Color"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "Tangent",
+                    "type": "Float4",
+                    "semantic": "Tangent"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "MaterialID",
+                    "type": "Int",
+                    "dflt": "0",
+                    "semantic": "MaterialID"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Texture",
+                "comment": "The texture that is rendered to",
+                "editorPos": [
+                    125.0,
+                    -14.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        256,
+                        256,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Scene",
+                "comment": "The raytracing scene",
+                "editorPos": [
+                    125.0,
+                    34.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BlueChannel",
+                "editorPos": [
+                    250.0,
+                    82.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "A",
+                "editorPos": [
+                    259.0,
+                    -1.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Texture",
+                        "dstNode": "Texture",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Scene",
+                        "dstNode": "Scene",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "TwoRayGensSubgraphA.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Texture",
+                        "Scene"
+                    ],
+                    "variables": [
+                        {
+                            "name": "clipToWorld",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "cameraPos",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "depthNearPlane",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "hitColor",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "missColor",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "clipToWorld",
+                        "visibility": "Host",
+                        "replaceWithStr": "clipToWorld"
+                    },
+                    {
+                        "name": "cameraPos",
+                        "visibility": "Host",
+                        "replaceWithStr": "cameraPos"
+                    },
+                    {
+                        "name": "depthNearPlane",
+                        "visibility": "Host",
+                        "replaceWithStr": "depthNearPlane"
+                    },
+                    {
+                        "name": "hitColor",
+                        "visibility": "User",
+                        "replaceWithStr": "hitColor"
+                    },
+                    {
+                        "name": "missColor",
+                        "visibility": "User",
+                        "replaceWithStr": "missColor"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "B",
+                "editorPos": [
+                    405.0,
+                    12.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Texture",
+                        "dstNode": "A",
+                        "dstPin": "Texture"
+                    },
+                    {
+                        "srcPin": "Scene",
+                        "dstNode": "A",
+                        "dstPin": "Scene"
+                    },
+                    {
+                        "srcPin": "BlueChannel",
+                        "dstNode": "BlueChannel",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "TwoRayGensSubgraphB.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Texture",
+                        "Scene",
+                        "BlueChannel"
+                    ],
+                    "variables": [
+                        {
+                            "name": "clipToWorld",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "cameraPos",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "depthNearPlane",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "hitColor",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "missColor",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "clipToWorld",
+                        "visibility": "Host",
+                        "replaceWithStr": "clipToWorld"
+                    },
+                    {
+                        "name": "cameraPos",
+                        "visibility": "Host",
+                        "replaceWithStr": "cameraPos"
+                    },
+                    {
+                        "name": "depthNearPlane",
+                        "visibility": "Host",
+                        "replaceWithStr": "depthNearPlane"
+                    },
+                    {
+                        "name": "hitColor",
+                        "visibility": "User",
+                        "replaceWithStr": "hitColor"
+                    },
+                    {
+                        "name": "missColor",
+                        "visibility": "User",
+                        "replaceWithStr": "missColor"
+                    }
+                ]
+            }
+        }
+    ],
+    "settings": {
+        "frostbite": {
+            "shaderProgramsProviderVersion": 1340
+        }
+    }
+}

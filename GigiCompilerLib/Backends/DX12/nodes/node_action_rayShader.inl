@@ -16,10 +16,45 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     };
     std::vector<ShaderExport> shaderExports;
 
+    // gather all the shaders involved
     for (const Shader& shader : renderGraph.shaders)
     {
         if (shader.type != ShaderType::RTClosestHit && shader.type != ShaderType::RTMiss &&
             shader.type != ShaderType::RTAnyHit && shader.type != ShaderType::RTIntersection)
+            continue;
+
+        // If this shader is referenced as RTMissIndex, include it
+        bool includeShader = false;
+        for (const std::string& RTMissShader : node.shader.shader->Used_RTMissIndex)
+        {
+            if (!_stricmp(shader.name.c_str(), RTMissShader.c_str()))
+            {
+                includeShader = true;
+                break;
+            }
+        }
+
+        // If this shader is part of an RTHitGroupIndex, include it
+        if (!includeShader)
+        {
+            for (const std::string& RTHitGroupName : node.shader.shader->Used_RTHitGroupIndex)
+            {
+                int hitGroupIndex = GetHitGroupIndex(renderGraph, RTHitGroupName.c_str());
+                if (hitGroupIndex >= 0)
+                {
+                    const RTHitGroup& hitGroup = renderGraph.hitGroups[hitGroupIndex];
+                    if (!_stricmp(shader.name.c_str(), hitGroup.closestHit.name.c_str()) ||
+                        !_stricmp(shader.name.c_str(), hitGroup.anyHit.name.c_str()) ||
+                        !_stricmp(shader.name.c_str(), hitGroup.intersection.name.c_str()))
+                    {
+                        includeShader = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (!includeShader)
             continue;
 
         ShaderExport newExport;
@@ -175,7 +210,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             stringReplacementMap["/*$(CreateShared)*/"] <<
                 "\n                { \"MAX_RECURSION_DEPTH\", \"" << node.maxRecursionDepth << "\" },"
-                "\n                { \"RT_HIT_GROUP_COUNT\", \"" << renderGraph.hitGroups.size() << "\" },"
+                "\n                { \"RT_HIT_GROUP_COUNT\", \"" << node.shader.shader->Used_RTHitGroupIndex.size() << "\" },"
                 "\n                { nullptr, nullptr }"
                 "\n            };";
         }
@@ -228,22 +263,27 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         }
 
         // Hit Groups
+        if (node.shader.shader->Used_RTHitGroupIndex.size() > 0)
         {
             stateObjectCreation <<
                 "\n"
                 "\n            // Make the hit group sub objects"
-                "\n            D3D12_HIT_GROUP_DESC hitGroupDescs[" << renderGraph.hitGroups.size() << "];"
+                "\n            D3D12_HIT_GROUP_DESC hitGroupDescs[" << node.shader.shader->Used_RTHitGroupIndex.size() << "];"
                 ;
 
-            for (size_t i = 0; i < renderGraph.hitGroups.size(); ++i)
+            for (size_t hgi = 0; hgi < node.shader.shader->Used_RTHitGroupIndex.size(); ++hgi)
             {
-                const RTHitGroup& hitGroup = renderGraph.hitGroups[i];
+                int hitGroupIndex = GetHitGroupIndex(renderGraph, node.shader.shader->Used_RTHitGroupIndex[hgi].c_str());
+                if (hitGroupIndex < 0)
+                    continue;
+
+                const RTHitGroup& hitGroup = renderGraph.hitGroups[hitGroupIndex];
                 stateObjectCreation <<
                     "\n"
                     "\n            // Hit group: " << hitGroup.name <<
                     "\n            {"
-                    "\n                D3D12_HIT_GROUP_DESC& hitGroupDesc = hitGroupDescs[" << i << "];"
-                    "\n                hitGroupDesc.HitGroupExport = L\"hitgroup" << i << "\";"
+                    "\n                D3D12_HIT_GROUP_DESC& hitGroupDesc = hitGroupDescs[" << hgi << "];"
+                    "\n                hitGroupDesc.HitGroupExport = L\"hitgroup" << hgi << "\";"
                     ;
 
                 // Any hit Shader Import
@@ -393,13 +433,13 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
         // Get the count for the number of items in each shader table
         int shaderTableMissCount = 0;
-        for (const Shader& shader : renderGraph.shaders)
+        for (const ShaderExport& shaderExport : shaderExports)
         {
-            if (shader.type == ShaderType::RTMiss)
+            if (shaderExport.shaderType == ShaderType::RTMiss)
                 shaderTableMissCount++;
         }
         int shaderTableRaygenCount = 1;
-        int shaderTableHitGroupCount = (int)renderGraph.hitGroups.size();
+        int shaderTableHitGroupCount = (int)node.shader.shader->Used_RTHitGroupIndex.size(); // How many hit groups used by this shader
 
         // Ray Gen Shader Table
         {
@@ -435,6 +475,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         }
 
         // Miss Shader Table
+        if (node.shader.shader->Used_RTMissIndex.size() > 0)
         {
             stringReplacementMap["/*$(CreateShared)*/"] <<
                 "\n"
@@ -468,6 +509,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         }
 
         // Hit Group Table
+        if (node.shader.shader->Used_RTHitGroupIndex.size() > 0)
         {
             stringReplacementMap["/*$(CreateShared)*/"] <<
                 "\n"
@@ -482,7 +524,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n"
                 ;
 
-            for (size_t index = 0; index < renderGraph.hitGroups.size(); ++index)
+            for (int index = 0; index < node.shader.shader->Used_RTHitGroupIndex.size(); ++index)
             {
                 stringReplacementMap["/*$(CreateShared)*/"] <<
                     "\n                    memcpy(shaderTableBytes, soprops->GetShaderIdentifier(L\"hitgroup" << index << "\"), D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);"
@@ -778,14 +820,18 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n            dispatchDesc.Depth = ((baseDispatchSize[2] + " << node.dispatchSize.preAdd[2] << ") * " << node.dispatchSize.multiply[2] << ") / " <<
         node.dispatchSize.divide[2] << " + " << node.dispatchSize.postAdd[2] << ";";
 
+    //if (runtimeData.m_shaderTableMiss)
+
     // write out the table addresses and size
     stringReplacementMap["/*$(Execute)*/"] <<
         "\n            dispatchDesc.RayGenerationShaderRecord.StartAddress = ContextInternal::rayShader_" << node.name << "_shaderTableRayGen->GetGPUVirtualAddress();"
         "\n            dispatchDesc.RayGenerationShaderRecord.SizeInBytes = ContextInternal::rayShader_" << node.name << "_shaderTableRayGenSize;"
-        "\n            dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_" << node.name << "_shaderTableMiss->GetGPUVirtualAddress();"
+        "\n            if (ContextInternal::rayShader_" << node.name << "_shaderTableMiss)"
+        "\n                dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_" << node.name << "_shaderTableMiss->GetGPUVirtualAddress();"
         "\n            dispatchDesc.MissShaderTable.SizeInBytes = ContextInternal::rayShader_" << node.name << "_shaderTableMissSize;"
         "\n            dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;"
-        "\n            dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_" << node.name << "_shaderTableHitGroup->GetGPUVirtualAddress();"
+        "\n            if (ContextInternal::rayShader_" << node.name << "_shaderTableHitGroup)"
+        "\n                dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_" << node.name << "_shaderTableHitGroup->GetGPUVirtualAddress();"
         "\n            dispatchDesc.HitGroupTable.SizeInBytes = ContextInternal::rayShader_" << node.name << "_shaderTableHitGroupSize;"
         "\n            dispatchDesc.HitGroupTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;"
         "\n"

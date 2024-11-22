@@ -1753,9 +1753,13 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
             else if (GetTokenParameter(token.c_str(), "RTHitGroupIndex", param))
             {
                 int foundIndex = -1;
-                for (int i = 0; i < (int)renderGraph.hitGroups.size(); ++i)
+                for (int i = 0; i < shader.Used_RTHitGroupIndex.size(); ++i)
                 {
-                    const RTHitGroup& hitGroup = renderGraph.hitGroups[i];
+                    int HGIndex = GetHitGroupIndex(renderGraph, shader.Used_RTHitGroupIndex[i].c_str());
+                    if (HGIndex < 0)
+                        continue;
+
+                    const RTHitGroup& hitGroup = renderGraph.hitGroups[HGIndex];
                     if (shader.scope == hitGroup.scope && param == hitGroup.originalName)
                     {
                         foundIndex = i;
@@ -1765,7 +1769,7 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
                         break;
                 }
 
-                Assert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\"", param.c_str());
+                Assert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
                 if (foundIndex != -1)
                 {
                     shaderSpecificStringReplacementMap[token] = std::ostringstream();
@@ -1779,24 +1783,24 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
             }
             else if (GetTokenParameter(token.c_str(), "RTMissIndex", param))
             {
-                int RTMissIndex = -1;
-                int foundIndex = 1;
-                for (const Shader& shader : renderGraph.shaders)
+                int foundIndex = -1;
+                for (int i = 0; i < shader.Used_RTMissIndex.size(); ++i)
                 {
-                    if (shader.type != ShaderType::RTMiss)
+                    int MissIndex = GetShaderIndex(renderGraph, shader.Used_RTMissIndex[i].c_str());
+                    if (MissIndex < 0)
                         continue;
 
-                    RTMissIndex++;
-
-                    if (param == shader.name)
+                    const Shader& missShader = renderGraph.shaders[MissIndex];
+                    if (shader.scope == missShader.scope && param == missShader.originalName)
                     {
-                        foundIndex = RTMissIndex;
+                        foundIndex = i;
                         break;
                     }
                     if (foundIndex != -1)
                         break;
                 }
-                Assert(foundIndex != -1, "Could not find RTMissIndex for \"%s\"", param.c_str());
+
+                Assert(foundIndex != -1, "Could not find RTMissIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
                 if (foundIndex != -1)
                 {
                     shaderSpecificStringReplacementMap[token] = std::ostringstream();

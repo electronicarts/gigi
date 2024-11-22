@@ -215,6 +215,9 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 #include "UnitTests\RayTrace\TwoRayGens\public\technique.h"
 #include "UnitTests\RayTrace\TwoRayGens\public\imgui.h"
 #include "UnitTests\RayTrace\TwoRayGens\private\technique.h"
+#include "UnitTests\RayTrace\TwoRayGensSubgraph\public\technique.h"
+#include "UnitTests\RayTrace\TwoRayGensSubgraph\public\imgui.h"
+#include "UnitTests\RayTrace\TwoRayGensSubgraph\private\technique.h"
 #include "UnitTests\SubGraph\SubGraphLoops\public\technique.h"
 #include "UnitTests\SubGraph\SubGraphLoops\public\imgui.h"
 #include "UnitTests\SubGraph\SubGraphLoops\private\technique.h"
@@ -328,6 +331,7 @@ IntersectionShader::Context* m_IntersectionShader = nullptr;
 simpleRT::Context* m_simpleRT = nullptr;
 simpleRT_inline::Context* m_simpleRT_inline = nullptr;
 TwoRayGens::Context* m_TwoRayGens = nullptr;
+TwoRayGensSubgraph::Context* m_TwoRayGensSubgraph = nullptr;
 SubGraphLoops::Context* m_SubGraphLoops = nullptr;
 SubGraphTest::Context* m_SubGraphTest = nullptr;
 SubInSub::Context* m_SubInSub = nullptr;
@@ -778,6 +782,16 @@ int main(int, char**)
         printf("Could not create m_TwoRayGens context");
         return 1;
     }
+    TwoRayGensSubgraph::Context::LogFn = &LogFunction;
+    TwoRayGensSubgraph::Context::PerfEventBeginFn = &PerfEventBeginFn;
+    TwoRayGensSubgraph::Context::PerfEventEndFn = &PerfEventEndFn;
+    TwoRayGensSubgraph::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\TwoRayGensSubgraph\\";
+    m_TwoRayGensSubgraph = TwoRayGensSubgraph::CreateContext(g_pd3dDevice);
+    if (!m_TwoRayGensSubgraph)
+    {
+        printf("Could not create m_TwoRayGensSubgraph context");
+        return 1;
+    }
     SubGraphLoops::Context::LogFn = &LogFunction;
     SubGraphLoops::Context::PerfEventBeginFn = &PerfEventBeginFn;
     SubGraphLoops::Context::PerfEventEndFn = &PerfEventEndFn;
@@ -1152,6 +1166,8 @@ int main(int, char**)
             simpleRT_inline::MakeUI(m_simpleRT_inline, g_pd3dCommandQueue);
         if (m_TwoRayGens && ImGui::CollapsingHeader("TwoRayGens"))
             TwoRayGens::MakeUI(m_TwoRayGens, g_pd3dCommandQueue);
+        if (m_TwoRayGensSubgraph && ImGui::CollapsingHeader("TwoRayGensSubgraph"))
+            TwoRayGensSubgraph::MakeUI(m_TwoRayGensSubgraph, g_pd3dCommandQueue);
         if (m_SubGraphLoops && ImGui::CollapsingHeader("SubGraphLoops"))
             SubGraphLoops::MakeUI(m_SubGraphLoops, g_pd3dCommandQueue);
         if (m_SubGraphTest && ImGui::CollapsingHeader("SubGraphTest"))
@@ -1305,6 +1321,7 @@ int main(int, char**)
         simpleRT::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         simpleRT_inline::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         TwoRayGens::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        TwoRayGensSubgraph::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         SubGraphLoops::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         SubGraphTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         SubInSub::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
@@ -1364,6 +1381,7 @@ int main(int, char**)
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PreExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PreExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PreExecute);
@@ -1454,6 +1472,8 @@ int main(int, char**)
             simpleRT_inline::Execute(m_simpleRT_inline, g_pd3dDevice, g_pd3dCommandList);
         if (m_TwoRayGens)
             TwoRayGens::Execute(m_TwoRayGens, g_pd3dDevice, g_pd3dCommandList);
+        if (m_TwoRayGensSubgraph)
+            TwoRayGensSubgraph::Execute(m_TwoRayGensSubgraph, g_pd3dDevice, g_pd3dCommandList);
         if (m_SubGraphLoops)
             SubGraphLoops::Execute(m_SubGraphLoops, g_pd3dDevice, g_pd3dCommandList);
         if (m_SubGraphTest)
@@ -1540,6 +1560,7 @@ int main(int, char**)
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PostExecute);
+        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PostExecute);
         UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PostExecute);
@@ -1758,6 +1779,11 @@ int main(int, char**)
     {
         TwoRayGens::DestroyContext(m_TwoRayGens);
         m_TwoRayGens = nullptr;
+    }
+    if (m_TwoRayGensSubgraph)
+    {
+        TwoRayGensSubgraph::DestroyContext(m_TwoRayGensSubgraph);
+        m_TwoRayGensSubgraph = nullptr;
     }
     if (m_SubGraphLoops)
     {

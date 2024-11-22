@@ -1,0 +1,43 @@
+{
+    "version": "2.0",
+    "systemVars": {
+        "ProjMtx_textureName": "Texture",
+        "InvViewProjMtx_varName": "clipToWorld",
+        "CameraPos_varName": "cameraPos"
+    },
+    "snapshot": {
+        "resourceViewNodeIndex": 4,
+        "resourceViewResourceIndex": 4,
+        "importedResources": [
+            {
+                "nodeName": "BlueChannel",
+                "texture": {
+                    "fileName": "..\\..\\cabinsmall.png"
+                }
+            },
+            {
+                "nodeName": "Scene",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "SimpleRT_VertexBufferSimple.csv",
+                    "type": "Float3",
+                    "BLASOpaque": true
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "depthNearPlane",
+                "value": "0.000000"
+            },
+            {
+                "name": "hitColor",
+                "value": "0.000000,1.000000,0.000000"
+            },
+            {
+                "name": "missColor",
+                "value": "1.000000,0.000000,0.000000"
+            }
+        ]
+    }
+}

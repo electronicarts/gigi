@@ -30,7 +30,7 @@ struct Payload
 		0xFF, // Ray mask
 		/*$(RTHitGroupIndex:HitGroup1)*/,
 		0,
-		/*$(RTMissIndex:Miss1)*/,
+		/*$(RTMissIndex:TwoRayGensMiss1)*/,
 		ray,
 		payload);
 

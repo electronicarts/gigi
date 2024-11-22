@@ -1111,10 +1111,12 @@ namespace IntersectionShader
             dispatchDesc.Depth = ((baseDispatchSize[2] + 0) * 1) / 1 + 0;
             dispatchDesc.RayGenerationShaderRecord.StartAddress = ContextInternal::rayShader_Do_RT_shaderTableRayGen->GetGPUVirtualAddress();
             dispatchDesc.RayGenerationShaderRecord.SizeInBytes = ContextInternal::rayShader_Do_RT_shaderTableRayGenSize;
-            dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_Do_RT_shaderTableMiss->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_Do_RT_shaderTableMiss)
+                dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_Do_RT_shaderTableMiss->GetGPUVirtualAddress();
             dispatchDesc.MissShaderTable.SizeInBytes = ContextInternal::rayShader_Do_RT_shaderTableMissSize;
             dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-            dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_Do_RT_shaderTableHitGroup->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_Do_RT_shaderTableHitGroup)
+                dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_Do_RT_shaderTableHitGroup->GetGPUVirtualAddress();
             dispatchDesc.HitGroupTable.SizeInBytes = ContextInternal::rayShader_Do_RT_shaderTableHitGroupSize;
             dispatchDesc.HitGroupTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 

@@ -65,6 +65,13 @@ namespace TwoRayGens
             unsigned int buffer_Scene_tlasSize = 0;
             ID3D12Resource* buffer_Scene_blas = nullptr;
             unsigned int buffer_Scene_blasSize = 0;
+
+            ID3D12Resource* texture_BlueChannel = nullptr;
+            unsigned int texture_BlueChannel_size[3] = { 0, 0, 0 };
+            unsigned int texture_BlueChannel_numMips = 0;
+            DXGI_FORMAT texture_BlueChannel_format = DXGI_FORMAT_UNKNOWN;
+            static const D3D12_RESOURCE_FLAGS texture_BlueChannel_flags =  D3D12_RESOURCE_FLAG_NONE;
+            D3D12_RESOURCE_STATES texture_BlueChannel_state = D3D12_RESOURCE_STATE_COMMON;
         };
         ContextInput m_input;
 

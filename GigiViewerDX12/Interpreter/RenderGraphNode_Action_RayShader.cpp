@@ -188,13 +188,47 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		std::vector<std::vector<unsigned char>> allShaderCode;
 		int countRaygen = 1;
 		int countMiss = 0;
-		int countHitGroups = (int)m_renderGraph.hitGroups.size();  // one hit group per explicit hit group
+		int countHitGroups = (int)node.shader.shader->Used_RTHitGroupIndex.size(); // How many hit groups used by this shader
 		{
 			// gather all the shaders involved
 			for (const Shader& shader : m_renderGraph.shaders)
 			{
 				if (shader.type != ShaderType::RTClosestHit && shader.type != ShaderType::RTMiss &&
 					shader.type != ShaderType::RTAnyHit && shader.type != ShaderType::RTIntersection)
+					continue;
+
+				// If this shader is referenced as RTMissIndex, include it
+				bool includeShader = false;
+				for (const std::string& RTMissShader : node.shader.shader->Used_RTMissIndex)
+				{
+					if (!_stricmp(shader.name.c_str(), RTMissShader.c_str()))
+					{
+						includeShader = true;
+						break;
+					}
+				}
+
+				// If this shader is part of an RTHitGroupIndex, include it
+				if (!includeShader)
+				{
+					for (const std::string& RTHitGroupName : node.shader.shader->Used_RTHitGroupIndex)
+					{
+						int hitGroupIndex = GetHitGroupIndex(m_renderGraph, RTHitGroupName.c_str());
+						if (hitGroupIndex >= 0)
+						{
+							const RTHitGroup& hitGroup = m_renderGraph.hitGroups[hitGroupIndex];
+							if (!_stricmp(shader.name.c_str(), hitGroup.closestHit.name.c_str()) ||
+								!_stricmp(shader.name.c_str(), hitGroup.anyHit.name.c_str()) ||
+								!_stricmp(shader.name.c_str(), hitGroup.intersection.name.c_str()))
+							{
+								includeShader = true;
+								break;
+							}
+						}
+					}
+				}
+
+				if (!includeShader)
 					continue;
 
 				ShaderExport newExport;
@@ -321,8 +355,15 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			// Hit groups
 			std::vector<std::wstring> hitGroupNameStrings(countHitGroups);
 			std::vector<D3D12_HIT_GROUP_DESC> hitGroupDescs(countHitGroups);
-			for (size_t index = 0; index < m_renderGraph.hitGroups.size(); ++index)
+
+			for (size_t index = 0; index < countHitGroups; ++index)
 			{
+				const std::string& RTHitGroupName = node.shader.shader->Used_RTHitGroupIndex[index];
+
+				int HGIndex = GetHitGroupIndex(m_renderGraph, RTHitGroupName.c_str());
+				if (HGIndex < 0)
+					continue;
+
 				wchar_t buffer[256];
 				swprintf_s(buffer, L"hitgroup_%i", (int)index);
 				hitGroupNameStrings[index] = buffer;
@@ -336,7 +377,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					const std::wstring* importName = nullptr;
 					for (const ShaderExport& shaderExport : shaderExports)
 					{
-						if (shaderExport.shader == m_renderGraph.hitGroups[index].anyHit.shader)
+						if (shaderExport.shader == m_renderGraph.hitGroups[HGIndex].anyHit.shader)
 						{
 							importName = &shaderExport.uniqueName;
 							break;
@@ -350,7 +391,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					const std::wstring* importName = nullptr;
 					for (const ShaderExport& shaderExport : shaderExports)
 					{
-						if (shaderExport.shader == m_renderGraph.hitGroups[index].closestHit.shader)
+						if (shaderExport.shader == m_renderGraph.hitGroups[HGIndex].closestHit.shader)
 						{
 							importName = &shaderExport.uniqueName;
 							break;
@@ -364,7 +405,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					const std::wstring* importName = nullptr;
 					for (const ShaderExport& shaderExport : shaderExports)
 					{
-						if (shaderExport.shader == m_renderGraph.hitGroups[index].intersection.shader)
+						if (shaderExport.shader == m_renderGraph.hitGroups[HGIndex].intersection.shader)
 						{
 							importName = &shaderExport.uniqueName;
 							break;
@@ -461,6 +502,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			}
 
 			// Make the miss shader table
+			if (countMiss > 0)
 			{
 				runtimeData.m_shaderTableMissSize = (unsigned int)(countMiss * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
 				runtimeData.m_shaderTableMissSize = ALIGN(D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, runtimeData.m_shaderTableMissSize);
@@ -486,6 +528,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			}
 
 			// Make the hit group table
+			if (countHitGroups > 0)
 			{
 				runtimeData.m_shaderTableHitGroupSize = (unsigned int)(countHitGroups * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
 				runtimeData.m_shaderTableHitGroupSize = ALIGN(D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, runtimeData.m_shaderTableHitGroupSize);
@@ -810,11 +853,13 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			dispatchDesc.RayGenerationShaderRecord.StartAddress = runtimeData.m_shaderTableRayGen->GetGPUVirtualAddress();
 			dispatchDesc.RayGenerationShaderRecord.SizeInBytes = D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT;
 
-			dispatchDesc.MissShaderTable.StartAddress = runtimeData.m_shaderTableMiss->GetGPUVirtualAddress();
+			if (runtimeData.m_shaderTableMiss)
+				dispatchDesc.MissShaderTable.StartAddress = runtimeData.m_shaderTableMiss->GetGPUVirtualAddress();
 			dispatchDesc.MissShaderTable.SizeInBytes = runtimeData.m_shaderTableMissSize;
 			dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 
-			dispatchDesc.HitGroupTable.StartAddress = runtimeData.m_shaderTableHitGroup->GetGPUVirtualAddress();
+			if (runtimeData.m_shaderTableHitGroup)
+				dispatchDesc.HitGroupTable.StartAddress = runtimeData.m_shaderTableHitGroup->GetGPUVirtualAddress();
 			dispatchDesc.HitGroupTable.SizeInBytes = runtimeData.m_shaderTableHitGroupSize;
 			dispatchDesc.HitGroupTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 

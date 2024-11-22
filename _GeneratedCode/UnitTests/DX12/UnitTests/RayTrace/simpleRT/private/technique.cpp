@@ -1050,10 +1050,12 @@ namespace simpleRT
             dispatchDesc.Depth = ((baseDispatchSize[2] + 0) * 1) / 1 + 0;
             dispatchDesc.RayGenerationShaderRecord.StartAddress = ContextInternal::rayShader_DoRT_shaderTableRayGen->GetGPUVirtualAddress();
             dispatchDesc.RayGenerationShaderRecord.SizeInBytes = ContextInternal::rayShader_DoRT_shaderTableRayGenSize;
-            dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_DoRT_shaderTableMiss->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_DoRT_shaderTableMiss)
+                dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_DoRT_shaderTableMiss->GetGPUVirtualAddress();
             dispatchDesc.MissShaderTable.SizeInBytes = ContextInternal::rayShader_DoRT_shaderTableMissSize;
             dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-            dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_DoRT_shaderTableHitGroup->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_DoRT_shaderTableHitGroup)
+                dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_DoRT_shaderTableHitGroup->GetGPUVirtualAddress();
             dispatchDesc.HitGroupTable.SizeInBytes = ContextInternal::rayShader_DoRT_shaderTableHitGroupSize;
             dispatchDesc.HitGroupTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 

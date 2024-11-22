@@ -1678,7 +1678,7 @@ struct SanitizeVisitor
     // The goal of this function is to take an arbitrary string s
     // and make a string which could be used as a C++ identifier
     // that is still reasonable as human readable.
-    void Sanitize(std::string& s)
+    static void Sanitize(std::string& s)
     {
         StringReplaceAll(s, " ", "_");
         StringReplaceAll(s, "+", "plus");
@@ -1708,6 +1708,12 @@ struct SanitizeVisitor
         if (!data.Enum.empty())
             Sanitize(data.dflt);
 
+        return true;
+    }
+
+    bool Visit(Struct& data, const std::string& path)
+    {
+        Sanitize(data.name);
         return true;
     }
 
@@ -1741,6 +1747,10 @@ struct SanitizeVisitor
     bool Visit(Shader& data, const std::string& path)
     {
         Sanitize(data.name, data.originalName);
+        for (std::string& s : data.Used_RTHitGroupIndex)
+            Sanitize(s);
+        for (std::string& s : data.Used_RTMissIndex)
+            Sanitize(s);
         return true;
     }
 
@@ -2422,6 +2432,59 @@ struct ShaderDataVisitor
         return true;
     }
 
+    bool GatherRayShadersUsed(Shader& shader, const std::string& path)
+    {
+        // Load the file
+        std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
+        std::vector<unsigned char> fileContents;
+        if (!LoadFile(fileName, fileContents))
+        {
+            Assert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            return false;
+        }
+        fileContents.push_back(0);
+
+        auto BeginsWith = [](const char* haystack, int& index, const char* needle) -> bool
+        {
+            size_t needleLen = strlen(needle);
+            if (_strnicmp(&haystack[index], needle, needleLen) != 0)
+                return false;
+            index += (int)needleLen;
+            return true;
+        };
+
+        // Gather RTHitGroupIndex and RTMissIndex uses
+        std::unordered_set<std::string> RTHitGroupIndexes, RTMissIndexes;
+        ForEachToken((char*)fileContents.data(),
+            [&](const std::string& tokenStr, const char* stringStart, const char* cursor)
+            {
+                const char* token = tokenStr.c_str();
+                int tokenIndex = 0;
+                if (!BeginsWith(token, tokenIndex, "/*$("))
+                    return;
+
+                if (BeginsWith(token, tokenIndex, "RTHitGroupIndex:"))
+                {
+                    std::string name = shader.scope + tokenStr.substr(tokenIndex, tokenStr.length() - (tokenIndex + 3));
+                    SanitizeVisitor::Sanitize(name);
+                    shader.Used_RTHitGroupIndex.push_back(name);
+                }
+                else if (BeginsWith(token, tokenIndex, "RTMissIndex:"))
+                {
+                    std::string name = shader.scope + tokenStr.substr(tokenIndex, tokenStr.length() - (tokenIndex + 3));
+                    SanitizeVisitor::Sanitize(name);
+                    shader.Used_RTMissIndex.push_back(name);
+                }
+                else
+                {
+                    return;
+                }
+            }
+        );
+
+        return true;
+    }
+
     bool HookupVariables(Shader& shader, const std::string& path)
     {
         if (!shader.copyFile)
@@ -2946,6 +3009,11 @@ struct ShaderDataVisitor
         shader.entryPointW = ToWideString(shader.entryPoint.c_str());
 
         if (!HookupVariables(shader, path))
+        {
+            return false;
+        }
+
+        if (!GatherRayShadersUsed(shader, path))
         {
             return false;
         }

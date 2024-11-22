@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "TwoRayGens",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "clipToWorld",
@@ -43,12 +43,18 @@
                 {
                     "name": "g_texture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "g_scene",
                     "type": "Buffer",
-                    "access": "RTScene"
+                    "access": "RTScene",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
@@ -75,20 +81,38 @@
                 {
                     "name": "g_texture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "g_scene",
                     "type": "Buffer",
-                    "access": "RTScene"
+                    "access": "RTScene",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "g_blueChannel",
+                    "type": "Texture",
+                    "access": "SRV"
                 }
             ]
         },
         {
-            "name": "TwoRayGensMiss2",
+            "name": "TwoRayGensMiss2A",
             "fileName": "TwoRayGens2.hlsl",
             "type": "RTMiss",
-            "entryPoint": "Miss2",
+            "entryPoint": "Miss2A",
+            "copyFile": false
+        },
+        {
+            "name": "TwoRayGensMiss2B",
+            "fileName": "TwoRayGens2.hlsl",
+            "type": "RTMiss",
+            "entryPoint": "Miss2B",
             "copyFile": false
         },
         {
@@ -238,6 +262,7 @@
                 ],
                 "linkProperties": [
                     {},
+                    {},
                     {}
                 ],
                 "connections": [
@@ -250,6 +275,11 @@
                         "srcPin": "g_scene",
                         "dstNode": "DoRT1",
                         "dstPin": "g_scene"
+                    },
+                    {
+                        "srcPin": "g_blueChannel",
+                        "dstNode": "BlueChannel",
+                        "dstPin": "resource"
                     }
                 ],
                 "shader": {
@@ -261,6 +291,16 @@
                     }
                 },
                 "rayPayloadSize": 12
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BlueChannel",
+                "editorPos": [
+                    250.0,
+                    82.0
+                ],
+                "visibility": "Imported"
             }
         }
     ],

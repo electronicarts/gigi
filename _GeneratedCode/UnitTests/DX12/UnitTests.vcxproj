@@ -584,6 +584,16 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\public\technique.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\shaders\TwoRayGens1.hlsl" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGens\shaders\TwoRayGens2.hlsl" />
+    <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\private\technique.cpp">
+      <ObjectFileName>$(IntDir)/UnitTests/RayTrace/TwoRayGensSubgraph/private/technique.cpp.obj</ObjectFileName>
+    </ClCompile>
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\private\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\all.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\imgui.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\pythoninterface.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\public\technique.h" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphA\TwoRayGens1.hlsl" />
+    <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\TwoRayGensSubgraph\shaders\TwoRayGensSubgraphB\TwoRayGens2.hlsl" />
     <ClCompile Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests\RayTrace\simpleRT\private\technique.cpp">
       <ObjectFileName>$(IntDir)/UnitTests/RayTrace/simpleRT/private/technique.cpp.obj</ObjectFileName>
     </ClCompile>

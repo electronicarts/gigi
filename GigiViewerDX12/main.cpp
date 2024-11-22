@@ -87,6 +87,8 @@
 
 #include "tinyexr/tinyexr.h"
 
+#include "renderdoc_app.h"
+
 #if USE_AGILITY_SDK()
 extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 613; }
 extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\bin\\"; }
@@ -167,6 +169,15 @@ static std::string g_meshInfoName = "";
 
 RecentFiles g_recentFiles("Software\\GigiViewer");
 RecentFiles g_recentPythonScripts("Software\\GigiViewerPy");
+
+// RenderDoc
+static HMODULE g_renderDocModule = NULL;
+static RENDERDOC_API_1_6_0* g_renderDocAPI = nullptr;
+static bool g_renderDocCaptureNextFrame = false;
+static bool g_renderDocIsCapturing = false;
+static bool g_renderDocLaunchUI = false;
+static bool g_renderDocEnabled = false;
+static int g_renderDocFrameCaptureCount = 1;
 
 void RenderFrame(bool forceExecute);
 
@@ -557,6 +568,79 @@ void Log(LogLevel level, const char* msg, ...)
         msg.log.msg = formattedMsg;
         g_previewClient.Send(msg);
     }
+}
+
+void TryLoadRenderDocAPI()
+{
+    if (g_renderDocAPI)
+    {
+        return;
+    }
+
+	if (g_renderDocModule = LoadLibraryA(".\\renderdoc.dll"))
+	{
+		pRENDERDOC_GetAPI RENDERDOC_GetAPI = reinterpret_cast<pRENDERDOC_GetAPI>(GetProcAddress(g_renderDocModule, "RENDERDOC_GetAPI"));
+		int result = RENDERDOC_GetAPI(eRENDERDOC_API_Version_1_6_0, reinterpret_cast<void**>(&g_renderDocAPI));
+
+		if (result != 1)
+		{
+			g_renderDocAPI = nullptr;
+			FreeLibrary(g_renderDocModule);
+            g_renderDocModule = NULL;
+
+            Log(LogLevel::Error, "Failed to get RenderDoc API!");
+		}
+        else
+        {
+            std::string filepathTemplate = (std::filesystem::current_path() / "gigi").string();
+            g_renderDocAPI->SetCaptureFilePathTemplate(filepathTemplate.c_str());
+            g_renderDocAPI->MaskOverlayBits(RENDERDOC_OverlayBits::eRENDERDOC_Overlay_None, 0);
+        }
+	}
+    else
+    {
+		Log(LogLevel::Error, "Failed to find renderdoc.dll!");
+    }
+}
+
+void TryBeginRenderDocCapture()
+{
+    if (!g_renderDocAPI)
+    {
+        return;
+    }
+
+	if (g_renderDocCaptureNextFrame)
+	{
+		g_renderDocIsCapturing = true;
+		g_renderDocAPI->StartFrameCapture(nullptr, nullptr);
+		g_renderDocFrameCaptureCount--;
+
+		if (g_renderDocFrameCaptureCount == 0)
+		{
+			g_renderDocCaptureNextFrame = false;
+		}
+	}
+}
+
+void TryEndRenderDocCapture()
+{
+    if (!g_renderDocIsCapturing)
+    {
+        return;
+    }
+
+    uint32_t result = g_renderDocAPI->EndFrameCapture(nullptr, nullptr);
+
+    if (g_renderDocLaunchUI)
+    {
+        if (g_renderDocAPI->ShowReplayUI() == 0)
+        {
+			g_renderDocAPI->LaunchReplayUI(1, nullptr);
+        }
+    }
+
+    g_renderDocIsCapturing = false;
 }
 
 GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResource_To_ImportedResourceDesc(const GGUserFile_ImportedResource& inDesc, const std::filesystem::path& renderGraphDir)
@@ -986,6 +1070,10 @@ bool LoadGGFile(const char* fileName, bool preserveState)
     g_startTime = context->Time;
     g_techniqueFrameIndex = 0;
 
+    OutputDebugStringA("Loaded GG File: ");
+    OutputDebugStringA(fileName);
+    OutputDebugStringA("\n");
+
     return true;
 }
 
@@ -1268,7 +1356,7 @@ void HandleMainMenu()
             ImGui::InputInt("Count", &g_executeTechniqueCount, 0);
         }
 
-        // Pix Capture
+        // Pix & RenderDoc Capture
         {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
             static int captureFrames = 1;
@@ -1300,6 +1388,14 @@ void HandleMainMenu()
                 else
                     waitingToOpenFileName = "";
             }
+
+			if (g_renderDocEnabled && ImGui::Button("RenderDoc Capture"))
+			{
+				g_renderDocCaptureNextFrame = true;
+                g_renderDocFrameCaptureCount = captureFrames;
+                g_renderDocLaunchUI = openCapture;
+			}
+
             ImGui::SetNextItemWidth(50);
             ImGui::InputInt("Frames", &captureFrames, 0);
             ImGui::Checkbox("Open Capture", &openCapture);
@@ -2755,7 +2851,7 @@ void ShowShaders()
         std::sort(scopesSorted.begin(), scopesSorted.end());
 
         // for each scope
-        for const std::string& scope: scopesSorted)
+        for (const std::string& scope: scopesSorted)
         {
             // get a sorted list of shaders in this scope
             std::vector<const Shader*> sortedShaders;
@@ -7019,6 +7115,8 @@ Python g_python;
 
 void RenderFrame(bool forceExecute)
 {
+	TryBeginRenderDocCapture();
+
     SynchronizeSystemVariables();
 
     // Start the Dear ImGui frame
@@ -7108,6 +7206,8 @@ void RenderFrame(bool forceExecute)
     g_pd3dCommandQueue->Signal(g_fence, fenceValue);
     g_fenceLastSignaledValue = fenceValue;
     frameCtx->FenceValue = fenceValue;
+
+    TryEndRenderDocCapture();
 }
 
 // Main code
@@ -7183,10 +7283,20 @@ int main(int argc, char** argv)
             g_GPUValidation = true;
             argIndex++;
         }
+        else if (!_stricmp(argv[argIndex], "-renderdoc"))
+        {
+            g_renderDocEnabled = true;
+            argIndex++;
+        }
         else
         {
             argIndex++;
         }
+    }
+
+    if (g_renderDocEnabled)
+    {
+        TryLoadRenderDocAPI();
     }
 
     PythonInit(&g_python, argc, argv, firstPythonArgv);
@@ -7491,6 +7601,11 @@ int main(int argc, char** argv)
     SaveGGUserFile();
 
     PythonShutdown();
+
+    if (g_renderDocEnabled)
+    {
+        FreeLibrary(g_renderDocModule);
+    }
 
     return mainRet;
 }

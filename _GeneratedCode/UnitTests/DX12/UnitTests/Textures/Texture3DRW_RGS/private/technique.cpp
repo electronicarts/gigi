@@ -90,41 +90,31 @@ namespace Texture3DRW_RGS
 
             D3D_SHADER_MACRO defines[] = {
                 { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "1" },
+                { "RT_HIT_GROUP_COUNT", "0" },
                 { nullptr, nullptr }
             };
 
             // Compile shaders
-            std::vector<unsigned char> shaderCode[3];
+            std::vector<unsigned char> shaderCode[1];
 
-            // Compile RTClosestHit : Texture3DRW_CHS_MISS.hlsl chsmain()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture3DRW_CHS_MISS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTRayGen : Texture3DRW_RGS.hlsl rgsmain()
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture3DRW_RGS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
-            // Compile RTMiss : Texture3DRW_CHS_MISS.hlsl missmain()
-            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture3DRW_CHS_MISS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
-            if (shaderCode[1].empty())
-                return false;
-
-            // Compile RTRayGen : Texture3DRW_RGS.hlsl rgsmain()
-            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture3DRW_RGS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
-            if (shaderCode[2].empty())
-                return false;
-
             // Make the state object
-            D3D12_STATE_SUBOBJECT subObjects[8];
+            D3D12_STATE_SUBOBJECT subObjects[5];
 
             D3D12_STATE_OBJECT_DESC soDesc;
             soDesc.Type = D3D12_STATE_OBJECT_TYPE_RAYTRACING_PIPELINE;
-            soDesc.NumSubobjects = 8;
+            soDesc.NumSubobjects = 5;
             soDesc.pSubobjects = subObjects;
 
-            // DXIL Library for RTClosestHit : Texture3DRW_CHS_MISS.hlsl chsmain()
+            // DXIL Library for RTRayGen : Texture3DRW_RGS.hlsl rgsmain()
             {
                 static D3D12_EXPORT_DESC exportDesc;
-                exportDesc.Name = L"chsmain_0";
-                exportDesc.ExportToRename = L"chsmain";
+                exportDesc.Name = L"rgsmain_0";
+                exportDesc.ExportToRename = L"rgsmain";
                 exportDesc.Flags = D3D12_EXPORT_FLAG_NONE;
 
                 static D3D12_DXIL_LIBRARY_DESC libDesc;
@@ -137,84 +127,35 @@ namespace Texture3DRW_RGS
                 subObjects[0].pDesc = &libDesc;
             }
 
-            // DXIL Library for RTMiss : Texture3DRW_CHS_MISS.hlsl missmain()
-            {
-                static D3D12_EXPORT_DESC exportDesc;
-                exportDesc.Name = L"missmain_1";
-                exportDesc.ExportToRename = L"missmain";
-                exportDesc.Flags = D3D12_EXPORT_FLAG_NONE;
-
-                static D3D12_DXIL_LIBRARY_DESC libDesc;
-                libDesc.DXILLibrary.BytecodeLength = shaderCode[1].size();
-                libDesc.DXILLibrary.pShaderBytecode = shaderCode[1].data();
-                libDesc.NumExports = 1;
-                libDesc.pExports = &exportDesc;
-
-                subObjects[1].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-                subObjects[1].pDesc = &libDesc;
-            }
-
-            // DXIL Library for RTRayGen : Texture3DRW_RGS.hlsl rgsmain()
-            {
-                static D3D12_EXPORT_DESC exportDesc;
-                exportDesc.Name = L"rgsmain_2";
-                exportDesc.ExportToRename = L"rgsmain";
-                exportDesc.Flags = D3D12_EXPORT_FLAG_NONE;
-
-                static D3D12_DXIL_LIBRARY_DESC libDesc;
-                libDesc.DXILLibrary.BytecodeLength = shaderCode[2].size();
-                libDesc.DXILLibrary.pShaderBytecode = shaderCode[2].data();
-                libDesc.NumExports = 1;
-                libDesc.pExports = &exportDesc;
-
-                subObjects[2].Type = D3D12_STATE_SUBOBJECT_TYPE_DXIL_LIBRARY;
-                subObjects[2].pDesc = &libDesc;
-            }
-
-            // Make the hit group sub objects
-            D3D12_HIT_GROUP_DESC hitGroupDescs[1];
-
-            // Hit group: HitGroup0
-            {
-                D3D12_HIT_GROUP_DESC& hitGroupDesc = hitGroupDescs[0];
-                hitGroupDesc.HitGroupExport = L"hitgroup0";
-                hitGroupDesc.AnyHitShaderImport = nullptr;
-                hitGroupDesc.ClosestHitShaderImport = L"chsmain_0";
-                hitGroupDesc.IntersectionShaderImport = nullptr;
-                hitGroupDesc.Type = D3D12_HIT_GROUP_TYPE_TRIANGLES;
-                subObjects[3].Type = D3D12_STATE_SUBOBJECT_TYPE_HIT_GROUP;
-                subObjects[3].pDesc = &hitGroupDesc;
-            }
-
             // Payload
             D3D12_RAYTRACING_SHADER_CONFIG payloadDesc;
             payloadDesc.MaxPayloadSizeInBytes = 64;
             payloadDesc.MaxAttributeSizeInBytes = D3D12_RAYTRACING_MAX_ATTRIBUTE_SIZE_IN_BYTES;
 
-            subObjects[4].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
-            subObjects[4].pDesc = &payloadDesc;
+            subObjects[1].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_SHADER_CONFIG;
+            subObjects[1].pDesc = &payloadDesc;
 
             // Associate payload with shaders
-            const WCHAR* shaderExports[] = { L"chsmain_0", L"missmain_1", L"rgsmain_2" };
+            const WCHAR* shaderExports[] = { L"rgsmain_0" };
 
             D3D12_SUBOBJECT_TO_EXPORTS_ASSOCIATION shaderPayloadAssociation = {};
-            shaderPayloadAssociation.NumExports = 3;
+            shaderPayloadAssociation.NumExports = 1;
             shaderPayloadAssociation.pExports = shaderExports;
-            shaderPayloadAssociation.pSubobjectToAssociate = &subObjects[4];
+            shaderPayloadAssociation.pSubobjectToAssociate = &subObjects[1];
 
-            subObjects[5].Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
-            subObjects[5].pDesc = &shaderPayloadAssociation;
+            subObjects[2].Type = D3D12_STATE_SUBOBJECT_TYPE_SUBOBJECT_TO_EXPORTS_ASSOCIATION;
+            subObjects[2].pDesc = &shaderPayloadAssociation;
 
             // Pipeline Config
             D3D12_RAYTRACING_PIPELINE_CONFIG pipelineConfig;
             pipelineConfig.MaxTraceRecursionDepth = 3;
 
-            subObjects[6].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
-            subObjects[6].pDesc = &pipelineConfig;
+            subObjects[3].Type = D3D12_STATE_SUBOBJECT_TYPE_RAYTRACING_PIPELINE_CONFIG;
+            subObjects[3].pDesc = &pipelineConfig;
 
             // Global Root Signature
-            subObjects[7].Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
-            subObjects[7].pDesc = &ContextInternal::rayShader_RW_rootSig;
+            subObjects[4].Type = D3D12_STATE_SUBOBJECT_TYPE_GLOBAL_ROOT_SIGNATURE;
+            subObjects[4].pDesc = &ContextInternal::rayShader_RW_rootSig;
             if (FAILED(dxrDevice->CreateStateObject(&soDesc, IID_PPV_ARGS(&ContextInternal::rayShader_RW_rtso))))
                 return false;
 
@@ -236,40 +177,10 @@ namespace Texture3DRW_RGS
                     D3D12_RANGE readRange = { 0, 0 };
                     ContextInternal::rayShader_RW_shaderTableRayGen->Map(0, &readRange, (void**)&shaderTableBytes);
 
-                    memcpy(shaderTableBytes, soprops->GetShaderIdentifier(L"rgsmain_2"), D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
+                    memcpy(shaderTableBytes, soprops->GetShaderIdentifier(L"rgsmain_0"), D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
                     shaderTableBytes += D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
 
                     ContextInternal::rayShader_RW_shaderTableRayGen->Unmap(0, nullptr);
-                }
-
-                // make the miss shader table and fill it out
-                {
-                    ContextInternal::rayShader_RW_shaderTableMissSize = ALIGN(D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, (unsigned int)(1 * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT));
-                    ContextInternal::rayShader_RW_shaderTableMiss = DX12Utils::CreateBuffer(device, ContextInternal::rayShader_RW_shaderTableMissSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD, (c_debugNames ? L"RW shader table miss" : nullptr), nullptr);
-
-                    unsigned char* shaderTableBytes = nullptr;
-                    D3D12_RANGE readRange = { 0, 0 };
-                    ContextInternal::rayShader_RW_shaderTableMiss->Map(0, &readRange, (void**)&shaderTableBytes);
-
-                    memcpy(shaderTableBytes, soprops->GetShaderIdentifier(L"missmain_1"), D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
-                    shaderTableBytes += D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
-
-                    ContextInternal::rayShader_RW_shaderTableMiss->Unmap(0, nullptr);
-                }
-
-                // make the hit group shader table and fill it out
-                {
-                    ContextInternal::rayShader_RW_shaderTableHitGroupSize = ALIGN(D3D12_RAYTRACING_SHADER_TABLE_BYTE_ALIGNMENT, (unsigned int)(1 * D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT));
-                    ContextInternal::rayShader_RW_shaderTableHitGroup = DX12Utils::CreateBuffer(device, ContextInternal::rayShader_RW_shaderTableHitGroupSize, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD, (c_debugNames ? L"RW shader table hit group" : nullptr), nullptr);
-
-                    unsigned char* shaderTableBytes = nullptr;
-                    D3D12_RANGE readRange = { 0, 0 };
-                    ContextInternal::rayShader_RW_shaderTableHitGroup->Map(0, &readRange, (void**)&shaderTableBytes);
-
-                    memcpy(shaderTableBytes, soprops->GetShaderIdentifier(L"hitgroup0"), D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT);
-                    shaderTableBytes += D3D12_RAYTRACING_SHADER_RECORD_BYTE_ALIGNMENT;
-
-                    ContextInternal::rayShader_RW_shaderTableHitGroup->Unmap(0, nullptr);
                 }
 
                 soprops->Release();
@@ -1060,10 +971,12 @@ namespace Texture3DRW_RGS
             dispatchDesc.Depth = ((baseDispatchSize[2] + 0) * 1) / 1 + 0;
             dispatchDesc.RayGenerationShaderRecord.StartAddress = ContextInternal::rayShader_RW_shaderTableRayGen->GetGPUVirtualAddress();
             dispatchDesc.RayGenerationShaderRecord.SizeInBytes = ContextInternal::rayShader_RW_shaderTableRayGenSize;
-            dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_RW_shaderTableMiss->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_RW_shaderTableMiss)
+                dispatchDesc.MissShaderTable.StartAddress = ContextInternal::rayShader_RW_shaderTableMiss->GetGPUVirtualAddress();
             dispatchDesc.MissShaderTable.SizeInBytes = ContextInternal::rayShader_RW_shaderTableMissSize;
             dispatchDesc.MissShaderTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
-            dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_RW_shaderTableHitGroup->GetGPUVirtualAddress();
+            if (ContextInternal::rayShader_RW_shaderTableHitGroup)
+                dispatchDesc.HitGroupTable.StartAddress = ContextInternal::rayShader_RW_shaderTableHitGroup->GetGPUVirtualAddress();
             dispatchDesc.HitGroupTable.SizeInBytes = ContextInternal::rayShader_RW_shaderTableHitGroupSize;
             dispatchDesc.HitGroupTable.StrideInBytes = D3D12_SHADER_IDENTIFIER_SIZE_IN_BYTES;
 

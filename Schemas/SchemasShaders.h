@@ -365,4 +365,7 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 
     STRUCT_FIELD(std::string, originalName, "", "The name before renames and sanitization", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, scope, "", "The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_DYNAMIC_ARRAY(std::string, Used_RTHitGroupIndex, "All RTHitGroupIndex names used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_DYNAMIC_ARRAY(std::string, Used_RTMissIndex, "All RTMissIndex names used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
