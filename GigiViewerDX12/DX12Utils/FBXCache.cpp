@@ -178,84 +178,77 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 
 					newVertex.materialID = importMesh.materialID;
 				}
+			}
+		}
+	}
 
-				ofbx::Vec2Attributes uvs = geom.getUVs(0);
-				if (!uvs.values)
-					continue;
+	// Calculate tangents and bitangents, using uv0
+	{
+		std::vector<Vec3> tangents(geometry.size(), Vec3{ 0.0f, 0.0f, 0.0f });
+		std::vector<Vec3> bitangents(geometry.size(), Vec3{ 0.0f, 0.0f, 0.0f });
+		for (size_t vertexIndex = 0; vertexIndex < geometry.size(); vertexIndex += 3)
+		{
+			FlattenedVertex& v1 = geometry[vertexIndex + 0];
+			FlattenedVertex& v2 = geometry[vertexIndex + 1];
+			FlattenedVertex& v3 = geometry[vertexIndex + 2];
 
-				// Calculate tangents and bitangents, using uv0
-				std::vector<Vec3> tangents(indexCount, Vec3{ 0.0f, 0.0f, 0.0f });
-				std::vector<Vec3> bitangents(indexCount, Vec3{ 0.0f, 0.0f, 0.0f });
-				for (int i = 0; i < static_cast<int>(indexCount); i += 3)
-				{
-					int vertexIndex1 = tmpTriIndices[i + 0];
-					int vertexIndex2 = tmpTriIndices[i + 1];
-					int vertexIndex3 = tmpTriIndices[i + 2];
+			Vec3 pos1 = v1.position;
+			Vec3 pos2 = v2.position;
+			Vec3 pos3 = v3.position;
 
-					int vi1 = i + 0;
-					int vi2 = i + 1;
-					int vi3 = i + 2;
+			Vec2 uv1 = v1.uvs[0];
+			Vec2 uv2 = v2.uvs[0];
+			Vec2 uv3 = v3.uvs[0];
 
-					Vec3 pos1 = ToVec3(positions.get(vertexIndex1));
-					Vec3 pos2 = ToVec3(positions.get(vertexIndex2));
-					Vec3 pos3 = ToVec3(positions.get(vertexIndex3));
+			Vec3 pos21 = pos2 - pos1;
+			Vec3 pos31 = pos3 - pos1;
 
-					Vec2 uv1 = ToVec2(uvs.get(vertexIndex1));
-					Vec2 uv2 = ToVec2(uvs.get(vertexIndex2));
-					Vec2 uv3 = ToVec2(uvs.get(vertexIndex3));
+			Vec2 uv21 = uv2 - uv1;
+			Vec2 uv31 = uv3 - uv1;
 
-					Vec3 pos21 = pos2 - pos1;
-					Vec3 pos31 = pos3 - pos1;
+			float r = 1.0f / (uv21[0] * uv31[1] - uv21[1] * uv31[0]);
 
-					Vec2 uv21 = uv2 - uv1;
-					Vec2 uv31 = uv3 - uv1;
+			if (std::isfinite(r))
+			{
+				Vec3 u = Vec3{ (uv31[1] * pos21[0] - uv21[1] * pos31[0]) * r, (uv31[1] * pos21[1] - uv21[1] * pos31[1]) * r, (uv31[1] * pos21[2] - uv21[1] * pos31[2]) * r };
+				Vec3 v = Vec3{ (uv21[0] * pos31[0] - uv31[0] * pos21[0]) * r, (uv21[0] * pos31[1] - uv31[0] * pos21[1]) * r, (uv21[0] * pos31[2] - uv31[0] * pos21[2]) * r };
 
-					float r = 1.0f / (uv21[0] * uv31[1] - uv21[1] * uv31[0]);
+				tangents[vertexIndex + 0] += u;
+				tangents[vertexIndex + 1] += u;
+				tangents[vertexIndex + 2] += u;
 
-					if (std::isfinite(r))
-					{
-						Vec3 u = Vec3{ (uv31[1] * pos21[0] - uv21[1] * pos31[0]) * r, (uv31[1] * pos21[1] - uv21[1] * pos31[1]) * r, (uv31[1] * pos21[2] - uv21[1] * pos31[2]) * r };
-						Vec3 v = Vec3{ (uv21[0] * pos31[0] - uv31[0] * pos21[0]) * r, (uv21[0] * pos31[1] - uv31[0] * pos21[1]) * r, (uv21[0] * pos31[2] - uv31[0] * pos21[2]) * r };
+				bitangents[vertexIndex + 0] += v;
+				bitangents[vertexIndex + 1] += v;
+				bitangents[vertexIndex + 2] += v;
+			}
+		}
 
-						tangents[vi1] += u;
-						tangents[vi2] += u;
-						tangents[vi3] += u;
+		for (size_t vertexIndex = 0; vertexIndex < geometry.size(); ++vertexIndex)
+		{
+			FlattenedVertex& v = geometry[vertexIndex];
 
-						bitangents[vi1] += v;
-						bitangents[vi2] += v;
-						bitangents[vi3] += v;
-					}
-				}
+			const Vec3& normal = v.normal;
+			const Vec3& tangent = tangents[vertexIndex];
+			const Vec3& bitangent = bitangents[vertexIndex];
 
-				for (size_t indexIndex = 0; indexIndex < indexCount; ++indexIndex)
-				{
-					int vi = tmpTriIndices[indexIndex];
+			Vec3 tangentOut = tangent - normal * Dot(normal, tangent);
+			if (Dot(tangentOut, tangentOut) < 0.00001f)
+				tangentOut = tangent;
 
-					Vec3 normal = ToVec3(normals.get(vi));
-
-					Vec3& tangent = tangents[indexIndex];
-					Vec3& bitangent = bitangents[indexIndex];
-
-					Vec3 tangentOut = tangent - normal * Dot(normal, tangent);
-					if (Dot(tangentOut, tangentOut) < 0.00001f)
-						tangentOut = tangent;
-
-					if (Dot(tangentOut, tangentOut) > 0.0f)
-					{
-						tangentOut = Normalize(tangentOut);
-						geometry[geometryIndexStart + indexIndex].tangent[0] = tangentOut[0];
-						geometry[geometryIndexStart + indexIndex].tangent[1] = tangentOut[1];
-						geometry[geometryIndexStart + indexIndex].tangent[2] = tangentOut[2];
-						geometry[geometryIndexStart + indexIndex].tangent[3] = (Dot(Cross(normal, tangent), bitangent) < 0.0f) ? 0.0f : 1.0f;
-					}
-					else
-					{
-						geometry[geometryIndexStart + indexIndex].tangent[0] = 1.0f;
-						geometry[geometryIndexStart + indexIndex].tangent[1] = 0.0f;
-						geometry[geometryIndexStart + indexIndex].tangent[2] = 0.0f;
-						geometry[geometryIndexStart + indexIndex].tangent[3] = 1.0f;
-					}
-				}
+			if (Dot(tangentOut, tangentOut) > 0.0f)
+			{
+				tangentOut = Normalize(tangentOut);
+				v.tangent[0] = tangentOut[0];
+				v.tangent[1] = tangentOut[1];
+				v.tangent[2] = tangentOut[2];
+				v.tangent[3] = (Dot(Cross(normal, tangent), bitangent) < 0.0f) ? 0.0f : 1.0f;
+			}
+			else
+			{
+				v.tangent[0] = 1.0f;
+				v.tangent[1] = 0.0f;
+				v.tangent[2] = 0.0f;
+				v.tangent[3] = 1.0f;
 			}
 		}
 	}

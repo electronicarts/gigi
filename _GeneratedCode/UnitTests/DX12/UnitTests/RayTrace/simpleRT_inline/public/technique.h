@@ -210,8 +210,8 @@ namespace simpleRT_inline
 
     struct Struct_VertexBuffer
     {
-        float3 Color = {};
-        float3 Position = {};
-        float3 Normal = {};
+        float3 Color = {0.0f,0.0f,0.0f};
+        float3 Position = {0.0f,0.0f,0.0f};
+        float3 Normal = {0.0f,0.0f,0.0f};
     };
 };

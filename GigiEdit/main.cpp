@@ -542,7 +542,7 @@ struct Example :
     void UpdateWindowTitle()
     {
         std::string newWindowTitle;
-        newWindowTitle = "GigiEdit (v" GIGI_VERSION() " " BUILD_FLAVOR() ") - ";
+        newWindowTitle = "GigiEdit (v" GIGI_VERSION_WITH_BUILD_NUMBER() " " BUILD_FLAVOR() ") - ";
         if (!g_renderGraphFileName.empty())
             newWindowTitle += g_renderGraphFileName;
         else

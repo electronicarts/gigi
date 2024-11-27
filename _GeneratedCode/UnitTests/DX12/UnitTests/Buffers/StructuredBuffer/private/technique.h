@@ -50,7 +50,7 @@ namespace StructuredBuffer
         {
             float frameDeltaTime = 0.000000f;
             int frameIndex = 0;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         // Variables

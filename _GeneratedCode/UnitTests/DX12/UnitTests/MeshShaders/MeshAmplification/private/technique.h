@@ -31,7 +31,7 @@ namespace MeshAmplification
         struct Struct__MeshShaderCB
         {
             float AmplificationSpacing = 2.000000f;
-            float3 _padding0 = {};  // Padding
+            float3 _padding0 = {0.0f,0.0f,0.0f};  // Padding
             float4x4 ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
         };
 

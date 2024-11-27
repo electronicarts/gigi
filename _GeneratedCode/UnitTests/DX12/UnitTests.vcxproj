@@ -93,9 +93,11 @@
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>Disabled</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;CMAKE_INTDIR="Debug"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -131,12 +133,15 @@
     <ClCompile>
       <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="Release"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -174,12 +179,15 @@
     <ClCompile>
       <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>MinSpace</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="MinSizeRel"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -217,13 +225,16 @@
     <ClCompile>
       <AdditionalIncludeDirectories>D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\imgui;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\AgilitySDK\include;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\DX12Utils\tinyexr\deps\miniz;D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\.\WinPixEventRuntime.1.0.230302001\Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
+      <BasicRuntimeChecks>Default</BasicRuntimeChecks>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <ExceptionHandling>Sync</ExceptionHandling>
       <InlineFunctionExpansion>OnlyExplicitInline</InlineFunctionExpansion>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <MinimalRebuild></MinimalRebuild>
       <Optimization>MaxSpeed</Optimization>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <SupportJustMyCode></SupportJustMyCode>
       <UseFullPaths>false</UseFullPaths>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;CMAKE_INTDIR="RelWithDebInfo"</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
@@ -1001,6 +1012,7 @@
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\tweakme.h" />
     <ClInclude Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\spdlog\version.h" />
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

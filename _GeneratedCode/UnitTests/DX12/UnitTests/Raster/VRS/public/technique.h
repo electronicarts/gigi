@@ -213,6 +213,6 @@ namespace VRS
     struct Struct_VertexFormat
     {
         float3 Position = {0, 0, 0};
-        float3 Normal = {};
+        float3 Normal = {0.0f,0.0f,0.0f};
     };
 };

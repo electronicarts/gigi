@@ -13,6 +13,48 @@
 #include <algorithm>
 #include "GigiCompilerLib/Utils.h"
 
+inline void ZeroDfltIfEmpty(std::string& dflt, DataFieldType type, const std::string& path)
+{
+    if (dflt.empty())
+    {
+        switch (type)
+        {
+            case DataFieldType::Int: dflt = "0"; break;
+            case DataFieldType::Int2: dflt = "0,0"; break;
+            case DataFieldType::Int3: dflt = "0,0,0"; break;
+            case DataFieldType::Int4: dflt = "0,0,0,0"; break;
+            case DataFieldType::Uint: dflt = "0"; break;
+            case DataFieldType::Uint2: dflt = "0,0"; break;
+            case DataFieldType::Uint3: dflt = "0,0,0"; break;
+            case DataFieldType::Uint4: dflt = "0,0,0,0"; break;
+            case DataFieldType::Float: dflt = "0.0f"; break;
+            case DataFieldType::Float2: dflt = "0.0f,0.0f"; break;
+            case DataFieldType::Float3: dflt = "0.0f,0.0f,0.0f"; break;
+            case DataFieldType::Float4: dflt = "0.0f,0.0f,0.0f,0.0f"; break;
+            case DataFieldType::Bool: dflt = "false"; break;
+            case DataFieldType::Float4x4: dflt = "0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f"; break;
+            case DataFieldType::Uint_16: dflt = "0"; break;
+            default:
+            {
+                Assert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(type), type, path.c_str());
+                break;
+            }
+        }
+    }
+}
+
+inline int GetEnumIndex(const RenderGraph& renderGraph, const char* scope, const char* name)
+{
+    for (size_t i = 0; i < renderGraph.enums.size(); ++i)
+    {
+        const Enum& e = renderGraph.enums[i];
+        if (e.scope == scope && e.originalName == name)
+            return (int)i;
+    }
+
+    return -1;
+}
+
 struct DfltFixupVisitor
 {
     template <typename TDATA>
@@ -1514,33 +1556,9 @@ struct ValidationVisitor
             return false;
         }
 
-        // Every variable needs a default!
-        if (variable.dflt.empty())
-        {
-            switch (variable.type)
-            {
-                case DataFieldType::Int: variable.dflt = "0"; break;
-                case DataFieldType::Int2: variable.dflt = "0,0"; break;
-                case DataFieldType::Int3: variable.dflt = "0,0,0"; break;
-                case DataFieldType::Int4: variable.dflt = "0,0,0,0"; break;
-                case DataFieldType::Uint: variable.dflt = "0"; break;
-                case DataFieldType::Uint2: variable.dflt = "0,0"; break;
-                case DataFieldType::Uint3: variable.dflt = "0,0,0"; break;
-                case DataFieldType::Uint4: variable.dflt = "0,0,0,0"; break;
-                case DataFieldType::Float: variable.dflt = "0.0f"; break;
-                case DataFieldType::Float2: variable.dflt = "0.0f,0.0f"; break;
-                case DataFieldType::Float3: variable.dflt = "0.0f,0.0f,0.0f"; break;
-                case DataFieldType::Float4: variable.dflt = "0.0f,0.0f,0.0f,0.0f"; break;
-                case DataFieldType::Bool: variable.dflt = "false"; break;
-                case DataFieldType::Float4x4: variable.dflt = "0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f"; break;
-                case DataFieldType::Uint_16: variable.dflt = "0"; break;
-                default:
-                {
-                    Assert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(variable.type), variable.type, path.c_str());
-                    break;
-                }
-            }
-        }
+        // Every variable needs a default
+        if (variable.Enum.empty())
+            ZeroDfltIfEmpty(variable.dflt, variable.type, path);
 
         // Enum validation
         if (!variable.Enum.empty())
@@ -1558,6 +1576,13 @@ struct ValidationVisitor
                 if (e.scope == variable.scope && e.originalName == variable.Enum)
                 {
                     variable.enumIndex = enumIndex;
+
+                    if (variable.dflt.empty())
+                    {
+                        Assert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for Variable \'%s\' but the enum has no items!\nIn %s\n", variable.name.c_str(), path.c_str());
+                        variable.dflt = renderGraph.enums[enumIndex].items[0].label;
+                    }
+
                     return true;
                 }
             }
@@ -1573,6 +1598,10 @@ struct ValidationVisitor
     {
         for (StructField& field : s.fields)
         {
+            // Every field needs a default
+            if (field.Enum.empty())
+                ZeroDfltIfEmpty(field.dflt, field.type, path);
+
             if (field.Enum.empty())
                 continue;
 
@@ -1589,6 +1618,11 @@ struct ValidationVisitor
                 if (e.scope == s.scope && e.originalName == field.Enum)
                 {
                     field.enumIndex = enumIndex;
+                    if (field.dflt.empty())
+                    {
+                        Assert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for struct field \'%s\' but the enum has no items!\nIn %s\n", field.name.c_str(), path.c_str());
+                        field.dflt = renderGraph.enums[enumIndex].items[0].label;
+                    }
                     break;
                 }
             }
@@ -2850,6 +2884,24 @@ struct ShaderDataVisitor
                 newField.dflt = variable.dflt;
                 newField.Enum = variable.Enum;
                 newField.comment = variable.comment;
+
+                // make sure there is a dflt
+                if (newField.dflt.empty())
+                {
+                    if (newField.Enum.empty())
+                    {
+                        ZeroDfltIfEmpty(newField.dflt, newField.type, path);
+                    }
+                    else
+                    {
+                        int enumIndex = GetEnumIndex(renderGraph, variable.scope.c_str(), variable.Enum.c_str());
+                        Assert(enumIndex >= 0, "Could not find enum \"%s\"\nIn %s\n", variable.Enum.c_str(), path.c_str());
+                        Assert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for field \'%s\' but the enum has no items!\nIn %s\n", newField.name.c_str(), path.c_str());
+                        newField.dflt = renderGraph.enums[enumIndex].items[0].label;
+                        newField.enumIndex = enumIndex;
+                    }
+                }
+
                 newStruct.fields.push_back(newField);
             }
 

@@ -52,7 +52,7 @@ namespace YesVertexStruct_YesIndex_NoInstance
         struct Struct__PixelShaderCB
         {
             int viewMode = (int)ViewMode::UV;
-            float3 _padding0 = {};  // Padding
+            float3 _padding0 = {0.0f,0.0f,0.0f};  // Padding
         };
 
         Struct__VertexShaderCB constantBuffer__VertexShaderCB_cpu;

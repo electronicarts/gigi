@@ -41,7 +41,7 @@ namespace Mips_DrawCall
         struct Struct__PixelShaderSphereCB
         {
             unsigned int UseMips = true;
-            float3 _padding0 = {};  // Padding
+            float3 _padding0 = {0.0f,0.0f,0.0f};  // Padding
         };
 
         ID3D12Resource* texture_Color_Buffer = nullptr;

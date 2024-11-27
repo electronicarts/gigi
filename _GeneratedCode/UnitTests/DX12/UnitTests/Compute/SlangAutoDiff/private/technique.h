@@ -31,20 +31,20 @@ namespace SlangAutoDiff
         struct Struct__InitCB
         {
             int FrameIndex = 0;
-            float3 _padding0 = {};  // Padding
-            float4 MouseState = {};
-            float4 MouseStateLastFrame = {};
+            float3 _padding0 = {0.0f,0.0f,0.0f};  // Padding
+            float4 MouseState = {0.0f,0.0f,0.0f,0.0f};
+            float4 MouseStateLastFrame = {0.0f,0.0f,0.0f,0.0f};
             int NumGaussians = 10;
-            float3 iResolution = {};
+            float3 iResolution = {0.0f,0.0f,0.0f};
             unsigned int initialized = false;
-            float3 _padding1 = {};  // Padding
+            float3 _padding1 = {0.0f,0.0f,0.0f};  // Padding
         };
 
         struct Struct__RenderCB
         {
             int NumGaussians = 10;
             unsigned int QuantizeDisplay = false;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         struct Struct__DescendCB

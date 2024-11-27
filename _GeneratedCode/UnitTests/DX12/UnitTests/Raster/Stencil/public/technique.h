@@ -212,8 +212,8 @@ namespace Stencil
 
     struct Struct_VertexBuffer
     {
-        float3 pos = {};
-        float3 normal = {};
-        float2 uv = {};
+        float3 pos = {0.0f,0.0f,0.0f};
+        float3 normal = {0.0f,0.0f,0.0f};
+        float2 uv = {0.0f,0.0f};
     };
 };

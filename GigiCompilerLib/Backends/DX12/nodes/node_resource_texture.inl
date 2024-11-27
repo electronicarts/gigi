@@ -3,6 +3,14 @@
 //        Copyright (c) 2024 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
+static std::string SanitizeFilenameForCpp(const std::string& fileName)
+{
+    std::string ret = fileName;
+    StringReplaceAll(ret, "\\\\", "\\"); // This is a bit ugly, but trying to prevent double escaping
+    StringReplaceAll(ret, "\\", "\\\\");
+    return ret;
+}
+
 static void MakeStringReplacementForNode(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, const RenderGraphNode_Resource_Texture& node)
 {
     if (!ResourceNodeIsUsed(node))
@@ -139,15 +147,15 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                     "\n                else if (formatInfo.channelType == DX12Utils::DXGI_FORMAT_Info::ChannelType::_float)"
                     "\n                    desiredType = DX12Utils::TextureCache::Type::F32;"
                     "\n                else"
-                    "\n                    Context::LogFn(LogLevel::Error, \"Unhandled channel type for image: " << node.loadFileName << "\");"
+                    "\n                    Context::LogFn(LogLevel::Error, \"Unhandled channel type for image: " << SanitizeFilenameForCpp(node.loadFileName) << "\");"
                     "\n"
                     "\n                char loadedTextureFileName[1024];"
-                    "\n                sprintf_s(loadedTextureFileName, \"%lsassets/" << node.loadFileName << "\", s_techniqueLocation.c_str());"
+                    "\n                sprintf_s(loadedTextureFileName, \"%lsassets/" << SanitizeFilenameForCpp(node.loadFileName) << "\", s_techniqueLocation.c_str());"
                     "\n"
                     "\n                loadedTextureSlices.push_back(DX12Utils::TextureCache::GetAs(loadedTextureFileName, " << (node.loadFileNameAsSRGB ? "true" : "false") << ", desiredType, formatInfo.sRGB, formatInfo.channelCount));"
                     "\n                DX12Utils::TextureCache::Texture& loadedTexture = loadedTextureSlices[0];"
                     "\n                if(!loadedTexture.Valid())"
-                    "\n                    Context::LogFn(LogLevel::Error, \"Could not load image: " << node.loadFileName << "\");"
+                    "\n                    Context::LogFn(LogLevel::Error, \"Could not load image: " << SanitizeFilenameForCpp(node.loadFileName) << "\");"
                     "\n"
                     "\n                unsigned int size[3] = { (unsigned int)loadedTexture.width, (unsigned int)loadedTexture.height, 1 };"
                     ;
@@ -187,13 +195,13 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         "\n                        \"Back\""
                         "\n                    };"
                         "\n"
-                        "\n                    sprintf_s(indexedFileName, \"%lsassets/" << node.loadFileName << "\", s_techniqueLocation.c_str(), c_cubeMapNames[textureIndex]);"
+                        "\n                    sprintf_s(indexedFileName, \"%lsassets/" << SanitizeFilenameForCpp(node.loadFileName) << "\", s_techniqueLocation.c_str(), c_cubeMapNames[textureIndex]);"
                         ;
                 }
                 else
                 {
                     stringReplacementMap["/*$(EnsureResourcesCreated)*/"] <<
-                        "\n                    sprintf_s(indexedFileName, \"%lsassets/" << node.loadFileName << "\", s_techniqueLocation.c_str(), textureIndex);"
+                        "\n                    sprintf_s(indexedFileName, \"%lsassets/" << SanitizeFilenameForCpp(node.loadFileName) << "\", s_techniqueLocation.c_str(), textureIndex);"
                         ;
                 }
 

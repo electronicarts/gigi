@@ -198,7 +198,7 @@ bool GigiInterpreterPreviewWindowDX12::MakeAccelerationStructures(const RenderGr
 	// allocate a scratch buffer for creating our BLAS and TLAS
 	ID3D12Resource* scratch = CreateBuffer(
 		m_device,
-		(unsigned int)ALIGN(D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT, max(topLevelPrebuildInfo.ResultDataMaxSizeInBytes, bottomLevelPrebuildInfo.ResultDataMaxSizeInBytes)),
+		(unsigned int)ALIGN(D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BYTE_ALIGNMENT, max(topLevelPrebuildInfo.ScratchDataSizeInBytes, bottomLevelPrebuildInfo.ScratchDataSizeInBytes)),
 		D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
 		D3D12_RESOURCE_STATE_COMMON,
 		D3D12_HEAP_TYPE_DEFAULT,

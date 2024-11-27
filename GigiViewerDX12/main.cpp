@@ -90,7 +90,7 @@
 #include "renderdoc_app.h"
 
 #if USE_AGILITY_SDK()
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 613; }
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
 extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\bin\\"; }
 #endif
 
@@ -110,8 +110,8 @@ static const uint64_t ImGuiShaderFlag_Signed = 1 << 9;
 
 struct FrameContext
 {
-    ID3D12CommandAllocator* CommandAllocator;
-    UINT64                  FenceValue;
+    ID3D12CommandAllocator* CommandAllocator = nullptr;
+    UINT64                  FenceValue = 0;
 };
 
 // Data
@@ -177,6 +177,7 @@ static bool g_renderDocCaptureNextFrame = false;
 static bool g_renderDocIsCapturing = false;
 static bool g_renderDocLaunchUI = false;
 static bool g_renderDocEnabled = false;
+static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
 
 void RenderFrame(bool forceExecute);
@@ -1104,7 +1105,7 @@ void OnServerMessage(const PreviewMsg_Ping& msg)
 void UpdateWindowTitle()
 {
     std::string newWindowTitle;
-    newWindowTitle = "Gigi Viewer (v" GIGI_VERSION() " DX12 " BUILD_FLAVOR ")";
+    newWindowTitle = "Gigi Viewer (v" GIGI_VERSION_WITH_BUILD_NUMBER() " DX12 " BUILD_FLAVOR ")";
     if (!g_renderGraphFileName.empty())
     {
         newWindowTitle += " - ";
@@ -1357,12 +1358,13 @@ void HandleMainMenu()
         }
 
         // Pix & RenderDoc Capture
+        if (g_pixCaptureEnabled || g_renderDocEnabled) // TODO: test with them both off
         {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
             static int captureFrames = 1;
             static std::string waitingToOpenFileName = "";
             static bool openCapture = true;
-            if (ImGui::Button("Pix Capture"))
+            if (g_pixCaptureEnabled && ImGui::Button("Pix Capture"))
             {
                 wchar_t fileName[1024];
                 int i = 0;
@@ -1406,6 +1408,8 @@ void HandleMainMenu()
                 waitingToOpenFileName = "";
             }
         }
+
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 
         // Open Editor
         if (ImGui::Button("Open Editor"))
@@ -7218,8 +7222,7 @@ int main(int argc, char** argv)
     g_recentPythonScripts.LoadAllEntries();
 
     SetGigiHeadlessMode(!BREAK_ON_GIGI_ASSERTS());
-    PIXLoadLatestWinPixGpuCapturerLibrary();
-    PIXSetHUDOptions(PIX_HUD_SHOW_ON_NO_WINDOWS);
+
 
     // Parse command line parameters
     int argIndex = 0;
@@ -7288,10 +7291,21 @@ int main(int argc, char** argv)
             g_renderDocEnabled = true;
             argIndex++;
         }
+        else if (!_stricmp(argv[argIndex], "-nopixcapture"))
+        {
+            g_pixCaptureEnabled = false;
+            argIndex++;
+        }
         else
         {
             argIndex++;
         }
+    }
+
+    if (g_pixCaptureEnabled)
+    {
+        PIXLoadLatestWinPixGpuCapturerLibrary();
+        PIXSetHUDOptions(PIX_HUD_SHOW_ON_NO_WINDOWS);
     }
 
     if (g_renderDocEnabled)
@@ -7709,24 +7723,26 @@ bool CreateDeviceD3D(HWND hWnd)
     if (pdx12Debug != NULL)
     {
         g_pd3dDevice->QueryInterface(IID_PPV_ARGS(&g_pd3dInfoQueue));
-
-        g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, DX12_BREAK_ON_ERROR());
-        g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, DX12_BREAK_ON_CORRUPTION());
-        g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, DX12_BREAK_ON_WARN());
-        g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_INFO, false);
-        g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_MESSAGE, false);
-
-        D3D12_MESSAGE_ID hide[] =
+        if (g_pd3dInfoQueue)
         {
-            // Don't care about the clear value not matching the fast clear value
-            D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
-            D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
-        };
-        D3D12_INFO_QUEUE_FILTER filter;
-        memset(&filter, 0, sizeof(filter));
-        filter.DenyList.NumIDs = _countof(hide);
-        filter.DenyList.pIDList = hide;
-        g_pd3dInfoQueue->AddStorageFilterEntries(&filter);
+            g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_ERROR, DX12_BREAK_ON_ERROR());
+            g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_CORRUPTION, DX12_BREAK_ON_CORRUPTION());
+            g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_WARNING, DX12_BREAK_ON_WARN());
+            g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_INFO, false);
+            g_pd3dInfoQueue->SetBreakOnSeverity(D3D12_MESSAGE_SEVERITY_MESSAGE, false);
+
+            D3D12_MESSAGE_ID hide[] =
+            {
+                // Don't care about the clear value not matching the fast clear value
+                D3D12_MESSAGE_ID_CLEARRENDERTARGETVIEW_MISMATCHINGCLEARVALUE,
+                D3D12_MESSAGE_ID_CLEARDEPTHSTENCILVIEW_MISMATCHINGCLEARVALUE
+            };
+            D3D12_INFO_QUEUE_FILTER filter;
+            memset(&filter, 0, sizeof(filter));
+            filter.DenyList.NumIDs = _countof(hide);
+            filter.DenyList.pIDList = hide;
+            g_pd3dInfoQueue->AddStorageFilterEntries(&filter);
+        }
 
         pdx12Debug->Release();
     }

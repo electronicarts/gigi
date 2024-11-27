@@ -15,6 +15,10 @@ That branch is meant to be mirrored verbatim to the public repo at https://githu
 
 So, the first step is to get the "ExternalRelease" branch to contain what you want the public repo to contain.  Like for instance, by merging main into the branch.
 
+You should also increment the build number in Version.h, in the GIGI_VERSION_WITH_BUILD_NUMBER() macro. Or, if the
+major or minor version number changed since last release, set the build number to 0.  Make sure install.nsi has the same
+version numbers specified for VERSIONMAJOR, VERSIONMINOR and VERSIONBUILD.
+
 This branch should be tested to verify that things are working correctly.
 
 The Viewer and DX12 unit tests should also be ran, to help ensure everything is working correctly.
@@ -35,14 +39,16 @@ You may then push the changes to a branch and merge that branch down to main (ma
 
 ## Gigi Version Numbers
 
-Public Gigi versions are of the form v&lt;major&gt;.&lt;minor&gt;.&lt;build&gt; such as v0.99.0.  The major and minor version number come from Version.h.  The version number in Version.h refers to the file version of .gg files, so incrementing that number should only be done for functional reasons involving schema changes or default functionality changes.  The build number part of the version number exists only in github, and should be incremented if the major and minor version numbers are the same as the last build, or set to zero if the major or minor version number has changed since the last release.
+Public Gigi versions are of the form v&lt;major&gt;.&lt;minor&gt;.&lt;build&gt; such as v0.99.0.  Version.h contains
+the build verion numbers in two macros:
 
-In short, there is no need to update the version number in version.h.  Either it has been updated or it has not, but either way, the build portion of the version number will be what makes it unique in the github repo.
+* GIGI_VERSION() - This refers to the file version of .gg files, so incrementing that number should usually only be done for functional reasons involving schema changes or default functionality changes
+* GIGI_VERSION_WITH_BUILD_NUMBER() is a version number that includes the build number in the public release, to help see what specific build is being used.
 
 ## Making The Release
 
 In the private gitlab repo, find the job for the ExternalRelease branch and download the artifacts from the Release job when complete.  It will give you a file named artifacts.zip.  Rename it to Gigi-&lt;major&gt;.&lt;minor&gt;.&lt;build&gt;.x64.windows.zip, for example, Gigi-0.99.0.x64.windows.zip.  This will be one of the two files manually added to the release as an asset.
 
-To make the installer, extract that zip file. Inside, open **Install.nsi** in a text editor and update the version numbers, save and close.  Next, right click **Install.nsi** and select "Compile NSIS Script".  If you don't have NSIS installed, you can download it from https://sourceforge.net/projects/nsis/.  This will make a file named based on the version numbers E.g. Gigi-0.99.0.x64.windows.installer.exe.  This is the second file that needs to be manually added to the release as an asset.
+To make the installer, extract that zip file. Inside, right click **Install.nsi** and select "Compile NSIS Script".  If you don't have NSIS installed, you can download it from https://sourceforge.net/projects/nsis/.  This will make a file named based on the version numbers E.g. Gigi-0.99.0.x64.windows.installer.exe.  This is the second file that needs to be manually added to the release as an asset.
 
 In the public github repo, create a new release through the web interface at https://github.com/electronicarts/gigi/releases/new.  You should create a new tag named from the version number (such as v0.99.0) and the release should be the same name.  You can put change notes into the description.  Then click "Publish release" and you are done!

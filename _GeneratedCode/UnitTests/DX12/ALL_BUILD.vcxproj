@@ -109,6 +109,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests.vcxproj">
       <Project>{782F6C35-74A9-32AC-A4B6-7632D950429B}</Project>

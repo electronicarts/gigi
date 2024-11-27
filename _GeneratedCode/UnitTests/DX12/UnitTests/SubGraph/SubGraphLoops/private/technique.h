@@ -32,35 +32,35 @@ namespace SubGraphLoops
         {
             unsigned int FilterSub_Iteration_0_sRGB = true;
             int __loopIndexValue_0 = 0;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_1_BlurCB
         {
             unsigned int FilterSub_Iteration_1_sRGB = true;
             int __loopIndexValue_1 = 1;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_2_BlurCB
         {
             unsigned int FilterSub_Iteration_2_sRGB = true;
             int __loopIndexValue_2 = 2;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_3_BlurCB
         {
             unsigned int FilterSub_Iteration_3_sRGB = true;
             int __loopIndexValue_3 = 3;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_4_BlurCB
         {
             unsigned int FilterSub_Iteration_4_sRGB = true;
             int __loopIndexValue_4 = 4;
-            float2 _padding0 = {};  // Padding
+            float2 _padding0 = {0.0f,0.0f};  // Padding
         };
 
         // Variables

@@ -617,6 +617,17 @@ inline std::string GetNodeTypeString(const RenderGraphNode& node)
     return "";
 }
 
+inline bool StringBeginsWith(const char* hayStack, const char* needle)
+{
+    size_t hayStackLen = strlen(hayStack);
+    size_t needleLen = strlen(needle);
+
+    if (needleLen > hayStackLen)
+        return false;
+
+    return std::strncmp(hayStack, needle, needleLen) == 0;
+}
+
 template <typename TVARIABLETOSTRING>
 inline std::string ConditionToString(const Condition& condition, const RenderGraph& renderGraph, const TVARIABLETOSTRING& VariableToStringFn)
 {
@@ -631,7 +642,16 @@ inline std::string ConditionToString(const Condition& condition, const RenderGra
     if (condition.variable2Index != -1)
         value2 = VariableToStringFn(renderGraph.variables[condition.variable2Index], renderGraph);
     else
+    {
         value2 = condition.value2;
+
+        if (condition.variable1Index != -1 && renderGraph.variables[condition.variable1Index].enumIndex != -1)
+        {
+            std::string enumValueScope = renderGraph.enums[renderGraph.variables[condition.variable1Index].enumIndex].name + "::";
+            if (!StringBeginsWith(value2.c_str(), enumValueScope.c_str()))
+                value2 = enumValueScope + value2;
+        }
+    }
 
     switch (condition.comparison)
     {

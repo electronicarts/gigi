@@ -38,7 +38,7 @@
 #endif
 
 // Gigi Modification Begin
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 613; }
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
 extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\AgilitySDK\\bin\\"; }
 
 #include "DX12Utils/FileCache.h"

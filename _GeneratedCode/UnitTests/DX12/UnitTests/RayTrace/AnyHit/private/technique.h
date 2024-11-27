@@ -34,7 +34,7 @@ namespace AnyHit
             float _padding0 = 0.000000f;  // Padding
             float4x4 InvViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
             float depthNearPlane = 0.000000f;
-            float3 _padding1 = {};  // Padding
+            float3 _padding1 = {0.0f,0.0f,0.0f};  // Padding
         };
 
         Struct__RayGenCB constantBuffer__RayGenCB_cpu;

@@ -213,7 +213,7 @@ namespace YesVertexStruct_NoIndex_NoInstance
     struct Struct_VertexFormat
     {
         float3 Position = {0, 0, 0};
-        float3 Normal = {};
-        float2 UV = {};
+        float3 Normal = {0.0f,0.0f,0.0f};
+        float2 UV = {0.0f,0.0f};
     };
 };

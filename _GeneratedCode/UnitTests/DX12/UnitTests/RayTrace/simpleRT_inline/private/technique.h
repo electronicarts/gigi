@@ -30,24 +30,24 @@ namespace simpleRT_inline
 
         struct Struct_VertexBufferSimple
         {
-            float3 Position = {};
+            float3 Position = {0.0f,0.0f,0.0f};
         };
 
         struct Struct_VertexBufferFull
         {
-            float3 Position = {};
-            float3 Color = {};
-            float3 Normal = {};
-            float4 Tangent = {};
-            float2 UV = {};
+            float3 Position = {0.0f,0.0f,0.0f};
+            float3 Color = {0.0f,0.0f,0.0f};
+            float3 Normal = {0.0f,0.0f,0.0f};
+            float4 Tangent = {0.0f,0.0f,0.0f,0.0f};
+            float2 UV = {0.0f,0.0f};
             int MaterialID = 0;
         };
 
         struct Struct__SimpleRTCSCB
         {
-            float3 cameraPos = {};
+            float3 cameraPos = {0.0f,0.0f,0.0f};
             float _padding0 = 0.000000f;  // Padding
-            float4x4 clipToWorld = {};
+            float4x4 clipToWorld = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
             float depthNearPlane = 0.000000f;  // The depth value for the near plane.
             float3 hitColor = {0.0f, 1.0f, 0.0f};
             float3 missColor = {1.0f, 0.0f, 0.0f};

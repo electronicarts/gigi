@@ -12,10 +12,10 @@ typedef std::array<float, 4> Vec4;
 
 struct FlattenedVertex
 {
-	Vec3 position;
-	Vec3 normal;
-	Vec4 tangent;
-	Vec4 albedo;
+	Vec3 position = Vec3{ 0.0f, 0.0f, 0.0f };
+	Vec3 normal = Vec3{ 0.0f, 0.0f, 0.0f };
+	Vec4 tangent = Vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+	Vec4 albedo = Vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
 	Vec2 uvs[4]; // FBX supports up to 4 uvs
 	int materialID = -1;
 	int shapeIndex = -1; // mesh index in FBX. shape index in OBJ.
