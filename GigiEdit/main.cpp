@@ -1402,7 +1402,7 @@ struct Example :
         if (!showWindow)
             return;
 
-        if (!ImGui::Begin(dataName, &showWindow))
+        if (!ImGui::Begin(dataName, &showWindow, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
         {
             ImGui::End();
             return;
@@ -1497,67 +1497,73 @@ struct Example :
         }
 
         ImGui::TableNextColumn();
-        if (selectedIndex < dataList.size())
-            g_renderGraphDirty |= ShowUI(g_renderGraph, nullptr, nullptr, dataList[selectedIndex], path);
 
-        // delete an item if we should
-        if (deleteIndex < dataList.size())
+        const std::string scrollableId = std::string(dataName) + "##scrollable";
+        if (ImGui::BeginChild(scrollableId.c_str()))
         {
-            dataList.erase(dataList.begin() + deleteIndex);
-            g_renderGraphDirty = true;
-            selectedIndex = std::min(selectedIndex, dataList.size() - 1);
-        }
+			if (selectedIndex < dataList.size())
+				g_renderGraphDirty |= ShowUI(g_renderGraph, nullptr, nullptr, dataList[selectedIndex], path);
 
-        // duplicate an item if we should
-        if (duplicateIndex < dataList.size())
-        {
-            CopyDataItemButNotName(newItem, dataList[duplicateIndex]);
-            dataList.push_back(newItem);
-            g_renderGraphDirty = true;
-            selectedIndex = dataList.size() - 1;
-        }
+			// delete an item if we should
+			if (deleteIndex < dataList.size())
+			{
+				dataList.erase(dataList.begin() + deleteIndex);
+				g_renderGraphDirty = true;
+				selectedIndex = std::min(selectedIndex, dataList.size() - 1);
+			}
 
-        // create an item if we should
-        if (wantsNew)
-        {
-            dataList.push_back(newItem);
-            g_renderGraphDirty = true;
-            selectedIndex = dataList.size() - 1;
-        }
+			// duplicate an item if we should
+			if (duplicateIndex < dataList.size())
+			{
+				CopyDataItemButNotName(newItem, dataList[duplicateIndex]);
+				dataList.push_back(newItem);
+				g_renderGraphDirty = true;
+				selectedIndex = dataList.size() - 1;
+			}
 
-        // Move Up
-        if (wantsMoveUp)
-        {
-            std::swap(dataList[selectedIndex - 1], dataList[selectedIndex]);
-            g_renderGraphDirty = true;
-            selectedIndex = selectedIndex - 1;
-        }
+			// create an item if we should
+			if (wantsNew)
+			{
+				dataList.push_back(newItem);
+				g_renderGraphDirty = true;
+				selectedIndex = dataList.size() - 1;
+			}
 
-        // Move Down
-        if (wantsMoveDown)
-        {
-            std::swap(dataList[selectedIndex + 1], dataList[selectedIndex]);
-            g_renderGraphDirty = true;
-            selectedIndex = selectedIndex + 1;
-        }
+			// Move Up
+			if (wantsMoveUp)
+			{
+				std::swap(dataList[selectedIndex - 1], dataList[selectedIndex]);
+				g_renderGraphDirty = true;
+				selectedIndex = selectedIndex - 1;
+			}
 
-        // Move Top
-        if (wantsMoveTop)
-        {
-            for (size_t i = selectedIndex; i > 0; i--)
-                std::swap(dataList[i - 1], dataList[i]);
-            g_renderGraphDirty = true;
-            selectedIndex = 0;
-        }
+			// Move Down
+			if (wantsMoveDown)
+			{
+				std::swap(dataList[selectedIndex + 1], dataList[selectedIndex]);
+				g_renderGraphDirty = true;
+				selectedIndex = selectedIndex + 1;
+			}
 
-        // Move Bottom
-        if (wantsMoveBottom)
-        {
-            for (size_t i = selectedIndex; (i + 1) < dataList.size(); ++i)
-                std::swap(dataList[i], dataList[i + 1]);
-            g_renderGraphDirty = true;
-            selectedIndex = dataList.size() - 1;
+			// Move Top
+			if (wantsMoveTop)
+			{
+				for (size_t i = selectedIndex; i > 0; i--)
+					std::swap(dataList[i - 1], dataList[i]);
+				g_renderGraphDirty = true;
+				selectedIndex = 0;
+			}
+
+			// Move Bottom
+			if (wantsMoveBottom)
+			{
+				for (size_t i = selectedIndex; (i + 1) < dataList.size(); ++i)
+					std::swap(dataList[i], dataList[i + 1]);
+				g_renderGraphDirty = true;
+				selectedIndex = dataList.size() - 1;
+			}
         }
+        ImGui::EndChild();
 
         ImGui::EndTable();
 
