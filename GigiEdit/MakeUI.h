@@ -493,8 +493,12 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
             duplicateIndex = index;
         ShowUIToolTip("Duplicate");
 
+        ImGui::Indent();
+
         // show sub UI without name and without tooltip
         ret |= ShowUI(renderGraph, "", nullptr, value[index], path);
+
+        ImGui::Unindent();
 
         ImGui::PopID();
     }
