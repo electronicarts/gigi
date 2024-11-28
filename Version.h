@@ -4,4 +4,4 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #define GIGI_VERSION() "0.99b"
-#define GIGI_VERSION_WITH_BUILD_NUMBER() GIGI_VERSION() "0.99.4"
+#define GIGI_VERSION_WITH_BUILD_NUMBER() "0.99.4"
