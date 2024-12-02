@@ -853,6 +853,9 @@ void GatherSnapshotData(GGUserFileV2Snapshot& snapshot)
             rtVar.variable->name == g_systemVariables.CameraAltitudeAzimuth_varName ||
             rtVar.variable->name == g_systemVariables.CameraChanged_varName ||
             rtVar.variable->name == g_systemVariables.CameraJitter_varName ||
+            rtVar.variable->name == g_systemVariables.CameraFOV_varName ||
+            rtVar.variable->name == g_systemVariables.CameraNearPlane_varName ||
+            rtVar.variable->name == g_systemVariables.CameraFarPlane_varName ||
             rtVar.variable->name == g_systemVariables.WindowSize_varName ||
             rtVar.variable->name == g_systemVariables.ShadingRateImageTileSize_varName)
             continue;
@@ -2155,6 +2158,11 @@ void SynchronizeSystemVariables()
             AssignVariable(g_systemVariables.CameraPos_varName.c_str(), DataFieldType::Float3, g_systemVariables.camera.cameraPos);
             AssignVariable(g_systemVariables.CameraAltitudeAzimuth_varName.c_str(), DataFieldType::Float2, g_systemVariables.camera.cameraAltitudeAzimuth);
 
+            // Camera FOV, near plance and far plane
+            AssignVariable(g_systemVariables.CameraFOV_varName.c_str(), DataFieldType::Float, g_systemVariables.camera.FOV);
+            AssignVariable(g_systemVariables.CameraNearPlane_varName.c_str(), DataFieldType::Float, g_systemVariables.camera.nearPlane);
+            AssignVariable(g_systemVariables.CameraFarPlane_varName.c_str(), DataFieldType::Float, g_systemVariables.camera.farPlane);
+
             // camera jitter
             AssignVariable(g_systemVariables.CameraJitter_varName.c_str(), DataFieldType::Float2, jitter);
 
@@ -2702,6 +2710,9 @@ void ShowSystemVariables()
         ShowVariableDropDown("Inverse Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvViewProjMtx_varName);
 
         ShowVariableDropDown("Camera Jitter", DataFieldType::Float2, g_systemVariables.CameraJitter_varName);
+        ShowVariableDropDown("Camera FOV", DataFieldType::Float, g_systemVariables.CameraFOV_varName);
+        ShowVariableDropDown("Camera Near Z", DataFieldType::Float, g_systemVariables.CameraNearPlane_varName);
+        ShowVariableDropDown("Camera Far Z", DataFieldType::Float, g_systemVariables.CameraFarPlane_varName);
     }
 
     // Camera settings
