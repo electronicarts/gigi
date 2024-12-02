@@ -1550,6 +1550,8 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
                 {
                     case ShaderResourceType::Texture:
                     {
+                        const char* variablePrefix = (resource.access == ShaderResourceAccessType::UAV && resource.texture.globallyCoherent) ? "globallycoherent " : "";
+
                         const char* textureType = "";
                         switch (resource.texture.dimension)
                         {
@@ -1574,21 +1576,23 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
                         }
 
                         shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                            "\n" << typePrefix << textureType << "<" << BackendDX12::DataFieldTypeToCPPType(viewDataFieldType) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
+                            "\n" << variablePrefix << typePrefix << textureType << "<" << BackendDX12::DataFieldTypeToCPPType(viewDataFieldType) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
                         break;
                     }
                     case ShaderResourceType::Buffer:
                     {
+						const char* variablePrefix = (resource.access == ShaderResourceAccessType::UAV && resource.buffer.globallyCoherent) ? "globallycoherent " : "";
+
                         if (resource.buffer.raw)
                         {
                             shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                "\n" << typePrefix << "ByteAddressBuffer " << resource.name << " : register(" << registerType << resource.registerIndex << ");"
+                                "\n" << variablePrefix << typePrefix << "ByteAddressBuffer " << resource.name << " : register(" << registerType << resource.registerIndex << ");"
                                 ;
                         }
                         else if (resource.buffer.typeStruct.structIndex != -1)
                         {
                             shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                "\n" << typePrefix << "StructuredBuffer<Struct_" << renderGraph.structs[resource.buffer.typeStruct.structIndex].name << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");"
+                                "\n" << variablePrefix << typePrefix << "StructuredBuffer<Struct_" << renderGraph.structs[resource.buffer.typeStruct.structIndex].name << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");"
                                 ;
                         }
                         else
@@ -1596,12 +1600,12 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
                             if (DataFieldTypeIsPOD(resource.buffer.type) && !resource.buffer.PODAsStructuredBuffer)
                             {
                                 shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                    "\n" << typePrefix << "Buffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
+                                    "\n" << variablePrefix << typePrefix << "Buffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
                             }
                             else
                             {
                                 shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                    "\n" << typePrefix << "StructuredBuffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
+                                    "\n" << variablePrefix << typePrefix << "StructuredBuffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
                             }
                         }
                         break;
