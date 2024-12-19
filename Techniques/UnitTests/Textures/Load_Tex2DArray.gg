@@ -1,0 +1,272 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "shaders": [
+        {
+            "name": "Load_Tex2DArrayCS",
+            "fileName": "Load_Tex2DArrayCS.hlsl",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                4,
+                4,
+                4
+            ],
+            "resources": [
+                {
+                    "name": "BC6U",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BC6U_NoMips",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BC7sRGB",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BC7sRGB_NoMips",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BinaryF32",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BinaryF32_NoMips",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BinaryU8",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BinaryU8_NoMips",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "BC6U",
+                "editorPos": [
+                    -69.0,
+                    -190.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC7sRGB",
+                "editorPos": [
+                    -69.0,
+                    -78.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BinaryF32",
+                "editorPos": [
+                    -53.0,
+                    18.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BinaryU8",
+                "editorPos": [
+                    -53.0,
+                    114.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Load_Tex2DArrayCS",
+                "editorPos": [
+                    208.0,
+                    -94.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "BC6U_NoMips",
+                        "dstNode": "BC6U_NoMips",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC7sRGB_NoMips",
+                        "dstNode": "BC7sRGB_NoMips",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BinaryF32_NoMips",
+                        "dstNode": "BinaryF32_NoMips",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BinaryU8_NoMips",
+                        "dstNode": "BinaryU8_NoMips",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC6U",
+                        "dstNode": "BC6U",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC7sRGB",
+                        "dstNode": "BC7sRGB",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BinaryF32",
+                        "dstNode": "BinaryF32",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BinaryU8",
+                        "dstNode": "BinaryU8",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Load_Tex2DArrayCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -53.0,
+                    210.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        64,
+                        96,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BinaryU8_NoMips",
+                "editorPos": [
+                    -100.0,
+                    162.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BinaryF32_NoMips",
+                "editorPos": [
+                    -104.0,
+                    66.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC7sRGB_NoMips",
+                "editorPos": [
+                    -85.0,
+                    -30.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC6U_NoMips",
+                "editorPos": [
+                    -69.0,
+                    -142.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        }
+    ]
+}

@@ -6,6 +6,16 @@ import os
 
 resource = "ComputeShader.tex: Texture (UAV - After)"
 
+DontTestTheseFormats = [
+	Host.TextureFormat_Any,
+	Host.TextureFormat_D32_Float_S8,
+	Host.TextureFormat_D24_Unorm_S8,
+	Host.TextureFormat_BC7_Unorm,
+	Host.TextureFormat_BC7_Unorm_sRGB,
+	Host.TextureFormat_BC6_UF16,
+	Host.TextureFormat_BC6_SF16,
+]
+
 # don't save gguser files during this script execution
 Host.DisableGGUserSave(True)
 
@@ -26,7 +36,7 @@ def DoTest():
 	# For each texture format type
 	for textureFormatIndex in range(Host.TextureFormat_FIRST, Host.TextureFormat_COUNT):
 
-		if (textureFormatIndex in [Host.TextureFormat_Any, Host.TextureFormat_D32_Float_S8, Host.TextureFormat_D24_Unorm_S8, Host.TextureFormat_BC7_Unorm, Host.TextureFormat_BC7_Unorm_sRGB]):
+		if (textureFormatIndex in DontTestTheseFormats):
 			continue
 
 		# Set the format type

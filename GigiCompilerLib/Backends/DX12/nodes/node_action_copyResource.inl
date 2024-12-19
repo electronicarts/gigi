@@ -142,8 +142,8 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n"
         "\n            if(context->m_profile)"
         "\n            {"
-        "\n                context->m_profileData[s_timerIndex].m_label = \"" << node.name << "\";"
-        "\n                context->m_profileData[s_timerIndex].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();"
+        "\n                context->m_profileData[(s_timerIndex-1)/2].m_label = \"" << node.name << "\";"
+        "\n                context->m_profileData[(s_timerIndex-1)/2].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();"
         "\n                commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);"
         "\n            }"
         "\n        }";

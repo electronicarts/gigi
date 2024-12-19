@@ -372,6 +372,8 @@ namespace DX12Utils
 		    // Block compressed formats
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM, uint8_t, 4, false, false, false, 0, 1);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC6H_UF16, uint16_t, 3, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC6H_SF16, uint16_t, 3, false, false, false, 0, 1);
 
 		    default:
 		    {

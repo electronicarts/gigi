@@ -34,7 +34,6 @@ namespace TwoRayGens
             ImGui::Text("hitColor");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
         {
             float width = ImGui::GetContentRegionAvail().x / 5.0f;
@@ -49,7 +48,6 @@ namespace TwoRayGens
             ImGui::Text("missColor");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

@@ -1,0 +1,59 @@
+{
+    "version": "2.0",
+    "systemVars": {
+        "camera": {
+            "startingCameraPos": [
+                -2.2799999713897707,
+                0.5389999747276306,
+                2.5490000247955324
+            ],
+            "startingCameraAltitudeAzimuth": [
+                0.05900000035762787,
+                3.752000093460083
+            ]
+        },
+        "ProjMtx_textureName": "ColorF32"
+    },
+    "snapshot": {
+        "resourceViewNodeIndex": 6,
+        "resourceViewResourceIndex": 4,
+        "cameraPos": [
+            -2.2799999713897707,
+            0.5389999747276306,
+            2.5490000247955324
+        ],
+        "cameraAltitudeAzimuth": [
+            0.05900000035762787,
+            3.752000093460083
+        ],
+        "importedResources": [
+            {
+                "nodeName": "VertexBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "RenderSize",
+                "value": "1024,768"
+            },
+            {
+                "name": "ViewMode",
+                "value": "5"
+            },
+            {
+                "name": "ViewerColor",
+                "value": "1.000000,10.019608,1.000000,1.000000"
+            },
+            {
+                "name": "Skybox",
+                "value": "true"
+            }
+        ]
+    }
+}

@@ -29,7 +29,7 @@ def DoTest():
 
 	# Specify the resources we want to readback
 	for resource in resources:
-		Host.SetWantReadback(resource[1], True, resource[2])
+		Host.SetWantReadback(resource[1])
 
 	# Do one execution to ensure everything is initialized
 	Host.RunTechnique()
@@ -60,7 +60,7 @@ def DoTest():
 
 	# Read the data back, make sure it's correct
 	for i, resource in enumerate(resources):
-		lastReadback, success = Host.Readback(resource[1])
+		lastReadback, success = Host.Readback(resource[1], resource[2])
 		if success:
 			lastReadbackNp = numpy.array(lastReadback)
 			#Host.Warn(resource[1] + " " + str(lastReadbackNp.shape))

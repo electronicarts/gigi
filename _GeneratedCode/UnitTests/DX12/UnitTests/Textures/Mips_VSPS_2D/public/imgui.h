@@ -36,7 +36,6 @@ namespace Mips_VSPS_2D
             ImGui::Text("RenderSize");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

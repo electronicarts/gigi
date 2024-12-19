@@ -13,6 +13,16 @@
 class DescriptorTableCache
 {
 public:
+	void Init(int numFramesInFlight)
+	{
+		assert(numFramesInFlight >= 2
+			&& numFramesInFlight <= 3
+			&& "Unexpected number of frames in flight. See the comment above the declaration of m_numFramesInFlight");
+
+		m_numFramesInFlight = numFramesInFlight;
+	}
+
+public:
 	enum class AccessType
 	{
 		SRV,
@@ -242,7 +252,7 @@ public:
 		for (auto& it : m_descriptorTableCache)
 		{
 			it.second.framesSinceUsed++;
-			if (it.second.framesSinceUsed >= c_unusedFramesRecycle)
+			if (it.second.framesSinceUsed >= m_numFramesInFlight)
 			{
 				heap.Free(it.second.m_srvHeapIndex, it.second.m_count);
 				keysToRemove.push_back(it.first);
@@ -304,8 +314,10 @@ private:
 	};
 
 private:
-
-	static const int c_unusedFramesRecycle = 10; // After this many frames of not being used, a descriptor table will be released
+	// After this many frames of not being used, a descriptor table will be released. Set via Init().
+	// Note: As we don't currently explicitly free descriptor tables when resource(s) are released, we must use the
+	// maximum number of frames in flight as our release age to keep this system in sync with everything else.
+	int m_numFramesInFlight = -1;
 
 	// Maps hash to entry
 	std::unordered_map<size_t, Entry> m_descriptorTableCache;

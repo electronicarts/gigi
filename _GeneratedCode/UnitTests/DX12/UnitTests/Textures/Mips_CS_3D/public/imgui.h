@@ -40,7 +40,6 @@ namespace Mips_CS_3D
             ImGui::Text("RenderSize");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

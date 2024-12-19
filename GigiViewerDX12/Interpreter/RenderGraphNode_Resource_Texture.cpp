@@ -207,196 +207,100 @@ void RuntimeTypes::RenderGraphNode_Resource_Texture::Release(GigiInterpreterPrev
 	m_failed = false;
 }
 
-template <typename T>
-std::vector<double> ConvertToDoubles(const std::vector<unsigned char>& src, double multiplier)
+bool ConvertPixelData(TextureCache::Texture& texture, DXGI_FORMAT newFormat)
 {
-	const size_t valueCount = src.size() / sizeof(T);
-
-	std::vector<double> ret(valueCount, 0);
-
-	const T* srcValues = (const T*)src.data();
-	for (size_t index = 0; index < valueCount; ++index)
-		ret[index] = multiplier * (double)srcValues[index];
-
-	return ret;
-}
-
-template <typename T>
-std::vector<double> ConvertToDoubles(const unsigned char* src, size_t valueCount, double multiplier)
-{
-	std::vector<double> ret(valueCount, 0);
-
-	const T* srcValues = (const T*)src;
-	for (size_t index = 0; index < valueCount; ++index)
-		ret[index] = multiplier * (double)srcValues[index];
-
-	return ret;
-}
-
-static bool ConvertToDoubles(const std::vector<unsigned char>& src, DXGI_FORMAT_Info::ChannelType type, std::vector<double>& doubles)
-{
-	switch (type)
-	{
-		case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, 1.0 / 255.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, 1.0 / 65535.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, 1.0 / 32767.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, 1.0 / 4294967296.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, 1.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, 1.0); break;
-		default: return false;
-	}
-	return true;
-}
-
-static bool ConvertToDoubles(const unsigned char* src, size_t valueCount, DXGI_FORMAT_Info::ChannelType type, std::vector<double>& doubles)
-{
-	switch (type)
-	{
-		case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, valueCount, 1.0 / 255.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, valueCount, 1.0 / 65535.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, valueCount, 1.0 / 32767.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, valueCount, 1.0 / 4294967296.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, valueCount, 1.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, valueCount, 1.0); break;
-		default: return false;
-	}
-	return true;
-}
-
-template <typename T>
-std::vector<unsigned char> ConvertFromDoubles(const std::vector<double>& src, double multiplier, double theMin, double theMax)
-{
-	const size_t valueCount = src.size();
-
-	std::vector<unsigned char> ret(valueCount * sizeof(T), 0);
-
-	T* destValues = (T*)ret.data();
-	for (size_t index = 0; index < valueCount; ++index)
-		destValues[index] = (T)(max(min(src[index] * multiplier, theMax), theMin));
-
-	return ret;
-}
-
-static bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_Info::ChannelType type, std::vector<unsigned char>& dest)
-{
-	switch (type)
-	{
-		case DXGI_FORMAT_Info::ChannelType::_uint8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_int8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_int16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint32_t: dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_half: dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_float: dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
-		default: return false;
-	}
-	return true;
-}
-
-static bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_Info::ChannelType type, unsigned char* dest)
-{
-	std::vector<unsigned char> _dest;
-	switch (type)
-	{
-		case DXGI_FORMAT_Info::ChannelType::_uint8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_int8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_int16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_uint32_t: _dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_half: _dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
-		case DXGI_FORMAT_Info::ChannelType::_float: _dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
-		default: return false;
-	}
-
-	memcpy(dest, _dest.data(), _dest.size());
-
-	return true;
-}
-
-bool ConvertPixelData(const std::vector<unsigned char>& src, const DXGI_FORMAT_Info& srcFormat_, std::vector<unsigned char>& dest, const DXGI_FORMAT_Info& destFormat)
-{
-	// We don't do conversion on compressed image formats
-	if (srcFormat_.isCompressed || destFormat.isCompressed)
-	{
-		if (srcFormat_.format == destFormat.format)
-		{
-			dest = src;
-			return true;
-		}
-		return false;
-	}
-
-	// Nothing to do if nothing to convert
-	DXGI_FORMAT_Info srcFormat = srcFormat_;
-	if (srcFormat.channelType == destFormat.channelType && srcFormat.sRGB == destFormat.sRGB && srcFormat.channelCount == destFormat.channelCount)
-	{
-		dest = src;
+	// If same format, nothing to do
+	if (texture.format == newFormat)
 		return true;
-	}
 
-	// Convert the source pixels to doubles
-	std::vector<double> srcDoubles;
-	if (!ConvertToDoubles(src, srcFormat.channelType, srcDoubles))
+	// We don't do conversion on compressed image formats
+	// We do allow implicit conversion between compatible compressed types though.
+	DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(texture.format);
+	DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(newFormat);
+	if (textureFormatInfo.isCompressed || newFormatInfo.isCompressed)
+	{
+		DXGI_FORMAT fmtA = min(texture.format, newFormat);
+		DXGI_FORMAT fmtB = max(texture.format, newFormat);
+
+		if (fmtA == DXGI_FORMAT_BC7_UNORM && fmtB == DXGI_FORMAT_BC7_UNORM_SRGB)
+			return true;
+
+		if (fmtA == DXGI_FORMAT_BC6H_UF16 && fmtB == DXGI_FORMAT_BC6H_SF16)
+			return true;
+
 		return false;
-
-	// convert to the right channel count
-	if (srcFormat.channelCount != destFormat.channelCount)
-	{
-		size_t numPixels = srcDoubles.size() / srcFormat.channelCount;
-		std::vector<double> temp(numPixels * destFormat.channelCount);
-
-		const double* srcPixel = srcDoubles.data();
-		double* destPixel = temp.data();
-
-		for (size_t i = 0; i < numPixels; ++i)
-		{
-			memcpy(destPixel, srcPixel, sizeof(double) * min(srcFormat.channelCount, destFormat.channelCount));
-
-			for (size_t c = srcFormat.channelCount; c < destFormat.channelCount; c++)
-				destPixel[c] = (c < 3) ? 0.0f : 1.0f;
-
-			srcPixel += srcFormat.channelCount;
-			destPixel += destFormat.channelCount;
-		}
-
-		// Channel count conversion done
-		srcFormat.channelCount = destFormat.channelCount;
-		srcDoubles = temp;
 	}
 
-	// do sRGB conversion if we should
-	if (srcFormat.sRGB != destFormat.sRGB)
+	// Process each slice
+	for (int iz = 0; iz < texture.images.size(); ++iz)
 	{
-		int channelsToConvert = min(srcFormat.channelCount, 3); // don't convert alpha
+		// Convert to doubles
+		std::vector<double> textureDoubles;
+		if (!ConvertToDoubles(texture.images[iz].pixels, textureFormatInfo.channelType, textureDoubles))
+			return false;
 
-		if (srcFormat.sRGB)
+		// do sRGB conversion if we should
+		if (textureFormatInfo.sRGB != newFormatInfo.sRGB)
 		{
-			size_t index = 0;
-			while (index < srcDoubles.size())
+			int channelsToConvert = min(textureFormatInfo.channelCount, 3); // don't convert alpha
+
+			if (textureFormatInfo.sRGB)
 			{
-				for (int channel = 0; channel < channelsToConvert; ++channel)
-					srcDoubles[index + channel] = (float)SRGBToLinear((float)srcDoubles[index + channel]);
-				index += srcFormat.channelCount;
+				size_t index = 0;
+				while (index < textureDoubles.size())
+				{
+					for (int channel = 0; channel < channelsToConvert; ++channel)
+						textureDoubles[index + channel] = SRGBToLinear((float)textureDoubles[index + channel]);
+					index += textureFormatInfo.channelCount;
+				}
 			}
-		}
-		else
-		{
-			size_t index = 0;
-			while (index < srcDoubles.size())
+			else
 			{
-				for (int channel = 0; channel < channelsToConvert; ++channel)
-					srcDoubles[index + channel] = (float)LinearTosRGB((float)srcDoubles[index + channel]);
-				index += srcFormat.channelCount;
+				size_t index = 0;
+				while (index < textureDoubles.size())
+				{
+					for (int channel = 0; channel < channelsToConvert; ++channel)
+						textureDoubles[index + channel] = LinearTosRGB((float)textureDoubles[index + channel]);
+					index += textureFormatInfo.channelCount;
+				}
 			}
 		}
 
-		srcFormat.sRGB = destFormat.sRGB;
+		// Add or remove channels as needed
+		if (textureFormatInfo.channelCount != newFormatInfo.channelCount)
+		{
+			size_t pixelCount = textureDoubles.size() / textureFormatInfo.channelCount;
+			std::vector<double> padded(pixelCount * newFormatInfo.channelCount);
+
+			const double* src = textureDoubles.data();
+			double* dest = padded.data();
+
+			for (size_t pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+			{
+				if (textureFormatInfo.channelCount < newFormatInfo.channelCount)
+				{
+					memcpy(dest, src, sizeof(double) * textureFormatInfo.channelCount);
+					for (int channelIndex = textureFormatInfo.channelCount; channelIndex < newFormatInfo.channelCount; ++channelIndex)
+						dest[channelIndex] = (channelIndex == 3) ? 1.0 : 0.0;
+				}
+				else
+				{
+					memcpy(dest, src, sizeof(double) * newFormatInfo.channelCount);
+				}
+				src += textureFormatInfo.channelCount;
+				dest += newFormatInfo.channelCount;
+			}
+
+			textureDoubles = padded;
+		}
+
+		// Convert from doubles to the destination format
+		if (!ConvertFromDoubles(textureDoubles, newFormatInfo.channelType, texture.images[iz].pixels))
+			return false;
 	}
 
-	// Convert from doubles to the destination format
-	if (!ConvertFromDoubles(srcDoubles, destFormat.channelType, dest))
-		return false;
-
+	// Set the new format and return success
+	texture.format = newFormat;
 	return true;
 }
 
@@ -524,8 +428,7 @@ static void MakeMip(const std::vector<unsigned char>& src, std::vector<unsigned 
 	}
 	else
 	{
-		// For each array slize
-		for (size_t iZ = 0; iZ < srcDims[2]; ++iZ)
+		size_t iZ = 0;
 		{
 			size_t srcArrayOffset = iZ * srcDims[1] * srcUnalignedPitch;
 			size_t destArrayOffset = iZ * destDims[1] * destUnalignedPitch;
@@ -551,38 +454,455 @@ static void MakeMip(const std::vector<unsigned char>& src, std::vector<unsigned 
 	}
 }
 
-static TextureCache::Texture LoadTextureFromBinaryFile(FileCache& fileCache, const char* fileName_, int dims[2], int channelCount, TextureCache::Type dataType)
+static TextureCache::Texture LoadTextureFromBinaryFile(FileCache& fileCache, const char* fileName_, TextureDimensionType dimension, int width, int height, int depth, TextureFormat textureFormat)
 {
-	size_t dataTypeSize = (dataType == TextureCache::Type::F32) ? sizeof(float) : sizeof(uint8_t);
-
-	// normalize the string by making it canonical and making it lower case
+	// normalize the filename by making it canonical and making it lower case
 	std::filesystem::path p = std::filesystem::weakly_canonical(fileName_);
 	std::string s = p.string();
 	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
 	const char* fileName = s.c_str();
 
-	// Get the file data off disk
-	FileCache::File fileData = fileCache.Get(s.c_str());
-
-	// init the texture object
+	// init the texture object to an invalid result
 	TextureCache::Texture newTexture;
 	newTexture.fileName = fileName;
 
-	// bail out if there aren't the right number of bytes
-	if (fileData.GetSize() != dims[0] * dims[1] * channelCount * dataTypeSize)
+	// Get the file data off disk
+	FileCache::File fileData = fileCache.Get(s.c_str());
+	if (!fileData.Valid())
 		return newTexture;
 
-	// fill out the other texture data
-	newTexture.width = dims[0];
-	newTexture.height = dims[1];
-	newTexture.channels = channelCount;
-	newTexture.type = dataType;
+	// validate format
+	DXGI_FORMAT format = TextureFormatToDXGI_FORMAT(textureFormat);
+	if (format == DXGI_FORMAT_UNKNOWN || format == DXGI_FORMAT_FORCE_UINT)
+		return newTexture;
+
+	// Calculate unpadded sizes
+	DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(format);
+	const int c_rowSize = width * formatInfo.bytesPerPixel;
+	const int c_sliceSize = c_rowSize * height;
+	const int c_imageSize = c_sliceSize * depth;
+
+	// Calculate what the size of the image would be with mips, and how many mips there would be
+	bool is3D = (dimension == TextureDimensionType::Texture3D);
+	int imageSizeWithoutMips = c_imageSize;
+	int imageSizeWithMips = 0;
+	int mipCount = 0;
+	{
+		if (!is3D)
+		{
+			int mipDims[2] = { width, height };
+			while (1)
+			{
+				mipCount++;
+				imageSizeWithMips += mipDims[1] * mipDims[0] * formatInfo.bytesPerPixel;
+
+				if (mipDims[0] == 1 && mipDims[1] == 1)
+					break;
+
+				mipDims[0] = max(mipDims[0] / 2, 1);
+				mipDims[1] = max(mipDims[1] / 2, 1);
+			}
+
+			imageSizeWithMips *= depth;
+		}
+		else
+		{
+			int mipDims[3] = { width, height, depth };
+			while (1)
+			{
+				mipCount++;
+				imageSizeWithMips += mipDims[2] * mipDims[1] * mipDims[0] * formatInfo.bytesPerPixel;
+
+				if (mipDims[0] == 1 && mipDims[1] == 1 && mipDims[2] == 1)
+					break;
+
+				mipDims[0] = max(mipDims[0] / 2, 1);
+				mipDims[1] = max(mipDims[1] / 2, 1);
+				mipDims[2] = max(mipDims[2] / 2, 1);
+			}
+		}
+	}
+
+	// The file size on disk either has to be the size of the image with mips, or without mips.
+	if (fileData.GetSize() == imageSizeWithoutMips)
+		mipCount = 1;
+	else if (fileData.GetSize() != imageSizeWithMips)
+		return newTexture;
+
+	// Fill out the texture data
+	newTexture.width = width;
+	newTexture.height = height;
+	newTexture.depth = depth;
+	newTexture.mips = mipCount;
+	newTexture.format = format;
+
+	int arrayCount = is3D ? 1 : depth;
 
 	// copy pixel data
-	newTexture.pixels.resize(fileData.GetSize());
-	memcpy(newTexture.pixels.data(), fileData.GetBytes(), fileData.GetSize());
+	const char* src = fileData.GetBytes();
+	int imageCount = 0;
+	newTexture.images.resize(newTexture.depth * mipCount);
+	for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+	{
+		int mipDims[3] = { width, height, is3D ? depth : 1 };
+		for (int mipIndex = 0; mipIndex < mipCount; ++mipIndex)
+		{
+			int mipSliceSize = mipDims[0] * mipDims[1] * formatInfo.bytesPerPixel;
 
+			TextureCache::Image& image = newTexture.images[imageCount];
+			imageCount++;
+
+			for (size_t iz = 0; iz < mipDims[2]; ++iz)
+			{
+				size_t copyOffset = image.pixels.size();
+
+				image.pixels.resize(copyOffset + mipSliceSize);
+				memcpy(&image.pixels[copyOffset], src, mipSliceSize);
+
+				src += mipSliceSize;
+			}
+
+			mipDims[0] = max(mipDims[0] / 2, 1);
+			mipDims[1] = max(mipDims[1] / 2, 1);
+
+			if (is3D)
+				mipDims[2] = max(mipDims[2] / 2, 1);
+		}
+	}
+
+	// I'm being lazy about calculating how many 2d slices a 3d texture with mips needs
+	if (imageCount < newTexture.images.size())
+		newTexture.images.resize(imageCount);
+
+	// return success
 	return newTexture;
+}
+
+bool GigiInterpreterPreviewWindowDX12::LoadTexture(std::vector<TextureCache::Texture>& loadedTextures, const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::string fileName, bool fileIsSRGB, const ImportedTextureBinaryDesc& binaryDesc, DXGI_FORMAT desiredFormat)
+{
+	if (!FileNameSafe(fileName.c_str()))
+		return false;
+
+	bool useCubeMapNames = (fileName.find("%s") != std::string::npos);
+
+	int textureIndex = -1;
+	while (1)
+	{
+		// make the next file name
+		textureIndex++;
+
+		// If we are supposed to use cube map names, but ran out of cube map names, we are done.
+		if (useCubeMapNames && textureIndex >= 6)
+			break;
+
+		// make the next file name
+		char indexedFileName[1024];
+		if (useCubeMapNames)
+			sprintf_s(indexedFileName, fileName.c_str(), c_cubeMapNames[textureIndex]);
+		else
+			sprintf_s(indexedFileName, fileName.c_str(), textureIndex);
+
+		// Load the file
+		TextureCache::Texture& texture = m_textures.Get(m_files, indexedFileName);
+		if (texture.Valid())
+		{
+			// We need to combine slices of 3d textures, or split apart slices of 2d texture arrays
+			if (node.dimension == TextureDimensionType::Texture3D)
+			{
+				loadedTextures.push_back(texture);
+				loadedTextures[0].Ensure3D();
+			}
+			else
+			{
+				bool success = texture.SplitByIndex([&loadedTextures](const TextureCache::Texture& texture)
+					{
+						loadedTextures.push_back(texture);
+					}
+				);
+				if (!success)
+					return false;
+			}
+		}
+		// If the file couldn't be loaded, try as a binary file
+		else if (textureIndex == 0)
+		{
+			if (binaryDesc.format != TextureFormat::Any)
+			{
+				TextureCache::Texture binaryTexture = LoadTextureFromBinaryFile(m_files, indexedFileName, node.dimension, binaryDesc.size[0], binaryDesc.size[1], binaryDesc.size[2], binaryDesc.format);
+				if (!binaryTexture.Valid())
+					return false;
+
+				// We need to combine slices of 3d textures, or split apart slices of 2d texture arrays
+				if (node.dimension == TextureDimensionType::Texture3D)
+				{
+					loadedTextures.push_back(binaryTexture);
+					loadedTextures[0].Ensure3D();
+				}
+				else
+				{
+					bool success = binaryTexture.SplitByIndex([&loadedTextures](const TextureCache::Texture& texture)
+						{
+							loadedTextures.push_back(texture);
+						}
+					);
+
+					if (!success)
+						return false;
+				}
+			}
+			else
+				return false;
+		}
+		// it's ok to fail after the first image, since for indexed files, the numbers have to stop at some point!
+		else
+		{
+			break;
+		}
+
+		// Watch this file for changes
+		m_fileWatcher.Add(indexedFileName, FileWatchOwner::TextureCache);
+
+		// Verify that all loaded textures are the same size and format
+		if (textureIndex > 0)
+		{
+			if (loadedTextures[0].width != texture.width || loadedTextures[0].height != texture.height && texture.format != loadedTextures[0].format)
+			{
+				m_logFn(LogLevel::Error, "Texture \"%s\" is the wrong size or type", indexedFileName);
+				return false;
+			}
+		}
+
+		// If there is no %i or %s in the filename, break. We have found the only file.
+		if (fileName.find("%i") == std::string::npos && fileName.find("%s") == std::string::npos)
+			break;
+	}
+
+	// Ensure that cube maps have 6 images loaded
+	if (node.dimension == TextureDimensionType::TextureCube)
+	{
+		if (loadedTextures.size() != 6)
+		{
+			m_logFn(LogLevel::Error, "Cube map \"%s\" does not have 6 images, it has %i", node.name.c_str(), (int)loadedTextures.size());
+			return false;
+		}
+	}
+
+	// Force Texture2D to have one texture loaded max. This can happen if you load a dds into a texture 2d, since a dds can have multiple images inside of it,
+	// that get flattened into multiple loadedTextures
+	if (node.dimension == TextureDimensionType::Texture2D && loadedTextures.size() > 1)
+		loadedTextures.resize(1);
+
+	// Translate format types based on sRGB flag
+	{
+		DXGI_FORMAT format = loadedTextures[0].format;
+		if (fileIsSRGB)
+		{
+			switch (format)
+			{
+				case DXGI_FORMAT_R8G8B8A8_UNORM: format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB; break;
+				case DXGI_FORMAT_BC7_UNORM: format = DXGI_FORMAT_BC7_UNORM_SRGB; break;
+
+			}
+		}
+		else
+		{
+			switch (format)
+			{
+				case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+				case DXGI_FORMAT_BC7_UNORM_SRGB: format = DXGI_FORMAT_BC7_UNORM; break;
+			}
+		}
+		for (TextureCache::Texture& texture : loadedTextures)
+			texture.format = format;
+	}
+
+	// Do format conversion if needed
+	for (TextureCache::Texture& texture : loadedTextures)
+	{
+		if (!ConvertPixelData(texture, desiredFormat))
+			return false;
+	}
+
+	// Smoosh all the slices of a 3d texture together if needed.
+	// This happens if you load a 3d texture from indexed images (filenames with %i in them)
+	if ((node.dimension == TextureDimensionType::Texture3D) && loadedTextures.size() > 1)
+	{
+		TextureCache::Texture& firstTexture = loadedTextures[0];
+		for (size_t textureIndex = 1; textureIndex < loadedTextures.size(); ++textureIndex)
+		{
+			const TextureCache::Texture& texture = loadedTextures[textureIndex];
+
+			for (size_t imageIndex = 0; imageIndex < firstTexture.images.size(); ++imageIndex)
+			{
+				TextureCache::Image& firstImage = firstTexture.images[imageIndex];
+				const TextureCache::Image& image = texture.images[imageIndex];
+
+				size_t copyOffset = firstImage.pixels.size();
+				size_t copySize = image.pixels.size();
+
+				firstImage.pixels.resize(copyOffset + copySize);
+				memcpy(&firstImage.pixels[copyOffset], image.pixels.data(), copySize);
+			}
+
+			firstTexture.depth += texture.depth;
+		}
+		loadedTextures.resize(1);
+	}
+
+	return true;
+}
+
+bool GigiInterpreterPreviewWindowDX12::CreateAndUploadTextures(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::vector<TextureCache::Texture>& loadedTextures)
+{
+	// Validate texture usage
+	bool hasMips = loadedTextures[0].images.size() > 1;
+	bool wantsMips = runtimeData.m_numMips > 1;
+	bool wantsToMakeMips = wantsMips && !hasMips;
+	{
+		DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
+
+		// We don't make mips for compressed texture formats
+		if (wantsToMakeMips && formatInfo.isCompressed)
+		{
+			m_logFn(LogLevel::Error, "Cannot make mips for a compressed texture format. Node \"%s\"", node.name.c_str());
+			return false;
+		}
+
+		// only let proper depth formats be allowed for use as a depth texture
+		if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
+		{
+			if (!formatInfo.isDepth)
+			{
+				m_logFn(LogLevel::Error, "Cannot create because texture is used as a depth target, but is not a depth format. Node \"%s\"", node.name.c_str());
+				return false;
+			}
+		}
+
+		// UAV with stencil is not allowed
+		if (formatInfo.isStencil && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
+		{
+			m_logFn(LogLevel::Error, "Cannot create because texture is a stencil format, but is used with UAV access. This is not allowed. Node \"%s\"", node.name.c_str());
+			return false;
+		}
+
+		// UAV with compressed texture types is not allowed
+		if (formatInfo.isCompressed && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
+		{
+			m_logFn(LogLevel::Error, "Cannot create because texture is a compressed format, but is used with UAV access. This is not allowed. Node \"%s\"", node.name.c_str());
+			return false;
+		}
+	}
+
+	// Make a resource for the "live" texture which may be modified during running, and also for the initial state.
+	D3D12_RESOURCE_FLAGS resourceFlags = ShaderResourceAccessToD3D12_RESOURCE_FLAGs(node.accessedAs);
+	unsigned int size[3] = { (unsigned int)runtimeData.m_size[0], (unsigned int)runtimeData.m_size[1], (unsigned int)runtimeData.m_size[2] };
+	std::string nodeNameInitialState = node.name + " Initial State";
+	runtimeData.m_resourceInitialState = CreateTexture(m_device, size, runtimeData.m_numMips, runtimeData.m_format, resourceFlags, D3D12_RESOURCE_STATE_COPY_DEST, TextureDimensionTypeToResourceType(node.dimension), nodeNameInitialState.c_str());
+	runtimeData.m_resource = CreateTexture(m_device, size, runtimeData.m_numMips, runtimeData.m_format, resourceFlags, D3D12_RESOURCE_STATE_COPY_DEST, TextureDimensionTypeToResourceType(node.dimension), node.name.c_str());
+
+	// track the new resources for state transitions
+	m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST));
+	m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
+
+	// Make the mips if we should
+	if (wantsToMakeMips)
+	{
+		DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
+
+		int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
+
+		for (TextureCache::Texture& texture : loadedTextures)
+			texture.images.resize(runtimeData.m_numMips);
+
+		for (int mipIndex = 0; mipIndex < runtimeData.m_numMips - 1; ++mipIndex)
+		{
+			for (TextureCache::Texture& texture : loadedTextures)
+				MakeMip(texture.images[mipIndex].pixels, texture.images[mipIndex + 1].pixels, formatInfo, node.dimension, mipDims);
+
+			mipDims[0] = max(mipDims[0] / 2, 1);
+			mipDims[1] = max(mipDims[1] / 2, 1);
+			if (node.dimension == TextureDimensionType::Texture3D)
+				mipDims[2] = max(mipDims[2] / 2, 1);
+		}
+
+		for (TextureCache::Texture& texture : loadedTextures)
+			texture.mips = runtimeData.m_numMips;
+	}
+
+	// copy everything to GPU
+	{
+		D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resource->GetDesc();
+
+		int arrayCount = (int)loadedTextures.size();
+		int mipCount = (int)loadedTextures[0].mips;
+
+		for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+		{
+			for (int mipIndex = 0; mipIndex < mipCount; ++mipIndex)
+			{
+				// Calculate the subresource index
+				unsigned int subResourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, mipCount, arrayCount);
+
+				// gather stats about the current sub resource
+				std::vector<unsigned char> layoutsMem((sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)));
+				D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutsMem.data();
+				unsigned int numRows = 0;
+				size_t unalignedPitch = 0;
+				m_device->GetCopyableFootprints(&resourceDesc, subResourceIndex, 1, 0, layout, &numRows, &unalignedPitch, nullptr);
+				size_t alignedPitch = layout->Footprint.RowPitch;
+				size_t bufferSize = numRows * alignedPitch * layout->Footprint.Depth;
+
+				// Allocate an upload buffer
+				UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, bufferSize, false);
+
+				// map the memory
+				D3D12_RANGE readRange;
+				readRange.Begin = 1;
+				readRange.End = 0;
+				unsigned char* destPixels = nullptr;
+				HRESULT hr = uploadBuffer->buffer->Map(0, &readRange, reinterpret_cast<void**>(&destPixels));
+				if (FAILED(hr))
+					return false;
+
+				// Copy the texture data
+				for (unsigned int iz = 0; iz < layout->Footprint.Depth; ++iz)
+				{
+					for (unsigned int iy = 0; iy < numRows; ++iy)
+					{
+						size_t srcBegin = (iz * numRows + iy) * unalignedPitch;
+						size_t srcEnd = srcBegin + unalignedPitch;
+
+						if (loadedTextures[arrayIndex].images[mipIndex].pixels.size() < srcEnd)
+							return false;
+
+						const unsigned char* src = &loadedTextures[arrayIndex].images[mipIndex].pixels[srcBegin];
+						unsigned char* dest = &destPixels[(iz * numRows + iy) * alignedPitch];
+						memcpy(dest, src, unalignedPitch);
+					}
+				}
+
+				// unmap the memory
+				uploadBuffer->buffer->Unmap(0, nullptr);
+
+				// Copy the upload buffer into m_resourceInitialState
+				{
+					D3D12_TEXTURE_COPY_LOCATION src = {};
+					src.pResource = uploadBuffer->buffer;
+					src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+					src.PlacedFootprint = *layout;
+
+					D3D12_TEXTURE_COPY_LOCATION dest = {};
+					dest.pResource = runtimeData.m_resourceInitialState;
+					dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+					dest.SubresourceIndex = subResourceIndex;
+
+					m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+				}
+			}
+		}
+	}
+
+	return true;
 }
 
 bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, NodeAction nodeAction)
@@ -604,6 +924,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 	{
 		ImportedResourceDesc& desc = m_importedResources[node.name];
 
+		if (desc.state == ImportedResourceState::failed)
+		{
+			runtimeData.m_renderGraphText = "\nCreation Failed";
+			return true;
+		}
+
 		// (Re)Create a texture, as necessary
 		// if the texture isn't dirty, nothing to do
 		// if the format is "any", wait until it isn't
@@ -612,253 +938,100 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			// Release any resources which may have previously existed
 			runtimeData.Release(*this);
 
-			// fill out the pixels - either from a file on disk, or a solid color;
-			std::vector<unsigned char> allPixels;
+			std::vector<TextureCache::Texture> loadedTextures;
 
-			runtimeData.m_format = TextureFormatToDXGI_FORMAT(desc.texture.format);
-			DXGI_FORMAT_Info pixelsFormatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
-
-			// if we have a file to load
+			// Load a file from disk if we have a file name
 			if (!desc.texture.fileName.empty())
 			{
-				if (!FileNameSafe(desc.texture.fileName.c_str()))
+				// Load the textures
+				DXGI_FORMAT format = TextureFormatToDXGI_FORMAT(desc.texture.format);
+				if (!LoadTexture(loadedTextures, node, runtimeData, desc.texture.fileName, desc.texture.fileIsSRGB, desc.texture.binaryDesc, format) || loadedTextures.size() == 0)
+				{
+					m_logFn(LogLevel::Error, "Could not load texture \"%s\" for node \"%s\"", desc.texture.fileName.c_str(), node.name.c_str());
+					runtimeData.m_failed = true;
+					desc.state = ImportedResourceState::failed;
 					return true;
-
-				std::vector<TextureCache::Texture> loadedTextures;
-
-				bool useCubeMapNames = (desc.texture.fileName.find("%s") != std::string::npos);
-
-				int textureIndex = -1;
-				bool loadedBinary = false;
-				while (1)
-				{
-					// make the next file name
-					textureIndex++;
-					char indexedFileName[1024];
-					if (useCubeMapNames)
-						sprintf_s(indexedFileName, desc.texture.fileName.c_str(), c_cubeMapNames[textureIndex]);
-					else
-						sprintf_s(indexedFileName, desc.texture.fileName.c_str(), textureIndex);
-
-					TextureCache::Texture& texture = m_textures.Get(m_files, indexedFileName);
-					if (!texture.Valid())
-					{
-						if (textureIndex == 0)
-						{
-							// try as a binary file
-							int binaryDims2D[2] = { desc.texture.binaryDims[0], desc.texture.binaryDims[1] * desc.texture.binaryDims[2] };
-							TextureCache::Type dataType = (desc.texture.binaryType == GGUserFile_ImportedTexture_BinaryType::Float) ? TextureCache::Type::F32 : TextureCache::Type::U8;
-							TextureCache::Texture texture = LoadTextureFromBinaryFile(m_files, indexedFileName, binaryDims2D, desc.texture.binaryChannels, dataType);
-
-							// If still invalid, bail out
-							if (!texture.Valid())
-							{
-								if (FileExists(indexedFileName))
-									m_logFn(LogLevel::Error, "Could not load texture. Unsupported type or format. \"%s\"", indexedFileName);
-								else
-									m_logFn(LogLevel::Error, "Could not load texture. File not found. \"%s\"", indexedFileName);
-								runtimeData.m_failed = true;
-								desc.state = ImportedResourceState::failed;
-								return false;
-							}
-
-							// finalize
-							loadedTextures.push_back(texture);
-							m_fileWatcher.Add(indexedFileName, FileWatchOwner::TextureCache);
-
-							// otherwise we are done. binary files only load a single file
-							loadedBinary = true;
-							break;
-						}
-						else
-						{
-							break;
-						}
-					}
-
-					loadedTextures.push_back(texture);
-					m_fileWatcher.Add(indexedFileName, FileWatchOwner::TextureCache);
-
-					if (textureIndex > 0)
-					{
-						if (loadedTextures[0].width != texture.width || loadedTextures[0].height != texture.height && texture.type != loadedTextures[0].type || texture.channels != loadedTextures[0].channels)
-						{
-							m_logFn(LogLevel::Error, "Texture \"%s\" is the wrong size or type", indexedFileName);
-							runtimeData.m_failed = true;
-							desc.state = ImportedResourceState::failed;
-							return false;
-						}
-					}
-
-					// only one texture allowed in a texture2D
-					if (node.dimension == TextureDimensionType::Texture2D)
-						break;
-
-					// If there is no %i or %s in the filename, break
-					if (desc.texture.fileName.find("%i") == std::string::npos && desc.texture.fileName.find("%s") == std::string::npos)
-						break;
-
-					// cube maps are only allowed 6 textures
-					if (useCubeMapNames && textureIndex == 5)
-						break;
 				}
+			}
+			// else make a solid color texture
+			else if (desc.texture.size[0] > 0 && desc.texture.size[1] > 0 && desc.texture.size[2] > 0)
+			{
+				// make a new 2D texture
+				TextureCache::Texture newTexture;
+				newTexture.width = desc.texture.size[0];
+				newTexture.height = desc.texture.size[1];
+				newTexture.mips = 1;
+				newTexture.format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+				newTexture.images.resize(1);
 
-				// if loaded as binary, break the singularly loaded image into multiple images if we should
-				if (loadedBinary && desc.texture.binaryDims[2] > 1)
+				if ((node.dimension == TextureDimensionType::Texture3D))
 				{
-					int dataByteSize = (int)(loadedTextures[0].type == TextureCache::Type::F32) ? sizeof(float) : sizeof(uint8_t);
-					int imageSizeBytes = desc.texture.binaryDims[0] * desc.texture.binaryDims[1] * desc.texture.binaryChannels * dataByteSize;
+					newTexture.depth = desc.texture.size[2];
 
-					for (int z = 1; z < desc.texture.binaryDims[2]; ++z)
+					// Fill it with solid color
+					newTexture.images[0].pixels.resize(newTexture.width * newTexture.height * newTexture.depth * sizeof(float) * 4);
+					for (size_t i = 0; i < desc.texture.size[0] * desc.texture.size[1] * desc.texture.size[2]; ++i)
+						memcpy(&newTexture.images[0].pixels[i * sizeof(float) * 4], desc.texture.color, sizeof(float) * 4);
+
+					// Convert it to the format we want
+					if (!ConvertPixelData(newTexture, TextureFormatToDXGI_FORMAT(desc.texture.format)))
 					{
-						TextureCache::Texture newTexture = loadedTextures[0];
-						newTexture.height = desc.texture.binaryDims[1];
-						newTexture.pixels.resize(imageSizeBytes);
-
-						unsigned char* dest = newTexture.pixels.data();
-						const unsigned char* src = &loadedTextures[0].pixels[z * imageSizeBytes];
-						memcpy(dest, src, imageSizeBytes);
-
-						loadedTextures.push_back(newTexture);
-					}
-
-					loadedTextures[0].height = desc.texture.binaryDims[1];
-					loadedTextures[0].pixels.resize(imageSizeBytes);
-				}
-
-				// Ensure that cube maps have 6 images loaded
-				if (node.dimension == TextureDimensionType::TextureCube)
-				{
-					if (loadedTextures.size() != 6)
-					{
-						m_logFn(LogLevel::Error, "Cube map \"%s\" does not have 6 images, it has %i", node.name.c_str(), (int)loadedTextures.size());
 						runtimeData.m_failed = true;
-						desc.state = ImportedResourceState::failed;
-						return false;
-					}
-				}
-
-				// make a DXGI_FORMAT_Info describing our loaded texture data
-				DXGI_FORMAT_Info textureFormatInfo;
-				switch (loadedTextures[0].type)
-				{
-					case TextureCache::Type::U8: textureFormatInfo = DXGI_FORMAT_INFO(uint8_t, loadedTextures[0].channels, desc.texture.fileIsSRGB); break;
-					case TextureCache::Type::F32: textureFormatInfo = DXGI_FORMAT_INFO(float, loadedTextures[0].channels, desc.texture.fileIsSRGB); break;
-					case TextureCache::Type::BC7: textureFormatInfo = desc.texture.fileIsSRGB ? Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM_SRGB) : Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM); break;
-					default:
-					{
 						desc.state = ImportedResourceState::failed;
 						return true;
 					}
-				}
 
-				// tint the image if we should
-				std::vector<unsigned char> allTintedPixels;
-				if (desc.texture.color[0] != 1.0f || desc.texture.color[1] != 1.0f || desc.texture.color[2] != 1.0f || desc.texture.color[3] != 1.0f)
-				{
-					if (textureFormatInfo.isCompressed)
-					{
-						m_logFn(LogLevel::Error, "Texture \"%s\": cannot tint a compressed texture format", node.name.c_str());
-						desc.state = ImportedResourceState::failed;
-						return false;
-					}
-
-					std::vector<unsigned char> tintedPixels(loadedTextures[0].pixels.size());
-					for (const TextureCache::Texture& texture : loadedTextures)
-					{
-						switch (texture.type)
-						{
-							case TextureCache::Type::U8:
-							{
-								const unsigned char* srcPixel = texture.pixels.data();
-								unsigned char* destPixel = tintedPixels.data();
-								for (int pixelIndex = 0; pixelIndex < texture.width * texture.height; ++pixelIndex)
-								{
-									for (int channelIndex = 0; channelIndex < texture.channels; ++channelIndex)
-									{
-										*destPixel = (unsigned char)(float(*srcPixel) * desc.texture.color[channelIndex]);
-										srcPixel++;
-										destPixel++;
-									}
-								}
-								break;
-							}
-							case TextureCache::Type::F32:
-							{
-								const float* srcPixel = (float*)texture.pixels.data();
-								float* destPixel = (float*)tintedPixels.data();
-								for (int pixelIndex = 0; pixelIndex < texture.width * texture.height; ++pixelIndex)
-								{
-									for (int channelIndex = 0; channelIndex < texture.channels; ++channelIndex)
-									{
-										*destPixel = *srcPixel * desc.texture.color[channelIndex];
-										srcPixel++;
-										destPixel++;
-									}
-								}
-								break;
-							}
-							default:
-							{
-								desc.state = ImportedResourceState::failed;
-								return true;
-							}
-						}
-						allTintedPixels.insert(allTintedPixels.end(), tintedPixels.begin(), tintedPixels.end());
-					}
+					// Add it
+					loadedTextures.push_back(newTexture);
 				}
 				else
 				{
-					for (const TextureCache::Texture& texture : loadedTextures)
-						allTintedPixels.insert(allTintedPixels.end(), texture.pixels.begin(), texture.pixels.end());
+					newTexture.depth = 1;
+
+					// Fill it with solid color
+					newTexture.images[0].pixels.resize(newTexture.width * newTexture.height * sizeof(float) * 4);
+					for (size_t i = 0; i < desc.texture.size[0] * desc.texture.size[1]; ++i)
+						memcpy(&newTexture.images[0].pixels[i * sizeof(float) * 4], desc.texture.color, sizeof(float) * 4);
+
+					// Convert it to the format we want
+					if (!ConvertPixelData(newTexture, TextureFormatToDXGI_FORMAT(desc.texture.format)))
+					{
+						runtimeData.m_failed = true;
+						desc.state = ImportedResourceState::failed;
+						return true;
+					}
+
+					// Repeatedly add this texture to fulfill "depth" aka desc.texture.size[2]
+					for (int iz = 0; iz < desc.texture.size[2]; ++iz)
+						loadedTextures.push_back(newTexture);
 				}
-
-				// convert to the correct format
-				if (!ConvertPixelData(allTintedPixels, textureFormatInfo, allPixels, pixelsFormatInfo))
-				{
-					desc.state = ImportedResourceState::failed;
-					return true;
-				}
-				runtimeData.m_size[0] = loadedTextures[0].width;
-				runtimeData.m_size[1] = loadedTextures[0].height;
-				runtimeData.m_size[2] = (int)loadedTextures.size();
-			}
-			// else if we have a size
-			else if (desc.texture.size[0] > 0 && desc.texture.size[1] > 0)
-			{
-				// make the initialization value for a single pixel
-				std::vector<float> initValue(pixelsFormatInfo.channelCount);
-				for (int i = 0; i < pixelsFormatInfo.channelCount; ++i)
-					initValue[i] = desc.texture.color[i];
-
-				// repeat that to make the whole texture.
-				std::vector<unsigned char> srcPixels(desc.texture.size[0] * desc.texture.size[1] * desc.texture.size[2] * pixelsFormatInfo.channelCount * sizeof(float));
-				for (int i = 0; i < desc.texture.size[0] * desc.texture.size[1] * desc.texture.size[2]; ++i)
-					memcpy(&srcPixels[i * pixelsFormatInfo.channelCount * sizeof(float)], initValue.data(), initValue.size() * sizeof(initValue[0]));
-
-				// convert to the correct format
-				if (!ConvertPixelData(srcPixels, DXGI_FORMAT_INFO(float, pixelsFormatInfo.channelCount, desc.texture.fileIsSRGB), allPixels, pixelsFormatInfo))
-				{
-					desc.state = ImportedResourceState::failed;
-					return true;
-				}
-
-				runtimeData.m_size[0] = desc.texture.size[0];
-				runtimeData.m_size[1] = desc.texture.size[1];
-				runtimeData.m_size[2] = desc.texture.size[2];
 			}
 			// otherwise, we have nothing to go on
 			else
 			{
+				runtimeData.m_failed = true;
 				desc.state = ImportedResourceState::failed;
 				return true;
 			}
 
+			// Fill out the runtime data
+			bool is3D = (node.dimension == TextureDimensionType::Texture3D);
+			runtimeData.m_size[0] = loadedTextures[0].width;
+			runtimeData.m_size[1] = loadedTextures[0].height;
+			runtimeData.m_size[2] = is3D ? loadedTextures[0].depth : (int)loadedTextures.size();
+			runtimeData.m_format = loadedTextures[0].format;
+			runtimeData.m_failed = false;
+
 			// Calculate mip count if needed
-			runtimeData.m_numMips = 1;
+			runtimeData.m_numMips = (int)loadedTextures[0].mips;
 			if (desc.texture.makeMips)
 			{
 				int maxSize = max(runtimeData.m_size[0], runtimeData.m_size[1]);
+
+				if (node.dimension == TextureDimensionType::Texture3D)
+					maxSize = max(maxSize, runtimeData.m_size[2]);
+
+				runtimeData.m_numMips = 1;
 				while (maxSize > 1)
 				{
 					maxSize /= 2;
@@ -866,192 +1039,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				}
 			}
 
-			// We don't currently make mips for compressed texture formats
-			if (runtimeData.m_numMips > 1 && pixelsFormatInfo.isCompressed)
+			if (!CreateAndUploadTextures(node, runtimeData, loadedTextures))
 			{
-				m_logFn(LogLevel::Error, "Texture \"%s\": Cannot make mips for a compressed texture format", node.name.c_str());
+				m_logFn(LogLevel::Error, "Could not create resource for node \"%s\"", node.name.c_str());
+				runtimeData.m_failed = true;
 				desc.state = ImportedResourceState::failed;
 				return false;
-			}
-
-			// only let proper depth formats be allowed for use as a depth texture
-			if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
-			{
-				if (!Get_DXGI_FORMAT_Info(runtimeData.m_format).isDepth)
-				{
-					runtimeData.m_renderGraphText = "Cannot create because texture is used as a depth target, but is not a depth format";
-					return true;
-				}
-			}
-
-			// UAV with stencil is not allowed
-			if (pixelsFormatInfo.isStencil && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
-			{
-				runtimeData.m_renderGraphText = "Cannot create because texture is a stencil format, but is used with UAV access. This is not allowed.";
-				return true;
-			}
-
-			// UAV with compressed texture types is not allowed
-			if (pixelsFormatInfo.isCompressed && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
-			{
-				runtimeData.m_renderGraphText = "Cannot create because texture is a compressed format, but is used with UAV access. This is not allowed.";
-				return true;
-			}
-
-			// Make a resource for the "live" texture which may be modified during running, and also for the initial state.
-			D3D12_RESOURCE_FLAGS resourceFlags = ShaderResourceAccessToD3D12_RESOURCE_FLAGs(node.accessedAs);
-			unsigned int size[3] = { (unsigned int)runtimeData.m_size[0], (unsigned int)runtimeData.m_size[1], (unsigned int)runtimeData.m_size[2] };
-			std::string nodeNameInitialState = node.name + " Initial State";
-			runtimeData.m_resourceInitialState = CreateTexture(m_device, size, runtimeData.m_numMips, runtimeData.m_format, resourceFlags, D3D12_RESOURCE_STATE_COPY_DEST, TextureDimensionTypeToResourceType(node.dimension), nodeNameInitialState.c_str());
-			runtimeData.m_resource = CreateTexture(m_device, size, runtimeData.m_numMips, runtimeData.m_format, resourceFlags, D3D12_RESOURCE_STATE_COPY_DEST, TextureDimensionTypeToResourceType(node.dimension), node.name.c_str());
-
-			// track the new resources for state transitions
-			m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST));
-			m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
-
-			// Make the mips
-			std::vector<std::vector<unsigned char>> allPixelsMips(runtimeData.m_numMips > 1 ? runtimeData.m_numMips - 1 : 0);
-			{
-				int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
-				for (int mipIndex = 0; mipIndex < runtimeData.m_numMips - 1; ++mipIndex)
-				{
-					if (mipIndex == 0)
-						MakeMip(allPixels, allPixelsMips[0], pixelsFormatInfo, node.dimension, mipDims);
-					else
-						MakeMip(allPixelsMips[mipIndex - 1], allPixelsMips[mipIndex], pixelsFormatInfo, node.dimension, mipDims);
-
-					mipDims[0] = max(mipDims[0] / 2, 1);
-					mipDims[1] = max(mipDims[1] / 2, 1);
-					if (node.dimension == TextureDimensionType::Texture3D)
-						mipDims[2] = max(mipDims[2] / 2, 1);
-				}
-			}
-
-			// copy everything to GPU
-			if (pixelsFormatInfo.isCompressed)
-			{
-				// Make an upload buffer
-				int unalignedPitch = (int)allPixels.size();
-				int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
-				UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, alignedPitch, false);
-
-				// write the pixels into the upload buffer
-				{
-					unsigned char* destPixels = nullptr;
-					HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
-					if (hr)
-						return false;
-
-					memcpy(destPixels, allPixels.data(), allPixels.size());
-
-					uploadBuffer->buffer->Unmap(0, nullptr);
-				}
-
-				// Copy the upload buffer into m_resourceInitialState
-				{
-					UINT subresourceIndex = D3D12CalcSubresource(0, 0, 0, 1, 1);
-
-					D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resourceInitialState->GetDesc();
-					std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
-					D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
-					m_device->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
-
-					D3D12_TEXTURE_COPY_LOCATION src = {};
-					src.pResource = uploadBuffer->buffer;
-					src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-					src.PlacedFootprint = *layout;
-
-					D3D12_TEXTURE_COPY_LOCATION dest = {};
-					dest.pResource = runtimeData.m_resourceInitialState;
-					dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-					dest.SubresourceIndex = subresourceIndex;
-
-					m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
-				}
-			}
-			else
-			{
-				int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
-				for (int mipIndex = 0; mipIndex < runtimeData.m_numMips; ++mipIndex)
-				{
-					std::vector<unsigned char>& srcPixels = (mipIndex > 0)
-						? allPixelsMips[mipIndex - 1]
-						: allPixels;
-
-					// Set up variables to handle 3d textures (single sub resource) vs other times (a sub resource per 2d texture)
-					int arrayCount = 0;
-					int iyCount = mipDims[1];
-					int izCount = 0;
-					if (node.dimension == TextureDimensionType::Texture3D)
-					{
-						arrayCount = 1;
-						izCount = mipDims[2];
-					}
-					else
-					{
-						arrayCount = mipDims[2];
-						izCount = 1;
-					}
-
-					int allPixelsStride = (int)srcPixels.size() / arrayCount;
-
-					for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
-					{
-						unsigned int arrayIndexStart = allPixelsStride * arrayIndex;
-
-						// Make an upload buffer
-						int unalignedPitch = mipDims[0] * pixelsFormatInfo.bytesPerPixel;
-						int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
-						UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, alignedPitch * iyCount * izCount, false);
-
-						// write the pixels into the upload buffer
-						{
-							unsigned char* destPixels = nullptr;
-							HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
-							if (hr)
-								return false;
-
-							for (int iz = 0; iz < izCount; ++iz)
-							{
-								for (int iy = 0; iy < iyCount; ++iy)
-								{
-									const unsigned char* src = &srcPixels[arrayIndexStart + (iz * iyCount + iy) * unalignedPitch];
-									unsigned char* dest = &destPixels[(iz * iyCount + iy) * alignedPitch];
-									memcpy(dest, src, unalignedPitch);
-								}
-							}
-
-							uploadBuffer->buffer->Unmap(0, nullptr);
-						}
-
-						// Copy the upload buffer into m_resourceInitialState
-						{
-							UINT subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, runtimeData.m_numMips, arrayCount);
-
-							D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resourceInitialState->GetDesc();
-							std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
-							D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
-							m_device->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
-
-							D3D12_TEXTURE_COPY_LOCATION src = {};
-							src.pResource = uploadBuffer->buffer;
-							src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-							src.PlacedFootprint = *layout;
-
-							D3D12_TEXTURE_COPY_LOCATION dest = {};
-							dest.pResource = runtimeData.m_resourceInitialState;
-							dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-							dest.SubresourceIndex = subresourceIndex;
-
-							m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
-						}
-					}
-
-					mipDims[0] = max(mipDims[0] / 2, 1);
-					mipDims[1] = max(mipDims[1] / 2, 1);
-					if (node.dimension == TextureDimensionType::Texture3D)
-						mipDims[2] = max(mipDims[2] / 2, 1);
-				}
 			}
 
 			// Note that the resource wants to be reset to the initial state.
@@ -1100,273 +1093,110 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 			}
 
 			runtimeData.m_renderGraphText = ss.str();
-		}
-		else
-		{
-			std::vector<TextureCache::Texture> loadedTextures;
 
-			if (hasFileName)
+			return true;
+		}
+
+		std::vector<TextureCache::Texture> loadedTextures;
+
+		// if we have a filename, our size comes from the image file
+		if (hasFileName)
+		{
+			// If we already have a resource made, we know the size
+			if (runtimeData.m_resource)
 			{
-				if (runtimeData.m_resource)
+				desiredSize[0] = runtimeData.m_size[0];
+				desiredSize[1] = runtimeData.m_size[1];
+				desiredSize[2] = runtimeData.m_size[2];
+			}
+			// else we load the texture and get the size from that
+			else
+			{
+				// Load the textures
+				ImportedTextureBinaryDesc binaryDesc;
+				if (!LoadTexture(loadedTextures, node, runtimeData, fullLoadFileName, node.loadFileNameAsSRGB, binaryDesc, desiredFormat) || loadedTextures.size() == 0)
+					return false;
+
+				// Set the desired size, now that we know it
+				desiredSize[0] = loadedTextures[0].width;
+				desiredSize[1] = loadedTextures[0].height;
+				desiredSize[2] = (node.dimension == TextureDimensionType::Texture3D) ? loadedTextures[0].depth : (int)loadedTextures.size();
+			}
+		}
+
+		// Calculate desired mip count
+		int desiredMips = (int)node.numMips;
+		if (hasFileName)
+		{
+			if (runtimeData.m_resource)
+				desiredMips = runtimeData.m_numMips;
+			if (loadedTextures.size() > 0 && loadedTextures[0].images.size() > 1)
+				desiredMips = (int)loadedTextures[0].mips;
+		}
+		if (desiredMips == 0)
+		{
+			int maxSize = max(desiredSize[0], desiredSize[1]);
+
+			if (node.dimension == TextureDimensionType::Texture3D)
+				maxSize = max(maxSize, runtimeData.m_size[2]);
+
+			desiredMips = 1;
+			while (maxSize > 1)
+			{
+				maxSize /= 2;
+				desiredMips++;
+			}
+		}
+
+		// (re) create the resource if we should
+		if (!runtimeData.m_resource || runtimeData.m_format != desiredFormat || runtimeData.m_size[0] != desiredSize[0] || runtimeData.m_size[1] != desiredSize[1] || runtimeData.m_size[2] != desiredSize[2] || runtimeData.m_numMips != desiredMips)
+		{
+			// Release any resources which may have previously existed
+			runtimeData.Release(*this);
+
+			// set the format and size
+			runtimeData.m_format = desiredFormat;
+			runtimeData.m_size[0] = desiredSize[0];
+			runtimeData.m_size[1] = desiredSize[1];
+			runtimeData.m_size[2] = desiredSize[2];
+			runtimeData.m_numMips = desiredMips;
+
+			// If we don't have a filename, make textures to spec and zero initialize
+			if (!hasFileName)
+			{
+				DXGI_FORMAT_Info desiredFormatInfo = Get_DXGI_FORMAT_Info(desiredFormat);
+
+				TextureCache::Texture texture;
+				texture.width = desiredSize[0];
+				texture.height = desiredSize[1];
+				texture.mips = 1;
+				texture.format = desiredFormat;
+				texture.images.resize(1);
+
+				if (node.dimension == TextureDimensionType::Texture3D)
 				{
-					desiredSize[0] = runtimeData.m_size[0];
-					desiredSize[1] = runtimeData.m_size[1];
-					desiredSize[2] = runtimeData.m_size[2];
+					texture.depth = desiredSize[2];
+					texture.images[0].pixels.resize(texture.width* texture.height* texture.depth* desiredFormatInfo.bytesPerPixel, 0);
+					loadedTextures.push_back(texture);
 				}
 				else
 				{
-					bool useCubeMapNames = (fullLoadFileName.find("%s") != std::string::npos);
-
-					int textureIndex = -1;
-					while (1)
-					{
-						// make the next file name
-						textureIndex++;
-						char indexedFileName[1024];
-						if (useCubeMapNames)
-							sprintf_s(indexedFileName, fullLoadFileName.c_str(), c_cubeMapNames[textureIndex]);
-						else
-							sprintf_s(indexedFileName, fullLoadFileName.c_str(), textureIndex);
-
-						TextureCache::Texture& texture = m_textures.Get(m_files, indexedFileName);
-						if (!texture.Valid())
-						{
-							if (textureIndex == 0)
-							{
-								m_logFn(LogLevel::Error, "Could not load texture \"%s\"", indexedFileName);
-								runtimeData.m_failed = true;
-								return false;
-							}
-							else
-							{
-								break;
-							}
-						}
+					texture.depth = 1;
+					texture.images[0].pixels.resize(texture.width * texture.height * desiredFormatInfo.bytesPerPixel, 0);
+					for (int iz = 0; iz < desiredSize[2]; ++iz)
 						loadedTextures.push_back(texture);
-						m_fileWatcher.Add(indexedFileName, FileWatchOwner::TextureCache);
-
-						if (textureIndex > 0)
-						{
-							if (desiredSize[0] != texture.width || desiredSize[1] != texture.height && texture.type != loadedTextures[0].type || texture.channels != loadedTextures[0].channels)
-							{
-								m_logFn(LogLevel::Error, "Texture \"%s\" is the wrong size or type", indexedFileName);
-								runtimeData.m_failed = true;
-								return false;
-							}
-						}
-						else
-						{
-							desiredSize[0] = texture.width;
-							desiredSize[1] = texture.height;
-						}
-
-						// only one texture allowed in a texture2D
-						if (node.dimension == TextureDimensionType::Texture2D)
-							break;
-
-						// If there is no %i or %s in the filename, break
-						if (fullLoadFileName.find("%i") == std::string::npos && fullLoadFileName.find("%s") == std::string::npos)
-							break;
-
-						// cube maps are only allowed 6 textures
-						if (useCubeMapNames && textureIndex == 5)
-							break;
-					}
-					desiredSize[2] = (int)loadedTextures.size();
-
-					// Ensure that cube maps have 6 images loaded
-					if (node.dimension == TextureDimensionType::TextureCube)
-					{
-						if (loadedTextures.size() != 6)
-						{
-							m_logFn(LogLevel::Error, "Cube map \"%s\" does not have 6 images, it has %i", node.name.c_str(), (int)loadedTextures.size());
-							runtimeData.m_failed = true;
-							return false;
-						}
-					}
 				}
 			}
 
-			// Calculate desired mip count
-			int desiredMips = node.numMips;
-			if (desiredMips == 0)
+			if (!CreateAndUploadTextures(node, runtimeData, loadedTextures))
 			{
-				int maxSize = max(desiredSize[0], desiredSize[1]);
-				desiredMips = 1;
-				while (maxSize > 1)
-				{
-					maxSize /= 2;
-					desiredMips++;
-				}
+				m_logFn(LogLevel::Error, "Could not create resource for node \"%s\"", node.name.c_str());
+				runtimeData.m_failed = true;
+				return true;
 			}
 
-			// (re) create the resource if we should
-			if (!runtimeData.m_resource || runtimeData.m_format != desiredFormat || runtimeData.m_size[0] != desiredSize[0] || runtimeData.m_size[1] != desiredSize[1] || runtimeData.m_size[2] != desiredSize[2] || runtimeData.m_numMips != desiredMips)
-			{
-				// Release any resources which may have previously existed
-				runtimeData.Release(*this);
-
-				// set the format and size
-				runtimeData.m_format = desiredFormat;
-				runtimeData.m_size[0] = desiredSize[0];
-				runtimeData.m_size[1] = desiredSize[1];
-				runtimeData.m_size[2] = desiredSize[2];
-				runtimeData.m_numMips = desiredMips;
-
-				// UAV with stencil is not allowed
-				DXGI_FORMAT_Info pixelsFormatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
-				if (pixelsFormatInfo.isStencil && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
-				{
-					runtimeData.m_renderGraphText = "Cannot create because texture is a stencil format, but is used with UAV access";
-					return true;
-				}
-
-				// Make a resource for the "live" texture which may be modified during running, and also for the initial state.
-				D3D12_RESOURCE_FLAGS resourceFlags = ShaderResourceAccessToD3D12_RESOURCE_FLAGs(node.accessedAs);
-				unsigned int size[3] = { (unsigned int)desiredSize[0], (unsigned int)desiredSize[1], (unsigned int)desiredSize[2] };
-				std::string nodeNameInitialState = node.name + " Initial State";
-				runtimeData.m_resourceInitialState = CreateTexture(m_device, size, desiredMips, runtimeData.m_format, resourceFlags, D3D12_RESOURCE_STATE_COPY_DEST, TextureDimensionTypeToResourceType(node.dimension), nodeNameInitialState.c_str());
-				runtimeData.m_resource = CreateTexture(m_device, size, desiredMips, runtimeData.m_format, resourceFlags, D3D12_RESOURCE_STATE_COPY_DEST, TextureDimensionTypeToResourceType(node.dimension), node.name.c_str());
-
-				// track the new resources for state transitions
-				m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST));
-				m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
-
-				if (hasFileName)
-				{
-					// get the texture info
-					TextureCache::Texture& firstTexture = loadedTextures[0];
-
-					// make a DXGI_FORMAT_Info describing our loaded texture data
-					DXGI_FORMAT_Info textureFormatInfo;
-					switch (firstTexture.type)
-					{
-						case TextureCache::Type::U8: textureFormatInfo = DXGI_FORMAT_INFO(uint8_t, firstTexture.channels, node.loadFileNameAsSRGB); break;
-						case TextureCache::Type::F32: textureFormatInfo = DXGI_FORMAT_INFO(float, firstTexture.channels, node.loadFileNameAsSRGB); break;
-						case TextureCache::Type::BC7: textureFormatInfo = node.loadFileNameAsSRGB ? Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM_SRGB) : Get_DXGI_FORMAT_Info(DXGI_FORMAT_BC7_UNORM); break;
-						default:
-						{
-							return false;
-						}
-					}
-
-					// convert all the textures into a single bufer
-					std::vector<unsigned char> allPixels;
-					DXGI_FORMAT_Info pixelsFormatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
-					for (size_t textureIndex = 0; textureIndex < loadedTextures.size(); ++textureIndex)
-					{
-						std::vector<unsigned char> pixelsConverted;
-						if (!ConvertPixelData(loadedTextures[textureIndex].pixels, textureFormatInfo, pixelsConverted, pixelsFormatInfo))
-							return false;
-
-						allPixels.insert(allPixels.end(), pixelsConverted.begin(), pixelsConverted.end());
-					}
-
-					// Make the mips
-					std::vector<std::vector<unsigned char>> allPixelsMips(desiredMips > 1 ? desiredMips - 1 : 0);
-					{
-						int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
-						for (int mipIndex = 0; mipIndex < desiredMips - 1; ++mipIndex)
-						{
-							if (mipIndex == 0)
-								MakeMip(allPixels, allPixelsMips[0], pixelsFormatInfo, node.dimension, mipDims);
-							else
-								MakeMip(allPixelsMips[mipIndex - 1], allPixelsMips[mipIndex], pixelsFormatInfo, node.dimension, mipDims);
-
-							mipDims[0] = max(mipDims[0] / 2, 1);
-							mipDims[1] = max(mipDims[1] / 2, 1);
-							if (node.dimension == TextureDimensionType::Texture3D)
-								mipDims[2] = max(mipDims[2] / 2, 1);
-						}
-					}
-
-					// copy everything to GPU
-					int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
-					for (int mipIndex = 0; mipIndex < runtimeData.m_numMips; ++mipIndex)
-					{
-						std::vector<unsigned char>& srcPixels = (mipIndex > 0)
-							? allPixelsMips[mipIndex - 1]
-							: allPixels;
-
-						// Set up variables to handle 3d textures (single sub resource) vs other times (a sub resource per 2d texture)
-						int arrayCount = 0;
-						int iyCount = mipDims[1];
-						int izCount = 0;
-						if (node.dimension == TextureDimensionType::Texture3D)
-						{
-							arrayCount = 1;
-							izCount = mipDims[2];
-						}
-						else
-						{
-							arrayCount = mipDims[2];
-							izCount = 1;
-						}
-
-						int allPixelsStride = (int)srcPixels.size() / arrayCount;
-
-						for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
-						{
-							unsigned int arrayIndexStart = allPixelsStride * arrayIndex;
-
-							// Make an upload buffer
-							int unalignedPitch = mipDims[0] * pixelsFormatInfo.bytesPerPixel;
-							int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
-							UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, alignedPitch * iyCount * izCount, false);
-
-							// write the pixels into the upload buffer
-							{
-								unsigned char* destPixels = nullptr;
-								HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&destPixels));
-								if (hr)
-									return false;
-
-								for (int iz = 0; iz < izCount; ++iz)
-								{
-									for (int iy = 0; iy < iyCount; ++iy)
-									{
-										const unsigned char* src = &srcPixels[arrayIndexStart + (iz * iyCount + iy) * unalignedPitch];
-										unsigned char* dest = &destPixels[(iz * iyCount + iy) * alignedPitch];
-										memcpy(dest, src, unalignedPitch);
-									}
-								}
-
-								uploadBuffer->buffer->Unmap(0, nullptr);
-							}
-
-							// Copy the upload buffer into m_resourceInitialState
-							{
-								UINT subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, runtimeData.m_numMips, arrayCount);
-
-								D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resourceInitialState->GetDesc();
-								std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
-								D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
-								m_device->GetCopyableFootprints(&resourceDesc, subresourceIndex, 1, 0, layout, nullptr, nullptr, nullptr);
-
-								D3D12_TEXTURE_COPY_LOCATION src = {};
-								src.pResource = uploadBuffer->buffer;
-								src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-								src.PlacedFootprint = *layout;
-
-								D3D12_TEXTURE_COPY_LOCATION dest = {};
-								dest.pResource = runtimeData.m_resourceInitialState;
-								dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-								dest.SubresourceIndex = subresourceIndex;
-
-								m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
-							}
-						}
-
-						mipDims[0] = max(mipDims[0] / 2, 1);
-						mipDims[1] = max(mipDims[1] / 2, 1);
-						if (node.dimension == TextureDimensionType::Texture3D)
-							mipDims[2] = max(mipDims[2] / 2, 1);
-					}
-				}
-
-				// Note that the resource wants to be reset to the initial state.
-				runtimeData.m_resourceWantsReset = true;
-			}
+			// Note that the resource wants to be reset to the initial state.
+			runtimeData.m_resourceWantsReset = true;
 		}
 	}
 

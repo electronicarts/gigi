@@ -50,12 +50,6 @@ STRUCT_END()
 // .gguser File Schema
 //========================================================
 
-ENUM_BEGIN(GGUserFile_ImportedTexture_BinaryType, "The basic data type within the binary file")
-	ENUM_ITEM(Float, "Floating point 32 bits")
-	ENUM_ITEM(Byte, "Unsigned 8 bits")
-	ENUM_ITEM(Count, "")
-ENUM_END()
-
 ENUM_BEGIN(GGUserFile_TLASBuildFlags, "D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE etc")
 	ENUM_ITEM(None, "")
 	ENUM_ITEM(AllowUpdate, "")
@@ -74,8 +68,7 @@ STRUCT_BEGIN(GGUserFile_ImportedTexture, "The details of an imported texture")
 	STRUCT_FIELD(TextureFormat, format, TextureFormat::RGBA8_Unorm_sRGB, "The format of the texture to create", 0)
 
 	STRUCT_STATIC_ARRAY(int, binaryDims, 3, {0 COMMA 0 COMMA 1}, "The size of the image in the binary file", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
-	STRUCT_FIELD(GGUserFile_ImportedTexture_BinaryType, binaryType, GGUserFile_ImportedTexture_BinaryType::Float, "The basic data type within the binary file", 0)
-	STRUCT_FIELD(int, binaryChannels, 4, "How many channels there are in the file", 0)
+	STRUCT_FIELD(TextureFormat, binaryFormat, TextureFormat::RGBA8_Unorm_sRGB, "The format of the binary file", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(GGUserFile_ImportedBuffer, "The details of an imported buffer")

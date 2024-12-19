@@ -44,6 +44,8 @@ Introductory Gigi Tutorial: Make a box blur post processing effect.
 
 [Gigi Jam 2024 Lightning Talks (YouTube)](https://www.youtube.com/watch?v=m62ePwK33PM)
 
+[Gigi Technical Overview (YouTube GPC 2024)](https://www.youtube.com/watch?v=MgCR-Kky628)
+
 The **Techniques/** folder of the repo contains some examples to help get you started.  The **Techniques/UnitTests/** folder contains the unit tests, which aims to exercise every possible piece of functionality.
 
 There are also documents in the **UserDocumentation** folder that explain the viewer python interface, Gigi shader tokens, and other things.
@@ -63,6 +65,8 @@ If you could also let us know the urgency of the bug or missing feature on your 
 Created by Alan Wolfe
 
 **Contributors:**
+
+Adam Badke
 
 Alexey Gladkov
 

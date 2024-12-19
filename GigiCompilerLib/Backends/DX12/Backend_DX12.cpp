@@ -247,6 +247,8 @@ struct BackendDX12 : public BackendBase
             case TextureFormat::D24_Unorm_S8: return "DXGI_FORMAT_R24_UNORM_X8_TYPELESS";
             case TextureFormat::BC7_Unorm: return "DXGI_FORMAT_BC7_UNORM";
             case TextureFormat::BC7_Unorm_sRGB: return "DXGI_FORMAT_BC7_UNORM_SRGB";
+            case TextureFormat::BC6_UF16: return "DXGI_FORMAT_BC6H_UF16";
+            case TextureFormat::BC6_SF16: return "DXGI_FORMAT_BC6H_SF16";
         }
 
         Assert(false, "Unhandled TextureFormat: %s (%i)", EnumToString(textureFormat), (int)textureFormat);
@@ -760,15 +762,27 @@ struct BackendDX12 : public BackendBase
                         {
                             stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n        " << VariableToString(variable, renderGraph) << " = ImGui::Button(\"" << variable.name << "\");"
-                                "\n        ShowToolTip(\"" << variable.comment << "\");"
                                 ;
+
+                            if (!variable.comment.empty())
+                            {
+                                stringReplacementMap["/*$(IMGUI)*/"] <<
+                                    "\n        ShowToolTip(\"" << variable.comment << "\");"
+                                    ;
+                            }
                         }
                         else
                         {
                             stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n        ImGui::Checkbox(\"" << variable.name << "\", &" << VariableToString(variable, renderGraph) << ");"
-                                "\n        ShowToolTip(\"" << variable.comment << "\");"
                                 ;
+
+                            if (!variable.comment.empty())
+                            {
+                                stringReplacementMap["/*$(IMGUI)*/"] <<
+                                    "\n        ShowToolTip(\"" << variable.comment << "\");"
+                                    ;
+                            }
                         }
                         break;
                     }
@@ -778,8 +792,14 @@ struct BackendDX12 : public BackendBase
                         {
                             stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n        ImGui::InputInt(\"" << variable.name << "\", &" << VariableToString(variable, renderGraph) << ", 0);"
-                                "\n        ShowToolTip(\"" << variable.comment << "\");"
                                 ;
+
+                            if (!variable.comment.empty())
+                            {
+                                stringReplacementMap["/*$(IMGUI)*/"] <<
+                                    "\n        ShowToolTip(\"" << variable.comment << "\");"
+                                    ;
+                            }
                         }
                         else
                         {
@@ -796,7 +816,16 @@ struct BackendDX12 : public BackendBase
                             stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n            };"
                                 "\n            ImGui::Combo(\"" << variable.name << "\", (int*)&" << VariableToString(variable, renderGraph) << ", labels, " << e.items.size() << ");"
-                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+
+                            if (!variable.comment.empty())
+                            {
+                                stringReplacementMap["/*$(IMGUI)*/"] <<
+                                    "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                    ;
+                            }
+
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n        }"
                                 ;
                         }
@@ -810,7 +839,16 @@ struct BackendDX12 : public BackendBase
                             "\n            int localVar = (int)" << VariableToString(variable, renderGraph) << ";"
                             "\n            if(ImGui::InputInt(\"" << variable.name << "\", &localVar, 0))"
                             "\n                " << VariableToString(variable, renderGraph) << " = (unsigned int)localVar;"
-                            "\n            ShowToolTip(\"" << variable.comment << "\");"
+                            ;
+
+                        if (!variable.comment.empty())
+                        {
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
+                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+                        }
+
+                        stringReplacementMap["/*$(IMGUI)*/"] <<
                             "\n        }";
                         break;
                     }
@@ -832,7 +870,16 @@ struct BackendDX12 : public BackendBase
                             "\n            ImGui::Text(\"" << variable.name << "\");"
                             "\n            ImGui::PopItemWidth();"
                             "\n            ImGui::PopID();"
-                            "\n            ShowToolTip(\"" << variable.comment << "\");"
+                            ;
+
+                        if (!variable.comment.empty())
+                        {
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
+                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+                        }
+
+                        stringReplacementMap["/*$(IMGUI)*/"] <<
                             "\n        }";
                         break;
                     }
@@ -858,7 +905,16 @@ struct BackendDX12 : public BackendBase
                             "\n            ImGui::Text(\"" << variable.name << "\");"
                             "\n            ImGui::PopItemWidth();"
                             "\n            ImGui::PopID();"
-                            "\n            ShowToolTip(\"" << variable.comment << "\");"
+                            ;
+
+                        if (!variable.comment.empty())
+                        {
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
+                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+                        }
+
+                        stringReplacementMap["/*$(IMGUI)*/"] <<
                             "\n        }";
                         break;
                     }
@@ -866,8 +922,14 @@ struct BackendDX12 : public BackendBase
                     {
                         stringReplacementMap["/*$(IMGUI)*/"] <<
                             "\n        ImGui::InputFloat(\"" << variable.name << "\", &" << VariableToString(variable, renderGraph) << ");"
-                            "\n        ShowToolTip(\"" << variable.comment << "\");"
                             ;
+
+                        if (!variable.comment.empty())
+                        {
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
+                                "\n        ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+                        }
                         break;
                     }
                     case DataFieldType::Float2:
@@ -884,7 +946,16 @@ struct BackendDX12 : public BackendBase
                             "\n            ImGui::Text(\"" << variable.name << "\");"
                             "\n            ImGui::PopItemWidth();"
                             "\n            ImGui::PopID();"
-                            "\n            ShowToolTip(\"" << variable.comment << "\");"
+                            ;
+
+                        if (!variable.comment.empty())
+                        {
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
+                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+                        }
+
+                        stringReplacementMap["/*$(IMGUI)*/"] <<
                             "\n        }"
                             ;
                         break;
@@ -913,7 +984,16 @@ struct BackendDX12 : public BackendBase
                                 "\n            ImGui::Text(\"" << variable.name << "\");"
                                 "\n            ImGui::PopItemWidth();"
                                 "\n            ImGui::PopID();"
-                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+
+                            if (!variable.comment.empty())
+                            {
+                                stringReplacementMap["/*$(IMGUI)*/"] <<
+                                    "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                    ;
+                            }
+
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n        }"
                                 ;
                         }
@@ -945,7 +1025,16 @@ struct BackendDX12 : public BackendBase
                                 "\n            ImGui::Text(\"" << variable.name << "\");"
                                 "\n            ImGui::PopItemWidth();"
                                 "\n            ImGui::PopID();"
-                                "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                ;
+
+                            if (!variable.comment.empty())
+                            {
+                                stringReplacementMap["/*$(IMGUI)*/"] <<
+                                    "\n            ShowToolTip(\"" << variable.comment << "\");"
+                                    ;
+                            }
+
+                            stringReplacementMap["/*$(IMGUI)*/"] <<
                                 "\n        }"
                                 ;
                         }

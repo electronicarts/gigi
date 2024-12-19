@@ -233,24 +233,18 @@ struct DepluralizeFileCopiesVisitor
 
                     // make sure there is a %i in the source file name
                     bool useCubeMapNames = false;
+                    bool filenameIsPlural = false;
                     if (copy.fileName.find("%i") == std::string::npos)
                     {
                         if (copy.fileName.find("%s") != std::string::npos)
                         {
                             useCubeMapNames = true;
-                        }
-                        else
-                        {
-                            Assert(false, "Plural file copies need to contain a %%i or %%s. Not found in fileName %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
-                            return false;
+                            filenameIsPlural = true;
                         }
                     }
-
-                    // make sure there is a %i in the dest file name too - or that it is empty
-                    if (!copy.destFileName.empty() && copy.destFileName.find("%i") == std::string::npos)
+                    else
                     {
-                        Assert(false, "Plural file copies need to contain a %%i. Not found in destFileName %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
-                        return false;
+                        filenameIsPlural = true;
                     }
 
                     int fileCopyCount = -1;
@@ -298,6 +292,9 @@ struct DepluralizeFileCopiesVisitor
                         newFileCopies.push_back(newFileCopy);
 
                         if (useCubeMapNames && fileCopyCount == 5)
+                            break;
+
+                        if (!filenameIsPlural)
                             break;
                     }
 

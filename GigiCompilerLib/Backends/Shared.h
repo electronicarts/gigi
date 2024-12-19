@@ -542,6 +542,20 @@ inline bool ShaderResourceTypeIsReadOnly(ShaderResourceAccessType access)
     return false;
 }
 
+inline bool AccessIsReadOnly(unsigned int accessedAs)
+{
+    for (unsigned int i = 0; i < (unsigned int)ShaderResourceAccessType::Count; ++i)
+    {
+        if ((accessedAs & (1 << i)) == 0)
+            continue;
+
+        if (!ShaderResourceTypeIsReadOnly((ShaderResourceAccessType)i))
+            return false;
+    }
+
+    return true;
+}
+
 inline size_t DataFieldTypeToSize(DataFieldType type)
 {
     switch(type)

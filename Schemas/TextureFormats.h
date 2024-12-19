@@ -54,4 +54,7 @@ ENUM_BEGIN(TextureFormat, "")
     // Block compressed formats
     ENUM_ITEM(BC7_Unorm, "RGB, alpha optional")
     ENUM_ITEM(BC7_Unorm_sRGB, "RGB, alpha optional. sRGB")
+
+    ENUM_ITEM(BC6_UF16, "RGB, 16 bit float unsigned")
+    ENUM_ITEM(BC6_SF16, "RGB, 16 bit float signed")
 ENUM_END()

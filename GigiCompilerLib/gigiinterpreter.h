@@ -939,6 +939,26 @@ public:
 		}
 	}
 
+	template<typename LAMBDA>
+	void RuntimeDataLambda(const LAMBDA& lambda) const
+	{
+		#include "external/df_serialize/_common.h"
+		#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
+		{ \
+			m_##_TYPE##_RuntimeData.ForEach( \
+				[lambda](const auto& key, const auto& value) \
+				{ \
+					lambda(key, value); \
+				} \
+			); \
+		}
+
+		// clang-format off
+		#include "external/df_serialize/_fillunsetdefines.h"
+		#include "Schemas/RenderGraphNodesVariant.h"
+		// clang-format on
+	}
+
 	std::string GetTempDirectory() const
 	{
 		return m_tempDirectory;

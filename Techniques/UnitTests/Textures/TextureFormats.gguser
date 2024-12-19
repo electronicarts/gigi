@@ -1,17 +1,20 @@
 {
-    "resourceViewNodeIndex": 1,
-    "resourceViewResourceIndex": 1,
-    "importedResources": [
-        {
-            "nodeName": "Texture",
-            "texture": {
-                "size": [
-                    16,
-                    16,
-                    1
-                ],
-                "format": "Any"
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 1,
+        "importedResources": [
+            {
+                "nodeName": "Texture",
+                "texture": {
+                    "size": [
+                        16,
+                        16,
+                        1
+                    ],
+                    "format": "D16_Unorm"
+                }
             }
-        }
-    ]
+        ]
+    }
 }

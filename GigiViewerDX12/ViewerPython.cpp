@@ -218,12 +218,10 @@ static PyObject* Python_SetWantReadback(PyObject* self, PyObject* args)
 {
     const char* viewableResourceName = nullptr;
     int wantsReadback = 1;
-    int arrayIndex = 0;
-    int mipIndex = 0;
-    if (!PyArg_ParseTuple(args, "s|pii:Python_SetWantReadback", &viewableResourceName, &wantsReadback, &arrayIndex, &mipIndex))
+    if (!PyArg_ParseTuple(args, "s|p:Python_SetWantReadback", &viewableResourceName, &wantsReadback))
         return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
 
-    g_interface->SetWantReadback(viewableResourceName, wantsReadback != 0, arrayIndex, mipIndex);
+    g_interface->SetWantReadback(viewableResourceName, wantsReadback != 0);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -232,12 +230,14 @@ static PyObject* Python_SetWantReadback(PyObject* self, PyObject* args)
 static PyObject* Python_Readback(PyObject* self, PyObject* args)
 {
     const char* viewableResourceName = nullptr;
-    if (!PyArg_ParseTuple(args, "s:Python_Readback", &viewableResourceName))
+    int arrayIndex = 0;
+    int mipIndex = 0;
+    if (!PyArg_ParseTuple(args, "s|ii:Python_Readback", &viewableResourceName, &arrayIndex, &mipIndex))
         return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
 
     // Get the data
     GigiArray data;
-    bool success = g_interface->Readback(viewableResourceName, data);
+    bool success = g_interface->Readback(viewableResourceName, arrayIndex, mipIndex, data);
 
     // return the result
     PyObject* ret = PyTuple_New(2);
@@ -503,19 +503,6 @@ static PyObject* Python_SetImportedTextureSize(PyObject* self, PyObject* args)
     return Py_None;
 }
 
-static PyObject* Python_SetImportedTextureBinaryType(PyObject* self, PyObject* args)
-{
-    const char* textureName = nullptr;
-    int type;
-    if (!PyArg_ParseTuple(args, "si:Python_SetImportedTextureBinaryType", &textureName, &type))
-        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
-
-    g_interface->SetImportedTextureBinaryType(textureName, (GGUserFile_ImportedTexture_BinaryType)type);
-
-    Py_INCREF(Py_None);
-    return Py_None;
-}
-
 static PyObject* Python_SetImportedTextureBinarySize(PyObject* self, PyObject* args)
 {
     const char* textureName = nullptr;
@@ -529,14 +516,14 @@ static PyObject* Python_SetImportedTextureBinarySize(PyObject* self, PyObject* a
     return Py_None;
 }
 
-static PyObject* Python_SetImportedTextureBinaryChannels(PyObject* self, PyObject* args)
+static PyObject* Python_SetImportedTextureBinaryFormat(PyObject* self, PyObject* args)
 {
     const char* textureName = nullptr;
-    int channels;
-    if (!PyArg_ParseTuple(args, "si:Python_SetImportedTextureBinarySize", &textureName, &channels))
+    int textureFormat = 0;
+    if (!PyArg_ParseTuple(args, "si:Python_SetImportedTextureBinaryFormat", &textureName, &textureFormat))
         return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
 
-    g_interface->SetImportedTextureBinaryChannels(textureName, channels);
+    g_interface->SetImportedTextureFormat(textureName, textureFormat);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -576,6 +563,31 @@ static PyObject* Python_SetCameraAltitudeAzimuth(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
 
     g_interface->SetCameraAltitudeAzimuth(altitude, azimuth);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetCameraNearFarZ(PyObject* self, PyObject* args)
+{
+    float nearZ = 0.0f;
+    float farZ = 0.0f;
+    if (!PyArg_ParseTuple(args, "ff:SetCameraNearFarZ", &nearZ, &farZ))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraNearFarZ(nearZ, farZ);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetCameraFlySpeed(PyObject* self, PyObject* args)
+{
+    float speed = 0.0f;
+    if (!PyArg_ParseTuple(args, "f:SetCameraFlySpeed", &speed))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraFlySpeed(speed);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -643,6 +655,31 @@ static PyObject* Python_GetProfilingData(PyObject* self, PyObject* args)
         PyDict_SetItem(ret, key, value);
     }
     return ret;
+}
+
+static PyObject* Python_IsResourceCreated(PyObject* self, PyObject* args)
+{
+    const char* resourceName = nullptr;
+    if (!PyArg_ParseTuple(args, "s:Python_IsResourceCreated", &resourceName))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->IsResourceCreated(resourceName);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SetViewedResource(PyObject* self, PyObject* args)
+{
+    const char* resourceName = nullptr;
+    if (!PyArg_ParseTuple(args, "s:Python_SetViewedResource", &resourceName))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetViewedResource(resourceName);
+
+    Py_INCREF(Py_None);
+    return Py_None;
 }
 
 static PyObject* Python_GGEnumValue(PyObject* self, PyObject* args)
@@ -850,7 +887,7 @@ static void AddEnums(PyObject* module)
     // clang-format on
 }
 
-void PythonInit(PythonInterface* interface, int argc, char** argv, int firstPythonArgv)
+void PythonInit(PythonInterface* interface)
 {
     g_interface = interface;
 
@@ -890,15 +927,18 @@ void PythonInit(PythonInterface* interface, int argc, char** argv, int firstPyth
         {"SetImportedTextureFormat", Python_SetImportedTextureFormat, METH_VARARGS, "Set the texture format of an imported texture"},
         {"SetImportedTextureColor", Python_SetImportedTextureColor, METH_VARARGS, "Set the color of an imported texture"},
         {"SetImportedTextureSize", Python_SetImportedTextureSize, METH_VARARGS, "Set the x,y,z dimensions an imported texture"},
-        {"SetImportedTextureBinaryType", Python_SetImportedTextureBinaryType, METH_VARARGS, "Sets the data type of a binary imported texture"},
-        {"SetImportedTextureBinarySize", Python_SetImportedTextureBinarySize, METH_VARARGS, "Sets the x,y,z dimensions of a binary imported texture"},
-        {"SetImportedTextureBinaryChannels", Python_SetImportedTextureBinaryChannels, METH_VARARGS, "Sets the number of channels of a binary imported texture"},
+        {"SetImportedTextureBinarySize", Python_SetImportedTextureBinarySize, METH_VARARGS, "Sets the x,y,z dimensions of a binary imported texture."},
+        {"SetImportedTextureBinaryFormat", Python_SetImportedTextureBinaryFormat, METH_VARARGS, "Sets the format of the binary file."},
         {"SetFrameDeltaTime", Python_SetFrameDeltaTime, METH_VARARGS, "Set the frame delta time, in seconds. Useful for recording videos by setting a fixed frame rate. Clear by setting to 0."},
         {"SetCameraPos", Python_SetCameraPos, METH_VARARGS, "Set the camera position"},
         {"SetCameraAltitudeAzimuth", Python_SetCameraAltitudeAzimuth, METH_VARARGS, "Set the camera altitude azimuth"},
+        {"SetCameraNearFarZ", Python_SetCameraNearFarZ, METH_VARARGS, "Set the near and far plane"},
+        {"SetCameraFlySpeed", Python_SetCameraFlySpeed, METH_VARARGS, "Set the fly speed of the camera"},
         {"GetCameraPos", Python_GetCameraPos, METH_VARARGS, "Get camera position"},
         {"GetCameraAltitudeAzimuth", Python_GetCameraAltitudeAzimuth, METH_VARARGS, "Get the camera altitude azimuth"},
         {"WriteGPUResource", Python_WriteGPUResource, METH_VARARGS, "Writes a gpu resource during the next RunTechnique"},
+        {"IsResourceCreated", Python_IsResourceCreated, METH_VARARGS, "Returns whether or not a resource is created."},
+        {"SetViewedResource", Python_SetViewedResource, METH_VARARGS, "Sets the resource being viewed"},
         {"ForceEnableProfiling", Python_ForceEnableProfiling, METH_VARARGS, "If true, forces profiling on, even when the profiling window isn't being shown."},
         {"GetProfilingData", Python_GetProfilingData, METH_VARARGS, "Gets the profiling data from the last technique execution. Python_ForceEnableProfiling needs to be enabled. Time is in milliseconds. CPU time is first, GPU time is second."},
         {"GGEnumValue", Python_GGEnumValue, METH_VARARGS, "Gets the integer value of an enum defined in the loaded .gg file."},
@@ -965,23 +1005,6 @@ void PythonInit(PythonInterface* interface, int argc, char** argv, int firstPyth
 
     config.home = pythonHomeBuf;
     Py_InitializeFromConfig(&config);
-
-    // handle command line parameters
-    if (firstPythonArgv >= 0 && firstPythonArgv < argc)
-    {
-        for (int i = firstPythonArgv; i < argc; ++i)
-        {
-            auto wtext = Py_DecodeLocale(argv[i], nullptr);
-            g_argvText.push_back(wtext);
-            PyMem_RawFree(wtext);
-        }
-
-        g_argv.resize(g_argvText.size());
-        for (size_t i = 0; i < g_argv.size(); ++i)
-            g_argv[i] = (wchar_t*)g_argvText[i].c_str();
-
-        PySys_SetArgv(int(g_argv.size()), g_argv.data());
-    }
 }
 
 void PythonShutdown()
@@ -989,8 +1012,18 @@ void PythonShutdown()
 	Py_Finalize();
 }
 
-bool PythonExecute(const char* fileName)
+bool PythonExecute(const char* fileName, const std::vector<std::wstring>& args)
 {
+    // handle command line parameters
+    {
+        g_argvText = args;
+        g_argv.resize(g_argvText.size());
+        for (size_t i = 0; i < g_argv.size(); ++i)
+            g_argv[i] = (wchar_t*)g_argvText[i].c_str();
+
+        PySys_SetArgv(int(g_argv.size()), g_argv.data());
+    }
+
     g_interface->m_scriptLocation = std::filesystem::weakly_canonical(fileName).string();
 
     // Read the file in
@@ -1010,7 +1043,7 @@ bool PythonExecute(const char* fileName)
         fclose(file);
     }
 
-    // execute the script
+    // execute the script, setting the command line args too
     PyObject* global = PyDict_New();
     PyObject* ret = PyRun_String(fileData.data(), Py_file_input, global, global);
 

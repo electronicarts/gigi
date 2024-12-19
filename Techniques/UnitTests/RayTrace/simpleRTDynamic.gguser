@@ -1,0 +1,43 @@
+{
+    "version": "2.0",
+    "systemVars": {
+        "ProjMtx_textureName": "Texture",
+        "InvViewProjMtx_varName": "clipToWorld"
+    },
+    "snapshot": {
+        "resourceViewNodeIndex": 2,
+        "resourceViewResourceIndex": 3,
+        "importedResources": [
+            {
+                "nodeName": "Scene",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "SimpleRT_VertexBuffer.csv",
+                    "structIndex": 0
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "enabled",
+                "value": "true"
+            },
+            {
+                "name": "cameraPos",
+                "value": "0.000000,0.000000,-10.000000"
+            },
+            {
+                "name": "depthNearPlane",
+                "value": "0.100000"
+            },
+            {
+                "name": "hitColor",
+                "value": "0.000000,1.000000,0.000000"
+            },
+            {
+                "name": "missColor",
+                "value": "1.000000,0.000000,0.000000"
+            }
+        ]
+    }
+}

@@ -22,7 +22,6 @@ namespace simpleRT_inline
         ImGui::PushID("gigi_simpleRT_inline");
 
         ImGui::Checkbox("enabled", &context->m_input.variable_enabled);
-        ShowToolTip("");
         {
             float width = ImGui::GetContentRegionAvail().x / 5.0f;
             ImGui::PushID("hitColor");
@@ -36,7 +35,6 @@ namespace simpleRT_inline
             ImGui::Text("hitColor");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
         {
             float width = ImGui::GetContentRegionAvail().x / 5.0f;
@@ -51,7 +49,6 @@ namespace simpleRT_inline
             ImGui::Text("missColor");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

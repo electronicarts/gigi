@@ -25,10 +25,8 @@ namespace MeshAmplification
             int localVar = (int)context->m_input.variable_AmplificationCount;
             if(ImGui::InputInt("AmplificationCount", &localVar, 0))
                 context->m_input.variable_AmplificationCount = (unsigned int)localVar;
-            ShowToolTip("");
         }
         ImGui::InputFloat("AmplificationSpacing", &context->m_input.variable_AmplificationSpacing);
-        ShowToolTip("");
         {
             float width = ImGui::GetContentRegionAvail().x / 5.0f;
             ImGui::PushID("Offset");
@@ -42,7 +40,6 @@ namespace MeshAmplification
             ImGui::Text("Offset");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

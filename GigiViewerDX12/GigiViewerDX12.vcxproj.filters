@@ -100,12 +100,14 @@
     <ClCompile Include="DX12Utils\PLYCache.cpp">
       <Filter>DX12Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\external\bc7enc\bc7decomp.cpp">
-      <Filter>external\bc7enc</Filter>
-    </ClCompile>
     <ClCompile Include="..\external\OpenFBX\libdeflate.c">
       <Filter>external\OpenFBX</Filter>
     </ClCompile>
+    <ClCompile Include="DX12Utils\Camera.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ImageReadback.cpp" />
+    <ClCompile Include="ImageSave.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">
@@ -134,12 +136,6 @@
     </Filter>
     <Filter Include="external\imgui">
       <UniqueIdentifier>{48c7e155-5828-48cc-8cae-7915a191ffe3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\gli">
-      <UniqueIdentifier>{1f1793cd-1a49-4b19-81f5-690cd19f3926}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="external\bc7enc">
-      <UniqueIdentifier>{19dbad94-614b-4e65-a9f9-f0c7b149e72f}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -237,15 +233,14 @@
     <ClInclude Include="imgui\backends\imgui_impl_dx12.ps.hlsl.h">
       <Filter>external\imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\external\gli\gli\gli.hpp">
-      <Filter>external\gli</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\bc7enc\bc7decomp.h">
-      <Filter>external\bc7enc</Filter>
-    </ClInclude>
     <ClInclude Include="..\external\OpenFBX\libdeflate.h">
       <Filter>external\OpenFBX</Filter>
     </ClInclude>
+    <ClInclude Include="DX12Utils\Camera.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageReadback.h" />
+    <ClInclude Include="ImageSave.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiViewerDX12.rc" />

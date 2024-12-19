@@ -1,19 +1,21 @@
 {
-    "resourceViewNodeIndex": 0,
-    "resourceViewResourceIndex": 1,
-    "importedResources": [
-        {
-            "nodeName": "Texture",
-            "texture": {
-                "fileName": "64x64_RGBA_u8.dat",
-                "format": "RGBA8_Unorm",
-                "binaryDims": [
-                    64,
-                    64,
-                    1
-                ],
-                "binaryType": "Byte"
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 0,
+        "resourceViewResourceIndex": 1,
+        "importedResources": [
+            {
+                "nodeName": "Texture",
+                "texture": {
+                    "fileName": "64x64_RGBA_u8.dat",
+                    "format": "RGBA8_Unorm",
+                    "binaryDims": [
+                        64,
+                        64,
+                        1
+                    ]
+                }
             }
-        }
-    ]
+        ]
+    }
 }

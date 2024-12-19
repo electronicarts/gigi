@@ -22,17 +22,11 @@ namespace SlangAutoDiff
         ImGui::PushID("gigi_SlangAutoDiff");
 
         ImGui::InputInt("NumGaussians", &context->m_input.variable_NumGaussians, 0);
-        ShowToolTip("");
         context->m_input.variable_Reset = ImGui::Button("Reset");
-        ShowToolTip("");
         ImGui::InputFloat("LearningRate", &context->m_input.variable_LearningRate);
-        ShowToolTip("");
         ImGui::InputFloat("MaximumStepSize", &context->m_input.variable_MaximumStepSize);
-        ShowToolTip("");
         ImGui::Checkbox("UseBackwardAD", &context->m_input.variable_UseBackwardAD);
-        ShowToolTip("");
         ImGui::Checkbox("QuantizeDisplay", &context->m_input.variable_QuantizeDisplay);
-        ShowToolTip("");
 
         ImGui::Checkbox("Profile", &context->m_profile);
         if (context->m_profile)

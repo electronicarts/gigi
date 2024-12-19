@@ -46,6 +46,9 @@ public:
 		m_commandQueue = commandQueue;
 		m_maxFramesInFlight = maxFramesInFlight;
 
+		m_descriptorTableCache_imgui.Init(maxFramesInFlight);
+		m_descriptorTableCache.Init(maxFramesInFlight);
+
 		m_SRVHeapAllocationTracker_imgui.Init(m_maxFramesInFlight, ImGuiSRVHeap, ImGuiSRVHeapDescriptorCount, ImGuiSRVHeapDescriptorSize);
 		m_SRVHeapAllocationTracker_imgui.MarkIndexAllocated(0, HEAP_DEBUG_TEXT()); // used by the imgui font texture
 
@@ -165,7 +168,7 @@ public:
 		// Call release on all runtime data
 		// clang-format off
 		#include "external/df_serialize/_common.h"
-		#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) m_##_TYPE##_RuntimeData.ForEach([this](auto& data) { data.Release(*this); }); \
+		#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) m_##_TYPE##_RuntimeData.ForEach([this](auto& key, auto& data) { data.Release(*this); }); \
 		m_##_TYPE##_RuntimeData.Clear();
 		#include "external/df_serialize/_fillunsetdefines.h"
 		#include "Schemas/RenderGraphNodesVariant.h"
@@ -269,7 +272,7 @@ public:
 		// Call release on all runtime data
 		// clang-format off
 		#include "external/df_serialize/_common.h"
-		#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) m_##_TYPE##_RuntimeData.ForEach([this](auto& data) { data.Release(*this); data.OnCompileOK(*this); });
+		#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) m_##_TYPE##_RuntimeData.ForEach([this](auto& key, auto& data) { data.Release(*this); data.OnCompileOK(*this); });
 		#include "external/df_serialize/_fillunsetdefines.h"
 		#include "Schemas/RenderGraphNodesVariant.h"
 		// clang-format on
@@ -429,7 +432,7 @@ public:
 			#include "external/df_serialize/_common.h"
 			#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
 				m_##_TYPE##_RuntimeData.ForEach( \
-					[](RuntimeTypes::_TYPE& data) \
+					[](auto& key, RuntimeTypes::_TYPE& data) \
 					{ \
 						data.OnNewFrame(); \
 					} \
@@ -506,6 +509,13 @@ public:
 		failed,
 		clean
 	};
+
+	struct ImportedTextureBinaryDesc
+	{
+		TextureFormat format = TextureFormat::Any;
+		int size[3] = { 0, 0, 1 };
+	};
+
 	struct ImportedTextureDesc
 	{
 		std::string fileName;
@@ -517,10 +527,9 @@ public:
 		RuntimeTypes::ViewableResource::Type textureType = RuntimeTypes::ViewableResource::Type::Texture2D;
 
 		// binary file loading info
-		int binaryDims[3] = { 0, 0, 1 };
-		GGUserFile_ImportedTexture_BinaryType binaryType = GGUserFile_ImportedTexture_BinaryType::Float;
-		int binaryChannels = 4;
+		ImportedTextureBinaryDesc binaryDesc;
 	};
+
 	struct ImportedBufferDesc
 	{
 		std::string fileName;
@@ -533,6 +542,7 @@ public:
 		bool BLASNoDuplicateAnyhitInvocations = false;
 		bool IsAABBs = false; // only for ray tracing AABBs which have an intersection shader
 	};
+
 	struct ImportedResourceDesc
 	{
 		ImportedResourceDesc()
@@ -688,11 +698,15 @@ private:
 	// clang-format on
 
 	// helpers
+	bool LoadTexture(std::vector<TextureCache::Texture>& loadedTextures, const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::string fileName, bool fileIsSRGB, const ImportedTextureBinaryDesc& binaryDesc, DXGI_FORMAT desiredFormat);
+	bool CreateAndUploadTextures(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::vector<TextureCache::Texture>& loadedTextures);
+
 	bool OnNodeActionImported(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, NodeAction nodeAction);
 	bool OnNodeActionNotImported(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, NodeAction nodeAction);
 	bool OnNodeActionImported(const RenderGraphNode_Resource_Buffer& node, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData, NodeAction nodeAction);
 	bool OnNodeActionNotImported(const RenderGraphNode_Resource_Buffer& node, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData, NodeAction nodeAction);
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
+	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
 	bool DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates);
 

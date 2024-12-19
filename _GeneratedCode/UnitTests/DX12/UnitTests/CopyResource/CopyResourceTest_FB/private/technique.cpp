@@ -745,8 +745,8 @@ namespace CopyResourceTest_FB
 
             if(context->m_profile)
             {
-                context->m_profileData[s_timerIndex].m_label = "Copy_Texture_To_Texture";
-                context->m_profileData[s_timerIndex].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
+                context->m_profileData[(s_timerIndex-1)/2].m_label = "Copy_Texture_To_Texture";
+                context->m_profileData[(s_timerIndex-1)/2].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
         }
@@ -765,8 +765,8 @@ namespace CopyResourceTest_FB
 
             if(context->m_profile)
             {
-                context->m_profileData[s_timerIndex].m_label = "Copy_Buffer_To_Buffer";
-                context->m_profileData[s_timerIndex].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
+                context->m_profileData[(s_timerIndex-1)/2].m_label = "Copy_Buffer_To_Buffer";
+                context->m_profileData[(s_timerIndex-1)/2].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
         }

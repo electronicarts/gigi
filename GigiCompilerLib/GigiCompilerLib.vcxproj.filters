@@ -74,6 +74,9 @@
     <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_fxc.cpp">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\Camera.cpp">
+      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gigicompiler.h" />
@@ -378,6 +381,9 @@
       <Filter>Backends\DX12\templates\Module\AgilitySDK\include\d3dx12</Filter>
     </ClInclude>
     <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders.h">
+      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\Camera.h">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClInclude>
   </ItemGroup>

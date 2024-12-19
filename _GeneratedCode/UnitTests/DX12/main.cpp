@@ -21,16 +21,19 @@
 #include <dxgi1_4.h>
 #include <tchar.h>
 
-#ifdef _DEBUG
-#define DX12_ENABLE_DEBUG_LAYER
 // Gigi Modification Begin
-#define DX12_GPU_VALIDATION() false
-#define DX12_BREAK_ON_WARN() false
-#define DX12_BREAK_ON_CORRUPTION() true
-#define DX12_BREAK_ON_ERROR() true
-#define MAKE_PIX_CAPTURE() false // if true, will emit a pix capture for every frame the unit tests run.
-// Gigi Modification End
+#ifdef _DEBUG
+    #define DX12_ENABLE_DEBUG_LAYER
+    #define DX12_GPU_VALIDATION() false
+    #define DX12_BREAK_ON_WARN() false
+    #define DX12_BREAK_ON_CORRUPTION() true
+    #define DX12_BREAK_ON_ERROR() true
 #endif
+
+#define MAKE_PIX_CAPTURE() false // if true, will emit a pix capture for every frame the unit tests run.
+
+static const unsigned int c_renderSize[2] = { 1024, 768 };
+// Gigi Modification End
 
 #ifdef DX12_ENABLE_DEBUG_LAYER
 #include <dxgidebug.h>
@@ -44,6 +47,7 @@ extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\Agility
 #include "DX12Utils/FileCache.h"
 #include "spdlog/spdlog.h"
 #include "DX12Utils/logfn.h"
+#include "DX12Utils/Camera.h"
 static void LogFunction(LogLevel level, const char* msg, ...)
 {
     char buffer[4096];
@@ -388,6 +392,21 @@ static HANDLE                       g_hSwapChainWaitableObject = nullptr;
 static ID3D12Resource*              g_mainRenderTargetResource[NUM_BACK_BUFFERS] = {};
 static D3D12_CPU_DESCRIPTOR_HANDLE  g_mainRenderTargetDescriptor[NUM_BACK_BUFFERS] = {};
 
+Camera g_camera;
+
+// first half of key states are this frame, second half are last frame
+uint8_t g_keyStates[512] = {};
+uint8_t* g_keyStatesLastFrame = &g_keyStates[256];
+
+// Mouse state is mouse x,y then left mouse down, right mouse down
+float g_mouseState[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+float g_mouseStateLastFrame[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+float g_cameraPos[3] = { 0.0f, 0.0f, 0.0f };
+float g_cameraAltitudeAzimuth[2] = { 0.0f, 0.0f };
+
+bool g_vsyncOn = true;
+
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -418,7 +437,10 @@ int main(int, char**)
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX12 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
+
+    RECT windowSize = { 0, 0, (LONG)c_renderSize[0], (LONG)c_renderSize[1] };
+    AdjustWindowRect(&windowSize, WS_OVERLAPPEDWINDOW, false);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"UnitTests", WS_OVERLAPPEDWINDOW, 100, 100, windowSize.right - windowSize.left, windowSize.bottom - windowSize.top, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -1604,8 +1626,7 @@ int main(int, char**)
 
         g_pd3dCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&g_pd3dCommandList);
 
-        g_pSwapChain->Present(1, 0); // Present with vsync
-        //g_pSwapChain->Present(0, 0); // Present without vsync
+        g_pSwapChain->Present(g_vsyncOn ? 1 : 0, 0);
 
         UINT64 fenceValue = g_fenceLastSignaledValue + 1;
         g_pd3dCommandQueue->Signal(g_fence, fenceValue);

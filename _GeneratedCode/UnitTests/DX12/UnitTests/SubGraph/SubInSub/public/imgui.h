@@ -36,7 +36,6 @@ namespace SubInSub
             ImGui::Text("Inner1_Inner1Mult");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

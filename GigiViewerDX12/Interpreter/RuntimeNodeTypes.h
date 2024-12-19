@@ -36,9 +36,10 @@ struct RuntimeTypes
 
 		Type m_type = Type::Texture2D;
 		std::string m_displayName;
-		ID3D12Resource* m_resource = nullptr;         // Textures: Always a 2D slice of the resource. Buffer: The full resource.
-		ID3D12Resource* m_resourceReadback = nullptr; // Textures: Always a full subresource of the resource. Buffer: the full resource.
-		DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;
+		ID3D12Resource* m_resource = nullptr;                  // Textures: The 2D slice of the resource being viewed (specific index or z, and specific mip). Format m_resourceFormat. Buffer: The full resource.
+		DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;         // The viewable format (like DXGI_FORMAT_R8_UINT instead of DXGI_FORMAT_X32_TYPELESS_G8X24_UINT). THe format of m_resource
+		ID3D12Resource* m_resourceReadback = nullptr;          // The full resource, all indices and mips. Format m_formatReadback, the format of the source resource.
+		D3D12_RESOURCE_DESC m_origResourceDesc;                // The desc of the resource we are reading back. Useful to decode the "untyped" readback buffer memory
 		int m_formatCount = 1; // A float4x4 would need 4 float4s, so this would be 4 in that case and the format would be for float4.
 		int m_size[3] = { 0, 0, 0 };
 		int m_numMips = 1;

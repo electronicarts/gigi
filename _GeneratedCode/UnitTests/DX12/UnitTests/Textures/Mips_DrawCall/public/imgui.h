@@ -22,7 +22,6 @@ namespace Mips_DrawCall
         ImGui::PushID("gigi_Mips_DrawCall");
 
         ImGui::Checkbox("UseMips", &context->m_input.variable_UseMips);
-        ShowToolTip("");
         {
             float width = ImGui::GetContentRegionAvail().x / 4.0f;
             ImGui::PushID("RenderSize");
@@ -38,7 +37,6 @@ namespace Mips_DrawCall
             ImGui::Text("RenderSize");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

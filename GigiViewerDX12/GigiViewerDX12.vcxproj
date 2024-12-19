@@ -45,11 +45,11 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -93,14 +93,16 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\external\bc7enc\bc7decomp.cpp" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_common.c" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\external\OpenFBX\libdeflate.c" />
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
+    <ClCompile Include="ImageReadback.cpp" />
+    <ClCompile Include="DX12Utils\Camera.cpp" />
     <ClCompile Include="DX12Utils\FBXCache.cpp" />
     <ClCompile Include="DX12Utils\ObjCache.cpp" />
     <ClCompile Include="DX12Utils\PLYCache.cpp" />
+    <ClCompile Include="ImageSave.cpp" />
     <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp" />
     <ClCompile Include="imgui\backends\imgui_impl_win32.cpp" />
     <ClCompile Include="imgui\imgui.cpp" />
@@ -134,13 +136,13 @@
     <ClCompile Include="ViewerPython_GigiArray.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\external\bc7enc\bc7decomp.h" />
-    <ClInclude Include="..\external\gli\gli\gli.hpp" />
     <ClInclude Include="..\external\nativefiledialog\src\common.h" />
     <ClInclude Include="..\external\nativefiledialog\src\include\nfd.h" />
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
     <ClInclude Include="..\external\OpenFBX\libdeflate.h" />
     <ClInclude Include="..\external\OpenFBX\ofbx.h" />
+    <ClInclude Include="ImageReadback.h" />
+    <ClInclude Include="DX12Utils\Camera.h" />
     <ClInclude Include="DX12Utils\CompileShaders.h" />
     <ClInclude Include="DX12Utils\CreateResources.h" />
     <ClInclude Include="DX12Utils\DelayedReleaseTracker.h" />
@@ -159,6 +161,7 @@
     <ClInclude Include="DX12Utils\UploadBufferTracker.h" />
     <ClInclude Include="DX12Utils\Utils.h" />
     <ClInclude Include="f16.h" />
+    <ClInclude Include="ImageSave.h" />
     <ClInclude Include="ImGuiHelper.h" />
     <ClInclude Include="imgui\backends\imgui_impl_dx12.ps.hlsl.h" />
     <ClInclude Include="Interpreter\GigiInterpreterPreviewWindowDX12.h" />
@@ -181,6 +184,9 @@
     <Image Include="iconWindow.ico" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\external\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\GigiCompilerLib\GigiCompilerLib.vcxproj">
       <Project>{6a151f4e-efd3-4a58-a6f5-e07ed189a6f5}</Project>
     </ProjectReference>
@@ -190,12 +196,12 @@
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
-    <Import Project="..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets" Condition="Exists('..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets')" />
+    <Import Project="..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets" Condition="Exists('..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets')" />
   </ImportGroup>
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WinPixEventRuntime.1.0.230302001\build\WinPixEventRuntime.targets'))" />
+    <Error Condition="!Exists('..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\WinPixEventRuntime.1.0.240308001\build\WinPixEventRuntime.targets'))" />
   </Target>
 </Project>

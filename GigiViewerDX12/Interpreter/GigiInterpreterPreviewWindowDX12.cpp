@@ -76,7 +76,7 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 		{
 			// translate the creation format for stencil bits
 			DXGI_FORMAT viewableFormat = resourceFormat;
-			if (viewableFormat == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT)
+			if (viewableFormat == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT || viewableFormat == DXGI_FORMAT_X24_TYPELESS_G8_UINT)
 				viewableFormat = DXGI_FORMAT_R8_UINT;
 
 			// (re) create the resource if needed
@@ -103,6 +103,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 				res.m_stride = stride;
 				res.m_count = count;
 
+				res.m_origResourceDesc = resource->GetDesc();
+
 				// create the new resource
 				switch (res.m_type)
 				{
@@ -111,20 +113,30 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 					case RuntimeTypes::ViewableResource::Type::Texture3D:
 					case RuntimeTypes::ViewableResource::Type::TextureCube:
 					{
-						unsigned int size[3] = { (unsigned int)res.m_size[0], (unsigned int)res.m_size[1], (unsigned int)res.m_size[2] };
-						if (res.m_type != RuntimeTypes::ViewableResource::Type::Texture3D)
-							size[2] = 1;
+						// Make the view slice
+						{
+							unsigned int size[3] = { (unsigned int)res.m_size[0], (unsigned int)res.m_size[1], (unsigned int)res.m_size[2] };
+							if (res.m_type != RuntimeTypes::ViewableResource::Type::Texture3D)
+								size[2] = 1;
 
-						res.m_resource = CreateTexture(interpreter.m_device, size, 1, res.m_format, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, ResourceType::Texture2D, (std::string(displayName) + " Copy").c_str());
-						interpreter.m_transitions.Track(TRANSITION_DEBUG_INFO(res.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
+							res.m_resource = CreateTexture(interpreter.m_device, size, 1, res.m_format, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, ResourceType::Texture2D, (std::string(displayName) + " Copy").c_str());
+							interpreter.m_transitions.Track(TRANSITION_DEBUG_INFO(res.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
+						}
 
-						// Make a readback buffer
-						DXGI_FORMAT_Info viewableFormatInfo = Get_DXGI_FORMAT_Info(viewableFormat);
-						int unalignedPitch = res.m_size[0] * viewableFormatInfo.bytesPerPixel;
-						int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * viewableFormatInfo.planeCount), unalignedPitch);
+						// Make a readback buffer that can hold the entire source resource
+						{
+							D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
 
-						res.m_resourceReadback = CreateBuffer(interpreter.m_device, alignedPitch * res.m_size[1] * res.m_size[2], D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, (std::string(displayName) + " Readback").c_str());
-						interpreter.m_transitions.Track(TRANSITION_DEBUG_INFO(res.m_resourceReadback, D3D12_RESOURCE_STATE_COPY_DEST));
+							unsigned int numSubResources = (res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D)
+								? resourceDesc.MipLevels
+								: resourceDesc.MipLevels * resourceDesc.DepthOrArraySize;
+
+							size_t totalBytes = 0;
+							interpreter.m_device->GetCopyableFootprints(&resourceDesc, 0, numSubResources, 0, nullptr, nullptr, nullptr, &totalBytes);
+
+							res.m_resourceReadback = CreateBuffer(interpreter.m_device, (unsigned int)totalBytes, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, (std::string(displayName) + " Readback").c_str());
+							interpreter.m_transitions.Track(TRANSITION_DEBUG_INFO(res.m_resourceReadback, D3D12_RESOURCE_STATE_COPY_DEST));
+						}
 						break;
 					}
 					case RuntimeTypes::ViewableResource::Type::ConstantBuffer:
@@ -161,10 +173,14 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 				interpreter.m_transitions.Transition(TRANSITION_DEBUG_INFO(res.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
 				interpreter.m_transitions.Flush(interpreter.m_commandList);
 
+				// make sure these are in range
+				res.m_arrayIndex = min(res.m_arrayIndex, res.m_size[2] - 1);
+				res.m_mipIndex = min(res.m_mipIndex, res.m_numMips - 1);
+
 				// multi dimensional textures only get a 2d slice
 				if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D)
 				{
-					res.m_arrayIndex = min(res.m_arrayIndex, res.m_size[2] - 1);
+					DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(resourceFormat);
 
 					D3D12_BOX srcBox;
 					srcBox.left = 0;
@@ -173,6 +189,14 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 					srcBox.bottom = res.m_size[1];
 					srcBox.front = res.m_arrayIndex;
 					srcBox.back = res.m_arrayIndex + 1;
+
+					if (resourceFormatInfo.isCompressed)
+					{
+						srcBox.left = ALIGN(4, srcBox.left);
+						srcBox.right = ALIGN(4, srcBox.right);
+						srcBox.top = ALIGN(4, srcBox.top);
+						srcBox.bottom = ALIGN(4, srcBox.bottom);
+					}
 
 					D3D12_TEXTURE_COPY_LOCATION src = {};
 					src.pResource = resource;
@@ -219,64 +243,36 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 				interpreter.m_transitions.Transition(TRANSITION_DEBUG_INFO(res.m_resourceReadback, D3D12_RESOURCE_STATE_COPY_DEST));
 				interpreter.m_transitions.Flush(interpreter.m_commandList);
 
-				if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D)
-				{
-					DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(resourceFormat);
-
-					D3D12_BOX srcBox;
-					srcBox.left = 0;
-					srcBox.right = res.m_size[0];
-					srcBox.top = 0;
-					srcBox.bottom = res.m_size[1];
-					srcBox.front = 0;
-					srcBox.back = res.m_size[2];
-
-					D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
-					std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
-					D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
-
-					UINT firstSubResource = D3D12CalcSubresource(res.m_mipIndex, 0, resourceFormatInfo.planeIndex, res.m_numMips, 1);
-					interpreter.m_device->GetCopyableFootprints(&resourceDesc, firstSubResource, 1, 0, layout, nullptr, nullptr, nullptr);
-
-					D3D12_TEXTURE_COPY_LOCATION src = {};
-					src.pResource = resource;
-					src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-					src.SubresourceIndex = firstSubResource;
-
-					D3D12_TEXTURE_COPY_LOCATION dest = {};
-					dest.pResource = res.m_resourceReadback;
-					dest.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-					dest.PlacedFootprint = *layout;
-
-					interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, &srcBox);
-				}
-				else if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D ||
+				if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D ||
 					res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray ||
+					res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D ||
 					res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube)
 				{
-					DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(resourceFormat);
-
+					// Calculate the number of sub resources
 					D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
-					resourceDesc.Format = resourceFormat;
 
-					std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));
-					D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem.data();
+					unsigned int numSubResources = (res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D)
+						? resourceDesc.MipLevels
+						: resourceDesc.MipLevels * resourceDesc.DepthOrArraySize;
 
-					UINT firstSubResource = D3D12CalcSubresource(res.m_mipIndex, res.m_arrayIndex, resourceFormatInfo.planeIndex, res.m_numMips, res.m_size[2]);
-					interpreter.m_device->GetCopyableFootprints(&resourceDesc, firstSubResource, 1, 0, layout, nullptr, nullptr, nullptr);
+					std::vector<unsigned char> layoutsMem((sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)) * numSubResources);
+					D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutsMem.data();
+					interpreter.m_device->GetCopyableFootprints(&resourceDesc, 0, numSubResources, 0, layouts, nullptr, nullptr, nullptr);
 
-					D3D12_TEXTURE_COPY_LOCATION src = {};
-					src.pResource = resource;
-					src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-					src.SubresourceIndex = D3D12CalcSubresource(res.m_mipIndex, res.m_arrayIndex, resourceFormatInfo.planeIndex, res.m_numMips, res.m_size[2]);
+					for (unsigned int subResourceIndex = 0; subResourceIndex < numSubResources; ++subResourceIndex)
+					{
+						D3D12_TEXTURE_COPY_LOCATION src = {};
+						src.pResource = resource;
+						src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+						src.SubresourceIndex = subResourceIndex;
 
+						D3D12_TEXTURE_COPY_LOCATION dest = {};
+						dest.pResource = res.m_resourceReadback;
+						dest.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+						dest.PlacedFootprint = layouts[subResourceIndex];
 
-					D3D12_TEXTURE_COPY_LOCATION dest = {};
-					dest.pResource = res.m_resourceReadback;
-					dest.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-					dest.PlacedFootprint = *layout;
-
-					interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+						interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+					}
 				}
 				else
 				{

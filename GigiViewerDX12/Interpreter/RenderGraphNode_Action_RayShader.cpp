@@ -653,10 +653,36 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					}
 					case RenderGraphNode::c_index_resourceBuffer:
 					{
-						const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
+						RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
 
 						if (dep.access == ShaderResourceAccessType::RTScene)
 						{
+							if (!AccessIsReadOnly(resourceNode.resourceBuffer.accessedAs))
+							{
+								m_transitions.Untrack(resourceInfo.m_tlas);
+								m_delayedRelease.Add(resourceInfo.m_tlas);
+								resourceInfo.m_tlas = nullptr;
+								resourceInfo.m_tlasSize = 0;
+
+								m_transitions.Untrack(resourceInfo.m_blas);
+								m_delayedRelease.Add(resourceInfo.m_blas);
+								resourceInfo.m_blas = nullptr;
+								resourceInfo.m_blasSize = 0;
+
+								m_transitions.Untrack(resourceInfo.m_instanceDescs);
+								m_delayedRelease.Add(resourceInfo.m_instanceDescs);
+								resourceInfo.m_instanceDescs = nullptr;
+							}
+
+							if (!resourceInfo.m_tlas)
+							{
+								if (!MakeAccelerationStructures(resourceNode.resourceBuffer))
+								{
+									m_logFn(LogLevel::Error, "Failed to make acceleration structure for buffer \"%s\"", resourceNode.resourceBuffer.name.c_str());
+									return false;
+								}
+							}
+
 							desc.m_resource = resourceInfo.m_tlas;
 							desc.m_format = DXGI_FORMAT_UNKNOWN;
 							desc.m_stride = resourceInfo.m_tlasSize;

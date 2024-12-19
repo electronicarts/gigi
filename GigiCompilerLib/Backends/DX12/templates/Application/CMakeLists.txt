@@ -29,9 +29,9 @@ target_include_directories(/*$(Name)*/ PRIVATE ./imgui/)
 /*$(if:DX12.AgilitySDKRequired:true)*/target_include_directories(/*$(Name)*/ PRIVATE ./AgilitySDK/include/)/*$(endif)*/
 target_include_directories(/*$(Name)*/ PRIVATE ./DX12Utils/tinyexr/)
 target_include_directories(/*$(Name)*/ PRIVATE ./DX12Utils/tinyexr/deps/miniz/)
-target_include_directories(/*$(Name)*/ PRIVATE ./WinPixEventRuntime.1.0.230302001/Include/)
+target_include_directories(/*$(Name)*/ PRIVATE ./WinPixEventRuntime.1.0.240308001/Include/)
 
-target_link_directories(/*$(Name)*/ PRIVATE ./WinPixEventRuntime.1.0.230302001/bin/x64/)
+target_link_directories(/*$(Name)*/ PRIVATE ./WinPixEventRuntime.1.0.240308001/bin/x64/)
 
 target_link_libraries(/*$(Name)*/ d3d12.lib dxgi.lib d3dcompiler.lib WinPixEventRuntime.lib)
 

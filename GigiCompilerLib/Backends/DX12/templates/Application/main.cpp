@@ -21,16 +21,19 @@
 #include <dxgi1_4.h>
 #include <tchar.h>
 
-#ifdef _DEBUG
-#define DX12_ENABLE_DEBUG_LAYER
 // Gigi Modification Begin
-#define DX12_GPU_VALIDATION() false
-#define DX12_BREAK_ON_WARN() false
-#define DX12_BREAK_ON_CORRUPTION() true
-#define DX12_BREAK_ON_ERROR() true
-#define MAKE_PIX_CAPTURE() false // if true, will emit a pix capture for every frame the unit tests run.
-// Gigi Modification End
+#ifdef _DEBUG
+    #define DX12_ENABLE_DEBUG_LAYER
+    #define DX12_GPU_VALIDATION() false
+    #define DX12_BREAK_ON_WARN() false
+    #define DX12_BREAK_ON_CORRUPTION() true
+    #define DX12_BREAK_ON_ERROR() true
 #endif
+
+#define MAKE_PIX_CAPTURE() false // if true, will emit a pix capture for every frame the unit tests run.
+
+static const unsigned int c_renderSize[2] = { 1024, 768 };
+// Gigi Modification End
 
 #ifdef DX12_ENABLE_DEBUG_LAYER
 #include <dxgidebug.h>
@@ -44,6 +47,7 @@ extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\Agility
 #include "DX12Utils/FileCache.h"
 #include "spdlog/spdlog.h"
 #include "DX12Utils/logfn.h"
+#include "DX12Utils/Camera.h"
 static void LogFunction(LogLevel level, const char* msg, ...)
 {
     char buffer[4096];
@@ -161,6 +165,17 @@ void CopyTextureToTexture(ID3D12GraphicsCommandList* commandList, ID3D12Resource
             commandList->ResourceBarrier(barrierCount, barriers);
     }
 
+    // Trim the source box if needed, to be smaller or equal to the size of the destination resource
+    D3D12_RESOURCE_DESC srcDesc = srcResource->GetDesc();
+    D3D12_RESOURCE_DESC destDesc = destResource->GetDesc();
+    D3D12_BOX srcBox;
+    srcBox.left = 0;
+    srcBox.right = min(srcDesc.Width, destDesc.Width);
+    srcBox.top = 0;
+    srcBox.bottom = min(srcDesc.Height, destDesc.Height);
+    srcBox.front = 0;
+    srcBox.back = 1;
+
     // Do the copy
     {
         D3D12_TEXTURE_COPY_LOCATION src = {};
@@ -173,7 +188,7 @@ void CopyTextureToTexture(ID3D12GraphicsCommandList* commandList, ID3D12Resource
         dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
         src.SubresourceIndex = 0;
 
-        commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+        commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, &srcBox);
     }
 
     // Transition from copy states
@@ -237,6 +252,21 @@ static HANDLE                       g_hSwapChainWaitableObject = nullptr;
 static ID3D12Resource*              g_mainRenderTargetResource[NUM_BACK_BUFFERS] = {};
 static D3D12_CPU_DESCRIPTOR_HANDLE  g_mainRenderTargetDescriptor[NUM_BACK_BUFFERS] = {};
 
+Camera g_camera;
+
+// first half of key states are this frame, second half are last frame
+uint8_t g_keyStates[512] = {};
+uint8_t* g_keyStatesLastFrame = &g_keyStates[256];
+
+// Mouse state is mouse x,y then left mouse down, right mouse down
+float g_mouseState[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+float g_mouseStateLastFrame[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+
+float g_cameraPos[3] = { 0.0f, 0.0f, 0.0f };
+float g_cameraAltitudeAzimuth[2] = { 0.0f, 0.0f };
+
+bool g_vsyncOn = true;
+
 // Forward declarations of helper functions
 bool CreateDeviceD3D(HWND hWnd);
 void CleanupDeviceD3D();
@@ -267,7 +297,10 @@ int main(int, char**)
     //ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = { sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr };
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX12 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
+
+    RECT windowSize = { 0, 0, (LONG)c_renderSize[0], (LONG)c_renderSize[1] };
+    AdjustWindowRect(&windowSize, WS_OVERLAPPEDWINDOW, false);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"/*$(Name)*/", WS_OVERLAPPEDWINDOW, 100, 100, windowSize.right - windowSize.left, windowSize.bottom - windowSize.top, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -372,8 +405,42 @@ int main(int, char**)
         ImGui::NewFrame();
 
         // Gigi Modification Begin - UI
-        if (m_/*$(Name)*/ && ImGui::CollapsingHeader("/*$(Name)*/"))
+        bool UIHovered = false;
+        if (m_/*$(Name)*/)
+        {
+            ImGui::Begin("/*$(Name)*/");
             /*$(Name)*/::MakeUI(m_/*$(Name)*/, g_pd3dCommandQueue);
+
+            ImGuiIO& io = ImGui::GetIO();
+            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+
+            ImGui::Checkbox("VSync", &g_vsyncOn);
+
+            ImGui::End();
+        }
+
+        // update key states
+        memcpy(g_keyStatesLastFrame, g_keyStates, 256);
+        if (!ImGui::GetIO().WantTextInput)
+        {
+            GetKeyboardState(g_keyStates);
+            for (int i = 0; i < 256; ++i)
+                g_keyStates[i] = (g_keyStates[i] & 128) != 0;
+        }
+        else
+            memset(g_keyStates, 0, 256);
+
+        // update mouse state
+        if (!ImGui::GetIO().WantCaptureMouse)
+        {
+            ImVec2 mousePos = ImGui::GetMousePos();
+            ImGuiIO& io = ImGui::GetIO();
+            memcpy(g_mouseStateLastFrame, g_mouseState, sizeof(g_mouseState));
+            g_mouseState[0] = mousePos.x;
+            g_mouseState[1] = mousePos.y;
+            g_mouseState[2] = io.MouseDown[0] ? 1.0f : 0.0f;
+            g_mouseState[3] = io.MouseDown[1] ? 1.0f : 0.0f;
+        }
         // Gigi Modification End
 
         // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
@@ -474,8 +541,7 @@ int main(int, char**)
 
         g_pd3dCommandQueue->ExecuteCommandLists(1, (ID3D12CommandList* const*)&g_pd3dCommandList);
 
-        g_pSwapChain->Present(1, 0); // Present with vsync
-        //g_pSwapChain->Present(0, 0); // Present without vsync
+        g_pSwapChain->Present(g_vsyncOn ? 1 : 0, 0);
 
         UINT64 fenceValue = g_fenceLastSignaledValue + 1;
         g_pd3dCommandQueue->Signal(g_fence, fenceValue);

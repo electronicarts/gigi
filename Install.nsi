@@ -11,7 +11,7 @@
   !define DESCRIPTION "Rapid Graphics Development Platform"
   !define VERSIONMAJOR 0
   !define VERSIONMINOR 99
-  !define VERSIONBUILD 4
+  !define VERSIONBUILD 5
   !define SLUG "${APPNAME} v${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
 
   # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"

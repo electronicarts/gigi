@@ -33,13 +33,13 @@ def DoTest():
 
 		# Specify the resources we want to readback
 		for resource in resources:
-			Host.SetWantReadback(resource[0], True, subResourceIndex)
+			Host.SetWantReadback(resource[0], True)
 
 		# Get the results and compare
 		Host.RunTechnique()
 		Host.WaitOnGPU()
 		for i, resource in enumerate(resources):
-			lastReadback, success = Host.Readback(resource[0])
+			lastReadback, success = Host.Readback(resource[0], subResourceIndex)
 			if success:
 				lastReadbackNp = numpy.array(lastReadback)
 				if resource[1]:

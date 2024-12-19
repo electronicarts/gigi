@@ -25,7 +25,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{BC81F722-C461-34D3-A896-32CCF03ED6DB}</ProjectGuid>
+    <ProjectGuid>{2B32EBFB-7A2E-3F98-8C8A-84CE44714129}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <WindowsTargetPlatformVersion>10.0.22621.0</WindowsTargetPlatformVersion>
     <Platform>x64</Platform>
@@ -111,8 +111,8 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
-    <ProjectReference Include="D:\dev\gitlab\gigi\_GeneratedCode\UnitTests\DX12\UnitTests.vcxproj">
-      <Project>{782F6C35-74A9-32AC-A4B6-7632D950429B}</Project>
+    <ProjectReference Include="D:\dev\github\gigi\_GeneratedCode\UnitTests\DX12\UnitTests.vcxproj">
+      <Project>{A77DA0B5-D7E9-3EBB-9150-C4CBC1CCA07E}</Project>
       <Name>UnitTests</Name>
     </ProjectReference>
   </ItemGroup>

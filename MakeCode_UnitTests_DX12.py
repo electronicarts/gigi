@@ -29,6 +29,11 @@ unsupportedTests = [
     "Textures\\Mips_Imported_2DArray",
     "Textures\\Mips_Imported_3D",
     "Textures\\Mips_Imported_Cube",
+    "Textures\\Load_Tex2DArray",
+    "Textures\\Load_Tex3D",
+
+    # Just need to make work
+    "RayTrace\\simpleRTDynamic",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

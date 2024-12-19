@@ -28,7 +28,6 @@ namespace YesVertexStruct_NoIndex_NoInstance
                 "Solid",
             };
             ImGui::Combo("viewMode", (int*)&context->m_input.variable_viewMode, labels, 3);
-            ShowToolTip("");
         }
 
         ImGui::Checkbox("Profile", &context->m_profile);

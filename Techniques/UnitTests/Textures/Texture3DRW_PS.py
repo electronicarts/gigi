@@ -5,8 +5,8 @@ from PIL import Image
 import os
 
 resources = [
-	[ "Node_1.importedTexture: ImportedTexture (UAV - After)", False ],
-	[ "Node_1.nodeTexture: NodeTexture (UAV - After)", False ],
+	[ "Node_1.importedTexture: ImportedTexture (UAV - After)", True ],
+	[ "Node_1.nodeTexture: NodeTexture (UAV - After)", True ],
 ]
 
 # don't save gguser files during this script execution
@@ -38,17 +38,18 @@ def DoTest():
 		if success:
 			lastReadbackNp = numpy.array(lastReadback)
 			if resource[1]:
-				lastReadbackNp = lastReadbackNp.reshape((lastReadbackNp.shape[1], lastReadbackNp.shape[2], lastReadbackNp.shape[3]))
-				outFileName = outDirName + str(i) + ".png"
-				if os.path.exists(outFileName):
-					img = numpy.asarray(Image.open(outFileName))
-					if not numpy.array_equal(img, lastReadbackNp):
-						Host.Log("Error", outFileName + " did not match")
+				for j in range(lastReadbackNp.shape[0]):
+					lastReadbackNpSlice = lastReadbackNp[j,:,:,:].reshape((lastReadbackNp.shape[1], lastReadbackNp.shape[2], lastReadbackNp.shape[3]))
+					outFileName = outDirName + str(i) + "_" + str(j) + ".png"
+					if os.path.exists(outFileName):
+						img = numpy.asarray(Image.open(outFileName))
+						if not numpy.array_equal(img, lastReadbackNpSlice):
+							Host.Log("Error", outFileName + " did not match")
+							TestPassed = False
+					else:
+						Host.Log("Error", outFileName + " didn't exist, creating")
+						Image.fromarray(lastReadbackNpSlice, "RGBA").save(outFileName)
 						TestPassed = False
-				else:
-					Host.Log("Error", outFileName + " didn't exist, creating")
-					Image.fromarray(lastReadbackNp, "RGBA").save(outFileName)
-					TestPassed = False
 			else:
 				outFileName = outDirName + str(i) + ".npy"
 				if os.path.exists(outFileName):

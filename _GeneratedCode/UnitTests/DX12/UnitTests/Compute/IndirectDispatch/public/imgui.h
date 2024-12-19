@@ -40,7 +40,6 @@ namespace IndirectDispatch
             ImGui::Text("Dispatch_Count_1");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
         {
             float width = ImGui::GetContentRegionAvail().x / 4.0f;
@@ -61,10 +60,8 @@ namespace IndirectDispatch
             ImGui::Text("Dispatch_Count_2");
             ImGui::PopItemWidth();
             ImGui::PopID();
-            ShowToolTip("");
         }
         ImGui::InputInt("Second_Dispatch_Offset", &context->m_input.variable_Second_Dispatch_Offset, 0);
-        ShowToolTip("");
 
         ImGui::Checkbox("Profile", &context->m_profile);
         if (context->m_profile)

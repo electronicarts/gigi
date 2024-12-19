@@ -52,7 +52,7 @@ struct DXGI_FORMAT_Info
 
 	DXGI_FORMAT_Info() {}
 
-	DXGI_FORMAT_Info(DXGI_FORMAT _format, const char* _name, int _bytesPerChannel, int _channelCount, ChannelType _channelType, bool _sRGB, bool _isStencil, bool _isDepth, int _planeIndex, int _planeCount, NormType _normType, bool _isCompressed)
+	DXGI_FORMAT_Info(DXGI_FORMAT _format, const char* _name, int _bytesPerChannel, int _channelCount, ChannelType _channelType, bool _sRGB, bool _isStencil, bool _isDepth, int _planeIndex, int _planeCount, NormType _normType, bool _isCompressed, DXGI_FORMAT _decompressedFormat)
 	{
 		format = _format;
 		name = _name;
@@ -67,6 +67,7 @@ struct DXGI_FORMAT_Info
 		planeCount = _planeCount;
 		normType = _normType;
 		isCompressed = _isCompressed;
+		decompressedFormat = _decompressedFormat;
 	}
 
 	DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;
@@ -82,84 +83,99 @@ struct DXGI_FORMAT_Info
 	int planeCount = 1;
 	NormType normType = NormType::None;
 	bool isCompressed = false;
+	DXGI_FORMAT decompressedFormat = DXGI_FORMAT_UNKNOWN;
 };
 
-#define DXGI_FORMAT_INFO(type, channelCount, sRGB) DXGI_FORMAT_Info(DXGI_FORMAT_UNKNOWN, "", sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, false, false, 0, 1, DXGI_FORMAT_Info::NormType::None, false)
-#define DXGI_FORMAT_INFO_CASE(name, type, channelCount, sRGB, isStencil, isDepth, planeIndex, planeCount, normType, isCompressed) case name: return DXGI_FORMAT_Info(name, #name, sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, isStencil, isDepth, planeIndex, planeCount, DXGI_FORMAT_Info::NormType::##normType, isCompressed);
+template <typename T>
+T Min(const T& A, const T& B)
+{
+	return A <= B ? A : B;
+}
+
+template <typename T>
+T Max(const T& A, const T& B)
+{
+	return A > B ? A : B;
+}
+
+#define DXGI_FORMAT_INFO(type, channelCount, sRGB) DXGI_FORMAT_Info(DXGI_FORMAT_UNKNOWN, "", sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, false, false, 0, 1, DXGI_FORMAT_Info::NormType::None, false, DXGI_FORMAT_UNKNOWN)
+#define DXGI_FORMAT_INFO_CASE(name, type, channelCount, sRGB, isStencil, isDepth, planeIndex, planeCount, normType, isCompressed, decompressedFormat) case name: return DXGI_FORMAT_Info(name, #name, sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, isStencil, isDepth, planeIndex, planeCount, DXGI_FORMAT_Info::NormType::##normType, isCompressed, decompressedFormat);
 
 inline DXGI_FORMAT_Info Get_DXGI_FORMAT_Info(DXGI_FORMAT format)
 {
 	switch (format)
 	{
 		// Unsigned integers
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_UNORM, uint8_t, 1, false, false, false, 0, 1, UNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_UNORM, uint8_t, 2, false, false, false, 0, 1, UNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1, UNorm, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_UNORM, uint8_t, 1, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_UNORM, uint8_t, 2, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
 
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_UINT, uint8_t, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_UINT, uint8_t, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UINT, uint8_t, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_UINT, uint8_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_UINT, uint8_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UINT, uint8_t, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_UINT, uint16_t, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_UNORM, uint16_t, 1, false, false, false, 0, 1, UNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_UINT, uint16_t, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_UINT, uint16_t, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_UINT, uint16_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_UNORM, uint16_t, 1, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_UINT, uint16_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_UINT, uint16_t, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_UINT, uint32_t, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32_UINT, uint32_t, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32_UINT, uint32_t, 3, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32A32_UINT, uint32_t, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_UINT, uint32_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32_UINT, uint32_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32_UINT, uint32_t, 3, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32A32_UINT, uint32_t, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
 		// Signed integers
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_SNORM, int8_t, 1, false, false, false, 0, 1, SNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_SNORM, int8_t, 2, false, false, false, 0, 1, SNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_SNORM, int8_t, 4, false, false, false, 0, 1, SNorm, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_SNORM, int8_t, 1, false, false, false, 0, 1, SNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_SNORM, int8_t, 2, false, false, false, 0, 1, SNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_SNORM, int8_t, 4, false, false, false, 0, 1, SNorm, false, DXGI_FORMAT_UNKNOWN);
 
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_SINT, int8_t, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_SINT, int8_t, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_SINT, int8_t, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_SINT, int8_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_SINT, int8_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_SINT, int8_t, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_SINT, int16_t, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_SINT, int16_t, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_SINT, int16_t, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_SINT, int16_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_SINT, int16_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_SINT, int16_t, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_SINT, int32_t, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32_SINT, int32_t, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32_SINT, int32_t, 3, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32A32_SINT, int32_t, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_SINT, int32_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32_SINT, int32_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32_SINT, int32_t, 3, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32A32_SINT, int32_t, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
 		// 16 bit
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_FLOAT, half, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_FLOAT, half, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_FLOAT, half, 4, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_UNORM, uint16_t, 4, false, false, false, 0, 1, UNorm, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_SNORM, int16_t, 4, false, false, false, 0, 1, SNorm, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16_FLOAT, half, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16_FLOAT, half, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_FLOAT, half, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_UNORM, uint16_t, 4, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R16G16B16A16_SNORM, int16_t, 4, false, false, false, 0, 1, SNorm, false, DXGI_FORMAT_UNKNOWN);
 
 		// 32 bit float
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_FLOAT, float, 1, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32_FLOAT, float, 2, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32_FLOAT, float, 3, false, false, false, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32A32_FLOAT, float, 4, false, false, false, 0, 1, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_FLOAT, float, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32_FLOAT, float, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32_FLOAT, float, 3, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32G32B32A32_FLOAT, float, 4, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 
 		// Other
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R11G11B10_FLOAT, uint32_t, 1, false, false, false, 0, 1, None, false);  // Treat as 1 x u32
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R11G11B10_FLOAT, uint32_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);  // Treat as 1 x u32
 
 		// Depth
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D32_FLOAT, float, 1, false, false, true, 0, 1, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D16_UNORM, uint16_t, 1, false, false, true, 0, 1, UNorm, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D32_FLOAT, float, 1, false, false, true, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D16_UNORM, uint16_t, 1, false, false, true, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
 
 		// Depth Stencil
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D32_FLOAT_S8X24_UINT, uint32_t, 2, false, true, true, 0, 2, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS, float, 1, false, true, true, 0, 2, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X32_TYPELESS_G8X24_UINT, uint8_t, 1, false, true, true, 1, 2, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D24_UNORM_S8_UINT, uint32_t, 1, false, true, true, 0, 2, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R24_UNORM_X8_TYPELESS, uint32_t, 1, false, true, true, 0, 2, None, false);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X24_TYPELESS_G8_UINT, uint8_t, 1, false, true, true, 1, 2, None, false);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D32_FLOAT_S8X24_UINT, uint32_t, 2, false, true, true, 0, 2, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS, float, 1, false, true, true, 0, 2, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X32_TYPELESS_G8X24_UINT, uint8_t, 1, false, true, true, 1, 2, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_D24_UNORM_S8_UINT, uint32_t, 1, false, true, true, 0, 2, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R24_UNORM_X8_TYPELESS, uint32_t, 1, false, true, true, 0, 2, None, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X24_TYPELESS_G8_UINT, uint8_t, 1, false, true, true, 1, 2, None, false, DXGI_FORMAT_UNKNOWN);
 
 		// Block compressed formats
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, true);
-		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1, UNorm, true);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, true, DXGI_FORMAT_R8G8B8A8_UNORM);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1, UNorm, true, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC6H_UF16, float, 3, false, false, false, 0, 1, None, true, DXGI_FORMAT_R32G32B32_FLOAT);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC6H_SF16, float, 3, false, false, false, 0, 1, None, true, DXGI_FORMAT_R32G32B32_FLOAT);
 
 		default:
 		{
@@ -167,6 +183,112 @@ inline DXGI_FORMAT_Info Get_DXGI_FORMAT_Info(DXGI_FORMAT format)
 			return DXGI_FORMAT_INFO(uint8_t, 0, false);
 		}
 	}
+}
+
+template <typename T>
+std::vector<double> ConvertToDoubles(const std::vector<unsigned char>& src, double multiplier)
+{
+	const size_t valueCount = src.size() / sizeof(T);
+
+	std::vector<double> ret(valueCount, 0);
+
+	const T* srcValues = (const T*)src.data();
+	for (size_t index = 0; index < valueCount; ++index)
+		ret[index] = multiplier * (double)srcValues[index];
+
+	return ret;
+}
+
+template <typename T>
+std::vector<double> ConvertToDoubles(const unsigned char* src, size_t valueCount, double multiplier)
+{
+	std::vector<double> ret(valueCount, 0);
+
+	const T* srcValues = (const T*)src;
+	for (size_t index = 0; index < valueCount; ++index)
+		ret[index] = multiplier * (double)srcValues[index];
+
+	return ret;
+}
+
+inline bool ConvertToDoubles(const std::vector<unsigned char>& src, DXGI_FORMAT_Info::ChannelType type, std::vector<double>& doubles)
+{
+	switch (type)
+	{
+		case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, 1.0 / 255.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, 1.0 / 65535.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, 1.0 / 32767.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, 1.0 / 4294967296.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, 1.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, 1.0); break;
+		default: return false;
+	}
+	return true;
+}
+
+inline bool ConvertToDoubles(const unsigned char* src, size_t valueCount, DXGI_FORMAT_Info::ChannelType type, std::vector<double>& doubles)
+{
+	switch (type)
+	{
+		case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, valueCount, 1.0 / 255.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, valueCount, 1.0 / 65535.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, valueCount, 1.0 / 32767.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, valueCount, 1.0 / 4294967296.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, valueCount, 1.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, valueCount, 1.0); break;
+		default: return false;
+	}
+	return true;
+}
+
+template <typename T>
+std::vector<unsigned char> ConvertFromDoubles(const std::vector<double>& src, double multiplier, double theMin, double theMax)
+{
+	const size_t valueCount = src.size();
+
+	std::vector<unsigned char> ret(valueCount * sizeof(T), 0);
+
+	T* destValues = (T*)ret.data();
+	for (size_t index = 0; index < valueCount; ++index)
+		destValues[index] = (T)(Max(Min(src[index] * multiplier, theMax), theMin));
+
+	return ret;
+}
+
+inline bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_Info::ChannelType type, std::vector<unsigned char>& dest)
+{
+	switch (type)
+	{
+		case DXGI_FORMAT_Info::ChannelType::_uint8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_int8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_int16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint32_t: dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_half: dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_float: dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
+		default: return false;
+	}
+	return true;
+}
+
+inline bool ConvertFromDoubles(const std::vector<double>& doubles, DXGI_FORMAT_Info::ChannelType type, unsigned char* dest)
+{
+	std::vector<unsigned char> _dest;
+	switch (type)
+	{
+		case DXGI_FORMAT_Info::ChannelType::_uint8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_int8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_int16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_uint32_t: _dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_half: _dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
+		case DXGI_FORMAT_Info::ChannelType::_float: _dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
+		default: return false;
+	}
+
+	memcpy(dest, _dest.data(), _dest.size());
+
+	return true;
 }
 
 inline bool FormatsCompatibleForCopyResource(DXGI_FORMAT a, DXGI_FORMAT b)

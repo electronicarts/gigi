@@ -50,7 +50,7 @@ The editor controls in the central grid render graph area are:
 
 We are going to make a technique which takes in an input texture, blurs it, and gives the result as an output texture.  First we'll make the textures.
 
-Right click in the center area (that has a grid) to bring up the "Create Node" menu and choose "resourceTexture" to create a new texture.
+Right click in the center area (that has a grid) to bring up the "Create Node" menu and choose "Texture" to create a new "resourceTexture" node.
 
 ![](createtex.png)
 
@@ -62,7 +62,7 @@ We will leave the rest of the settings alone.  Not setting the format or size is
 
 ![](createdtex.png)
 
-Our input texture is created. To create our output texture, right click on an empty space, and create another "resourceTexture" node. Then:
+Our input texture is created. To create our output texture, right click on an empty space, and create another "Texture" node. Then:
 1. Set the name to "Output"
 2. Set the visibility to "Exported" meaning that the texture is managed by the technique, but is made available outside of the technique after execution.
 3. Under the "Format" section, set the "Node" drop down to "Input", meaning that this texture will have the same format as "Input", whatever format that is.
@@ -86,7 +86,7 @@ Lastly, scroll to the bottom, click "Create Shader File", and name it "BoxBlurCS
 
 ![](createshader.png)
 
-Click the edit button to open the shader file in your default shader editor. For me that is VSCode.
+Click the edit button (near the top of the "Shaders" tab) to open the shader file in your default shader editor. For me that is VSCode, for you it will be whatever app Windows is configured to open .hlsl files with.
 
 In the skeleton shader file that Gigi made for you, you'll notice a couple strange looking tokens.  Before sending your shader to the shader compiler, Gigi processes the shader file for string replacement.
 
@@ -124,7 +124,7 @@ Shader Resources:
 */
 ```
 
-Now that we have our shader written, we need to create a compute shader action node.  In the editor, right click and create an "actionComputeShader" node. Then:
+Now that we have our shader written, we need to create a compute shader action node.  In the editor, right click and select "Compute Shader" to create a new "actionComputeShader" node. Then:
 
 1. Set the name to "DoBlur"
 2. In the "Shader" drop down, choose our new shader "DoBlurCS". After this, our resources "input" and "output" will appear as pins.

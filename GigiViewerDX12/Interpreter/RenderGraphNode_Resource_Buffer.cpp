@@ -56,6 +56,17 @@ void RuntimeTypes::RenderGraphNode_Resource_Buffer::Release(GigiInterpreterPrevi
 	}
 }
 
+bool GigiInterpreterPreviewWindowDX12::MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node)
+{
+	ImportedResourceDesc& resourceDesc = m_importedResources[node.name];
+	RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData = m_RenderGraphNode_Resource_Buffer_RuntimeData.GetOrCreate(node.name);
+
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	m_transitions.Flush(m_commandList);
+
+	return MakeAccelerationStructures(node, resourceDesc, runtimeData);
+}
+
 bool GigiInterpreterPreviewWindowDX12::MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData)
 {
 	if (!SupportsRaytracing())
@@ -1113,32 +1124,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				m_commandList->CopyResource(runtimeData.m_resourceInitialState, uploadBuffer->buffer);
 			}
 
-			// If this resource is used as an RTScene, this is vertex data we need to turn into a BLAS/TLAS
-			if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::RTScene))
-			{
-				// Copy the inital state into the resource
-				{
-					// transition the resources as needed
-					m_transitions.Transition(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_SOURCE));
-					m_transitions.Transition(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
-					m_transitions.Flush(m_commandList);
-
-					// copy
-					m_commandList->CopyResource(runtimeData.m_resource, runtimeData.m_resourceInitialState);
-				}
-
-				// Put the resource into non pixel shader resource
-				m_transitions.Transition(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-				m_transitions.Flush(m_commandList);
-
-				if (!MakeAccelerationStructures(node, desc, runtimeData))
-				{
-					m_logFn(LogLevel::Error, "Failed to make acceleration structure for buffer \"%s\"", node.name.c_str());
-					desc.state = ImportedResourceState::failed;
-					return true;
-				}
-			}
-
 			// Note that the resource wants to be reset to the initial state.
 			runtimeData.m_resourceWantsReset = true;
 
@@ -1262,14 +1247,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Resour
 		if (accessTypeCount > 1)
 		{
 			m_logFn(LogLevel::Error, "A buffer may only be used as an RTScene, a VertexBuffer, or an IndexBuffer. Buffer \"%s\" was used for multiple.", node.name.c_str());
-			return false;
-		}
-
-		// Furthermore, RTScene access needs to be alone
-		if (node.accessedAs & (1 << ((unsigned int)(ShaderResourceAccessType::RTScene))) &&
-			node.accessedAs != (1 << ((unsigned int)(ShaderResourceAccessType::RTScene))))
-		{
-			m_logFn(LogLevel::Error, "Buffer \"%s\" is used as an RTScene, and cannot be used as anything else.", node.name.c_str());
 			return false;
 		}
 	}

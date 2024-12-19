@@ -291,6 +291,18 @@ inline std::string GetNodeName(const RenderGraph& renderGraph, int nodeIndex)
     return GetNodeName(renderGraph.nodes[nodeIndex]);
 }
 
+inline std::string GetNodeOriginalName(const RenderGraphNode& node)
+{
+    std::string ret;
+    ExecuteOnNode(node,
+        [&ret](auto& node)
+        {
+            ret = node.originalName;
+        }
+    );
+    return ret;
+}
+
 inline void AddResourceNodeAccessedAs(RenderGraphNode& node, ShaderResourceAccessType access)
 {
     ExecuteOnNode(node,

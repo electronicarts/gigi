@@ -16,9 +16,8 @@ tinyobjloader | https://github.com/tinyobjloader/tinyobjloader/ | Load .obj mode
 OpenFBX | https://github.com/nem0/OpenFBX/ | For loading FBX model.
 tinyexr | https://github.com/syoyo/tinyexr | Load HDR .exr image files in viewer.
 stb | https://github.com/nothings/stb/ | read and write png, jpg, etc.
-gli | https://github.com/g-truc/gli/ | Load dds files.
-bc7enc | https://github.com/richgel999/bc7enc/ | Decode BC data into pixels.
 spdlog | https://github.com/gabime/spdlog/ | Prettier output for the compiler.
 nativefiledialog | https://github.com/mlabbe/nativefiledialog/ | For opening native file selection windows.
 rapidjson | https://github.com/Tencent/rapidjson/ | Read/write json files. Nearly every data file is stored as json.
 tinyxml2 | https://github.com/leethomason/tinyxml2 | Read/write xml files.
+DiretcXTex | https://github.com/microsoft/DirectXTex | Load, encode and decode dds files.

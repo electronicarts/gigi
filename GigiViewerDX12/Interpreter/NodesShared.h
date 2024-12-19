@@ -13,18 +13,6 @@
 
 typedef std::array<int, 3> IVec3;
 
-inline std::string GetNodeOriginalName(const RenderGraphNode& node)
-{
-	std::string ret;
-	ExecuteOnNode(node,
-		[&ret](auto& node)
-		{
-			ret = node.originalName;
-		}
-	);
-	return ret;
-}
-
 inline bool ShadingRateToD3D12_SHADING_RATE(ShadingRate shadingRate, D3D12_SHADING_RATE& d3d12ShadingRate)
 {
 	switch (shadingRate)
@@ -114,10 +102,23 @@ inline DXGI_FORMAT TextureFormatToDXGI_FORMAT(TextureFormat textureFormat)
 		case TextureFormat::D24_Unorm_S8: return DXGI_FORMAT_D24_UNORM_S8_UINT;
 		case TextureFormat::BC7_Unorm: return DXGI_FORMAT_BC7_UNORM;
 		case TextureFormat::BC7_Unorm_sRGB: return DXGI_FORMAT_BC7_UNORM_SRGB;
+		case TextureFormat::BC6_UF16: return DXGI_FORMAT_BC6H_UF16;
+		case TextureFormat::BC6_SF16: return DXGI_FORMAT_BC6H_SF16;
 	}
 
 	Assert(false, "Unhandled TextureFormat");
 	return DXGI_FORMAT_FORCE_UINT;
+}
+
+// Returns "Any" if no valid format found
+inline TextureFormat DXGI_FORMATToTextureFormat(DXGI_FORMAT format)
+{
+	for (size_t i = 0; i < EnumCount<TextureFormat>(); ++i)
+	{
+		if (TextureFormatToDXGI_FORMAT((TextureFormat)i) == format)
+			return (TextureFormat)i;
+	}
+	return TextureFormat::Any;
 }
 
 inline D3D12_CULL_MODE DrawCullModeToD3D12_CULL_MODE(DrawCullMode cullMode)

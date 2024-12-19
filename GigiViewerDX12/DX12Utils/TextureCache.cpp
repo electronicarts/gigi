@@ -13,9 +13,8 @@
 #define TINYEXR_IMPLEMENTATION
 #include "tinyexr/tinyexr.h"
 
-#include <gli/gli.hpp>
-
 #include <f16.h>
+#include "DirectXTex.h"
 
 TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileName_)
 {
@@ -32,6 +31,8 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 
 		Texture newTexture;
 		newTexture.fileName = fileName;
+
+		Texture failTexture = newTexture;
 
 		if (p.extension().string() == ".exr")
 		{
@@ -53,13 +54,24 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 					{
 						newTexture.width = exr_image.width;
 						newTexture.height = exr_image.height;
-						newTexture.channels = exr_image.num_channels;
-						newTexture.type = Type::F32;
+
+						switch (exr_image.num_channels)
+						{
+							case 1: newTexture.format = DXGI_FORMAT_R32_FLOAT; break;
+							case 2: newTexture.format = DXGI_FORMAT_R32G32_FLOAT; break;
+							case 3: newTexture.format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+							case 4: newTexture.format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+							default:
+							{
+								m_cache[fileName] = failTexture;
+								return m_cache[fileName];
+							}
+						}
 
 						// find out what order to get the channels in
 						int channelType = -1;
-						std::vector<int> channelOrder(newTexture.channels);
-						for (int i = 0; i < newTexture.channels; ++i)
+						std::vector<int> channelOrder(exr_image.num_channels);
+						for (int i = 0; i < exr_image.num_channels; ++i)
 						{
 							if (i == 0)
 							{
@@ -88,7 +100,10 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 						// `exr_image.tiled` will be filled when EXR is tiled format.
 						if (channelType == TINYEXR_PIXELTYPE_FLOAT || channelType == TINYEXR_PIXELTYPE_HALF)
 						{
-							newTexture.pixels.resize(newTexture.width * newTexture.height * newTexture.channels * sizeof(float));
+							newTexture.images.resize(1);
+							Image& newImage = newTexture.images[0];
+
+							newImage.pixels.resize(newTexture.width * newTexture.height * exr_image.num_channels * sizeof(float));
 
 							if (exr_image.images)
 							{
@@ -97,21 +112,21 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 									case TINYEXR_PIXELTYPE_HALF:
 									{
 										uint16_t** channelPtrs = (uint16_t**)exr_image.images;
-										std::vector<uint16_t*> src(newTexture.channels);
-										for (int i = 0; i < newTexture.channels; ++i)
+										std::vector<uint16_t*> src(exr_image.num_channels);
+										for (int i = 0; i < exr_image.num_channels; ++i)
 											src[i] = channelPtrs[i];
 
-										float* dest = (float*)newTexture.pixels.data();
+										float* dest = (float*)newImage.pixels.data();
 										for (int iy = 0; iy < newTexture.height; ++iy)
 										{
 											for (int ix = 0; ix < newTexture.width; ++ix)
 											{
-												for (int channel = 0; channel < newTexture.channels; ++channel)
+												for (int channel = 0; channel < exr_image.num_channels; ++channel)
 												{
 													dest[channelOrder[channel]] = f16tof32(*src[channel]);
 													src[channel]++;
 												}
-												dest += newTexture.channels;
+												dest += exr_image.num_channels;
 											}
 										}
 										break;
@@ -119,21 +134,21 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 									case TINYEXR_PIXELTYPE_FLOAT:
 									{
 										float** channelPtrs = (float**)exr_image.images;
-										std::vector<float*> src(newTexture.channels);
-										for (int i = 0; i < newTexture.channels; ++i)
+										std::vector<float*> src(exr_image.num_channels);
+										for (int i = 0; i < exr_image.num_channels; ++i)
 											src[i] = channelPtrs[i];
 
-										float* dest = (float*)newTexture.pixels.data();
+										float* dest = (float*)newImage.pixels.data();
 										for (int iy = 0; iy < newTexture.height; ++iy)
 										{
 											for (int ix = 0; ix < newTexture.width; ++ix)
 											{
-												for (int channel = 0; channel < newTexture.channels; ++channel)
+												for (int channel = 0; channel < exr_image.num_channels; ++channel)
 												{
 													dest[channelOrder[channel]] = *src[channel];
 													src[channel]++;
 												}
-												dest += newTexture.channels;
+												dest += exr_image.num_channels;
 											}
 										}
 										break;
@@ -147,7 +162,6 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 						{
 							newTexture.width = 0;
 							newTexture.height = 0;
-							newTexture.channels = 0;
 						}
 
 						// 4. Free image data
@@ -167,41 +181,124 @@ TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileN
 		}
 		else if (p.extension().string() == ".hdr")
 		{
-			float* rawPixels = stbi_loadf_from_memory((const unsigned char*)fileData.GetBytes(), (int)fileData.GetSize(), &newTexture.width, &newTexture.height, &newTexture.channels, 0);
+			int numChannels = 0;
+			float* rawPixels = stbi_loadf_from_memory((const unsigned char*)fileData.GetBytes(), (int)fileData.GetSize(), &newTexture.width, &newTexture.height, &numChannels, 0);
 			if (rawPixels)
 			{
-				newTexture.type = Type::F32;
-				newTexture.pixels.resize(newTexture.width * newTexture.height * newTexture.channels * sizeof(float));
-				memcpy(newTexture.pixels.data(), rawPixels, newTexture.pixels.size());
+				switch (numChannels)
+				{
+					case 1: newTexture.format = DXGI_FORMAT_R32_FLOAT; break;
+					case 2: newTexture.format = DXGI_FORMAT_R32G32_FLOAT; break;
+					case 3: newTexture.format = DXGI_FORMAT_R32G32B32_FLOAT; break;
+					case 4: newTexture.format = DXGI_FORMAT_R32G32B32A32_FLOAT; break;
+					default:
+					{
+						m_cache[fileName] = failTexture;
+						return m_cache[fileName];
+					}
+				}
+
+				newTexture.images.resize(1);
+				Image& newImage = newTexture.images[0];
+
+				newImage.pixels.resize(newTexture.width * newTexture.height * numChannels * sizeof(float));
+				memcpy(newImage.pixels.data(), rawPixels, newImage.pixels.size());
 				stbi_image_free(rawPixels);
 			}
 		}
 		else if (p.extension().string() == ".dds")
 		{
-			gli::texture texture = gli::load_dds(fileData.GetBytes(), fileData.GetSize());
+			DirectX::TexMetadata metaData;
+			DirectX::ScratchImage scratchImage;
 
-			// Only supports 2d textures of this type for now
-			if (texture.target() == gli::texture::target_type::TARGET_2D &&
-				texture.format() == gli::texture::format_type::FORMAT_RGBA_BP_UNORM_BLOCK16)
+			HRESULT hr = DirectX::LoadFromDDSMemory((const uint8_t*)fileData.GetBytes(), fileData.GetSize(), DirectX::DDS_FLAGS::DDS_FLAGS_NONE, &metaData, scratchImage);
+			if (SUCCEEDED(hr))
 			{
-				//gli::swizzles desiredSwizzle = {gli::swizzle::SWIZZLE_RED, gli::swizzle::SWIZZLE_GREEN, gli::swizzle::SWIZZLE_BLUE, gli::swizzle::SWIZZLE_ALPHA};
-				//texture.swizzle(desiredSwizzle);
+				// Get the image properties
+				newTexture.width = (int)metaData.width;
+				newTexture.height = (int)metaData.height;
+				newTexture.depth = metaData.IsVolumemap() ? (int)metaData.depth : (int)metaData.arraySize;
+				newTexture.mips = (int)metaData.mipLevels;
+				newTexture.format = metaData.format;
 
-				newTexture.type = Type::BC7;
-				newTexture.pixels.resize(texture.size());
-				memcpy(newTexture.pixels.data(), texture.data(), newTexture.pixels.size());
-				newTexture.width = texture.extent().x;
-				newTexture.height = texture.extent().y;
-				newTexture.channels = 4;
+				newTexture.images.resize(scratchImage.GetImageCount());
+
+				int arrayCount = (int)metaData.arraySize;
+				int mipCount = (int)metaData.mipLevels;
+				int depthCount = (int)metaData.depth;
+
+				int newImageIndex = -1;
+				for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+				{
+					for (int mipIndex = 0; mipIndex < mipCount; ++mipIndex)
+					{
+						for (int z = 0; z < depthCount; ++z)
+						{
+							newImageIndex++;
+							Image& newImage = newTexture.images[newImageIndex];
+
+							const DirectX::Image* oldImage = scratchImage.GetImage(mipIndex, arrayIndex, z);
+
+							newImage.pixels.resize(oldImage->slicePitch);
+							memcpy(newImage.pixels.data(), oldImage->pixels, oldImage->slicePitch);
+						}
+
+						if (metaData.IsVolumemap())
+							depthCount = std::max(depthCount / 2, 1);
+					}
+				}
+
+				// Release the scratch image
+				scratchImage.Release();
 			}
 		}
 		else
 		{
-			unsigned char* rawPixels = stbi_load_from_memory((const unsigned char*)fileData.GetBytes(), (int)fileData.GetSize(), &newTexture.width, &newTexture.height, &newTexture.channels, 0);
+			int numChannels = 0;
+			unsigned char* rawPixels = stbi_load_from_memory((const unsigned char*)fileData.GetBytes(), (int)fileData.GetSize(), &newTexture.width, &newTexture.height, &numChannels, 0);
 			if (rawPixels)
 			{
-				newTexture.pixels.resize(newTexture.width * newTexture.height * newTexture.channels);
-				memcpy(newTexture.pixels.data(), rawPixels, newTexture.pixels.size());
+				// There are no 3 channel texture formats, but 3 channel image files are common.
+				// Promote it to 4 channels and fill alpha with 255 (1.0)
+				if (numChannels == 3)
+				{
+					numChannels = 4;
+					newTexture.format = DXGI_FORMAT_R8G8B8A8_UNORM;
+
+					newTexture.images.resize(1);
+					Image& newImage = newTexture.images[0];
+
+					newImage.pixels.resize(newTexture.width* newTexture.height * numChannels);
+
+					for (size_t i = 0; i < newTexture.width * newTexture.height; ++i)
+					{
+						newImage.pixels[i * 4 + 0] = rawPixels[i * 3 + 0];
+						newImage.pixels[i * 4 + 1] = rawPixels[i * 3 + 1];
+						newImage.pixels[i * 4 + 2] = rawPixels[i * 3 + 2];
+						newImage.pixels[i * 4 + 3] = 255;
+					}
+				}
+				else
+				{
+					switch (numChannels)
+					{
+						case 1: newTexture.format = DXGI_FORMAT_R8_UNORM; break;
+						case 2: newTexture.format = DXGI_FORMAT_R8G8_UNORM; break;
+						case 4: newTexture.format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+						default:
+						{
+							m_cache[fileName] = failTexture;
+							return m_cache[fileName];
+						}
+					}
+
+					newTexture.images.resize(1);
+					Image& newImage = newTexture.images[0];
+
+					newImage.pixels.resize(newTexture.width * newTexture.height * numChannels);
+					memcpy(newImage.pixels.data(), rawPixels, newImage.pixels.size());
+				}
+
 				stbi_image_free(rawPixels);
 			}
 		}

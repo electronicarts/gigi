@@ -137,7 +137,14 @@ public:
     void ForEach(const LAMBDA& lambda)
     {
         for (auto& it : m_cache)
-            lambda(it.second);
+            lambda(it.first, it.second);
+    }
+
+    template <typename LAMBDA>
+    void ForEach(const LAMBDA& lambda) const
+    {
+        for (const auto& it : m_cache)
+            lambda(it.first, it.second);
     }
 
 private:

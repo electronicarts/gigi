@@ -22,15 +22,10 @@ namespace SubGraphLoops
         ImGui::PushID("gigi_SubGraphLoops");
 
         ImGui::Checkbox("FilterSub_Iteration_0_sRGB", &context->m_input.variable_FilterSub_Iteration_0_sRGB);
-        ShowToolTip("");
         ImGui::Checkbox("FilterSub_Iteration_1_sRGB", &context->m_input.variable_FilterSub_Iteration_1_sRGB);
-        ShowToolTip("");
         ImGui::Checkbox("FilterSub_Iteration_2_sRGB", &context->m_input.variable_FilterSub_Iteration_2_sRGB);
-        ShowToolTip("");
         ImGui::Checkbox("FilterSub_Iteration_3_sRGB", &context->m_input.variable_FilterSub_Iteration_3_sRGB);
-        ShowToolTip("");
         ImGui::Checkbox("FilterSub_Iteration_4_sRGB", &context->m_input.variable_FilterSub_Iteration_4_sRGB);
-        ShowToolTip("");
 
         ImGui::Checkbox("Profile", &context->m_profile);
         if (context->m_profile)

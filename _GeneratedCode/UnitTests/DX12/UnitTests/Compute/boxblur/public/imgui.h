@@ -26,7 +26,6 @@ namespace boxblur
         ImGui::InputInt("radius", &context->m_input.variable_radius, 0);
         ShowToolTip("The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2");
         ImGui::Checkbox("sRGB", &context->m_input.variable_sRGB);
-        ShowToolTip("");
 
         ImGui::Checkbox("Profile", &context->m_profile);
         if (context->m_profile)

@@ -1,6 +1,6 @@
 **/.vs/*
-**/x64/Debug/*
-**/x64/Release/*
+**/Debug/*
+**/Release/*
 **/out/**/*.obj
 Debug-windows-x86_64/
 imgui.ini

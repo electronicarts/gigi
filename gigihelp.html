@@ -310,6 +310,8 @@ table, th, td, tr
 <tr><td>D24_Unorm_S8</td><td>24 bit depth, 8 bit stencil</td></tr>
 <tr><td>BC7_Unorm</td><td>RGB, alpha optional</td></tr>
 <tr><td>BC7_Unorm_sRGB</td><td>RGB, alpha optional. sRGB</td></tr>
+<tr><td>BC6_UF16</td><td>RGB, 16 bit float unsigned</td></tr>
+<tr><td>BC6_SF16</td><td>RGB, 16 bit float signed</td></tr>
 </table>
 <br/>
 
@@ -319,15 +321,6 @@ table, th, td, tr
 <tr><td>Info</td><td></td></tr>
 <tr><td>Warn</td><td></td></tr>
 <tr><td>Error</td><td></td></tr>
-</table>
-<br/>
-
-<b>GGUserFile_ImportedTexture_BinaryType : The basic data type within the binary file</b><br/><br/>
-<table>
-<tr><th colspan=2>GGUserFile_ImportedTexture_BinaryType</th></tr>
-<tr><td>Float</td><td>Floating point 32 bits</td></tr>
-<tr><td>Byte</td><td>Unsigned 8 bits</td></tr>
-<tr><td>Count</td><td></td></tr>
 </table>
 <br/>
 
@@ -647,6 +640,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>StructReference typeStruct</td><td>{}</td><td>The data type of the buffer if a struct type</td></tr>
 <tr><td>bool raw</td><td>false</td><td>If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)</td></tr>
 <tr><td>bool PODAsStructuredBuffer</td><td>true</td><td>Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.</td></tr>
+<tr><td>bool globallyCoherent</td><td>false</td><td>Set this to true if you want the resource to be declared as globallycoherent.</td></tr>
 </table>
 <br/>
 
@@ -655,6 +649,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>ShaderResourceTexture</th></tr>
 <tr><td>TextureDimensionType dimension</td><td>TextureDimensionType::Texture2D</td><td>The dimensionality of the texture</td></tr>
 <tr><td>TextureViewType viewType</td><td>TextureViewType::Float4</td><td>The dimensionality of the texture</td></tr>
+<tr><td>bool globallyCoherent</td><td>false</td><td>Set this to true if you want the resource to be declared as globallycoherent.</td></tr>
 </table>
 <br/>
 
@@ -1274,8 +1269,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>float color[4]</td><td>{ 1 , 1 , 1 , 1}</td><td>The color of the image to create, or the tint of the loaded file</td></tr>
 <tr><td>TextureFormat format</td><td>TextureFormat::RGBA8_Unorm_sRGB</td><td>The format of the texture to create</td></tr>
 <tr><td>int binaryDims[3]</td><td>{0 , 0 , 1}</td><td>The size of the image in the binary file</td></tr>
-<tr><td>GGUserFile_ImportedTexture_BinaryType binaryType</td><td>GGUserFile_ImportedTexture_BinaryType::Float</td><td>The basic data type within the binary file</td></tr>
-<tr><td>int binaryChannels</td><td>4</td><td>How many channels there are in the file</td></tr>
+<tr><td>TextureFormat binaryFormat</td><td>TextureFormat::RGBA8_Unorm_sRGB</td><td>The format of the binary file</td></tr>
 </table>
 <br/>
 
@@ -1355,6 +1349,9 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string CameraAltitudeAzimuth_varName</td><td>"CameraAltitudeAzimuth"</td><td></td></tr>
 <tr><td>std::string CameraChanged_varName</td><td>"CameraChanged"</td><td></td></tr>
 <tr><td>std::string CameraJitter_varName</td><td>"CameraJitter"</td><td></td></tr>
+<tr><td>std::string CameraFOV_varName</td><td>"CameraFOV"</td><td></td></tr>
+<tr><td>std::string CameraNearPlane_varName</td><td>"CameraNearPlane"</td><td></td></tr>
+<tr><td>std::string CameraFarPlane_varName</td><td>"CameraFarPlane"</td><td></td></tr>
 <tr><td>std::string ShadingRateImageTileSize_varName</td><td>"ShadingRateImageTileSize"</td><td></td></tr>
 <tr><td>std::string KeyState_bufferName</td><td>""</td><td>256 entries for the keys this frame, and 256 entries for the keys last frame. 512 entries total.</td></tr>
 </table>

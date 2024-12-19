@@ -1,0 +1,93 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 4,
+        "resourceViewResourceIndex": 13,
+        "importedResources": [
+            {
+                "nodeName": "BC6U",
+                "texture": {
+                    "fileName": "Tex2DArray_BC6U_8x8x4_mips.dds",
+                    "fileIsSRGB": false,
+                    "format": "BC6_UF16",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BC6U_NoMips",
+                "texture": {
+                    "fileName": "Tex2DArray_BC6U_8x8x4_nomips.dds",
+                    "format": "BC6_UF16",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BC7sRGB",
+                "texture": {
+                    "fileName": "Tex2DArray_BC7sRGB_8x8x4_mips.dds",
+                    "format": "BC7_Unorm_sRGB",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BC7sRGB_NoMips",
+                "texture": {
+                    "fileName": "Tex2DArray_BC7sRGB_8x8x4_nomips.dds",
+                    "format": "BC7_Unorm_sRGB",
+                    "binaryDims": [
+                        0,
+                        0,
+                        4
+                    ],
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BinaryF32",
+                "texture": {
+                    "fileName": "Tex2DArray_RGBAF32_8x8x4_mips.bin",
+                    "binaryDims": [
+                        8,
+                        8,
+                        4
+                    ],
+                    "binaryFormat": "RGBA32_Float"
+                }
+            },
+            {
+                "nodeName": "BinaryF32_NoMips",
+                "texture": {
+                    "fileName": "Tex2DArray_RGBAF32_8x8x4_nomips.bin",
+                    "binaryDims": [
+                        8,
+                        8,
+                        4
+                    ],
+                    "binaryFormat": "RGBA32_Float"
+                }
+            },
+            {
+                "nodeName": "BinaryU8",
+                "texture": {
+                    "fileName": "Tex2DArray_RGBAU8_8x8x4_mips.bin",
+                    "binaryDims": [
+                        8,
+                        8,
+                        4
+                    ]
+                }
+            },
+            {
+                "nodeName": "BinaryU8_NoMips",
+                "texture": {
+                    "fileName": "Tex2DArray_RGBAU8_8x8x4_nomips.bin",
+                    "binaryDims": [
+                        8,
+                        8,
+                        4
+                    ]
+                }
+            }
+        ]
+    }
+}

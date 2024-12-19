@@ -101,6 +101,9 @@ static IDxcBlob* CompileShaderToByteCode_Private(
     }
 
     std::vector<LPCWSTR> arguments;
+
+    arguments.push_back(fullFileName.c_str()); // 1st positional argument is the source file name
+
     std::wstring entryPointW = ToWideString(entryPoint);
     std::wstring shaderModelW = ToWideString(shaderModel);
 

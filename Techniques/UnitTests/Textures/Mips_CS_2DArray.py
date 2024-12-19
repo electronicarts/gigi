@@ -25,7 +25,7 @@ def DoTest():
 
 	# Specify the resources we want to readback
 	for resource in resources:
-		Host.SetWantReadback(resource[0], True, resource[2], resource[3])
+		Host.SetWantReadback(resource[0], True)
 
 	# Do one execution to ensure everything is initialized
 	Host.RunTechnique()
@@ -33,14 +33,14 @@ def DoTest():
 	# Get the results and compare
 	for i, resource in enumerate(resources):
 		# Specify the resources we want to readback
-		Host.SetWantReadback(resource[0], True, resource[2], resource[3])
+		Host.SetWantReadback(resource[0], True)
 
 		# Render and wait on results
 		Host.RunTechnique()
 		Host.WaitOnGPU()
 
 		# Do readback
-		lastReadback, success = Host.Readback(resource[0])
+		lastReadback, success = Host.Readback(resource[0], resource[2], resource[3])
 		if success:
 			lastReadbackNp = numpy.array(lastReadback)
 			if resource[1]:

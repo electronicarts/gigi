@@ -248,6 +248,10 @@
                     "PODAsStructuredBuffer": {
                       "description": "Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.",
                       "type": "boolean"
+                    },
+                    "globallyCoherent": {
+                      "description": "Set this to true if you want the resource to be declared as globallycoherent.",
+                      "type": "boolean"
                     }
                   }
                 },
@@ -264,6 +268,10 @@
                       "description": "The dimensionality of the texture",
                       "type": "string",
                       "enum": ["Int", "Int4", "Uint", "Uint4", "Float", "Float2", "Float3", "Float4"]
+                    },
+                    "globallyCoherent": {
+                      "description": "Set this to true if you want the resource to be declared as globallycoherent.",
+                      "type": "boolean"
                     }
                   }
                 },
@@ -711,7 +719,7 @@
                   "format": {
                     "description": "A specific format can be specified",
                     "type": "string",
-                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC7_Unorm", "BC7_Unorm_sRGB"]
+                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
                   },
                   "variable": {
                     "description": "The variable that holds the texture format. Assumed to be a uint32.",

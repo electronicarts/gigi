@@ -69,9 +69,6 @@
   PreviewMsgCS_Log_LevelFromString()
   PreviewMsgCS_Log_LevelToString()
 
-  GGUserFile_ImportedTexture_BinaryTypeFromString()
-  GGUserFile_ImportedTexture_BinaryTypeToString()
-
   GGUserFile_TLASBuildFlagsFromString()
   GGUserFile_TLASBuildFlagsToString()
 
@@ -375,8 +372,10 @@
     Host.TextureFormat_D24_Unorm_S8 = 28
     Host.TextureFormat_BC7_Unorm = 29
     Host.TextureFormat_BC7_Unorm_sRGB = 30
-    Host.TextureFormat_LAST = 30
-    Host.TextureFormat_COUNT = 31
+    Host.TextureFormat_BC6_UF16 = 31
+    Host.TextureFormat_BC6_SF16 = 32
+    Host.TextureFormat_LAST = 32
+    Host.TextureFormat_COUNT = 33
 
   PreviewMsgCS_Log_Level:
     Host.PreviewMsgCS_Log_Level_FIRST = 0
@@ -385,14 +384,6 @@
     Host.PreviewMsgCS_Log_Level_Error = 2
     Host.PreviewMsgCS_Log_Level_LAST = 2
     Host.PreviewMsgCS_Log_Level_COUNT = 3
-
-  GGUserFile_ImportedTexture_BinaryType:
-    Host.GGUserFile_ImportedTexture_BinaryType_FIRST = 0
-    Host.GGUserFile_ImportedTexture_BinaryType_Float = 0
-    Host.GGUserFile_ImportedTexture_BinaryType_Byte = 1
-    Host.GGUserFile_ImportedTexture_BinaryType_Count = 2
-    Host.GGUserFile_ImportedTexture_BinaryType_LAST = 2
-    Host.GGUserFile_ImportedTexture_BinaryType_COUNT = 3
 
   GGUserFile_TLASBuildFlags:
     Host.GGUserFile_TLASBuildFlags_FIRST = 0

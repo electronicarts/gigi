@@ -39,6 +39,7 @@
 
 #include "DX12Utils/Utils.h"
 #include "DX12Utils/sRGB.h"
+#include "DX12Utils/Camera.h"
 #include "version.h"
 #include "ImGuiHelper.h"
 
@@ -50,8 +51,8 @@
 
 #include "RecentFiles.h"
 
-#include "f16.h"
-#include "external/bc7enc/bc7decomp.h"
+#include "ImageReadback.h"
+#include "ImageSave.h"
 // clang-format on
 
 #include <thread>
@@ -81,11 +82,6 @@
 
 #include <dxgidebug.h>
 #pragma comment(lib, "dxguid.lib")
-
-#define STB_IMAGE_WRITE_IMPLEMENTATION
-#include "stb/stb_image_write.h"
-
-#include "tinyexr/tinyexr.h"
 
 #include "renderdoc_app.h"
 
@@ -399,6 +395,8 @@ struct ResourceViewState
     float systemVarMouseState[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
     float systemVarMouseStateLastFrame[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
 
+    Camera camera;
+
     void StoreLast()
     {
         lastType = type;
@@ -441,6 +439,8 @@ bool g_logCollectedShaderAsserts = true;
 
 std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
+std::vector<std::wstring> g_runPyArgs;
+bool g_runPyFileAddToRecentScripts = true;
 
 int g_syncInterval = 1;
 bool g_debugLayerOn = DX12_VALIDATION_ON_BY_DEFAULT();
@@ -668,11 +668,10 @@ GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResour
         outDesc.texture.color[3] = inDesc.texture.color[3];
         outDesc.texture.format = inDesc.texture.format;
 
-        outDesc.texture.binaryDims[0] = inDesc.texture.binaryDims[0];
-        outDesc.texture.binaryDims[1] = inDesc.texture.binaryDims[1];
-        outDesc.texture.binaryDims[2] = inDesc.texture.binaryDims[2];
-        outDesc.texture.binaryType = inDesc.texture.binaryType;
-        outDesc.texture.binaryChannels = inDesc.texture.binaryChannels;
+        outDesc.texture.binaryDesc.size[0] = inDesc.texture.binaryDims[0];
+        outDesc.texture.binaryDesc.size[1] = inDesc.texture.binaryDims[1];
+        outDesc.texture.binaryDesc.size[2] = inDesc.texture.binaryDims[2];
+        outDesc.texture.binaryDesc.format = inDesc.texture.binaryFormat;
     }
     else
     {
@@ -719,11 +718,10 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
         outDesc.texture.color[3] = inDesc.texture.color[3];
         outDesc.texture.format = inDesc.texture.format;
 
-        outDesc.texture.binaryDims[0] = inDesc.texture.binaryDims[0];
-        outDesc.texture.binaryDims[1] = inDesc.texture.binaryDims[1];
-        outDesc.texture.binaryDims[2] = inDesc.texture.binaryDims[2];
-        outDesc.texture.binaryType = inDesc.texture.binaryType;
-        outDesc.texture.binaryChannels = inDesc.texture.binaryChannels;
+        outDesc.texture.binaryDims[0] = inDesc.texture.binaryDesc.size[0];
+        outDesc.texture.binaryDims[1] = inDesc.texture.binaryDesc.size[1];
+        outDesc.texture.binaryDims[2] = inDesc.texture.binaryDesc.size[2];
+        outDesc.texture.binaryFormat = inDesc.texture.binaryDesc.format;
     }
     else
     {
@@ -984,9 +982,105 @@ GGUserFileV2 LoadGGUserFile()
     return ggUserData;
 }
 
-bool LoadGGFile(const char* fileName, bool preserveState)
+bool HandleOpenNonGGFile(const char* fileName)
 {
-    g_recentFiles.AddEntry(fileName);
+    enum class Viewer
+    {
+        None,
+        Texture,
+        TextureNoModify, // For DDS
+        Model,
+    };
+
+    struct ViewerMapping
+    {
+        const char* extension;
+        Viewer viewer;
+    };
+
+    static const ViewerMapping s_mapping[] =
+    {
+        {".exr", Viewer::Texture},
+
+        // stbi_image handles all these
+        {".png", Viewer::Texture},
+        {".hdr", Viewer::Texture},
+        {".bmp", Viewer::Texture},
+        {".jpg", Viewer::Texture},
+        {".jpeg", Viewer::Texture},
+        {".gif", Viewer::Texture},
+        {".psd", Viewer::Texture},
+        {".pic", Viewer::Texture},
+        {".pnm", Viewer::Texture},
+        {".tga", Viewer::Texture},
+
+        {".dds", Viewer::TextureNoModify},
+
+        {".obj", Viewer::Model},
+        {".fbx", Viewer::Model},
+    };
+
+    // Figure out which viewer we should use
+    Viewer viewer = Viewer::None;
+    {
+        std::filesystem::path p(fileName);
+        std::string extension = p.extension().string();
+        for (const ViewerMapping& mapping : s_mapping)
+        {
+            if (!_stricmp(mapping.extension, extension.c_str()))
+            {
+                viewer = mapping.viewer;
+                break;
+            }
+        }
+
+        if (viewer == Viewer::None)
+            return false;
+    }
+
+    const char* folder = nullptr;
+    switch (viewer)
+    {
+        case Viewer::Texture: folder = "Techniques/DataViewers/TextureViewer/"; break;
+        case Viewer::TextureNoModify: folder = "Techniques/DataViewers/TextureViewerDDS/"; break;
+        case Viewer::Model: folder = "Techniques/DataViewers/ModelViewer/"; break;
+    }
+
+    char currentDirectory[4096];
+    GetCurrentDirectoryA(4096, currentDirectory);
+    std::filesystem::path searchPath = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / std::filesystem::path(folder));
+
+    char pid[256];
+    sprintf_s(pid, "%i", _getpid());
+    std::filesystem::path tempDir = std::filesystem::weakly_canonical(std::filesystem::temp_directory_path() / std::filesystem::path("GigiDataViewer") / std::filesystem::path(pid));
+
+    // Remove everything aready there, to prevent stale things interfering
+    // Then, make sure the directory is created
+    std::filesystem::remove_all(tempDir);
+    std::filesystem::create_directories(tempDir);
+
+    std::filesystem::copy(searchPath, tempDir);
+
+    // Run view.py, with this filename as a command line parameter
+    g_runPyFileName = std::filesystem::weakly_canonical(tempDir / std::filesystem::path("view.py")).string();
+    g_runPyArgs.clear();
+    g_runPyArgs.push_back(ToWideString(fileName));
+    g_runPyFileAddToRecentScripts = false;
+
+    return true;
+}
+
+bool LoadGGFile(const char* fileName, bool preserveState, bool addToRecentFiles)
+{
+    // Handle non gg files
+    {
+        std::filesystem::path p(fileName);
+        if (_stricmp(p.extension().string().c_str(), ".gg"))
+            return HandleOpenNonGGFile(fileName);
+    }
+
+    if (addToRecentFiles)
+        g_recentFiles.AddEntry(fileName);
 
     std::array<float, 3> cameraPos;
     std::array<float, 2> cameraAltitudeAzimuth;
@@ -1086,7 +1180,7 @@ void ReloadGGFile(bool clearCachedFiles)
     if (clearCachedFiles)
         g_interpreter.ClearCachedFiles();
 
-    LoadGGFile(g_renderGraphFileName.c_str(), true);
+    LoadGGFile(g_renderGraphFileName.c_str(), true, true);
 }
 
 void OnServerMessage(const PreviewMsgSC_VersionResponse& msg)
@@ -1097,7 +1191,7 @@ void OnServerMessage(const PreviewMsgSC_VersionResponse& msg)
 void OnServerMessage(const PreviewMsgSC_LoadGGFile& msg)
 {
     Log(LogLevel::Info, "Server Message: LoadGGFile \"%s\"\n", msg.fileName.c_str());
-    LoadGGFile(msg.fileName.c_str(), msg.preserveState);
+    LoadGGFile(msg.fileName.c_str(), msg.preserveState, true);
 }
 
 void OnServerMessage(const PreviewMsg_Ping& msg)
@@ -1137,7 +1231,7 @@ void ImGuiRecentFiles()
                 {
                     // make a copy so we don't point to data we might change
                     std::string fileName = el;
-                    LoadGGFile(fileName.c_str(), false);
+                    LoadGGFile(fileName.c_str(), false, true);
                     break;
                 }
             }
@@ -1162,6 +1256,7 @@ void ImGuiRecentPythonScripts()
                     // make a copy so we don't point to data we might change
                     std::string fileName = el;
                     g_runPyFileName = fileName;
+                    g_runPyArgs.clear();
                     break;
                 }
             }
@@ -1185,7 +1280,7 @@ void HandleMainMenu()
                 {
                     nfdchar_t* outPath = nullptr;
                     if (NFD_OpenDialog("gg", "", &outPath) == NFD_OKAY)
-                        LoadGGFile(outPath, false);
+                        LoadGGFile(outPath, false, true);
                 }
             }
 
@@ -1208,7 +1303,10 @@ void HandleMainMenu()
             {
                 nfdchar_t* outPath = nullptr;
                 if (NFD_OpenDialog("py", "", &outPath) == NFD_OKAY)
+                {
                     g_runPyFileName = outPath;
+                    g_runPyArgs.clear();
+                }
             }
 
             ImGuiRecentPythonScripts();
@@ -1361,7 +1459,7 @@ void HandleMainMenu()
         }
 
         // Pix & RenderDoc Capture
-        if (g_pixCaptureEnabled || g_renderDocEnabled) // TODO: test with them both off
+        if (g_pixCaptureEnabled || g_renderDocEnabled)
         {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
             static int captureFrames = 1;
@@ -1834,15 +1932,6 @@ bool AssignVariable(const char* name, DataFieldType type, T value)
     return false;
 }
 
-DirectX::XMMATRIX GetViewMatrix()
-{
-    float altitude = g_systemVariables.camera.cameraAltitudeAzimuth[0];
-    float azimuth = g_systemVariables.camera.cameraAltitudeAzimuth[1];
-
-    DirectX::XMMATRIX rot = DirectX::XMMatrixRotationY(azimuth) * DirectX::XMMatrixRotationX(altitude);
-    return DirectX::XMMatrixTranslation(-g_systemVariables.camera.cameraPos[0], -g_systemVariables.camera.cameraPos[1], -g_systemVariables.camera.cameraPos[2]) * rot;
-}
-
 void SynchronizeSystemVariables()
 {
     auto context = ImGui::GetCurrentContext();
@@ -1930,111 +2019,16 @@ void SynchronizeSystemVariables()
 
     // Camera Logic
     {
-        // To account for frame time
-        float movementMultiplier = ImGui::GetIO().DeltaTime * 60.0f;
-
-        // If the mouse is dragging, rotate the camera
-        if (g_resourceView.systemVarMouseState[2] && g_resourceView.systemVarMouseStateLastFrame[2])
-        {
-            float dx = g_resourceView.systemVarMouseStateLastFrame[0] - g_resourceView.systemVarMouseState[0];
-            float dy = g_resourceView.systemVarMouseStateLastFrame[1] - g_resourceView.systemVarMouseState[1];
-
-            dx *= movementMultiplier;
-            dy *= movementMultiplier;
-
-            if (!g_systemVariables.camera.leftHanded)
-            {
-                dx *= -1.0;
-                dy *= -1.0;
-            }
-
-            g_systemVariables.camera.cameraAltitudeAzimuth[0] += dy * g_systemVariables.camera.mouseSensitivity;
-            g_systemVariables.camera.cameraAltitudeAzimuth[0] = std::max(std::min(g_systemVariables.camera.cameraAltitudeAzimuth[0], c_pi * 0.95f), -c_pi * 0.95f);
-
-            g_systemVariables.camera.cameraAltitudeAzimuth[1] += dx * g_systemVariables.camera.mouseSensitivity;
-            if (g_systemVariables.camera.cameraAltitudeAzimuth[1] < 0.0f)
-                g_systemVariables.camera.cameraAltitudeAzimuth[1] += 2.0f * c_pi;
-            g_systemVariables.camera.cameraAltitudeAzimuth[1] = std::fmodf(g_systemVariables.camera.cameraAltitudeAzimuth[1], 2.0f * c_pi);
-
-            g_systemVariables.camera.cameraChanged |= (dx != 0.0f || dy != 0.0f);
-        }
-
-        // Handle WASD
-        {
-
-            DirectX::XMMATRIX viewMatrix = GetViewMatrix();
-
-            float left[3] = {viewMatrix.r[0].m128_f32[0] , viewMatrix.r[1].m128_f32[0] , viewMatrix.r[2].m128_f32[0]};
-            float up[3] = {viewMatrix.r[0].m128_f32[1], viewMatrix.r[1].m128_f32[1], viewMatrix.r[2].m128_f32[1]};
-            float fwd[3] = {viewMatrix.r[0].m128_f32[2], viewMatrix.r[1].m128_f32[2], viewMatrix.r[2].m128_f32[2]};
-
-            float flySpeed = g_systemVariables.camera.flySpeed;
-            if (g_keyStates[VK_SHIFT])
-                flySpeed *= 10;
-            else if (g_keyStates[VK_CONTROL])
-                flySpeed /= 10;
-
-            if (!g_systemVariables.camera.leftHanded)
-            {
-                fwd[0] *= -1.0f;
-                fwd[1] *= -1.0f;
-                fwd[2] *= -1.0f;
-            }
-
-            if (g_keyStates['W'] || g_keyStates[VK_UP])
-            {
-                g_systemVariables.camera.cameraPos[0] += fwd[0] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[1] += fwd[1] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[2] += fwd[2] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraChanged = true;
-            }
-
-            if (g_keyStates['S'] || g_keyStates[VK_DOWN])
-            {
-                g_systemVariables.camera.cameraPos[0] -= fwd[0] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[1] -= fwd[1] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[2] -= fwd[2] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraChanged = true;
-            }
-
-            if (g_keyStates['A'] || g_keyStates[VK_LEFT])
-            {
-                g_systemVariables.camera.cameraPos[0] -= left[0] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[1] -= left[1] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[2] -= left[2] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraChanged = true;
-            }
-
-            if (g_keyStates['D'] || g_keyStates[VK_RIGHT])
-            {
-                g_systemVariables.camera.cameraPos[0] += left[0] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[1] += left[1] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[2] += left[2] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraChanged = true;
-            }
-
-            if (g_keyStates['E'] || g_keyStates[VK_PRIOR])
-            {
-                g_systemVariables.camera.cameraPos[0] += up[0] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[1] += up[1] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[2] += up[2] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraChanged = true;
-            }
-
-            if (g_keyStates['Q'] || g_keyStates[VK_NEXT])
-            {
-                g_systemVariables.camera.cameraPos[0] -= up[0] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[1] -= up[1] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraPos[2] -= up[2] * flySpeed * movementMultiplier;
-                g_systemVariables.camera.cameraChanged = true;
-            }
-        }
+        g_resourceView.camera.m_flySpeed = g_systemVariables.camera.flySpeed;
+        g_resourceView.camera.m_leftHanded = g_systemVariables.camera.leftHanded;
+        g_resourceView.camera.m_mouseSensitivity = g_systemVariables.camera.mouseSensitivity;
+        g_resourceView.camera.Update(g_keyStates, g_resourceView.systemVarMouseState, g_resourceView.systemVarMouseStateLastFrame, ImGui::GetIO().DeltaTime, g_systemVariables.camera.cameraPos.data(), g_systemVariables.camera.cameraAltitudeAzimuth.data(), g_systemVariables.camera.cameraChanged);
 
         AssignVariable(g_systemVariables.CameraChanged_varName.c_str(), DataFieldType::Bool, g_systemVariables.camera.cameraChanged);
         g_systemVariables.camera.cameraChanged = false;
     }
 
-    // Camera
+    // Assign camera system variables
     {
         // Make the projection and jittered projection matrix
         DirectX::XMMATRIX projMtx, jitteredProjMtx;
@@ -2052,34 +2046,8 @@ void SynchronizeSystemVariables()
                 }
             }
 
-            float fov = g_systemVariables.camera.FOV * c_pi / 180.0f;
-            float nearZ = g_systemVariables.camera.nearPlane;
-            float farZ = g_systemVariables.camera.farPlane;
-
-            nearZ = std::max(nearZ, 0.001f);
-            farZ = std::max(farZ, 0.001f);
-            fov = std::max(fov, 0.001f);
-
-            if (nearZ == farZ)
-                farZ = nearZ + 0.01f;
-
-            if (g_systemVariables.camera.reverseZ)
-                std::swap(nearZ, farZ);
-
-            if (g_systemVariables.camera.perspective)
-            {
-                if (g_systemVariables.camera.leftHanded)
-                    projMtx = DirectX::XMMatrixPerspectiveFovLH(fov, resolution[0] / resolution[1], nearZ, farZ);
-                else
-                    projMtx = DirectX::XMMatrixPerspectiveFovRH(fov, resolution[0] / resolution[1], nearZ, farZ);
-            }
-            else
-            {
-                if (g_systemVariables.camera.leftHanded)
-                    projMtx = DirectX::XMMatrixOrthographicLH(resolution[0], resolution[1], nearZ, farZ);
-                else
-                    projMtx = DirectX::XMMatrixOrthographicRH(resolution[0], resolution[1], nearZ, farZ);
-            }
+            // Get the projection matrix
+            projMtx = g_resourceView.camera.GetProjMatrix(g_systemVariables.camera.FOV, resolution, g_systemVariables.camera.nearPlane, g_systemVariables.camera.farPlane, g_systemVariables.camera.reverseZ, g_systemVariables.camera.perspective);
 
             // Subpixel jitter
             jitteredProjMtx = projMtx;
@@ -2126,7 +2094,7 @@ void SynchronizeSystemVariables()
             DirectX::XMMATRIX invProjMtx = DirectX::XMMatrixInverse(nullptr, projMtx);
             DirectX::XMMATRIX invJitteredProjMtx = DirectX::XMMatrixInverse(nullptr, jitteredProjMtx);
 
-            DirectX::XMMATRIX viewMtx = GetViewMatrix();
+            DirectX::XMMATRIX viewMtx = g_resourceView.camera.GetViewMatrix(g_systemVariables.camera.cameraPos.data(), g_systemVariables.camera.cameraAltitudeAzimuth.data());
             DirectX::XMMATRIX invViewMtx = DirectX::XMMatrixInverse(nullptr, viewMtx);
 
             DirectX::XMMATRIX viewProjMtx = viewMtx * projMtx;
@@ -2594,7 +2562,7 @@ void ShowInternalVariables()
                 std::string base_filename = key.substr(key.find_last_of("/\\") + 1);
                 const char* for_display = base_filename.c_str();
                 c_texture_cache_details_file_display.push_back(for_display);
-                c_texture_cache_details_pixels.push_back(val.pixels.size());
+                c_texture_cache_details_pixels.push_back(val.PixelCount());
             }
         }
         if (ImGui::BeginTable("Texture cache details", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
@@ -2998,7 +2966,7 @@ void ShowImportedResources()
         if (desc.isATexture)
         {
             // Image File
-            if (ImGui_File("File", desc.texture.fileName, "jpeg,jpg,png,bmp,hdr,psd,tga,gif,pic,pgm,ppm,exr,dds"))
+            if (ImGui_File("File", desc.texture.fileName, "jpeg,jpg,png,bmp,hdr,psd,tga,gif,pic,pgm,ppm,exr,dds,bin"))
             {
                 desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
             }
@@ -3077,39 +3045,37 @@ void ShowImportedResources()
             {
                 ImGui::PushID("LoadBinaryFile");
 
+                // Size
                 if (desc.texture.textureType == RuntimeTypes::ViewableResource::Type::Texture2DArray || desc.texture.textureType == RuntimeTypes::ViewableResource::Type::Texture3D)
                 {
-                    if (ImGui::InputInt3("Size", desc.texture.binaryDims))
+                    if (ImGui::InputInt3("Size", desc.texture.binaryDesc.size))
                         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
                 }
                 else
                 {
-                    if (ImGui::InputInt2("Size", desc.texture.binaryDims))
+                    if (ImGui::InputInt2("Size", desc.texture.binaryDesc.size))
                     {
-                        desc.texture.binaryDims[2] = 1;
+                        desc.texture.binaryDesc.size[2] = 1;
                         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
                     }
                 }
-
                 ShowToolTip("The dimensions of the data in the binary file");
 
-                // binary Type
+                // Format
                 {
                     static const char* labels[] = {
-                        "Float",
-                        "Byte",
+                        #include "external/df_serialize/_common.h"
+                        #define ENUM_ITEM(_NAME, _DESCRIPTION) #_NAME,
+                        // clang-format off
+                        #include "external/df_serialize/_fillunsetdefines.h"
+                        #include "Schemas/TextureFormats.h"
+                        // clang-format on
                     };
 
-                    static_assert(_countof(labels) == (int)GGUserFile_ImportedTexture_BinaryType::Count);
-
-                    if (ImGui::Combo("Type", (int*)&desc.texture.binaryType, labels, _countof(labels)))
+                    if (ImGui::Combo("Format", (int*)&desc.texture.binaryDesc.format, labels, _countof(labels)))
                         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
-                    ShowToolTip("The data type stored in the binary file");
+                    ShowToolTip("This is the format of the data in the binary file.");
                 }
-
-                if (ImGui::InputInt("Channels", &desc.texture.binaryChannels))
-                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
-                ShowToolTip("The channels per pixel in the binary file");
 
                 ImGui::PopID();
             }
@@ -3565,191 +3531,150 @@ void ShowLog()
     ImGui::End();
 }
 
-void AutoHistogram(ID3D12Resource* readbackResource, DXGI_FORMAT format, int width, int height, int depth, int zslice, float& histogramMin, float& histogramMax)
+void AutoHistogram(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int zIndex, int mipIndex, float& histogramMin, float& histogramMax)
 {
-    DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(format);
-
-    int unalignedPitch = width * formatInfo.bytesPerPixel;
-    int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
-
-    D3D12_RANGE readRange;
-    readRange.Begin = zslice * height * alignedPitch;
-    readRange.End = (zslice + 1) * height * alignedPitch;
-
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-
-    void* mappedMemory = nullptr;
-    readbackResource->Map(0, &readRange, &mappedMemory);
+    // Get the decoded image data
+    DXGI_FORMAT decodedFormat;
+    std::vector<unsigned char> decodedPixels;
+    int decodedWidth = 0;
+    int decodedHeight = 0;
+    if (!ImageReadback::GetDecodedImageSlice(g_pd3dDevice, readbackResource, resourceOriginalDesc, zIndex, mipIndex, decodedPixels, decodedFormat, decodedWidth, decodedHeight))
+    {
+        Log(LogLevel::Error, __FUNCTION__ " Could not decode block compressed image\n");
+        return;
+    }
 
     float minValue[4] = { FLT_MAX, FLT_MAX, FLT_MAX, FLT_MAX };
     float maxValue[4] = { -FLT_MAX, -FLT_MAX, -FLT_MAX, -FLT_MAX };
 
-    for (int iy = 0; iy < height; ++iy)
+    DXGI_FORMAT_Info decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
+
+    switch (decodedFormatInfo.channelType)
     {
-        void* firstPixel = &((char*)mappedMemory)[readRange.Begin + iy * alignedPitch];
-
-        if (formatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
+        case DXGI_FORMAT_Info::ChannelType::_uint8_t:
         {
-            const uint32_t* value = (uint32_t*)firstPixel;
-            for (int ix = 0; ix < width; ++ix)
+            const uint8_t* value = (uint8_t*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
             {
-                float v = float(double(*value) / 16777216.0);
-                minValue[0] = std::min(minValue[0], v);
-                maxValue[0] = std::max(maxValue[0], v);
-                value++;
-            }
-        }
-        else if (formatInfo.format == DXGI_FORMAT_R11G11B10_FLOAT)
-        {
-            const uint32_t* value = (uint32_t*)firstPixel;
-            for (int ix = 0; ix < width; ++ix)
-            {
-                float rgb[3];
-                R11G11B10tof32(*value, rgb);
-
-                for (int i = 0; i < 3; ++i)
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
                 {
-                    minValue[i] = std::min(minValue[i], rgb[i]);
-                    maxValue[i] = std::max(maxValue[i], rgb[i]);
+                    float v = InverseLerp(0.0f, 255.0f, float(*value));
+                    minValue[i] = std::min(minValue[i], v);
+                    maxValue[i] = std::max(maxValue[i], v);
+                    value++;
                 }
-                value++;
             }
             break;
         }
-        else
+        case DXGI_FORMAT_Info::ChannelType::_int8_t:
         {
-            switch (formatInfo.channelType)
+            const int8_t* value = (int8_t*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
             {
-                case DXGI_FORMAT_Info::ChannelType::_uint8_t:
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
                 {
-                    const uint8_t* value = (uint8_t*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            float v = InverseLerp(0.0f, 255.0f, float(*value));
-                            minValue[i] = std::min(minValue[i], v);
-                            maxValue[i] = std::max(maxValue[i], v);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_int8_t:
-                {
-                    const int8_t* value = (int8_t*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            float v = InverseLerp(-128.0f, 127.0f, float(*value));
-                            minValue[i] = std::min(minValue[i], v);
-                            maxValue[i] = std::max(maxValue[i], v);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_uint16_t:
-                {
-                    const uint16_t* value = (uint16_t*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            float v = InverseLerp(0.0f, 65535.0f, float(*value));
-                            minValue[i] = std::min(minValue[i], v);
-                            maxValue[i] = std::max(maxValue[i], v);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_int16_t:
-                {
-                    const int16_t* value = (int16_t*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            float v = InverseLerp(-32768.0f, 32767.0f, float(*value));
-                            minValue[i] = std::min(minValue[i], v);
-                            maxValue[i] = std::max(maxValue[i], v);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_uint32_t:
-                {
-                    const uint32_t* value = (uint32_t*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            float v = InverseLerp(0.0f, 4294967295.0f, float(*value));
-                            minValue[i] = std::min(minValue[i], v);
-                            maxValue[i] = std::max(maxValue[i], v);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_int32_t:
-                {
-                    const int32_t* value = (int32_t*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            float v = InverseLerp(-2147483648.0f, 2147483647.0f, float(*value));
-                            minValue[i] = std::min(minValue[i], v);
-                            maxValue[i] = std::max(maxValue[i], v);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_float:
-                {
-                    const float* value = (float*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            minValue[i] = std::min(minValue[i], *value);
-                            maxValue[i] = std::max(maxValue[i], *value);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                case DXGI_FORMAT_Info::ChannelType::_half:
-                {
-                    const half* value = (half*)firstPixel;
-                    for (int ix = 0; ix < width; ++ix)
-                    {
-                        for (int i = 0; i < formatInfo.channelCount; ++i)
-                        {
-                            minValue[i] = std::min<float>(minValue[i], *value);
-                            maxValue[i] = std::max<float>(maxValue[i], *value);
-                            value++;
-                        }
-                    }
-                    break;
-                }
-                default:
-                {
-                    Assert(false, "Unhandled Channel Type");
-                    return;
+                    float v = InverseLerp(-128.0f, 127.0f, float(*value));
+                    minValue[i] = std::min(minValue[i], v);
+                    maxValue[i] = std::max(maxValue[i], v);
+                    value++;
                 }
             }
+            break;
+        }
+        case DXGI_FORMAT_Info::ChannelType::_uint16_t:
+        {
+            const uint16_t* value = (uint16_t*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
+            {
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
+                {
+                    float v = InverseLerp(0.0f, 65535.0f, float(*value));
+                    minValue[i] = std::min(minValue[i], v);
+                    maxValue[i] = std::max(maxValue[i], v);
+                    value++;
+                }
+            }
+            break;
+        }
+        case DXGI_FORMAT_Info::ChannelType::_int16_t:
+        {
+            const int16_t* value = (int16_t*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
+            {
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
+                {
+                    float v = InverseLerp(-32768.0f, 32767.0f, float(*value));
+                    minValue[i] = std::min(minValue[i], v);
+                    maxValue[i] = std::max(maxValue[i], v);
+                    value++;
+                }
+            }
+            break;
+        }
+        case DXGI_FORMAT_Info::ChannelType::_uint32_t:
+        {
+            const uint32_t* value = (uint32_t*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
+            {
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
+                {
+                    float v = InverseLerp(0.0f, 4294967295.0f, float(*value));
+                    minValue[i] = std::min(minValue[i], v);
+                    maxValue[i] = std::max(maxValue[i], v);
+                    value++;
+                }
+            }
+            break;
+        }
+        case DXGI_FORMAT_Info::ChannelType::_int32_t:
+        {
+            const int32_t* value = (int32_t*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
+            {
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
+                {
+                    float v = InverseLerp(-2147483648.0f, 2147483647.0f, float(*value));
+                    minValue[i] = std::min(minValue[i], v);
+                    maxValue[i] = std::max(maxValue[i], v);
+                    value++;
+                }
+            }
+            break;
+        }
+        case DXGI_FORMAT_Info::ChannelType::_float:
+        {
+            const float* value = (float*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
+            {
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
+                {
+                    minValue[i] = std::min(minValue[i], *value);
+                    maxValue[i] = std::max(maxValue[i], *value);
+                    value++;
+                }
+            }
+            break;
+        }
+        case DXGI_FORMAT_Info::ChannelType::_half:
+        {
+            const half* value = (half*)decodedPixels.data();
+            for (int ix = 0; ix < decodedWidth * decodedHeight; ++ix)
+            {
+                for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
+                {
+                    minValue[i] = std::min<float>(minValue[i], *value);
+                    maxValue[i] = std::max<float>(maxValue[i], *value);
+                    value++;
+                }
+            }
+            break;
+        }
+        default:
+        {
+            Assert(false, "Unhandled Channel Type");
+            return;
         }
     }
-
-    readbackResource->Unmap(0, &writeRange);
 
     // Use the min / max histogram of visible channels
     bool first = true;
@@ -3775,101 +3700,25 @@ void AutoHistogram(ID3D12Resource* readbackResource, DXGI_FORMAT format, int wid
     }
 }
 
-std::vector<char> DecodeBC7Pixel(ID3D12Resource* readbackResource, int width, int height, int x, int y)
-{
-    // Make sure pixel is in range
-    x = std::max(0, std::min(width - 1, x));
-    y = std::max(0, std::min(height - 1, y));
-
-    // Calculate how many blocks there are
-    int numBlocksX = (width + 3) / 4;
-    int numBlocksY = (height + 3) / 4;
-    int numBlocks = numBlocksX * numBlocksY;
-
-    // Calculate which block we are decoding
-    int decodeBlockX = (x + 3) / 4;
-    int decodeBlockY = (x + 3) / 4;
-    int decodeBlock = decodeBlockY * numBlocksX + decodeBlockX;
-
-    // read back and decode the block that contains our pixel
-    std::vector<char> ret;
-    std::vector<char> decodedBlock(64);
-    {
-        D3D12_RANGE readRange;
-        readRange.Begin = decodeBlock * 16;
-        readRange.End = (decodeBlock + 1) * 16;
-
-        char* readbackData = nullptr;
-        HRESULT hr = readbackResource->Map(0, &readRange, (void**)&readbackData);
-        if (FAILED(hr))
-        {
-            ImGui::TextUnformatted("Could not map resource");
-            return ret;
-        }
-
-        bc7decomp::unpack_bc7(&readbackData[decodeBlock * 16], (bc7decomp::color_rgba*)decodedBlock.data());
-
-        D3D12_RANGE writeRange;
-        writeRange.Begin = 1;
-        writeRange.End = 0;
-        readbackResource->Unmap(0, &writeRange);
-    }
-
-    // copy our pixel out of the decoded block
-    int offsetX = (x % 4);
-    int offsetY = (y % 4);
-    const char* pixel = &decodedBlock[(offsetY * 4 + offsetX) * 4];
-    ret.resize(4);
-    memcpy(ret.data(), pixel, 4);
-
-    return ret;
-}
-
-void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int x, int y, int z)
+void ShowPixelValue(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int x, int y, int z, int mipIndex, float cursorPosX)
 {
     // read back the pixel data
-    std::vector<char> pixelUntypedData(formatInfo.bytesPerPixel);
-    if (formatInfo.isCompressed)
-    {
-        pixelUntypedData = DecodeBC7Pixel(readbackResource, width, height, x, y);
-    }
-    else
-    {
-        x = std::max(0, std::min(width - 1, x));
-        y = std::max(0, std::min(height - 1, y));
-        z = std::max(0, std::min(depth - 1, z));
-
-        int unalignedPitch = width * formatInfo.bytesPerPixel;
-        int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
-
-        D3D12_RANGE readRange;
-        readRange.Begin = z * height * alignedPitch + y * alignedPitch + x * formatInfo.bytesPerPixel;
-        readRange.End = readRange.Begin + formatInfo.bytesPerPixel;
-
-        char* readbackData = nullptr;
-        HRESULT hr = readbackResource->Map(0, &readRange, (void**)&readbackData);
-        if (FAILED(hr))
-        {
-            ImGui::TextUnformatted("Could not map resource");
-            return;
-        }
-        memcpy(pixelUntypedData.data(), &readbackData[readRange.Begin], formatInfo.bytesPerPixel);
-
-        D3D12_RANGE writeRange;
-        writeRange.Begin = 1;
-        writeRange.End = 0;
-        readbackResource->Unmap(0, &writeRange);
-    }
-    if (pixelUntypedData.size() < formatInfo.bytesPerPixel)
+    std::vector<unsigned char> pixelUntypedData;
+    DXGI_FORMAT viewFormat;
+    if (!ImageReadback::GetDecodedPixel(g_pd3dDevice, readbackResource, resourceOriginalDesc, x, y, z, mipIndex, pixelUntypedData, viewFormat))
         return;
-    const char* pixelUntyped = pixelUntypedData.data();
 
+    // Make sure we got enough data
+    DXGI_FORMAT_Info viewFormatInfo = Get_DXGI_FORMAT_Info(viewFormat);
+    if (pixelUntypedData.size() < viewFormatInfo.bytesPerPixel)
+        return;
+
+    // Make a string of the pixel values
+    const unsigned char* pixelUntyped = pixelUntypedData.data();
     float pixelColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
-
     char str[256], *writer = str;
-
     bool isHDR = false;
-    if (formatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
+    if (viewFormatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
     {
         uint32_t* pixel = (uint32_t*)pixelUntyped;
         float value = float(double(pixel[0]) / 16777216.0);
@@ -3877,7 +3726,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
 
         pixelColor[0] = value;
     }
-    else if (formatInfo.format == DXGI_FORMAT_R11G11B10_FLOAT)
+    else if (viewFormatInfo.format == DXGI_FORMAT_R11G11B10_FLOAT)
     {
         float rgb[3];
         R11G11B10tof32(*(uint32_t*)pixelUntyped, rgb);
@@ -3889,12 +3738,12 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
     }
     else
     {
-        switch (formatInfo.channelType)
+        switch (viewFormatInfo.channelType)
         {
             case DXGI_FORMAT_Info::ChannelType::_uint8_t:
             {
                 uint8_t* pixel = (uint8_t*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					sprintf(writer, "%u ", (unsigned int)pixel[i]);
                     writer += strlen(writer);
@@ -3906,7 +3755,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             case DXGI_FORMAT_Info::ChannelType::_int8_t:
             {
                 int8_t* pixel = (int8_t*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					sprintf(writer, "%i ", (int)pixel[i]);
 					writer += strlen(writer);
@@ -3918,7 +3767,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             case DXGI_FORMAT_Info::ChannelType::_int16_t:
             {
                 int16_t* pixel = (int16_t*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					sprintf(writer, "%i ", (int)pixel[i]);
 					writer += strlen(writer);
@@ -3930,7 +3779,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             case DXGI_FORMAT_Info::ChannelType::_uint16_t:
             {
                 uint16_t* pixel = (uint16_t*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					sprintf(writer, "%u ", (unsigned int)pixel[i]);
 					writer += strlen(writer);
@@ -3942,7 +3791,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             case DXGI_FORMAT_Info::ChannelType::_uint32_t:
             {
                 uint32_t* pixel = (uint32_t*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					sprintf(writer, "%u ", (unsigned int)pixel[i]);
 					writer += strlen(writer);
@@ -3954,7 +3803,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             case DXGI_FORMAT_Info::ChannelType::_half:
             {
                 half* pixel = (half*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					float f = pixel[i];
 					sprintf(writer, "%f ", f);
@@ -3968,7 +3817,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
             {
                 isHDR = true;
                 float* pixel = (float*)pixelUntyped;
-                for (int i = 0; i < formatInfo.channelCount; ++i)
+                for (int i = 0; i < viewFormatInfo.channelCount; ++i)
                 {
 					sprintf(writer, "%f ", pixel[i]);
 					writer += strlen(writer);
@@ -3986,7 +3835,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
     }
 
     // show the actual pixel color
-    if (formatInfo.sRGB)
+    if (viewFormatInfo.sRGB)
     {
         pixelColor[0] = SRGBToLinear(pixelColor[0]);
         pixelColor[1] = SRGBToLinear(pixelColor[1]);
@@ -3996,6 +3845,9 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
     if (isHDR)
         flags |= ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR;
 
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(cursorPosX);
+
     // to get vertical alignment in the line
     const float size = ImGui::GetTextLineHeight();
 
@@ -4003,12 +3855,12 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
 
     // If the format is a normed texture, we wrote it as int or uint, but we want to show it as float.
     // furthermore, snorm textures need to be converted from [0,1] to [-1,1]
-    switch (formatInfo.normType)
+    switch (viewFormatInfo.normType)
     {
         case DXGI_FORMAT_Info::NormType::UNorm:
         {
             writer = str;
-            for (int i = 0; i < formatInfo.channelCount; ++i)
+            for (int i = 0; i < viewFormatInfo.channelCount; ++i)
             {
                 sprintf(writer, "%f ", pixelColor[i]);
                 writer += strlen(writer);
@@ -4018,7 +3870,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& fo
         case DXGI_FORMAT_Info::NormType::SNorm:
         {
             writer = str;
-            for (int i = 0; i < formatInfo.channelCount; ++i)
+            for (int i = 0; i < viewFormatInfo.channelCount; ++i)
             {
                 pixelColor[i] = pixelColor[i] * 2.0f - 1.0f;
                 sprintf(writer, "%f ", pixelColor[i]);
@@ -4800,180 +4652,89 @@ void ShowStructuredBuffer(const RenderGraph& renderGraph, unsigned char* bytes, 
     }
 }
 
-std::vector<unsigned char> DecodeBc7(unsigned char* pixels, int width, int height)
+void CopyImageToClipBoard(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int zIndex, int mipIndex)
 {
-    // Calculate how many blocks there are
-    int numBlocksX = (width + 3) / 4;
-    int numBlocksY = (height + 3) / 4;
-    int numBlocks = numBlocksX * numBlocksY;
-
-    std::vector<unsigned char> decodedPixels(width * height * 4, 0);
-    std::vector<unsigned char> decodedBlock(64);
-
-    for (int i = 0; i < numBlocks; ++i)
+    DXGI_FORMAT decodedFormat;
+    std::vector<unsigned char> decodedPixels;
+    int decodedWidth = 0;
+    int decodedHeight = 0;
+    if (!ImageReadback::GetDecodedImageSlice(g_pd3dDevice, readbackResource, resourceOriginalDesc, zIndex, mipIndex, decodedPixels, decodedFormat, decodedWidth, decodedHeight))
     {
-        bc7decomp::unpack_bc7(&pixels[i * 16], (bc7decomp::color_rgba*)decodedBlock.data());
-
-        int blockX = i % numBlocksX;
-        int blockY = i / numBlocksX;
-
-        int outY = blockY * 4;
-        int outX = blockX * 4;
-
-        unsigned char* dest = &decodedPixels[(outY * width + outX) * 4];
-        unsigned char* src = decodedBlock.data();
-        for (int iy = 0; iy < 4; ++iy)
-        {
-            memcpy(dest, src, 16);
-            src += 16;
-            dest += width * 4;
-        }
+        Log(LogLevel::Error, __FUNCTION__ " Could not decode block compressed image\n");
+        return;
     }
 
-    return decodedPixels;
-}
-
-void SaveAsPng(const char* fileName, ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z, bool forceRGBA)
-{
-    // TODO: bc7 treatment
-
-    std::filesystem::path p(fileName);
-    if (!p.has_extension() || p.extension() != ".png")
-        p.replace_extension(".png");
-
-    unsigned char* pixels = nullptr;
-    readbackResource->Map(0, nullptr, (void**)&pixels);
-
-    if (formatInfo.isCompressed)
+    // If the decoded format isn't RGBAU8, convert it to that!
+    DXGI_FORMAT_Info decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
+    if (decodedFormatInfo.channelCount != 4 || decodedFormatInfo.channelType != DXGI_FORMAT_Info::ChannelType::_uint8_t)
     {
-        std::vector<unsigned char> decodedPixels = DecodeBc7(pixels, width, height);
-        stbi_write_png(p.string().c_str(), width, height, 4, decodedPixels.data(), 0);
-    }
-    else
-    {
-        int unalignedPitch = width * formatInfo.bytesPerPixel;
-        int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
-
-        if (forceRGBA)
+        // Convert
+        std::vector<double> scratchMemory;
+        std::vector<unsigned char> convertedPixels(decodedWidth * decodedHeight * 4);
+        for (size_t pixelIndex = 0; pixelIndex < decodedWidth * decodedHeight; ++pixelIndex)
         {
-            std::vector<unsigned char> paddedPixels(width * height * 4, 0);
-            for (int i = 0; i < width * height; ++i)
-                paddedPixels[i * 4 + 3] = 255;
+            unsigned char* destPixel = &convertedPixels[pixelIndex * 4];
+            destPixel[0] = 0;
+            destPixel[1] = 0;
+            destPixel[2] = 0;
+            destPixel[3] = 255;
 
-            for (int y = 0; y < height; ++y)
+            for (size_t channelIndex = 0; channelIndex < decodedFormatInfo.channelCount; ++channelIndex)
             {
-                for (int x = 0; x < width; ++x)
+                unsigned char* srcPixel = &decodedPixels[pixelIndex * decodedFormatInfo.bytesPerPixel + channelIndex * decodedFormatInfo.bytesPerChannel];
+                switch (decodedFormatInfo.channelType)
                 {
-                    unsigned char* dest = &paddedPixels[(x + y * width) * 4];
-                    const unsigned char* src = &pixels[z * height * alignedPitch + y * alignedPitch + x * formatInfo.channelCount];
-                    memcpy(dest, src, formatInfo.channelCount);
+                    case DXGI_FORMAT_Info::ChannelType::_uint8_t: destPixel[channelIndex] = *srcPixel; break;
+                    default:
+                    {
+                        if (!ConvertToDoubles(srcPixel, 1, decodedFormatInfo.channelType, scratchMemory))
+                        {
+                            Log(LogLevel::Error, __FUNCTION__ " Could not convert format \"%s\" to doubles\n", decodedFormatInfo.name);
+                            return;
+                        }
+
+                        // linear to sRGB conversion
+                        if (channelIndex != 3)
+                            scratchMemory[0] = LinearTosRGB(scratchMemory[0]);
+
+                        if(!ConvertFromDoubles(scratchMemory, DXGI_FORMAT_Info::ChannelType::_uint8_t, &destPixel[channelIndex]))
+                        {
+                            Log(LogLevel::Error, __FUNCTION__ " Could not convert from doubles to uint8\n");
+                            return;
+                        }
+
+                        break;
+                    }
                 }
             }
+        }
 
-            stbi_write_png(p.string().c_str(), width, height, 4, paddedPixels.data(), 0);
-        }
-        else
-        {
-            stbi_write_png(p.string().c_str(), width, height, formatInfo.channelCount, &pixels[z * height * alignedPitch], alignedPitch);
-        }
+        // set the new pixels
+        decodedPixels = convertedPixels;
+
+        // remember that our pixels are the new format
+        decodedFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
+        decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
     }
 
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-    readbackResource->Unmap(0, &writeRange);
-}
-
-void SaveImageAsCSV(const char* fileName, ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z)
-{
-    std::filesystem::path p(fileName);
-    if (!p.has_extension() || p.extension() != ".csv")
-        p.replace_extension(".csv");
-
-    unsigned char* pixels = nullptr;
-    readbackResource->Map(0, nullptr, (void**)&pixels);
-
-    FILE* file = nullptr;
-    fopen_s(&file, p.string().c_str(), "wb");
-
-    static const char c_channelNames[] = { 'R', 'G', 'B', 'A' };
-    for (int i = 0; i < formatInfo.channelCount; ++i)
-        fprintf(file, "%s\"%c\"", (i > 0 ? "," : ""), c_channelNames[i]);
-    fprintf(file, "\n");
-
-    // Decode the pixels if we need to
-    int pitch = width * formatInfo.bytesPerPixel;
-    std::vector<unsigned char> decodedPixels(width * height * 4, 0);
-    if (formatInfo.isCompressed)
-    {
-        std::vector<unsigned char> decodedPixels = DecodeBc7(pixels, width, height);
-        pixels = decodedPixels.data();
-    }
-    else
-    {
-        pitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), pitch);
-    }
-
-    switch (formatInfo.channelType)
-    {
-        case DXGI_FORMAT_Info::ChannelType::_uint8_t:
-        {
-            for (int i = 0; i < width * height; ++i)
-            {
-                const unsigned char* src = &pixels[z * height * pitch + i * formatInfo.channelCount * sizeof(uint8_t)];
-                for (int c = 0; c < formatInfo.channelCount; ++c)
-                    fprintf(file, "%s\"%u\"", (c > 0 ? "," : ""), (unsigned int)src[c]);
-                fprintf(file, "\n");
-            }
-            break;
-        }
-        case DXGI_FORMAT_Info::ChannelType::_float:
-        {
-            for (int i = 0; i < width * height; ++i)
-            {
-                const float* src = (float*)&pixels[z * height * pitch + i * formatInfo.channelCount * sizeof(float)];
-                for (int c = 0; c < formatInfo.channelCount; ++c)
-                    fprintf(file, "%s\"%f\"", (c > 0 ? "," : ""), src[c]);
-                fprintf(file, "\n");
-            }
-            break;
-        }
-        default:
-        {
-            Log(LogLevel::Error, __FUNCTION__ " Unhandled channel type: %i\n", (int)formatInfo.channelType);
-        }
-    }
-
-    fclose(file);
-
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-    readbackResource->Unmap(0, &writeRange);
-}
-
-void CopyImageToClipBoard(ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z)
-{
-    unsigned char* pixels = nullptr;
-    readbackResource->Map(0, nullptr, (void**)&pixels);
-
+    // can we make this work with pixel formats other than U8? (like HDR images, i guess)
     constexpr uint32_t kBytesPerPixel = 4;
     constexpr WORD kBitsPerPixel = 8 * kBytesPerPixel;
     BITMAPV5HEADER header = {
         .bV5Size = sizeof(header),
-        .bV5Width = width,
-        .bV5Height = height,
+        .bV5Width = decodedWidth,
+        .bV5Height = decodedHeight,
         .bV5Planes = 1,
         .bV5BitCount = kBitsPerPixel,
-        .bV5Compression = BI_BITFIELDS,
+        .bV5Compression = BI_BITFIELDS, // Should this be BI_RGB?
         .bV5RedMask = 0x000000ff,
         .bV5GreenMask = 0x0000ff00,
         .bV5BlueMask = 0x00ff0000,
         .bV5AlphaMask = 0xff000000,
-        .bV5CSType = LCS_WINDOWS_COLOR_SPACE,
+        .bV5CSType = LCS_WINDOWS_COLOR_SPACE,  // Should this be LCS_sRGB sometimes?
     };
 
-    HGLOBAL hglob = GlobalAlloc(GMEM_MOVEABLE, sizeof(header) + width * height * 4);
+    HGLOBAL hglob = GlobalAlloc(GMEM_MOVEABLE, sizeof(header) + decodedWidth * decodedHeight * 4);
     if (hglob)
     {
         void* buffer = GlobalLock(hglob);
@@ -4981,37 +4742,24 @@ void CopyImageToClipBoard(ID3D12Resource* readbackResource, const DXGI_FORMAT_In
         {
             CopyMemory(buffer, &header, sizeof(header));
 
-            if (formatInfo.isCompressed)
+            for (int y = 0; y < decodedHeight; ++y)
             {
-                std::vector<unsigned char> decodedPixels = DecodeBc7(pixels, width, height);
-                for (int i = 0; i < height; i++) {
-                    CopyMemory((unsigned char*)buffer + sizeof(header) + i * width * kBytesPerPixel, decodedPixels.data() + (height - 1 - i) * width * kBytesPerPixel, width * kBytesPerPixel);
-                }
-            }
-            else
-            {
-                int unalignedPitch = width * formatInfo.bytesPerPixel;
-                int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
+                const unsigned char* src = &decodedPixels[(zIndex * decodedHeight + y) * decodedWidth * decodedFormatInfo.bytesPerPixel];
+                unsigned char* dest = (unsigned char*)buffer + sizeof(header) + (decodedHeight - 1 - y) * decodedWidth * 4;
 
-                if (formatInfo.channelCount == 4)
+                for (int x = 0; x < decodedWidth; ++x)
                 {
-                    for (int y = 0; y < height; ++y)
+                    CopyMemory(dest, src, decodedFormatInfo.bytesPerPixel);
+
+                    switch (decodedFormatInfo.channelCount)
                     {
-                        CopyMemory((unsigned char*)buffer + sizeof(header) + (height - 1 - y) * width * formatInfo.bytesPerPixel, &pixels[z * height * alignedPitch + y * alignedPitch], unalignedPitch);
+                        case 1: dest[1] = 0;
+                        case 2: dest[2] = 0;
+                        case 3: dest[3] = 1;
                     }
-                }
-                else
-                {
-                    for (int y = 0; y < height; ++y)
-                    {
-                        for (int x = 0; x < width; ++x)
-                        {
-                            unsigned char values[4] = {};
-                            values[3] = 255;
-                            memcpy(values, &pixels[z * height * alignedPitch + y * alignedPitch + x * formatInfo.channelCount], formatInfo.channelCount);
-                            CopyMemory((unsigned char*)buffer + sizeof(header) + (height - 1 - y) * width * kBytesPerPixel + x * kBytesPerPixel, values, kBytesPerPixel);
-                        }
-                    }
+
+                    src += decodedFormatInfo.bytesPerPixel;
+                    dest += 4;
                 }
             }
 
@@ -5033,175 +4781,6 @@ void CopyImageToClipBoard(ID3D12Resource* readbackResource, const DXGI_FORMAT_In
             GlobalFree(hglob);
         }
     }
-
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-    readbackResource->Unmap(0, &writeRange);
-}
-
-void SaveAsHDR(const char* fileName, ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z)
-{
-    std::filesystem::path p(fileName);
-    if (!p.has_extension() || p.extension() != ".hdr")
-        p.replace_extension(".hdr");
-
-    int unalignedPitch = width * formatInfo.bytesPerPixel;
-    int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
-
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-
-    std::vector<char> pixels(width * height * formatInfo.bytesPerPixel);
-
-    char* pixelsWidthPadding = nullptr;
-    readbackResource->Map(0, nullptr, (void**)&pixelsWidthPadding);
-
-    // 24 bit unorm stored in a uint32
-    if (formatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
-    {
-        for (int i = 0; i < height; ++i)
-        {
-            const uint32_t* src = (const uint32_t*)&pixelsWidthPadding[z * height * alignedPitch + alignedPitch * i];
-            float* dest = (float*)&pixels[unalignedPitch * i];
-            for (int j = 0; j < width; ++j)
-                dest[j] = float(double(src[j]) / 16777216.0);
-        }
-    }
-    else
-    {
-        for (int i = 0; i < height; ++i)
-        {
-            const char* src = &pixelsWidthPadding[z * height * alignedPitch + alignedPitch * i];
-            char* dest = &pixels[unalignedPitch * i];
-            memcpy(dest, src, unalignedPitch);
-        }
-    }
-
-    readbackResource->Unmap(0, &writeRange);
-
-    stbi_write_hdr(p.string().c_str(), width, height, formatInfo.channelCount, (float*)pixels.data());
-}
-
-bool SaveEXR(const float* pixels, int width, int height, int numChannels, const char* outfilename)
-{
-    EXRHeader header;
-    InitEXRHeader(&header);
-
-    EXRImage image;
-    InitEXRImage(&image);
-
-    image.num_channels = numChannels;
-
-    std::vector<std::vector<float>> images;
-    images.resize(numChannels);
-    for (std::vector<float>& v : images)
-        v.resize(width * height);
-
-    // Split interleaved channels into separate channels
-    for (int i = 0; i < width * height; i++)
-    {
-        for (int j = 0; j < numChannels; ++j)
-            images[j][i] = pixels[numChannels * i + j];
-    }
-
-    // put the RGBA channels into ABGR because most EXR viewers expect this
-    std::vector<float*> image_ptr(numChannels);
-    for (int i = 0; i < numChannels; ++i)
-        image_ptr[i] = images[numChannels - i - 1].data();
-
-    image.images = (unsigned char**)image_ptr.data();
-    image.width = width;
-    image.height = height;
-
-    // Must be (A)BGR order, since most of EXR viewers expect this channel order.
-    const char* chanelNames[4] = { "R", "G", "B", "A" };
-    header.num_channels = numChannels;
-    header.channels = (EXRChannelInfo*)malloc(sizeof(EXRChannelInfo) * header.num_channels);
-    for (int i = 0; i < numChannels; ++i)
-    {
-        char buffer[256];
-        const char* channelName;
-        if (i < 4)
-        {
-            channelName = chanelNames[numChannels - i - 1];
-        }
-        else
-        {
-            sprintf(buffer, "X%i", i - 4);
-            channelName = buffer;
-        }
-        strncpy(header.channels[i].name, channelName, 255); header.channels[0].name[strlen(channelName)] = '\0';
-    }
-
-    header.pixel_types = (int*)malloc(sizeof(int) * header.num_channels);
-    header.requested_pixel_types = (int*)malloc(sizeof(int) * header.num_channels);
-    for (int i = 0; i < header.num_channels; i++) {
-        header.pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT; // pixel type of input image
-        header.requested_pixel_types[i] = TINYEXR_PIXELTYPE_FLOAT;// TINYEXR_PIXELTYPE_HALF; // pixel type of output image to be stored in .EXR
-    }
-
-    const char* err = NULL; // or nullptr in C++11 or later.
-    int ret = SaveEXRImageToFile(&image, &header, outfilename, &err);
-    if (ret != TINYEXR_SUCCESS) {
-        //fprintf(stderr, "Save EXR err: %s\n", err);
-        FreeEXRErrorMessage(err); // free's buffer for an error message
-        return ret;
-    }
-    //printf("Saved exr file. [ %s ] \n", outfilename);
-
-    //free(pixels);
-
-    free(header.channels);
-    free(header.pixel_types);
-    free(header.requested_pixel_types);
-
-    return true;
-}
-
-void SaveAsEXR(const char* fileName, ID3D12Resource* readbackResource, const DXGI_FORMAT_Info& formatInfo, int width, int height, int depth, int z)
-{
-    std::filesystem::path p(fileName);
-    if (!p.has_extension() || p.extension() != ".exr")
-        p.replace_extension(".exr");
-
-    int unalignedPitch = width * formatInfo.bytesPerPixel;
-    int alignedPitch = ALIGN((D3D12_TEXTURE_DATA_PITCH_ALIGNMENT * formatInfo.planeCount), unalignedPitch);
-
-    D3D12_RANGE writeRange;
-    writeRange.Begin = 1;
-    writeRange.End = 0;
-
-    std::vector<char> pixels(width * height * formatInfo.bytesPerPixel);
-
-    char* pixelsWidthPadding = nullptr;
-    readbackResource->Map(0, nullptr, (void**)&pixelsWidthPadding);
-
-    // 24 bit unorm stored in a uint32
-    if (formatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
-    {
-        for (int i = 0; i < height; ++i)
-        {
-            const uint32_t* src = (const uint32_t*)&pixelsWidthPadding[z * height * alignedPitch + alignedPitch * i];
-            float* dest = (float*)&pixels[unalignedPitch * i];
-            for (int j = 0; j < width; ++j)
-                dest[j] = float(double(src[j]) / 16777216.0);
-        }
-    }
-    else
-    {
-        for (int i = 0; i < height; ++i)
-        {
-            const char* src = &pixelsWidthPadding[z * height * alignedPitch + alignedPitch * i];
-            char* dest = &pixels[unalignedPitch * i];
-            memcpy(dest, src, unalignedPitch);
-        }
-    }
-
-    readbackResource->Unmap(0, &writeRange);
-
-    SaveEXR((const float*)pixels.data(), width, height, formatInfo.channelCount, p.string().c_str());
 }
 
 void ShowResourceView()
@@ -5431,134 +5010,155 @@ void ShowResourceView()
                     case RuntimeTypes::ViewableResource::Type::Texture3D:
                     case RuntimeTypes::ViewableResource::Type::TextureCube:
                     {
-                        int imageZ = (res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D) ? res.m_arrayIndex : 0;
-
                         if (!g_hideUI)
                         {
-                            // Option to save the texture
-                            DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(res.m_format);
-                            if (formatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_uint8_t)
+                            // Figure out what kind of texture data we have, once it's decoded (if it's block compressed)
+                            DXGI_FORMAT decodedFormat = ImageReadback::GetDecodedFormat(res.m_format);
+                            DXGI_FORMAT_Info decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
+
+                            // Images can always be copied
+                            ImGui::SameLine();
+                            if (ImGui::Button("Copy Image"))
+                                CopyImageToClipBoard(res.m_resourceReadback, res.m_origResourceDesc, res.m_arrayIndex, res.m_mipIndex);
+
+                            // The types that can be saved as
+                            enum class SaveAsType
                             {
-                                nfdchar_t* outPath = nullptr;
+                                PNG,
+                                CSV,
+                                EXR,
+                                HDR,
+                                DDS_BC6,
+                                DDS_BC7,
+                                Binary,
+                            };
 
-                                static bool forceRGBA = false;
-                                static bool saveAllVertically = false;
+                            struct SaveAsTypeInfo
+                            {
+                                const char* label;
+                                const char* extension;
+                            };
 
-                                ImGui::SameLine();
-                                if (ImGui::Button("Copy Image"))
-                                {
-                                    CopyImageToClipBoard(res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
-                                }
+                            static const SaveAsTypeInfo c_saveAsTypeInfo[] =
+                            {
+                                { "png", "png" },
+                                { "csv", "csv" },
+                                { "exr", "exr" },
+                                { "hdr", "hdr" },
+                                { "dds (BC6)", "dds" },
+                                { "dds (BC7)", "dds" },
+                                { "binary", "bin" },
+                            };
 
-                                ImGui::SameLine();
-                                if (ImGui::Button("Save as ...") && NFD_SaveDialog("png;csv", "", &outPath) == NFD_OKAY)
-                                {
-                                    std::filesystem::path p(outPath);
-                                    if (p.extension() == ".csv")
-                                        SaveImageAsCSV(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
-                                    else
-                                        SaveAsPng(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ, forceRGBA);
-                                }
+                            // figure out what we can save as
+                            bool canSaveAsPNG_BC7 = (decodedFormatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_uint8_t);
+                            bool canSaveAsEXR_HDR_BC6 = (decodedFormatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_float);
 
-                                // Save all slices
-                                if (res.m_size[2] > 1)
-                                {
-                                    ImGui::SameLine();
-                                    if (ImGui::Button("Save all as ...") && NFD_SaveDialog("png;csv", "", &outPath) == NFD_OKAY)
-                                    {
-                                        std::filesystem::path p(outPath);
-                                        if (p.extension() == ".csv")
-                                        {
-                                            SaveImageAsCSV(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1] * res.m_size[2], 1, 0);
-                                        }
-                                        else if (saveAllVertically)
-                                        {
-                                            SaveAsPng(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1] * res.m_size[2], 1, 0, forceRGBA);
-                                        }
-                                        else
-                                        {
-                                            std::filesystem::path p(outPath);
-                                            std::string baseFileName = p.replace_extension().string();
-
-                                            for (int z = 0; z < res.m_size[2]; ++z)
-                                            {
-                                                char buffer[32];
-                                                sprintf_s(buffer, ".%i", z);
-                                                std::string fileName = baseFileName + std::string(buffer) + std::string(".png");
-                                                SaveAsPng(fileName.c_str(), res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], z, forceRGBA);
-                                            }
-                                        }
-                                    }
-
-                                    ImGui::SameLine();
-                                    ImGui::Checkbox("Write Single Image", &saveAllVertically);
-                                    ShowToolTip("Writes all slices to a single image, vertically");
-                                }
-
-                                ImGui::SameLine();
-                                ImGui::Checkbox("Write RGBA", &forceRGBA);
-                                ShowToolTip("Write out an RGBA png even if there are fewer than 4 channels. A 2 channel PNG would be written as Red,Alpha not Red,Green, this helps that.\n"
-                                    "Alpha is padded as 255. Other channels are padded as 0.");
+                            // make the option list
+                            std::vector<SaveAsType> options;
+                            if (canSaveAsPNG_BC7)
+                            {
+                                options.push_back(SaveAsType::PNG);
+                                options.push_back(SaveAsType::DDS_BC7);
                             }
-                            else if (formatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_float || formatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
+                            if (canSaveAsEXR_HDR_BC6)
                             {
-                                nfdchar_t* outPath = nullptr;
+                                options.push_back(SaveAsType::EXR);
+                                options.push_back(SaveAsType::HDR);
+                                options.push_back(SaveAsType::DDS_BC6);
+                            }
+                            options.push_back(SaveAsType::CSV);
+                            options.push_back(SaveAsType::Binary);
 
-                                static bool saveAllVertically = false;
-
-                                ImGui::SameLine();
-                                if (ImGui::Button("Save as ...") && NFD_SaveDialog("exr;hdr;csv", "", &outPath) == NFD_OKAY)
+                            // figure out which is selected
+                            static std::string s_saveOptionStr;
+                            SaveAsType saveAsType = options[0];
+                            int saveAsOptionIndex = 0;
+                            for (size_t optionIndex = 0; optionIndex < options.size(); ++optionIndex)
+                            {
+                                if (c_saveAsTypeInfo[(int)options[optionIndex]].label == s_saveOptionStr)
                                 {
-                                    std::filesystem::path p(outPath);
-                                    if (p.extension() == ".csv")
-                                        SaveImageAsCSV(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
-                                    else if (p.extension() == ".hdr")
-                                        SaveAsHDR(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
-                                    else
-                                        SaveAsEXR(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], imageZ);
+                                    saveAsType = options[optionIndex];
+                                    saveAsOptionIndex = (int)optionIndex;
                                 }
+                            }
 
-                                // Save all slices
-                                if (res.m_size[2] > 1)
+                            // Show the UI and do the work
+                            {
+                                static bool s_saveAll = false;
+                                static bool s_bc6_signed = false;
+                                static bool s_bc7_srgb = true;
+
+                                ImGuiStyle& style = ImGui::GetStyle();
+                                ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
+
+                                std::string saveAsStr = "Save as " + std::string(c_saveAsTypeInfo[(int)saveAsType].label);
+                                nfdchar_t* outPath = nullptr;
+                                if (ImGui::Button(saveAsStr.c_str()) && NFD_SaveDialog(c_saveAsTypeInfo[(int)saveAsType].extension, "", &outPath) == NFD_OKAY)
                                 {
-                                    ImGui::SameLine();
-                                    if (ImGui::Button("Save all as ...") && NFD_SaveDialog("exr;hdr;csv", "", &outPath) == NFD_OKAY)
+                                    ImageSave::Options saveOptions;
+                                    saveOptions.zIndex = res.m_arrayIndex;
+                                    saveOptions.mipIndex = res.m_mipIndex;
+                                    saveOptions.saveAll = s_saveAll;
+                                    saveOptions.isCubeMap = (res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube);
+                                    saveOptions.bc6.isSigned = s_bc6_signed;
+                                    saveOptions.bc7.sRGB = s_bc7_srgb;
+
+                                    bool success = false;
+                                    switch (saveAsType)
                                     {
-                                        std::filesystem::path p(outPath);
-                                        std::string extension = p.has_extension() ? p.extension().string() : std::string(".exr");
-
-                                        if (p.extension() == ".csv")
-                                        {
-                                            SaveImageAsCSV(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1] * res.m_size[2], 1, 0);
-                                        }
-                                        else if (saveAllVertically)
-                                        {
-                                            if (extension == ".hdr")
-                                                SaveAsHDR(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1] * res.m_size[2], 1, 0);
-                                            else
-                                                SaveAsEXR(outPath, res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1] * res.m_size[2], 1, 0);
-                                        }
-                                        else
-                                        {
-                                            std::string baseFileName = p.replace_extension().string();
-
-                                            for (int z = 0; z < res.m_size[2]; ++z)
-                                            {
-                                                char buffer[32];
-                                                sprintf_s(buffer, ".%i", z);
-                                                std::string fileName = baseFileName + std::string(buffer) + std::string(extension);
-
-                                                if (extension == ".hdr")
-                                                    SaveAsHDR(fileName.c_str(), res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], z);
-                                                else
-                                                    SaveAsEXR(fileName.c_str(), res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], z);
-                                            }
-                                        }
+                                        case SaveAsType::PNG: success = ImageSave::SaveAsPng(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::CSV: success = ImageSave::SaveAsCSV(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::EXR: success = ImageSave::SaveAsEXR(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::HDR: success = ImageSave::SaveAsHDR(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::DDS_BC6: success = ImageSave::SaveAsDDS_BC6(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::DDS_BC7: success = ImageSave::SaveAsDDS_BC7(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::Binary: success = ImageSave::SaveAsBinary(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
                                     }
 
+                                    if (!success)
+                                    {
+                                        Log(LogLevel::Error, __FUNCTION__ " Could not save file \"%s\"\n", outPath);
+                                    }
+                                }
+
+                                ImGui::SameLine();
+                                if (ImGui::ArrowButton("##ChooseSaveAs", ImGuiDir_Down))
+                                    ImGui::OpenPopup("PopupChooseSaveAs");
+
+                                ImGui::PopStyleVar(1);
+
+                                if (saveAsType == SaveAsType::DDS_BC6)
+                                {
                                     ImGui::SameLine();
-                                    ImGui::Checkbox("Write Single Image", &saveAllVertically);
-                                    ShowToolTip("Writes all slices to a single image, vertically");
+                                    ImGui::Checkbox("Signed", &s_bc6_signed);
+                                    ShowToolTip("If true, saves as DXGI_FORMAT_BC6H_SF16, else saves as DXGI_FORMAT_BC6H_UF16.");
+                                }
+
+                                if (saveAsType == SaveAsType::DDS_BC7)
+                                {
+                                    ImGui::SameLine();
+                                    ImGui::Checkbox("sRGB", &s_bc7_srgb);
+                                    ShowToolTip("If true, saves as DXGI_FORMAT_BC7_UNORM_SRGB, else saves as DXGI_FORMAT_BC7_UNORM.");
+                                }
+
+                                if (res.m_size[2] > 1 || res.m_numMips > 1)
+                                {
+                                    ImGui::SameLine();
+                                    ImGui::Checkbox("Save All", &s_saveAll);
+                                    ShowToolTip("Saves all slices and mips if true, else only saves the current one");
+                                }
+
+                                if (ImGui::BeginPopupContextItem("PopupChooseSaveAs"))
+                                {
+                                    for (size_t optionIndex = 0; optionIndex < options.size(); ++optionIndex)
+                                    {
+                                        bool checked = saveAsOptionIndex == optionIndex;
+                                        if (ImGui::MenuItem(c_saveAsTypeInfo[(int)options[optionIndex]].label, nullptr, &checked))
+                                            s_saveOptionStr = c_saveAsTypeInfo[(int)options[optionIndex]].label;
+                                    }
+
+                                    ImGui::EndPopup();
                                 }
                             }
 
@@ -5574,34 +5174,11 @@ void ShowResourceView()
 
                             // Show size and format
                             if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D)
-                            {
-                                ImGui::Text("%ix%i    %s", res.m_size[0], res.m_size[1], formatInfo.name);
-                            }
+                                ImGui::Text("%ix%i    %s", res.m_size[0], res.m_size[1], Get_DXGI_FORMAT_Info(res.m_origResourceDesc.Format).name);
                             else
-                            {
-                                ImGui::Text("%ix%ix%i    %s", res.m_size[0], res.m_size[1], res.m_size[2], formatInfo.name);
+                                ImGui::Text("%ix%ix%i    %s", res.m_size[0], res.m_size[1], res.m_size[2], Get_DXGI_FORMAT_Info(res.m_origResourceDesc.Format).name);
 
-                                char buffer[32];
-                                float comboWidth = 0.0f;
-                                std::vector<std::string> optionsStr;
-                                for (int i = 0; i < res.m_size[2]; ++i)
-                                {
-                                    sprintf_s(buffer, "%i", i);
-                                    optionsStr.push_back(buffer);
-                                    comboWidth = std::max(comboWidth, ImGui::CalcTextSize(optionsStr[i].c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
-                                }
-                                std::vector<const char*> options;
-                                for (int i = 0; i < res.m_size[2]; ++i)
-                                    options.push_back(optionsStr[i].c_str());
-
-                                ImGui::SameLine();
-                                ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
-
-                                const char* Label = (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray) ? "Index" : "Slice";
-
-                                ImGui::Combo(Label, &res.m_arrayIndex, options.data(), (int)options.size());
-                            }
-
+                            // Mip drop down
                             if (res.m_numMips > 1)
                             {
                                 char buffer[32];
@@ -5623,20 +5200,60 @@ void ShowResourceView()
                                 ImGui::Combo("Mip", &res.m_mipIndex, options.data(), (int)options.size());
                             }
 
-                            // Show the clicked pixel
-                            {                    
-								float x = ImGui::GetStyle().WindowPadding.x + ImGui::CalcTextSize("Mouse Hover 12345,12345 ").x;
+                            // Z index drop down
+                            if (res.m_type != RuntimeTypes::ViewableResource::Type::Texture2D)
+                            {
+                                const char* label = "Index";
+                                switch (res.m_type)
+                                {
+                                    case RuntimeTypes::ViewableResource::Type::Texture2DArray: label = "Index"; break;
+                                    case RuntimeTypes::ViewableResource::Type::Texture3D: label = "Slice"; break;
+                                    case RuntimeTypes::ViewableResource::Type::TextureCube: label = "Face"; break;
+                                }
 
-                                ImGui::Text("Mouse Click %i,%i", mouseClickX, mouseClickY);
+                                float comboWidth = 0.0f;
+                                std::vector<std::string> optionsStr;
+                                std::vector<const char*> options;
+                                if (res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube)
+                                {
+                                    options.push_back("Right (X+)");
+                                    options.push_back("Left (X-)");
+                                    options.push_back("Up (Y+)");
+                                    options.push_back("Down (Y-)");
+                                    options.push_back("Front (Z+)");
+                                    options.push_back("Back (Z-)");
+                                }
+                                else
+                                {
+                                    char buffer[32];
+                                    for (int i = 0; i < res.m_size[2]; ++i)
+                                    {
+                                        sprintf_s(buffer, "%i", i);
+                                        optionsStr.push_back(buffer);
+                                    }
+                                    for (int i = 0; i < res.m_size[2]; ++i)
+                                        options.push_back(optionsStr[i].c_str());
+                                }
+
+                                for (const char* option : options)
+                                    comboWidth = std::max(comboWidth, ImGui::CalcTextSize(option).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+
                                 ImGui::SameLine();
-                                ImGui::SetCursorPosX(x);
-                                ShowPixelValue(res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], mouseClickX, mouseClickY, imageZ);
+                                ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+
+                                ImGui::Combo(label, &res.m_arrayIndex, options.data(), (int)options.size());
+                            }
+
+                            {                    
+								float imgui_x = ImGui::GetStyle().WindowPadding.x + ImGui::CalcTextSize("Mouse Hover 12345,12345 ").x;
+
+                                // Show the clicked pixel
+                                ImGui::Text("Mouse Click %i,%i", mouseClickX, mouseClickY);
+                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseClickX, mouseClickY, res.m_arrayIndex, res.m_mipIndex, imgui_x);
 
                                 // Show the hovered pixel
                                 ImGui::Text("Mouse Hover %i,%i", mouseHoverX, mouseHoverY);
-                                ImGui::SameLine();
-								ImGui::SetCursorPosX(x);
-                                ShowPixelValue(res.m_resourceReadback, formatInfo, res.m_size[0], res.m_size[1], res.m_size[2], mouseHoverX, mouseHoverY, imageZ);
+                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseHoverX, mouseHoverY, res.m_arrayIndex, res.m_mipIndex, imgui_x);
                             }
 
                             {
@@ -5695,7 +5312,7 @@ void ShowResourceView()
 
                             ImGui::SameLine();
                             if (ImGui::Button("Auto"))
-                                AutoHistogram(res.m_resourceReadback, res.m_format, res.m_size[0], res.m_size[1], res.m_size[2], imageZ, g_histogramMinMax[0], g_histogramMinMax[1]);
+                                AutoHistogram(res.m_resourceReadback, res.m_origResourceDesc, res.m_arrayIndex, res.m_mipIndex, g_histogramMinMax[0], g_histogramMinMax[1]);
                             ImGui::SameLine();
                             if (ImGui::Button("Reset"))
                             {
@@ -6107,11 +5724,13 @@ void ShowProfilerWindow()
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
         ImGui::TextWrapped(
             "Warning: Profiling is affected by features in this viewer. "
-            "For more accurate results turn on profile mode under the settings menu to reduce copies, readbacks, and turn off vsync.\n"
+            "For more accurate results turn on profile mode under the settings menu or the checkbox below, to reduce copies, readbacks, and turn off vsync.\n"
             "You may also wish to turn on stable power state.\n"
             "\nNote: Generated code may have different performance characteristics.\n"
         );
         ImGui::PopStyleColor();
+
+        ImGui::Checkbox("Profile Mode", &g_profileMode);
 
         if (g_debugLayerOn)
         {
@@ -6251,7 +5870,7 @@ public:
     bool LoadGG(const char* fileName) override final
     {
         ClearWantsReadback();
-        return LoadGGFile(fileName, false);
+        return LoadGGFile(fileName, false, false);
     }
 
     void RequestExit(int exitCode) override final
@@ -6345,22 +5964,15 @@ public:
         }
     }
 
-    void SetWantReadback(const char* viewableResourceName, bool wantsReadback, int arrayIndex, int mipIndex) override final
+    void SetWantReadback(const char* viewableResourceName, bool wantsReadback) override final
     {
         if (wantsReadback)
-        {
-            ReadbackParams params;
-            params.arrayIndex = arrayIndex;
-            params.mipIndex = mipIndex;
-            m_wantsReadback[viewableResourceName] = params;
-        }
+            m_wantsReadback.insert(viewableResourceName);
         else
-        {
             m_wantsReadback.erase(viewableResourceName);
-        }
     }
 
-    bool Readback(const char* viewableResourceName, GigiArray& data) override final
+    bool Readback(const char* viewableResourceName, int arrayIndex, int mipIndex, GigiArray& data) override final
     {
         // If they didn't say that it wants to be read back, we won't have read it back!
         if (m_wantsReadback.count(viewableResourceName) == 0)
@@ -6411,9 +6023,21 @@ public:
 
         if (isTexture)
         {
+            // Get the decoded image data
+            DXGI_FORMAT decodedFormat;
+            std::vector<unsigned char> decodedPixels;
+            int decodedWidth = 0;
+            int decodedHeight = 0;
+            int decodedDepth = 1;
+            if (!ImageReadback::GetDecodedImageSliceAllDepths(g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, arrayIndex, mipIndex, decodedPixels, decodedFormat, decodedWidth, decodedHeight, decodedDepth))
+            {
+                Log(LogLevel::Warn, "Python: Host.Readback() could not decode resource slice \"%s\" %i %i.", viewableResourceName, arrayIndex, mipIndex);
+                return false;
+            }
+
             // get the type info
-            DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(vr->m_format);
-            switch (formatInfo.channelType)
+            DXGI_FORMAT_Info decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
+            switch (decodedFormatInfo.channelType)
             {
                 case DXGI_FORMAT_Info::ChannelType::_uint8_t: data.formatString = "B"; break;
                 case DXGI_FORMAT_Info::ChannelType::_uint16_t: data.formatString = "H"; break;
@@ -6424,52 +6048,24 @@ public:
                 case DXGI_FORMAT_Info::ChannelType::_float: data.formatString = "f"; break;
                 case DXGI_FORMAT_Info::ChannelType::_half: data.formatString = "e"; break;
             }
-            data.itemSize = formatInfo.bytesPerChannel;
+            data.itemSize = decodedFormatInfo.bytesPerChannel;
 
-            // only 3d textures have a depth
-            int depth = (vr->m_type == RuntimeTypes::ViewableResource::Type::Texture3D) ? vr->m_size[2] : 1;
-
-            // Get the data
-            {
-                // allocate
-                data.data.resize(vr->m_size[0] * vr->m_size[1] * depth * formatInfo.bytesPerPixel);
-
-                // map
-                char* pixels = nullptr;
-                vr->m_resourceReadback->Map(0, nullptr, (void**)&pixels);
-
-                // copy
-                int unalignedPitch = vr->m_size[0] * formatInfo.bytesPerPixel;
-                int alignedPitch = ALIGN(D3D12_TEXTURE_DATA_PITCH_ALIGNMENT, unalignedPitch);
-                for (int iz = 0; iz < depth; ++iz)
-                {
-                    for (int iy = 0; iy < vr->m_size[1]; ++iy)
-                    {
-                        const char* src = &pixels[iz * vr->m_size[1] * alignedPitch + iy * alignedPitch];
-                        char* dest = &data.data[iz * vr->m_size[1] * unalignedPitch + iy * unalignedPitch];
-                        memcpy(dest, src, unalignedPitch);
-                    }
-                }
-
-                // unmap
-                D3D12_RANGE writeRange;
-                writeRange.Begin = 1;
-                writeRange.End = 0;
-                vr->m_resourceReadback->Unmap(0, &writeRange);
-            }
+            // copy the data
+            data.data.resize(decodedPixels.size());
+            memcpy(data.data.data(), decodedPixels.data(), data.data.size());
 
             // dimensions
-            data.dims.push_back(formatInfo.channelCount);
-            data.dims.push_back(vr->m_size[0]);
-            data.dims.push_back(vr->m_size[1]);
-            data.dims.push_back(depth);
+            data.dims.push_back(decodedFormatInfo.channelCount);
+            data.dims.push_back(decodedWidth);
+            data.dims.push_back(decodedHeight);
+            data.dims.push_back(decodedDepth);
             std::reverse(data.dims.begin(), data.dims.end());
 
             // strides
-            data.strides.push_back(formatInfo.bytesPerChannel);                 // bytes to get from one channel to the next
-            data.strides.push_back(data.strides[0] * formatInfo.channelCount);  // bytes to increment x position
-            data.strides.push_back(data.strides[1] * vr->m_size[0]);            // bytes to increment y position
-            data.strides.push_back(data.strides[2] * vr->m_size[1]);            // bytes to increment z position
+            data.strides.push_back(decodedFormatInfo.bytesPerChannel);                              // bytes to get from one channel to the next
+            data.strides.push_back(decodedFormatInfo.bytesPerPixel);                                // bytes to increment x position
+            data.strides.push_back(decodedWidth * decodedFormatInfo.bytesPerPixel);                 // bytes to increment y position
+            data.strides.push_back(decodedHeight * decodedWidth * decodedFormatInfo.bytesPerPixel); // bytes to increment z position
             std::reverse(data.strides.begin(), data.strides.end());
 
             return true;
@@ -6555,7 +6151,7 @@ public:
                     if (vr->m_type == RuntimeTypes::ViewableResource::Type::ConstantBuffer)
                         data.data.resize(data.itemSize);
                     else
-                        data.data.resize(vr->m_size[0]);
+                        data.data.resize(vr->m_stride * vr->m_count);
 
                     // map
                     char* values = nullptr;
@@ -6850,25 +6446,6 @@ public:
         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
     }
 
-    void SetImportedTextureBinaryType(const char* textureName, GGUserFile_ImportedTexture_BinaryType type) override final
-    {
-        if (g_interpreter.m_importedResources.count(textureName) == 0)
-        {
-            Log(LogLevel::Error, "Python: SetImportedTextureSize could not find imported texture %s", textureName);
-            return;
-        }
-
-        GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc = g_interpreter.m_importedResources[textureName];
-        if (!desc.isATexture)
-        {
-            Log(LogLevel::Error, "Python: SetImportedTextureSize called for %s which is not a texture", textureName);
-            return;
-        }
-
-        desc.texture.binaryType = type;
-        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
-    }
-
     void SetImportedTextureBinarySize(const char* textureName, int x, int y, int z) override final
     {
         if (g_interpreter.m_importedResources.count(textureName) == 0)
@@ -6884,28 +6461,28 @@ public:
             return;
         }
 
-        desc.texture.binaryDims[0] = x;
-        desc.texture.binaryDims[1] = y;
-        desc.texture.binaryDims[2] = z;
+        desc.texture.binaryDesc.size[0] = x;
+        desc.texture.binaryDesc.size[1] = y;
+        desc.texture.binaryDesc.size[2] = z;
         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
     }
 
-    void SetImportedTextureBinaryChannels(const char* textureName, int channels) override final
+    void SetImportedTextureBinaryFormat(const char* textureName, int textureFormat) override final
     {
         if (g_interpreter.m_importedResources.count(textureName) == 0)
         {
-            Log(LogLevel::Error, "Python: SetImportedTextureBinaryChannels could not find imported texture %s", textureName);
+            Log(LogLevel::Error, "Python: SetImportedTextureBinaryFormat could not find imported texture %s", textureName);
             return;
         }
 
         GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc = g_interpreter.m_importedResources[textureName];
         if (!desc.isATexture)
         {
-            Log(LogLevel::Error, "Python: SetImportedTextureBinaryChannels called for %s which is not a texture", textureName);
+            Log(LogLevel::Error, "Python: SetImportedTextureBinaryFormat called for %s which is not a texture", textureName);
             return;
         }
 
-        desc.texture.binaryChannels = channels;
+        desc.texture.binaryDesc.format = (TextureFormat)textureFormat;
         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
     }
 
@@ -6925,6 +6502,17 @@ public:
     {
         g_systemVariables.camera.cameraAltitudeAzimuth[0] = altitude;
         g_systemVariables.camera.cameraAltitudeAzimuth[1] = azimuth;
+    }
+
+    void SetCameraNearFarZ(float nearZ, float farZ) override final
+    {
+        g_systemVariables.camera.nearPlane = nearZ;
+        g_systemVariables.camera.farPlane = farZ;
+    }
+
+    void SetCameraFlySpeed(float speed) override final
+    {
+        g_systemVariables.camera.flySpeed = speed;
     }
 
     void GetCameraPos(float& X, float& Y, float& Z) override final
@@ -6970,6 +6558,69 @@ public:
         }
 
         return ret;
+    }
+
+    bool IsResourceCreated(const char* resourceName) override final
+    {
+        if (g_interpreter.m_importedResources.count(resourceName) == 0)
+        {
+            Log(LogLevel::Error, "Python: IsResourceCreated could not find imported resource %s", resourceName);
+            return false;
+        }
+
+        bool existsAsBuffer = false;
+        RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeDataBuffer = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceName, existsAsBuffer);
+
+        bool existsAsTexture = false;
+        RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeDataTexture = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceName, existsAsTexture);
+
+        return runtimeDataBuffer.m_resource || runtimeDataTexture.m_resource;
+    }
+
+    void SetViewedResource(const char* resourceName) override final
+    {
+        // RuntimeTypes::RenderGraphNode_Base
+        g_interpreter.RuntimeDataLambda(
+            [resourceName](auto& key, const RuntimeTypes::RenderGraphNode_Base& runtimeData)
+            {
+                int viewableResourceIndex = -1;
+                for (const RuntimeTypes::ViewableResource& viewableResource : runtimeData.m_viewableResources)
+                {
+                    viewableResourceIndex++;
+                    if (!_stricmp(viewableResource.m_displayName.c_str(), resourceName))
+                    {
+                        int nodeIndex = FrontEndNodesNoCaching::GetNodeIndexByName(g_interpreter.GetRenderGraph(), std::get<0>(key).c_str());
+                        if (nodeIndex == -1)
+                            continue;
+
+                        const RenderGraphNode& nodeBase = g_interpreter.GetRenderGraph().nodes[nodeIndex];
+                        switch (nodeBase._index)
+                        {
+                            case RenderGraphNode::c_index_resourceBuffer:
+                            {
+                                const RenderGraphNode_Resource_Buffer& node = nodeBase.resourceBuffer;
+                                g_resourceView.Buffer(nodeIndex, viewableResourceIndex);
+                                break;
+                            }
+                            case RenderGraphNode::c_index_resourceTexture:
+                            {
+                                const RenderGraphNode_Resource_Texture& node = nodeBase.resourceTexture;
+                                RuntimeTypes::ViewableResource::Type type = RuntimeTypes::ViewableResource::Type::Texture2D;
+                                switch (node.dimension)
+                                {
+                                    case TextureDimensionType::Texture2D: type = RuntimeTypes::ViewableResource::Type::Texture2D; break;
+                                    case TextureDimensionType::Texture2DArray: type = RuntimeTypes::ViewableResource::Type::Texture2DArray; break;
+                                    case TextureDimensionType::Texture3D: type = RuntimeTypes::ViewableResource::Type::Texture3D; break;
+                                    case TextureDimensionType::TextureCube: type = RuntimeTypes::ViewableResource::Type::TextureCube; break;
+                                }
+                                g_resourceView.Texture(nodeIndex, viewableResourceIndex, type);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+        );
     }
 
     void SetShaderAssertsLogging(bool set) override final
@@ -7079,18 +6730,8 @@ public:
                         {
                             viewableResource.m_wantsToBeViewed = true;
                             viewableResource.m_wantsToBeReadBack = true;
-
-                            if (m_wantsReadback.count(viewableResource.m_displayName) == 0)
-                            {
-                                viewableResource.m_arrayIndex = 0;
-                                viewableResource.m_mipIndex = 0;
-                            }
-                            else
-                            {
-                                viewableResource.m_arrayIndex = m_wantsReadback[viewableResource.m_displayName].arrayIndex;
-                                viewableResource.m_mipIndex = m_wantsReadback[viewableResource.m_displayName].mipIndex;
-                            }
-
+                            viewableResource.m_arrayIndex = 0;
+                            viewableResource.m_mipIndex = 0;
                             continue;
                         }
 
@@ -7099,8 +6740,8 @@ public:
                             continue;
                         viewableResource.m_wantsToBeViewed = true;
                         viewableResource.m_wantsToBeReadBack = true;
-                        viewableResource.m_arrayIndex = m_wantsReadback[viewableResource.m_displayName].arrayIndex;
-                        viewableResource.m_mipIndex = m_wantsReadback[viewableResource.m_displayName].mipIndex;
+                        viewableResource.m_arrayIndex = 0;
+                        viewableResource.m_mipIndex = 0;
                     }
                 }
             );
@@ -7117,13 +6758,7 @@ public:
         m_wantsReadback.clear();
     }
 
-    struct ReadbackParams
-    {
-        int arrayIndex;
-        int mipIndex;
-    };
-
-    std::unordered_map<std::string, ReadbackParams> m_wantsReadback;
+    std::unordered_set<std::string> m_wantsReadback;
 };
 
 Python g_python;
@@ -7237,7 +6872,6 @@ int main(int argc, char** argv)
 
     // Parse command line parameters
     int argIndex = 0;
-    int firstPythonArgv = -1;
     while (argIndex < argc)
     {
         if (!_stricmp(argv[argIndex], "-editor"))
@@ -7284,8 +6918,12 @@ int main(int argc, char** argv)
             g_runPyFileName = argv[argIndex + 1];
             argIndex += 2;
 
-            firstPythonArgv = argIndex;
-            break; // NOTE: all arguments after -run are sent to the python script!
+            // NOTE: all arguments after -run are sent to the python script!
+            g_runPyArgs.clear();
+            for (int argumentIndex = argIndex; argumentIndex < argc; ++argumentIndex)
+                g_runPyArgs.push_back(ToWideString(argv[argumentIndex]));
+
+            break;
         }
         else if (!_stricmp(argv[argIndex], "-nodebuglayer"))
         {
@@ -7307,6 +6945,11 @@ int main(int argc, char** argv)
             g_pixCaptureEnabled = false;
             argIndex++;
         }
+        else if (!_stricmp(argv[argIndex], "-compileshadersfordebug"))
+        {
+            g_interpreter.m_compileShadersForDebug = true;
+            argIndex++;
+        }
         else
         {
             argIndex++;
@@ -7324,7 +6967,7 @@ int main(int argc, char** argv)
         TryLoadRenderDocAPI();
     }
 
-    PythonInit(&g_python, argc, argv, firstPythonArgv);
+    PythonInit(&g_python);
 
     if (g_isForEditor)
     {
@@ -7362,6 +7005,7 @@ int main(int argc, char** argv)
 	}
 
     g_hwnd = ::CreateWindowW(wc.lpszClassName, L"Gigi Viewer - DX12 (Gigi v" GIGI_VERSION() ")", WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
+    DragAcceptFiles(g_hwnd, true);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(g_hwnd))
@@ -7532,7 +7176,7 @@ int main(int argc, char** argv)
                 {
                     nfdchar_t* outPath = nullptr;
                     if (NFD_OpenDialog("gg", "", &outPath) == NFD_OKAY)
-                        LoadGGFile(outPath, false);
+                        LoadGGFile(outPath, false, true);
                 }
             }
             else if (ImGui::IsKeyReleased(ImGui::GetKeyIndex(ImGuiKey_R)))
@@ -7593,19 +7237,22 @@ int main(int argc, char** argv)
 
         if (!g_commandLineLoadGGFileName.empty())
         {
-            LoadGGFile(g_commandLineLoadGGFileName.c_str(), false);
+            LoadGGFile(g_commandLineLoadGGFileName.c_str(), false, true);
             g_commandLineLoadGGFileName.clear();
         }
 
         if (!g_runPyFileName.empty())
         {
-            g_recentPythonScripts.AddEntry(g_runPyFileName.c_str());
+            if (g_runPyFileAddToRecentScripts)
+                g_recentPythonScripts.AddEntry(g_runPyFileName.c_str());
             Log(LogLevel::Info, "Executing python script \"%s\"", g_runPyFileName.c_str());
-            if (!PythonExecute(g_runPyFileName.c_str()))
+            if (!PythonExecute(g_runPyFileName.c_str(), g_runPyArgs))
                 Log(LogLevel::Error, "Could not execute python script \"%s\"", g_runPyFileName.c_str());
             else
                 Log(LogLevel::Info, "Python script finished", g_runPyFileName.c_str());
             g_runPyFileName.clear();
+            g_runPyArgs.clear();
+            g_runPyFileAddToRecentScripts = true;
         }
     }
 
@@ -7932,6 +7579,14 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     switch (msg)
     {
+    case WM_DROPFILES:
+    {
+        unsigned int dropFileNameLen = DragQueryFileA((HDROP)wParam, 0, nullptr, 0);
+        std::vector<char> dropFileName(dropFileNameLen + 1);
+        unsigned int ret = DragQueryFileA((HDROP)wParam, 0, dropFileName.data(), (UINT)dropFileName.size());
+        LoadGGFile(dropFileName.data(), false, true);
+        return 0;
+    }
     case WM_SIZE:
         if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
         {
