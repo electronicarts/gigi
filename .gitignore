@@ -14,7 +14,6 @@ GigiViewerDX12.exe
 GigiViewerDX12.pdb
 GigiViewerDX12.exp
 GigiViewerDX12.lib
-WinPixEventRuntime.dll
 GigiEdit/GigiEdit.aps
 
 **/__pycache__/
