@@ -78,18 +78,24 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 				objData.attrib.vertices[3 * index.vertex_index + 2]
 			};
 
-			newVertex.normal = Vec3
+			if (index.normal_index >= 0)
 			{
-				objData.attrib.normals[3 * index.normal_index + 0],
-				objData.attrib.normals[3 * index.normal_index + 1],
-				objData.attrib.normals[3 * index.normal_index + 2]
-			};
+				newVertex.normal = Vec3
+				{
+					objData.attrib.normals[3 * index.normal_index + 0],
+					objData.attrib.normals[3 * index.normal_index + 1],
+					objData.attrib.normals[3 * index.normal_index + 2]
+				};
+			}
 
-			newVertex.uvs[0] = Vec2
+			if (index.texcoord_index >= 0)
 			{
-				objData.attrib.texcoords[2 * index.texcoord_index + 0],
-				1.0f - objData.attrib.texcoords[2 * index.texcoord_index + 1],
-			};
+				newVertex.uvs[0] = Vec2
+				{
+					objData.attrib.texcoords[2 * index.texcoord_index + 0],
+					1.0f - objData.attrib.texcoords[2 * index.texcoord_index + 1],
+				};
+			}
 
 			newVertex.uvs[1] = Vec2{ 0.0f, 0.0f };
 			newVertex.uvs[2] = Vec2{ 0.0f, 0.0f };
@@ -186,12 +192,16 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 			int vi = shape.mesh.indices[indexIndex].vertex_index;
 			int ni = shape.mesh.indices[indexIndex].normal_index;
 
-			Vec3 normal = Vec3
+			Vec3 normal = Vec3{ 0.0f, 0.0f, 0.0f };
+			if (ni >= 0)
 			{
-				objData.attrib.normals[3 * ni + 0],
-				objData.attrib.normals[3 * ni + 1],
-				objData.attrib.normals[3 * ni + 2]
-			};
+				normal = Vec3
+				{
+					objData.attrib.normals[3 * ni + 0],
+					objData.attrib.normals[3 * ni + 1],
+					objData.attrib.normals[3 * ni + 2]
+				};
+			}
 
 			Vec3& tangent = tangents[vi];
 			Vec3& bitangent = bitangents[vi];
