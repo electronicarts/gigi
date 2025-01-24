@@ -1,22 +1,27 @@
 # Gigi
 
-Gigi is software designed for rapid prototyping and rapid development of real time rendering techniques. It is meant for use by professionals, researchers, students, and hobbyists.
+Gigi is software designed for rapid prototyping and development of real time rendering techniques. It is meant for use by professionals, researchers, students, and hobbyists.
 
 The goal is to allow work at the speed of thought, and then easily use what was created in real applications using various APIs or engines.
 
-[Hear what people say about using Gigi](readme/testimonials.md)
+[See what people say about using Gigi](readme/testimonials.md)
 
-Gigi is made of three components:
+Gigi is made of four components:
 
 1. Editor - Author a rendering technique
 2. Viewer - Debug and profile the technique
 3. Compiler - Generate code for the technique like a human would write
+4. Browser - View a library of Gigi techniques, and submit your own
 
-[Click here to read more about these three components.](readme/Overview.md)
+[Click here to read more about these components](readme/Overview.md)
 
-Gigi Editor | Gigi Viewer | Gigi Compiler Generated Code (DX12)
-:-----:|:------:|:--------:
-[![A screenshot of the Gigi Editor](readme/editor.png)](readme/editor.png) | [![A screenshot of the Gigi Viewer](readme/viewer.png)](readme/viewer.png) | [![A screenshot of the Gigi Generated C++ / DX12 code](readme/code.png)](readme/code.png)
+Gigi Editor | Gigi Viewer
+:-----:|:------:|
+[![A screenshot of the Gigi Editor](readme/editor.png)](readme/editor.png) | [![A screenshot of the Gigi Viewer](readme/viewer.png)](readme/viewer.png)
+
+Gigi Compiler Generated Code (DX12) | Gigi Browser
+:-----:|:------:|
+[![A screenshot of the Gigi Generated C++ / DX12 code](readme/code.png)](readme/code.png) | [![A screenshot of the Gigi Browser](readme/browser.png)](readme/browser.png)
 
 Gigi is being actively used and developed, but is young software. You may hit bugs or missing features. Please report these so we can improve Gigi and push forward in the most useful directions. Pull requests are also appreciated! Please see the "Contributing" section below.
 
@@ -24,15 +29,16 @@ Currently, only dx12 code generation is available in this public version of Gigi
 
 # Building or Getting, and Running
 
-Cloning this repo and then building gigi.sln is all that is needed to build Gigi Editor, Viewer and Compiler.
+Cloning this repo and then building gigi.sln is all that is needed to build Gigi.
 
 To use prebuilt binaries, go to the releases tab https://github.com/electronicarts/gigi/releases/.  You can either download the .zip file, and extract that to the location of your choice, or you can download and run the installer exe.
 
-There will be three executables in the root folder:
+There will be four executables in the root folder:
 
 * **GigiEdit** - This is the editor.
 * **GigiViewerDX12** - This is the viewer. 
 * **GigiCompiler** - This is the command line interface compiler.
+* **GigiBrowser** - This lets you browse, download, and open techniques from the technique library.
 
 # Learning & Support
 
@@ -46,7 +52,7 @@ Introductory Gigi Tutorial: Make a box blur post processing effect.
 
 [Gigi Technical Overview (YouTube GPC 2024)](https://www.youtube.com/watch?v=MgCR-Kky628)
 
-The **Techniques/** folder of the repo contains some examples to help get you started.  The **Techniques/UnitTests/** folder contains the unit tests, which aims to exercise every possible piece of functionality.
+The browser lets you explore some examples to help get you started.  The **Techniques/UnitTests/** folder contains the unit tests, which aims to exercise every possible piece of functionality.
 
 There are also documents in the **UserDocumentation** folder that explain the viewer python interface, Gigi shader tokens, and other things.
 
@@ -59,6 +65,10 @@ For bug reports, giving or linking to a zip file of a gigi technique and related
 For feature requests, the more information you give us about your need, the better we can come up with something to address the need.  We may not always give you what you want as you describe it, but we will aim to solve the spirit of what you are asking for, considering any other constraints that may be in play.
 
 If you could also let us know the urgency of the bug or missing feature on your side, that will help us triage the work.  We can't promise to have an immediate resolution to your report, but we will do what we can, as soon as we can.
+
+# Sharing Techniques In The Gigi Browser
+
+See this document for more information: [Sharing Techniques In The Gigi Browser](readme/BrowserSharing.md)
 
 # Contributors
 
@@ -79,6 +89,8 @@ Ivar Jönsson
 Martin Mittring
 
 Mohit Sethi
+
+Patrick Anderson
 
 Richard Raquepo
 

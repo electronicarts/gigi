@@ -1,4 +1,4 @@
-#pragma once
+/*$(CopyrightHeader)*/#pragma once
 
 #include <d3d12.h>
 

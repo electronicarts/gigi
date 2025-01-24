@@ -1,4 +1,4 @@
-#pragma once
+/*$(CopyrightHeader)*/#pragma once
 
 #include <vector>
 #include <unordered_map>

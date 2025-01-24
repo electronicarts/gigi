@@ -1,0 +1,94 @@
+'\" t
+.\"     Title: git-lfs-ls-files
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-LS\-FILES" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-ls-files \- Show information about Git LFS files in the index and working tree
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs ls\-files\fP [<ref>]
+.br
+\f(CRgit lfs ls\-files\fP <ref> <ref>
+.SH "DESCRIPTION"
+.sp
+Display paths of Git LFS files that are found in the tree at the given
+reference. If no reference is given, scan the currently checked\-out
+branch. If two references are given, the LFS files that are modified
+between the two references are shown; deletions are not listed.
+.sp
+An asterisk (*) after the OID indicates a full object, a minus (\-)
+indicates an LFS pointer.
+.SH "OPTIONS"
+.sp
+\f(CR\-l\fP, \f(CR\-\-long\fP
+.RS 4
+Show the entire 64 character OID, instead of just first 10.
+.RE
+.sp
+\f(CR\-s\fP, \f(CR\-\-size\fP
+.RS 4
+Show the size of the LFS object between parenthesis at the end of a line.
+.RE
+.sp
+\f(CR\-d\fP, \f(CR\-\-debug\fP
+.RS 4
+Show as much information as possible about a LFS file. This is intended for
+manual inspection; the exact format may change at any time.
+.RE
+.sp
+\f(CR\-a\fP, \f(CR\-\-all\fP
+.RS 4
+Inspects the full history of the repository, not the current HEAD (or other
+provided reference). This will include previous versions of LFS objects that
+are no longer found in the current tree.
+.RE
+.sp
+\f(CR\-\-deleted\fP
+.RS 4
+Shows the full history of the given reference, including objects that have
+been deleted.
+.RE
+.sp
+\f(CR\-I <paths>\fP, \f(CR\-\-include=<paths>\fP
+.RS 4
+Include paths matching only these patterns; see [_fetch_settings].
+.RE
+.sp
+\f(CR\-X <paths>\fP, \f(CR\-\-exclude=<paths>\fP
+.RS 4
+Exclude paths matching any of these patterns; see [_fetch_settings].
+.RE
+.sp
+\f(CR\-n\fP, \f(CR\-\-name\-only\fP
+.RS 4
+Show only the lfs tracked file names.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-status(1), git\-lfs\-config(5).
+.sp
+Part of the git\-lfs(1) suite.

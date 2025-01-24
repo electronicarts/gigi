@@ -1,4 +1,4 @@
-#pragma once
+/*$(CopyrightHeader)*/#pragma once
 
 #include <d3d12.h>
 #include <vector>
@@ -202,7 +202,7 @@ namespace DX12Utils
 	    }
     }
 
-	// https://learn.microsoft.com/en-us/windows/win32/direct3d12/typed-unordered-access-view-loads
+	// Following the documentation at https://learn.microsoft.com/en-us/windows/win32/direct3d12/typed-unordered-access-view-loads
 	inline bool FormatSupportedForUAV(ID3D12Device* device, DXGI_FORMAT format)
 	{
 		switch (format)
@@ -370,6 +370,10 @@ namespace DX12Utils
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X24_TYPELESS_G8_UINT, uint8_t, 1, false, true, true, 1, 2);
 
 		    // Block compressed formats
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC4_UNORM, uint8_t, 1, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC4_SNORM, int8_t, 1, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC5_UNORM, uint8_t, 2, false, false, false, 0, 1);
+		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC5_SNORM, int8_t, 2, false, false, false, 0, 1);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM, uint8_t, 4, false, false, false, 0, 1);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1);
 		    DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC6H_UF16, uint16_t, 3, false, false, false, 0, 1);

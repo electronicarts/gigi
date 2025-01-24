@@ -308,10 +308,14 @@ table, th, td, tr
 <tr><td>D16_Unorm</td><td>16 bit unorm depth</td></tr>
 <tr><td>D32_Float_S8</td><td>32 bit depth, 8 bit stencil, and 24 more bits unused</td></tr>
 <tr><td>D24_Unorm_S8</td><td>24 bit depth, 8 bit stencil</td></tr>
-<tr><td>BC7_Unorm</td><td>RGB, alpha optional</td></tr>
-<tr><td>BC7_Unorm_sRGB</td><td>RGB, alpha optional. sRGB</td></tr>
-<tr><td>BC6_UF16</td><td>RGB, 16 bit float unsigned</td></tr>
-<tr><td>BC6_SF16</td><td>RGB, 16 bit float signed</td></tr>
+<tr><td>BC4_Unorm</td><td>R 8 bit unorm. block compressed.</td></tr>
+<tr><td>BC4_Snorm</td><td>R 8 bit snorm. block compressed.</td></tr>
+<tr><td>BC5_Unorm</td><td>RG 8 bit unorm. block compressed.</td></tr>
+<tr><td>BC5_Snorm</td><td>RG 8 bit snorm. block compressed.</td></tr>
+<tr><td>BC7_Unorm</td><td>RGB, alpha optional. block compressed.</td></tr>
+<tr><td>BC7_Unorm_sRGB</td><td>RGB, alpha optional. sRGB. block compressed.</td></tr>
+<tr><td>BC6_UF16</td><td>RGB, 16 bit float unsigned. block compressed.</td></tr>
+<tr><td>BC6_SF16</td><td>RGB, 16 bit float signed. block compressed.</td></tr>
 </table>
 <br/>
 
@@ -1415,6 +1419,65 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>BrowserServerInfo : </b><br/><br/>
+<table>
+<tr><th colspan=3>BrowserServerInfo</th></tr>
+<tr><td>std::string Name</td><td>""</td><td></td></tr>
+<tr><td>std::string Repo</td><td>""</td><td></td></tr>
+<tr><td>std::string Branch</td><td>""</td><td></td></tr>
+<tr><td>std::string TechniqueList</td><td>""</td><td></td></tr>
+</table>
+<br/>
+
+<b>BrowserTechniqueSummary : </b><br/><br/>
+<table>
+<tr><th colspan=3>BrowserTechniqueSummary</th></tr>
+<tr><td>std::string Repo</td><td>""</td><td>The repo. Usually begins with https and ends with .git.</td></tr>
+<tr><td>std::string Commit</td><td>""</td><td>The commit hash to look at in that repo.</td></tr>
+<tr><td>std::string DetailsFile</td><td>""</td><td>The path of the json file containing BrowserTechniqueDetails of the technique. This location is recursively downloaded when the download button is pressed.</td></tr>
+<tr><td>std::string ListedDate</td><td>""</td><td>A date in the form YYYY-MM-DD</td></tr>
+</table>
+<br/>
+
+<b>BrowserTechniqueSummaries : </b><br/><br/>
+<table>
+<tr><th colspan=3>BrowserTechniqueSummaries</th></tr>
+<tr><td>BrowserTechniqueSummary Techniques[]</td><td></td><td></td></tr>
+</table>
+<br/>
+
+<b>BrowserTechniqueDetails : </b><br/><br/>
+<table>
+<tr><th colspan=3>BrowserTechniqueDetails</th></tr>
+<tr><td>std::string Title</td><td>""</td><td></td></tr>
+<tr><td>std::string Description</td><td>""</td><td></td></tr>
+<tr><td>std::string Author</td><td>""</td><td></td></tr>
+<tr><td>std::string Tags</td><td>""</td><td>Separated by commas</td></tr>
+<tr><td>std::string Technique</td><td>"The .gg file to open. Relative to DetailsFile."</td><td></td></tr>
+<tr><td>std::string Website</td><td>""</td><td>[Optional] A website to view and/or discuss your technique. For instance, the github page.</td></tr>
+<tr><td>std::string Screenshot</td><td>""</td><td>The image shown that goes with your technique. Relative to DetailsFile.</td></tr>
+<tr><td>std::string License</td><td>""</td><td>The file describing the license of your technique. Relative to DetailsFile.</td></tr>
+<tr><td>std::string GigiVersion</td><td>""</td><td>The version of Gigi used to make this technique.</td></tr>
+</table>
+<br/>
+
+<b>BrowserCachedTechnique : </b><br/><br/>
+<table>
+<tr><th colspan=3>BrowserCachedTechnique</th></tr>
+<tr><td>BrowserTechniqueSummary Summary</td><td>{}</td><td></td></tr>
+<tr><td>BrowserTechniqueDetails Details</td><td>{}</td><td></td></tr>
+<tr><td>bool Downloaded</td><td>false</td><td></td></tr>
+<tr><td>BrowserServerInfo Origin</td><td>{}</td><td></td></tr>
+</table>
+<br/>
+
+<b>BrowserCachedTechniques : </b><br/><br/>
+<table>
+<tr><th colspan=3>BrowserCachedTechniques</th></tr>
+<tr><td>BrowserCachedTechnique Techniques[]</td><td></td><td></td></tr>
+</table>
+<br/>
+
 <b>BackendTemplateFileProperties : File Properties</b><br/><br/>
 <table>
 <tr><th colspan=3>BackendTemplateFileProperties</th></tr>
@@ -1551,6 +1614,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>CustomGigiToken : Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.</b><br/><br/>
+<table>
+<tr><th colspan=3>CustomGigiToken</th></tr>
+<tr><td>std::string key</td><td>""</td><td>The name of the gigi token without markup, such as CopyrightHeader for /*$(CopyrightHeader)*/</td></tr>
+<tr><td>std::string value</td><td>""</td><td>The value to replace the token with</td></tr>
+</table>
+<br/>
+
 <b>RenderGraph : The root type of the render graph</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraph</th></tr>
@@ -1568,6 +1639,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>RTHitGroup hitGroups[]</td><td></td><td>Ray tracing hit group definitions</td></tr>
 <tr><td>BackendSettings settings</td><td>{}</td><td>Backend settings</td></tr>
 <tr><td>BuildSettings buildSettings</td><td>{}</td><td>Build settings</td></tr>
+<tr><td>CustomGigiToken customTokens[]</td><td></td><td>Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.</td></tr>
+<tr><td>TextureNodeReference PrimaryOutput</td><td>{}</td><td>A hint to anything that might be able to use this information, such as generated code or the viewer.</td></tr>
 <tr><td><i>std::string baseDirectory</i></td><td>""</td><td>The relative location of the render graph file.</td></tr>
 <tr><td><i>std::string outputDirectory</i></td><td>""</td><td>Where the render graph output should go (this field used by the compiler).</td></tr>
 <tr><td><i>std::vector<int> flattenedNodeList</i></td><td>{}</td><td>The flattened list of nodes, in the order they should be executed in. Calculated before being given to back end code.</td></tr>

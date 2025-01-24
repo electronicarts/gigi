@@ -1,0 +1,49 @@
+'\" t
+.\"     Title: git-lfs-standalone-file
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-STANDALONE\-FILE" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-standalone-file \- Standalone transfer adapter for file URLs
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs standalone\-file\fP
+.SH "DESCRIPTION"
+.sp
+Provides a standalone transfer adapter for file URLs (local paths).
+.sp
+By default, Git LFS requires the support of an HTTP server to implement
+the Git LFS protocol. However, this tool allows the use of URLs starting
+with \f(CR\c
+.URL "file:///" "" "\fP"
+(that is, those representing local paths) in addition.
+Configuration is not necessary; Git LFS handles this internally.
+.sp
+When invoked, this tool speaks JSON on input and output as a standalone
+transfer adapter. It is not intended for use by end users.
+.SH "SEE ALSO"
+.sp
+Part of the git\-lfs(1) suite.

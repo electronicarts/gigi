@@ -17,11 +17,11 @@ float3 LinearToSRGB(float3 linearCol)
 	uint2 px = DTid.xy;
 
 	uint4 dims;
-	/*$(Image3D:..\\..\\skyboxes\\Test_%s.png:RGBA8_Unorm_sRGB:float4:true:true)*/.GetDimensions(0, dims.x, dims.y, dims.z, dims.w);
+	/*$(Image3D:..\\skyboxes\\Test_%s.png:RGBA8_Unorm_sRGB:float4:true:true)*/.GetDimensions(0, dims.x, dims.y, dims.z, dims.w);
 
 	uint2 readPos = px % dims.xy;
 
-	Output[px] = float4(LinearToSRGB(/*$(Image3D:..\\..\\skyboxes\\Test_%s.png:RGBA8_Unorm_sRGB:float4:true:true)*/[uint3(readPos, 0)].rgb), 1.0f);
+	Output[px] = float4(LinearToSRGB(/*$(Image3D:..\\skyboxes\\Test_%s.png:RGBA8_Unorm_sRGB:float4:true:true)*/[uint3(readPos, 0)].rgb), 1.0f);
 }
 
 /*

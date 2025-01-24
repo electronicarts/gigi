@@ -1,0 +1,80 @@
+'\" t
+.\"     Title: git-lfs-smudge
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-SMUDGE" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-smudge \- Git smudge filter that converts pointer in blobs to the actual content
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs smudge\fP [<path>]
+.br
+\f(CRgit lfs smudge\fP \-\-skip [<path>]
+.SH "DESCRIPTION"
+.sp
+Read a Git LFS pointer file from standard input and write the contents
+of the corresponding large file to standard output. If needed, download
+the file\(cqs contents from the Git LFS endpoint. The argument, if
+provided, is only used for a progress bar.
+.sp
+Smudge is typically run by Git\(cqs smudge filter, configured by the
+repository\(cqs Git attributes.
+.sp
+In your Git configuration or in a \f(CR.lfsconfig\fP file, you may set either
+or both of \f(CRlfs.fetchinclude\fP and \f(CRlfs.fetchexclude\fP to comma\-separated
+lists of paths. If \f(CRlfs.fetchinclude\fP is defined, Git LFS pointer files
+will only be replaced with the contents of the corresponding Git LFS
+object file if their path matches one in that list, and if
+\f(CRlfs.fetchexclude\fP is defined, Git LFS pointer files will only be
+replaced with the contents of the corresponding Git LFS object file if
+their path does not match one in that list. Paths are matched using
+wildcard matching as per gitignore(5). Git LFS pointer files that are
+not replaced with the contents of their corresponding object files are
+simply copied to standard output without change.
+.SH "OPTIONS"
+.sp
+Without any options, \f(CRgit lfs smudge\fP outputs the raw Git LFS content to
+standard output.
+.sp
+\f(CR\-\-skip\fP
+.RS 4
+Skip automatic downloading of objects on clone or pull.
+.RE
+.sp
+\f(CRGIT_LFS_SKIP_SMUDGE\fP
+.RS 4
+Disables the smudging process. For more, see: git\-lfs\-config(5).
+.RE
+.SH "KNOWN BUGS"
+.sp
+On Windows, Git before 2.34.0 does not handle files in the working tree
+larger than 4 gigabytes. Newer versions of Git, as well as Unix
+versions, are unaffected.
+.SH "SEE ALSO"
+.sp
+git\-lfs\-install(1), gitattributes(5), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

@@ -77,6 +77,9 @@
     <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\Camera.cpp">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClCompile>
+    <ClCompile Include="Backends\Shared.cpp">
+      <Filter>Backends</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gigicompiler.h" />
@@ -386,6 +389,9 @@
     <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\Camera.h">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
     </ClInclude>
+    <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h">
+      <Filter>schemas\Browser</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="schemas">
@@ -477,6 +483,9 @@
     </Filter>
     <Filter Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12">
       <UniqueIdentifier>{3771847f-1c21-43cf-be29-a8b4a140604a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="schemas\Browser">
+      <UniqueIdentifier>{c824d9a0-2bc5-4b45-8dcc-1c5e0913d765}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

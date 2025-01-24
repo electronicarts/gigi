@@ -1,4 +1,4 @@
-#include "FileCache.h"
+/*$(CopyrightHeader)*/#include "FileCache.h"
 
 #include <filesystem>
 

@@ -1,0 +1,78 @@
+'\" t
+.\"     Title: git-lfs-filter-process
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-FILTER\-PROCESS" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-filter-process \- Git filter process that converts between pointer and actual content
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs filter\-process\fP
+.br
+\f(CRgit lfs filter\-process \-\-skip\fP
+.SH "DESCRIPTION"
+.sp
+Implement the Git process filter API, exchanging handshake messages and
+then accepting and responding to requests to either clean or smudge a
+file.
+.sp
+filter\-process is always run by Git\(cqs filter process, and is configured
+by the repository\(cqs Git attributes.
+.sp
+In your Git configuration or in a \f(CR.lfsconfig\fP file, you may set either
+or both of \f(CRlfs.fetchinclude\fP and \f(CRlfs.fetchexclude\fP to comma\-separated
+lists of paths. If \f(CRlfs.fetchinclude\fP is defined, Git LFS pointer files
+will only be replaced with the contents of the corresponding Git LFS
+object file if their path matches one in that list, and if
+\f(CRlfs.fetchexclude\fP is defined, Git LFS pointer files will only be
+replaced with the contents of the corresponding Git LFS object file if
+their path does not match one in that list. Paths are matched using
+wildcard matching as per gitignore(5). Git LFS pointer files that are
+not replaced with the contents of their corresponding object files are
+simply copied to standard output without change.
+.sp
+The filter process uses Git\(cqs pkt\-line protocol to communicate, and is
+documented in detail in gitattributes(5).
+.SH "OPTIONS"
+.sp
+Without any options, filter\-process accepts and responds to requests
+normally.
+.sp
+\f(CR\-\-skip\fP
+.RS 4
+Skip automatic downloading of objects on clone or pull.
+.RE
+.sp
+\f(CRGIT_LFS_SKIP_SMUDGE\fP
+.RS 4
+Disables the smudging process. For more, see: git\-lfs\-config(5).
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-clean(1), git\-lfs\-install(1), git\-lfs\-smudge(1),
+gitattributes(5), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

@@ -20,7 +20,7 @@
             "nodeName": "Scene",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                "fileName": "..\\OBJAssets\\bunny.obj",
                 "type": "Float3"
             }
         }

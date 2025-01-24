@@ -1,4 +1,0 @@
-I wrote a 1D/2D FFT-1024 utilizing groupshared and waveintrinsics.
-I also wrote a 2D FFT-4096, but the VGPR usage is too high to get good occupancy with it - I still have some ideas about how to fix this, but it'll take some work.
-This was my first time writing & optimizing compute shaders, but gigi made it easy.
-My 1024x1024 FFT-based convolution [show here with a gaussian blur] runs in 0.43ms on my 3080

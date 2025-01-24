@@ -3,7 +3,7 @@
 
 /*$(_compute:csmain)*/(uint3 DTid : SV_DispatchThreadID)
 {
-	float3 loadedTexturePx = /*$(Image2D:../../cabinsmall.png:RGBA8_Unorm:float4:false)*/[DTid.xy].rgb;
+	float3 loadedTexturePx = /*$(Image2D:../cabinsmall.png:RGBA8_Unorm:float4:false)*/[DTid.xy].rgb;
 	float3 importedTexturePx = importedTexture[DTid.xy].rgb;
 	float3 importedColorPx = importedColor[DTid.xy].rgb;
 

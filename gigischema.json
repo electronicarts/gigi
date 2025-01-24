@@ -719,7 +719,7 @@
                   "format": {
                     "description": "A specific format can be specified",
                     "type": "string",
-                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
+                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC4_Unorm", "BC4_Snorm", "BC5_Unorm", "BC5_Snorm", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
                   },
                   "variable": {
                     "description": "The variable that holds the texture format. Assumed to be a uint32.",
@@ -2591,6 +2591,33 @@
         },
         "outDX12": {
           "description": "The output location for DX12",
+          "type": "string"
+        }
+      }
+    },
+    "customTokens": {
+      "description": "Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "key": {
+            "description": "The name of the gigi token without markup, such as CopyrightHeader for /*$(CopyrightHeader)*/",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value to replace the token with",
+            "type": "string"
+          }
+        }
+      }
+    },
+    "PrimaryOutput": {
+      "description": "A hint to anything that might be able to use this information, such as generated code or the viewer.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "description": "The name of the node",
           "type": "string"
         }
       }

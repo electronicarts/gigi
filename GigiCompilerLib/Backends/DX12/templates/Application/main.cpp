@@ -1,4 +1,4 @@
-// Dear ImGui: standalone example application for DirectX 12
+/*$(CopyrightHeader)*/// Dear ImGui: standalone example application for DirectX 12
 
 // Learn about Dear ImGui:
 // - FAQ                  https://dearimgui.com/faq
@@ -514,7 +514,7 @@ int main(int, char**)
             if (firstPreExecute)
             {
                 firstPreExecute = false;
-                // TODO: Do one time setup here, such as creating imported resources or setting variables
+                // TODO: Do one time setup here, such as creating imported resources or setting variables/*$(FirstPreExecute)*/
             }
             // TODO: do per frame setup here, such as setting camera matrices, or keyboard and mouse states.
 
@@ -522,8 +522,7 @@ int main(int, char**)
             if (m_/*$(Name)*/)
                 /*$(Name)*/::Execute(m_/*$(Name)*/, g_pd3dDevice, g_pd3dCommandList);
 
-            // TODO: Do post execution work here, such as copying an output texture to g_mainRenderTargetResource[backBufferIdx]
-            //CopyTextureToTexture(g_pd3dCommandList, resource, resourceState, g_mainRenderTargetResource[backBufferIdx], D3D12_RESOURCE_STATE_RENDER_TARGET);
+            /*$(CopyPrimaryOutput)*/
         }
         // Gigi Modification End
 

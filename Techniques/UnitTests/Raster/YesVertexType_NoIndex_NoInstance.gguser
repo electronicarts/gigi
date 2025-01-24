@@ -8,7 +8,7 @@
             "nodeName": "Vertex_Buffer",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                "fileName": "..\\OBJAssets\\bunny.obj",
                 "type": "Float3"
             }
         }

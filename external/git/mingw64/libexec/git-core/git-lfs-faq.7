@@ -1,0 +1,326 @@
+'\" t
+.\"     Title: git-lfs-faq
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-FAQ" "7" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-faq \- FAQ for Git LFS
+.SH "ENTRIES"
+.SS "File Size"
+.sp
+Does Git LFS provide a way to track files by size?
+.RS 4
+No, it doesn\(cqt.  Unfortunately, Git itself doesn\(cqt specify a way to make
+\f(CR.gitattributes\fP patterns apply to files of a certain size and we rely on
+the \f(CR.gitattributes\fP file to specify which files are tracked by Git LFS.
+.sp
+You \fIcan\fP use the \f(CR\-\-above\fP option to \f(CRgit lfs migrate import\fP to migrate
+all files that at the specified time are larger than a certain size.  However,
+if your files change to be smaller or larger in the future, or you add more
+files in the future that are larger than the limit you specified, you will have
+to track them manually.
+.sp
+For these reasons, we recommend using patterns rather than \f(CR\-\-above\fP.
+.RE
+.sp
+Why doesn\(cqt Git LFS handle files larger than 4 GiB on Windows?
+.RS 4
+Git LFS itself handles these files just fine.  However, Git LFS is usually
+invoked by Git, and until Git 2.34, Git itself on Windows didn\(cqt handle files
+using smudge and clean filters (like Git LFS) that are larger than 4 GiB.
+So you can update Git for Windows to 2.34 to natively support these file sizes.
+.sp
+On older versions, set \f(CRGIT_LFS_SKIP_SMUDGE\fP to \f(CR1\fP and run \f(CRgit lfs pull\fP
+to pull down the LFS files.  This bypasses Git\(cqs smudging functionality
+and therefore avoids its limitations.
+.RE
+.SS "Working Tree Contents"
+.sp
+Why do I end up with small text files in my working tree instead of my files?
+.RS 4
+Git LFS stores small text files called pointer files in the repository instead
+of your large files, which it stores elsewhere.  These pointer files usually
+start with the line \f(CRversion \c
+.URL "https://git\-lfs.github.com/spec/v1" "" "\fP."
+.sp
+Normally, if you\(cqve run \f(CRgit lfs install\fP at least once for your user account on
+the system, then Git LFS will be automatically invoked by Git when you check out
+files or clone a repository and this won\(cqt happen.  However, if you haven\(cqt, or
+you\(cqve explicitly chosen to skip that behaviour by using the \f(CR\-\-skip\-smudge\fP
+option of \f(CRgit lfs install\fP, then you may need to use \f(CRgit lfs pull\fP to replace
+the pointer files in your working tree with large files.
+.RE
+.sp
+Why do I end up with some of my working tree files constantly showing as modified?
+.RS 4
+This can happen if someone made a commit to a file that\(cqs tracked by Git LFS
+but didn\(cqt have Git LFS properly set up on their system.  The objects that
+were checked into the repository are Git objects, not the pointers to Git LFS
+objects, and when Git checks these files out, it shows them as modified.
+.sp
+There are also several other possible ways to encounter this problem, such as an
+incomplete migration of your repository.  For example, you should not use \f(CRgit
+lfs track\fP to track patterns that are already in your repository without running
+\f(CRgit add \-\-renormalize .\fP, since that can lead to this problem.
+.sp
+Users frequently find that this cannot be changed by doing \f(CRgit reset \-\-hard\fP or
+other techniques because Git then checks the files out and marks them as
+modified again.  The best way to solve this problem is by fixing the files and
+the committing the change, which you can do with the following on an otherwise
+clean tree:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git add \-\-renormalize .
+$ git commit \-m "Fix broken LFS files"
+.fam
+.fi
+.if n .RE
+.sp
+This requires that every branch you want to fix have this done to it.
+.sp
+To prevent this from reoccurring in the future, make sure that everyone working
+with large files on a project has run \f(CRgit lfs install\fP at least once.  The
+command \f(CRgit lfs fsck \-\-pointers BASE..HEAD\fP (with suitable values of \f(CRBASE\fP and
+\f(CRHEAD\fP) may be used in your CI system to verify that nobody is introducing such
+problems.
+.RE
+.SS "Tracking and Migration"
+.sp
+How do I track files that are already in a repository?
+.RS 4
+If you want to track files that already exist in a repository, you need to do
+two things.  First, you need to use \f(CRgit lfs track\fP (or a manual modification
+of \f(CR.gitattributes\fP) to mark the files as LFS files.  Then, you need to run
+\f(CRgit add \-\-renormalize .\fP and commit the changes to the repository.
+.sp
+If you skip this second step, then you\(cqll end up with files that are marked as
+LFS files but are stored as Git files, which can lead to files which are always
+modified, as outlined in the FAQ entry above.  Note also that this doesn\(cqt
+change large files in your history.  To do that, use \f(CRgit lfs migrate import
+\-\-everything\fP instead, as specified in one of the entries below.
+.RE
+.sp
+How do I convert from using Git LFS to a plain Git repository?
+.RS 4
+If you\(cqd like to stop using Git LFS and switch back to storing your large
+files in the plain Git format, you can do so with \f(CRgit lfs migrate export
+\-\-everything\fP.  Note that you will need to provide an appropriate \f(CR\-\-include\fP
+option to match all the patterns that you currently have tracked in any ref.
+.sp
+This also rewrites history, so the Git object IDs of many, if not all, of your
+objects will change.
+.RE
+.sp
+I\(cqm using Git LFS, but I still see GitHub\(cqs large file error.  How do I fix this?
+.RS 4
+GitHub rejects large files anywhere in the history of your repository, not
+just in the latest commit.  If you\(cqre still seeing this message, then you have
+some large files somewhere in your history, even if in the latest commits
+you\(cqve moved them to Git LFS.
+.sp
+To fix this, you can use \f(CRgit lfs migrate import \-\-everything\fP with an
+appropriate \f(CR\-\-include\fP argument.  For example, if you wanted to move your
+\f(CR.jpg\fP and \f(CR.png\fP files into Git LFS, you can do that with
+\f(CRgit lfs migrate import \-\-everything \-\-include="*.jpg,*.png"\fP.  More complicated
+patterns are possible: run \f(CRgit help gitattributes\fP for more information on
+valid patterns.  Note that if you\(cqre specifying directories, using slashes is
+mandatory: backslashes are not allowed as path separators.
+.RE
+.SS "Configuration"
+.sp
+Can I use a proxy with Git LFS?
+.RS 4
+Yes, Git LFS supports proxies using the same mechanisms that Git supports,
+namely the \f(CRhttp_proxy\fP environment variable and the configuration of
+\f(CRhttp.proxy\fP (or \f(CRhttp.*.proxy\fP for per\-URL usage).  However, Git LFS only
+supports proxies which use Basic or no authentication, and it doesn\(cqt
+currently support Digest or Kerberos authentication.
+.sp
+If you\(cqre using a proxy, we recommend that you set the full URL in the proxy
+value, including a scheme.  Thus, \f(CR\c
+.URL "http://example.com:3128" "" "\fP"
+is a better choice
+than \f(CRexample.com:3128\fP.  If you need a username and password, they must be
+percent\-encoded in the URL, so a username of \f(CRfoo\(rsbar\fP with a password of
+\f(CRabc@123+\fP using the above proxy would be
+\f(CR\c
+.URL "http://foo%5cbar:abc%40123%2b@example.com:3128" "" "\fP."
+.sp
+Note that, just like with Git, proxies must not modify, buffer, tamper with, or
+change the response to the data in any way, upstream or downstream, and any
+proxy which does so will break things and is not supported. The Git LFS
+developers don\(cqt recommend any sort of proxy, including any sort of antivirus,
+firewall, or monitoring software, which performs TLS interception because these
+are known to cause breakage and in general have been shown to worsen security.
+.RE
+.sp
+Can I use a custom set of SSL/TLS certificate authorities with Git LFS?
+.RS 4
+Yes, Git LFS supports configuring trusted certificate authorities and client
+certificates for HTTPS, using the same configuration as for Git.
+.sp
+To configure a set of trusted certificate authorities, you can use
+\f(CRhttp.sslCAPath\fP to specify a directory of files, each one containing a PKCS#1
+certificate of a trusted certificate authority.  If you\(cqd prefer to use a single
+file with all trusted certificates, you can use \f(CRhttp.sslCAInfo\fP to refer to a
+single file containing PKCS#1 certificates, one following the other.
+.sp
+For example, on Debian, to set this option to provide the default behavior, you
+could run \f(CRgit config http.sslCAPath /etc/ssl/certs\fP.  Note that it\(cqs also
+possible to set these configuration options on a per\-URL basis, like so: \f(CRgit
+config http.https://example.com/.sslCAPath /etc/ssl/certs\fP.
+.sp
+Note that PKCS#12 files are a Git for Windows extension to Git and are not
+supported by Git LFS.  Additionally, take into account the information about
+TLS\-intercepting proxies above if this configuration is because of a
+TLS\-intercepting proxy.
+.RE
+.sp
+Can I use an SSL/TLS client certificate with Git LFS?
+.RS 4
+Yes, Git LFS supports configuring client certificates and keys using the same
+configuration as for Git.
+.sp
+To configure a client certificate, use the \f(CRhttp.sslCert\fP configuration option
+pointing to a file containing a PKCS#1 certificate.  To configure the
+corresponding key, use \f(CRhttp.sslKey\fP with a file containing a PEM\-encoded key.
+If it is encrypted, you will be prompted using the credential helper for the
+passphrase.
+.sp
+Usually you will want to specify these values on a per\-URL basis, such as the
+following: \f(CRgit config http.https://example.com/.sslKey
+/home/user/.certs/mine.key\fP.
+.sp
+Note that PKCS#8 and PKCS#12 files are not supported by Git LFS.
+.RE
+.SS "Working with Git Features"
+.sp
+How do I enable git diff to work on LFS files?
+.RS 4
+You can run \f(CRgit config diff.lfs.textconv cat\fP, which will produce normal
+diffs if your files are text files.
+.RE
+.sp
+How do I enable git diff to work on LFS files based on extension or path?
+.RS 4
+If the above solution is too broad, each entry in the \f(CR.gitattributes\fP file
+can be customized by creating a custom global converter:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git config \-\-global diff.lfstext.textconv cat
+.fam
+.fi
+.if n .RE
+.sp
+Any given \f(CR.gitattributes\fP entry for large text files can be customized to use
+this global text converter (e.g., patch files), whereas binary formats can
+continue to use the conventional lfs diff tool, like so:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ cat .gitattributes
+\&....
+*.bin filter=lfs diff=lfs merge=lfs \-text
+*.patch filter=lfs diff=lfstext merge=lfs \-text
+\&....
+.fam
+.fi
+.if n .RE
+.sp
+Be advised that all developers sharing this repo with such a modified
+\f(CR.gitattributes\fP file must have similarly configured the \f(CRlfstext\fP text
+converter, whether globally or on a per repository basis.
+.RE
+.sp
+Why are LFS files not included when I archive a subdirectory?
+.RS 4
+When you run \f(CRgit archive\fP with only a subdirectory, such as \f(CRgit archive
+HEAD:src\fP, Git resolves the revision (in this case, \f(CRHEAD:src\fP) to a tree, and
+only processes items in that tree.  Because the \f(CR.gitattributes\fP file is
+typically only in the root of the repository, Git doesn\(cqt even see that file,
+which controls whether files are considered LFS files, and hence doesn\(cqt
+consider any of the files in the directory as LFS files, and thus doesn\(cqt
+invoke Git LFS at all.
+.sp
+Since Git LFS doesn\(cqt even get invoked in this case, there\(cqs no way to change
+how this works.  If you just want to include the single subdirectory without
+stripping the prefix, you can do this: \f(CRgit archive \-o archive.tar.gz
+\-\-prefix=archive/ HEAD src\fP.  If you do want to strip the subdirectory name
+(\f(CRsrc\fP) in this case, one option if you have the libarchive tar (available on Windows
+and macOS as \f(CRtar\fP, and usually on Linux as \f(CRbsdtar\fP) is to do something like
+this script:
+.sp
+.if n .RS 4
+.nf
+.fam C
+#!/bin/sh
+
+# With trailing slash.
+ARCHIVE_PREFIX="archive/"
+# Without trailing slash.
+SOURCE_PREFIX="src"
+# Without directory or file components.
+REVISION="HEAD"
+
+temp=$(mktemp \-d)
+
+git archive \-\-prefix="$ARCHIVE_PREFIX" "$REVISION" "$SOURCE_PREFIX" | bsdtar \-C "$temp" \-xf \-
+bsdtar \-s "!^\(rs./!$ARCHIVE_PREFIX!" \-\-format=pax \-czf archive.tar.gz \-C "$temp/$ARCHIVE_PREFIX$SOURCE_PREFIX" .
+rm \-fr "$temp"
+.fam
+.fi
+.if n .RE
+.RE
+.SS "Working with Non\-Git Tools"
+.sp
+I\(cqm using Jenkins and \f(CRgit lfs install\fP fails due to an invalid hook path.  What do I do?
+.RS 4
+Recent versions of Jenkins have set \f(CRcore.hooksPath\fP to various values,
+notably \f(CRNUL:\fP on Windows, with the goal of disabling hooks.  This is not a
+valid path on Windows, nor a valid value for this configuration option, so
+when \f(CRgit lfs install\fP runs and Git LFS attempts to install hooks, the
+operation fails.
+.sp
+The easiest way to solve this problem is by using the \f(CR\-\-skip\-repo\fP option to
+\f(CRgit lfs install\fP, which skips the installation of the hooks.  Despite the name,
+it can be successfully combined with \f(CR\-\-local\fP if you need that option.
+.sp
+Note that this prevents things like \f(CRgit push\fP from pushing LFS objects and
+locked files from being read only, since those are implemented by hooks.  If you
+need that functionality, you should review the Jenkins documentation about how
+to properly configure the environment in such a situation so that hooks can be
+used.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-config(1), git\-lfs\-install(1), gitattributes(5), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

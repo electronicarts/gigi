@@ -183,6 +183,11 @@ static float Lerp(float A, float B, float t)
     return A * (1.0f - t) + B * t;
 }
 
+static double Lerp(double A, double B, double t)
+{
+    return A * (1.0 - t) + B * t;
+}
+
 static float InverseLerp(float A, float B, float v)
 {
     // returns the time t of v between A and B.
@@ -190,7 +195,8 @@ static float InverseLerp(float A, float B, float v)
     return (v - A) / (B - A);
 }
 
-static float Clamp(float x, float theMin, float theMax)
+template <typename T>
+static T Clamp(T x, T theMin, T theMax)
 {
     if (x <= theMin)
         return theMin;
@@ -385,10 +391,13 @@ struct ResourceViewState
     int lastNodeIndex = -1;
     int lastResourceIndex = -1;
 
-    int mousePosX = 0;
-    int mousePosY = 0;
-    int mouseClickX = 0;
-    int mouseClickY = 0;
+    // These are in image space (pixels of viewed image)
+    int mousePosImageX = 0;
+    int mousePosImageY = 0;
+    int mouseClickImageX = 0;
+    int mouseClickImageY = 0;
+
+    int mouseRegionRadiusPx = 0;
 
     bool mouseWasDownLastFrame = false;
     float systemVarMouse[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -474,7 +483,7 @@ bool g_showCapsWindow = false;
 uint8_t g_keyStates[512] = {};
 uint8_t* g_keyStatesLastFrame = &g_keyStates[256];
 
-// adapted from https://devblogs.microsoft.com/oldnewthing/20100125-00/?p=15183
+// Portions of this software were based on https://devblogs.microsoft.com/oldnewthing/20100125-00/?p=15183
 HANDLE SetClipboardDataEx(UINT uFormat, void *pvData, DWORD cbData)
 {
     if (OpenClipboard(g_hwnd))
@@ -990,6 +999,7 @@ bool HandleOpenNonGGFile(const char* fileName)
         Texture,
         TextureNoModify, // For DDS
         Model,
+        Ply,
     };
 
     struct ViewerMapping
@@ -1018,6 +1028,8 @@ bool HandleOpenNonGGFile(const char* fileName)
 
         {".obj", Viewer::Model},
         {".fbx", Viewer::Model},
+
+        {".ply", Viewer::Ply},
     };
 
     // Figure out which viewer we should use
@@ -1044,6 +1056,7 @@ bool HandleOpenNonGGFile(const char* fileName)
         case Viewer::Texture: folder = "Techniques/DataViewers/TextureViewer/"; break;
         case Viewer::TextureNoModify: folder = "Techniques/DataViewers/TextureViewerDDS/"; break;
         case Viewer::Model: folder = "Techniques/DataViewers/ModelViewer/"; break;
+        case Viewer::Ply: folder = "Techniques/DataViewers/PlyViewer/"; break;
     }
 
     char currentDirectory[4096];
@@ -1513,7 +1526,7 @@ void HandleMainMenu()
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 
         // Open Editor
-        if (ImGui::Button("Open Editor"))
+        if (ImGui::Button("Editor"))
         {
             char commandLine[1024];
             if (g_renderGraphFileName.empty())
@@ -1541,7 +1554,7 @@ void HandleMainMenu()
         }
 
         // Open Viewer
-        if (ImGui::Button("Open Viewer"))
+        if (ImGui::Button("Viewer"))
         {
             STARTUPINFOA si;
             ZeroMemory(&si, sizeof(si));
@@ -1552,6 +1565,28 @@ void HandleMainMenu()
             CreateProcessA(
                 nullptr,
                 (char*)"GigiViewerDX12.exe",
+                nullptr,
+                nullptr,
+                FALSE,
+                0,
+                nullptr,
+                nullptr,
+                &si,
+                &pi);
+        }
+
+        // Open Browser
+        if (ImGui::Button("Browser"))
+        {
+            STARTUPINFOA si;
+            ZeroMemory(&si, sizeof(si));
+            si.cb = sizeof(si);
+
+            PROCESS_INFORMATION pi;
+
+            CreateProcessA(
+                nullptr,
+                (char*)"GigiBrowser.exe",
                 nullptr,
                 nullptr,
                 FALSE,
@@ -3700,44 +3735,79 @@ void AutoHistogram(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourc
     }
 }
 
-void ShowPixelValue(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int x, int y, int z, int mipIndex, float cursorPosX)
+void ShowPixelValue(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int x, int y, int z, int mipIndex, float cursorPosX, int radius)
 {
     // read back the pixel data
-    std::vector<unsigned char> pixelUntypedData;
-    DXGI_FORMAT viewFormat;
-    if (!ImageReadback::GetDecodedPixel(g_pd3dDevice, readbackResource, resourceOriginalDesc, x, y, z, mipIndex, pixelUntypedData, viewFormat))
+    std::vector<unsigned char> pixelsUntypedData;
+    DXGI_FORMAT viewFormat = DXGI_FORMAT_UNKNOWN;
+    if (!ImageReadback::GetDecodedPixelsRectangle(g_pd3dDevice, readbackResource, resourceOriginalDesc, x - radius, x + radius + 1, y - radius, y + radius + 1, z, mipIndex, pixelsUntypedData, viewFormat))
         return;
 
     // Make sure we got enough data
     DXGI_FORMAT_Info viewFormatInfo = Get_DXGI_FORMAT_Info(viewFormat);
-    if (pixelUntypedData.size() < viewFormatInfo.bytesPerPixel)
+    if ((pixelsUntypedData.size() % viewFormatInfo.bytesPerPixel) != 0)
         return;
 
     // Make a string of the pixel values
-    const unsigned char* pixelUntyped = pixelUntypedData.data();
+    const unsigned char* pixelsUntyped = pixelsUntypedData.data();
+    int pixelCount = (int)pixelsUntypedData.size() / viewFormatInfo.bytesPerPixel;
     float pixelColor[4] = { 0.0f, 0.0f, 0.0f, 1.0f };
     char str[256], *writer = str;
     bool isHDR = false;
     if (viewFormatInfo.format == DXGI_FORMAT_R24_UNORM_X8_TYPELESS)
     {
-        uint32_t* pixel = (uint32_t*)pixelUntyped;
-        float value = float(double(pixel[0]) / 16777216.0);
+        uint32_t* pixel = (uint32_t*)pixelsUntyped;
+
+        float value = 0;
+        for (int pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+            value = Lerp(value, float(double(pixel[pixelIndex]) / 16777216.0), 1.0f / float(pixelIndex + 1));
+
         sprintf(str, "%f", value);
 
         pixelColor[0] = value;
     }
     else if (viewFormatInfo.format == DXGI_FORMAT_R11G11B10_FLOAT)
     {
-        float rgb[3];
-        R11G11B10tof32(*(uint32_t*)pixelUntyped, rgb);
-		sprintf(str, "%f %f %f", rgb[0], rgb[1], rgb[2]);
+        float value[3] = { 0.0f, 0.0f, 0.0f };
+        for (int pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+        {
+            float rgb[3];
+            R11G11B10tof32(*(uint32_t*)pixelsUntyped, rgb);
+            value[0] = Lerp(value[0], rgb[0], 1.0f / float(pixelIndex + 1));
+            value[1] = Lerp(value[1], rgb[1], 1.0f / float(pixelIndex + 1));
+            value[2] = Lerp(value[2], rgb[2], 1.0f / float(pixelIndex + 1));
+        }
 
-        pixelColor[0] = rgb[0];
-        pixelColor[1] = rgb[1];
-        pixelColor[2] = rgb[2];
+		sprintf(str, "%f %f %f", value[0], value[1], value[2]);
+
+        pixelColor[0] = value[0];
+        pixelColor[1] = value[1];
+        pixelColor[2] = value[2];
     }
     else
     {
+        // Convert the rectangular region of pixels into doubles, average them, and convert them back to their source format for display logic below
+        std::vector<unsigned char> pixelUntypedData;
+        {
+            std::vector<double> doublesRaw;
+            if (!ConvertToDoubles(pixelsUntyped, pixelCount * viewFormatInfo.channelCount, viewFormatInfo.channelType, doublesRaw))
+                return;
+
+            std::vector<double> averagePixel(viewFormatInfo.channelCount, 0.0);
+            for (int pixelIndex = 0; pixelIndex < pixelCount; ++pixelIndex)
+            {
+                for (int channelIndex = 0; channelIndex < viewFormatInfo.channelCount; ++channelIndex)
+                {
+                    double value = doublesRaw[pixelIndex * viewFormatInfo.channelCount + channelIndex];
+                    averagePixel[channelIndex] = Lerp(averagePixel[channelIndex], value, 1.0 / double(pixelIndex + 1));
+                }
+            }
+
+            ConvertFromDoubles(averagePixel, viewFormatInfo.channelType, pixelUntypedData);
+        }
+        const unsigned char* pixelUntyped = pixelUntypedData.data();
+
+        // Display the pixels
         switch (viewFormatInfo.channelType)
         {
             case DXGI_FORMAT_Info::ChannelType::_uint8_t:
@@ -5028,6 +5098,8 @@ void ShowResourceView()
                                 CSV,
                                 EXR,
                                 HDR,
+                                DDS_BC4,
+                                DDS_BC5,
                                 DDS_BC6,
                                 DDS_BC7,
                                 Binary,
@@ -5045,20 +5117,24 @@ void ShowResourceView()
                                 { "csv", "csv" },
                                 { "exr", "exr" },
                                 { "hdr", "hdr" },
+                                { "dds (BC4)", "dds" },
+                                { "dds (BC5)", "dds" },
                                 { "dds (BC6)", "dds" },
                                 { "dds (BC7)", "dds" },
                                 { "binary", "bin" },
                             };
 
                             // figure out what we can save as
-                            bool canSaveAsPNG_BC7 = (decodedFormatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_uint8_t);
+                            bool canSaveAsPNG_BC457 = (decodedFormatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_uint8_t);
                             bool canSaveAsEXR_HDR_BC6 = (decodedFormatInfo.channelType == DXGI_FORMAT_Info::ChannelType::_float);
 
                             // make the option list
                             std::vector<SaveAsType> options;
-                            if (canSaveAsPNG_BC7)
+                            if (canSaveAsPNG_BC457)
                             {
                                 options.push_back(SaveAsType::PNG);
+                                options.push_back(SaveAsType::DDS_BC4);
+                                options.push_back(SaveAsType::DDS_BC5);
                                 options.push_back(SaveAsType::DDS_BC7);
                             }
                             if (canSaveAsEXR_HDR_BC6)
@@ -5086,6 +5162,7 @@ void ShowResourceView()
                             // Show the UI and do the work
                             {
                                 static bool s_saveAll = false;
+                                static bool s_bc45_signed = false;
                                 static bool s_bc6_signed = false;
                                 static bool s_bc7_srgb = true;
 
@@ -5101,6 +5178,7 @@ void ShowResourceView()
                                     saveOptions.mipIndex = res.m_mipIndex;
                                     saveOptions.saveAll = s_saveAll;
                                     saveOptions.isCubeMap = (res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube);
+                                    saveOptions.bc45.isSigned = s_bc45_signed;
                                     saveOptions.bc6.isSigned = s_bc6_signed;
                                     saveOptions.bc7.sRGB = s_bc7_srgb;
 
@@ -5111,6 +5189,8 @@ void ShowResourceView()
                                         case SaveAsType::CSV: success = ImageSave::SaveAsCSV(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
                                         case SaveAsType::EXR: success = ImageSave::SaveAsEXR(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
                                         case SaveAsType::HDR: success = ImageSave::SaveAsHDR(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::DDS_BC4: success = ImageSave::SaveAsDDS_BC4(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
+                                        case SaveAsType::DDS_BC5: success = ImageSave::SaveAsDDS_BC5(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
                                         case SaveAsType::DDS_BC6: success = ImageSave::SaveAsDDS_BC6(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
                                         case SaveAsType::DDS_BC7: success = ImageSave::SaveAsDDS_BC7(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
                                         case SaveAsType::Binary: success = ImageSave::SaveAsBinary(outPath, g_pd3dDevice, res.m_resourceReadback, res.m_origResourceDesc, saveOptions); break;
@@ -5127,6 +5207,13 @@ void ShowResourceView()
                                     ImGui::OpenPopup("PopupChooseSaveAs");
 
                                 ImGui::PopStyleVar(1);
+
+                                if (saveAsType == SaveAsType::DDS_BC4 || saveAsType == SaveAsType::DDS_BC5)
+                                {
+                                    ImGui::SameLine();
+                                    ImGui::Checkbox("Signed", &s_bc45_signed);
+                                    ShowToolTip("If true, saves as snorm, else saves as unorm");
+                                }
 
                                 if (saveAsType == SaveAsType::DDS_BC6)
                                 {
@@ -5163,14 +5250,10 @@ void ShowResourceView()
                             }
 
                             // Force mouse data to be in range (switching images could make it not be)
-                            int mouseHoverX = int(float(g_resourceView.mousePosX) / g_imageZoom);
-                            int mouseHoverY = int(float(g_resourceView.mousePosY) / g_imageZoom);
-                            int mouseClickX = int(float(g_resourceView.mouseClickX) / g_imageZoom);
-                            int mouseClickY = int(float(g_resourceView.mouseClickY) / g_imageZoom);
-                            mouseHoverX = std::max(0, std::min(mouseHoverX, res.m_size[0] - 1));
-                            mouseHoverY = std::max(0, std::min(mouseHoverY, res.m_size[1] - 1));
-                            mouseClickX = std::max(0, std::min(mouseClickX, res.m_size[0] - 1));
-                            mouseClickY = std::max(0, std::min(mouseClickY, res.m_size[1] - 1));
+                            int mouseHoverX = Clamp(g_resourceView.mousePosImageX, 0, res.m_size[0] - 1);
+                            int mouseHoverY = Clamp(g_resourceView.mousePosImageY, 0, res.m_size[1] - 1);
+                            int mouseClickX = Clamp(g_resourceView.mouseClickImageX, 0, res.m_size[0] - 1);
+                            int mouseClickY = Clamp(g_resourceView.mouseClickImageY, 0, res.m_size[1] - 1);
 
                             // Show size and format
                             if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D)
@@ -5244,16 +5327,22 @@ void ShowResourceView()
                                 ImGui::Combo(label, &res.m_arrayIndex, options.data(), (int)options.size());
                             }
 
-                            {                    
-								float imgui_x = ImGui::GetStyle().WindowPadding.x + ImGui::CalcTextSize("Mouse Hover 12345,12345 ").x;
+                            {
+                                float imgui_x = ImGui::GetStyle().WindowPadding.x + ImGui::CalcTextSize("Mouse Hover 12345,12345 ").x;
 
                                 // Show the clicked pixel
                                 ImGui::Text("Mouse Click %i,%i", mouseClickX, mouseClickY);
-                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseClickX, mouseClickY, res.m_arrayIndex, res.m_mipIndex, imgui_x);
+                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseClickX, mouseClickY, res.m_arrayIndex, res.m_mipIndex, imgui_x, g_resourceView.mouseRegionRadiusPx);
 
                                 // Show the hovered pixel
                                 ImGui::Text("Mouse Hover %i,%i", mouseHoverX, mouseHoverY);
-                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseHoverX, mouseHoverY, res.m_arrayIndex, res.m_mipIndex, imgui_x);
+                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseHoverX, mouseHoverY, res.m_arrayIndex, res.m_mipIndex, imgui_x, g_resourceView.mouseRegionRadiusPx);
+
+                                // Clicked pixel radius
+                                ImGui::SetNextItemWidth(100.0f);
+                                ImGui::InputInt("Mouse Region Radius", &g_resourceView.mouseRegionRadiusPx);
+                                ShowToolTip("The half width of the square selected by mouse click or mouse hover. Pixel values shown are averaged over the area", true);
+                                g_resourceView.mouseRegionRadiusPx = std::max(g_resourceView.mouseRegionRadiusPx, 0);
                             }
 
                             {
@@ -5358,6 +5447,8 @@ void ShowResourceView()
 						desc.m_format = res.m_format;
 
 						D3D12_GPU_DESCRIPTOR_HANDLE descTable;
+						ImVec2 imagePosition = ImVec2{ 0.0f, 0.0f };
+						ImVec2 imageSize = ImVec2{ 0.0f, 0.0f };
 						if (g_interpreter.GetDescriptorTableCache_ImGui().GetDescriptorTable(g_pd3dDevice, g_interpreter.GetSRVHeapAllocationTracker_ImGui(), &desc, 1, descTable, HEAP_DEBUG_TEXT()))
 						{
 							uint64_t shaderFlags = GetImGuiImageShaderFlags(res.m_format, true);
@@ -5382,12 +5473,66 @@ void ShowResourceView()
 							ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetHistogramMin, PackFloatIntoPointer(adjustedMinMax[0]));
                             ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetHistogramMax, PackFloatIntoPointer(adjustedMinMax[1]));
 
+							imageSize = ImVec2{ (float)res.m_size[0] * g_imageZoom, (float)res.m_size[1] * g_imageZoom };
+							imagePosition = ImGui::GetCursorScreenPos();
+
                             if (!g_profileMode)
-								ImGui::Image((ImTextureID)descTable.ptr, ImVec2{ (float)res.m_size[0] * g_imageZoom, (float)res.m_size[1] * g_imageZoom }, ImVec2{ 0.0f, 0.0f }, ImVec2{ 1.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
+								ImGui::Image((ImTextureID)descTable.ptr, ImVec2{ imageSize }, ImVec2{ 0.0f, 0.0f }, ImVec2{ 1.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
 							ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetShaderFlags, (void*)0);
 							ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetHistogramMin, PackFloatIntoPointer(0.0f));
                             ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetHistogramMax, PackFloatIntoPointer(1.0f));
 						}
+
+                        // Draw a rectangle to show the mouse click location region
+                        {
+
+                            // Force mouse data to be in range (switching images could make it not be)
+                            float mouseHoverX = resourceLeftTopScreen.x + (float)Clamp(g_resourceView.mousePosImageX, 0, res.m_size[0] - 1) * g_imageZoom;
+                            float mouseHoverY = resourceLeftTopScreen.y + (float)Clamp(g_resourceView.mousePosImageY, 0, res.m_size[1] - 1) * g_imageZoom;
+                            float mouseClickX = resourceLeftTopScreen.x + (float)Clamp(g_resourceView.mouseClickImageX, 0, res.m_size[0] - 1) * g_imageZoom;
+                            float mouseClickY = resourceLeftTopScreen.y + (float)Clamp(g_resourceView.mouseClickImageY, 0, res.m_size[1] - 1) * g_imageZoom;
+
+                            float selectionRadius = (float(g_resourceView.mouseRegionRadiusPx) + 1.0f) * g_imageZoom;
+
+                            // Show the mouse click box
+                            {
+                                ImVec2 startPos = ImVec2{ mouseClickX + g_imageZoom - selectionRadius, mouseClickY + g_imageZoom - selectionRadius };
+                                ImVec2 endPos = ImVec2{ mouseClickX + selectionRadius, mouseClickY + selectionRadius };
+                                if (endPos.x - startPos.x >= 4.0f)
+                                {
+                                    static float s_selectionPhase = 0.0f;
+                                    s_selectionPhase = std::fmodf(s_selectionPhase + ImGui::GetIO().DeltaTime, 1.0f);
+                                    int color = int(32.0f + (sin(s_selectionPhase * 6.28f) * 0.5f + 0.5f) * 191.0f);
+
+                                    ImVec2 imagePositionEnd = ImVec2{ imagePosition.x + imageSize.x, imagePosition.y + imageSize.y };
+                                    ImGui::PushClipRect(imagePosition, imagePositionEnd, true);
+
+                                    ImGui::GetCurrentWindow()->DrawList->AddRect(startPos, endPos, ImGui::GetColorU32(IM_COL32(color, color, 0, 128)));
+
+                                    ImGui::PopClipRect();
+                                }
+                            }
+
+                            // Show the mouse hover box, if there is a radius > 0.
+                            if (g_resourceView.mouseRegionRadiusPx > 0)
+                            {
+                                ImVec2 startPos = ImVec2{ mouseHoverX + g_imageZoom - selectionRadius, mouseHoverY + g_imageZoom - selectionRadius };
+                                ImVec2 endPos = ImVec2{ mouseHoverX + selectionRadius, mouseHoverY + selectionRadius };
+                                if (endPos.x - startPos.x >= 4.0f)
+                                {
+                                    static float s_selectionPhase = 0.0f;
+                                    s_selectionPhase = std::fmodf(s_selectionPhase + ImGui::GetIO().DeltaTime, 1.0f);
+                                    int color = int(32.0f + (sin(s_selectionPhase * 6.28f) * 0.5f + 0.5f) * 191.0f);
+
+                                    ImVec2 imagePositionEnd = ImVec2{ imagePosition.x + imageSize.x, imagePosition.y + imageSize.y };
+                                    ImGui::PushClipRect(imagePosition, imagePositionEnd, true);
+
+                                    ImGui::GetCurrentWindow()->DrawList->AddRect(startPos, endPos, ImGui::GetColorU32(IM_COL32(color, color, color, 128)));
+
+                                    ImGui::PopClipRect();
+                                }
+                            }
+                        }
 
                         // deal with mouse
                         // Only update hover and click location if the mouse is in the window
@@ -5432,19 +5577,19 @@ void ShowResourceView()
                             //if (mousePos[0] >= 0 && mousePos[1] >= 0 && mousePos[0] < res.m_size[0] && mousePos[1] < res.m_size[1])
                             {
                                 // set the mouse position
-                                g_resourceView.mousePosX = (int)mousePos.x;
-                                g_resourceView.mousePosY = (int)mousePos.y;
+                                g_resourceView.mousePosImageX = (int)(mousePos.x / g_imageZoom);
+                                g_resourceView.mousePosImageY = (int)(mousePos.y / g_imageZoom);
 
                                 // set the click position if it's set
                                 if (io.MouseDown[0])
                                 {
-                                    g_resourceView.mouseClickX = g_resourceView.mousePosX;
-                                    g_resourceView.mouseClickY = g_resourceView.mousePosY;
+                                    g_resourceView.mouseClickImageX = g_resourceView.mousePosImageX;
+                                    g_resourceView.mouseClickImageY = g_resourceView.mousePosImageY;
                                 }
 
                                 memcpy(g_resourceView.systemVarMouseStateLastFrame, g_resourceView.systemVarMouseState, sizeof(g_resourceView.systemVarMouseState));
-                                g_resourceView.systemVarMouseState[0] = float(g_resourceView.mousePosX) / g_imageZoom;
-                                g_resourceView.systemVarMouseState[1] = float(g_resourceView.mousePosY) / g_imageZoom;
+                                g_resourceView.systemVarMouseState[0] = float(g_resourceView.mousePosImageX);
+                                g_resourceView.systemVarMouseState[1] = float(g_resourceView.mousePosImageY);
                                 g_resourceView.systemVarMouseState[2] = io.MouseDown[0] ? 1.0f : 0.0f;
                                 g_resourceView.systemVarMouseState[3] = io.MouseDown[1] ? 1.0f : 0.0f;
 
@@ -5453,13 +5598,13 @@ void ShowResourceView()
                                 g_resourceView.systemVarMouse[3] = 0.0f;
                                 if (io.MouseDown[0])
                                 {
-                                    g_resourceView.systemVarMouse[0] = float(g_resourceView.mousePosX) / g_imageZoom;
-                                    g_resourceView.systemVarMouse[1] = float(g_resourceView.mousePosY) / g_imageZoom;
+                                    g_resourceView.systemVarMouse[0] = float(g_resourceView.mousePosImageX);
+                                    g_resourceView.systemVarMouse[1] = float(g_resourceView.mousePosImageY);
 
                                     if (!g_resourceView.mouseWasDownLastFrame)
                                     {
-                                        g_resourceView.systemVarMouse[2] = float(g_resourceView.mousePosX) / g_imageZoom;
-                                        g_resourceView.systemVarMouse[3] = float(g_resourceView.mousePosY) / g_imageZoom;
+                                        g_resourceView.systemVarMouse[2] = float(g_resourceView.mousePosImageX);
+                                        g_resourceView.systemVarMouse[3] = float(g_resourceView.mousePosImageY);
                                     }
                                 }
                                 g_resourceView.mouseWasDownLastFrame = io.MouseDown[0];
@@ -6110,7 +6255,7 @@ public:
 
                 // dimensions
                 data.dims.push_back(formatInfo.channelCount);
-                data.dims.push_back(data.data.size() / formatInfo.bytesPerPixel);
+                data.dims.push_back(vr->m_count);
                 std::reverse(data.dims.begin(), data.dims.end());
 
                 // strides
@@ -6176,6 +6321,185 @@ public:
                 return true;
             }
         }
+    }
+
+    RuntimeTypes::ViewableResource* PrepareSaveTexture(const char* viewableResourceName, const char* functionName)
+    {
+        // If they didn't say that it wants to be read back, we won't have read it back!
+        if (m_wantsReadback.count(viewableResourceName) == 0)
+        {
+            Log(LogLevel::Error, "Python: %s tried to read back resource \"%s\" without calling SetWantReadback() first.", functionName, viewableResourceName);
+            return nullptr;
+        }
+
+        // Get the viewable resource
+        RuntimeTypes::ViewableResource* vr = nullptr;
+        for (const RenderGraphNode& node : g_interpreter.GetRenderGraph().nodes)
+        {
+            g_interpreter.RuntimeNodeDataLambda(
+                node,
+                [&](auto node, auto* runtimeData)
+                {
+                    if (vr != nullptr || !runtimeData)
+                        return;
+                    for (RuntimeTypes::ViewableResource& viewableResource : runtimeData->m_viewableResources)
+                    {
+                        if (viewableResource.m_displayName == viewableResourceName)
+                        {
+                            vr = &viewableResource;
+                            break;
+                        }
+                    }
+                }
+            );
+        }
+
+        // Not having the resource may be a temporary thing, due to "frames in flight" causing latency
+        if (vr == nullptr || vr->m_resourceReadback == nullptr)
+        {
+            Log(LogLevel::Warn, "Python: %s could not read back resource \"%s\".  It is either invalid or doesn't yet exist. You may need to run the technique before the resource exists.", functionName, viewableResourceName);
+            return nullptr;
+        }
+
+        bool isTexture = true;
+        switch (vr->m_type)
+        {
+            case RuntimeTypes::ViewableResource::Type::Buffer:
+            case RuntimeTypes::ViewableResource::Type::ConstantBuffer:
+            {
+                isTexture = false;
+                break;
+            }
+        }
+
+        if (!isTexture)
+        {
+            Log(LogLevel::Warn, "Python: Host." __FUNCTION__ " resource \"%s\" is not a texture.", viewableResourceName);
+            return nullptr;
+        }
+
+        return vr;
+    }
+
+    bool SaveAsPNG(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        return ImageSave::SaveAsPng(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsDDS_BC4(const char* fileName, const char* viewableResourceName, bool signedData, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        options.bc45.isSigned = signedData;
+        return ImageSave::SaveAsDDS_BC4(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsDDS_BC5(const char* fileName, const char* viewableResourceName, bool signedData, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        options.bc45.isSigned = signedData;
+        return ImageSave::SaveAsDDS_BC5(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsDDS_BC6(const char* fileName, const char* viewableResourceName, bool signedData, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        options.bc6.isSigned = signedData;
+        return ImageSave::SaveAsDDS_BC6(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsDDS_BC7(const char* fileName, const char* viewableResourceName, bool sRGB, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        options.bc7.sRGB = sRGB;
+        return ImageSave::SaveAsDDS_BC7(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsEXR(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        return ImageSave::SaveAsEXR(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsHDR(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        return ImageSave::SaveAsHDR(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsCSV(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        return ImageSave::SaveAsCSV(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
+    }
+
+    bool SaveAsBinary(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) override final
+    {
+        RuntimeTypes::ViewableResource* vr = PrepareSaveTexture(viewableResourceName, __FUNCTION__);
+        if (!vr)
+            return false;
+
+        ImageSave::Options options;
+        options.saveAll = (arrayIndex < 0);
+        options.zIndex = arrayIndex;
+        options.mipIndex = mipIndex;
+        return ImageSave::SaveAsBinary(fileName, g_pd3dDevice, vr->m_resourceReadback, vr->m_origResourceDesc, options);
     }
 
     void RunTechnique(int runCount) override final
@@ -6335,12 +6659,17 @@ public:
             return;
         }
 
-        std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
+        if (fileName != nullptr && fileName[0] != 0)
+        {
+            std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
 
-        if (std::filesystem::path(fileName).is_relative())
-            desc.texture.fileName = (renderGraphDir / fileName).string();
+            if (std::filesystem::path(fileName).is_relative())
+                desc.texture.fileName = (renderGraphDir / fileName).string();
+            else
+                desc.texture.fileName = fileName;
+        }
         else
-            desc.texture.fileName = fileName;
+            desc.texture.fileName = "";
 
         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
     }

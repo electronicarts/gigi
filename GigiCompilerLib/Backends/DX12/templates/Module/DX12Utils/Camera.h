@@ -1,4 +1,4 @@
-#pragma once
+/*$(CopyrightHeader)*/#pragma once
 
 #include <stdint.h>
 #include <DirectXMath.h>

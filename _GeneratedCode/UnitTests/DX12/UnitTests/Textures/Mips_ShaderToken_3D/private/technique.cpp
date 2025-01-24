@@ -170,6 +170,16 @@ namespace Mips_ShaderToken_3D
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -870,7 +880,7 @@ namespace Mips_ShaderToken_3D
                         "Back"
                     };
 
-                    sprintf_s(indexedFileName, "%lsassets/..\\..\\skyboxes\\Test_%s.png", s_techniqueLocation.c_str(), c_cubeMapNames[textureIndex]);
+                    sprintf_s(indexedFileName, "%lsassets/..\\skyboxes\\Test_%s.png", s_techniqueLocation.c_str(), c_cubeMapNames[textureIndex]);
                     DX12Utils::TextureCache::Texture loadedTextureSlice = DX12Utils::TextureCache::GetAs(indexedFileName, true, desiredType, formatInfo.sRGB, formatInfo.channelCount);
 
                     if(!loadedTextureSlice.Valid())

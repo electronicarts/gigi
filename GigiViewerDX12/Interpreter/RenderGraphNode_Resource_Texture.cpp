@@ -225,6 +225,12 @@ bool ConvertPixelData(TextureCache::Texture& texture, DXGI_FORMAT newFormat)
 		if (fmtA == DXGI_FORMAT_BC7_UNORM && fmtB == DXGI_FORMAT_BC7_UNORM_SRGB)
 			return true;
 
+		if (fmtA == DXGI_FORMAT_BC4_UNORM && fmtB == DXGI_FORMAT_BC4_SNORM)
+			return true;
+
+		if (fmtA == DXGI_FORMAT_BC5_UNORM && fmtB == DXGI_FORMAT_BC5_SNORM)
+			return true;
+
 		if (fmtA == DXGI_FORMAT_BC6H_UF16 && fmtB == DXGI_FORMAT_BC6H_SF16)
 			return true;
 
@@ -789,6 +795,12 @@ bool GigiInterpreterPreviewWindowDX12::CreateAndUploadTextures(const RenderGraph
 		if (formatInfo.isCompressed && (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::UAV)))
 		{
 			m_logFn(LogLevel::Error, "Cannot create because texture is a compressed format, but is used with UAV access. This is not allowed. Node \"%s\"", node.name.c_str());
+			return false;
+		}
+
+		if (runtimeData.m_size[2] > 1 && node.dimension == TextureDimensionType::Texture2D)
+		{
+			m_logFn(LogLevel::Error, "Cannot create because size.z is > 1 (%i), but node is a texture 2d. Node \"%s\"", runtimeData.m_size[2], node.name.c_str());
 			return false;
 		}
 	}

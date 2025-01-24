@@ -296,6 +296,250 @@ namespace ImageSave
         );
     }
 
+    bool SaveAsDDS_BC4(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options)
+    {
+        // Get the pixel data
+        DXGI_FORMAT decodedFormat;
+        std::vector<unsigned char> decodedPixels;
+        if (!ImageReadback::GetDecodedImage(device, readbackResource, resourceOriginalDesc, decodedPixels, decodedFormat))
+            return false;
+
+        // Verify the pixel data is appropriate for this file type
+        DXGI_FORMAT_Info decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
+        if (decodedFormatInfo.channelType != DXGI_FORMAT_Info::ChannelType::_uint8_t)
+            return false;
+
+        // Get information about the subresources
+        bool is3D = (resourceOriginalDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D);
+        unsigned int numSlices = resourceOriginalDesc.MipLevels * resourceOriginalDesc.DepthOrArraySize;
+        unsigned int numSubResources = is3D ? resourceOriginalDesc.MipLevels : numSlices;
+        std::vector<unsigned char> layoutsMem((sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)) * numSubResources);
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutsMem.data();
+        D3D12_RESOURCE_DESC decodedDesc = resourceOriginalDesc;
+        decodedDesc.Format = decodedFormat;
+        device->GetCopyableFootprints(&decodedDesc, 0, numSubResources, 0, layouts, nullptr, nullptr, nullptr);
+
+        int arrayCount = is3D ? 1 : resourceOriginalDesc.DepthOrArraySize;
+        int mipCount = resourceOriginalDesc.MipLevels;
+
+        // for each array index
+        std::vector<DirectX::Image> images(options.saveAll ? numSlices : 1);
+        unsigned char* src = decodedPixels.data();
+        int imageIndex = 0;
+        for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+        {
+            // for each mip index
+            for (int mipIndex = 0; mipIndex < mipCount; ++mipIndex)
+            {
+                int zCount = 1;
+                if (is3D)
+                {
+                    unsigned int subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, resourceOriginalDesc.MipLevels, arrayCount);
+                    zCount = layouts[subresourceIndex].Footprint.Depth;
+                }
+
+                for (int zIndex = 0; zIndex < zCount; ++zIndex)
+                {
+                    // Get the information about this subresource
+                    unsigned int subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, resourceOriginalDesc.MipLevels, arrayCount);
+                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout = layouts[subresourceIndex];
+
+                    // Figure out if we should save this one
+                    bool shouldSave = options.saveAll;
+                    if (is3D)
+                        shouldSave |= (mipIndex == options.mipIndex && zIndex == options.zIndex);
+                    else
+                        shouldSave |= (mipIndex == options.mipIndex && arrayIndex == options.zIndex);
+
+                    // save the image if we should
+                    if (shouldSave)
+                    {
+                        DirectX::Image& image = images[imageIndex];
+                        imageIndex++;
+
+                        image.width = layout.Footprint.Width;
+                        image.height = layout.Footprint.Height;
+                        image.format = decodedFormatInfo.format;
+                        image.rowPitch = decodedFormatInfo.bytesPerPixel * image.width;
+                        image.slicePitch = image.rowPitch * image.height;
+                        image.pixels = src;
+                    }
+
+                    // Move past this subresource
+                    src += layout.Footprint.Width * layout.Footprint.Height * decodedFormatInfo.bytesPerPixel;
+                }
+            }
+        }
+
+        // Being lazy about calculating how many 2d images a 3d texture with mips needs.
+        if (imageIndex < images.size())
+            images.resize(imageIndex);
+
+        // make meta data
+        DirectX::TexMetadata metaData;
+        if (options.saveAll)
+        {
+            metaData.width = resourceOriginalDesc.Width;
+            metaData.height = resourceOriginalDesc.Height;
+            metaData.depth = is3D ? resourceOriginalDesc.DepthOrArraySize : 1;
+            metaData.arraySize = is3D ? 1 : resourceOriginalDesc.DepthOrArraySize;
+            metaData.mipLevels = resourceOriginalDesc.MipLevels;
+        }
+        else
+        {
+            metaData.width = images[0].width;
+            metaData.height = images[0].height;
+            metaData.depth = 1;
+            metaData.arraySize = 1;
+            metaData.mipLevels = 1;
+        }
+        metaData.miscFlags = 0;
+        metaData.miscFlags2 = 0;
+        metaData.format = decodedFormatInfo.format;
+        metaData.dimension = is3D ? DirectX::TEX_DIMENSION_TEXTURE3D : DirectX::TEX_DIMENSION_TEXTURE2D;
+
+        // Compress
+        DirectX::ScratchImage compressedImages;
+        HRESULT hr = DirectX::Compress(images.data(), images.size(), metaData, options.bc45.isSigned ? DXGI_FORMAT_BC4_SNORM : DXGI_FORMAT_BC4_UNORM, DirectX::TEX_COMPRESS_PARALLEL, DirectX::TEX_THRESHOLD_DEFAULT, compressedImages);
+        if (FAILED(hr))
+        {
+            return false;
+        }
+
+        // Save to disk
+        std::filesystem::path p(fileName);
+        p.replace_extension(".dds");
+        hr = DirectX::SaveToDDSFile(compressedImages.GetImages(), compressedImages.GetImageCount(), compressedImages.GetMetadata(), DirectX::DDS_FLAGS_NONE, p.wstring().c_str());
+        if (FAILED(hr))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    bool SaveAsDDS_BC5(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options)
+    {
+        // Get the pixel data
+        DXGI_FORMAT decodedFormat;
+        std::vector<unsigned char> decodedPixels;
+        if (!ImageReadback::GetDecodedImage(device, readbackResource, resourceOriginalDesc, decodedPixels, decodedFormat))
+            return false;
+
+        // Verify the pixel data is appropriate for this file type
+        DXGI_FORMAT_Info decodedFormatInfo = Get_DXGI_FORMAT_Info(decodedFormat);
+        if (decodedFormatInfo.channelType != DXGI_FORMAT_Info::ChannelType::_uint8_t)
+            return false;
+
+        // Get information about the subresources
+        bool is3D = (resourceOriginalDesc.Dimension == D3D12_RESOURCE_DIMENSION_TEXTURE3D);
+        unsigned int numSlices = resourceOriginalDesc.MipLevels * resourceOriginalDesc.DepthOrArraySize;
+        unsigned int numSubResources = is3D ? resourceOriginalDesc.MipLevels : numSlices;
+        std::vector<unsigned char> layoutsMem((sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)) * numSubResources);
+        D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layouts = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutsMem.data();
+        D3D12_RESOURCE_DESC decodedDesc = resourceOriginalDesc;
+        decodedDesc.Format = decodedFormat;
+        device->GetCopyableFootprints(&decodedDesc, 0, numSubResources, 0, layouts, nullptr, nullptr, nullptr);
+
+        int arrayCount = is3D ? 1 : resourceOriginalDesc.DepthOrArraySize;
+        int mipCount = resourceOriginalDesc.MipLevels;
+
+        // for each array index
+        std::vector<DirectX::Image> images(options.saveAll ? numSlices : 1);
+        unsigned char* src = decodedPixels.data();
+        int imageIndex = 0;
+        for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+        {
+            // for each mip index
+            for (int mipIndex = 0; mipIndex < mipCount; ++mipIndex)
+            {
+                int zCount = 1;
+                if (is3D)
+                {
+                    unsigned int subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, resourceOriginalDesc.MipLevels, arrayCount);
+                    zCount = layouts[subresourceIndex].Footprint.Depth;
+                }
+
+                for (int zIndex = 0; zIndex < zCount; ++zIndex)
+                {
+                    // Get the information about this subresource
+                    unsigned int subresourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, resourceOriginalDesc.MipLevels, arrayCount);
+                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout = layouts[subresourceIndex];
+
+                    // Figure out if we should save this one
+                    bool shouldSave = options.saveAll;
+                    if (is3D)
+                        shouldSave |= (mipIndex == options.mipIndex && zIndex == options.zIndex);
+                    else
+                        shouldSave |= (mipIndex == options.mipIndex && arrayIndex == options.zIndex);
+
+                    // save the image if we should
+                    if (shouldSave)
+                    {
+                        DirectX::Image& image = images[imageIndex];
+                        imageIndex++;
+
+                        image.width = layout.Footprint.Width;
+                        image.height = layout.Footprint.Height;
+                        image.format = decodedFormatInfo.format;
+                        image.rowPitch = decodedFormatInfo.bytesPerPixel * image.width;
+                        image.slicePitch = image.rowPitch * image.height;
+                        image.pixels = src;
+                    }
+
+                    // Move past this subresource
+                    src += layout.Footprint.Width * layout.Footprint.Height * decodedFormatInfo.bytesPerPixel;
+                }
+            }
+        }
+
+        // Being lazy about calculating how many 2d images a 3d texture with mips needs.
+        if (imageIndex < images.size())
+            images.resize(imageIndex);
+
+        // make meta data
+        DirectX::TexMetadata metaData;
+        if (options.saveAll)
+        {
+            metaData.width = resourceOriginalDesc.Width;
+            metaData.height = resourceOriginalDesc.Height;
+            metaData.depth = is3D ? resourceOriginalDesc.DepthOrArraySize : 1;
+            metaData.arraySize = is3D ? 1 : resourceOriginalDesc.DepthOrArraySize;
+            metaData.mipLevels = resourceOriginalDesc.MipLevels;
+        }
+        else
+        {
+            metaData.width = images[0].width;
+            metaData.height = images[0].height;
+            metaData.depth = 1;
+            metaData.arraySize = 1;
+            metaData.mipLevels = 1;
+        }
+        metaData.miscFlags = 0;
+        metaData.miscFlags2 = 0;
+        metaData.format = decodedFormatInfo.format;
+        metaData.dimension = is3D ? DirectX::TEX_DIMENSION_TEXTURE3D : DirectX::TEX_DIMENSION_TEXTURE2D;
+
+        // Compress
+        DirectX::ScratchImage compressedImages;
+        HRESULT hr = DirectX::Compress(images.data(), images.size(), metaData, options.bc45.isSigned ? DXGI_FORMAT_BC5_SNORM : DXGI_FORMAT_BC5_UNORM, DirectX::TEX_COMPRESS_PARALLEL, DirectX::TEX_THRESHOLD_DEFAULT, compressedImages);
+        if (FAILED(hr))
+        {
+            return false;
+        }
+
+        // Save to disk
+        std::filesystem::path p(fileName);
+        p.replace_extension(".dds");
+        hr = DirectX::SaveToDDSFile(compressedImages.GetImages(), compressedImages.GetImageCount(), compressedImages.GetMetadata(), DirectX::DDS_FLAGS_NONE, p.wstring().c_str());
+        if (FAILED(hr))
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     bool SaveAsDDS_BC6(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options)
     {
         // Get the pixel data

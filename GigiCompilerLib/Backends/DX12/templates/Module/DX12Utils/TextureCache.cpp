@@ -1,4 +1,4 @@
-#include "TextureCache.h"
+/*$(CopyrightHeader)*/#include "TextureCache.h"
 #include "FileCache.h"
 
 #include <filesystem>

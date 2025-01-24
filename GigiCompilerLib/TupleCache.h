@@ -8,14 +8,14 @@
 #include <unordered_map>
 #include <tuple>
 
-// Generic tuple hasher from https://stackoverflow.com/questions/20834838/using-tuple-in-unordered-map
+// Portions of this software were based on https://stackoverflow.com/questions/20834838/using-tuple-in-unordered-map
 // function has to live in the std namespace 
 // so that it is picked up by argument-dependent name lookup (ADL).
 namespace std {
     namespace
     {
 
-        // Code from boost
+        // Portions of this software were based on code from boost
         // Reciprocal of the golden ratio helps spread entropy
         //     and handles duplicates.
         // See Mike Seymour in magic-numbers-in-boosthash-combine:

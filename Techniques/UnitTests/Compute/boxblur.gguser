@@ -8,7 +8,7 @@
         {
             "nodeName": "InputTexture",
             "texture": {
-                "fileName": "..\\..\\cabinsmall.png"
+                "fileName": "..\\cabinsmall.png"
             }
         }
     ],

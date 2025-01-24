@@ -3,6 +3,8 @@
 //        Copyright (c) 2024 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
+// Portions of this software were based on https://simoncoenen.com/blog/programming/graphics/DxcCompiling
+
 #include "CompileShaders.h"
 
 #include <d3d12.h>
@@ -13,7 +15,6 @@
 
 #pragma comment(lib, "dxcompiler.lib")
 
-// https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 class IncludeHandlerDXC : public IDxcIncludeHandler
 {
 public:

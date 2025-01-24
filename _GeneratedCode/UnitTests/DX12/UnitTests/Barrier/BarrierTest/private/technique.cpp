@@ -251,6 +251,16 @@ namespace BarrierTest
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);

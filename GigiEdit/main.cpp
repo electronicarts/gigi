@@ -619,16 +619,19 @@ struct Example :
         }
         else
         {
-            m_BuildOutputBuffer.clear();
+            //m_BuildOutputBuffer.clear();
             Backend backend;
             GigiBuildFlavorBackend(g_gigiBuildFlavor, backend);
+
+            std::filesystem::path renderGraphDirectory(g_renderGraphFileName);
+            renderGraphDirectory.replace_filename("");
 
             switch (backend)
             {
                 // Build individual backends
                 #include "external/df_serialize/_common.h"
                 #define ENUM_BEGIN(_NAME, _DESCRIPTION)
-                #define ENUM_ITEM(_NAME, _DESCRIPTION) case Backend::##_NAME: GigiCompile(g_gigiBuildFlavor, g_renderGraphFileName, g_renderGraph.buildSettings.out##_NAME, PostLoad_##_NAME, nullptr, false); break;
+                #define ENUM_ITEM(_NAME, _DESCRIPTION) case Backend::##_NAME: GigiCompile(g_gigiBuildFlavor, g_renderGraphFileName, std::filesystem::weakly_canonical(std::filesystem::path(renderGraphDirectory) / g_renderGraph.buildSettings.out##_NAME).string(), PostLoad_##_NAME, nullptr, false); break;
                 #define ENUM_END()
                 #include "Schemas/BackendList.h"
             }
@@ -961,8 +964,29 @@ struct Example :
                         &si,
                         &pi);
                 }
+
+                if (ImGui::Button("Open Browser"))
+                {
+                    STARTUPINFOA si;
+                    ZeroMemory(&si, sizeof(si));
+                    si.cb = sizeof(si);
+
+                    PROCESS_INFORMATION pi;
+
+                    CreateProcessA(
+                        nullptr,
+                        (char*)"GigiBrowser.exe",
+                        nullptr,
+                        nullptr,
+                        FALSE,
+                        0,
+                        nullptr,
+                        nullptr,
+                        &si,
+                        &pi);
+                }
+                ImGui::PopStyleVar(1);
             }
-            ImGui::PopStyleVar(1);
 
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
 
@@ -2101,6 +2125,16 @@ struct Example :
 			{
 				SaveGraph((io.KeyShift || g_renderGraphFileName.empty()) ? nullptr : g_renderGraphFileName.c_str());
 			}
+        }
+
+        // Drag and drop file loading
+        {
+            std::string dragFileName = GetAndClearDragFile();
+            if (!dragFileName.empty())
+            {
+                if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
+                    LoadJSONFile(dragFileName.c_str());
+            }
         }
 
         HandleMainMenu();

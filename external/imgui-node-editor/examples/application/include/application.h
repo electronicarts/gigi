@@ -45,6 +45,18 @@ struct Application
     virtual bool CanClose() { return true; }
 
     // Gigi change begin
+    std::string GetAndClearDragFile()
+    {
+        std::string ret = m_dragFile;
+        m_dragFile.clear();
+        return ret;
+    }
+
+    void SetDragFile(const char* file)
+    {
+        m_dragFile = file;
+    }
+
 protected:
 	void SetStyleAndTheme(bool dark = true);
     // Gigi change end
@@ -59,6 +71,10 @@ protected:
     ImGuiContext*               m_Context = nullptr;
     ImFont*                     m_DefaultFont = nullptr;
     ImFont*                     m_HeaderFont = nullptr;
+
+    // Gigi change begin
+    std::string                 m_dragFile;
+    // Gigi change end
 };
 
 int Main(int argc, char** argv);

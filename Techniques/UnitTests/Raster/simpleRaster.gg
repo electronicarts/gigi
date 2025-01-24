@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "simpleRaster",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "MouseState",
@@ -181,8 +181,8 @@
                 ],
                 "frontIsCounterClockwise": false,
                 "vertexBuffer": {
-                    "node": "VertexBuffer",
-                    "pin": "resource"
+                    "node": "CopyVBs",
+                    "pin": "dest"
                 },
                 "colorTargets": [
                     {
@@ -207,8 +207,8 @@
             "resourceBuffer": {
                 "name": "VertexBuffer",
                 "editorPos": [
-                    341.0,
-                    434.0
+                    247.0,
+                    418.0
                 ],
                 "visibility": "Imported"
             }
@@ -248,6 +248,48 @@
                     "node": {
                         "name": "Color Buffer"
                     }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VBCopy",
+                "comment": "This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.",
+                "editorPos": [
+                    251.0,
+                    354.0
+                ],
+                "format": {
+                    "structureType": {
+                        "name": "VertexFormat"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "VertexBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopyVBs",
+                "comment": "This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.",
+                "editorPos": [
+                    372.0,
+                    367.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "VertexBuffer",
+                    "pin": "resource"
+                },
+                "dest": {
+                    "node": "VBCopy",
+                    "pin": "resource"
                 }
             }
         }

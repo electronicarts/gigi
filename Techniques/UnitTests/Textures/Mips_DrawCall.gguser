@@ -19,7 +19,7 @@
             "nodeName": "SphereVB",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\sphere.obj",
+                "fileName": "..\\OBJAssets\\sphere.obj",
                 "structIndex": 0,
                 "BLASOpaque": true
             }
@@ -28,7 +28,7 @@
             "nodeName": "VertexBuffer",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                "fileName": "..\\OBJAssets\\bunny.obj",
                 "structIndex": 0,
                 "BLASOpaque": true
             }

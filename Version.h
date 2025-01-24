@@ -4,4 +4,5 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #define GIGI_VERSION() "0.99b"
-#define GIGI_VERSION_WITH_BUILD_NUMBER() "0.99.5"
+#define GIGI_VERSION_WITH_BUILD_NUMBER() "0.99.6"
+#define BROWSER_DB_VERSION() "1.0"

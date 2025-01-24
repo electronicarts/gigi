@@ -36,15 +36,23 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		{
 			// shader samplers
 			std::vector<D3D12_STATIC_SAMPLER_DESC> samplers;
+			int samplerIndex = -1;
 			for (const ShaderSampler& sampler : node.shader.shader->samplers)
 			{
+				samplerIndex++;
 				D3D12_STATIC_SAMPLER_DESC desc;
 
 				if (!SamplerFilterToD3D12Filter(sampler.filter, desc.Filter))
+				{
+					m_logFn(LogLevel::Error, "Shader \"%s\" has an invalid sampler filter for sampler %i: \"%s\"", node.shader.shader->name.c_str(), samplerIndex, EnumToString(sampler.filter));
 					return false;
+				}
 
 				if (!SamplerAddressModeToD3D12AddressMode(sampler.addressMode, desc.AddressU))
+				{
+					m_logFn(LogLevel::Error, "Shader \"%s\" has an invalid address mode for sampler %i: \"%s\"", node.shader.shader->name.c_str(), samplerIndex, EnumToString(sampler.addressMode));
 					return false;
+				}
 
 				desc.AddressV = desc.AddressW = desc.AddressU;
 
@@ -73,7 +81,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					case ShaderResourceAccessType::RTScene:
 					case ShaderResourceAccessType::SRV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
 					case ShaderResourceAccessType::CBV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-					default: return false;
+					default:
+					{
+						m_logFn(LogLevel::Error, "Shader \"%s\" unhandled resource access: \"%s\"", node.shader.shader->name.c_str(), EnumToString(resource.access));
+						return false;
+					}
 				}
 
 				desc.NumDescriptors = 1;
@@ -195,7 +207,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			}
 
 			if (!runtimeData.m_pso)
+			{
+				m_logFn(LogLevel::Error, "Shader \"%s\" Could not create PSO", node.shader.shader->name.c_str());
 				return false;
+			}
 
 			// name the PSO for debuggers
 			runtimeData.m_pso->SetName(ToWideString(node.entryPoint.empty() ? node.shader.shader->entryPoint.c_str() : node.entryPoint.c_str()).c_str());

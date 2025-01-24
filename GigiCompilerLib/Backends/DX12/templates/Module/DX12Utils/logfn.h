@@ -1,4 +1,4 @@
-#pragma once
+/*$(CopyrightHeader)*/#pragma once
 
 enum class LogLevel : int
 {

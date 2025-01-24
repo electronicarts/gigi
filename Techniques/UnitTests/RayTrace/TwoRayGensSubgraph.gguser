@@ -12,7 +12,7 @@
             {
                 "nodeName": "BlueChannel",
                 "texture": {
-                    "fileName": "..\\..\\cabinsmall.png"
+                    "fileName": "..\\cabinsmall.png"
                 }
             },
             {

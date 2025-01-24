@@ -23,6 +23,7 @@ unsupportedTests = [
     "Python\\GPUWrite",
     "Python\\profiling",
     "ShaderAssert\\assertsTest",
+    "Textures\\Save",
 
     # Viewer Only - These make sure the viewer will make mips of imported textures when asked
     "Textures\\Mips_Imported_2D",
@@ -100,27 +101,33 @@ for fileName in glob.glob(path + "UnitTests\\**\\readme.txt", recursive = True):
 # // Gigi Modification Begin - Includes And Context
 newString1 = ""
 newString2 = ""
+newString3 = "\nbool g_doSubsetTest = false; // If true, it will only test the techniques set to true below\n"
 for technique in techniqueList:
     newString1 += "\n#include \"" + technique[0] + "\\public\\technique.h\""
     newString1 += "\n#include \"" + technique[0] + "\\public\\imgui.h\""
     newString1 += "\n#include \"" + technique[0] + "\\private\\technique.h\""
     newString2 += "\n" + technique[1] + "::Context* m_" + technique[1] + " = nullptr;"
+    newString3 += "\nbool g_doTest_" + technique[1] + " = false;"
 newString2 += "\n\n#include \"UnitTestLogic.h\""
-data = ReplaceSection(data, "// Gigi Modification Begin - Includes And Context", "// Gigi Modification End", newString1 + "\n" + newString2 + "\n")
+data = ReplaceSection(data, "// Gigi Modification Begin - Includes And Context", "// Gigi Modification End", newString1 + "\n" + newString2 + "\n" + newString3 + "\n")
 
 # // Gigi Modification Begin - Create Context
 newString = ""
 for technique in techniqueList:
-    newString += "\n    " + technique[1] + "::Context::LogFn = &LogFunction;"
-    newString += "\n    " + technique[1] + "::Context::PerfEventBeginFn = &PerfEventBeginFn;"
-    newString += "\n    " + technique[1] + "::Context::PerfEventEndFn = &PerfEventEndFn;"
-    newString += "\n    " + technique[1] + "::Context::s_techniqueLocation = L\".\\\\" + technique[0].replace("\\", "\\\\") + "\\\\\";"
-    newString += "\n    m_" + technique[1] + " = " + technique[1] + "::CreateContext(g_pd3dDevice);"
-    newString += "\n    if (!m_" + technique[1] + ")"
+    newString += "\n    if (!g_doSubsetTest || g_doTest_" + technique[1] + ")"
     newString += "\n    {"
-    newString += "\n        printf(\"Could not create m_" + technique[1] + " context\");"
-    newString += "\n        return 1;"
+    newString += "\n        " + technique[1] + "::Context::LogFn = &LogFunction;"
+    newString += "\n        " + technique[1] + "::Context::PerfEventBeginFn = &PerfEventBeginFn;"
+    newString += "\n        " + technique[1] + "::Context::PerfEventEndFn = &PerfEventEndFn;"
+    newString += "\n        " + technique[1] + "::Context::s_techniqueLocation = L\".\\\\" + technique[0].replace("\\", "\\\\") + "\\\\\";"
+    newString += "\n        m_" + technique[1] + " = " + technique[1] + "::CreateContext(g_pd3dDevice);"
+    newString += "\n        if (!m_" + technique[1] + ")"
+    newString += "\n        {"
+    newString += "\n            printf(\"Could not create m_" + technique[1] + " context\");"
+    newString += "\n            return 1;"
+    newString += "\n        }"
     newString += "\n    }"
+    newString += "\n"
 data = ReplaceSection(data, "// Gigi Modification Begin - Create Context", "    // Gigi Modification End", newString + "\n")
 
 # // Gigi Modification Begin - UI
@@ -136,11 +143,14 @@ newString2 = ""
 newString3 = ""
 newString4 = ""
 for technique in techniqueList:
-    newString1 += "\n        " + technique[1] + "::OnNewFrame(NUM_FRAMES_IN_FLIGHT);"
-    newString2 += "\n        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_" + technique[1] + ", UnitTestEvent::PreExecute);"
+    newString1 += "\n        if (m_" + technique[1] + ")"
+    newString1 += "\n            " + technique[1] + "::OnNewFrame(NUM_FRAMES_IN_FLIGHT);"
+    newString2 += "\n        if (m_" + technique[1] + ")"
+    newString2 += "\n            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_" + technique[1] + ", UnitTestEvent::PreExecute);"
     newString3 += "\n        if (m_" + technique[1] + ")"
     newString3 += "\n            " + technique[1] + "::Execute(m_" + technique[1] + ", g_pd3dDevice, g_pd3dCommandList);"
-    newString4 += "\n        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_" + technique[1] + ", UnitTestEvent::PostExecute);"
+    newString4 += "\n        if (m_" + technique[1] + ")"
+    newString4 += "\n            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_" + technique[1] + ", UnitTestEvent::PostExecute);"
 data = ReplaceSection(data, "// Gigi Modification Begin - OnNewFrame and Execute", "        // Gigi Modification End", newString1 + "\n" + newString2 + "\n" + newString3 + "\n"+ newString4 + "\n")
 
 # // Gigi Modification Begin - Destroy Contexts

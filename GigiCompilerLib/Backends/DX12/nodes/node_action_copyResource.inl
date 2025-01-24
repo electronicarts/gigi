@@ -60,10 +60,19 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         }
 
         stringReplacementMap["/*$(Execute)*/"] <<
-            "\n            commandList->CopyResource(" <<
+            "\n            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use"
+            "\n            unsigned int srcSize = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) << "->GetDesc().Width;"
+            "\n            unsigned int destSize = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << "->GetDesc().Width;"
+            "\n            if (srcSize == destSize)"
+            "\n                commandList->CopyResource("
             "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << ", "
             "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) <<
-            ");";
+            ");"
+            "\n            else"
+            "\n                commandList->CopyBufferRegion("
+            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << ", 0, "
+            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) << ", 0, min(srcSize, destSize));"
+            ;
     }
     else
     {

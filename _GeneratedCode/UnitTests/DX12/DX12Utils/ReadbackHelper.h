@@ -115,7 +115,7 @@ public:
 
 				D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
 				DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(newRequest.resourceDesc.Format, logFn);
-				UINT firstSubResource = D3D12CalcSubresource(mipIndex, arrayIndex, resourceFormatInfo.planeIndex, newRequest.resourceDesc.MipLevels, newRequest.resourceDesc.DepthOrArraySize);
+				UINT firstSubResource = D3D12CalcSubresource(mipIndex, 0, resourceFormatInfo.planeIndex, newRequest.resourceDesc.MipLevels, newRequest.resourceDesc.DepthOrArraySize);
 
 				unsigned char layoutMem[sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)];
 				D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutMem;

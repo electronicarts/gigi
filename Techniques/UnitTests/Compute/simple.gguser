@@ -5,7 +5,7 @@
         {
             "nodeName": "Input",
             "texture": {
-                "fileName": "..\\..\\cabinsmall.png"
+                "fileName": "..\\cabinsmall.png"
             }
         }
     ]

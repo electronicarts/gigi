@@ -1,0 +1,79 @@
+'\" t
+.\"     Title: git-lfs-push
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-PUSH" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-push \- Push queued large files to the Git LFS endpoint
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs push\fP [options] <remote> [<ref>...]
+.br
+\f(CRgit lfs push\fP <remote> [<ref>...]
+.br
+\f(CRgit lfs push\fP [options] <remote> \-\-stdin
+\f(CRgit lfs push\fP \-\-object\-id <remote> [<oid>...]
+\f(CRgit lfs push\fP \-\-object\-id <remote> \-\-stdin
+.SH "DESCRIPTION"
+.sp
+Upload Git LFS files to the configured endpoint for the current Git
+remote. By default, it filters out objects that are already referenced
+by the local clone of the remote.
+.SH "OPTIONS"
+.sp
+\f(CR\-\-dry\-run\fP
+.RS 4
+Print the files that would be pushed, without actually pushing them.
+.RE
+.sp
+\f(CR\-\-all\fP
+.RS 4
+This pushes all objects to the remote that are referenced by any commit
+reachable from the refs provided as arguments. If no refs are provided, then
+all local refs are pushed. Note that this behavior differs from that of
+git\-lfs\-fetch(1) when its \f(CR\-\-all\fP option is used; in that case, all refs are
+fetched, including refs other than those under \f(CRrefs/heads\fP and \f(CRrefs/tags\fP.
+If you are migrating a repository with these commands, make sure to run \f(CRgit
+lfs push\fP for any additional remote refs that contain Git LFS objects not
+reachable from your local refs.
+.RE
+.sp
+\f(CR\-\-object\-id\fP
+.RS 4
+This pushes only the object OIDs listed at the end of the command, separated
+by spaces.
+.RE
+.sp
+\f(CR\-\-stdin\fP
+.RS 4
+Read a list of newline\-delimited refs (or object IDs when using \f(CR\-\-object\-id\fP)
+from standard input instead of the command line.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-fetch(1), git\-lfs\-pre\-push(1).
+.sp
+Part of the git\-lfs(1) suite.

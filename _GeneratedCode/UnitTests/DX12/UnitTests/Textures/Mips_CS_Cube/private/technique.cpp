@@ -323,6 +323,16 @@ namespace Mips_CS_Cube
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -1155,15 +1165,15 @@ namespace Mips_CS_Cube
                 else if (formatInfo.channelType == DX12Utils::DXGI_FORMAT_Info::ChannelType::_float)
                     desiredType = DX12Utils::TextureCache::Type::F32;
                 else
-                    Context::LogFn(LogLevel::Error, "Unhandled channel type for image: ../../cabinsmall.png");
+                    Context::LogFn(LogLevel::Error, "Unhandled channel type for image: ../cabinsmall.png");
 
                 char loadedTextureFileName[1024];
-                sprintf_s(loadedTextureFileName, "%lsassets/../../cabinsmall.png", s_techniqueLocation.c_str());
+                sprintf_s(loadedTextureFileName, "%lsassets/../cabinsmall.png", s_techniqueLocation.c_str());
 
                 loadedTextureSlices.push_back(DX12Utils::TextureCache::GetAs(loadedTextureFileName, true, desiredType, formatInfo.sRGB, formatInfo.channelCount));
                 DX12Utils::TextureCache::Texture& loadedTexture = loadedTextureSlices[0];
                 if(!loadedTexture.Valid())
-                    Context::LogFn(LogLevel::Error, "Could not load image: ../../cabinsmall.png");
+                    Context::LogFn(LogLevel::Error, "Could not load image: ../cabinsmall.png");
 
                 unsigned int size[3] = { (unsigned int)loadedTexture.width, (unsigned int)loadedTexture.height, 1 };
 

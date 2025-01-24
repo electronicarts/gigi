@@ -7,7 +7,7 @@
             {
                 "nodeName": "Input2D",
                 "texture": {
-                    "fileName": "..\\..\\cabinsmall.dds",
+                    "fileName": "..\\..\\UnitTests\\cabinsmall.dds",
                     "format": "BC7_Unorm_sRGB",
                     "binaryFormat": "Any"
                 }
@@ -15,7 +15,7 @@
             {
                 "nodeName": "Input3D",
                 "texture": {
-                    "fileName": "..\\..\\cabinsmall.dds",
+                    "fileName": "..\\..\\UnitTests\\cabinsmall.dds",
                     "format": "BC7_Unorm_sRGB",
                     "binaryFormat": "Any"
                 }

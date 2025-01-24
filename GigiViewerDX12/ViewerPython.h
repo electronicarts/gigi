@@ -41,6 +41,15 @@ public:
 	virtual void SetDisableGGUserSave(bool set) = 0;
 	virtual void SetWantReadback(const char* viewableResourceName, bool wantsReadback) = 0;
 	virtual bool Readback(const char* viewableResourceName, int arrayIndex, int mipIndex, GigiArray& data) = 0;
+	virtual bool SaveAsPNG(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsDDS_BC4(const char* fileName, const char* viewableResourceName, bool signedData, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsDDS_BC5(const char* fileName, const char* viewableResourceName, bool signedData, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsDDS_BC6(const char* fileName, const char* viewableResourceName, bool signedData, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsDDS_BC7(const char* fileName, const char* viewableResourceName, bool sRGB, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsEXR(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsHDR(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsCSV(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) = 0;
+	virtual bool SaveAsBinary(const char* fileName, const char* viewableResourceName, int arrayIndex, int mipIndex) = 0;
 	virtual void RunTechnique(int runCount) = 0;
 	virtual void SetFrameIndex(int frameIndex) = 0;
 	virtual void WaitOnGPU() = 0;

@@ -10,6 +10,9 @@ win64_build_release:
     - .\\buildscripts\\Build_Release.bat
   artifacts:
     paths:
+      - GigiBrowser.exe
+      - GigiBrowser.pdb
+      - browserservers.txt
       - GigiViewerDX12.exe
       - GigiViewerDX12.pdb
       - GigiViewerDX12.exp
@@ -42,6 +45,7 @@ win64_build_release:
       - UserDocumentation/*
       - external/AgilitySDK/bin/*
       - external/fonts/OpenSans-Regular.ttf
+      - external/git/*
       - GigiCompilerLib/Backends/DX12/templates/*
       - GigiCompilerLib/Backends/Frostbite/templates/*
       - GigiCompilerLib/Backends/UE_5_3/templates/*

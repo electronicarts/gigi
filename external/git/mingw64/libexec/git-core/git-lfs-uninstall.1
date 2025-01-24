@@ -1,0 +1,94 @@
+'\" t
+.\"     Title: git-lfs-uninstall
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-UNINSTALL" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-uninstall \- Remove Git LFS configuration
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs uninstall\fP
+.SH "DESCRIPTION"
+.sp
+Perform the following actions to remove the Git LFS configuration:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Remove the "lfs" clean and smudge filters from the global Git config.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Uninstall the Git LFS pre\-push hook if run from inside a Git
+repository.
+.RE
+.SH "OPTIONS"
+.sp
+\f(CR\-\-local\fP
+.RS 4
+Removes the "lfs" smudge and clean filters from the local repository\(cqs git
+config, instead of the global git config (~/.gitconfig).
+.RE
+.sp
+\f(CR\-\-worktree\fP
+.RS 4
+Removes the "lfs" smudge and clean filters from the current working tree\(cqs git
+config, instead of the global git config (~/.gitconfig) or local repository\(cqs
+git config ($GIT_DIR/config). If multiple working trees are in use, the Git
+config extension \f(CRworktreeConfig\fP must be enabled to use this option. If only
+one working tree is in use, \f(CR\-\-worktree\fP has the same effect as \f(CR\-\-local\fP.
+This option is only available if the installed Git version is at least 2.20.0
+and therefore supports the "worktreeConfig" extension.
+.RE
+.sp
+\f(CR\-\-system\fP
+.RS 4
+Removes the "lfs" smudge and clean filters from the system git config, instead
+of the global git config (~/.gitconfig).
+.RE
+.sp
+\f(CR\-\-skip\-repo\fP
+.RS 4
+Skips cleanup of the local repo; use if you want to uninstall the global lfs
+filters but not make changes to the current repo.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-install(1), git\-worktree(1).
+.sp
+Part of the git\-lfs(1) suite.

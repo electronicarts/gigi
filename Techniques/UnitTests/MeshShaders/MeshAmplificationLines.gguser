@@ -19,7 +19,7 @@
             "nodeName": "VertexBuffer",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                "fileName": "..\\OBJAssets\\bunny.obj",
                 "structIndex": 0,
                 "BLASOpaque": true
             }

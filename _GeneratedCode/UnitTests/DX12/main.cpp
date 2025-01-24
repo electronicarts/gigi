@@ -174,6 +174,9 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 #include "UnitTests\Raster\simpleRaster2\public\technique.h"
 #include "UnitTests\Raster\simpleRaster2\public\imgui.h"
 #include "UnitTests\Raster\simpleRaster2\private\technique.h"
+#include "UnitTests\Raster\simpleRasterInSubgraph\public\technique.h"
+#include "UnitTests\Raster\simpleRasterInSubgraph\public\imgui.h"
+#include "UnitTests\Raster\simpleRasterInSubgraph\private\technique.h"
 #include "UnitTests\Raster\simpleRaster_Lines\public\technique.h"
 #include "UnitTests\Raster\simpleRaster_Lines\public\imgui.h"
 #include "UnitTests\Raster\simpleRaster_Lines\private\technique.h"
@@ -320,6 +323,7 @@ MeshAmplificationLines::Context* m_MeshAmplificationLines = nullptr;
 NoVertex_NoIndex_NoInstance::Context* m_NoVertex_NoIndex_NoInstance = nullptr;
 simpleRaster::Context* m_simpleRaster = nullptr;
 simpleRaster2::Context* m_simpleRaster2 = nullptr;
+simpleRasterInSubgraph::Context* m_simpleRasterInSubgraph = nullptr;
 simpleRaster_Lines::Context* m_simpleRaster_Lines = nullptr;
 simpleRaster_Points::Context* m_simpleRaster_Points = nullptr;
 Stencil::Context* m_Stencil = nullptr;
@@ -365,6 +369,69 @@ TextureCubeRW_RGS::Context* m_TextureCubeRW_RGS = nullptr;
 TextureFormats::Context* m_TextureFormats = nullptr;
 
 #include "UnitTestLogic.h"
+
+bool g_doSubsetTest = false; // If true, it will only test the techniques set to true below
+
+bool g_doTest_BarrierTest = false;
+bool g_doTest_buffertest = false;
+bool g_doTest_StructuredBuffer = false;
+bool g_doTest_boxblur = false;
+bool g_doTest_IndirectDispatch = false;
+bool g_doTest_ReadbackSequence = false;
+bool g_doTest_simple = false;
+bool g_doTest_SlangAutoDiff = false;
+bool g_doTest_CopyResourceTest = false;
+bool g_doTest_CopyResourceTest_FB = false;
+bool g_doTest_Mesh = false;
+bool g_doTest_MeshAmplification = false;
+bool g_doTest_MeshAmplificationLines = false;
+bool g_doTest_NoVertex_NoIndex_NoInstance = false;
+bool g_doTest_simpleRaster = false;
+bool g_doTest_simpleRaster2 = false;
+bool g_doTest_simpleRasterInSubgraph = false;
+bool g_doTest_simpleRaster_Lines = false;
+bool g_doTest_simpleRaster_Points = false;
+bool g_doTest_Stencil = false;
+bool g_doTest_VRS = false;
+bool g_doTest_YesVertexStruct_NoIndex_NoInstance = false;
+bool g_doTest_YesVertexStruct_NoIndex_YesInstanceStruct = false;
+bool g_doTest_YesVertexStruct_NoIndex_YesInstanceType = false;
+bool g_doTest_YesVertexStruct_YesIndex_NoInstance = false;
+bool g_doTest_YesVertexType_NoIndex_NoInstance = false;
+bool g_doTest_AnyHit = false;
+bool g_doTest_AnyHitSimple = false;
+bool g_doTest_IntersectionShader = false;
+bool g_doTest_simpleRT = false;
+bool g_doTest_simpleRT_inline = false;
+bool g_doTest_TwoRayGens = false;
+bool g_doTest_TwoRayGensSubgraph = false;
+bool g_doTest_SubGraphLoops = false;
+bool g_doTest_SubGraphTest = false;
+bool g_doTest_SubInSub = false;
+bool g_doTest_Mips_CS_2D = false;
+bool g_doTest_Mips_CS_2DArray = false;
+bool g_doTest_Mips_CS_3D = false;
+bool g_doTest_Mips_CS_Cube = false;
+bool g_doTest_Mips_DrawCall = false;
+bool g_doTest_Mips_RGS_2D = false;
+bool g_doTest_Mips_ShaderToken_2D = false;
+bool g_doTest_Mips_ShaderToken_2DArray = false;
+bool g_doTest_Mips_ShaderToken_3D = false;
+bool g_doTest_Mips_ShaderToken_Cube = false;
+bool g_doTest_Mips_VSPS_2D = false;
+bool g_doTest_Texture2DArrayRW_CS = false;
+bool g_doTest_Texture2DArrayRW_PS = false;
+bool g_doTest_Texture2DArrayRW_RGS = false;
+bool g_doTest_Texture2DRW_CS = false;
+bool g_doTest_Texture2DRW_PS = false;
+bool g_doTest_Texture2DRW_RGS = false;
+bool g_doTest_Texture3DRW_CS = false;
+bool g_doTest_Texture3DRW_PS = false;
+bool g_doTest_Texture3DRW_RGS = false;
+bool g_doTest_TextureCubeRW_CS = false;
+bool g_doTest_TextureCubeRW_PS = false;
+bool g_doTest_TextureCubeRW_RGS = false;
+bool g_doTest_TextureFormats = false;
 // Gigi Modification End
 
 struct FrameContext
@@ -494,596 +561,846 @@ int main(int, char**)
     bool show_simple_window = false;
     // Gigi Modification End
     // Gigi Modification Begin - Create Context
-    BarrierTest::Context::LogFn = &LogFunction;
-    BarrierTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    BarrierTest::Context::PerfEventEndFn = &PerfEventEndFn;
-    BarrierTest::Context::s_techniqueLocation = L".\\UnitTests\\Barrier\\BarrierTest\\";
-    m_BarrierTest = BarrierTest::CreateContext(g_pd3dDevice);
-    if (!m_BarrierTest)
+    if (!g_doSubsetTest || g_doTest_BarrierTest)
     {
-        printf("Could not create m_BarrierTest context");
-        return 1;
+        BarrierTest::Context::LogFn = &LogFunction;
+        BarrierTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        BarrierTest::Context::PerfEventEndFn = &PerfEventEndFn;
+        BarrierTest::Context::s_techniqueLocation = L".\\UnitTests\\Barrier\\BarrierTest\\";
+        m_BarrierTest = BarrierTest::CreateContext(g_pd3dDevice);
+        if (!m_BarrierTest)
+        {
+            printf("Could not create m_BarrierTest context");
+            return 1;
+        }
     }
-    buffertest::Context::LogFn = &LogFunction;
-    buffertest::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    buffertest::Context::PerfEventEndFn = &PerfEventEndFn;
-    buffertest::Context::s_techniqueLocation = L".\\UnitTests\\Buffers\\buffertest\\";
-    m_buffertest = buffertest::CreateContext(g_pd3dDevice);
-    if (!m_buffertest)
+
+    if (!g_doSubsetTest || g_doTest_buffertest)
     {
-        printf("Could not create m_buffertest context");
-        return 1;
+        buffertest::Context::LogFn = &LogFunction;
+        buffertest::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        buffertest::Context::PerfEventEndFn = &PerfEventEndFn;
+        buffertest::Context::s_techniqueLocation = L".\\UnitTests\\Buffers\\buffertest\\";
+        m_buffertest = buffertest::CreateContext(g_pd3dDevice);
+        if (!m_buffertest)
+        {
+            printf("Could not create m_buffertest context");
+            return 1;
+        }
     }
-    StructuredBuffer::Context::LogFn = &LogFunction;
-    StructuredBuffer::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    StructuredBuffer::Context::PerfEventEndFn = &PerfEventEndFn;
-    StructuredBuffer::Context::s_techniqueLocation = L".\\UnitTests\\Buffers\\StructuredBuffer\\";
-    m_StructuredBuffer = StructuredBuffer::CreateContext(g_pd3dDevice);
-    if (!m_StructuredBuffer)
+
+    if (!g_doSubsetTest || g_doTest_StructuredBuffer)
     {
-        printf("Could not create m_StructuredBuffer context");
-        return 1;
+        StructuredBuffer::Context::LogFn = &LogFunction;
+        StructuredBuffer::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        StructuredBuffer::Context::PerfEventEndFn = &PerfEventEndFn;
+        StructuredBuffer::Context::s_techniqueLocation = L".\\UnitTests\\Buffers\\StructuredBuffer\\";
+        m_StructuredBuffer = StructuredBuffer::CreateContext(g_pd3dDevice);
+        if (!m_StructuredBuffer)
+        {
+            printf("Could not create m_StructuredBuffer context");
+            return 1;
+        }
     }
-    boxblur::Context::LogFn = &LogFunction;
-    boxblur::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    boxblur::Context::PerfEventEndFn = &PerfEventEndFn;
-    boxblur::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\boxblur\\";
-    m_boxblur = boxblur::CreateContext(g_pd3dDevice);
-    if (!m_boxblur)
+
+    if (!g_doSubsetTest || g_doTest_boxblur)
     {
-        printf("Could not create m_boxblur context");
-        return 1;
+        boxblur::Context::LogFn = &LogFunction;
+        boxblur::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        boxblur::Context::PerfEventEndFn = &PerfEventEndFn;
+        boxblur::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\boxblur\\";
+        m_boxblur = boxblur::CreateContext(g_pd3dDevice);
+        if (!m_boxblur)
+        {
+            printf("Could not create m_boxblur context");
+            return 1;
+        }
     }
-    IndirectDispatch::Context::LogFn = &LogFunction;
-    IndirectDispatch::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    IndirectDispatch::Context::PerfEventEndFn = &PerfEventEndFn;
-    IndirectDispatch::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\IndirectDispatch\\";
-    m_IndirectDispatch = IndirectDispatch::CreateContext(g_pd3dDevice);
-    if (!m_IndirectDispatch)
+
+    if (!g_doSubsetTest || g_doTest_IndirectDispatch)
     {
-        printf("Could not create m_IndirectDispatch context");
-        return 1;
+        IndirectDispatch::Context::LogFn = &LogFunction;
+        IndirectDispatch::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        IndirectDispatch::Context::PerfEventEndFn = &PerfEventEndFn;
+        IndirectDispatch::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\IndirectDispatch\\";
+        m_IndirectDispatch = IndirectDispatch::CreateContext(g_pd3dDevice);
+        if (!m_IndirectDispatch)
+        {
+            printf("Could not create m_IndirectDispatch context");
+            return 1;
+        }
     }
-    ReadbackSequence::Context::LogFn = &LogFunction;
-    ReadbackSequence::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    ReadbackSequence::Context::PerfEventEndFn = &PerfEventEndFn;
-    ReadbackSequence::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\ReadbackSequence\\";
-    m_ReadbackSequence = ReadbackSequence::CreateContext(g_pd3dDevice);
-    if (!m_ReadbackSequence)
+
+    if (!g_doSubsetTest || g_doTest_ReadbackSequence)
     {
-        printf("Could not create m_ReadbackSequence context");
-        return 1;
+        ReadbackSequence::Context::LogFn = &LogFunction;
+        ReadbackSequence::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        ReadbackSequence::Context::PerfEventEndFn = &PerfEventEndFn;
+        ReadbackSequence::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\ReadbackSequence\\";
+        m_ReadbackSequence = ReadbackSequence::CreateContext(g_pd3dDevice);
+        if (!m_ReadbackSequence)
+        {
+            printf("Could not create m_ReadbackSequence context");
+            return 1;
+        }
     }
-    simple::Context::LogFn = &LogFunction;
-    simple::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simple::Context::PerfEventEndFn = &PerfEventEndFn;
-    simple::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\simple\\";
-    m_simple = simple::CreateContext(g_pd3dDevice);
-    if (!m_simple)
+
+    if (!g_doSubsetTest || g_doTest_simple)
     {
-        printf("Could not create m_simple context");
-        return 1;
+        simple::Context::LogFn = &LogFunction;
+        simple::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simple::Context::PerfEventEndFn = &PerfEventEndFn;
+        simple::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\simple\\";
+        m_simple = simple::CreateContext(g_pd3dDevice);
+        if (!m_simple)
+        {
+            printf("Could not create m_simple context");
+            return 1;
+        }
     }
-    SlangAutoDiff::Context::LogFn = &LogFunction;
-    SlangAutoDiff::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    SlangAutoDiff::Context::PerfEventEndFn = &PerfEventEndFn;
-    SlangAutoDiff::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\SlangAutoDiff\\";
-    m_SlangAutoDiff = SlangAutoDiff::CreateContext(g_pd3dDevice);
-    if (!m_SlangAutoDiff)
+
+    if (!g_doSubsetTest || g_doTest_SlangAutoDiff)
     {
-        printf("Could not create m_SlangAutoDiff context");
-        return 1;
+        SlangAutoDiff::Context::LogFn = &LogFunction;
+        SlangAutoDiff::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        SlangAutoDiff::Context::PerfEventEndFn = &PerfEventEndFn;
+        SlangAutoDiff::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\SlangAutoDiff\\";
+        m_SlangAutoDiff = SlangAutoDiff::CreateContext(g_pd3dDevice);
+        if (!m_SlangAutoDiff)
+        {
+            printf("Could not create m_SlangAutoDiff context");
+            return 1;
+        }
     }
-    CopyResourceTest::Context::LogFn = &LogFunction;
-    CopyResourceTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    CopyResourceTest::Context::PerfEventEndFn = &PerfEventEndFn;
-    CopyResourceTest::Context::s_techniqueLocation = L".\\UnitTests\\CopyResource\\CopyResourceTest\\";
-    m_CopyResourceTest = CopyResourceTest::CreateContext(g_pd3dDevice);
-    if (!m_CopyResourceTest)
+
+    if (!g_doSubsetTest || g_doTest_CopyResourceTest)
     {
-        printf("Could not create m_CopyResourceTest context");
-        return 1;
+        CopyResourceTest::Context::LogFn = &LogFunction;
+        CopyResourceTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        CopyResourceTest::Context::PerfEventEndFn = &PerfEventEndFn;
+        CopyResourceTest::Context::s_techniqueLocation = L".\\UnitTests\\CopyResource\\CopyResourceTest\\";
+        m_CopyResourceTest = CopyResourceTest::CreateContext(g_pd3dDevice);
+        if (!m_CopyResourceTest)
+        {
+            printf("Could not create m_CopyResourceTest context");
+            return 1;
+        }
     }
-    CopyResourceTest_FB::Context::LogFn = &LogFunction;
-    CopyResourceTest_FB::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    CopyResourceTest_FB::Context::PerfEventEndFn = &PerfEventEndFn;
-    CopyResourceTest_FB::Context::s_techniqueLocation = L".\\UnitTests\\CopyResource\\CopyResourceTest_FB\\";
-    m_CopyResourceTest_FB = CopyResourceTest_FB::CreateContext(g_pd3dDevice);
-    if (!m_CopyResourceTest_FB)
+
+    if (!g_doSubsetTest || g_doTest_CopyResourceTest_FB)
     {
-        printf("Could not create m_CopyResourceTest_FB context");
-        return 1;
+        CopyResourceTest_FB::Context::LogFn = &LogFunction;
+        CopyResourceTest_FB::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        CopyResourceTest_FB::Context::PerfEventEndFn = &PerfEventEndFn;
+        CopyResourceTest_FB::Context::s_techniqueLocation = L".\\UnitTests\\CopyResource\\CopyResourceTest_FB\\";
+        m_CopyResourceTest_FB = CopyResourceTest_FB::CreateContext(g_pd3dDevice);
+        if (!m_CopyResourceTest_FB)
+        {
+            printf("Could not create m_CopyResourceTest_FB context");
+            return 1;
+        }
     }
-    Mesh::Context::LogFn = &LogFunction;
-    Mesh::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mesh::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mesh::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\Mesh\\";
-    m_Mesh = Mesh::CreateContext(g_pd3dDevice);
-    if (!m_Mesh)
+
+    if (!g_doSubsetTest || g_doTest_Mesh)
     {
-        printf("Could not create m_Mesh context");
-        return 1;
+        Mesh::Context::LogFn = &LogFunction;
+        Mesh::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mesh::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mesh::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\Mesh\\";
+        m_Mesh = Mesh::CreateContext(g_pd3dDevice);
+        if (!m_Mesh)
+        {
+            printf("Could not create m_Mesh context");
+            return 1;
+        }
     }
-    MeshAmplification::Context::LogFn = &LogFunction;
-    MeshAmplification::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    MeshAmplification::Context::PerfEventEndFn = &PerfEventEndFn;
-    MeshAmplification::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\MeshAmplification\\";
-    m_MeshAmplification = MeshAmplification::CreateContext(g_pd3dDevice);
-    if (!m_MeshAmplification)
+
+    if (!g_doSubsetTest || g_doTest_MeshAmplification)
     {
-        printf("Could not create m_MeshAmplification context");
-        return 1;
+        MeshAmplification::Context::LogFn = &LogFunction;
+        MeshAmplification::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        MeshAmplification::Context::PerfEventEndFn = &PerfEventEndFn;
+        MeshAmplification::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\MeshAmplification\\";
+        m_MeshAmplification = MeshAmplification::CreateContext(g_pd3dDevice);
+        if (!m_MeshAmplification)
+        {
+            printf("Could not create m_MeshAmplification context");
+            return 1;
+        }
     }
-    MeshAmplificationLines::Context::LogFn = &LogFunction;
-    MeshAmplificationLines::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    MeshAmplificationLines::Context::PerfEventEndFn = &PerfEventEndFn;
-    MeshAmplificationLines::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\MeshAmplificationLines\\";
-    m_MeshAmplificationLines = MeshAmplificationLines::CreateContext(g_pd3dDevice);
-    if (!m_MeshAmplificationLines)
+
+    if (!g_doSubsetTest || g_doTest_MeshAmplificationLines)
     {
-        printf("Could not create m_MeshAmplificationLines context");
-        return 1;
+        MeshAmplificationLines::Context::LogFn = &LogFunction;
+        MeshAmplificationLines::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        MeshAmplificationLines::Context::PerfEventEndFn = &PerfEventEndFn;
+        MeshAmplificationLines::Context::s_techniqueLocation = L".\\UnitTests\\MeshShaders\\MeshAmplificationLines\\";
+        m_MeshAmplificationLines = MeshAmplificationLines::CreateContext(g_pd3dDevice);
+        if (!m_MeshAmplificationLines)
+        {
+            printf("Could not create m_MeshAmplificationLines context");
+            return 1;
+        }
     }
-    NoVertex_NoIndex_NoInstance::Context::LogFn = &LogFunction;
-    NoVertex_NoIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    NoVertex_NoIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
-    NoVertex_NoIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\NoVertex_NoIndex_NoInstance\\";
-    m_NoVertex_NoIndex_NoInstance = NoVertex_NoIndex_NoInstance::CreateContext(g_pd3dDevice);
-    if (!m_NoVertex_NoIndex_NoInstance)
+
+    if (!g_doSubsetTest || g_doTest_NoVertex_NoIndex_NoInstance)
     {
-        printf("Could not create m_NoVertex_NoIndex_NoInstance context");
-        return 1;
+        NoVertex_NoIndex_NoInstance::Context::LogFn = &LogFunction;
+        NoVertex_NoIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        NoVertex_NoIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
+        NoVertex_NoIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\NoVertex_NoIndex_NoInstance\\";
+        m_NoVertex_NoIndex_NoInstance = NoVertex_NoIndex_NoInstance::CreateContext(g_pd3dDevice);
+        if (!m_NoVertex_NoIndex_NoInstance)
+        {
+            printf("Could not create m_NoVertex_NoIndex_NoInstance context");
+            return 1;
+        }
     }
-    simpleRaster::Context::LogFn = &LogFunction;
-    simpleRaster::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simpleRaster::Context::PerfEventEndFn = &PerfEventEndFn;
-    simpleRaster::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster\\";
-    m_simpleRaster = simpleRaster::CreateContext(g_pd3dDevice);
-    if (!m_simpleRaster)
+
+    if (!g_doSubsetTest || g_doTest_simpleRaster)
     {
-        printf("Could not create m_simpleRaster context");
-        return 1;
+        simpleRaster::Context::LogFn = &LogFunction;
+        simpleRaster::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRaster::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRaster::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster\\";
+        m_simpleRaster = simpleRaster::CreateContext(g_pd3dDevice);
+        if (!m_simpleRaster)
+        {
+            printf("Could not create m_simpleRaster context");
+            return 1;
+        }
     }
-    simpleRaster2::Context::LogFn = &LogFunction;
-    simpleRaster2::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simpleRaster2::Context::PerfEventEndFn = &PerfEventEndFn;
-    simpleRaster2::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster2\\";
-    m_simpleRaster2 = simpleRaster2::CreateContext(g_pd3dDevice);
-    if (!m_simpleRaster2)
+
+    if (!g_doSubsetTest || g_doTest_simpleRaster2)
     {
-        printf("Could not create m_simpleRaster2 context");
-        return 1;
+        simpleRaster2::Context::LogFn = &LogFunction;
+        simpleRaster2::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRaster2::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRaster2::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster2\\";
+        m_simpleRaster2 = simpleRaster2::CreateContext(g_pd3dDevice);
+        if (!m_simpleRaster2)
+        {
+            printf("Could not create m_simpleRaster2 context");
+            return 1;
+        }
     }
-    simpleRaster_Lines::Context::LogFn = &LogFunction;
-    simpleRaster_Lines::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simpleRaster_Lines::Context::PerfEventEndFn = &PerfEventEndFn;
-    simpleRaster_Lines::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster_Lines\\";
-    m_simpleRaster_Lines = simpleRaster_Lines::CreateContext(g_pd3dDevice);
-    if (!m_simpleRaster_Lines)
+
+    if (!g_doSubsetTest || g_doTest_simpleRasterInSubgraph)
     {
-        printf("Could not create m_simpleRaster_Lines context");
-        return 1;
+        simpleRasterInSubgraph::Context::LogFn = &LogFunction;
+        simpleRasterInSubgraph::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRasterInSubgraph::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRasterInSubgraph::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRasterInSubgraph\\";
+        m_simpleRasterInSubgraph = simpleRasterInSubgraph::CreateContext(g_pd3dDevice);
+        if (!m_simpleRasterInSubgraph)
+        {
+            printf("Could not create m_simpleRasterInSubgraph context");
+            return 1;
+        }
     }
-    simpleRaster_Points::Context::LogFn = &LogFunction;
-    simpleRaster_Points::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simpleRaster_Points::Context::PerfEventEndFn = &PerfEventEndFn;
-    simpleRaster_Points::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster_Points\\";
-    m_simpleRaster_Points = simpleRaster_Points::CreateContext(g_pd3dDevice);
-    if (!m_simpleRaster_Points)
+
+    if (!g_doSubsetTest || g_doTest_simpleRaster_Lines)
     {
-        printf("Could not create m_simpleRaster_Points context");
-        return 1;
+        simpleRaster_Lines::Context::LogFn = &LogFunction;
+        simpleRaster_Lines::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRaster_Lines::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRaster_Lines::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster_Lines\\";
+        m_simpleRaster_Lines = simpleRaster_Lines::CreateContext(g_pd3dDevice);
+        if (!m_simpleRaster_Lines)
+        {
+            printf("Could not create m_simpleRaster_Lines context");
+            return 1;
+        }
     }
-    Stencil::Context::LogFn = &LogFunction;
-    Stencil::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Stencil::Context::PerfEventEndFn = &PerfEventEndFn;
-    Stencil::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\Stencil\\";
-    m_Stencil = Stencil::CreateContext(g_pd3dDevice);
-    if (!m_Stencil)
+
+    if (!g_doSubsetTest || g_doTest_simpleRaster_Points)
     {
-        printf("Could not create m_Stencil context");
-        return 1;
+        simpleRaster_Points::Context::LogFn = &LogFunction;
+        simpleRaster_Points::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRaster_Points::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRaster_Points::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\simpleRaster_Points\\";
+        m_simpleRaster_Points = simpleRaster_Points::CreateContext(g_pd3dDevice);
+        if (!m_simpleRaster_Points)
+        {
+            printf("Could not create m_simpleRaster_Points context");
+            return 1;
+        }
     }
-    VRS::Context::LogFn = &LogFunction;
-    VRS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    VRS::Context::PerfEventEndFn = &PerfEventEndFn;
-    VRS::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\VRS\\";
-    m_VRS = VRS::CreateContext(g_pd3dDevice);
-    if (!m_VRS)
+
+    if (!g_doSubsetTest || g_doTest_Stencil)
     {
-        printf("Could not create m_VRS context");
-        return 1;
+        Stencil::Context::LogFn = &LogFunction;
+        Stencil::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Stencil::Context::PerfEventEndFn = &PerfEventEndFn;
+        Stencil::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\Stencil\\";
+        m_Stencil = Stencil::CreateContext(g_pd3dDevice);
+        if (!m_Stencil)
+        {
+            printf("Could not create m_Stencil context");
+            return 1;
+        }
     }
-    YesVertexStruct_NoIndex_NoInstance::Context::LogFn = &LogFunction;
-    YesVertexStruct_NoIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    YesVertexStruct_NoIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
-    YesVertexStruct_NoIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_NoIndex_NoInstance\\";
-    m_YesVertexStruct_NoIndex_NoInstance = YesVertexStruct_NoIndex_NoInstance::CreateContext(g_pd3dDevice);
-    if (!m_YesVertexStruct_NoIndex_NoInstance)
+
+    if (!g_doSubsetTest || g_doTest_VRS)
     {
-        printf("Could not create m_YesVertexStruct_NoIndex_NoInstance context");
-        return 1;
+        VRS::Context::LogFn = &LogFunction;
+        VRS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        VRS::Context::PerfEventEndFn = &PerfEventEndFn;
+        VRS::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\VRS\\";
+        m_VRS = VRS::CreateContext(g_pd3dDevice);
+        if (!m_VRS)
+        {
+            printf("Could not create m_VRS context");
+            return 1;
+        }
     }
-    YesVertexStruct_NoIndex_YesInstanceStruct::Context::LogFn = &LogFunction;
-    YesVertexStruct_NoIndex_YesInstanceStruct::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    YesVertexStruct_NoIndex_YesInstanceStruct::Context::PerfEventEndFn = &PerfEventEndFn;
-    YesVertexStruct_NoIndex_YesInstanceStruct::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct\\";
-    m_YesVertexStruct_NoIndex_YesInstanceStruct = YesVertexStruct_NoIndex_YesInstanceStruct::CreateContext(g_pd3dDevice);
-    if (!m_YesVertexStruct_NoIndex_YesInstanceStruct)
+
+    if (!g_doSubsetTest || g_doTest_YesVertexStruct_NoIndex_NoInstance)
     {
-        printf("Could not create m_YesVertexStruct_NoIndex_YesInstanceStruct context");
-        return 1;
+        YesVertexStruct_NoIndex_NoInstance::Context::LogFn = &LogFunction;
+        YesVertexStruct_NoIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        YesVertexStruct_NoIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
+        YesVertexStruct_NoIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_NoIndex_NoInstance\\";
+        m_YesVertexStruct_NoIndex_NoInstance = YesVertexStruct_NoIndex_NoInstance::CreateContext(g_pd3dDevice);
+        if (!m_YesVertexStruct_NoIndex_NoInstance)
+        {
+            printf("Could not create m_YesVertexStruct_NoIndex_NoInstance context");
+            return 1;
+        }
     }
-    YesVertexStruct_NoIndex_YesInstanceType::Context::LogFn = &LogFunction;
-    YesVertexStruct_NoIndex_YesInstanceType::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    YesVertexStruct_NoIndex_YesInstanceType::Context::PerfEventEndFn = &PerfEventEndFn;
-    YesVertexStruct_NoIndex_YesInstanceType::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_NoIndex_YesInstanceType\\";
-    m_YesVertexStruct_NoIndex_YesInstanceType = YesVertexStruct_NoIndex_YesInstanceType::CreateContext(g_pd3dDevice);
-    if (!m_YesVertexStruct_NoIndex_YesInstanceType)
+
+    if (!g_doSubsetTest || g_doTest_YesVertexStruct_NoIndex_YesInstanceStruct)
     {
-        printf("Could not create m_YesVertexStruct_NoIndex_YesInstanceType context");
-        return 1;
+        YesVertexStruct_NoIndex_YesInstanceStruct::Context::LogFn = &LogFunction;
+        YesVertexStruct_NoIndex_YesInstanceStruct::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        YesVertexStruct_NoIndex_YesInstanceStruct::Context::PerfEventEndFn = &PerfEventEndFn;
+        YesVertexStruct_NoIndex_YesInstanceStruct::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct\\";
+        m_YesVertexStruct_NoIndex_YesInstanceStruct = YesVertexStruct_NoIndex_YesInstanceStruct::CreateContext(g_pd3dDevice);
+        if (!m_YesVertexStruct_NoIndex_YesInstanceStruct)
+        {
+            printf("Could not create m_YesVertexStruct_NoIndex_YesInstanceStruct context");
+            return 1;
+        }
     }
-    YesVertexStruct_YesIndex_NoInstance::Context::LogFn = &LogFunction;
-    YesVertexStruct_YesIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    YesVertexStruct_YesIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
-    YesVertexStruct_YesIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_YesIndex_NoInstance\\";
-    m_YesVertexStruct_YesIndex_NoInstance = YesVertexStruct_YesIndex_NoInstance::CreateContext(g_pd3dDevice);
-    if (!m_YesVertexStruct_YesIndex_NoInstance)
+
+    if (!g_doSubsetTest || g_doTest_YesVertexStruct_NoIndex_YesInstanceType)
     {
-        printf("Could not create m_YesVertexStruct_YesIndex_NoInstance context");
-        return 1;
+        YesVertexStruct_NoIndex_YesInstanceType::Context::LogFn = &LogFunction;
+        YesVertexStruct_NoIndex_YesInstanceType::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        YesVertexStruct_NoIndex_YesInstanceType::Context::PerfEventEndFn = &PerfEventEndFn;
+        YesVertexStruct_NoIndex_YesInstanceType::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_NoIndex_YesInstanceType\\";
+        m_YesVertexStruct_NoIndex_YesInstanceType = YesVertexStruct_NoIndex_YesInstanceType::CreateContext(g_pd3dDevice);
+        if (!m_YesVertexStruct_NoIndex_YesInstanceType)
+        {
+            printf("Could not create m_YesVertexStruct_NoIndex_YesInstanceType context");
+            return 1;
+        }
     }
-    YesVertexType_NoIndex_NoInstance::Context::LogFn = &LogFunction;
-    YesVertexType_NoIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    YesVertexType_NoIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
-    YesVertexType_NoIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexType_NoIndex_NoInstance\\";
-    m_YesVertexType_NoIndex_NoInstance = YesVertexType_NoIndex_NoInstance::CreateContext(g_pd3dDevice);
-    if (!m_YesVertexType_NoIndex_NoInstance)
+
+    if (!g_doSubsetTest || g_doTest_YesVertexStruct_YesIndex_NoInstance)
     {
-        printf("Could not create m_YesVertexType_NoIndex_NoInstance context");
-        return 1;
+        YesVertexStruct_YesIndex_NoInstance::Context::LogFn = &LogFunction;
+        YesVertexStruct_YesIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        YesVertexStruct_YesIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
+        YesVertexStruct_YesIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexStruct_YesIndex_NoInstance\\";
+        m_YesVertexStruct_YesIndex_NoInstance = YesVertexStruct_YesIndex_NoInstance::CreateContext(g_pd3dDevice);
+        if (!m_YesVertexStruct_YesIndex_NoInstance)
+        {
+            printf("Could not create m_YesVertexStruct_YesIndex_NoInstance context");
+            return 1;
+        }
     }
-    AnyHit::Context::LogFn = &LogFunction;
-    AnyHit::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    AnyHit::Context::PerfEventEndFn = &PerfEventEndFn;
-    AnyHit::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\AnyHit\\";
-    m_AnyHit = AnyHit::CreateContext(g_pd3dDevice);
-    if (!m_AnyHit)
+
+    if (!g_doSubsetTest || g_doTest_YesVertexType_NoIndex_NoInstance)
     {
-        printf("Could not create m_AnyHit context");
-        return 1;
+        YesVertexType_NoIndex_NoInstance::Context::LogFn = &LogFunction;
+        YesVertexType_NoIndex_NoInstance::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        YesVertexType_NoIndex_NoInstance::Context::PerfEventEndFn = &PerfEventEndFn;
+        YesVertexType_NoIndex_NoInstance::Context::s_techniqueLocation = L".\\UnitTests\\Raster\\YesVertexType_NoIndex_NoInstance\\";
+        m_YesVertexType_NoIndex_NoInstance = YesVertexType_NoIndex_NoInstance::CreateContext(g_pd3dDevice);
+        if (!m_YesVertexType_NoIndex_NoInstance)
+        {
+            printf("Could not create m_YesVertexType_NoIndex_NoInstance context");
+            return 1;
+        }
     }
-    AnyHitSimple::Context::LogFn = &LogFunction;
-    AnyHitSimple::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    AnyHitSimple::Context::PerfEventEndFn = &PerfEventEndFn;
-    AnyHitSimple::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\AnyHitSimple\\";
-    m_AnyHitSimple = AnyHitSimple::CreateContext(g_pd3dDevice);
-    if (!m_AnyHitSimple)
+
+    if (!g_doSubsetTest || g_doTest_AnyHit)
     {
-        printf("Could not create m_AnyHitSimple context");
-        return 1;
+        AnyHit::Context::LogFn = &LogFunction;
+        AnyHit::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        AnyHit::Context::PerfEventEndFn = &PerfEventEndFn;
+        AnyHit::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\AnyHit\\";
+        m_AnyHit = AnyHit::CreateContext(g_pd3dDevice);
+        if (!m_AnyHit)
+        {
+            printf("Could not create m_AnyHit context");
+            return 1;
+        }
     }
-    IntersectionShader::Context::LogFn = &LogFunction;
-    IntersectionShader::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    IntersectionShader::Context::PerfEventEndFn = &PerfEventEndFn;
-    IntersectionShader::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\IntersectionShader\\";
-    m_IntersectionShader = IntersectionShader::CreateContext(g_pd3dDevice);
-    if (!m_IntersectionShader)
+
+    if (!g_doSubsetTest || g_doTest_AnyHitSimple)
     {
-        printf("Could not create m_IntersectionShader context");
-        return 1;
+        AnyHitSimple::Context::LogFn = &LogFunction;
+        AnyHitSimple::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        AnyHitSimple::Context::PerfEventEndFn = &PerfEventEndFn;
+        AnyHitSimple::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\AnyHitSimple\\";
+        m_AnyHitSimple = AnyHitSimple::CreateContext(g_pd3dDevice);
+        if (!m_AnyHitSimple)
+        {
+            printf("Could not create m_AnyHitSimple context");
+            return 1;
+        }
     }
-    simpleRT::Context::LogFn = &LogFunction;
-    simpleRT::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simpleRT::Context::PerfEventEndFn = &PerfEventEndFn;
-    simpleRT::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\simpleRT\\";
-    m_simpleRT = simpleRT::CreateContext(g_pd3dDevice);
-    if (!m_simpleRT)
+
+    if (!g_doSubsetTest || g_doTest_IntersectionShader)
     {
-        printf("Could not create m_simpleRT context");
-        return 1;
+        IntersectionShader::Context::LogFn = &LogFunction;
+        IntersectionShader::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        IntersectionShader::Context::PerfEventEndFn = &PerfEventEndFn;
+        IntersectionShader::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\IntersectionShader\\";
+        m_IntersectionShader = IntersectionShader::CreateContext(g_pd3dDevice);
+        if (!m_IntersectionShader)
+        {
+            printf("Could not create m_IntersectionShader context");
+            return 1;
+        }
     }
-    simpleRT_inline::Context::LogFn = &LogFunction;
-    simpleRT_inline::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    simpleRT_inline::Context::PerfEventEndFn = &PerfEventEndFn;
-    simpleRT_inline::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\simpleRT_inline\\";
-    m_simpleRT_inline = simpleRT_inline::CreateContext(g_pd3dDevice);
-    if (!m_simpleRT_inline)
+
+    if (!g_doSubsetTest || g_doTest_simpleRT)
     {
-        printf("Could not create m_simpleRT_inline context");
-        return 1;
+        simpleRT::Context::LogFn = &LogFunction;
+        simpleRT::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRT::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRT::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\simpleRT\\";
+        m_simpleRT = simpleRT::CreateContext(g_pd3dDevice);
+        if (!m_simpleRT)
+        {
+            printf("Could not create m_simpleRT context");
+            return 1;
+        }
     }
-    TwoRayGens::Context::LogFn = &LogFunction;
-    TwoRayGens::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    TwoRayGens::Context::PerfEventEndFn = &PerfEventEndFn;
-    TwoRayGens::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\TwoRayGens\\";
-    m_TwoRayGens = TwoRayGens::CreateContext(g_pd3dDevice);
-    if (!m_TwoRayGens)
+
+    if (!g_doSubsetTest || g_doTest_simpleRT_inline)
     {
-        printf("Could not create m_TwoRayGens context");
-        return 1;
+        simpleRT_inline::Context::LogFn = &LogFunction;
+        simpleRT_inline::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        simpleRT_inline::Context::PerfEventEndFn = &PerfEventEndFn;
+        simpleRT_inline::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\simpleRT_inline\\";
+        m_simpleRT_inline = simpleRT_inline::CreateContext(g_pd3dDevice);
+        if (!m_simpleRT_inline)
+        {
+            printf("Could not create m_simpleRT_inline context");
+            return 1;
+        }
     }
-    TwoRayGensSubgraph::Context::LogFn = &LogFunction;
-    TwoRayGensSubgraph::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    TwoRayGensSubgraph::Context::PerfEventEndFn = &PerfEventEndFn;
-    TwoRayGensSubgraph::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\TwoRayGensSubgraph\\";
-    m_TwoRayGensSubgraph = TwoRayGensSubgraph::CreateContext(g_pd3dDevice);
-    if (!m_TwoRayGensSubgraph)
+
+    if (!g_doSubsetTest || g_doTest_TwoRayGens)
     {
-        printf("Could not create m_TwoRayGensSubgraph context");
-        return 1;
+        TwoRayGens::Context::LogFn = &LogFunction;
+        TwoRayGens::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        TwoRayGens::Context::PerfEventEndFn = &PerfEventEndFn;
+        TwoRayGens::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\TwoRayGens\\";
+        m_TwoRayGens = TwoRayGens::CreateContext(g_pd3dDevice);
+        if (!m_TwoRayGens)
+        {
+            printf("Could not create m_TwoRayGens context");
+            return 1;
+        }
     }
-    SubGraphLoops::Context::LogFn = &LogFunction;
-    SubGraphLoops::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    SubGraphLoops::Context::PerfEventEndFn = &PerfEventEndFn;
-    SubGraphLoops::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubGraphLoops\\";
-    m_SubGraphLoops = SubGraphLoops::CreateContext(g_pd3dDevice);
-    if (!m_SubGraphLoops)
+
+    if (!g_doSubsetTest || g_doTest_TwoRayGensSubgraph)
     {
-        printf("Could not create m_SubGraphLoops context");
-        return 1;
+        TwoRayGensSubgraph::Context::LogFn = &LogFunction;
+        TwoRayGensSubgraph::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        TwoRayGensSubgraph::Context::PerfEventEndFn = &PerfEventEndFn;
+        TwoRayGensSubgraph::Context::s_techniqueLocation = L".\\UnitTests\\RayTrace\\TwoRayGensSubgraph\\";
+        m_TwoRayGensSubgraph = TwoRayGensSubgraph::CreateContext(g_pd3dDevice);
+        if (!m_TwoRayGensSubgraph)
+        {
+            printf("Could not create m_TwoRayGensSubgraph context");
+            return 1;
+        }
     }
-    SubGraphTest::Context::LogFn = &LogFunction;
-    SubGraphTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    SubGraphTest::Context::PerfEventEndFn = &PerfEventEndFn;
-    SubGraphTest::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubGraphTest\\";
-    m_SubGraphTest = SubGraphTest::CreateContext(g_pd3dDevice);
-    if (!m_SubGraphTest)
+
+    if (!g_doSubsetTest || g_doTest_SubGraphLoops)
     {
-        printf("Could not create m_SubGraphTest context");
-        return 1;
+        SubGraphLoops::Context::LogFn = &LogFunction;
+        SubGraphLoops::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        SubGraphLoops::Context::PerfEventEndFn = &PerfEventEndFn;
+        SubGraphLoops::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubGraphLoops\\";
+        m_SubGraphLoops = SubGraphLoops::CreateContext(g_pd3dDevice);
+        if (!m_SubGraphLoops)
+        {
+            printf("Could not create m_SubGraphLoops context");
+            return 1;
+        }
     }
-    SubInSub::Context::LogFn = &LogFunction;
-    SubInSub::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    SubInSub::Context::PerfEventEndFn = &PerfEventEndFn;
-    SubInSub::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubInSub\\";
-    m_SubInSub = SubInSub::CreateContext(g_pd3dDevice);
-    if (!m_SubInSub)
+
+    if (!g_doSubsetTest || g_doTest_SubGraphTest)
     {
-        printf("Could not create m_SubInSub context");
-        return 1;
+        SubGraphTest::Context::LogFn = &LogFunction;
+        SubGraphTest::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        SubGraphTest::Context::PerfEventEndFn = &PerfEventEndFn;
+        SubGraphTest::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubGraphTest\\";
+        m_SubGraphTest = SubGraphTest::CreateContext(g_pd3dDevice);
+        if (!m_SubGraphTest)
+        {
+            printf("Could not create m_SubGraphTest context");
+            return 1;
+        }
     }
-    Mips_CS_2D::Context::LogFn = &LogFunction;
-    Mips_CS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_CS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_CS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_2D\\";
-    m_Mips_CS_2D = Mips_CS_2D::CreateContext(g_pd3dDevice);
-    if (!m_Mips_CS_2D)
+
+    if (!g_doSubsetTest || g_doTest_SubInSub)
     {
-        printf("Could not create m_Mips_CS_2D context");
-        return 1;
+        SubInSub::Context::LogFn = &LogFunction;
+        SubInSub::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        SubInSub::Context::PerfEventEndFn = &PerfEventEndFn;
+        SubInSub::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\SubInSub\\";
+        m_SubInSub = SubInSub::CreateContext(g_pd3dDevice);
+        if (!m_SubInSub)
+        {
+            printf("Could not create m_SubInSub context");
+            return 1;
+        }
     }
-    Mips_CS_2DArray::Context::LogFn = &LogFunction;
-    Mips_CS_2DArray::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_CS_2DArray::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_CS_2DArray::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_2DArray\\";
-    m_Mips_CS_2DArray = Mips_CS_2DArray::CreateContext(g_pd3dDevice);
-    if (!m_Mips_CS_2DArray)
+
+    if (!g_doSubsetTest || g_doTest_Mips_CS_2D)
     {
-        printf("Could not create m_Mips_CS_2DArray context");
-        return 1;
+        Mips_CS_2D::Context::LogFn = &LogFunction;
+        Mips_CS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_CS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_CS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_2D\\";
+        m_Mips_CS_2D = Mips_CS_2D::CreateContext(g_pd3dDevice);
+        if (!m_Mips_CS_2D)
+        {
+            printf("Could not create m_Mips_CS_2D context");
+            return 1;
+        }
     }
-    Mips_CS_3D::Context::LogFn = &LogFunction;
-    Mips_CS_3D::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_CS_3D::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_CS_3D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_3D\\";
-    m_Mips_CS_3D = Mips_CS_3D::CreateContext(g_pd3dDevice);
-    if (!m_Mips_CS_3D)
+
+    if (!g_doSubsetTest || g_doTest_Mips_CS_2DArray)
     {
-        printf("Could not create m_Mips_CS_3D context");
-        return 1;
+        Mips_CS_2DArray::Context::LogFn = &LogFunction;
+        Mips_CS_2DArray::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_CS_2DArray::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_CS_2DArray::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_2DArray\\";
+        m_Mips_CS_2DArray = Mips_CS_2DArray::CreateContext(g_pd3dDevice);
+        if (!m_Mips_CS_2DArray)
+        {
+            printf("Could not create m_Mips_CS_2DArray context");
+            return 1;
+        }
     }
-    Mips_CS_Cube::Context::LogFn = &LogFunction;
-    Mips_CS_Cube::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_CS_Cube::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_CS_Cube::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_Cube\\";
-    m_Mips_CS_Cube = Mips_CS_Cube::CreateContext(g_pd3dDevice);
-    if (!m_Mips_CS_Cube)
+
+    if (!g_doSubsetTest || g_doTest_Mips_CS_3D)
     {
-        printf("Could not create m_Mips_CS_Cube context");
-        return 1;
+        Mips_CS_3D::Context::LogFn = &LogFunction;
+        Mips_CS_3D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_CS_3D::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_CS_3D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_3D\\";
+        m_Mips_CS_3D = Mips_CS_3D::CreateContext(g_pd3dDevice);
+        if (!m_Mips_CS_3D)
+        {
+            printf("Could not create m_Mips_CS_3D context");
+            return 1;
+        }
     }
-    Mips_DrawCall::Context::LogFn = &LogFunction;
-    Mips_DrawCall::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_DrawCall::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_DrawCall::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_DrawCall\\";
-    m_Mips_DrawCall = Mips_DrawCall::CreateContext(g_pd3dDevice);
-    if (!m_Mips_DrawCall)
+
+    if (!g_doSubsetTest || g_doTest_Mips_CS_Cube)
     {
-        printf("Could not create m_Mips_DrawCall context");
-        return 1;
+        Mips_CS_Cube::Context::LogFn = &LogFunction;
+        Mips_CS_Cube::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_CS_Cube::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_CS_Cube::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_CS_Cube\\";
+        m_Mips_CS_Cube = Mips_CS_Cube::CreateContext(g_pd3dDevice);
+        if (!m_Mips_CS_Cube)
+        {
+            printf("Could not create m_Mips_CS_Cube context");
+            return 1;
+        }
     }
-    Mips_RGS_2D::Context::LogFn = &LogFunction;
-    Mips_RGS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_RGS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_RGS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_RGS_2D\\";
-    m_Mips_RGS_2D = Mips_RGS_2D::CreateContext(g_pd3dDevice);
-    if (!m_Mips_RGS_2D)
+
+    if (!g_doSubsetTest || g_doTest_Mips_DrawCall)
     {
-        printf("Could not create m_Mips_RGS_2D context");
-        return 1;
+        Mips_DrawCall::Context::LogFn = &LogFunction;
+        Mips_DrawCall::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_DrawCall::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_DrawCall::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_DrawCall\\";
+        m_Mips_DrawCall = Mips_DrawCall::CreateContext(g_pd3dDevice);
+        if (!m_Mips_DrawCall)
+        {
+            printf("Could not create m_Mips_DrawCall context");
+            return 1;
+        }
     }
-    Mips_ShaderToken_2D::Context::LogFn = &LogFunction;
-    Mips_ShaderToken_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_ShaderToken_2D::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_ShaderToken_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_2D\\";
-    m_Mips_ShaderToken_2D = Mips_ShaderToken_2D::CreateContext(g_pd3dDevice);
-    if (!m_Mips_ShaderToken_2D)
+
+    if (!g_doSubsetTest || g_doTest_Mips_RGS_2D)
     {
-        printf("Could not create m_Mips_ShaderToken_2D context");
-        return 1;
+        Mips_RGS_2D::Context::LogFn = &LogFunction;
+        Mips_RGS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_RGS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_RGS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_RGS_2D\\";
+        m_Mips_RGS_2D = Mips_RGS_2D::CreateContext(g_pd3dDevice);
+        if (!m_Mips_RGS_2D)
+        {
+            printf("Could not create m_Mips_RGS_2D context");
+            return 1;
+        }
     }
-    Mips_ShaderToken_2DArray::Context::LogFn = &LogFunction;
-    Mips_ShaderToken_2DArray::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_ShaderToken_2DArray::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_ShaderToken_2DArray::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_2DArray\\";
-    m_Mips_ShaderToken_2DArray = Mips_ShaderToken_2DArray::CreateContext(g_pd3dDevice);
-    if (!m_Mips_ShaderToken_2DArray)
+
+    if (!g_doSubsetTest || g_doTest_Mips_ShaderToken_2D)
     {
-        printf("Could not create m_Mips_ShaderToken_2DArray context");
-        return 1;
+        Mips_ShaderToken_2D::Context::LogFn = &LogFunction;
+        Mips_ShaderToken_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_ShaderToken_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_ShaderToken_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_2D\\";
+        m_Mips_ShaderToken_2D = Mips_ShaderToken_2D::CreateContext(g_pd3dDevice);
+        if (!m_Mips_ShaderToken_2D)
+        {
+            printf("Could not create m_Mips_ShaderToken_2D context");
+            return 1;
+        }
     }
-    Mips_ShaderToken_3D::Context::LogFn = &LogFunction;
-    Mips_ShaderToken_3D::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_ShaderToken_3D::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_ShaderToken_3D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_3D\\";
-    m_Mips_ShaderToken_3D = Mips_ShaderToken_3D::CreateContext(g_pd3dDevice);
-    if (!m_Mips_ShaderToken_3D)
+
+    if (!g_doSubsetTest || g_doTest_Mips_ShaderToken_2DArray)
     {
-        printf("Could not create m_Mips_ShaderToken_3D context");
-        return 1;
+        Mips_ShaderToken_2DArray::Context::LogFn = &LogFunction;
+        Mips_ShaderToken_2DArray::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_ShaderToken_2DArray::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_ShaderToken_2DArray::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_2DArray\\";
+        m_Mips_ShaderToken_2DArray = Mips_ShaderToken_2DArray::CreateContext(g_pd3dDevice);
+        if (!m_Mips_ShaderToken_2DArray)
+        {
+            printf("Could not create m_Mips_ShaderToken_2DArray context");
+            return 1;
+        }
     }
-    Mips_ShaderToken_Cube::Context::LogFn = &LogFunction;
-    Mips_ShaderToken_Cube::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_ShaderToken_Cube::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_ShaderToken_Cube::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_Cube\\";
-    m_Mips_ShaderToken_Cube = Mips_ShaderToken_Cube::CreateContext(g_pd3dDevice);
-    if (!m_Mips_ShaderToken_Cube)
+
+    if (!g_doSubsetTest || g_doTest_Mips_ShaderToken_3D)
     {
-        printf("Could not create m_Mips_ShaderToken_Cube context");
-        return 1;
+        Mips_ShaderToken_3D::Context::LogFn = &LogFunction;
+        Mips_ShaderToken_3D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_ShaderToken_3D::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_ShaderToken_3D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_3D\\";
+        m_Mips_ShaderToken_3D = Mips_ShaderToken_3D::CreateContext(g_pd3dDevice);
+        if (!m_Mips_ShaderToken_3D)
+        {
+            printf("Could not create m_Mips_ShaderToken_3D context");
+            return 1;
+        }
     }
-    Mips_VSPS_2D::Context::LogFn = &LogFunction;
-    Mips_VSPS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Mips_VSPS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
-    Mips_VSPS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_VSPS_2D\\";
-    m_Mips_VSPS_2D = Mips_VSPS_2D::CreateContext(g_pd3dDevice);
-    if (!m_Mips_VSPS_2D)
+
+    if (!g_doSubsetTest || g_doTest_Mips_ShaderToken_Cube)
     {
-        printf("Could not create m_Mips_VSPS_2D context");
-        return 1;
+        Mips_ShaderToken_Cube::Context::LogFn = &LogFunction;
+        Mips_ShaderToken_Cube::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_ShaderToken_Cube::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_ShaderToken_Cube::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_ShaderToken_Cube\\";
+        m_Mips_ShaderToken_Cube = Mips_ShaderToken_Cube::CreateContext(g_pd3dDevice);
+        if (!m_Mips_ShaderToken_Cube)
+        {
+            printf("Could not create m_Mips_ShaderToken_Cube context");
+            return 1;
+        }
     }
-    Texture2DArrayRW_CS::Context::LogFn = &LogFunction;
-    Texture2DArrayRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture2DArrayRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture2DArrayRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DArrayRW_CS\\";
-    m_Texture2DArrayRW_CS = Texture2DArrayRW_CS::CreateContext(g_pd3dDevice);
-    if (!m_Texture2DArrayRW_CS)
+
+    if (!g_doSubsetTest || g_doTest_Mips_VSPS_2D)
     {
-        printf("Could not create m_Texture2DArrayRW_CS context");
-        return 1;
+        Mips_VSPS_2D::Context::LogFn = &LogFunction;
+        Mips_VSPS_2D::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Mips_VSPS_2D::Context::PerfEventEndFn = &PerfEventEndFn;
+        Mips_VSPS_2D::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Mips_VSPS_2D\\";
+        m_Mips_VSPS_2D = Mips_VSPS_2D::CreateContext(g_pd3dDevice);
+        if (!m_Mips_VSPS_2D)
+        {
+            printf("Could not create m_Mips_VSPS_2D context");
+            return 1;
+        }
     }
-    Texture2DArrayRW_PS::Context::LogFn = &LogFunction;
-    Texture2DArrayRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture2DArrayRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture2DArrayRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DArrayRW_PS\\";
-    m_Texture2DArrayRW_PS = Texture2DArrayRW_PS::CreateContext(g_pd3dDevice);
-    if (!m_Texture2DArrayRW_PS)
+
+    if (!g_doSubsetTest || g_doTest_Texture2DArrayRW_CS)
     {
-        printf("Could not create m_Texture2DArrayRW_PS context");
-        return 1;
+        Texture2DArrayRW_CS::Context::LogFn = &LogFunction;
+        Texture2DArrayRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture2DArrayRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture2DArrayRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DArrayRW_CS\\";
+        m_Texture2DArrayRW_CS = Texture2DArrayRW_CS::CreateContext(g_pd3dDevice);
+        if (!m_Texture2DArrayRW_CS)
+        {
+            printf("Could not create m_Texture2DArrayRW_CS context");
+            return 1;
+        }
     }
-    Texture2DArrayRW_RGS::Context::LogFn = &LogFunction;
-    Texture2DArrayRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture2DArrayRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture2DArrayRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DArrayRW_RGS\\";
-    m_Texture2DArrayRW_RGS = Texture2DArrayRW_RGS::CreateContext(g_pd3dDevice);
-    if (!m_Texture2DArrayRW_RGS)
+
+    if (!g_doSubsetTest || g_doTest_Texture2DArrayRW_PS)
     {
-        printf("Could not create m_Texture2DArrayRW_RGS context");
-        return 1;
+        Texture2DArrayRW_PS::Context::LogFn = &LogFunction;
+        Texture2DArrayRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture2DArrayRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture2DArrayRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DArrayRW_PS\\";
+        m_Texture2DArrayRW_PS = Texture2DArrayRW_PS::CreateContext(g_pd3dDevice);
+        if (!m_Texture2DArrayRW_PS)
+        {
+            printf("Could not create m_Texture2DArrayRW_PS context");
+            return 1;
+        }
     }
-    Texture2DRW_CS::Context::LogFn = &LogFunction;
-    Texture2DRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture2DRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture2DRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DRW_CS\\";
-    m_Texture2DRW_CS = Texture2DRW_CS::CreateContext(g_pd3dDevice);
-    if (!m_Texture2DRW_CS)
+
+    if (!g_doSubsetTest || g_doTest_Texture2DArrayRW_RGS)
     {
-        printf("Could not create m_Texture2DRW_CS context");
-        return 1;
+        Texture2DArrayRW_RGS::Context::LogFn = &LogFunction;
+        Texture2DArrayRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture2DArrayRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture2DArrayRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DArrayRW_RGS\\";
+        m_Texture2DArrayRW_RGS = Texture2DArrayRW_RGS::CreateContext(g_pd3dDevice);
+        if (!m_Texture2DArrayRW_RGS)
+        {
+            printf("Could not create m_Texture2DArrayRW_RGS context");
+            return 1;
+        }
     }
-    Texture2DRW_PS::Context::LogFn = &LogFunction;
-    Texture2DRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture2DRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture2DRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DRW_PS\\";
-    m_Texture2DRW_PS = Texture2DRW_PS::CreateContext(g_pd3dDevice);
-    if (!m_Texture2DRW_PS)
+
+    if (!g_doSubsetTest || g_doTest_Texture2DRW_CS)
     {
-        printf("Could not create m_Texture2DRW_PS context");
-        return 1;
+        Texture2DRW_CS::Context::LogFn = &LogFunction;
+        Texture2DRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture2DRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture2DRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DRW_CS\\";
+        m_Texture2DRW_CS = Texture2DRW_CS::CreateContext(g_pd3dDevice);
+        if (!m_Texture2DRW_CS)
+        {
+            printf("Could not create m_Texture2DRW_CS context");
+            return 1;
+        }
     }
-    Texture2DRW_RGS::Context::LogFn = &LogFunction;
-    Texture2DRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture2DRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture2DRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DRW_RGS\\";
-    m_Texture2DRW_RGS = Texture2DRW_RGS::CreateContext(g_pd3dDevice);
-    if (!m_Texture2DRW_RGS)
+
+    if (!g_doSubsetTest || g_doTest_Texture2DRW_PS)
     {
-        printf("Could not create m_Texture2DRW_RGS context");
-        return 1;
+        Texture2DRW_PS::Context::LogFn = &LogFunction;
+        Texture2DRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture2DRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture2DRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DRW_PS\\";
+        m_Texture2DRW_PS = Texture2DRW_PS::CreateContext(g_pd3dDevice);
+        if (!m_Texture2DRW_PS)
+        {
+            printf("Could not create m_Texture2DRW_PS context");
+            return 1;
+        }
     }
-    Texture3DRW_CS::Context::LogFn = &LogFunction;
-    Texture3DRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture3DRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture3DRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture3DRW_CS\\";
-    m_Texture3DRW_CS = Texture3DRW_CS::CreateContext(g_pd3dDevice);
-    if (!m_Texture3DRW_CS)
+
+    if (!g_doSubsetTest || g_doTest_Texture2DRW_RGS)
     {
-        printf("Could not create m_Texture3DRW_CS context");
-        return 1;
+        Texture2DRW_RGS::Context::LogFn = &LogFunction;
+        Texture2DRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture2DRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture2DRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture2DRW_RGS\\";
+        m_Texture2DRW_RGS = Texture2DRW_RGS::CreateContext(g_pd3dDevice);
+        if (!m_Texture2DRW_RGS)
+        {
+            printf("Could not create m_Texture2DRW_RGS context");
+            return 1;
+        }
     }
-    Texture3DRW_PS::Context::LogFn = &LogFunction;
-    Texture3DRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture3DRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture3DRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture3DRW_PS\\";
-    m_Texture3DRW_PS = Texture3DRW_PS::CreateContext(g_pd3dDevice);
-    if (!m_Texture3DRW_PS)
+
+    if (!g_doSubsetTest || g_doTest_Texture3DRW_CS)
     {
-        printf("Could not create m_Texture3DRW_PS context");
-        return 1;
+        Texture3DRW_CS::Context::LogFn = &LogFunction;
+        Texture3DRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture3DRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture3DRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture3DRW_CS\\";
+        m_Texture3DRW_CS = Texture3DRW_CS::CreateContext(g_pd3dDevice);
+        if (!m_Texture3DRW_CS)
+        {
+            printf("Could not create m_Texture3DRW_CS context");
+            return 1;
+        }
     }
-    Texture3DRW_RGS::Context::LogFn = &LogFunction;
-    Texture3DRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    Texture3DRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
-    Texture3DRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture3DRW_RGS\\";
-    m_Texture3DRW_RGS = Texture3DRW_RGS::CreateContext(g_pd3dDevice);
-    if (!m_Texture3DRW_RGS)
+
+    if (!g_doSubsetTest || g_doTest_Texture3DRW_PS)
     {
-        printf("Could not create m_Texture3DRW_RGS context");
-        return 1;
+        Texture3DRW_PS::Context::LogFn = &LogFunction;
+        Texture3DRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture3DRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture3DRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture3DRW_PS\\";
+        m_Texture3DRW_PS = Texture3DRW_PS::CreateContext(g_pd3dDevice);
+        if (!m_Texture3DRW_PS)
+        {
+            printf("Could not create m_Texture3DRW_PS context");
+            return 1;
+        }
     }
-    TextureCubeRW_CS::Context::LogFn = &LogFunction;
-    TextureCubeRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    TextureCubeRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
-    TextureCubeRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureCubeRW_CS\\";
-    m_TextureCubeRW_CS = TextureCubeRW_CS::CreateContext(g_pd3dDevice);
-    if (!m_TextureCubeRW_CS)
+
+    if (!g_doSubsetTest || g_doTest_Texture3DRW_RGS)
     {
-        printf("Could not create m_TextureCubeRW_CS context");
-        return 1;
+        Texture3DRW_RGS::Context::LogFn = &LogFunction;
+        Texture3DRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Texture3DRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
+        Texture3DRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\Texture3DRW_RGS\\";
+        m_Texture3DRW_RGS = Texture3DRW_RGS::CreateContext(g_pd3dDevice);
+        if (!m_Texture3DRW_RGS)
+        {
+            printf("Could not create m_Texture3DRW_RGS context");
+            return 1;
+        }
     }
-    TextureCubeRW_PS::Context::LogFn = &LogFunction;
-    TextureCubeRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    TextureCubeRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
-    TextureCubeRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureCubeRW_PS\\";
-    m_TextureCubeRW_PS = TextureCubeRW_PS::CreateContext(g_pd3dDevice);
-    if (!m_TextureCubeRW_PS)
+
+    if (!g_doSubsetTest || g_doTest_TextureCubeRW_CS)
     {
-        printf("Could not create m_TextureCubeRW_PS context");
-        return 1;
+        TextureCubeRW_CS::Context::LogFn = &LogFunction;
+        TextureCubeRW_CS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        TextureCubeRW_CS::Context::PerfEventEndFn = &PerfEventEndFn;
+        TextureCubeRW_CS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureCubeRW_CS\\";
+        m_TextureCubeRW_CS = TextureCubeRW_CS::CreateContext(g_pd3dDevice);
+        if (!m_TextureCubeRW_CS)
+        {
+            printf("Could not create m_TextureCubeRW_CS context");
+            return 1;
+        }
     }
-    TextureCubeRW_RGS::Context::LogFn = &LogFunction;
-    TextureCubeRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    TextureCubeRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
-    TextureCubeRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureCubeRW_RGS\\";
-    m_TextureCubeRW_RGS = TextureCubeRW_RGS::CreateContext(g_pd3dDevice);
-    if (!m_TextureCubeRW_RGS)
+
+    if (!g_doSubsetTest || g_doTest_TextureCubeRW_PS)
     {
-        printf("Could not create m_TextureCubeRW_RGS context");
-        return 1;
+        TextureCubeRW_PS::Context::LogFn = &LogFunction;
+        TextureCubeRW_PS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        TextureCubeRW_PS::Context::PerfEventEndFn = &PerfEventEndFn;
+        TextureCubeRW_PS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureCubeRW_PS\\";
+        m_TextureCubeRW_PS = TextureCubeRW_PS::CreateContext(g_pd3dDevice);
+        if (!m_TextureCubeRW_PS)
+        {
+            printf("Could not create m_TextureCubeRW_PS context");
+            return 1;
+        }
     }
-    TextureFormats::Context::LogFn = &LogFunction;
-    TextureFormats::Context::PerfEventBeginFn = &PerfEventBeginFn;
-    TextureFormats::Context::PerfEventEndFn = &PerfEventEndFn;
-    TextureFormats::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureFormats\\";
-    m_TextureFormats = TextureFormats::CreateContext(g_pd3dDevice);
-    if (!m_TextureFormats)
+
+    if (!g_doSubsetTest || g_doTest_TextureCubeRW_RGS)
     {
-        printf("Could not create m_TextureFormats context");
-        return 1;
+        TextureCubeRW_RGS::Context::LogFn = &LogFunction;
+        TextureCubeRW_RGS::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        TextureCubeRW_RGS::Context::PerfEventEndFn = &PerfEventEndFn;
+        TextureCubeRW_RGS::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureCubeRW_RGS\\";
+        m_TextureCubeRW_RGS = TextureCubeRW_RGS::CreateContext(g_pd3dDevice);
+        if (!m_TextureCubeRW_RGS)
+        {
+            printf("Could not create m_TextureCubeRW_RGS context");
+            return 1;
+        }
     }
+
+    if (!g_doSubsetTest || g_doTest_TextureFormats)
+    {
+        TextureFormats::Context::LogFn = &LogFunction;
+        TextureFormats::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        TextureFormats::Context::PerfEventEndFn = &PerfEventEndFn;
+        TextureFormats::Context::s_techniqueLocation = L".\\UnitTests\\Textures\\TextureFormats\\";
+        m_TextureFormats = TextureFormats::CreateContext(g_pd3dDevice);
+        if (!m_TextureFormats)
+        {
+            printf("Could not create m_TextureFormats context");
+            return 1;
+        }
+    }
+
     // Gigi Modification End
 
     bool show_another_window = false;
@@ -1158,6 +1475,8 @@ int main(int, char**)
             simpleRaster::MakeUI(m_simpleRaster, g_pd3dCommandQueue);
         if (m_simpleRaster2 && ImGui::CollapsingHeader("simpleRaster2"))
             simpleRaster2::MakeUI(m_simpleRaster2, g_pd3dCommandQueue);
+        if (m_simpleRasterInSubgraph && ImGui::CollapsingHeader("simpleRasterInSubgraph"))
+            simpleRasterInSubgraph::MakeUI(m_simpleRasterInSubgraph, g_pd3dCommandQueue);
         if (m_simpleRaster_Lines && ImGui::CollapsingHeader("simpleRaster_Lines"))
             simpleRaster_Lines::MakeUI(m_simpleRaster_Lines, g_pd3dCommandQueue);
         if (m_simpleRaster_Points && ImGui::CollapsingHeader("simpleRaster_Points"))
@@ -1312,125 +1631,247 @@ int main(int, char**)
         // Gigi Modification End
 
         // Gigi Modification Begin - OnNewFrame and Execute
-        BarrierTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        buffertest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        StructuredBuffer::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        boxblur::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        IndirectDispatch::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        ReadbackSequence::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simple::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        SlangAutoDiff::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        CopyResourceTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        CopyResourceTest_FB::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mesh::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        MeshAmplification::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        MeshAmplificationLines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        NoVertex_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simpleRaster::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simpleRaster2::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simpleRaster_Lines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simpleRaster_Points::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Stencil::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        VRS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        YesVertexStruct_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        YesVertexStruct_NoIndex_YesInstanceStruct::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        YesVertexStruct_NoIndex_YesInstanceType::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        YesVertexStruct_YesIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        YesVertexType_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        AnyHit::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        AnyHitSimple::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        IntersectionShader::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simpleRT::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        simpleRT_inline::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        TwoRayGens::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        TwoRayGensSubgraph::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        SubGraphLoops::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        SubGraphTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        SubInSub::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_CS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_CS_2DArray::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_CS_3D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_CS_Cube::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_DrawCall::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_RGS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_ShaderToken_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_ShaderToken_2DArray::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_ShaderToken_3D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_ShaderToken_Cube::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Mips_VSPS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture2DArrayRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture2DArrayRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture2DArrayRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture2DRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture2DRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture2DRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture3DRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture3DRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        Texture3DRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        TextureCubeRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        TextureCubeRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        TextureCubeRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
-        TextureFormats::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_BarrierTest)
+            BarrierTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_buffertest)
+            buffertest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_StructuredBuffer)
+            StructuredBuffer::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_boxblur)
+            boxblur::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_IndirectDispatch)
+            IndirectDispatch::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_ReadbackSequence)
+            ReadbackSequence::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simple)
+            simple::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_SlangAutoDiff)
+            SlangAutoDiff::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_CopyResourceTest)
+            CopyResourceTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_CopyResourceTest_FB)
+            CopyResourceTest_FB::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mesh)
+            Mesh::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_MeshAmplification)
+            MeshAmplification::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_MeshAmplificationLines)
+            MeshAmplificationLines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_NoVertex_NoIndex_NoInstance)
+            NoVertex_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRaster)
+            simpleRaster::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRaster2)
+            simpleRaster2::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRasterInSubgraph)
+            simpleRasterInSubgraph::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRaster_Lines)
+            simpleRaster_Lines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRaster_Points)
+            simpleRaster_Points::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Stencil)
+            Stencil::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_VRS)
+            VRS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_YesVertexStruct_NoIndex_NoInstance)
+            YesVertexStruct_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_YesVertexStruct_NoIndex_YesInstanceStruct)
+            YesVertexStruct_NoIndex_YesInstanceStruct::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_YesVertexStruct_NoIndex_YesInstanceType)
+            YesVertexStruct_NoIndex_YesInstanceType::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_YesVertexStruct_YesIndex_NoInstance)
+            YesVertexStruct_YesIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_YesVertexType_NoIndex_NoInstance)
+            YesVertexType_NoIndex_NoInstance::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_AnyHit)
+            AnyHit::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_AnyHitSimple)
+            AnyHitSimple::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_IntersectionShader)
+            IntersectionShader::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRT)
+            simpleRT::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_simpleRT_inline)
+            simpleRT_inline::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_TwoRayGens)
+            TwoRayGens::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_TwoRayGensSubgraph)
+            TwoRayGensSubgraph::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_SubGraphLoops)
+            SubGraphLoops::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_SubGraphTest)
+            SubGraphTest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_SubInSub)
+            SubInSub::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_CS_2D)
+            Mips_CS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_CS_2DArray)
+            Mips_CS_2DArray::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_CS_3D)
+            Mips_CS_3D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_CS_Cube)
+            Mips_CS_Cube::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_DrawCall)
+            Mips_DrawCall::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_RGS_2D)
+            Mips_RGS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_ShaderToken_2D)
+            Mips_ShaderToken_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_ShaderToken_2DArray)
+            Mips_ShaderToken_2DArray::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_ShaderToken_3D)
+            Mips_ShaderToken_3D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_ShaderToken_Cube)
+            Mips_ShaderToken_Cube::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Mips_VSPS_2D)
+            Mips_VSPS_2D::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture2DArrayRW_CS)
+            Texture2DArrayRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture2DArrayRW_PS)
+            Texture2DArrayRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture2DArrayRW_RGS)
+            Texture2DArrayRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture2DRW_CS)
+            Texture2DRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture2DRW_PS)
+            Texture2DRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture2DRW_RGS)
+            Texture2DRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture3DRW_CS)
+            Texture3DRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture3DRW_PS)
+            Texture3DRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Texture3DRW_RGS)
+            Texture3DRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_TextureCubeRW_CS)
+            TextureCubeRW_CS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_TextureCubeRW_PS)
+            TextureCubeRW_PS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_TextureCubeRW_RGS)
+            TextureCubeRW_RGS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_TextureFormats)
+            TextureFormats::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
 
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BarrierTest, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ReadbackSequence, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest_FB, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mesh, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplification, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplificationLines, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_NoVertex_NoIndex_NoInstance, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster2, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Lines, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Points, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Stencil, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VRS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_NoInstance, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceStruct, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceType, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_YesIndex_NoInstance, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexType_NoIndex_NoInstance, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHit, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHitSimple, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IntersectionShader, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2D, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2DArray, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_3D, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_Cube, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_DrawCall, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_RGS_2D, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2D, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2DArray, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_3D, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_Cube, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_VSPS_2D, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_CS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_PS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_RGS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_CS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_PS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_RGS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_CS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_PS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_RGS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_CS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_PS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_RGS, UnitTestEvent::PreExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureFormats, UnitTestEvent::PreExecute);
+        if (m_BarrierTest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BarrierTest, UnitTestEvent::PreExecute);
+        if (m_buffertest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PreExecute);
+        if (m_StructuredBuffer)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PreExecute);
+        if (m_boxblur)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PreExecute);
+        if (m_IndirectDispatch)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PreExecute);
+        if (m_ReadbackSequence)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ReadbackSequence, UnitTestEvent::PreExecute);
+        if (m_simple)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PreExecute);
+        if (m_SlangAutoDiff)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PreExecute);
+        if (m_CopyResourceTest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest, UnitTestEvent::PreExecute);
+        if (m_CopyResourceTest_FB)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest_FB, UnitTestEvent::PreExecute);
+        if (m_Mesh)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mesh, UnitTestEvent::PreExecute);
+        if (m_MeshAmplification)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplification, UnitTestEvent::PreExecute);
+        if (m_MeshAmplificationLines)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplificationLines, UnitTestEvent::PreExecute);
+        if (m_NoVertex_NoIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_NoVertex_NoIndex_NoInstance, UnitTestEvent::PreExecute);
+        if (m_simpleRaster)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster, UnitTestEvent::PreExecute);
+        if (m_simpleRaster2)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster2, UnitTestEvent::PreExecute);
+        if (m_simpleRasterInSubgraph)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRasterInSubgraph, UnitTestEvent::PreExecute);
+        if (m_simpleRaster_Lines)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Lines, UnitTestEvent::PreExecute);
+        if (m_simpleRaster_Points)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Points, UnitTestEvent::PreExecute);
+        if (m_Stencil)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Stencil, UnitTestEvent::PreExecute);
+        if (m_VRS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VRS, UnitTestEvent::PreExecute);
+        if (m_YesVertexStruct_NoIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_NoInstance, UnitTestEvent::PreExecute);
+        if (m_YesVertexStruct_NoIndex_YesInstanceStruct)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceStruct, UnitTestEvent::PreExecute);
+        if (m_YesVertexStruct_NoIndex_YesInstanceType)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceType, UnitTestEvent::PreExecute);
+        if (m_YesVertexStruct_YesIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_YesIndex_NoInstance, UnitTestEvent::PreExecute);
+        if (m_YesVertexType_NoIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexType_NoIndex_NoInstance, UnitTestEvent::PreExecute);
+        if (m_AnyHit)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHit, UnitTestEvent::PreExecute);
+        if (m_AnyHitSimple)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHitSimple, UnitTestEvent::PreExecute);
+        if (m_IntersectionShader)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IntersectionShader, UnitTestEvent::PreExecute);
+        if (m_simpleRT)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PreExecute);
+        if (m_simpleRT_inline)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PreExecute);
+        if (m_TwoRayGens)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PreExecute);
+        if (m_TwoRayGensSubgraph)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PreExecute);
+        if (m_SubGraphLoops)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PreExecute);
+        if (m_SubGraphTest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PreExecute);
+        if (m_SubInSub)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PreExecute);
+        if (m_Mips_CS_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2D, UnitTestEvent::PreExecute);
+        if (m_Mips_CS_2DArray)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2DArray, UnitTestEvent::PreExecute);
+        if (m_Mips_CS_3D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_3D, UnitTestEvent::PreExecute);
+        if (m_Mips_CS_Cube)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_Cube, UnitTestEvent::PreExecute);
+        if (m_Mips_DrawCall)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_DrawCall, UnitTestEvent::PreExecute);
+        if (m_Mips_RGS_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_RGS_2D, UnitTestEvent::PreExecute);
+        if (m_Mips_ShaderToken_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2D, UnitTestEvent::PreExecute);
+        if (m_Mips_ShaderToken_2DArray)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2DArray, UnitTestEvent::PreExecute);
+        if (m_Mips_ShaderToken_3D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_3D, UnitTestEvent::PreExecute);
+        if (m_Mips_ShaderToken_Cube)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_Cube, UnitTestEvent::PreExecute);
+        if (m_Mips_VSPS_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_VSPS_2D, UnitTestEvent::PreExecute);
+        if (m_Texture2DArrayRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_CS, UnitTestEvent::PreExecute);
+        if (m_Texture2DArrayRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_PS, UnitTestEvent::PreExecute);
+        if (m_Texture2DArrayRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_RGS, UnitTestEvent::PreExecute);
+        if (m_Texture2DRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_CS, UnitTestEvent::PreExecute);
+        if (m_Texture2DRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_PS, UnitTestEvent::PreExecute);
+        if (m_Texture2DRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_RGS, UnitTestEvent::PreExecute);
+        if (m_Texture3DRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_CS, UnitTestEvent::PreExecute);
+        if (m_Texture3DRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_PS, UnitTestEvent::PreExecute);
+        if (m_Texture3DRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_RGS, UnitTestEvent::PreExecute);
+        if (m_TextureCubeRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_CS, UnitTestEvent::PreExecute);
+        if (m_TextureCubeRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_PS, UnitTestEvent::PreExecute);
+        if (m_TextureCubeRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_RGS, UnitTestEvent::PreExecute);
+        if (m_TextureFormats)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureFormats, UnitTestEvent::PreExecute);
 
         if (m_BarrierTest)
             BarrierTest::Execute(m_BarrierTest, g_pd3dDevice, g_pd3dCommandList);
@@ -1464,6 +1905,8 @@ int main(int, char**)
             simpleRaster::Execute(m_simpleRaster, g_pd3dDevice, g_pd3dCommandList);
         if (m_simpleRaster2)
             simpleRaster2::Execute(m_simpleRaster2, g_pd3dDevice, g_pd3dCommandList);
+        if (m_simpleRasterInSubgraph)
+            simpleRasterInSubgraph::Execute(m_simpleRasterInSubgraph, g_pd3dDevice, g_pd3dCommandList);
         if (m_simpleRaster_Lines)
             simpleRaster_Lines::Execute(m_simpleRaster_Lines, g_pd3dDevice, g_pd3dCommandList);
         if (m_simpleRaster_Points)
@@ -1551,65 +1994,126 @@ int main(int, char**)
         if (m_TextureFormats)
             TextureFormats::Execute(m_TextureFormats, g_pd3dDevice, g_pd3dCommandList);
 
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BarrierTest, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ReadbackSequence, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest_FB, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mesh, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplification, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplificationLines, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_NoVertex_NoIndex_NoInstance, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster2, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Lines, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Points, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Stencil, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VRS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_NoInstance, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceStruct, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceType, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_YesIndex_NoInstance, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexType_NoIndex_NoInstance, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHit, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHitSimple, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IntersectionShader, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2D, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2DArray, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_3D, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_Cube, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_DrawCall, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_RGS_2D, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2D, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2DArray, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_3D, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_Cube, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_VSPS_2D, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_CS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_PS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_RGS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_CS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_PS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_RGS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_CS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_PS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_RGS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_CS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_PS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_RGS, UnitTestEvent::PostExecute);
-        UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureFormats, UnitTestEvent::PostExecute);
+        if (m_BarrierTest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BarrierTest, UnitTestEvent::PostExecute);
+        if (m_buffertest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PostExecute);
+        if (m_StructuredBuffer)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PostExecute);
+        if (m_boxblur)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PostExecute);
+        if (m_IndirectDispatch)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PostExecute);
+        if (m_ReadbackSequence)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ReadbackSequence, UnitTestEvent::PostExecute);
+        if (m_simple)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PostExecute);
+        if (m_SlangAutoDiff)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PostExecute);
+        if (m_CopyResourceTest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest, UnitTestEvent::PostExecute);
+        if (m_CopyResourceTest_FB)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyResourceTest_FB, UnitTestEvent::PostExecute);
+        if (m_Mesh)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mesh, UnitTestEvent::PostExecute);
+        if (m_MeshAmplification)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplification, UnitTestEvent::PostExecute);
+        if (m_MeshAmplificationLines)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_MeshAmplificationLines, UnitTestEvent::PostExecute);
+        if (m_NoVertex_NoIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_NoVertex_NoIndex_NoInstance, UnitTestEvent::PostExecute);
+        if (m_simpleRaster)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster, UnitTestEvent::PostExecute);
+        if (m_simpleRaster2)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster2, UnitTestEvent::PostExecute);
+        if (m_simpleRasterInSubgraph)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRasterInSubgraph, UnitTestEvent::PostExecute);
+        if (m_simpleRaster_Lines)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Lines, UnitTestEvent::PostExecute);
+        if (m_simpleRaster_Points)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRaster_Points, UnitTestEvent::PostExecute);
+        if (m_Stencil)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Stencil, UnitTestEvent::PostExecute);
+        if (m_VRS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VRS, UnitTestEvent::PostExecute);
+        if (m_YesVertexStruct_NoIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_NoInstance, UnitTestEvent::PostExecute);
+        if (m_YesVertexStruct_NoIndex_YesInstanceStruct)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceStruct, UnitTestEvent::PostExecute);
+        if (m_YesVertexStruct_NoIndex_YesInstanceType)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_NoIndex_YesInstanceType, UnitTestEvent::PostExecute);
+        if (m_YesVertexStruct_YesIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexStruct_YesIndex_NoInstance, UnitTestEvent::PostExecute);
+        if (m_YesVertexType_NoIndex_NoInstance)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_YesVertexType_NoIndex_NoInstance, UnitTestEvent::PostExecute);
+        if (m_AnyHit)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHit, UnitTestEvent::PostExecute);
+        if (m_AnyHitSimple)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_AnyHitSimple, UnitTestEvent::PostExecute);
+        if (m_IntersectionShader)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IntersectionShader, UnitTestEvent::PostExecute);
+        if (m_simpleRT)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT, UnitTestEvent::PostExecute);
+        if (m_simpleRT_inline)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simpleRT_inline, UnitTestEvent::PostExecute);
+        if (m_TwoRayGens)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PostExecute);
+        if (m_TwoRayGensSubgraph)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PostExecute);
+        if (m_SubGraphLoops)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PostExecute);
+        if (m_SubGraphTest)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphTest, UnitTestEvent::PostExecute);
+        if (m_SubInSub)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubInSub, UnitTestEvent::PostExecute);
+        if (m_Mips_CS_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2D, UnitTestEvent::PostExecute);
+        if (m_Mips_CS_2DArray)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_2DArray, UnitTestEvent::PostExecute);
+        if (m_Mips_CS_3D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_3D, UnitTestEvent::PostExecute);
+        if (m_Mips_CS_Cube)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_CS_Cube, UnitTestEvent::PostExecute);
+        if (m_Mips_DrawCall)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_DrawCall, UnitTestEvent::PostExecute);
+        if (m_Mips_RGS_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_RGS_2D, UnitTestEvent::PostExecute);
+        if (m_Mips_ShaderToken_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2D, UnitTestEvent::PostExecute);
+        if (m_Mips_ShaderToken_2DArray)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_2DArray, UnitTestEvent::PostExecute);
+        if (m_Mips_ShaderToken_3D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_3D, UnitTestEvent::PostExecute);
+        if (m_Mips_ShaderToken_Cube)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_ShaderToken_Cube, UnitTestEvent::PostExecute);
+        if (m_Mips_VSPS_2D)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Mips_VSPS_2D, UnitTestEvent::PostExecute);
+        if (m_Texture2DArrayRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_CS, UnitTestEvent::PostExecute);
+        if (m_Texture2DArrayRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_PS, UnitTestEvent::PostExecute);
+        if (m_Texture2DArrayRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DArrayRW_RGS, UnitTestEvent::PostExecute);
+        if (m_Texture2DRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_CS, UnitTestEvent::PostExecute);
+        if (m_Texture2DRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_PS, UnitTestEvent::PostExecute);
+        if (m_Texture2DRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture2DRW_RGS, UnitTestEvent::PostExecute);
+        if (m_Texture3DRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_CS, UnitTestEvent::PostExecute);
+        if (m_Texture3DRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_PS, UnitTestEvent::PostExecute);
+        if (m_Texture3DRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Texture3DRW_RGS, UnitTestEvent::PostExecute);
+        if (m_TextureCubeRW_CS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_CS, UnitTestEvent::PostExecute);
+        if (m_TextureCubeRW_PS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_PS, UnitTestEvent::PostExecute);
+        if (m_TextureCubeRW_RGS)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureCubeRW_RGS, UnitTestEvent::PostExecute);
+        if (m_TextureFormats)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TextureFormats, UnitTestEvent::PostExecute);
         // Gigi Modification End
 
         // Gigi Modification Begin
@@ -1725,6 +2229,11 @@ int main(int, char**)
     {
         simpleRaster2::DestroyContext(m_simpleRaster2);
         m_simpleRaster2 = nullptr;
+    }
+    if (m_simpleRasterInSubgraph)
+    {
+        simpleRasterInSubgraph::DestroyContext(m_simpleRasterInSubgraph);
+        m_simpleRasterInSubgraph = nullptr;
     }
     if (m_simpleRaster_Lines)
     {

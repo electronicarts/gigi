@@ -1,0 +1,184 @@
+'\" t
+.\"     Title: git-lfs-merge-driver
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-MERGE\-DRIVER" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-merge-driver \- Merge text\-based LFS files
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs merge\-driver\fP [options]
+.SH "DESCRIPTION"
+.sp
+Merge text files stored in Git LFS using the default Git merge
+machinery, or a custom merge driver if specified. Note that this, in
+general, does not support partial renames or copies because Git does not
+support them in this case.
+.sp
+This program is intended to be invoked automatically by Git and not by
+users manually. See CONFIGURATION for details on the configuration
+required for that.
+.SH "OPTIONS"
+.sp
+\f(CR\-\-ancestor <path>\fP
+.RS 4
+Specify the file containing the ancestor revision.
+.RE
+.sp
+\f(CR\-\-current <path>\fP
+.RS 4
+Specify the file containing the current revision.
+.RE
+.sp
+\f(CR\-\-marker\-size <num>\fP
+.RS 4
+Specify the conflict marker size as an integer.
+.RE
+.sp
+\f(CR\-\-other <path>\fP
+.RS 4
+Specify the file containing the other revision.
+.RE
+.sp
+\f(CR\-\-program <program>\fP
+.RS 4
+Specify a command, which is passed to the shell after substitution, that
+performs the actual merge. If this is not specified, \f(CRgit merge\-file\fP is
+invoked with appropriate arguments to perform the merge of the file.
+.sp
+See CONFIGURATION for the sequences which are substituted here.
+.RE
+.SH "CONFIGURATION"
+.sp
+Git allows the use of a custom merge driver for files based on the
+\f(CRmerge\fP attribute set in \f(CR.gitattributes\fP. By default, when using
+\f(CRgit lfs track\fP, this value is set to \f(CRlfs\fP.
+.sp
+Because Git LFS can be used to store both text and binary files and it
+isn\(cqt always clear which behavior should be used, Git LFS does not
+enable this merge driver by default. However, if you know that some or
+all of your files are text files, then you can set the \f(CRmerge\fP attribute
+for those files to \f(CRlfs\-text\fP and use \f(CRgit config\fP to set the merge
+driver like so:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git config merge.lfs\-text.driver \*(Aqgit lfs merge\-driver \-\-ancestor %O \-\-current %A \-\-other %B \-\-marker\-size %L \-\-output %A\*(Aq
+.fam
+.fi
+.if n .RE
+.sp
+This tells Git to invoke the custom Git LFS merge driver, which in turn
+uses Git\(cqs merge machinery, to merge files where the \f(CRmerge\fP attribute
+is set to \f(CRlfs\-text\fP. Note that \f(CRlfs\-text\fP here is an example and any
+syntactically valid value can be used.
+.sp
+If you are using a special type of file that needs rules different from
+Git\(cqs standard merge machinery, you can also specify the \f(CR\-\-program\fP
+option, which is passed to \f(CRsh\fP after substituting its own
+percent\-encoded escapes:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CR%A\fP: the current version
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CR%B\fP: the other version
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CR%D\fP: the destination version
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CR%O\fP: the ancestor version
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CR%L\fP: the conflict marker size
+.RE
+.sp
+Note that the percent sign must typically be doubled to prevent Git from
+substituting its own values here. Therefore, specifying the default
+behavior explicitly looks like this:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git config merge.lfs\-text.driver \(rs
+  \*(Aqgit lfs merge\-driver \-\-ancestor %O \-\-current %A \-\-other %B \-\-marker\-size %L \-\-output %A \-\-program \*(Aq\(rs\*(Aq\*(Aqgit merge\-file \-\-stdout \-\-marker\-size=%%L %%A %%O %%B >%%D\*(Aq\(rs\*(Aq\*(Aq\*(Aq
+.fam
+.fi
+.if n .RE
+.sp
+The exit status from the custom command should be zero on success or
+non\-zero on conflicts or other failure.
+.sp
+Note that if no merge driver is specified for the value of the \f(CRmerge\fP
+attribute (as is the case by default with \f(CRmerge=lfs\fP), then the default
+Git merge strategy is used. For LFS files, this means that Git will try
+to merge the pointer files, which usually is not useful.
+.SH "SEE ALSO"
+.sp
+git\-merge(1), git\-merge\-file(1), gitattributes(5)
+.sp
+Part of the git\-lfs(1) suite.

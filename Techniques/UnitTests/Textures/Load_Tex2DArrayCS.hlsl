@@ -55,18 +55,26 @@
 	float4 color = float4(0.0f, 0.0f, 0.0f, 1.0f);
 	switch (imageIndex)
 	{
-		case 0: color = BC6U.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 1: color = BC6U_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 2: color = BC7sRGB.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 3: color = BC7sRGB_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 4: color = BinaryF32.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 5: color = BinaryF32_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 6: color = BinaryU8.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 7: color = BinaryU8_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 8: color = /*$(Image2DArray:Tex2DArray_BC6U_8x8x4_mips.dds:BC6_UF16:float4:false:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 9: color = /*$(Image2DArray:Tex2DArray_BC6U_8x8x4_nomips.dds:BC6_UF16:float4:false:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 10: color = /*$(Image2DArray:Tex2DArray_BC7sRGB_8x8x4_mips.dds:BC7_Unorm_sRGB:float4:true:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
-		case 11: color = /*$(Image2DArray:Tex2DArray_BC7sRGB_8x8x4_nomips.dds:BC7_Unorm_sRGB:float4:true:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 0: color = BC4U.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 1: color = BC4U_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 2: color = BC5U.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 3: color = BC5U_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 4: color = BC6U.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 5: color = BC6U_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 6: color = BC7sRGB.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 7: color = BC7sRGB_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 8: color = BinaryF32.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 9: color = BinaryF32_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 10: color = BinaryU8.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 11: color = BinaryU8_NoMips.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 12: color = /*$(Image2DArray:Tex2DArray_BC4U_8x8x4_mips.dds:BC4_Unorm:float4:false:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 13: color = /*$(Image2DArray:Tex2DArray_BC4U_8x8x4_nomips.dds:BC4_Unorm:float4:false:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 14: color = /*$(Image2DArray:Tex2DArray_BC5U_8x8x4_mips.dds:BC5_Unorm:float4:true:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 15: color = /*$(Image2DArray:Tex2DArray_BC5U_8x8x4_nomips.dds:BC5_Unorm:float4:true:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 16: color = /*$(Image2DArray:Tex2DArray_BC6U_8x8x4_mips.dds:BC6_UF16:float4:false:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 17: color = /*$(Image2DArray:Tex2DArray_BC6U_8x8x4_nomips.dds:BC6_UF16:float4:false:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 18: color = /*$(Image2DArray:Tex2DArray_BC7sRGB_8x8x4_mips.dds:BC7_Unorm_sRGB:float4:true:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
+		case 19: color = /*$(Image2DArray:Tex2DArray_BC7sRGB_8x8x4_nomips.dds:BC7_Unorm_sRGB:float4:true:false)*/.Load(uint4(px, arrayIndex, mipIndex)); break;
 	}
 	Output[DTid.xy] = color;
 

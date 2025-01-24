@@ -52,9 +52,14 @@ ENUM_BEGIN(TextureFormat, "")
     ENUM_ITEM(D24_Unorm_S8, "24 bit depth, 8 bit stencil")
 
     // Block compressed formats
-    ENUM_ITEM(BC7_Unorm, "RGB, alpha optional")
-    ENUM_ITEM(BC7_Unorm_sRGB, "RGB, alpha optional. sRGB")
+    ENUM_ITEM(BC4_Unorm, "R 8 bit unorm. block compressed.")
+    ENUM_ITEM(BC4_Snorm, "R 8 bit snorm. block compressed.")
+    ENUM_ITEM(BC5_Unorm, "RG 8 bit unorm. block compressed.")
+    ENUM_ITEM(BC5_Snorm, "RG 8 bit snorm. block compressed.")
 
-    ENUM_ITEM(BC6_UF16, "RGB, 16 bit float unsigned")
-    ENUM_ITEM(BC6_SF16, "RGB, 16 bit float signed")
+    ENUM_ITEM(BC7_Unorm, "RGB, alpha optional. block compressed.")
+    ENUM_ITEM(BC7_Unorm_sRGB, "RGB, alpha optional. sRGB. block compressed.")
+
+    ENUM_ITEM(BC6_UF16, "RGB, 16 bit float unsigned. block compressed.")
+    ENUM_ITEM(BC6_SF16, "RGB, 16 bit float signed. block compressed.")
 ENUM_END()

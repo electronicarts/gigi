@@ -31,7 +31,7 @@
                 "nodeName": "VertexBuffer",
                 "isATexture": false,
                 "buffer": {
-                    "fileName": "..\\..\\OBJAssets\\bunny.obj",
+                    "fileName": "..\\..\\UnitTests\\ObjAssets\\bunny.obj",
                     "structIndex": 0,
                     "BLASOpaque": true
                 }
@@ -44,7 +44,7 @@
             },
             {
                 "name": "ViewMode",
-                "value": "5"
+                "value": "11"
             },
             {
                 "name": "ViewerColor",

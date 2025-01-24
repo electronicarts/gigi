@@ -3,7 +3,7 @@
         {
             "nodeName": "texture",
             "texture": {
-                "fileName": "..\\..\\skyboxes\\Test_%s.png",
+                "fileName": "..\\skyboxes\\Test_%s.png",
                 "makeMips": true
             }
         }

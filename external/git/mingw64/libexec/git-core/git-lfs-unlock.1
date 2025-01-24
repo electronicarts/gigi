@@ -1,0 +1,67 @@
+'\" t
+.\"     Title: git-lfs-unlock
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-UNLOCK" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-unlock \- Remove "locked" setting for a file on the Git LFS server
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs unlock\fP [<options>] <path>
+.SH "DESCRIPTION"
+.sp
+Removes the given file path as "locked" on the Git LFS server. Files
+must exist and have a clean git status before they can be unlocked. The
+\f(CR\-\-force\fP flag will skip these checks.
+.SH "OPTIONS"
+.sp
+\f(CR\-r <name>\fP, \f(CR\-\-remote=<name>\fP
+.RS 4
+Specify the Git LFS server to use. Ignored if the \f(CRlfs.url\fP config key is
+set.
+.RE
+.sp
+\f(CR\-f\fP, \f(CR\-\-force\fP
+.RS 4
+Tells the server to remove the lock, even if it\(cqs owned by another user.
+.RE
+.sp
+\f(CR\-i <id>\fP, \f(CR\-\-id=<id>\fP
+.RS 4
+Specifies a lock by its ID instead of path.
+.RE
+.sp
+\f(CR\-\-json\fP
+.RS 4
+Writes lock info as JSON to STDOUT if the command exits successfully. Intended
+for interoperation with external tools. If the command returns with a non\-zero
+exit code, plain text messages will be sent to STDERR.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-lock(1), git\-lfs\-locks(1).
+.sp
+Part of the git\-lfs(1) suite.

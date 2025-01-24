@@ -33,6 +33,15 @@ namespace simpleRaster
             float4x4 ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
         };
 
+        // This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.
+        ID3D12Resource* buffer_VBCopy = nullptr;
+        DXGI_FORMAT buffer_VBCopy_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
+        unsigned int buffer_VBCopy_stride = 0; // For structured buffers, the size of the structure
+        unsigned int buffer_VBCopy_count = 0; // How many items there are
+        const D3D12_RESOURCE_STATES c_buffer_VBCopy_endingState = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+
+        static const D3D12_RESOURCE_FLAGS c_buffer_VBCopy_flags =  D3D12_RESOURCE_FLAG_NONE; // Flags the buffer needs to have been created with
+
         Struct__VertexShaderCB constantBuffer__VertexShaderCB_cpu;
         ID3D12Resource* constantBuffer__VertexShaderCB = nullptr;
 

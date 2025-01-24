@@ -53,7 +53,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					return true;
 				}
 
-				if (srcRT.m_size != destRT.m_size)
+				// Compare sizes using count * stride. We don't use m_size because that may be padded for alignment reasons.
+				int srcCopySize = srcRT.m_count * srcRT.m_stride;
+				int destCopySize = destRT.m_count * destRT.m_stride;
+				if (srcCopySize != destCopySize)
 				{
 					m_logFn(LogLevel::Error, "Could not copy buffer \"%s\" to buffer \"%s\" because they are different sizes.\n", srcNodeName.c_str(), destNodeName.c_str());
 					return false;
@@ -72,7 +75,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(destRT.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
 				m_transitions.Flush(m_commandList);
 
-				m_commandList->CopyResource(destRT.m_resource, srcRT.m_resource);
+				// If they are the same size, there is no padding difference, and they can be coppied in full.
+				if (srcRT.m_size == destRT.m_size)
+					m_commandList->CopyResource(destRT.m_resource, srcRT.m_resource);
+				// Else, they would be the same size if not for the padding, so we need to specify the unpadded amount to actually copy over.
+				else
+					m_commandList->CopyBufferRegion(destRT.m_resource, 0, srcRT.m_resource, 0, srcCopySize);
 
 				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (After)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, true);
 			}

@@ -1,0 +1,635 @@
+'\" t
+.\"     Title: git-lfs-migrate
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-MIGRATE" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-migrate \- Migrate history to or from Git LFS
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs migrate\fP <mode> [options] [\-\-] [branch ...]
+.SH "DESCRIPTION"
+.sp
+Convert files in a Git repository to or from Git LFS pointers, or
+summarize Git file sizes by file type. The \f(CRimport\fP mode converts Git
+files (i.e., blobs) to Git LFS, while the \f(CRexport\fP mode does the
+reverse, and the \f(CRinfo\fP mode provides an informational summary which may
+be useful in deciding which files to import or export.
+.sp
+In all modes, by default \f(CRgit lfs migrate\fP operates only on the
+currently checked\-out branch, and only on files (of any size and type)
+added in commits which do not exist on any remote. Multiple options are
+available to override these defaults.
+.sp
+When converting files to or from Git LFS, the \f(CRgit lfs migrate\fP command
+will only make changes to your local repository and working copy, never
+any remotes. This is intentional as the \f(CRimport\fP and \f(CRexport\fP modes are
+generally "destructive" in the sense that they rewrite your Git history,
+changing commits and generating new commit SHAs. (The exception is the
+"no\-rewrite" \f(CRimport\fP sub\-mode; see IMPORT WITHOUT REWRITING HISTORY
+for details.)
+.sp
+You should therefore always first commit or stash any uncommitted work
+before using the \f(CRimport\fP or \f(CRexport\fP modes, and then validate the
+result of the migration before pushing the changes to your remotes, for
+instance by running the \f(CRinfo\fP mode and by examining your rewritten
+commit history.
+.sp
+Once you are satisfied with the changes, you will need to force\-push the
+new Git history of any rewritten branches to all your remotes. This is a
+step which should be taken with care, since you will be altering the Git
+history on your remotes.
+.sp
+To examine or modify files in branches other than the currently
+checked\-out one, branch refs may be specified directly, or provided in
+one or more \f(CR\-\-include\-ref\fP options. They may also be excluded by
+prefixing them with \f(CR^\fP or providing them in \f(CR\-\-exclude\-ref\fP options.
+Use the \f(CR\-\-everything\fP option to specify that all refs should be
+examined, including all remote refs. See INCLUDE AND EXCLUDE REFERENCES
+for details.
+.sp
+For the \f(CRinfo\fP and \f(CRimport\fP modes, all file types are considered by
+default; while useful in the \f(CRinfo\fP mode, this is often not desirable
+when importing, so either filename patterns (pathspecs) or the \f(CR\-\-fixup\fP
+option should normally be specified in that case. (At least one include
+pathspec is required for the \f(CRexport\fP mode.) Pathspecs may be defined
+using the \f(CR\-\-include\fP and \f(CR\-\-exclude\fP options (\f(CR\-I\fP and \f(CR\-X\fP for short),
+as described in INCLUDE AND EXCLUDE.
+.sp
+As typical Git LFS usage depends on tracking specific file types using
+filename patterns defined in \f(CR.gitattributes\fP files, the
+\f(CRgit lfs migrate\fP command will examine, create, and modify
+\f(CR.gitattributes\fP files as necessary. The \f(CR.gitattributes\fP files will
+always be assigned the default read/write permissions mode (i.e.,
+without execute permissions). Any symbolic links with that name will
+cause the migration to halt prematurely.
+.sp
+The \f(CRimport\fP mode (see IMPORT) will convert Git objects of the file
+types specified (e.g., with \f(CR\-\-include\fP) to Git LFS pointers, and will
+add entries for those file types to \f(CR.gitattributes\fP files, creating
+those files if they do not exist. The result should be as if
+\f(CRgit lfs track\fP commands had been run at the points in your Git history
+corresponding to where each type of converted file first appears. The
+exception is if the \f(CR\-\-fixup\fP option is given, in which case the
+\f(CRimport\fP mode will only examine any existing \f(CR.gitattributes\fP files and
+then convert Git objects which should be tracked by Git LFS but are not
+yet.
+.sp
+The \f(CRexport\fP mode (see EXPORT) works as the reverse operation to the
+\f(CRimport\fP mode, converting any Git LFS pointers that match the file types
+specified with \f(CR\-\-include\fP, which must be given at least once. Note that
+\f(CR.gitattributes\fP entries will not be removed, nor will the files;
+instead, the \f(CRexport\fP mode inserts "do not track" entries similar to
+those created by the \f(CRgit lfs untrack\fP command. The \f(CR\-\-remote\fP option is
+available in the \f(CRexport\fP mode to specify the remote from which Git LFS
+objects should be fetched if they do not exist in the local Git LFS
+object cache; if not provided, \f(CRorigin\fP is used by default.
+.sp
+The \f(CRinfo\fP mode (see INFO) summarizes by file type (i.e., by filename
+extension) the total number and size of files in a repository. Note that
+like the other two modes, by default the \f(CRinfo\fP mode operates only on
+the currently checked\-out branch and only on commits which do not exist
+on any remote, so to get a summary of the entire repository across all
+branches, use the \f(CR\-\-everything\fP option. If objects have already been
+converted to Git LFS pointers, then by default the size of the
+referenced objects is totaled and reported separately. You may also
+choose to ignore them by using \f(CR\-\-pointers=ignore\fP or to treat the
+pointers as files by using \f(CR\-\-pointers=no\-follow\fP. (The latter option is
+akin to how existing Git LFS pointers were handled by the \f(CRinfo\fP mode in
+prior versions of Git LFS).
+.sp
+When using the \f(CR\-\-everything\fP option, take note that it means all commits
+reachable from all refs (local and remote) will be considered, but not
+necessarily all file types. The \f(CRimport\fP and \f(CRinfo\fP modes consider all file
+types by default, although the \f(CR\-\-include\fP and \f(CR\-\-exclude\fP options constrain
+this behavior.
+.sp
+While the \f(CR\-\-everything\fP option means all commits reachable from any
+ref will be considered for migration, after migration only local refs will
+be updated even when \f(CR\-\-everything\fP is specified. This ensures remote
+refs stay synchronized with their remote. In other words, \f(CRrefs/heads/foo\fP
+will be updated with the \f(CR\-\-everything\fP option, but \f(CRrefs/remotes/origin/foo\fP
+will not, so it stays in sync with the remote until \f(CRgit push origin foo\fP
+is performed.  After checking that the results of a migration with
+\f(CR\-\-everything\fP are satisfactory, it may be convenient to push all local
+branches to your remotes by using the \f(CR\-\-all\fP option to \f(CRgit push\fP.
+.sp
+Unless the \f(CR\-\-skip\-fetch\fP option is given, \f(CRgit lfs migrate\fP always
+begins by fetching updated lists of refs from all the remotes returned
+by \f(CRgit remote\fP, but as noted above, after making changes to your local
+Git history while converting objects, it will never automatically push
+those changes to your remotes.
+.SH "MODES"
+.sp
+info
+.RS 4
+Show information about repository size. See INFO.
+.RE
+.sp
+import
+.RS 4
+Convert Git objects to Git LFS pointers. See IMPORT and
+IMPORT WITHOUT REWRITING HISTORY
+.RE
+.sp
+export
+.RS 4
+Convert Git LFS pointers to Git objects. See EXPORT.
+.RE
+.SH "OPTIONS"
+.sp
+\f(CR\-I <paths>\fP, \f(CR\-\-include=<paths>\fP
+.RS 4
+See INCLUDE AND EXCLUDE.
+.RE
+.sp
+\f(CR\-X <paths>\fP, \f(CR\-\-exclude=<paths>\fP
+.RS 4
+See INCLUDE AND EXCLUDE.
+.RE
+.sp
+\f(CR\-\-include\-ref=<refname>\fP
+.RS 4
+See INCLUDE AND EXCLUDE REFERENCES.
+.RE
+.sp
+\f(CR\-\-include\-ref=<refname>\fP
+.RS 4
+See INCLUDE AND EXCLUDE REFERENCES.
+.RE
+.sp
+\f(CR\-\-exclude\-ref=<refname>\fP
+.RS 4
+See INCLUDE AND EXCLUDE REFERENCES.
+.RE
+.sp
+\f(CR\-\-skip\-fetch\fP
+.RS 4
+  Assumes that the known set of remote references is complete, and should not be
+refreshed when determining the set of "un\-pushed" commits to migrate. Has no
+effect when combined with
+\f(CR\-\-include\-ref\fP or \f(CR\-\-exclude\-ref\fP.
+.RE
+.sp
+\f(CR\-\-everything\fP
+.RS 4
+See INCLUDE AND EXCLUDE REFERENCES.
+.sp
+Note: Git refs are "case\-sensitive" on all platforms in "packed from"
+(see \f(CRgit\-pack\-refs(1)\fP). On "case\-insensitive" file systems, e.g. NTFS
+on Windows or default APFS on macOS, \f(CRgit\-lfs\-migrate(1)\fP would only
+migrate the first ref if two or more refs are equal except for
+upper/lower case letters.
+.RE
+.sp
+\f(CR\-\-yes\fP
+.RS 4
+Assume a yes answer to any prompts, permitting noninteractive use. Currently,
+the only such prompt is the one asking whether to overwrite (destroy) any
+working copy changes. Thus, specifying this option may cause data loss if you
+are not careful.
+.RE
+.sp
+\f(CR[branch ...]\fP
+.RS 4
+Migrate only the set of branches listed. If not given, \f(CRgit\-lfs\-migrate(1)\fP
+will migrate the currently checked out branch.
+.sp
+References beginning with \f(CR^\fP will be excluded, whereas branches that do
+not begin with \f(CR^\fP will be included.
+.sp
+If any of \f(CR\-\-include\-ref\fP or \f(CR\-\-exclude\-ref\fP are given, the checked out
+branch will not be appended, but branches given explicitly will be
+appended.
+.RE
+.SS "INFO"
+.sp
+The \f(CRinfo\fP mode summarizes the sizes of file objects present in the Git
+history. It supports all the core \f(CRmigrate\fP options and these additional
+ones:
+.sp
+\f(CR\-\-above=<size>\fP
+.RS 4
+Only count files whose individual filesize is above the given size. \f(CRsize\fP may
+be specified as a number of bytes, or a number followed by a storage unit,
+e.g., "1b", "20 MB", "3 TiB", etc.
+.sp
+If a set of files sharing a common extension has no files in that set
+whose individual size is above the given \f(CR\-\-above\fP no files no entry for
+that set will be shown.
+.RE
+.sp
+\f(CR\-\-top=<n>\fP
+.RS 4
+Only display the top \f(CRn\fP entries, ordered by how many total files match the
+given pathspec. The default is to show only the top 5 entries. When existing
+Git LFS objects are found, an extra, separate "LFS Objects" line is output in
+addition to the top \f(CRn\fP entries, unless the \f(CR\-\-pointers\fP option is used to
+change this behavior.
+.RE
+.sp
+\f(CR\-\-unit=<unit>\fP
+.RS 4
+Format the number of bytes in each entry as a quantity of the storage unit
+provided. Valid units include: * b, kib, mib, gib, tib, pib \- for IEC storage
+units * b, kb, mb, gb, tb, pb \- for SI storage units
+.sp
+If a \f(CR\-\-unit\fP is not specified, the largest unit that can fit the number
+of counted bytes as a whole number quantity is chosen.
+.RE
+.sp
+\f(CR\-\-pointers=[follow|no\-follow|ignore]\fP
+.RS 4
+Treat existing Git LFS pointers in the history according to one of three
+alternatives. In the default \f(CRfollow\fP case, if any pointers are found, an
+additional separate "LFS Objects" line item is output which summarizes the
+total number and size of the Git LFS objects referenced by pointers. In the
+\f(CRignore\fP case, any pointers are simply ignored, while the \f(CRno\-follow\fP case
+replicates the behavior of the \f(CRinfo\fP mode in older Git LFS versions and
+treats any pointers it finds as if they were regular files, so the output
+totals only include the contents of the pointers, not the contents of the
+objects to which they refer.
+.RE
+.sp
+\f(CR\-\-fixup\fP
+.RS 4
+Infer \f(CR\-\-include\fP and \f(CR\-\-exclude\fP filters on a per\-commit basis based on the
+\f(CR.gitattributes\fP files in a repository. In practice, this option counts any
+filepaths which should be tracked by Git LFS according to the repository\(cqs
+\f(CR.gitattributes\fP file(s), but aren\(cqt already pointers. The \f(CR.gitattributes\fP
+files are not reported, in contrast to the normal output of the \f(CRinfo\fP mode.
+This option is incompatible with explicitly given \f(CR\-\-include\fP, \f(CR\-\-exclude\fP
+filters and with any \f(CR\-\-pointers\fP setting other than \f(CRignore\fP, hence \f(CR\-\-fixup\fP
+implies \f(CR\-\-pointers=ignore\fP if it is not explicitly set.
+.RE
+.sp
+The format of the output shows the filename pattern, the total size of
+the file objects (excluding those below the \f(CR\-\-above\fP threshold, if one
+was defined), and the ratio of the number of files above the threshold
+to the total number of files; this ratio is also shown as a percentage.
+For example:
+.sp
+.if n .RS 4
+.nf
+.fam C
+*.gif               93 MB   9480/10504 files(s)  90%
+*.png               14 MB    1732/1877 files(s)  92%
+.fam
+.fi
+.if n .RE
+.sp
+By default only the top five entries are shown, but \f(CR\-\-top\fP allows for
+more or fewer to be output as desired.
+.SS "IMPORT"
+.sp
+The \f(CRimport\fP mode migrates objects present in the Git history to pointer
+files tracked and stored with Git LFS. It supports all the core
+\f(CRmigrate\fP options and these additional ones:
+.sp
+\f(CR\-\-verbose\fP
+.RS 4
+Print the commit oid and filename of migrated files to STDOUT.
+.RE
+.sp
+\f(CR\-\-above=<size>\fP
+.RS 4
+Only migrate files whose individual filesize is above the given size. \f(CRsize\fP
+may be specified as a number of bytes, or a number followed by a storage unit,
+e.g., "1b", "20 MB", "3 TiB", etc. This option cannot be used with the
+\f(CR\-\-include\fP, \f(CR\-\-exclude\fP, and \f(CR\-\-fixup\fP options.
+.RE
+.sp
+\f(CR\-\-object\-map=<path>\fP
+.RS 4
+Write to \f(CRpath\fP a file with the mapping of each rewritten commits. The file
+format is CSV with this pattern: \f(CROLD\-SHA\fP,\f(CRNEW\-SHA\fP
+.RE
+.sp
+\f(CR\-\-no\-rewrite\fP
+.RS 4
+Migrate objects to Git LFS in a new commit without rewriting Git history.
+Please note that when this option is used, the \f(CRmigrate import\fP command will
+expect a different argument list, specialized options will become available,
+and the core \f(CRmigrate\fP options will be ignored.
+See IMPORT WITHOUT REWRITING HISTORY.
+.RE
+.sp
+\f(CR\-\-fixup\fP
+.RS 4
+Infer \f(CR\-\-include\fP and \f(CR\-\-exclude\fP filters on a per\-commit basis based on the
+\f(CR.gitattributes\fP files in a repository. In practice, this option imports any
+filepaths which should be tracked by Git LFS according to the repository\(cqs
+\f(CR.gitattributes\fP file(s), but aren\(cqt already pointers. This option is
+incompatible with explicitly given \f(CR\-\-include\fP, \f(CR\-\-exclude\fP filters.
+.RE
+.sp
+If \f(CR\-\-no\-rewrite\fP is not provided and \f(CR\-\-include\fP or \f(CR\-\-exclude\fP (\f(CR\-I\fP,
+\f(CR\-X\fP, respectively) are given, the \f(CR.gitattributes\fP will be modified to
+include any new filepath patterns as given by those flags.
+.sp
+If \f(CR\-\-no\-rewrite\fP is not provided and neither of those flags are given,
+the gitattributes will be incrementally modified to include new filepath
+extensions as they are rewritten in history.
+.SS "IMPORT WITHOUT REWRITING HISTORY"
+.sp
+The \f(CRimport\fP mode has a special sub\-mode enabled by the \f(CR\-\-no\-rewrite\fP
+flag. This sub\-mode will migrate objects to pointers as in the base
+\f(CRimport\fP mode, but will do so in a new commit without rewriting Git
+history. When using this sub\-mode, the base \f(CRmigrate\fP options, such as
+\f(CR\-\-include\-ref\fP, will be ignored, as will those for the base \f(CRimport\fP
+mode. The \f(CRmigrate\fP command will also take a different argument list. As
+a result of these changes, \f(CR\-\-no\-rewrite\fP will only operate on the
+current branch \- any other interested branches must have the generated
+commit merged in.
+.sp
+The \f(CR\-\-no\-rewrite\fP sub\-mode supports the following options and
+arguments:
+.sp
+\f(CR\-m <message>\fP, \f(CR\-\-message=<message>\fP
+.RS 4
+Specifies a commit message for the newly created commit.
+.RE
+.sp
+[file ...]
+.RS 4
+The list of files to import. These files must be tracked by
+patterns specified in the gitattributes.
+.RE
+.sp
+If \f(CR\-\-message\fP is given, the new commit will be created with the
+provided message. If no message is given, a commit message will be
+generated based on the file arguments.
+.SS "EXPORT"
+.sp
+The \f(CRexport\fP mode migrates Git LFS pointer files present in the Git
+history out of Git LFS, converting them into their corresponding object
+files. It supports all the core \f(CRmigrate\fP options and these additional
+ones:
+.sp
+\f(CR\-\-verbose\fP
+.RS 4
+Print the commit oid and filename of migrated files to
+STDOUT.
+.RE
+.sp
+\f(CR\-\-object\-map=<path>\fP
+.RS 4
+Write to \f(CRpath\fP a file with the mapping of each rewritten commit. The file
+format is CSV with this pattern: \f(CROLD\-SHA\fP,\f(CRNEW\-SHA\fP
+.RE
+.sp
+\f(CR\-\-remote=<git\-remote>\fP
+.RS 4
+Download LFS objects from the provided \f(CRgit\-remote\fP during the export. If not
+provided, defaults to \f(CRorigin\fP.
+.RE
+.sp
+The \f(CRexport\fP mode requires at minimum a pattern provided with the
+\f(CR\-\-include\fP argument to specify which files to export. Files matching
+the \f(CR\-\-include\fP patterns will be removed from Git LFS, while files
+matching the \f(CR\-\-exclude\fP patterns will retain their Git LFS status. The
+export command will modify the \f(CR.gitattributes\fP to set/unset any
+filepath patterns as given by those flags.
+.SH "INCLUDE AND EXCLUDE"
+.sp
+You can specify that \f(CRgit lfs migrate\fP should only convert files whose
+pathspec matches the \f(CR\-\-include\fP glob patterns and does not match the
+\f(CR\-\-exclude\fP glob patterns, either to reduce total migration time or to
+only migrate part of your repo. Multiple patterns may be given using
+commas as delimiters.
+.sp
+Pattern matching is done so as to be functionally equivalent to the
+pattern matching format of \f(CR.gitattributes\fP. In addition to simple file
+extension matches (e.g., \f(CR\fB.gif\fP) patterns may also specify directory
+paths, in which case the \f(CRpath/\fP*\fP format may be used to match
+recursively.
+.sp
+Note that this form of pattern matching for the \f(CR\-\-include\fP and
+\f(CR\-\-exclude\fP options used by the \f(CRgit lfs migrate\fP command is unique
+among the suite of \f(CRgit lfs\fP commands. Other commands which also take
+these options, such as \f(CRgit lfs ls\-files\fP, use the gitignore(5) form of
+pattern matching instead.
+.SH "INCLUDE AND EXCLUDE REFERENCES"
+.sp
+You can specify that \f(CRgit lfs migrate\fP should only convert files added
+in commits reachable from certain references, namely those defined using
+one or more \f(CR\-\-include\-ref\fP options, and should ignore files in commits
+reachable from references defined in \f(CR\-\-exclude\-ref\fP options.
+.sp
+.if n .RS 4
+.nf
+.fam C
+        D\-\-\-E\-\-\-F
+       /         \(rs
+  A\-\-\-B\-\-\-\-\-\-C    refs/heads/my\-feature
+   \(rs          \(rs
+    \(rs          refs/heads/main
+     \(rs
+      refs/remotes/origin/main
+.fam
+.fi
+.if n .RE
+.sp
+In the above configuration, the following commits are reachable by each
+ref:
+.sp
+.if n .RS 4
+.nf
+.fam C
+refs/heads/main:           C, B, A
+refs/heads/my\-feature:     F, E, D, B, A
+refs/remote/origin/main:   A
+.fam
+.fi
+.if n .RE
+.sp
+The following \f(CRgit lfs migrate\fP options would, therefore, include
+commits F, E, D, C, and B, but exclude commit A:
+.sp
+.if n .RS 4
+.nf
+.fam C
+  \-\-include\-ref=refs/heads/my\-feature
+  \-\-include\-ref=refs/heads/main
+  \-\-exclude\-ref=refs/remotes/origin/main
+.fam
+.fi
+.if n .RE
+.sp
+The presence of flag \f(CR\-\-everything\fP indicates that all commits reachable
+from all local and remote references should be migrated (but note that
+the remote refs themselves will not be updated).
+.SH "EXAMPLES"
+.SS "Migrate unpushed commits"
+.sp
+A common use case for the migrate command is to convert large Git
+objects to LFS before pushing your commits. By default, it only scans
+commits that don\(cqt exist on any remote, so long as the repository is
+non\-bare.
+.sp
+First, run \f(CRgit lfs migrate info\fP to list the file types taking up the
+most space in your repository:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git lfs migrate info
+migrate: Fetching remote refs: ..., done
+migrate: Sorting commits: ..., done
+migrate: Examining commits: 100% (1/1), done
+*.mp3   284 MB    1/1 files(s)  100%
+*.pdf   42 MB     8/8 files(s)  100%
+*.psd   9.8 MB  15/15 files(s)  100%
+*.ipynb 6.9 MB    6/6 files(s)  100%
+*.csv   5.8 MB    2/2 files(s)  100%
+.fam
+.fi
+.if n .RE
+.sp
+Now, you can run \f(CRgit lfs migrate import\fP to convert some file types to
+LFS:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git lfs migrate import \-\-include="*.mp3,*.psd"
+migrate: Fetching remote refs: ..., done
+migrate: Sorting commits: ..., done
+migrate: Rewriting commits: 100% (1/1), done
+  main  d2b959babd099fe70da1c1512e2475e8a24de163 \-> 136e706bf1ae79643915c134e17a6c933fd53c61
+migrate: Updating refs: ..., done
+.fam
+.fi
+.if n .RE
+.sp
+If after conversion you find that some files in your working directory
+have been replaced with Git LFS pointers, this is normal, and the
+working copies of these files can be repopulated with their full
+expected contents by using \f(CRgit lfs checkout\fP.
+.SS "Migrate local history"
+.sp
+You can also migrate the entire history of your repository:
+.sp
+.if n .RS 4
+.nf
+.fam C
+# Check for large files and existing Git LFS objects in your local main branch
+$ git lfs migrate info \-\-include\-ref=main
+
+# Check for large files and existing Git LFS objects in every branch
+$ git lfs migrate info \-\-everything
+
+# Check for large files in every branch, ignoring any existing Git LFS objects,
+# and listing the top 100 or fewer results
+$ git lfs migrate info \-\-everything \-\-pointers=ignore \-\-top=100
+.fam
+.fi
+.if n .RE
+.sp
+The same flags will work in \f(CRimport\fP mode:
+.sp
+.if n .RS 4
+.nf
+.fam C
+# Convert all zip files in your main branch
+$ git lfs migrate import \-\-include\-ref=main \-\-include="*.zip"
+
+# Convert all zip files in every local branch
+$ git lfs migrate import \-\-everything \-\-include="*.zip"
+
+# Convert all files over 100K in every local branch
+$ git lfs migrate import \-\-everything \-\-above=100Kb
+.fam
+.fi
+.if n .RE
+.sp
+Note: This will require a force\-push to any existing Git remotes. Using
+the \f(CR\-\-all\fP option when force\-pushing may be convenient if many local refs
+were updated, e.g., after importing to Git LFS with the \f(CR\-\-everything\fP
+option.
+.SS "Migrate without rewriting local history"
+.sp
+You can also migrate files without modifying the existing history of
+your repository. Note that in the examples below, files in
+subdirectories are not included because they are not explicitly
+specified.
+.sp
+Without a specified commit message:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git lfs migrate import \-\-no\-rewrite test.zip *.mp3 *.psd
+.fam
+.fi
+.if n .RE
+.sp
+With a specified commit message:
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git lfs migrate import \-\-no\-rewrite \(rs
+  \-m "Import test.zip, .mp3, .psd files in root of repo" \(rs
+  test.zip *.mp3 *.psd
+.fam
+.fi
+.if n .RE
+.SS "Migrate from Git LFS"
+.sp
+If you no longer wish to use Git LFS for some or all of your files, you can
+use the \f(CRexport\fP mode to convert Git LFS objects into regular Git blobs again.
+.sp
+The \f(CRexport\fP mode requires at least one \f(CR\-\-include\fP pathspec, and will
+download any objects not found locally from your \f(CRorigin\fP Git remote, or
+from the Git remote you specify with the \f(CR\-\-remote\fP option.
+.sp
+.if n .RS 4
+.nf
+.fam C
+# Convert all zip Git LFS objects to files in your main branch
+$ git lfs migrate export \-\-include\-ref=main \-\-include="*.zip"
+
+# Convert all zip Git LFS objects to files in every local branch,
+# fetching any object data not cached locally from the my\-remote Git remote
+$ git lfs migrate export \-\-everything \-\-include="*.zip" \-\-remote=my\-remote
+
+# Convert all Git LFS objects to files in every local branch
+$ git lfs migrate export \-\-everything \-\-include="*"
+.fam
+.fi
+.if n .RE
+.sp
+Note: This will require a force\-push to any existing Git remotes. Using
+the \f(CR\-\-all\fP option when force\-pushing may be convenient if many local refs
+were updated, e.g., after exporting from Git LFS with the \f(CR\-\-everything\fP
+option.
+.SH "SEE ALSO"
+.sp
+git\-lfs\-checkout(1), git\-lfs\-ls\-files(1), git\-lfs\-track(1),
+git\-lfs\-untrack(1), gitattributes(5), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

@@ -4,7 +4,7 @@
             "nodeName": "VB",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\ARA_Test_export.fbx",
+                "fileName": "..\\OBJAssets\\ARA_Test_export.fbx",
                 "structIndex": 0,
                 "BLASOpaque": true
             }

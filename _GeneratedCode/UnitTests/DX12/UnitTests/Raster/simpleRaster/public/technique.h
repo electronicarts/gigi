@@ -66,7 +66,6 @@ namespace simpleRaster
             unsigned int buffer_VertexBuffer_stride = 0; // For structured buffers, the size of the structure
             unsigned int buffer_VertexBuffer_count = 0; // How many items there are
             D3D12_RESOURCE_STATES buffer_VertexBuffer_state = D3D12_RESOURCE_STATE_COMMON;
-            std::vector<D3D12_INPUT_ELEMENT_DESC> buffer_VertexBuffer_vertexInputLayout;
 
             static const D3D12_RESOURCE_FLAGS c_buffer_VertexBuffer_flags =  D3D12_RESOURCE_FLAG_NONE; // Flags the buffer needs to have been created with
         };
@@ -170,6 +169,10 @@ namespace simpleRaster
             return true;
         }
 
+        // Get information about the primary output texture, if specified in the render graph
+        ID3D12Resource* GetPrimaryOutputTexture();
+        D3D12_RESOURCE_STATES GetPrimaryOutputTextureState();
+
     private:
         friend void DestroyContext(Context* context);
         ~Context();
@@ -178,7 +181,7 @@ namespace simpleRaster
         void EnsureResourcesCreated(ID3D12Device* device, ID3D12GraphicsCommandList* commandList);
         bool EnsureDrawCallPSOsCreated(ID3D12Device* device, bool dirty);
 
-        ProfileEntry m_profileData[1+1]; // One for each action node, and another for the total
+        ProfileEntry m_profileData[2+1]; // One for each action node, and another for the total
     };
 
     struct ScopedPerfEvent

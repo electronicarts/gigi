@@ -178,6 +178,7 @@
     </ClCompile>
     <ClCompile Include="Backends\GraphViz.cpp" />
     <ClCompile Include="Backends\Interpreter\Backend_Interpreter.cpp" />
+    <ClCompile Include="Backends\Shared.cpp" />
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -219,6 +220,7 @@
     <ClInclude Include="..\Nodes\action_drawcall.h" />
     <ClInclude Include="..\Nodes\action_barrier.h" />
     <ClInclude Include="..\Nodes\action_subgraph.h" />
+    <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h" />
     <ClInclude Include="..\Schemas\DataFieldTypes.h" />
     <ClInclude Include="..\Schemas\Misc\BackendTemplateSchemas.h" />
     <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgClientToServerVariant.h" />

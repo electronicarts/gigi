@@ -126,7 +126,7 @@ struct std::hash<NodePin>
 {
     size_t operator()(const NodePin& nodePin) const
     {
-        // http://stackoverflow.com/a/1646913/126995
+        // Portions of this software were based on http://stackoverflow.com/a/1646913/126995
         size_t ret = 17;
         ret = ret * 31 + hash<std::string>()(nodePin.node);
         ret = ret * 31 + hash<std::string>()(nodePin.pin);

@@ -1,0 +1,80 @@
+'\" t
+.\"     Title: git-lfs-pointer
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-POINTER" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-pointer \- Build, compare, and check pointers
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs pointer \-\-file=path/to/file\fP
+.br
+\f(CRgit lfs pointer \-\-file=path/to/file \-\-pointer=path/to/pointer\fP
+.br
+\f(CRgit lfs pointer \-\-file=path/to/file \-\-stdin\fP
+.br
+\f(CRgit lfs pointer \-\-check \-\-file=path/to/file\fP
+.SH "DESCRIPTION"
+.sp
+Builds and optionally compares generated pointer files to ensure
+consistency between different Git LFS implementations.
+.SH "OPTIONS"
+.sp
+\f(CR\-\-file\fP
+.RS 4
+A local file to build the pointer from.
+.RE
+.sp
+\f(CR\-\-pointer\fP
+.RS 4
+A local file including the contents of a pointer generated from another
+implementation. This is compared to the pointer generated from \f(CR\-\-file\fP.
+.RE
+.sp
+\f(CR\-\-stdin\fP
+.RS 4
+Reads the pointer from STDIN to compare with the pointer generated from
+\f(CR\-\-file\fP.
+.RE
+.sp
+\f(CR\-\-check\fP
+.RS 4
+Reads the pointer from STDIN (if \f(CR\-\-stdin\fP is given) or the filepath (if
+\f(CR\-\-file\fP) is given. If neither or both of \f(CR\-\-stdin\fP and \f(CR\-\-file\fP are given,
+the invocation is invalid. Exits 0 if the data read is a valid Git LFS
+pointer. Exits 1 otherwise.
+.RE
+.sp
+\f(CR\-\-strict\fP, \f(CR\-\-no\-strict\fP
+.RS 4
+In conjunction with \f(CR\-\-check\fP, \f(CR\-\-strict\fP verifies that the pointer is
+canonical; that is, it would be the one created by Git LFS. If it is not,
+exits 2. The default, for backwards compatibility, is \f(CR\-\-no\-strict\fP, but this
+may change in a future version.
+.RE
+.SH "SEE ALSO"
+.sp
+Part of the git\-lfs(1) suite.

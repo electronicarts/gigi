@@ -32,6 +32,7 @@ struct BackendDX12 : public BackendBase
         switch (type)
         {
             case DataFieldType::Float: return "DXGI_FORMAT_R32_FLOAT";
+            case DataFieldType::Float3: return "DXGI_FORMAT_R32G32B32_FLOAT";
             case DataFieldType::Uint: return "DXGI_FORMAT_R32_UINT";
             case DataFieldType::Uint_16: return "DXGI_FORMAT_R16_UINT";
             default:
@@ -245,6 +246,10 @@ struct BackendDX12 : public BackendBase
             case TextureFormat::D16_Unorm: return "DXGI_FORMAT_D16_UNORM";
             case TextureFormat::D32_Float_S8: return "DXGI_FORMAT_D32_FLOAT_S8X24_UINT";
             case TextureFormat::D24_Unorm_S8: return "DXGI_FORMAT_R24_UNORM_X8_TYPELESS";
+            case TextureFormat::BC4_Unorm: return "DXGI_FORMAT_BC4_UNORM";
+            case TextureFormat::BC4_Snorm: return "DXGI_FORMAT_BC4_SNORM";
+            case TextureFormat::BC5_Unorm: return "DXGI_FORMAT_BC5_UNORM";
+            case TextureFormat::BC5_Snorm: return "DXGI_FORMAT_BC5_SNORM";
             case TextureFormat::BC7_Unorm: return "DXGI_FORMAT_BC7_UNORM";
             case TextureFormat::BC7_Unorm_sRGB: return "DXGI_FORMAT_BC7_UNORM_SRGB";
             case TextureFormat::BC6_UF16: return "DXGI_FORMAT_BC6H_UF16";
@@ -528,6 +533,108 @@ struct BackendDX12 : public BackendBase
         // Simple things
         {
             stringReplacementMap["/*$(DXShaderCompilerIsDXC)*/"] << ((renderGraph.settings.dx12.shaderCompiler == DXShaderCompiler::DXC) ? "true" : "false");
+
+            if (renderGraph.PrimaryOutput.nodeIndex == -1 || renderGraph.nodes[renderGraph.PrimaryOutput.nodeIndex]._index != RenderGraphNode::c_index_resourceTexture)
+            {
+                stringReplacementMap["/*$(CopyPrimaryOutput)*/"] <<
+                    "// Copy the primary output to the screen\n"
+                    "            // if (m_" << renderGraph.name << "->GetPrimaryOutputTexture())\n"
+                    "            //     CopyTextureToTexture(g_pd3dCommandList, m_" << renderGraph.name << "->GetPrimaryOutputTexture(), m_" << renderGraph.name << "->GetPrimaryOutputTextureState(), g_mainRenderTargetResource[backBufferIdx], D3D12_RESOURCE_STATE_RENDER_TARGET);\n";
+
+                stringReplacementMap["/*$(GetPrimaryOutputTexture)*/"] << "return nullptr;";
+                stringReplacementMap["/*$(GetPrimaryOutputTextureState)*/"] << "return D3D12_RESOURCE_STATE_COMMON;";
+            }
+            else
+            {
+                const RenderGraphNode& node = renderGraph.nodes[renderGraph.PrimaryOutput.nodeIndex];
+                ResourceVisibility nodeVisibility = GetNodeResourceVisibility(node);
+
+                if (nodeVisibility == ResourceVisibility::Imported)
+                    stringReplacementMap["/*$(GetPrimaryOutputTextureState)*/"] << "return " << GetResourceNodePathInContext(nodeVisibility) << "texture_" << GetNodeName(node) << "_state;";
+                else
+                    stringReplacementMap["/*$(GetPrimaryOutputTextureState)*/"] << "return " << GetResourceNodePathInContext(nodeVisibility) << "c_texture_" << GetNodeName(node) << "_endingState;";
+
+                stringReplacementMap["/*$(GetPrimaryOutputTexture)*/"] << "return " << GetResourceNodePathInContext(nodeVisibility) << "texture_" << GetNodeName(node) << ";";
+
+
+                stringReplacementMap["/*$(CopyPrimaryOutput)*/"] <<
+                    "// Copy the primary output to the screen\n"
+                    "            if (m_" << renderGraph.name << "->GetPrimaryOutputTexture())\n"
+                    "                CopyTextureToTexture(g_pd3dCommandList, m_" << renderGraph.name << "->GetPrimaryOutputTexture(), m_" << renderGraph.name << "->GetPrimaryOutputTextureState(), g_mainRenderTargetResource[backBufferIdx], D3D12_RESOURCE_STATE_RENDER_TARGET);\n"
+                    ;
+            }
+        }
+
+        // Imported resources
+        {
+            for (const RenderGraphNode& node : renderGraph.nodes)
+            {
+                if (!GetNodeIsResourceNode(node) || GetNodeResourceVisibility(node) != ResourceVisibility::Imported)
+                    continue;
+
+                std::string nodeName = GetNodeName(node);
+
+                switch (node._index)
+                {
+                    case RenderGraphNode::c_index_resourceBuffer:
+                    {
+                        stringReplacementMap["/*$(FirstPreExecute)*/"] <<
+                            "\n"
+                            "                // Buffer " << nodeName << "\n"
+                            "                {\n"
+                            "                    // TODO: Set up buffer " << nodeName << "\n"
+                            "                    /*\n"
+                            "                    unsigned char* initialData = nullptr;\n"
+                            "                    size_t initialDataSize = 0;\n"
+                            "                    m_" << renderGraph.name << "->m_input.buffer_" << nodeName << "_format = DXGI_FORMAT_UNKNOWN;\n"
+                            "                    m_" << renderGraph.name << "->m_input.buffer_" << nodeName << "_stride = 0;\n"
+                            "                    m_" << renderGraph.name << "->m_input.buffer_" << nodeName << "_count = 0;\n"
+                            "                    m_" << renderGraph.name << "->m_input.buffer_" << nodeName << "_state = D3D12_RESOURCE_STATE_COMMON;\n"
+                            "                    m_" << renderGraph.name << "->m_input.buffer_" << nodeName << " = m_" << renderGraph.name << "->CreateManagedBuffer(\n"
+                            "                        g_pd3dDevice,\n"
+                            "                        g_pd3dCommandList,\n"
+                            "                        m_" << renderGraph.name << "->m_input.c_buffer_" << nodeName << "_flags,\n"
+                            "                        (void*)initialData, initialDataSize,\n"
+                            "                        L\"" << renderGraph.name << "." << nodeName << "\"\n"
+                            "                        m_" << renderGraph.name << "->m_input.buffer_" << nodeName << "_state\n"
+                            "                    );\n"
+                            "                    */\n"
+                            "                }\n"
+                            ;
+                        break;
+                    }
+                    case RenderGraphNode::c_index_resourceTexture:
+                    {
+                        stringReplacementMap["/*$(FirstPreExecute)*/"] <<
+                            "\n"
+                            "                // Texture " << nodeName << "\n"
+                            "                {\n"
+                            "                    // TODO: Set up texture " << nodeName << "\n"
+                            "                    // Note: Use CreateManagedTexture() to create a texture with specific initial data, instead of loading it from disk\n"
+                            "                    /*\n"
+                            "                    const char* fileName = \"image.png\";\n"
+                            "                    bool fileIsSRGB = true;\n"
+                            "                    m_" << renderGraph.name << "->m_input.texture_" << nodeName << "_format = DXGI_FORMAT_UNKNOWN;\n"
+                            "                    m_" << renderGraph.name << "->m_input.texture_" << nodeName << "_state = D3D12_RESOURCE_STATE_COMMON;\n"
+                            "                    m_" << renderGraph.name << "->m_input.texture_" << nodeName << " = m_" << renderGraph.name << "->CreateManagedTextureFromFile(\n"
+                            "                        g_pd3dDevice,\n"
+                            "                        g_pd3dCommandList,\n"
+                            "                        m_" << renderGraph.name << "->m_input.texture_" << nodeName << "_flags,\n"
+                            "                        m_" << renderGraph.name << "->m_input.texture_" << nodeName << "_format,\n"
+                            "                        DX12Utils::ResourceType::Texture2D,\n"
+                            "                        fileName,\n"
+                            "                        fileIsSRGB,\n"
+                            "                        m_" << renderGraph.name << "->m_input.texture_" << nodeName << "_size,\n"
+                            "                        L\"" << renderGraph.name << "." << nodeName << "\",\n"
+                            "                        m_" << renderGraph.name << "->m_input.texture_" << nodeName << "_state\n"
+                            "                    );\n"
+                            "                    */\n"
+                            "                }\n"
+                            ;
+                        break;
+                    }
+                }
+            }
         }
 
         // Make the enums

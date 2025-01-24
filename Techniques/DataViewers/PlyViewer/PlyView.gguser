@@ -1,0 +1,24 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 4,
+        "importedResources": [
+            {
+                "nodeName": "VB",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\..\\UnitTests\\Data\\cube_uv.ply",
+                    "type": "Float3",
+                    "BLASOpaque": true
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "RenderSize",
+                "value": "1024,1024"
+            }
+        ]
+    }
+}

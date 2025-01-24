@@ -384,7 +384,7 @@ bool computeLocationInFile(const Char* fileStart, const Char* where, uint32_t & 
 }
 
 
-// https://www.techiedelight.com/implement-strstr-function-c-iterative-recursive/
+// Portions of this software were based on https://www.techiedelight.com/implement-strstr-function-c-iterative-recursive/
 // Function to implement `strstr()` function using KMP algorithm
 // modified to stristr() with table to avoid costly localization functions
 const char* strstrOptimized(const char* X, const char* Y, int m, int n)

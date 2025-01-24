@@ -1,4 +1,7 @@
 {
-    "resourceViewNodeIndex": 1,
-    "resourceViewResourceIndex": 2
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 2
+    }
 }

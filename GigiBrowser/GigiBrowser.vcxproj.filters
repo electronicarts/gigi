@@ -1,0 +1,116 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="imgui\imgui.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_demo.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_draw.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_tables.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\imgui_widgets.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp">
+      <Filter>external\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Browser.cpp" />
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\TextureCache.cpp">
+      <Filter>external\DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\FileCache.cpp">
+      <Filter>external\DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GigiViewerDX12\tinyexr\deps\miniz\miniz.c">
+      <Filter>external\miniz</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\CreateResources.cpp">
+      <Filter>external\DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GigiCompilerLib\Utils.cpp">
+      <Filter>external\DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\UploadBufferTracker.cpp">
+      <Filter>external\DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\sqlite\shell.c">
+      <Filter>external\sqlite</Filter>
+    </ClCompile>
+    <ClCompile Include="..\external\sqlite\sqlite3.c">
+      <Filter>external\sqlite</Filter>
+    </ClCompile>
+    <ClCompile Include="Jobs_MainThread.cpp" />
+    <ClCompile Include="Jobs_WorkerThread.cpp" />
+    <ClCompile Include="Database.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="external">
+      <UniqueIdentifier>{206ae675-bd52-488b-9750-ccc6f3b98473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\imgui">
+      <UniqueIdentifier>{8d3692d1-7678-4ec5-a190-50ac30bfd871}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\DX12Utils">
+      <UniqueIdentifier>{73cd8bab-72ef-4825-b847-3c94bc371904}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\miniz">
+      <UniqueIdentifier>{a4e0f01e-9489-4b18-af25-fd716caf8539}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\sqlite">
+      <UniqueIdentifier>{60571254-fdee-4834-8177-8ccb91ea6450}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Browser.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\TextureCache.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\FileCache.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiViewerDX12\tinyexr\deps\miniz\miniz.h">
+      <Filter>external\miniz</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\DescriptorTableCache.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\HeapAllocationTracker.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\CreateResources.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiCompilerLib\Utils.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\UploadBufferTracker.h">
+      <Filter>external\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\sqlite\sqlite3.h">
+      <Filter>external\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\sqlite\sqlite3ext.h">
+      <Filter>external\sqlite</Filter>
+    </ClInclude>
+    <ClInclude Include="ThreadedWork.h" />
+    <ClInclude Include="Jobs.h" />
+    <ClInclude Include="Utils.h" />
+    <ClInclude Include="Database.h" />
+    <ClInclude Include="resource.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GigiBrowser.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\GigiBrowser.ico" />
+  </ItemGroup>
+</Project>

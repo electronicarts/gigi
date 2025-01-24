@@ -1,0 +1,88 @@
+'\" t
+.\"     Title: git-lfs-clone
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-CLONE" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-clone \- Efficiently clone a LFS\-enabled repository
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs clone\fP [git clone options] <repository> [<directory>]
+.SH "DESCRIPTION"
+.sp
+Clone an LFS enabled Git repository more efficiently by disabling LFS
+during the git clone, then performing a \*(Aqgit lfs pull\*(Aq directly
+afterwards.
+.sp
+\*(Aqgit lfs clone\*(Aq also installs all of the repo\-level hooks (.git/hooks)
+that LFS requires to operate. If \f(CR\-\-separate\-git\-dir\fP is given, the
+hooks will be installed there.
+.sp
+This is faster than a regular \*(Aqgit clone\*(Aq because that will download LFS
+content using the smudge filter, which is executed individually per file
+in the working copy. This is relatively inefficient compared to the
+batch mode and parallel downloads performed by \*(Aqgit lfs pull\*(Aq.
+.SH "OPTIONS"
+.sp
+All options supported by \*(Aqgit clone\*(Aq
+.sp
+\f(CR\-I <paths>\fP, \f(CR\-\-include=<paths>\fP
+.RS 4
+See INCLUDE AND EXCLUDE.
+.RE
+.sp
+\f(CR\-X <paths>\fP, \f(CR\-\-exclude=<paths>\fP
+.RS 4
+See INCLUDE AND EXCLUDE.
+.RE
+.sp
+\f(CR\-\-skip\-repo\fP
+.RS 4
+Skip installing repo\-level hooks (.git/hooks) that LFS
+requires. Disabled by default.
+.RE
+.SH "INCLUDE AND EXCLUDE"
+.sp
+You can configure Git LFS to only fetch objects to satisfy references in
+certain paths of the repo, and/or to exclude certain paths of the repo,
+to reduce the time you spend downloading things you do not use.
+.sp
+In your Git configuration or in a \f(CR.lfsconfig\fP file, you may set either
+or both of \f(CRlfs.fetchinclude\fP and \f(CRlfs.fetchexclude\fP to comma\-separated
+lists of paths. If \f(CRlfs.fetchinclude\fP is defined, Git LFS objects will
+only be fetched if their path matches one in that list, and if
+\f(CRlfs.fetchexclude\fP is defined, Git LFS objects will only be fetched if
+their path does not match one in that list. Paths are matched using
+wildcard matching as per gitignore(5).
+.sp
+Note that using the command\-line options \f(CR\-I\fP and \f(CR\-X\fP override the
+respective configuration settings. Setting either option to an empty
+string clears the value.
+.SH "SEE ALSO"
+.sp
+git\-clone(1), git\-lfs\-pull(1), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

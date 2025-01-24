@@ -1,4 +1,4 @@
-#include "Camera.h"
+/*$(CopyrightHeader)*/#include "Camera.h"
 
 #include <algorithm>
 #include <cmath>

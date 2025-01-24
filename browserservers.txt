@@ -1,0 +1,1 @@
+https://github.com/electronicarts/gigi-techniques.git main Techniques.json Electronic Arts

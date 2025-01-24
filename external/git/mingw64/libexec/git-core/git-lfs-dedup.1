@@ -1,0 +1,50 @@
+'\" t
+.\"     Title: git-lfs-dedup
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-DEDUP" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-dedup \- Deduplicate Git LFS files
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs dedup\fP
+.SH "DESCRIPTION"
+.sp
+Deduplicates storage by re\-creating working tree files as clones of the
+files in the Git LFS storage directory using the operating system\(cqs
+copy\-on\-write file creation functionality.
+.sp
+If the operating system or file system don\(cqt support copy\-on\-write file
+creation, this command exits unsuccessfully.
+.sp
+This command will also exit without success if any Git LFS extensions
+are configured, as these will typically be used to alter the file
+contents before they are written to the Git LFS storage directory, and
+therefore the working tree files should not be copy\-on\-write clones of
+the LFS object files.
+.SH "SEE ALSO"
+.sp
+Part of the git\-lfs(1) suite.

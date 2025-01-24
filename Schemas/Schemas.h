@@ -9,6 +9,7 @@
 #include "SchemasVariables.h"
 #include "RenderGraphNodes.h"
 #include "PreviewWindow/PreviewWindowSchemas.h"
+#include "Browser/BrowserSchemas.h"
 #include "Misc/BackendTemplateSchemas.h"
 // clang-format on
 
@@ -159,6 +160,11 @@ STRUCT_BEGIN(VariableReplacement, "When subgraph variables are replaced by paren
     STRUCT_FIELD(std::string, destName, "", "", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(CustomGigiToken, "Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.")
+    STRUCT_FIELD(std::string, key, "", "The name of the gigi token without markup, such as CopyrightHeader for /*$(CopyrightHeader)*/", 0)
+    STRUCT_FIELD(std::string, value, "", "The value to replace the token with", SCHEMA_FLAG_UI_MULTILINETEXT)
+STRUCT_END()
+
 STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
     STRUCT_FIELD(std::string, name, "Unnamed", "The name of the render graph.", 0)
     STRUCT_FIELD(std::string, comment, "", "Put author information, links, etc here.", SCHEMA_FLAG_UI_MULTILINETEXT)
@@ -176,6 +182,12 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
     STRUCT_FIELD(BackendSettings, settings, {}, "Backend settings", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(BuildSettings, buildSettings, {}, "Build settings", SCHEMA_FLAG_UI_COLLAPSABLE)
+
+    STRUCT_DYNAMIC_ARRAY(CustomGigiToken, customTokens, "Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.", 0)
+
+    STRUCT_FIELD(TextureNodeReference, PrimaryOutput, {}, "A hint to anything that might be able to use this information, such as generated code or the viewer.", 0)
+
+    // Non serialized things below
 
     STRUCT_FIELD(std::string, baseDirectory, "", "The relative location of the render graph file.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, outputDirectory, "", "Where the render graph output should go (this field used by the compiler).", SCHEMA_FLAG_NO_SERIALIZE)

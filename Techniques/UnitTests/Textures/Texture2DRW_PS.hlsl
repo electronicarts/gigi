@@ -13,7 +13,7 @@ struct PSOutput
 
 PSOutput psmain(PSInput input)
 {
-	float3 loadedTexturePx = /*$(Image2D:../../cabinsmall.png:RGBA8_Unorm:float4:false)*/[input.position.xy].rgb;
+	float3 loadedTexturePx = /*$(Image2D:../cabinsmall.png:RGBA8_Unorm:float4:false)*/[input.position.xy].rgb;
 	float3 importedTexturePx = importedTexture[input.position.xy].rgb;
 	float3 importedColorPx = importedColor[input.position.xy].rgb;
 

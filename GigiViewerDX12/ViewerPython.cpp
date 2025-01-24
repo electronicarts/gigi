@@ -247,6 +247,154 @@ static PyObject* Python_Readback(PyObject* self, PyObject* args)
     return ret;
 }
 
+static PyObject* Python_SaveAsPNG(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    if (!PyArg_ParseTuple(args, "ss|ii:" __FUNCTION__, &fileName , &viewableResourceName, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsPNG(fileName, viewableResourceName, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsDDS_BC4(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    int signedData = 0;
+    if (!PyArg_ParseTuple(args, "ss|pii:" __FUNCTION__, &fileName, &viewableResourceName, &signedData, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsDDS_BC4(fileName, viewableResourceName, signedData, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsDDS_BC5(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    int signedData = 0;
+    if (!PyArg_ParseTuple(args, "ss|pii:" __FUNCTION__, &fileName, &viewableResourceName, &signedData, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsDDS_BC5(fileName, viewableResourceName, signedData, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsDDS_BC6(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    int signedData = 0;
+    if (!PyArg_ParseTuple(args, "ss|pii:" __FUNCTION__, &fileName, &viewableResourceName, &signedData, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsDDS_BC6(fileName, viewableResourceName, signedData, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsDDS_BC7(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    int sRGB = 1;
+    if (!PyArg_ParseTuple(args, "ss|pii:" __FUNCTION__, &fileName, &viewableResourceName, &sRGB, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsDDS_BC7(fileName, viewableResourceName, sRGB, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsEXR(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    if (!PyArg_ParseTuple(args, "ss|ii:" __FUNCTION__, &fileName, &viewableResourceName, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsEXR(fileName, viewableResourceName, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsHDR(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    if (!PyArg_ParseTuple(args, "ss|ii:" __FUNCTION__, &fileName, &viewableResourceName, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsHDR(fileName, viewableResourceName, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsCSV(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    if (!PyArg_ParseTuple(args, "ss|ii:" __FUNCTION__, &fileName, &viewableResourceName, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsCSV(fileName, viewableResourceName, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
+static PyObject* Python_SaveAsBinary(PyObject* self, PyObject* args)
+{
+    const char* viewableResourceName = nullptr;
+    const char* fileName = nullptr;
+    int arrayIndex = -1;
+    int mipIndex = -1;
+    if (!PyArg_ParseTuple(args, "ss|ii:" __FUNCTION__, &fileName, &viewableResourceName, &arrayIndex, &mipIndex))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    bool success = g_interface->SaveAsBinary(fileName, viewableResourceName, arrayIndex, mipIndex);
+
+    PyObject* ret = PyBool_FromLong(success ? 1 : 0);
+    Py_INCREF(ret);
+    return ret;
+}
+
 static PyObject* Python_RunTechnique(PyObject* self, PyObject* args)
 {
     int runCount = 1;
@@ -906,7 +1054,16 @@ void PythonInit(PythonInterface* interface)
         {"GetVariable", Python_GetVariable, METH_VARARGS, "Gets the value of a variable. String for variable name, returns variable value as a string."},
         {"DisableGGUserSave", Python_DisableGGUserSave, METH_VARARGS, "When the gg file is changed next or the application is closed, this will prevent the gguser file from being saved."},
         {"SetWantReadback", Python_SetWantReadback, METH_VARARGS, "Declare that you want to read back a resource, or specify that you no longer want it."},
-        {"Readback", Python_Readback, METH_VARARGS, "Reads back a resource. Host.SetWantReadback must have been called prior to rendering."},
+        {"Readback", Python_Readback, METH_VARARGS, "Reads back a resource. Host.SetWantReadback must have been called prior."},
+        {"SaveAsPNG", Python_SaveAsPNG, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsDDS_BC4", Python_SaveAsDDS_BC4, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsDDS_BC5", Python_SaveAsDDS_BC5, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsDDS_BC6", Python_SaveAsDDS_BC6, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsDDS_BC7", Python_SaveAsDDS_BC7, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsEXR", Python_SaveAsEXR, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsHDR", Python_SaveAsHDR, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsCSV", Python_SaveAsCSV, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
+        {"SaveAsBinary", Python_SaveAsBinary, METH_VARARGS, "Saves a texture. Host.SetWantReadback must have been called prior."},
         {"RunTechnique", Python_RunTechnique, METH_VARARGS, "Runs the technique N times."},
         {"Log", Python_Log, METH_VARARGS, "Writes a message to the log."},
         {"Print", Python_Print, METH_VARARGS, "Writes a message to the log as INFO."},

@@ -13,6 +13,38 @@
             ],
             "resources": [
                 {
+                    "name": "BC4U",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BC4U_NoMips",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BC5U",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
+                    "name": "BC5U_NoMips",
+                    "type": "Texture",
+                    "access": "SRV",
+                    "texture": {
+                        "dimension": "Texture2DArray"
+                    }
+                },
+                {
                     "name": "BC6U",
                     "type": "Texture",
                     "access": "SRV",
@@ -133,10 +165,14 @@
             "actionComputeShader": {
                 "name": "Load_Tex2DArrayCS",
                 "editorPos": [
-                    208.0,
-                    -94.0
+                    181.0,
+                    -245.0
                 ],
                 "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
                     {},
                     {},
                     {},
@@ -175,8 +211,8 @@
                         "dstPin": "resource"
                     },
                     {
-                        "srcPin": "BC6U",
-                        "dstNode": "BC6U",
+                        "srcPin": "BC4U_NoMips",
+                        "dstNode": "BC4U_NoMips",
                         "dstPin": "resource"
                     },
                     {
@@ -192,6 +228,35 @@
                     {
                         "srcPin": "BinaryU8",
                         "dstNode": "BinaryU8",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC4U_NoMips"
+                    },
+                    {
+                        "srcPin": "BC5U_NoMips",
+                        "dstNode": "BC5U_NoMips",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC4U_NoMips"
+                    },
+                    {
+                        "srcPin": "BC4U",
+                        "dstNode": "BC4U",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC5U_NoMips"
+                    },
+                    {
+                        "srcPin": "BC6U",
+                        "dstNode": "BC6U",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "BC5U",
+                        "dstNode": "BC5U",
                         "dstPin": "resource"
                     }
                 ],
@@ -218,7 +283,7 @@
                 "size": {
                     "multiply": [
                         64,
-                        96,
+                        160,
                         1
                     ]
                 }
@@ -263,6 +328,50 @@
                 "editorPos": [
                     -69.0,
                     -142.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC5U_NoMips",
+                "editorPos": [
+                    -78.0,
+                    -254.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC4U_NoMips",
+                "editorPos": [
+                    -65.0,
+                    -366.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC5U",
+                "editorPos": [
+                    -69.0,
+                    -302.0
+                ],
+                "visibility": "Imported",
+                "dimension": "Texture2DArray"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "BC4U",
+                "editorPos": [
+                    -53.0,
+                    -414.0
                 ],
                 "visibility": "Imported",
                 "dimension": "Texture2DArray"

@@ -137,6 +137,10 @@ namespace Mips_ShaderToken_2D
             return true;
         }
 
+        // Get information about the primary output texture, if specified in the render graph
+        ID3D12Resource* GetPrimaryOutputTexture();
+        D3D12_RESOURCE_STATES GetPrimaryOutputTextureState();
+
     private:
         friend void DestroyContext(Context* context);
         ~Context();

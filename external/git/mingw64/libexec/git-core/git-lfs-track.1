@@ -1,0 +1,155 @@
+'\" t
+.\"     Title: git-lfs-track
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-TRACK" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-track \- View or add Git LFS paths to Git attributes
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs track\fP [options] [<pattern>...]
+.SH "DESCRIPTION"
+.sp
+Start tracking the given patterns(s) through Git LFS. The argument is
+written to .gitattributes. If no paths are provided, simply list the
+currently\-tracked paths.
+.sp
+The \c
+.URL "https://git\-scm.com/docs/gitattributes" "gitattributes documentation"
+states that patterns use the
+.URL "https://git\-scm.com/docs/gitignore" "gitignore pattern rules" ""
+to match
+paths. This means that patterns which contain asterisk (\f(CR*\fP), question
+mark (\f(CR?\fP), and the bracket characters (\f(CR[\fP and \f(CR]\fP) are treated
+specially; to disable this behavior and treat them literally instead,
+use \f(CR\-\-filename\fP or escape the character with a backslash.
+.SH "OPTIONS"
+.sp
+\f(CR\-\-verbose\fP, \f(CR\-v\fP
+.RS 4
+If enabled, have \f(CRgit lfs track\fP log files which it will touch. Disabled by
+default.
+.RE
+.sp
+\f(CR\-\-dry\-run\fP, \f(CR\-d\fP
+.RS 4
+If enabled, have \f(CRgit lfs track\fP log all actions it would normally take
+(adding entries to .gitattributes, touching files on disk, etc) without
+performing any mutative operations to the disk.
+.sp
+\f(CRgit lfs track \-\-dry\-run [files]\fP also implicitly mocks the behavior of
+passing the \f(CR\-\-verbose\fP, and will log in greater detail what it is
+doing.
+.sp
+Disabled by default.
+.RE
+.sp
+\f(CR\-\-filename\fP
+.RS 4
+Treat the arguments as literal filenames, not as patterns. Any special glob
+characters in the filename will be escaped when writing the \f(CR.gitattributes\fP
+file.
+.RE
+.sp
+\f(CR\-\-lockable\fP, \f(CR\-l\fP
+.RS 4
+Make the paths \*(Aqlockable\*(Aq, meaning they should be locked to edit them, and
+will be made read\-only in the working copy when not locked.
+.RE
+.sp
+\f(CR\-\-not\-lockable\fP
+.RS 4
+Remove the lockable flag from the paths so they are no longer read\-only unless
+locked.
+.RE
+.sp
+\f(CR\-\-no\-excluded\fP
+.RS 4
+  Do not list patterns that are excluded in the output; only list patterns that
+are tracked.
+\-\-no\-modify\-attrs:
+Makes matched entries stat\-dirty so that Git can re\-index files you wish to
+convert to LFS. Does not modify any \f(CR.gitattributes\fP file(s).
+.RE
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+List the patterns that Git LFS is currently tracking:
+.sp
+\f(CRgit lfs track\fP
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Configure Git LFS to track GIF files:
+.sp
+\f(CRgit lfs track "*.gif"\fP
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Configure Git LFS to track PSD files and make them read\-only unless
+locked:
+.sp
+\f(CRgit lfs track \-\-lockable "*.psd"\fP
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Configure Git LFS to track the file named \f(CRproject [1].psd\fP:
+.sp
+\f(CRgit lfs track \-\-filename "project [1].psd"\fP
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-untrack(1), git\-lfs\-install(1), gitattributes(5), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

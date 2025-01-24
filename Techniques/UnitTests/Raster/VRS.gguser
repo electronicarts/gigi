@@ -1,4 +1,5 @@
 {
+    "version": "2.0",
     "systemVars": {
         "iResolution_textureName": "Color_Buffer",
         "camera": {
@@ -14,33 +15,25 @@
         },
         "ProjMtx_textureName": "Color_Buffer"
     },
-    "resourceViewNodeIndex": 4,
-    "resourceViewResourceIndex": 3,
-    "importedResources": [
-        {
-            "nodeName": "VertexBuffer",
-            "resetEveryFrame": false,
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\..\\OBJAssets\\bunny.obj",
-                "structIndex": 0
+    "snapshot": {
+        "resourceViewNodeIndex": 4,
+        "resourceViewResourceIndex": 3,
+        "importedResources": [
+            {
+                "nodeName": "VertexBuffer",
+                "resetEveryFrame": false,
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\OBJAssets\\bunny.obj",
+                    "structIndex": 0
+                }
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "ShadingRateTextureSizeXY",
-            "value": "32,32"
-        }
-    ],
-    "bookmarks": [
-        {
-            "name": "Output",
-            "viewableResourceDisplayName": "Rasterize.colorTarget0 (After)"
-        },
-        {
-            "name": "Vertex Buffer",
-            "viewableResourceDisplayName": "VertexBuffer.resource"
-        }
-    ]
+        ],
+        "savedVariables": [
+            {
+                "name": "ShadingRateTextureSizeXY",
+                "value": "32,32"
+            }
+        ]
+    }
 }

@@ -28,7 +28,7 @@
   #endif
 #endif
 
-// Based on https://gist.github.com/lukicdarkoo/40684dbffe234796376dc001d2fc4cfb
+// Portions of this software were based on https://gist.github.com/lukicdarkoo/40684dbffe234796376dc001d2fc4cfb
 
 struct GigiArrayWrapper
 {

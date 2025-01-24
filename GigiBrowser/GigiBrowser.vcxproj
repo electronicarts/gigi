@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{3e361c6c-fb88-40dd-b028-8bbffd629308}</ProjectGuid>
+    <RootNamespace>GigiBrowser</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <OutDir>$(SolutionDir)</OutDir>
+    <IncludePath>$(ProjectDir)imgui\;$(ProjectDir)libgit2\include\;$(SolutionDir);$(SolutionDir)\external\DirectXTex\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)libgit2\bin\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <OutDir>$(SolutionDir)</OutDir>
+    <IncludePath>$(ProjectDir)imgui\;$(ProjectDir)libgit2\include\;$(SolutionDir);$(SolutionDir)\external\DirectXTex\;$(IncludePath)</IncludePath>
+    <LibraryPath>$(ProjectDir)libgit2\bin\;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\GigiViewerDX12\tinyexr\deps\miniz\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(SolutionDir)\GigiViewerDX12\tinyexr\deps\miniz\</AdditionalIncludeDirectories>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>d3d12.lib;dxgi.lib;d3dcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\external\sqlite\shell.c" />
+    <ClCompile Include="..\external\sqlite\sqlite3.c" />
+    <ClCompile Include="..\GigiCompilerLib\Utils.cpp" />
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\CreateResources.cpp" />
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\FileCache.cpp" />
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\TextureCache.cpp" />
+    <ClCompile Include="..\GigiViewerDX12\DX12Utils\UploadBufferTracker.cpp" />
+    <ClCompile Include="..\GigiViewerDX12\tinyexr\deps\miniz\miniz.c" />
+    <ClCompile Include="Browser.cpp" />
+    <ClCompile Include="Database.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_dx12.cpp" />
+    <ClCompile Include="imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="imgui\imgui.cpp" />
+    <ClCompile Include="imgui\imgui_demo.cpp" />
+    <ClCompile Include="imgui\imgui_draw.cpp" />
+    <ClCompile Include="imgui\imgui_tables.cpp" />
+    <ClCompile Include="imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Jobs_MainThread.cpp" />
+    <ClCompile Include="Jobs_WorkerThread.cpp" />
+    <ClCompile Include="main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\external\sqlite\sqlite3.h" />
+    <ClInclude Include="..\external\sqlite\sqlite3ext.h" />
+    <ClInclude Include="..\GigiCompilerLib\Utils.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\CreateResources.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\DescriptorTableCache.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\FileCache.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\HeapAllocationTracker.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\TextureCache.h" />
+    <ClInclude Include="..\GigiViewerDX12\DX12Utils\UploadBufferTracker.h" />
+    <ClInclude Include="..\GigiViewerDX12\tinyexr\deps\miniz\miniz.h" />
+    <ClInclude Include="Browser.h" />
+    <ClInclude Include="Database.h" />
+    <ClInclude Include="Jobs.h" />
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="ThreadedWork.h" />
+    <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\external\DirectXTex\DirectXTex_Desktop_2022_Win10.vcxproj">
+      <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="GigiBrowser.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\GigiBrowser.ico" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

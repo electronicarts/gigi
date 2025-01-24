@@ -2,11 +2,12 @@
 
 Gigi aims to help graphics practitioners work more closely to the speed of thought and is meant for use by professionals, researchers, students, and hobbyists.
 
-Gigi is made of three components:
+Gigi is made of four components:
 
 1. Editor - Author a rendering technique
 2. Viewer - Debug and profile the technique
 3. Compiler - Generate code for the technique like a human would write
+4. Browser - View a library of Gigi techniques, and submit your own
 
 ## Gigi Editor
 
@@ -127,6 +128,14 @@ The compiler does perform some optimizations on the graph while flattening.  For
 Each backend code generator has code that is isolated from the other code generators.  This is important because if you are working on the Vulkan backend for instance, you don't want to have to worry if your work is going to break the Metal back end or not, and you may not even be able to easily verify that it hasn't.  Keeping the code generators completely separate from each other allows people to work on one platform without having to worry about other platforms.  This problem is the challenge faced by traditional HALs and is why I believe the abstraction level Gigi works at is more appropriate for cross platform development.  Gigi allows you to work with concepts that are familiar to the GPU (run CS, copy resource, etc) and its up to each backend to determine how to best interpret that for their platform.  This leaves open the possibility of a platform doing things like finding opportunities to use tiled memory / shader operations by combining nodes together.
 
 Finally, calling the Gigi compiler a compiler makes it sound a lot fancier than it is.  In reality, the compiler is more of a string replacement engine. If you look at the code, you'll see what I mean.
+
+## Browser
+
+The browser allows you to view a library of Gigi techniques ranging from playable games, to implementations of research papers and modern rendering techniques, to image processing utilities.
+
+You may also submit your own techniques for sharing in the browser: [Sharing Techniques In The Gigi Browser](BrowserSharing.md).
+
+[![A screenshot of the Gigi Browser](browser.png)](browser.png)
 
 ## Conclusion
 

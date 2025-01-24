@@ -20,4 +20,6 @@ spdlog | https://github.com/gabime/spdlog/ | Prettier output for the compiler.
 nativefiledialog | https://github.com/mlabbe/nativefiledialog/ | For opening native file selection windows.
 rapidjson | https://github.com/Tencent/rapidjson/ | Read/write json files. Nearly every data file is stored as json.
 tinyxml2 | https://github.com/leethomason/tinyxml2 | Read/write xml files.
-DiretcXTex | https://github.com/microsoft/DirectXTex | Load, encode and decode dds files.
+DirectXTex | https://github.com/microsoft/DirectXTex | Load, encode and decode dds files.
+Git | https://git-scm.com/downloads | Used by the browser to synchronize local files to remote machines.
+SQLite | https://www.sqlite.org/ | Used by the browser to store and search through known techniques.

@@ -11,7 +11,7 @@
         {
             "name": "ViewMode",
             "type": "Int",
-            "dflt": "Normal",
+            "dflt": "PlasticShaded",
             "visibility": "User",
             "Enum": "ViewModes"
         },
@@ -41,6 +41,10 @@
             "type": "Bool",
             "dflt": "true",
             "visibility": "User"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4"
         }
     ],
     "shaders": [
@@ -377,6 +381,9 @@
                 },
                 {
                     "label": "ViewerColor"
+                },
+                {
+                    "label": "PlasticShaded"
                 }
             ]
         }

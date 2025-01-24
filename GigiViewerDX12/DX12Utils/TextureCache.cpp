@@ -8,12 +8,12 @@
 #include <filesystem>
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb/stb_image.h"
+#include "GigiViewerDX12/stb/stb_image.h"
 
 #define TINYEXR_IMPLEMENTATION
-#include "tinyexr/tinyexr.h"
+#include "GigiViewerDX12/tinyexr/tinyexr.h"
 
-#include <f16.h>
+#include "GigiViewerDX12/f16.h"
 #include "DirectXTex.h"
 
 TextureCache::Texture& TextureCache::Get(FileCache& fileCache, const char* fileName_)

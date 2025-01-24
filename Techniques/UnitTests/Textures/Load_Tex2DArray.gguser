@@ -2,8 +2,44 @@
     "version": "2.0",
     "snapshot": {
         "resourceViewNodeIndex": 4,
-        "resourceViewResourceIndex": 13,
+        "resourceViewResourceIndex": 21,
         "importedResources": [
+            {
+                "nodeName": "BC4U",
+                "texture": {
+                    "fileName": "Tex2DArray_BC4U_8x8x4_mips.dds",
+                    "fileIsSRGB": false,
+                    "format": "BC4_Unorm",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BC4U_NoMips",
+                "texture": {
+                    "fileName": "Tex2DArray_BC4U_8x8x4_nomips.dds",
+                    "fileIsSRGB": false,
+                    "format": "BC4_Unorm",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BC5U",
+                "texture": {
+                    "fileName": "Tex2DArray_BC5U_8x8x4_mips.dds",
+                    "fileIsSRGB": false,
+                    "format": "BC5_Unorm",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "BC5U_NoMips",
+                "texture": {
+                    "fileName": "Tex2DArray_BC5U_8x8x4_nomips.dds",
+                    "fileIsSRGB": false,
+                    "format": "BC5_Unorm",
+                    "binaryFormat": "Any"
+                }
+            },
             {
                 "nodeName": "BC6U",
                 "texture": {

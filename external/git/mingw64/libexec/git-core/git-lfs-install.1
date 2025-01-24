@@ -1,0 +1,121 @@
+'\" t
+.\"     Title: git-lfs-install
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-INSTALL" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-install \- Install Git LFS configuration.
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs install\fP [options]
+.SH "DESCRIPTION"
+.sp
+Perform the following actions to ensure that Git LFS is setup properly:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Set up the clean and smudge filters under the name "lfs" in the global
+Git config.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Install a pre\-push hook to run git\-lfs\-pre\-push(1) for the current
+repository, if run from inside one. If "core.hooksPath" is configured in
+any Git configuration (and supported, i.e., the installed Git version is
+at least 2.9.0), then the pre\-push hook will be installed to that
+directory instead.
+.RE
+.SH "OPTIONS"
+.sp
+Without any options, \f(CRgit lfs install\fP will only setup the "lfs" smudge
+and clean filters if they are not already set.
+.sp
+\f(CR\-\-force\fP
+.RS 4
+Sets the "lfs" smudge and clean filters, overwriting existing values.
+.RE
+.sp
+\f(CR\-\-local\fP
+.RS 4
+Sets the "lfs" smudge and clean filters in the local repository\(cqs git config,
+instead of the global git config (~/.gitconfig).
+.RE
+.sp
+\f(CR\-\-worktree\fP
+.RS 4
+Sets the "lfs" smudge and clean filters in the current working tree\(cqs git
+config, instead of the global git config (~/.gitconfig) or local repository\(cqs
+git config ($GIT_DIR/config). If multiple working trees are in use, the Git
+config extension \f(CRworktreeConfig\fP must be enabled to use this option. If only
+one working tree is in use, \f(CR\-\-worktree\fP has the same effect as \f(CR\-\-local\fP.
+This option is only available if the installed Git version is at least 2.20.0
+and therefore supports the "worktreeConfig" extension.
+.RE
+.sp
+\f(CR\-\-manual\fP
+.RS 4
+Print instructions for manually updating your hooks to include git\-lfs
+functionality. Use this option if \f(CRgit lfs install\fP fails because of existing
+hooks and you want to retain their functionality.
+.RE
+.sp
+\f(CR\-\-system\fP
+.RS 4
+Sets the "lfs" smudge and clean filters in the system git config, e.g.
+/etc/gitconfig instead of the global git config (~/.gitconfig).
+.RE
+.sp
+\f(CR\-\-skip\-smudge\fP
+.RS 4
+Skips automatic downloading of objects on clone or pull. This requires a
+manual "git lfs pull" every time a new commit is checked out on your
+repository.
+.RE
+.sp
+\f(CR\-\-skip\-repo\fP
+.RS 4
+Skips installation of hooks into the local repository; use if you want to
+install the LFS filters but not make changes to the hooks.  It is valid to use
+\f(CR\-\-local\fP, \f(CR\-\-global\fP, or \f(CR\-\-system\fP in conjunction with this option.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-uninstall(1), git\-worktree(1).
+.sp
+Part of the git\-lfs(1) suite.

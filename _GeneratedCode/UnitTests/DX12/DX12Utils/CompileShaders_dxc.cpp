@@ -1,3 +1,5 @@
+// Portions of this software are based on: https://simoncoenen.com/blog/programming/graphics/DxcCompiling
+
 #include "CompileShaders.h"
 
 #include <d3d12.h>
@@ -29,7 +31,6 @@ static std::string FromWideString(const wchar_t* string)
 namespace DX12Utils
 {
 
-// https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 class IncludeHandlerDXC : public IDxcIncludeHandler
 {
 public:

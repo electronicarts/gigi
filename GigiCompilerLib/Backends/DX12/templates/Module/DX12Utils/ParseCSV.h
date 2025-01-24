@@ -1,4 +1,4 @@
-// This file was created manually for DX12 unit tests, to write the logic for each unit test
+/*$(CopyrightHeader)*/// This file was created manually for DX12 unit tests, to write the logic for each unit test
 
 #pragma once
 

@@ -9,3 +9,7 @@ MinSizeRel/
 Release/
 RelWithDebInfo/
 .vs/
+*.vcxproj
+*.vcxproj.filters
+*.sln
+imgui.ini

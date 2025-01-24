@@ -10,7 +10,7 @@ struct Payload
 {
 	uint2 px = DispatchRaysIndex().xy;
 
-	float3 loadedTexturePx = /*$(Image2D:../../cabinsmall.png:RGBA8_Unorm:float4:false)*/[px].rgb;
+	float3 loadedTexturePx = /*$(Image2D:../cabinsmall.png:RGBA8_Unorm:float4:false)*/[px].rgb;
 	float3 importedTexturePx = importedTexture[px].rgb;
 	float3 importedColorPx = importedColor[px].rgb;
 

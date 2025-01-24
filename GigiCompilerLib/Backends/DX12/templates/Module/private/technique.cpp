@@ -1,4 +1,4 @@
-#include "../public/technique.h"
+/*$(CopyrightHeader)*/#include "../public/technique.h"
 #include "DX12Utils/dxutils.h"
 #include "DX12Utils/DelayedReleaseTracker.h"
 #include "DX12Utils/HeapAllocationTracker.h"
@@ -118,6 +118,16 @@ namespace /*$(Name)*/
         delete context;
         if (s_allContexts.size() == 0)
             DestroyShared();
+    }
+
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        /*$(GetPrimaryOutputTexture)*/
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        /*$(GetPrimaryOutputTextureState)*/
     }
 
     void OnNewFrame(int framesInFlight)

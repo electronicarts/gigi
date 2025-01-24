@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <f16.h>
+#include "GigiViewerDX12/f16.h"
 
 struct half
 {
@@ -172,6 +172,10 @@ inline DXGI_FORMAT_Info Get_DXGI_FORMAT_Info(DXGI_FORMAT format)
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_X24_TYPELESS_G8_UINT, uint8_t, 1, false, true, true, 1, 2, None, false, DXGI_FORMAT_UNKNOWN);
 
 		// Block compressed formats
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC4_UNORM, uint8_t, 1, false, false, false, 0, 1, UNorm, true, DXGI_FORMAT_R8G8B8A8_UNORM);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC4_SNORM, int8_t, 1, false, false, false, 0, 1, SNorm, true, DXGI_FORMAT_R8G8B8A8_SNORM);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC5_UNORM, uint8_t, 2, false, false, false, 0, 1, UNorm, true, DXGI_FORMAT_R8G8B8A8_UNORM);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC5_SNORM, int8_t, 2, false, false, false, 0, 1, SNorm, true, DXGI_FORMAT_R8G8B8A8_SNORM);
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, true, DXGI_FORMAT_R8G8B8A8_UNORM);
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC7_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1, UNorm, true, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_BC6H_UF16, float, 3, false, false, false, 0, 1, None, true, DXGI_FORMAT_R32G32B32_FLOAT);
@@ -348,7 +352,7 @@ inline D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS GGUserFile_TLASBuildF
 	}
 }
 
-// https://learn.microsoft.com/en-us/windows/win32/direct3d12/typed-unordered-access-view-loads
+// Following the documentation at https://learn.microsoft.com/en-us/windows/win32/direct3d12/typed-unordered-access-view-loads
 inline bool FormatSupportedForUAV(ID3D12Device* device, DXGI_FORMAT format)
 {
 	switch (format)

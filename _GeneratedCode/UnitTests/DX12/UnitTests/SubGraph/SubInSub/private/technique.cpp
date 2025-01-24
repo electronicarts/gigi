@@ -177,6 +177,16 @@ namespace SubInSub
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -868,7 +878,13 @@ namespace SubInSub
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_Inner1_Inner2_Output);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_output.texture_Inner1_Inner2_Output->GetDesc().Width;
+            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_Inner1_Inner2_Output);
+            else
+                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_Inner1_Inner2_Output, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {

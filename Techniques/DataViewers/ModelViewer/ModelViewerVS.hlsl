@@ -18,6 +18,8 @@ struct VSOutput // AKA PSInput
 {
 	float4 Position   : SV_POSITION;
 	float4 Color      : TEXCOORD0;
+	float3 Normal     : NORMAL;
+	float3 WorldPos   : POSITION;
 };
 
 VSOutput vsmain(VSInput input)
@@ -41,5 +43,7 @@ VSOutput vsmain(VSInput input)
 	}
 	
 	ret.Position = outPos;
+	ret.WorldPos = input.Position;
+	ret.Normal = input.Normal;
 	return ret;
 }

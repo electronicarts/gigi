@@ -3,6 +3,13 @@
 # include "platform.h"
 # include "renderer.h"
 
+// Gigi change Begin
+#define NOMINMAX 1
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <filesystem>
+// Gigi change End
+
 extern "C" {
 #define STB_IMAGE_IMPLEMENTATION
 #define STB_IMAGE_STATIC
@@ -282,7 +289,17 @@ void Application::RecreateFontAtlas()
 	iconsConfig.GlyphMinAdvanceX = 4.0f;
 	iconsConfig.SizePixels = fontSize;
 
-	m_DefaultFont = io.Fonts->AddFontFromFileTTF("external/fonts/OpenSans-Regular.ttf", 16.0f, &iconsConfig);
+	// Get path to font, relative to executable, not working directory.
+	std::filesystem::path fontPath;
+	{
+		char exePath[_MAX_PATH + 1];
+		GetModuleFileNameA(NULL, exePath, _MAX_PATH);
+		fontPath = exePath;
+		fontPath.replace_filename("");
+		fontPath = fontPath / "external" / "fonts" / "OpenSans-Regular.ttf";
+	}
+
+	m_DefaultFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), 16.0f, &iconsConfig);
 	m_HeaderFont = m_DefaultFont;// io.Fonts->AddFontFromFileTTF("external/fonts/OpenSans-Regular.ttf", 20.0f, &iconsConfig);
 
 	io.Fonts->TexGlyphPadding = 1;

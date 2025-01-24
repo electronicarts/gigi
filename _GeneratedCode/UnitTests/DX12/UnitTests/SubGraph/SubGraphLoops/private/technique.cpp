@@ -409,6 +409,16 @@ namespace SubGraphLoops
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -1161,7 +1171,13 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_0_Output);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_0_Output->GetDesc().Width;
+            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_0_Output);
+            else
+                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_0_Output, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {
@@ -1274,7 +1290,13 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_1_Output);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_1_Output->GetDesc().Width;
+            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_1_Output);
+            else
+                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_1_Output, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {
@@ -1387,7 +1409,13 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_2_Output);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_2_Output->GetDesc().Width;
+            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_2_Output);
+            else
+                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_2_Output, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {
@@ -1500,7 +1528,13 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_3_Output);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_3_Output->GetDesc().Width;
+            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_3_Output);
+            else
+                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_3_Output, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {
@@ -1613,7 +1647,13 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_4_Output);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_4_Output->GetDesc().Width;
+            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_4_Output);
+            else
+                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_4_Output, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {

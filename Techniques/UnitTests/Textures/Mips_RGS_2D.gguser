@@ -17,7 +17,7 @@
             "nodeName": "VertexBuffer",
             "isATexture": false,
             "buffer": {
-                "fileName": "..\\..\\OBJAssets\\cube.obj",
+                "fileName": "..\\OBJAssets\\cube.obj",
                 "type": "Float3",
                 "BLASOpaque": true
             }

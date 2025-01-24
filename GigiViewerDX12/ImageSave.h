@@ -17,6 +17,12 @@ namespace ImageSave
 		bool saveAll = false;	// If true, saves all slices and mips, else just saves the current one chosen.
 		bool isCubeMap = false;	// If true, uses cube map face names instead of numbered array indices.
 
+		struct BC45
+		{
+			bool isSigned = false;
+		};
+		BC45 bc45;
+
 		struct BC6
 		{
 			bool isSigned = false;
@@ -34,6 +40,8 @@ namespace ImageSave
 	bool SaveAsCSV(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
 	bool SaveAsEXR(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
 	bool SaveAsHDR(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
+	bool SaveAsDDS_BC4(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
+	bool SaveAsDDS_BC5(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
 	bool SaveAsDDS_BC6(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
 	bool SaveAsDDS_BC7(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);
 	bool SaveAsBinary(const char* fileName, ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, const Options& options);

@@ -1,0 +1,284 @@
+'\" t
+.\"     Title: git-lfs-prune
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-PRUNE" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-prune \- Delete old LFS files from local storage
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs prune\fP [options]
+.SH "DESCRIPTION"
+.sp
+Deletes local copies of LFS files which are old, thus freeing up disk
+space. Prune operates by enumerating all the locally stored objects, and
+then deleting any which are not referenced by at least ONE of the
+following:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+the current checkout
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+all existing stashes
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+a \*(Aqrecent branch\*(Aq; see RECENT FILES
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+a \*(Aqrecent commit\*(Aq on the current branch or recent branches; see
+RECENT FILES
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+a commit which has not been pushed; see UNPUSHED LFS FILES
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+any other worktree checkouts; see git\-worktree(1)
+.RE
+.sp
+In general terms, prune will delete files you\(cqre not currently using and
+which are not \*(Aqrecent\*(Aq, so long as they\(cqve been pushed i.e. the local
+copy is not the only one.
+.sp
+The reflog is not considered, only commits. Therefore LFS objects that
+are only referenced by orphaned commits are always deleted.
+.sp
+Note: you should not run \f(CRgit lfs prune\fP if you have different
+repositories sharing the same custom storage directory; see
+git\-lfs\-config(5) for more details about \f(CRlfs.storage\fP option.
+.sp
+In your Git configuration or in a \f(CR.lfsconfig\fP file, you may set
+\f(CRlfs.fetchexclude\fP to a comma\-separated list of paths. If
+\f(CRlfs.fetchexclude\fP is defined, then any Git LFS files whose paths match
+one in that list will be pruned unless they are referenced by a stash or
+an unpushed commit. Paths are matched using wildcard matching as per
+gitignore(5).
+.SH "OPTIONS"
+.sp
+\f(CR\-\-dry\-run\fP, \f(CR\-d\fP
+.RS 4
+Don\(cqt actually delete anything, just report on what would have been done
+.RE
+.sp
+\f(CR\-\-force\fP, \f(CR\-f\fP
+.RS 4
+Prune all objects except unpushed objects, including objects required for
+currently checked out refs. Implies \f(CR\-\-recent\fP.
+.RE
+.sp
+\f(CR\-\-recent\fP
+.RS 4
+Prune even objects that would normally be preserved by the
+configuration options specified below in RECENT FILES.
+.RE
+.sp
+\f(CR\-\-verify\-remote\fP, \f(CR\-c\fP
+.RS 4
+Contact the remote and check that copies of reachable files we would delete
+definitely exist before deleting. See VERIFY REMOTE.
+.RE
+.sp
+\f(CR\-\-no\-verify\-remote\fP
+.RS 4
+Disables remote verification if lfs.pruneverifyremotealways was enabled in
+settings. See VERIFY REMOTE.
+.RE
+.sp
+\f(CR\-\-verify\-reachable\fP
+.RS 4
+When doing \f(CR\-\-verify\-remote\fP contact the remote and check unreachable
+objects as well. See VERIFY REMOTE.
+.RE
+.sp
+\f(CR\-\-no\-verify\-reachable\fP
+.RS 4
+Disables remote verification of unreachable files if
+lfs.pruneverifyunreachablealways was enabled in settings. See
+VERIFY REMOTE.
+.RE
+.sp
+\f(CR\-\-when\-unverified=<halt,continue>\fP
+.RS 4
+When \f(CR\-\-verify\-remote\fP cannot verify an object on the remote, either halt
+the execution or continue the deletion of verified objects. See
+VERIFY REMOTE.
+.RE
+.sp
+\f(CR\-\-verbose\fP, \f(CR\-v\fP
+.RS 4
+Report the full detail of what is/would be deleted.
+.RE
+.SH "RECENT FILES"
+.sp
+Prune won\(cqt delete LFS files referenced by \*(Aqrecent\*(Aq commits, in case you
+want to use them again without having to download. The definition of
+\*(Aqrecent\*(Aq is derived from the one used by git\-lfs\-fetch(1) to download
+recent objects with the \f(CR\-\-recent\fP option, with an offset of a number of
+days (default 3) to ensure that we always keep files you download for a
+few days.
+.sp
+Here are the git\-config(1) settings that control this behaviour:
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CRlfs.pruneoffsetdays\fP The number of extra days added to the fetch
+recent settings when using them to decide when to prune. So for a
+reference to be considered old enough to prune, it has to be this many
+days older than the oldest reference that would be downloaded via
+\f(CRgit lfs fetch \-\-recent\fP. Only used if the relevant fetch recent \*(Aqdays\*(Aq
+setting is non\-zero. Default 3 days.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+\f(CRlfs.fetchrecentrefsdays\fP \f(CRlfs.fetchrecentremoterefs\fP
+\f(CRlfs.fetchrecentcommitsdays\fP These have the same meaning as
+git\-lfs\-fetch(1) with the \f(CR\-\-recent\fP option, they are used as a base for
+the offset above. Anything which falls outside of this offsetted window
+is considered old enough to prune. If a day value is zero, that
+condition is not used at all to retain objects and they will be pruned.
+.RE
+.SH "UNPUSHED LFS FILES"
+.sp
+When the only copy of an LFS file is local, and it is still reachable
+from any reference, that file can never be pruned, regardless of how old
+it is.
+.sp
+To determine whether an LFS file has been pushed, we check the
+difference between local refs and remote refs; where the local ref is
+ahead, any LFS files referenced in those commits is unpushed and will
+not be deleted. This works because the LFS pre\-push hook always ensures
+that LFS files are pushed before the remote branch is updated.
+.sp
+See DEFAULT REMOTE, for which remote is considered \*(Aqpushed\*(Aq for
+pruning purposes.
+.SH "VERIFY REMOTE"
+.sp
+The \f(CR\-\-verify\-remote\fP option calls the remote to ensure that any reachable
+LFS files to be deleted have copies on the remote before actually deleting
+them.
+.sp
+Usually the check performed by UNPUSHED LFS FILES is enough to
+determine that files have been pushed, but if you want to be extra sure
+at the expense of extra overhead you can make prune actually call the
+remote API and verify the presence of the files you\(cqre about to delete
+locally. See DEFAULT REMOTE for which remote is checked.
+.sp
+You can make this behaviour the default by setting
+\f(CRlfs.pruneverifyremotealways\fP to true.
+.sp
+In addition to the overhead of calling the remote, using this option
+also requires prune to distinguish between totally unreachable files
+(e.g. those that were added to the index but never committed, or
+referenced only by orphaned commits), and files which are still
+referenced, but by commits which are prunable. This makes the prune
+process take longer.
+.sp
+If you want to verify unreachable objects as well, set the
+\f(CR\-\-verify\-unreachable\fP option.
+.sp
+You can check for unreachable objects by default by setting
+\f(CRlfs.pruneverifyunreachablealways\fP to true.
+.sp
+By default, \f(CR\-\-verify\-remote\fP halts execution if a file cannot be
+verified. Set \f(CR\-\-when\-unverified=continue\fP to not halt exceution but
+continue deleting all objects that can be verified.
+.SH "DEFAULT REMOTE"
+.sp
+When identifying UNPUSHED LFS FILES and performing VERIFY REMOTE, a
+single remote, \*(Aqorigin\*(Aq, is normally used as the reference. This one
+remote is considered canonical; even if you use multiple remotes, you
+probably want to retain your local copies until they\(cqve made it to that
+remote. \*(Aqorigin\*(Aq is used by default because that will usually be a main
+central repo, or your fork of it \- in both cases that\(cqs a valid remote
+backup of your work. If origin doesn\(cqt exist then by default nothing
+will be pruned because everything is treated as \*(Aqunpushed\*(Aq.
+.sp
+You can alter the remote via git config: \f(CRlfs.pruneremotetocheck\fP. Set
+this to a different remote name to check that one instead of \*(Aqorigin\*(Aq.
+.SH "SEE ALSO"
+.sp
+git\-lfs\-fetch(1), gitignore(5).
+.sp
+Part of the git\-lfs(1) suite.

@@ -163,6 +163,16 @@ namespace SubGraphTest
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -776,7 +786,13 @@ namespace SubGraphTest
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_output.texture_Inner_Exported_Tex, context->m_input.texture_Test);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_input.texture_Test->GetDesc().Width;
+            unsigned int destSize = context->m_output.texture_Inner_Exported_Tex->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_output.texture_Inner_Exported_Tex, context->m_input.texture_Test);
+            else
+                commandList->CopyBufferRegion(context->m_output.texture_Inner_Exported_Tex, 0, context->m_input.texture_Test, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {

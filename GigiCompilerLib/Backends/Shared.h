@@ -51,6 +51,8 @@ struct BackendBase
     }
 };
 
+std::filesystem::path GetExePath();
+
 inline bool StringEndsWith(const char* haystack, const char* needle)
 {
     int lenHaystack = (int)strlen(haystack);
@@ -491,6 +493,8 @@ std::unordered_map<std::string, std::ostringstream> MakeFiles(std::unordered_map
 {
     // make the string replacement
     std::unordered_map<std::string, std::ostringstream> stringReplacementMap;
+    for (const CustomGigiToken& token : renderGraph.customTokens)
+        stringReplacementMap[std::string("/*$(") + token.key + std::string(")*/")] << token.value;
     stringReplacementMap["\r\n"] << "\n"; // normalize line endings
     TBACKEND::MakeStringReplacementGlobal(stringReplacementMap, renderGraph);
 
@@ -875,12 +879,15 @@ inline DataFieldTypeInfoStruct DataFieldTypeInfo(DataFieldType type)
     }
 }
 
-inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<std::string, std::string>& files, const char* outFolder, const char* templateDir)
+inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<std::string, std::string>& files, const char* outFolder, const char* templateDir_)
 {
+    // todo: templatedir needs to be relative to exe, not working directory!
+    std::filesystem::path templateDir = GetExePath() / templateDir_;
+
     // read the configuration
     BackendTemplateConfig& templateConfig = renderGraph.templateConfig;
     {
-        std::string ggconfigFileName = std::string(templateDir) + "ggconfig.json";
+        std::string ggconfigFileName = (templateDir / "ggconfig.json").string();
         ReadFromJSONFile(templateConfig, ggconfigFileName.c_str(), false);
     }
 
@@ -895,7 +902,7 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
         if (!fileProperties.isDirectory)
             continue;
 
-        std::filesystem::path p = std::filesystem::weakly_canonical(std::filesystem::path(templateDir) / fileProperties.fileName);
+        std::filesystem::path p = std::filesystem::weakly_canonical(templateDir / fileProperties.fileName);
 
         for (const std::filesystem::directory_entry it : std::filesystem::recursive_directory_iterator(p))
         {
@@ -931,7 +938,7 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
             for (const std::string& ignoreDir : templateConfig.ignoreDirectories)
             {
                 // ignore the file if the canonical path begins with the canonical path of the ignoreDir
-                std::string absoluteIgnoreDir = std::filesystem::weakly_canonical((std::filesystem::path(templateDir) / std::filesystem::path(ignoreDir))).string();
+                std::string absoluteIgnoreDir = std::filesystem::weakly_canonical((templateDir / std::filesystem::path(ignoreDir))).string();
                 if (!std::strncmp(absoluteIgnoreDir.c_str(), absoluteFileName.c_str(), absoluteIgnoreDir.length()))
                 {
                     ignoreFile = true;
@@ -1012,7 +1019,7 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
     // Process nodeTemplateFiles
     for (const std::string& nodeTemplateFile : templateConfig.nodeTemplateFiles)
     {
-        std::string fullFileName = (std::filesystem::path(templateDir) / std::filesystem::path(nodeTemplateFile)).string();
+        std::string fullFileName = (templateDir / std::filesystem::path(nodeTemplateFile)).string();
 
         tinyxml2::XMLDocument doc;
         doc.LoadFile(fullFileName.c_str());

@@ -1,4 +1,4 @@
-#include "CompileShaders.h"
+/*$(CopyrightHeader)*/#include "CompileShaders.h"
 
 #include <d3d12.h>
 #include <D3Dcompiler.h>

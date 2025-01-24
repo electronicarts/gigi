@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include "utils.h"
+#include <assert.h>
 
 class DescriptorTableCache
 {

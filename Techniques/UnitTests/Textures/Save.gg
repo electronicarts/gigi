@@ -1,0 +1,101 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "variables": [
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "16, 16",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "SaveCS",
+            "fileName": "SaveCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "ColorSDR",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "ColorHDR",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "ColorSDR",
+                "editorPos": [
+                    -34.0,
+                    -16.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ColorHDR",
+                "editorPos": [
+                    -37.0,
+                    34.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "MakeImages",
+                "editorPos": [
+                    85.0,
+                    -4.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ColorSDR",
+                        "dstNode": "ColorSDR",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ColorHDR",
+                        "dstNode": "ColorHDR",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "SaveCS"
+                },
+                "dispatchSize": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        }
+    ]
+}

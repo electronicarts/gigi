@@ -1,0 +1,11 @@
+{
+    "Title":"Life",
+    "Description":"Conway's game of life. Left mouse button draws, right mouse button erases.",
+    "Author":"Demofox",
+    "Tags":"game,simulation,compute",
+    "Technique": "DemofoxLife.gg",
+    "Website": "https://blog.demofox.org/",
+    "Screenshot":"Screenshot.png",
+    "License":"license.txt",
+    "GigiVersion":"0.99b",
+}

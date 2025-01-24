@@ -119,6 +119,16 @@ namespace CopyResourceTest
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -755,7 +765,13 @@ namespace CopyResourceTest
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_output.texture_Texture_From_Texture, context->m_input.texture_Source_Texture);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_input.texture_Source_Texture->GetDesc().Width;
+            unsigned int destSize = context->m_output.texture_Texture_From_Texture->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_output.texture_Texture_From_Texture, context->m_input.texture_Source_Texture);
+            else
+                commandList->CopyBufferRegion(context->m_output.texture_Texture_From_Texture, 0, context->m_input.texture_Source_Texture, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {
@@ -845,7 +861,13 @@ namespace CopyResourceTest
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            commandList->CopyResource(context->m_output.buffer_Buffer_From_Buffer, context->m_input.buffer_Source_Buffer);
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_input.buffer_Source_Buffer->GetDesc().Width;
+            unsigned int destSize = context->m_output.buffer_Buffer_From_Buffer->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_output.buffer_Buffer_From_Buffer, context->m_input.buffer_Source_Buffer);
+            else
+                commandList->CopyBufferRegion(context->m_output.buffer_Buffer_From_Buffer, 0, context->m_input.buffer_Source_Buffer, 0, min(srcSize, destSize));
 
             if(context->m_profile)
             {

@@ -15,6 +15,12 @@
 # include <imgui.h>
 # include "imgui_impl_win32.h"
 
+
+// Gigi Modification Begin
+#include "shellapi.h"
+#include <vector>
+// Gigi Modification End
+
 # if defined(_UNICODE)
 std::wstring Utf8ToNative(const std::string& str)
 {
@@ -172,6 +178,10 @@ bool PlatformWin32::OpenMainWindow(const char* title, int width, int height)
     if (!m_MainWindowHandle)
         return false;
 
+    // Gigi Modification Begin
+    DragAcceptFiles(m_MainWindowHandle, true);
+    // Gigi Modification End
+
     if (!ImGui_ImplWin32_Init(m_MainWindowHandle))
     {
         DestroyWindow(m_MainWindowHandle);
@@ -296,6 +306,16 @@ LRESULT PlatformWin32::WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
 
     switch (msg)
     {
+        // Gigi Modifiation Begin
+        case WM_DROPFILES:
+        {
+            unsigned int dropFileNameLen = DragQueryFileA((HDROP)wParam, 0, nullptr, 0);
+            std::vector<char> dropFileName(dropFileNameLen + 1);
+            unsigned int ret = DragQueryFileA((HDROP)wParam, 0, dropFileName.data(), (UINT)dropFileName.size());
+            m_Application.SetDragFile(dropFileName.data());
+            return 0;
+        }
+        // Gigi Modifiation End
         case WM_CLOSE:
             m_CanCloseResult = m_Application.CanClose();
             if (m_CanCloseResult)

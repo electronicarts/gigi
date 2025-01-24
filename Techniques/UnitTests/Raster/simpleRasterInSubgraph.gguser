@@ -1,0 +1,80 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 4,
+        "importedResources": [
+            {
+                "nodeName": "VB",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\ObjAssets\\bunny.obj",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "DoSimpleRaster_MouseState",
+                "value": "0.000000,0.000000,0.000000,0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_MouseStateLastFrame",
+                "value": "0.000000,0.000000,0.000000,0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_iResolution",
+                "value": "0.000000,0.000000,0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_iTime",
+                "value": "0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_iTimeDelta",
+                "value": "0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_iFrameRate",
+                "value": "0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_iFrame",
+                "value": "0"
+            },
+            {
+                "name": "DoSimpleRaster_iMouse",
+                "value": "0.000000,0.000000,0.000000,0.000000"
+            },
+            {
+                "name": "DoSimpleRaster_ViewMtx",
+                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
+            },
+            {
+                "name": "DoSimpleRaster_InvViewMtx",
+                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
+            },
+            {
+                "name": "DoSimpleRaster_ProjMtx",
+                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
+            },
+            {
+                "name": "DoSimpleRaster_InvProjMtx",
+                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
+            },
+            {
+                "name": "DoSimpleRaster_ViewProjMtx",
+                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
+            },
+            {
+                "name": "DoSimpleRaster_InvViewProjMtx",
+                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
+            },
+            {
+                "name": "DoSimpleRaster_CameraPos",
+                "value": "0.000000,0.000000,0.000000"
+            }
+        ]
+    }
+}

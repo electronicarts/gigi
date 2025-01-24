@@ -1,0 +1,56 @@
+'\" t
+.\"     Title: git-lfs-untrack
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-UNTRACK" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-untrack \- Remove Git LFS paths from Git Attributes
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs untrack\fP <path>...
+.SH "DESCRIPTION"
+.sp
+Stop tracking the given path(s) through Git LFS. The argument can be a
+glob pattern or a file path.
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+Configure Git LFS to stop tracking GIF files:
+.sp
+\f(CRgit lfs untrack "*.gif"\fP
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-track(1), git\-lfs\-install(1), gitattributes(5).
+.sp
+Part of the git\-lfs(1) suite.

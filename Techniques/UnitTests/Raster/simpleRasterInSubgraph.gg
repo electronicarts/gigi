@@ -1,0 +1,177 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "nodes": [
+        {
+            "actionSubGraph": {
+                "name": "DoSimpleRaster",
+                "editorPos": [
+                    499.0,
+                    511.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "VertexBuffer",
+                        "dstNode": "VB",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Color Buffer"
+                    },
+                    {
+                        "srcPin": "Depth Buffer"
+                    }
+                ],
+                "fileName": "simpleRaster.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "VertexBuffer"
+                    ],
+                    "exportedResources": [
+                        "Color Buffer",
+                        "Depth Buffer"
+                    ],
+                    "variables": [
+                        {
+                            "name": "MouseState",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "MouseStateLastFrame",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "iResolution",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "iTime",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "iTimeDelta",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "iFrameRate",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "iFrame",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "iMouse",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "ViewMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "InvViewMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "ProjMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "InvProjMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "ViewProjMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "InvViewProjMtx",
+                            "visibility": "Host"
+                        },
+                        {
+                            "name": "CameraPos",
+                            "visibility": "Host"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "MouseState",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "MouseStateLastFrame",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "iResolution",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "iTime",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "iTimeDelta",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "iFrameRate",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "iFrame",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "iMouse",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "ViewMtx",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "InvViewMtx",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "ProjMtx",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "InvProjMtx",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "ViewProjMtx",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "InvViewProjMtx",
+                        "visibility": "Host"
+                    },
+                    {
+                        "name": "CameraPos",
+                        "visibility": "Host"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VB",
+                "editorPos": [
+                    379.0,
+                    514.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

@@ -119,6 +119,16 @@ namespace simpleRaster
             DestroyShared();
     }
 
+    ID3D12Resource* Context::GetPrimaryOutputTexture()
+    {
+        return nullptr;
+    }
+
+    D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
+    {
+        return D3D12_RESOURCE_STATE_COMMON;
+    }
+
     void OnNewFrame(int framesInFlight)
     {
         s_delayedRelease.OnNewFrame(framesInFlight);
@@ -598,11 +608,12 @@ namespace simpleRaster
 
         D3D12_RANGE range;
         range.Begin = 0;
-        range.End = ((1 + 1) * 2) * sizeof(uint64_t);
+        range.End = ((2 + 1) * 2) * sizeof(uint64_t);
 
         uint64_t* timeStampBuffer = nullptr;
         m_internal.m_TimestampReadbackBuffer->Map(0, &range, (void**)&timeStampBuffer);
 
+        m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // copy resource: CopyVBs
         m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // Draw Call: Rasterize
         m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+1] - timeStampBuffer[0])); numItems++; // GPU total
 
@@ -650,6 +661,13 @@ namespace simpleRaster
             m_output.texture_Depth_Buffer = nullptr;
         }
 
+        // This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.
+        if(m_internal.buffer_VBCopy)
+        {
+            s_delayedRelease.Add(m_internal.buffer_VBCopy);
+            m_internal.buffer_VBCopy = nullptr;
+        }
+
         // _VertexShaderCB
         if (m_internal.constantBuffer__VertexShaderCB)
         {
@@ -675,7 +693,7 @@ namespace simpleRaster
         // reset the timer index
         s_timerIndex = 0;
 
-        ScopedPerfEvent scopedPerf("simpleRaster", commandList, 5);
+        ScopedPerfEvent scopedPerf("simpleRaster", commandList, 7);
 
         std::chrono::high_resolution_clock::time_point startPointCPUTechnique;
         if(context->m_profile)
@@ -684,14 +702,14 @@ namespace simpleRaster
             if(context->m_internal.m_TimestampQueryHeap == nullptr)
             {
                 D3D12_QUERY_HEAP_DESC QueryHeapDesc;
-                QueryHeapDesc.Count = (1+1) * 2;
+                QueryHeapDesc.Count = (2+1) * 2;
                 QueryHeapDesc.NodeMask = 1;
                 QueryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
                 device->CreateQueryHeap(&QueryHeapDesc, IID_PPV_ARGS(&context->m_internal.m_TimestampQueryHeap));
                 if (c_debugNames)
                     context->m_internal.m_TimestampQueryHeap->SetName(L"simpleRaster Time Stamp Query Heap");
 
-                context->m_internal.m_TimestampReadbackBuffer = DX12Utils::CreateBuffer(device, sizeof(uint64_t) * (1+1) * 2, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, (c_debugNames ? L"simpleRaster Time Stamp Query Heap" : nullptr), nullptr);
+                context->m_internal.m_TimestampReadbackBuffer = DX12Utils::CreateBuffer(device, sizeof(uint64_t) * (2+1) * 2, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, (c_debugNames ? L"simpleRaster Time Stamp Query Heap" : nullptr), nullptr);
             }
             commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
         }
@@ -699,12 +717,6 @@ namespace simpleRaster
         if (!context->m_input.buffer_VertexBuffer)
         {
             Context::LogFn(LogLevel::Error, "simpleRaster: Imported buffer \"VertexBuffer\" is null.\n");
-            return;
-        }
-
-        if (context->m_input.buffer_VertexBuffer_vertexInputLayout.size() == 0)
-        {
-            Context::LogFn(LogLevel::Error, "simpleRaster: Imported buffer \"VertexBuffer\" is used as a vertex buffer but no vertexInputLayout was given.\n");
             return;
         }
 
@@ -723,13 +735,13 @@ namespace simpleRaster
             int barrierCount = 0;
             D3D12_RESOURCE_BARRIER barriers[1];
 
-            if(context->m_input.buffer_VertexBuffer_state != D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)
+            if(context->m_input.buffer_VertexBuffer_state != D3D12_RESOURCE_STATE_COPY_SOURCE)
             {
                 barriers[barrierCount].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 barriers[barrierCount].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                 barriers[barrierCount].Transition.pResource = context->m_input.buffer_VertexBuffer;
                 barriers[barrierCount].Transition.StateBefore = context->m_input.buffer_VertexBuffer_state;
-                barriers[barrierCount].Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+                barriers[barrierCount].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
                 barriers[barrierCount].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 barrierCount++;
             }
@@ -738,10 +750,64 @@ namespace simpleRaster
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
+        // Transition resources for the next action
+        {
+            D3D12_RESOURCE_BARRIER barriers[1];
+
+            barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barriers[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barriers[0].Transition.pResource = context->m_internal.buffer_VBCopy;
+            barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+            barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_DEST;
+            barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+            commandList->ResourceBarrier(1, barriers);
+        }
+
+        // Copy Resource: CopyVBs
+        {
+            ScopedPerfEvent scopedPerf("Copy Resource: CopyVBs", commandList, 5);
+            std::chrono::high_resolution_clock::time_point startPointCPU;
+            if(context->m_profile)
+            {
+                startPointCPU = std::chrono::high_resolution_clock::now();
+                commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
+            }
+
+            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
+            unsigned int srcSize = context->m_input.buffer_VertexBuffer->GetDesc().Width;
+            unsigned int destSize = context->m_internal.buffer_VBCopy->GetDesc().Width;
+            if (srcSize == destSize)
+                commandList->CopyResource(context->m_internal.buffer_VBCopy, context->m_input.buffer_VertexBuffer);
+            else
+                commandList->CopyBufferRegion(context->m_internal.buffer_VBCopy, 0, context->m_input.buffer_VertexBuffer, 0, min(srcSize, destSize));
+
+            if(context->m_profile)
+            {
+                context->m_profileData[(s_timerIndex-1)/2].m_label = "CopyVBs";
+                context->m_profileData[(s_timerIndex-1)/2].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
+                commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
+            }
+        }
+
         // Shader Constants: _VertexShaderCB
         {
             context->m_internal.constantBuffer__VertexShaderCB_cpu.ViewProjMtx = context->m_input.variable_ViewProjMtx;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__VertexShaderCB, context->m_internal.constantBuffer__VertexShaderCB_cpu, Context::LogFn);
+        }
+
+        // Transition resources for the next action
+        {
+            D3D12_RESOURCE_BARRIER barriers[1];
+
+            barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+            barriers[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barriers[0].Transition.pResource = context->m_internal.buffer_VBCopy;
+            barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+            barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+            barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+            commandList->ResourceBarrier(1, barriers);
         }
 
         // Draw Call: Rasterize
@@ -765,14 +831,14 @@ namespace simpleRaster
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
 
             // Vertex Buffer
-            int vertexCountPerInstance = context->m_input.buffer_VertexBuffer_count;
+            int vertexCountPerInstance = context->m_internal.buffer_VBCopy_count;
 
             D3D12_VERTEX_BUFFER_VIEW vbView;
-            vbView.BufferLocation = context->m_input.buffer_VertexBuffer->GetGPUVirtualAddress();
-            vbView.StrideInBytes = (context->m_input.buffer_VertexBuffer_format == DXGI_FORMAT_UNKNOWN)
-                ? context->m_input.buffer_VertexBuffer_stride
-                : DX12Utils::Get_DXGI_FORMAT_Info(context->m_input.buffer_VertexBuffer_format, Context::LogFn).bytesPerPixel;
-            vbView.SizeInBytes = vbView.StrideInBytes * context->m_input.buffer_VertexBuffer_count;
+            vbView.BufferLocation = context->m_internal.buffer_VBCopy->GetGPUVirtualAddress();
+            vbView.StrideInBytes = (context->m_internal.buffer_VBCopy_format == DXGI_FORMAT_UNKNOWN)
+                ? context->m_internal.buffer_VBCopy_stride
+                : DX12Utils::Get_DXGI_FORMAT_Info(context->m_internal.buffer_VBCopy_format, Context::LogFn).bytesPerPixel;
+            vbView.SizeInBytes = vbView.StrideInBytes * context->m_internal.buffer_VBCopy_count;
 
             commandList->IASetVertexBuffers(0, 1, &vbView);
 
@@ -839,12 +905,12 @@ namespace simpleRaster
             int barrierCount = 0;
             D3D12_RESOURCE_BARRIER barriers[1];
 
-            if(context->m_input.buffer_VertexBuffer_state != D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER)
+            if(context->m_input.buffer_VertexBuffer_state != D3D12_RESOURCE_STATE_COPY_SOURCE)
             {
                 barriers[barrierCount].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
                 barriers[barrierCount].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
                 barriers[barrierCount].Transition.pResource = context->m_input.buffer_VertexBuffer;
-                barriers[barrierCount].Transition.StateBefore = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+                barriers[barrierCount].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
                 barriers[barrierCount].Transition.StateAfter = context->m_input.buffer_VertexBuffer_state;
                 barriers[barrierCount].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 barrierCount++;
@@ -936,6 +1002,32 @@ namespace simpleRaster
                 m_output.texture_Depth_Buffer_size[2] = desiredSize[2];
                 m_output.texture_Depth_Buffer_numMips = desiredNumMips;
                 m_output.texture_Depth_Buffer_format = desiredFormat;
+            }
+        }
+
+        // VBCopy
+        // This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.
+        {
+            unsigned int baseCount = m_input.buffer_VertexBuffer_count;
+            unsigned int desiredCount = ((baseCount + 0 ) * 1) / 1 + 0;
+            DXGI_FORMAT desiredFormat = DXGI_FORMAT_UNKNOWN;
+            unsigned int desiredStride = 24;
+
+            if(!m_internal.buffer_VBCopy ||
+               m_internal.buffer_VBCopy_count != desiredCount ||
+               m_internal.buffer_VBCopy_format != desiredFormat ||
+               m_internal.buffer_VBCopy_stride != desiredStride)
+            {
+                dirty = true;
+                if(m_internal.buffer_VBCopy)
+                    s_delayedRelease.Add(m_internal.buffer_VBCopy);
+
+                unsigned int desiredSize = desiredCount * ((desiredStride > 0) ? desiredStride : DX12Utils::Get_DXGI_FORMAT_Info(desiredFormat, Context::LogFn).bytesPerPixel);
+
+                m_internal.buffer_VBCopy = DX12Utils::CreateBuffer(device, desiredSize, m_internal.c_buffer_VBCopy_flags, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"VBCopy" : nullptr), Context::LogFn);
+                m_internal.buffer_VBCopy_count = desiredCount;
+                m_internal.buffer_VBCopy_format = desiredFormat;
+                m_internal.buffer_VBCopy_stride = desiredStride;
             }
         }
 
@@ -1045,7 +1137,8 @@ namespace simpleRaster
             std::vector<D3D12_INPUT_ELEMENT_DESC> vertexInputLayout;
 
             // Vertex buffer vertex input layout
-            vertexInputLayout.insert(vertexInputLayout.end(), m_input.buffer_VertexBuffer_vertexInputLayout.begin(), m_input.buffer_VertexBuffer_vertexInputLayout.end());
+                vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+                vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 
             // Make the PSO desc
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};

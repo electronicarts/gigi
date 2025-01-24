@@ -193,6 +193,9 @@ namespace ImageReadback
 
     bool GetDecodedPixel(ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int x, int y, int z, int mipIndex, std::vector<unsigned char>& pixel, DXGI_FORMAT& pixelFormat)
     {
+        if (mipIndex < 0 || mipIndex >= resourceOriginalDesc.MipLevels)
+            return false;
+
         // If compressed, decode it
         DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(resourceOriginalDesc.Format);
         if (formatInfo.isCompressed)
@@ -215,12 +218,11 @@ namespace ImageReadback
 
         // Ensure params are in range
         const D3D12_PLACED_SUBRESOURCE_FOOTPRINT& layout = layouts[subresourceIndex];
-        x = std::max<UINT>(0, std::min<UINT>(layout.Footprint.Width - 1, x));
-        y = std::max<UINT>(0, std::min<UINT>(layout.Footprint.Height - 1, y));
-        if (is3D)
-            z = std::max<UINT>(0, std::min<UINT>(layout.Footprint.Depth - 1, z));
-        else
-            z = 0;
+        if (x < 0 || y < 0 || z < 0 || x >= (int)layout.Footprint.Width || y >= (int)layout.Footprint.Height)
+            return false;
+
+        if (is3D && z >= (int)layout.Footprint.Depth)
+            return false;
 
         // Map the memory
         D3D12_RANGE readRange;
@@ -241,6 +243,30 @@ namespace ImageReadback
         writeRange.End = 0;
         readbackResource->Unmap(0, &writeRange);
         return true;
+    }
+
+    bool GetDecodedPixelsRectangle(ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, int x1, int x2, int y1, int y2, int z, int mipIndex, std::vector<unsigned char>& pixels, DXGI_FORMAT& pixelFormat)
+    {
+        // If this function is ever too slow, we can re-write it to not call into GetDecodedPixel for each individual pixel
+        pixels.clear();
+        std::vector<unsigned char> pixel;
+
+        if (x1 > x2)
+            std::swap(x1, x2);
+
+        if (y1 > y2)
+            std::swap(y1, y2);
+
+        for (int iy = y1; iy < y2; ++iy)
+        {
+            for (int ix = x1; ix < x2; ++ix)
+            {
+                if (GetDecodedPixel(device, readbackResource, resourceOriginalDesc, ix, iy, z, mipIndex, pixel, pixelFormat))
+                    pixels.insert(pixels.end(), pixel.begin(), pixel.end());
+            }
+        }
+
+        return pixels.size() > 0;
     }
 
     bool GetDecodedImage(ID3D12Device2* device, ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourceOriginalDesc, std::vector<unsigned char>& pixels, DXGI_FORMAT& pixelFormat)

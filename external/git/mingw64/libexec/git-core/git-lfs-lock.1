@@ -1,0 +1,61 @@
+'\" t
+.\"     Title: git-lfs-lock
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-LOCK" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-lock \- Set a file as "locked" on the Git LFS server
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs lock\fP [options] <path>
+.SH "DESCRIPTION"
+.sp
+Sets the given file path as "locked" against the Git LFS server, with
+the intention of blocking attempts by other users to update the given
+path. Locking a file requires the file to exist in the working copy.
+.sp
+Once locked, LFS will verify that Git pushes do not modify files locked
+by other users. See the description of the \f(CRlfs.<url>.locksverify\fP
+config key in git\-lfs\-config(5) for details.
+.SH "OPTIONS"
+.sp
+\f(CR\-r <name>\fP, \f(CR\-\-remote=<name>\fP
+.RS 4
+Specify the Git LFS server to use. Ignored if the \f(CRlfs.url\fP config key is
+set.
+.RE
+.sp
+\f(CR\-\-json\fP
+.RS 4
+Writes lock info as JSON to STDOUT if the command exits successfully. Intended
+for interoperation with external tools. If the command returns with a non\-zero
+exit code, plain text messages will be sent to STDERR.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-unlock(1), git\-lfs\-locks(1).
+.sp
+Part of the git\-lfs(1) suite.

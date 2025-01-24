@@ -6,6 +6,8 @@ Debug-windows-x86_64/
 imgui.ini
 HostApps/OpenGL/bin-int/Debug-x64/*
 HostApps/OpenGL/bin/Debug-x64/*
+GigiBrowser.exe
+GigiBrowser.pdb
 GigiEdit.exe
 GigiEdit.pdb
 GigiCompiler.exe
@@ -15,5 +17,5 @@ GigiViewerDX12.pdb
 GigiViewerDX12.exp
 GigiViewerDX12.lib
 GigiEdit/GigiEdit.aps
-
+./WinPixEventRuntime.dll
 **/__pycache__/

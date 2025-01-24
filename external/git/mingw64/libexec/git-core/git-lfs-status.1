@@ -1,0 +1,90 @@
+'\" t
+.\"     Title: git-lfs-status
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-STATUS" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-status \- Show the status of Git LFS files in the working tree
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs status\fP [<options>]
+.SH "DESCRIPTION"
+.sp
+Display paths of Git LFS objects that
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+have not been pushed to the Git LFS server. These are large files that
+would be uploaded by \f(CRgit push\fP.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+have differences between the index file and the current HEAD commit.
+These are large files that would be committed by \f(CRgit commit\fP.
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+have differences between the working tree and the index file. These
+are files that could be staged using \f(CRgit add\fP.
+.RE
+.sp
+This command must be run in a non\-bare repository.
+.SH "OPTIONS"
+.sp
+\f(CR\-\-porcelain\fP
+.RS 4
+Give the output in an easy\-to\-parse format for scripts.
+.RE
+.sp
+\f(CR\-\-json\fP
+.RS 4
+Give the output in a stable json format for scripts.
+.RE
+.SH "SEE ALSO"
+.sp
+git\-lfs\-ls\-files(1).
+.sp
+Part of the git\-lfs(1) suite.

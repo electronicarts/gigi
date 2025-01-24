@@ -1,0 +1,80 @@
+'\" t
+.\"     Title: git-lfs-ext
+.\"    Author: [see the "AUTHOR(S)" section]
+.\" Generator: Asciidoctor 2.0.21
+.\"    Manual: \ \&
+.\"    Source: \ \&
+.\"  Language: English
+.\"
+.TH "GIT\-LFS\-EXT" "1" "" "\ \&" "\ \&"
+.ie \n(.g .ds Aq \(aq
+.el       .ds Aq '
+.ss \n[.ss] 0
+.nh
+.ad l
+.de URL
+\fI\\$2\fP <\\$1>\\$3
+..
+.als MTO URL
+.if \n[.g] \{\
+.  mso www.tmac
+.  am URL
+.    ad l
+.  .
+.  am MTO
+.    ad l
+.  .
+.  LINKSTYLE blue R < >
+.\}
+.SH "NAME"
+git-lfs-ext \- View extension details
+.SH "SYNOPSIS"
+.sp
+\f(CRgit lfs ext list\fP [<name>...]
+.SH "DESCRIPTION"
+.sp
+Git LFS extensions enable the manipulation of files streams during
+smudge and clean.
+.SH "EXAMPLES"
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+List details for all extensions
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git lfs ext
+$ git lfs ext list
+.fam
+.fi
+.if n .RE
+.RE
+.sp
+.RS 4
+.ie n \{\
+\h'-04'\(bu\h'+03'\c
+.\}
+.el \{\
+.  sp -1
+.  IP \(bu 2.3
+.\}
+List details for the specified extensions
+.sp
+.if n .RS 4
+.nf
+.fam C
+$ git lfs ext list \*(Aqfoo\*(Aq \*(Aqbar\*(Aq
+.fam
+.fi
+.if n .RE
+.RE
+.SH "SEE ALSO"
+.sp
+Part of the git\-lfs(1) suite.

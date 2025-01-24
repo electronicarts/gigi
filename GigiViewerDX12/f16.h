@@ -7,7 +7,7 @@
 
 #include <stdint.h>
 
-// Adapted from https://fgiesen.wordpress.com/2012/03/28/half-to-float-done-quic/
+// Portions of this software were based on https://fgiesen.wordpress.com/2012/03/28/half-to-float-done-quic/
 inline float half_to_float_fast5(uint16_t h_)
 {
     typedef unsigned int uint;
@@ -50,7 +50,7 @@ inline float half_to_float_fast5(uint16_t h_)
     return o.f;
 }
 
-// https://gist.github.com/rygorous/2156668
+// Portions of this software were based on https://gist.github.com/rygorous/2156668
 inline uint16_t float_to_half_fast(float f_)
 {
     typedef unsigned int uint;

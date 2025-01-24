@@ -5,7 +5,7 @@
 
 #pragma once
 
-// adapted from https://github.com/TheRealMJP/BakingLab
+// Portions of this software are based on https://github.com/TheRealMJP/BakingLab
 
 #include <cmath>
 
