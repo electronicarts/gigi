@@ -1,6 +1,6 @@
 # Sharing Techniques In The Gigi Browser
 
-The technique sharing server lives on github at https://github.com/electronicarts/.gigi-techniques/
+The technique sharing server lives on github at https://github.com/electronicarts/gigi-techniques/
 
 This repository contains a Techniques.json file that lists the techniques served. Your technique must be added to that file to show up in the browser.
 
