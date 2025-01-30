@@ -4,6 +4,8 @@ The technique sharing server lives on github at https://github.com/electronicart
 
 This repository contains a Techniques.json file that lists the techniques served. Your technique must be added to that file to show up in the browser.
 
+The current technique list json file can be seen here: [Techniques.json](https://github.com/electronicarts/gigi-techniques/blob/main/Techniques.json)
+
 To get your technique added, you can make a merge request to add it yourself.  Alternately, you can open an issue asking for it to be added.
 
 If opening an issue, please provide:
