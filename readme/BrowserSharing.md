@@ -34,6 +34,8 @@ These fields are optional:
 1. Tags - Comma separated list of tags
 1. Website - a URL to get more information about the technique, or similar.
 
+An example details json file can be seen here: [Users/awolfe/Life/Technique.json](https://github.com/electronicarts/gigi-techniques/blob/main/Users/awolfe/Life/Technique.json)
+
 When the user downloads your technique, it will download the folder where your details file lives, and all subfolders recursively.
 
 ## Testing
