@@ -331,7 +331,7 @@ LRESULT PlatformWin32::WinProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam
                 m_IsMinimized  = true;
                 m_WasMinimized = true;
             }
-            else if (wParam == SIZE_RESTORED && m_IsMinimized)
+            else if (wParam == SIZE_RESTORED || wParam == SIZE_MAXIMIZED)
             {
                 m_IsMinimized = false;
             }
