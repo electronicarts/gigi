@@ -20,6 +20,8 @@
 
 #include "shlobj_core.h"
 
+bool g_logOpen = false;
+
 bool ShowErrorMessage(const char* fmt, ...)
 {
 	char buffer[4096];
@@ -548,6 +550,10 @@ void Browser::ShowBrowserWindow()
 		if (ImGui::Button("Open Viewer"))
 			RunCommandLine(false, "GigiViewerDX12.exe");
 
+		ImGui::SameLine();
+		if (ImGui::Button(g_logOpen ? "Hide Log" : "View Log"))
+			g_logOpen = !g_logOpen;
+
 		// Text
 		{
 			char buffer[4096];
@@ -608,6 +614,7 @@ void Browser::ShowBrowserWindow()
 				comboWidth = max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
 			}
 
+			ImGui::SameLine();
 			ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
 			if (ImGui::BeginCombo("Downloaded", EnumToString(m_search_Downloaded), ImGuiComboFlags_None))
 			{
@@ -924,6 +931,9 @@ void Browser::ShowBrowserWindow()
 
 void Browser::ShowLogWindow()
 {
+	if (!g_logOpen)
+		return;
+
 	if (!ImGui::Begin("Log"))
 	{
 		ImGui::End();
