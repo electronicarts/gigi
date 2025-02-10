@@ -23,6 +23,230 @@
 #include "Schemas/BackendList.h"
 // clang-format on
 
+bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
+{
+    struct OutputConnection
+    {
+        static inline size_t hash_combine(size_t A, size_t B)
+        {
+            return A ^ (0x9e3779b9 + (A << 6) + (A >> 2));
+        }
+
+        size_t operator()(const OutputConnection& key) const
+        {
+            return hash_combine(std::hash<int>()(key.nodeIndex), std::hash<int>()(key.pinIndex));
+        }
+
+        bool operator == (const OutputConnection& other) const
+        {
+            return
+                nodeIndex == other.nodeIndex &&
+                pinIndex == other.pinIndex;
+        }
+
+        int nodeIndex = -1;
+        int pinIndex = -1;
+    };
+
+    struct InputConnection
+    {
+        int nodeIndex = -1;
+        int pinIndex = -1;
+
+        bool subtreeIsReadOnly = true;
+    };
+
+    std::unordered_map<OutputConnection, std::vector<InputConnection>, OutputConnection> outputConnections;
+
+    // Gather output connections
+    for (int nodeIndex = 0; nodeIndex < (int)renderGraph.nodes.size(); ++nodeIndex)
+    {
+        RenderGraphNode& node = renderGraph.nodes[nodeIndex];
+        std::vector<FrontEndNodesNoCaching::PinInfo> pinInfos = FrontEndNodesNoCaching::GetPinInfo(renderGraph, node);
+        int pinCount = (int)pinInfos.size();
+
+        InputConnection inputConnection;
+        inputConnection.nodeIndex = nodeIndex;
+
+        for (int pinIndex = 0; pinIndex < pinCount; ++pinIndex)
+        {
+            const FrontEndNodesNoCaching::PinInfo& pinInfo = pinInfos[pinIndex];
+            if (pinInfo.dstNode == nullptr || pinInfo.dstNode->empty() || pinInfo.dstPin == nullptr || pinInfo.dstPin->empty())
+                continue;
+
+            OutputConnection outputConnection;
+            outputConnection.nodeIndex = FrontEndNodesNoCaching::GetNodeIndexByName(renderGraph, pinInfo.dstNode->c_str());
+
+            Assert(outputConnection.nodeIndex != -1, "could not find node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
+
+            RenderGraphNode& dstNode = renderGraph.nodes[outputConnection.nodeIndex];
+            outputConnection.pinIndex = FrontEndNodesNoCaching::GetPinIndexByName(renderGraph, dstNode, pinInfo.dstPin->c_str());
+
+            Assert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
+
+            inputConnection.pinIndex = pinIndex;
+            inputConnection.subtreeIsReadOnly = !FrontEndNodesNoCaching::DoesSubtreeWriteResource(renderGraph, node, pinIndex);
+
+            outputConnections[outputConnection].push_back(inputConnection);
+        }
+    }
+
+    // Every output pin that connects to multiple input pins needs to evaluated.
+    // 1) If all paths only lead to read only operations, no changes are needed and we are done.
+    // 2) If there are multiple paths that lead to read/write operations, a warning about arace condition needs to be issued.
+    // 3) If some paths are read only and some are read write, we need to make a copy of the resource (via a resource node and acopy node) and...
+    //   a) All read/write paths need to be parented against the "source" output pin of the copy node, so writes happen to the original resource.
+    //   b) All read only paths need to be parented against the "dest" output pin of the copy node, so they the version of the resource they want to see.
+    //
+    // When the graph is flattened, it may turn out that the temporary resource and copy nodes aren't needed. The optimizing code will be able
+    // to strip these away when possible and the optimizer deems it desirable.
+    //
+    std::ostringstream raceConditions;
+    for (auto& it : outputConnections)
+    {
+        // If there is only one thing connected to an output pin, don't need to do anything
+        std::vector<InputConnection>& inputConnections = it.second;
+        if (inputConnections.size() <= 1)
+            continue;
+
+        // Count how many read only, and how many read/write connections we have
+        int readOnlyCount = 0;
+        int readWriteCount = 0;
+        for (const InputConnection& inputConnection : inputConnections)
+        {
+            if (inputConnection.subtreeIsReadOnly)
+                readOnlyCount++;
+            else
+                readWriteCount++;
+        }
+
+        // if we only have read only connections, everything is fine as is.
+        if (readWriteCount == 0)
+            continue;
+
+        // Get the output node name and pin name
+        std::string outputNodeName;
+        std::string outputPinName;
+        {
+            const OutputConnection& outputConnection = it.first;
+            RenderGraphNode& outputNode = renderGraph.nodes[outputConnection.nodeIndex];
+            outputNodeName = GetNodeName(outputNode);
+            outputPinName = FrontEndNodesNoCaching::GetPinInfo(renderGraph, outputNode)[outputConnection.pinIndex].srcPin;
+        }
+
+        // If we have multiple read write counts, we need to issue a warning about a race condition
+        if (readWriteCount > 1)
+        {
+            raceConditions << "Node \"" << outputNodeName << "\", Output Pin \"" << outputPinName << "\" To:\n";
+
+            for (const InputConnection& inputConnection : inputConnections)
+            {
+                if (inputConnection.subtreeIsReadOnly)
+                    continue;
+
+                RenderGraphNode& connectedNode = renderGraph.nodes[inputConnection.nodeIndex];
+                raceConditions << "    Node \"" << GetNodeName(connectedNode) << "\", Input Pin \"" << FrontEndNodesNoCaching::GetPinInfo(renderGraph, connectedNode)[inputConnection.pinIndex].srcPin << "\"\n";
+            }
+
+            raceConditions << "\n";
+        }
+
+        // If we only have write connections, leave everything as is
+        if (readOnlyCount == 0)
+            continue;
+
+        // If we got here, we need to copy the resource to a temporary resource for the read access connections.
+        // The write access connections will use the original resource.
+
+        // Make a new resource node
+        RenderGraphNode newResourceNode;
+        {
+            int resourceNodeIndex = FrontEndNodesNoCaching::GetRootNodeIndex(renderGraph, outputNodeName, outputPinName);
+            newResourceNode = renderGraph.nodes[resourceNodeIndex];
+
+            // Get a unique node name for the resource node
+            int resourceNameIndex = -1;
+            char resourceName[1024];
+            do
+            {
+                resourceNameIndex++;
+                sprintf_s(resourceName, "%s_%s_Copy_%i", outputNodeName.c_str(), outputPinName.c_str(), resourceNameIndex);
+            }
+            while (FrontEndNodesNoCaching::GetNodeIndexByName(renderGraph, resourceName) != -1);
+
+            // Set the name
+            ExecuteOnNode(newResourceNode, [resourceName](auto& node) { node.name = resourceName; });
+
+            // Make sure the resource is transient, and the visibility is internal
+            switch (newResourceNode._index)
+            {
+                case RenderGraphNode::c_index_resourceBuffer:
+                {
+                    newResourceNode.resourceBuffer.transient = true;
+                    newResourceNode.resourceBuffer.visibility = ResourceVisibility::Internal;
+                    break;
+                }
+                case RenderGraphNode::c_index_resourceTexture:
+                {
+                    newResourceNode.resourceTexture.transient = true;
+                    newResourceNode.resourceTexture.visibility = ResourceVisibility::Internal;
+                    break;
+                }
+                default:
+                {
+                    ShowErrorMessage("Unhandled node type in " __FUNCTION__" : %i", newResourceNode._index);
+                    return false;
+                }
+            }
+        }
+
+        // Make a new copy resource node
+        RenderGraphNode newCopyNode;
+        {
+            // Set the node up
+            newCopyNode._index = RenderGraphNode::c_index_actionCopyResource;
+            newCopyNode.actionCopyResource.source.node = outputNodeName;
+            newCopyNode.actionCopyResource.source.pin = outputPinName;
+            newCopyNode.actionCopyResource.dest.node = GetNodeName(newResourceNode);
+            newCopyNode.actionCopyResource.dest.pin = "resource";
+
+            // Get a unique node name for the copy node
+            int copyNameIndex = -1;
+            char copyName[1024];
+            do
+            {
+                copyNameIndex++;
+                sprintf_s(copyName, "Copy_%s_%s_%i", outputNodeName.c_str(), outputPinName.c_str(), copyNameIndex);
+            }
+            while (FrontEndNodesNoCaching::GetNodeIndexByName(renderGraph, copyName) != -1);
+
+            // Set the name
+            ExecuteOnNode(newCopyNode, [copyName](auto& node) { node.name = copyName; });
+        }
+
+        // Add the nodes to the render graph
+        renderGraph.nodes.push_back(newResourceNode);
+        renderGraph.nodes.push_back(newCopyNode);
+
+        // All read/write connections should be parented to the "source" pin so they write the original resource.
+        // All read only connections should be parented to the "dest" pin so they see the version they want to see in the copy
+        for (const InputConnection& inputConnection : inputConnections)
+        {
+            RenderGraphNode& connectedNode = renderGraph.nodes[inputConnection.nodeIndex];
+            std::vector<FrontEndNodesNoCaching::PinInfo> pinInfos = FrontEndNodesNoCaching::GetPinInfo(renderGraph, connectedNode);
+            *pinInfos[inputConnection.pinIndex].dstNode = GetNodeName(newCopyNode);
+            *pinInfos[inputConnection.pinIndex].dstPin = inputConnection.subtreeIsReadOnly ? "dest" : "source";
+        }
+    }
+
+    // Output a warning if there were any race conditions
+    std::string raceConditionsStr = raceConditions.str();
+    if (!raceConditionsStr.empty())
+        ShowWarningMessage("These node output pins lead to parallel writes. If the writes overlap, or a read in one path can be affected by a write in another path, this is a race condition since Gigi may execute the output pins in any order. It's possible this was done intentionally and that there is no race condition.\n%s", raceConditionsStr.c_str());
+
+    return true;
+}
+
 bool RemoveBackendData(RenderGraph& renderGraph)
 {
     // Resolve all backend restrictions
@@ -239,6 +463,13 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     {
         if (!RemoveBackendData(renderGraph))
             return GigiCompileResult::BackendData;
+    }
+
+    // Use temporary resources and copy nodes to make it so 1 output goes to only 1 input.
+    // A make shift step towards static single assignment.
+    {
+        if (!HandleOutputsToMultiInput(renderGraph))
+            return GigiCompileResult::HandleOutputsToMultiInput;
     }
 
     // Sanitize IDs

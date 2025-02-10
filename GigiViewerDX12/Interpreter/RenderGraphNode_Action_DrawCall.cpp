@@ -397,7 +397,13 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 		}
 
 		// Add the vertex buffer to the vertex input layout
+		struct VertexInputLayoutEx
+		{
+			DataFieldType type;
+			std::string name;
+		};
 		std::vector<D3D12_INPUT_ELEMENT_DESC> vertexInputLayout;
+		std::vector<VertexInputLayoutEx> vertexInputLayoutEx;
 		if (node.vertexBuffer.resourceNodeIndex != -1)
 		{
 			if (m_renderGraph.nodes[node.vertexBuffer.resourceNodeIndex]._index != RenderGraphNode::c_index_resourceBuffer)
@@ -439,6 +445,11 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 							semanticIndex = maxUsedUVSlot;
 						}
 
+						VertexInputLayoutEx layoutEx;
+						layoutEx.type = field.type;
+						layoutEx.name = field.name;
+						vertexInputLayoutEx.push_back(layoutEx);
+
 						D3D12_INPUT_ELEMENT_DESC desc;
 						desc.SemanticName = semanticString;
 						desc.SemanticIndex = semanticIndex;
@@ -456,6 +467,11 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			}
 			else
 			{
+				VertexInputLayoutEx layoutEx;
+				layoutEx.type = m_renderGraph.nodes[node.vertexBuffer.resourceNodeIndex].resourceBuffer.format.type;
+				layoutEx.name = "position";
+				vertexInputLayoutEx.push_back(layoutEx);
+
 				vertexInputLayout.push_back({ "POSITION", 0, resourceInfo.m_format, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 			}
 		}
@@ -497,6 +513,11 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 							semanticIndex = maxUsedUVSlot;
 						}
 
+						VertexInputLayoutEx layoutEx;
+						layoutEx.type = field.type;
+						layoutEx.name = field.name;
+						vertexInputLayoutEx.push_back(layoutEx);
+
 						D3D12_INPUT_ELEMENT_DESC desc;
 						desc.SemanticName = semanticString;
 						desc.SemanticIndex = semanticIndex;
@@ -517,6 +538,12 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				SemanticEnumToString obj;
 				EnumDispatch(obj, StructFieldSemantic::UV);
 				maxUsedUVSlot++;
+
+				VertexInputLayoutEx layoutEx;
+				layoutEx.type = m_renderGraph.nodes[node.instanceBuffer.resourceNodeIndex].resourceBuffer.format.type;
+				layoutEx.name = "instance";
+				vertexInputLayoutEx.push_back(layoutEx);
+
 				vertexInputLayout.push_back({ obj.m_string, (UINT)maxUsedUVSlot, resourceInfo.m_format, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 1 });
 			}
 		}
@@ -691,6 +718,38 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			{
 				_com_error err(hr);
 				m_logFn(LogLevel::Error, "Could not create Vertex Shader PSO for draw call %s:\n%s", node.name.c_str(), FromWideString(err.ErrorMessage()).c_str());
+
+				// Provide more possible information if we got E_INVALIDARG
+				if (hr == E_INVALIDARG)
+				{
+					std::ostringstream message;
+
+					message <<
+						"This error could be caused by the vertex shader using incorrect semantics.  The vertex shader input should look like this:\n"
+						"\n"
+						"struct VSInput\n"
+						"{\n"
+						;
+
+					for (size_t elementIndex = 0; elementIndex < vertexInputLayout.size(); ++elementIndex)
+					{
+						const D3D12_INPUT_ELEMENT_DESC& desc = vertexInputLayout[elementIndex];
+						VertexInputLayoutEx& descEx = vertexInputLayoutEx[elementIndex];
+
+						message << "\t" << DataFieldTypeToHLSLType(descEx.type) << " " << descEx.name << " : " << desc.SemanticName;
+
+						if (desc.SemanticIndex > 0)
+							message << desc.SemanticIndex;
+						message << ";\n";
+					}
+
+					message <<
+						"};\n"
+						;
+
+					m_logFn(LogLevel::Error, "%s", message.str().c_str());
+				}
+
 				runtimeData.m_failed = true;
 				return false;
 			}
@@ -1440,9 +1499,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		if (descriptorsVertexShader.size() > 0)
 		{
 			D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVertexShader;
-			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsVertexShader.data(), (int)descriptorsVertexShader.size(), descriptorTableVertexShader, HEAP_DEBUG_TEXT()))
+			std::string error;
+			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsVertexShader.data(), (int)descriptorsVertexShader.size(), descriptorTableVertexShader, error, HEAP_DEBUG_TEXT()))
 			{
-				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for VS.", node.name.c_str());
+				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for VS: %s", node.name.c_str(), error.c_str());
 				return false;
 			}
 
@@ -1454,9 +1514,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		if (descriptorsPixelShader.size() > 0)
 		{
 			D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePixelShader;
-			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsPixelShader.data(), (int)descriptorsPixelShader.size(), descriptorTablePixelShader, HEAP_DEBUG_TEXT()))
+			std::string error;
+			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsPixelShader.data(), (int)descriptorsPixelShader.size(), descriptorTablePixelShader, error, HEAP_DEBUG_TEXT()))
 			{
-				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for PS.", node.name.c_str());
+				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for PS: %s", node.name.c_str(), error.c_str());
 				return false;
 			}
 
@@ -1468,9 +1529,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		if (descriptorsAmplificationShader.size() > 0)
 		{
 			D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableAmplificationShader;
-			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsAmplificationShader.data(), (int)descriptorsAmplificationShader.size(), descriptorTableAmplificationShader, HEAP_DEBUG_TEXT()))
+			std::string error;
+			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsAmplificationShader.data(), (int)descriptorsAmplificationShader.size(), descriptorTableAmplificationShader, error, HEAP_DEBUG_TEXT()))
 			{
-				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for AS.", node.name.c_str());
+				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for AS: %s", node.name.c_str(), error.c_str());
 				return false;
 			}
 
@@ -1482,9 +1544,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		if (descriptorsMeshShader.size() > 0)
 		{
 			D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableMeshShader;
-			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsMeshShader.data(), (int)descriptorsMeshShader.size(), descriptorTableMeshShader, HEAP_DEBUG_TEXT()))
+			std::string error;
+			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsMeshShader.data(), (int)descriptorsMeshShader.size(), descriptorTableMeshShader, error, HEAP_DEBUG_TEXT()))
 			{
-				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for MS.", node.name.c_str());
+				m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for MS: %s", node.name.c_str(), error.c_str());
 				return false;
 			}
 

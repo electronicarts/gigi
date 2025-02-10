@@ -430,8 +430,9 @@
     Host.GigiCompileResult_AddNodeInfoToShaders = 17
     Host.GigiCompileResult_DataFixup = 18
     Host.GigiCompileResult_DfltFixup = 19
-    Host.GigiCompileResult_LAST = 19
-    Host.GigiCompileResult_COUNT = 20
+    Host.GigiCompileResult_HandleOutputsToMultiInput = 20
+    Host.GigiCompileResult_LAST = 20
+    Host.GigiCompileResult_COUNT = 21
 
   GigiCompileWarning:
     Host.GigiCompileWarning_FIRST = 0

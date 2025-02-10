@@ -175,7 +175,8 @@ void Browser::GetSearchResults(bool refreshingResults)
 
 	if (!m_lastSearch_Text.empty())
 	{
-		query << (firstWhereClause ? " where " : " and ") << "(Details_Title like ? or Details_Description like ? or Details_Author like ?)";
+		query << (firstWhereClause ? " where " : " and ") << "(Details_Title like ? or Details_Description like ? or Details_Author like ? or SummaryHash like ?)";
+		parameterStrings.push_back(std::string("%") + m_lastSearch_Text + std::string("%"));
 		parameterStrings.push_back(std::string("%") + m_lastSearch_Text + std::string("%"));
 		parameterStrings.push_back(std::string("%") + m_lastSearch_Text + std::string("%"));
 		parameterStrings.push_back(std::string("%") + m_lastSearch_Text + std::string("%"));
@@ -514,8 +515,12 @@ void* Browser::GetDescriptorTableForImage(const char* path, int& width, int& hei
 	desc.m_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
 
 	D3D12_GPU_DESCRIPTOR_HANDLE descTable;
-	if (!m_descriptorTableCache_imgui.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker_imgui, &desc, 1, descTable, HEAP_DEBUG_TEXT()))
+	std::string error;
+	if (!m_descriptorTableCache_imgui.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker_imgui, &desc, 1, descTable, error, HEAP_DEBUG_TEXT()))
+	{
+		ShowErrorMessage("Could not get descriptor table: %s", error.c_str());
 		return nullptr;
+	}
 
 	return (void*)descTable.ptr;
 }

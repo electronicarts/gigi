@@ -55,9 +55,6 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 		// flatten the indexed vertices
 		for (const auto& index : shape.mesh.indices)
 		{
-			int ni = index.normal_index;
-			int vi = index.vertex_index;
-
 			size_t nextGeometryIndex = geometry.size();
 			geometry.resize(nextGeometryIndex + 1);
 			FlattenedVertex& newVertex = geometry[nextGeometryIndex];
@@ -124,6 +121,9 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 
 			int vi3 = shape.mesh.indices[indexIndex + 2].vertex_index;
 			int ti3 = shape.mesh.indices[indexIndex + 2].texcoord_index;
+
+			if (ti1 == -1 || ti2 == -1 || ti3 == -1)
+				continue;
 
 			Vec3 pos1 = Vec3
 			{

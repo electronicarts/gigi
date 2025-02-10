@@ -24,6 +24,7 @@ unsupportedTests = [
     "Python\\profiling",
     "ShaderAssert\\assertsTest",
     "Textures\\Save",
+    "Compute\\OutputToMultipleInputs",
 
     # Viewer Only - These make sure the viewer will make mips of imported textures when asked
     "Textures\\Mips_Imported_2D",

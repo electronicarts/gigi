@@ -98,7 +98,7 @@ T Max(const T& A, const T& B)
 	return A > B ? A : B;
 }
 
-#define DXGI_FORMAT_INFO(type, channelCount, sRGB) DXGI_FORMAT_Info(DXGI_FORMAT_UNKNOWN, "", sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, false, false, 0, 1, DXGI_FORMAT_Info::NormType::None, false, DXGI_FORMAT_UNKNOWN)
+#define DXGI_FORMAT_INFO(type, channelCount, sRGB) DXGI_FORMAT_Info(DXGI_FORMAT_UNKNOWN, "Unknown", sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, false, false, 0, 1, DXGI_FORMAT_Info::NormType::None, false, DXGI_FORMAT_UNKNOWN)
 #define DXGI_FORMAT_INFO_CASE(name, type, channelCount, sRGB, isStencil, isDepth, planeIndex, planeCount, normType, isCompressed, decompressedFormat) case name: return DXGI_FORMAT_Info(name, #name, sizeof(type), channelCount, DXGI_FORMAT_Info::ChannelType::_##type, sRGB, isStencil, isDepth, planeIndex, planeCount, DXGI_FORMAT_Info::NormType::##normType, isCompressed, decompressedFormat);
 
 inline DXGI_FORMAT_Info Get_DXGI_FORMAT_Info(DXGI_FORMAT format)

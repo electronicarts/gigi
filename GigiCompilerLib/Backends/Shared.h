@@ -524,42 +524,6 @@ inline int GetResourceNodeForPin(const RenderGraph& renderGraph, int nodeIndex, 
     return GetResourceNodeForPin(renderGraph, renderGraph.nodes[nodeIndex], pinIndex);
 }
 
-inline bool ShaderResourceTypeIsReadOnly(ShaderResourceAccessType access)
-{
-    switch (access)
-    {
-        case ShaderResourceAccessType::UAV: return false;
-        case ShaderResourceAccessType::RTScene: return true;
-        case ShaderResourceAccessType::SRV: return true;
-        case ShaderResourceAccessType::CopySource: return true;
-        case ShaderResourceAccessType::CopyDest: return false;
-        case ShaderResourceAccessType::CBV: return true;
-        case ShaderResourceAccessType::Indirect: return true;
-        case ShaderResourceAccessType::VertexBuffer: return true;
-        case ShaderResourceAccessType::RenderTarget: return false;
-        case ShaderResourceAccessType::DepthTarget: return false;
-        case ShaderResourceAccessType::Barrier: return false;
-        case ShaderResourceAccessType::ShadingRate: return true;
-    }
-
-    Assert(false, "Unhandled ShaderResourceType: %i", access);
-    return false;
-}
-
-inline bool AccessIsReadOnly(unsigned int accessedAs)
-{
-    for (unsigned int i = 0; i < (unsigned int)ShaderResourceAccessType::Count; ++i)
-    {
-        if ((accessedAs & (1 << i)) == 0)
-            continue;
-
-        if (!ShaderResourceTypeIsReadOnly((ShaderResourceAccessType)i))
-            return false;
-    }
-
-    return true;
-}
-
 inline size_t DataFieldTypeToSize(DataFieldType type)
 {
     switch(type)

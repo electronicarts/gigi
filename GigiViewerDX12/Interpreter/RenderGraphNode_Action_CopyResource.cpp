@@ -62,9 +62,32 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					return false;
 				}
 
-				if (srcRT.m_format != destRT.m_format || srcRT.m_structIndex != destRT.m_structIndex)
+				// Allow copies if the structs are compatible (same number of fields, and same type of fields, in same order)
+				bool structsCompatible = true;
+				if (srcRT.m_structIndex != destRT.m_structIndex)
 				{
-					m_logFn(LogLevel::Error, "Could not copy buffer \"%s\" to buffer \"%s\" because they are different formats.\n", srcNodeName.c_str(), destNodeName.c_str());
+					const Struct& srcStruct = m_renderGraph.structs[srcRT.m_structIndex];
+					const Struct& destStruct = m_renderGraph.structs[destRT.m_structIndex];
+					if (srcStruct.fields.size() == destStruct.fields.size())
+					{
+						for (size_t fieldIndex = 0; fieldIndex < srcStruct.fields.size(); ++fieldIndex)
+						{
+							if (srcStruct.fields[fieldIndex].type != destStruct.fields[fieldIndex].type)
+							{
+								structsCompatible = false;
+								break;
+							}
+						}
+					}
+					else
+						structsCompatible = false;
+				}
+
+				if (srcRT.m_format != destRT.m_format || !structsCompatible)
+				{
+					const char* srcStruct = (srcRT.m_structIndex == -1) ? "None" : m_renderGraph.structs[srcRT.m_structIndex].name.c_str();
+					const char* destStruct = (destRT.m_structIndex == -1) ? "None" : m_renderGraph.structs[destRT.m_structIndex].name.c_str();
+					m_logFn(LogLevel::Error, "Could not copy buffer \"%s\" (format %s struct %s) to buffer \"%s\" (format %s struct %s) because they are different formats.\n", srcNodeName.c_str(), Get_DXGI_FORMAT_Info(srcRT.m_format).name, srcStruct, destNodeName.c_str(), Get_DXGI_FORMAT_Info(destRT.m_format).name, destStruct);
 					return false;
 				}
 
@@ -165,7 +188,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 				if (srcRT.m_format != destRT.m_format)
 				{
-					m_logFn(LogLevel::Error, "Could not copy buffer \"%s\" to texture \"%s\" because they are different formats.\n", srcNodeName.c_str(), destNodeName.c_str());
+					m_logFn(LogLevel::Error, "Could not copy buffer \"%s\" (format %s) to texture \"%s\" (format %s) because they are different formats.\n", srcNodeName.c_str(), Get_DXGI_FORMAT_Info(srcRT.m_format).name, destNodeName.c_str(), Get_DXGI_FORMAT_Info(destRT.m_format).name);
 					return false;
 				}
 

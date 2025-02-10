@@ -59,7 +59,7 @@ public:
 		bool m_raw = false;
 	};
 
-	bool GetDescriptorTable(ID3D12Device* device, HeapAllocationTracker& heapAllocationTracker, const ResourceDescriptor* descriptors, int count, D3D12_GPU_DESCRIPTOR_HANDLE& handle, const char* debugText)
+	bool GetDescriptorTable(ID3D12Device* device, HeapAllocationTracker& heapAllocationTracker, const ResourceDescriptor* descriptors, int count, D3D12_GPU_DESCRIPTOR_HANDLE& handle, std::string& error, const char* debugText)
 	{
 		// Get the hash of the descriptor table desired
 		size_t hash = 0x1ee7beef;
@@ -78,7 +78,10 @@ public:
 		// allocate space for this table
 		int startIndex = -1;
 		if (!heapAllocationTracker.Allocate(startIndex, count, debugText))
+		{
+			error = "Ran out of handles";
 			return false;
+		}
 
 		// make an entry in our cache for this table
 		m_descriptorTableCache[hash] = { startIndex, count, 0 };
@@ -223,7 +226,12 @@ public:
 				}
 
 				if (!FormatSupportedForUAV(device, uavDesc.Format))
+				{
+					char buffer[2048];
+					sprintf_s(buffer, "Format \"%s\" (%i) can't be used for UAVs", Get_DXGI_FORMAT_Info(uavDesc.Format).name, uavDesc.Format);
+					error = buffer;
 					return false;
+				}
 
 				device->CreateUnorderedAccessView(descriptor.m_resource, nullptr, &uavDesc, handle);
 			}
@@ -237,6 +245,9 @@ public:
 			}
 			else
 			{
+				char buffer[2048];
+				sprintf_s(buffer, "Unknown resource access type: %i", (int)descriptor.m_access);
+				error = buffer;
 				return false;
 			}
 		}

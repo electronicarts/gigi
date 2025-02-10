@@ -861,9 +861,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 			// Get or make the descriptor table
 			D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable;
-			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptors.data(), (int)descriptors.size(), descriptorTable, HEAP_DEBUG_TEXT()))
+			std::string error;
+			if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptors.data(), (int)descriptors.size(), descriptorTable, error, HEAP_DEBUG_TEXT()))
 			{
-				m_logFn(LogLevel::Error, "Ray gen shader node \"%s\" could not allocate a descriptor table.", node.name.c_str());
+				m_logFn(LogLevel::Error, "Ray gen shader node \"%s\" could not allocate a descriptor table: %s", node.name.c_str(), error.c_str());
 				return false;
 			}
 

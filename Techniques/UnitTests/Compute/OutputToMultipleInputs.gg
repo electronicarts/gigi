@@ -1,0 +1,380 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "shaders": [
+        {
+            "name": "Write",
+            "fileName": "OutputToMultipleInputs_WriteCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Color",
+                    "type": "Texture",
+                    "access": "UAV"
+                },
+                {
+                    "name": "buff",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -53.0,
+                    -30.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        4,
+                        4,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Blue",
+                "editorPos": [
+                    69.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "OutputBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Write"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "COLOR",
+                        "value": "float4(0.0f, 0.0f, 1.0f, 1.0f)"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Red",
+                "editorPos": [
+                    299.0,
+                    -110.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Blue",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "Blue",
+                        "dstPin": "buff"
+                    }
+                ],
+                "shader": {
+                    "name": "Write"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "COLOR",
+                        "value": "float4(1.0f, 0.0f, 0.0f, 1.0f)"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputCopy",
+                "editorPos": [
+                    145.0,
+                    98.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopyTexture",
+                "editorPos": [
+                    298.0,
+                    66.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Blue",
+                    "pin": "Color"
+                },
+                "dest": {
+                    "node": "OutputCopy",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Green",
+                "editorPos": [
+                    299.0,
+                    -20.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Blue",
+                        "dstPin": "Color"
+                    },
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "Blue",
+                        "dstPin": "buff"
+                    }
+                ],
+                "shader": {
+                    "name": "Write"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "COLOR",
+                        "value": "float4(0.0f, 1.0f, 0.0f, 1.0f)"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "OutputCopy2",
+                "editorPos": [
+                    138.0,
+                    162.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopyTexture2",
+                "editorPos": [
+                    298.0,
+                    143.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Blue",
+                    "pin": "Color"
+                },
+                "dest": {
+                    "node": "OutputCopy2",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Magenta",
+                "editorPos": [
+                    485.0,
+                    220.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "CopyTexture2",
+                        "dstPin": "source"
+                    },
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "CopyBuffer2",
+                        "dstPin": "source"
+                    }
+                ],
+                "shader": {
+                    "name": "Write"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "COLOR",
+                        "value": "float4(1.0f, 0.0f, 1.0f, 1.0f)"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutputBuffer",
+                "editorPos": [
+                    -75.0,
+                    34.0
+                ],
+                "format": {
+                    "type": "Float4"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutputBufferCopy",
+                "editorPos": [
+                    106.0,
+                    242.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "OutputBuffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "OutputBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutputBufferCopy2",
+                "editorPos": [
+                    99.0,
+                    322.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "OutputBuffer"
+                    },
+                    "type": "Float4"
+                },
+                "count": {
+                    "node": {
+                        "name": "OutputBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopyBuffer",
+                "editorPos": [
+                    309.0,
+                    226.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Blue",
+                    "pin": "buff"
+                },
+                "dest": {
+                    "node": "OutputBufferCopy",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "CopyBuffer2",
+                "editorPos": [
+                    309.0,
+                    306.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Blue",
+                    "pin": "buff"
+                },
+                "dest": {
+                    "node": "OutputBufferCopy2",
+                    "pin": "resource"
+                }
+            }
+        }
+    ]
+}
