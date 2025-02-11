@@ -53,6 +53,7 @@
 
 #include "ImageReadback.h"
 #include "ImageSave.h"
+#include <comdef.h>
 // clang-format on
 
 #include <thread>
@@ -1493,16 +1494,24 @@ void HandleMainMenu()
                     i++;
                 }
 
-                PIXGpuCaptureNextFrames(fileName, captureFrames);
-
                 char currentDirectory[4096];
                 GetCurrentDirectoryA(4096, currentDirectory);
-                Log(LogLevel::Info, "Pix capture saved to %s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str());
 
-                if (openCapture)
-                    waitingToOpenFileName = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string();
+                HRESULT hr = PIXGpuCaptureNextFrames(fileName, captureFrames);
+                if (FAILED(hr))
+                {
+                    _com_error err(hr);
+                    Log(LogLevel::Error, "Could not save pix capture to %s:\n%s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str(), FromWideString(err.ErrorMessage()).c_str());
+                }
                 else
-                    waitingToOpenFileName = "";
+                {
+                    Log(LogLevel::Info, "Pix capture saved to %s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str());
+
+                    if (openCapture)
+                        waitingToOpenFileName = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string();
+                    else
+                        waitingToOpenFileName = "";
+                }
             }
 
 			if (g_renderDocEnabled && ImGui::Button("RenderDoc Capture"))
