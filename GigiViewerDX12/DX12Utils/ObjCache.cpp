@@ -108,7 +108,8 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 			geometry[geometryIndexStart + faceIndex * 3 + 2].materialID = shape.mesh.material_ids[faceIndex];
 		}
 
-		// Calculate tangents and bitangents
+		// Calculate normals, tangents and bitangents
+		std::vector<Vec3> normals(objData.attrib.vertices.size(), Vec3{ 0.0f, 0.0f, 0.0f });
 		std::vector<Vec3> tangents(objData.attrib.vertices.size(), Vec3{ 0.0f, 0.0f, 0.0f });
 		std::vector<Vec3> bitangents(objData.attrib.vertices.size(), Vec3{ 0.0f, 0.0f, 0.0f });
 		for (size_t indexIndex = 0; indexIndex < shape.mesh.indices.size(); indexIndex += 3)
@@ -121,9 +122,6 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 
 			int vi3 = shape.mesh.indices[indexIndex + 2].vertex_index;
 			int ti3 = shape.mesh.indices[indexIndex + 2].texcoord_index;
-
-			if (ti1 == -1 || ti2 == -1 || ti3 == -1)
-				continue;
 
 			Vec3 pos1 = Vec3
 			{
@@ -146,6 +144,16 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 				objData.attrib.vertices[3 * vi3 + 2],
 			};
 
+			Vec3 pos21 = pos2 - pos1;
+			Vec3 pos31 = pos3 - pos1;
+
+			normals[vi1] += Cross(pos21, pos31);
+			normals[vi2] += Cross(pos21, pos31);
+			normals[vi3] += Cross(pos21, pos31);
+
+			if (ti1 == -1 || ti2 == -1 || ti3 == -1)
+				continue;
+
 			Vec2 uv1 = Vec2
 			{
 				objData.attrib.texcoords[2 * ti1 + 0],
@@ -164,13 +172,11 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 				objData.attrib.texcoords[2 * ti3 + 1],
 			};
 
-			Vec3 pos21 = pos2 - pos1;
-			Vec3 pos31 = pos3 - pos1;
-
 			Vec2 uv21 = uv2 - uv1;
 			Vec2 uv31 = uv3 - uv1;
 
 			float r = 1.0f / (uv21[0] * uv31[1] - uv21[1] * uv31[0]);
+
 
 			if (std::isfinite(r))
 			{
@@ -193,6 +199,7 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 			int ni = shape.mesh.indices[indexIndex].normal_index;
 
 			Vec3 normal = Vec3{ 0.0f, 0.0f, 0.0f };
+
 			if (ni >= 0)
 			{
 				normal = Vec3
@@ -201,6 +208,13 @@ ObjCache::OBJData& ObjCache::Get(FileCache& fileCache, const char* fileName_)
 					objData.attrib.normals[3 * ni + 1],
 					objData.attrib.normals[3 * ni + 2]
 				};
+			}
+			else
+			{
+				normal = Normalize(normals[vi]);
+				geometry[geometryIndexStart + indexIndex].normal[0] = normal[0];
+				geometry[geometryIndexStart + indexIndex].normal[1] = normal[1];
+				geometry[geometryIndexStart + indexIndex].normal[2] = normal[2];
 			}
 
 			Vec3& tangent = tangents[vi];
