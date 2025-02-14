@@ -34,8 +34,18 @@ VSOutput vsmain(VSInput input)
 		case ViewModes::VertexID: ret.Color = float4(input.VertexID, 0.0f, 0.0f, 1.0f); break;
 		case ViewModes::InstanceID: ret.Color = float4(input.InstanceId, 0.0f, 0.0f, 1.0f); break;
 		case ViewModes::Color: ret.Color = float4(input.Color, 1.0f); break;
-		case ViewModes::Normal: ret.Color = float4(input.Normal, 1.0f); break;
-		case ViewModes::Tangent: ret.Color = float4(input.Tangent); break;
+		case ViewModes::Normal:
+		{
+			float3 displayNormal = /*$(Variable:RemapRanges)*/ ? (input.Normal + 1.0f) / 2.0f : input.Normal;
+			ret.Color = float4(displayNormal, 1.0f);
+			break;
+		}
+		case ViewModes::Tangent:
+		{
+			float3 displayTangent = /*$(Variable:RemapRanges)*/ ? (input.Tangent.xyz + 1.0f) / 2.0f : input.Tangent.xyz;
+			ret.Color = float4(displayTangent, 1.0f);
+		}
+			break;
 		case ViewModes::UV: ret.Color = float4(input.UV, 0.0f, 1.0f); break;
 		case ViewModes::MaterialID: ret.Color = float4(input.MaterialID, 0.0f, 0.0f, 1.0f); break;
 		case ViewModes::ShapeID: ret.Color = float4(input.ShapeID, 0.0f, 0.0f, 1.0f); break;
