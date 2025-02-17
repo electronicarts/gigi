@@ -17,6 +17,7 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 
 #include <nfd.h>
 
@@ -1095,6 +1096,79 @@ struct Example :
         g_renderGraph.variables.push_back(variable);
     }
 
+	int32_t LevenshteinDistance(const std::string& str1, const std::string& str2)
+	{
+		int32_t m = (int32_t)str1.length();
+		int32_t n = (int32_t)str2.length();
+		std::vector<std::vector<int32_t>> dp(m + 1, std::vector<int32_t>(n + 1));
+
+		// Initializing the first row and column as 0
+		for (int32_t i = 0; i <= m; i++)
+		{
+			dp[i][0] = i;
+		}
+		for (int32_t j = 0; j <= n; j++)
+		{
+			dp[0][j] = j;
+		}
+
+		// Filling in the rest of the dp array
+		for (int32_t i = 1; i <= m; i++)
+		{
+			for (int32_t j = 1; j <= n; j++)
+			{
+				int32_t insertion = dp[i][j - 1] + 1;
+				int32_t deletion = dp[i - 1][j] + 1;
+				int32_t match = dp[i - 1][j - 1];
+				int32_t mismatch = dp[i - 1][j - 1] + 1;
+				if (str1[i - 1] == str2[j - 1])
+				{
+					dp[i][j] = std::min(std::min(insertion, deletion), match);
+				}
+				else
+				{
+					dp[i][j] = std::min(std::min(insertion, deletion), mismatch);
+				}
+			}
+		}
+		return dp[m][n];
+	}
+
+    size_t StringFindForceLowercase(std::string str, std::string query)
+    {
+		std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return (uint8_t)std::tolower((int32_t)c); });
+		std::transform(query.begin(), query.end(), query.begin(), [](unsigned char c) { return (uint8_t)std::tolower((int32_t)c); });
+
+        return str.find(query);
+    }
+
+    void DrawMatchingStringBackground(const std::string& query, const std::string& text)
+    {
+        const size_t matchOffset = StringFindForceLowercase(text, query);
+
+        if (matchOffset == std::string::npos)
+        {
+            return;
+        }
+
+        const std::string matchPrefix = text.substr(0, matchOffset);
+        const std::string match = text.substr(matchOffset, query.size());
+
+		const ImVec2 prefixSize = ImGui::CalcTextSize(matchPrefix.c_str());
+		const ImVec2 matchSize = ImGui::CalcTextSize(match.c_str());
+        const ImVec2 cursorPos = ImGui::GetCursorPos();
+        const ImVec2 windowPos = ImGui::GetWindowPos();
+        const float scrollX = ImGui::GetScrollX();
+        const float scrollY = ImGui::GetScrollY();
+
+        auto currentWindow = ImGui::GetCurrentWindow();
+
+        const ImVec2 min = { cursorPos.x - scrollX + prefixSize.x, cursorPos.y - scrollY };
+        const ImVec2 max = min + matchSize;
+
+        currentWindow->DrawList->AddRectFilled(min + windowPos, max + windowPos, ImColor(100, 100, 100));
+    }
+
     void ShowNodesWindow()
     {
         if (!g_showWindows.Nodes)
@@ -1123,7 +1197,8 @@ struct Example :
         char buffer[256];
         sprintf_s(buffer, "%i Nodes", (int)g_renderGraph.nodes.size());
         ImGui::TextUnformatted(buffer);
-        ImGui::Indent();
+
+		static std::string searchQuery;
 
         // Make a sorted list of nodes
         struct NodeInfo
@@ -1136,8 +1211,14 @@ struct Example :
             int nodeId_ = 0;
             for (const RenderGraphNode& node : g_renderGraph.nodes)
             {
+                std::string nodeName = GetNodeName(node);
+                if (!searchQuery.empty() && StringFindForceLowercase(nodeName, searchQuery) == std::string::npos)
+                {
+                    continue;
+                }
+
                 nodeId_++;
-                sortedNodes.push_back({ GetNodeName(node), nodeId_ });
+                sortedNodes.push_back({ nodeName, nodeId_ });
             }
 
             std::sort(sortedNodes.begin(), sortedNodes.end(),
@@ -1146,7 +1227,37 @@ struct Example :
                     return a.name < b.name;
                 }
             );
+
+            // Sort by levenshtein distance
+            if (!searchQuery.empty())
+            {
+                std::unordered_map<std::string, int32_t> levenshteinScore;
+
+                for (const auto& node : sortedNodes)
+                {
+                    levenshteinScore[node.name] = LevenshteinDistance(searchQuery, node.name);
+                }
+
+				std::sort(sortedNodes.begin(), sortedNodes.end(),
+					[&levenshteinScore](const NodeInfo& a, const NodeInfo& b)
+					{
+						return levenshteinScore.at(a.name) < levenshteinScore.at(b.name);
+					}
+				);
+            }
         }
+
+        // Search bar
+        {
+            constexpr float searchBarHeight = 32.f;
+            ImGui::BeginChild("##nodesSearchBar", { ImGui::GetContentRegionAvail().x, searchBarHeight });
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().WindowPadding.x);
+            ImGui::InputTextWithHint("##searchInputStr", "Search...", &searchQuery);
+            ImGui::PopItemWidth();
+            ImGui::EndChild();
+        }
+
+		ImGui::Indent();
 
         // show the list of nodes
         for (const NodeInfo& nodeInfo : sortedNodes)
@@ -1157,6 +1268,8 @@ struct Example :
             ax::NodeEditor::NodeId nodeId(nodeInfo.nodeId);
 
             const std::string& nodeName = nodeInfo.name;
+
+            DrawMatchingStringBackground(searchQuery, nodeName);
 
             bool isSelected = std::find(selectedNodes.begin(), selectedNodes.end(), nodeId) != selectedNodes.end();
             if (ImGui::Selectable((nodeName + "##" + std::to_string(nodeInfo.nodeId)).c_str(), &isSelected))
