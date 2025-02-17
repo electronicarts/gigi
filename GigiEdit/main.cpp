@@ -17,6 +17,7 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include <imgui_internal.h>
+#include <imgui_stdlib.h>
 
 #include <nfd.h>
 
@@ -65,6 +66,8 @@ int g_argc = 0;
 char** g_argv = nullptr;
 
 namespace ed = ax::NodeEditor;
+
+constexpr int32_t g_groupNodesStartId = 100000;
 
 RenderGraph g_renderGraph;
 std::string g_renderGraphFileName = "";
@@ -1095,6 +1098,79 @@ struct Example :
         g_renderGraph.variables.push_back(variable);
     }
 
+	int32_t LevenshteinDistance(const std::string& str1, const std::string& str2)
+	{
+		int32_t m = (int32_t)str1.length();
+		int32_t n = (int32_t)str2.length();
+		std::vector<std::vector<int32_t>> dp(m + 1, std::vector<int32_t>(n + 1));
+
+		// Initializing the first row and column as 0
+		for (int32_t i = 0; i <= m; i++)
+		{
+			dp[i][0] = i;
+		}
+		for (int32_t j = 0; j <= n; j++)
+		{
+			dp[0][j] = j;
+		}
+
+		// Filling in the rest of the dp array
+		for (int32_t i = 1; i <= m; i++)
+		{
+			for (int32_t j = 1; j <= n; j++)
+			{
+				int32_t insertion = dp[i][j - 1] + 1;
+				int32_t deletion = dp[i - 1][j] + 1;
+				int32_t match = dp[i - 1][j - 1];
+				int32_t mismatch = dp[i - 1][j - 1] + 1;
+				if (str1[i - 1] == str2[j - 1])
+				{
+					dp[i][j] = std::min(std::min(insertion, deletion), match);
+				}
+				else
+				{
+					dp[i][j] = std::min(std::min(insertion, deletion), mismatch);
+				}
+			}
+		}
+		return dp[m][n];
+	}
+
+    size_t StringFindForceLowercase(std::string str, std::string query)
+    {
+		std::transform(str.begin(), str.end(), str.begin(), [](unsigned char c) { return (uint8_t)std::tolower((int32_t)c); });
+		std::transform(query.begin(), query.end(), query.begin(), [](unsigned char c) { return (uint8_t)std::tolower((int32_t)c); });
+
+        return str.find(query);
+    }
+
+    void DrawMatchingStringBackground(const std::string& query, const std::string& text)
+    {
+        const size_t matchOffset = StringFindForceLowercase(text, query);
+
+        if (matchOffset == std::string::npos)
+        {
+            return;
+        }
+
+        const std::string matchPrefix = text.substr(0, matchOffset);
+        const std::string match = text.substr(matchOffset, query.size());
+
+		const ImVec2 prefixSize = ImGui::CalcTextSize(matchPrefix.c_str());
+		const ImVec2 matchSize = ImGui::CalcTextSize(match.c_str());
+        const ImVec2 cursorPos = ImGui::GetCursorPos();
+        const ImVec2 windowPos = ImGui::GetWindowPos();
+        const float scrollX = ImGui::GetScrollX();
+        const float scrollY = ImGui::GetScrollY();
+
+        auto currentWindow = ImGui::GetCurrentWindow();
+
+        const ImVec2 min = { cursorPos.x - scrollX + prefixSize.x, cursorPos.y - scrollY };
+        const ImVec2 max = min + matchSize;
+
+        currentWindow->DrawList->AddRectFilled(min + windowPos, max + windowPos, ImColor(100, 100, 100));
+    }
+
     void ShowNodesWindow()
     {
         if (!g_showWindows.Nodes)
@@ -1123,7 +1199,8 @@ struct Example :
         char buffer[256];
         sprintf_s(buffer, "%i Nodes", (int)g_renderGraph.nodes.size());
         ImGui::TextUnformatted(buffer);
-        ImGui::Indent();
+
+		static std::string searchQuery;
 
         // Make a sorted list of nodes
         struct NodeInfo
@@ -1136,8 +1213,15 @@ struct Example :
             int nodeId_ = 0;
             for (const RenderGraphNode& node : g_renderGraph.nodes)
             {
-                nodeId_++;
-                sortedNodes.push_back({ GetNodeName(node), nodeId_ });
+				nodeId_++;
+
+                std::string nodeName = GetNodeName(node);
+                if (!searchQuery.empty() && StringFindForceLowercase(nodeName, searchQuery) == std::string::npos)
+                {
+                    continue;
+                }
+
+                sortedNodes.push_back({ nodeName, nodeId_ });
             }
 
             std::sort(sortedNodes.begin(), sortedNodes.end(),
@@ -1146,37 +1230,78 @@ struct Example :
                     return a.name < b.name;
                 }
             );
-        }
 
-        // show the list of nodes
-        for (const NodeInfo& nodeInfo : sortedNodes)
-        {
-            ImGui::PushID(nodeInfo.nodeId);
-            auto start = ImGui::GetCursorScreenPos();
-
-            ax::NodeEditor::NodeId nodeId(nodeInfo.nodeId);
-
-            const std::string& nodeName = nodeInfo.name;
-
-            bool isSelected = std::find(selectedNodes.begin(), selectedNodes.end(), nodeId) != selectedNodes.end();
-            if (ImGui::Selectable((nodeName + "##" + std::to_string(nodeInfo.nodeId)).c_str(), &isSelected))
+            // Sort by levenshtein distance
+            if (!searchQuery.empty())
             {
-                if (io.KeyCtrl)
+                std::unordered_map<std::string, int32_t> levenshteinScore;
+
+                for (const auto& node : sortedNodes)
                 {
-                    if (isSelected)
-                        ed::SelectNode(nodeId, true);
-                    else
-                        ed::DeselectNode(nodeId);
+                    levenshteinScore[node.name] = LevenshteinDistance(searchQuery, node.name);
                 }
-                else
-                    ed::SelectNode(nodeId, false);
 
-                ed::NavigateToSelection();
+				std::sort(sortedNodes.begin(), sortedNodes.end(),
+					[&levenshteinScore](const NodeInfo& a, const NodeInfo& b)
+					{
+						return levenshteinScore.at(a.name) < levenshteinScore.at(b.name);
+					}
+				);
             }
-
-            ImGui::PopID();
         }
-        ImGui::Unindent();
+
+        // Search bar
+        {
+            constexpr float searchBarHeight = 32.f;
+            ImGui::BeginChild("##nodesSearchBar", { ImGui::GetContentRegionAvail().x, searchBarHeight });
+            ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().WindowPadding.x);
+            ImGui::InputTextWithHint("##searchInputStr", "Search...", &searchQuery);
+            ImGui::PopItemWidth();
+            ImGui::EndChild();
+        }
+
+        // Scrollable window
+        {
+			const std::string scrollableId = "##nodesScrollable";
+            if (ImGui::BeginChild(scrollableId.c_str()))
+            {
+				ImGui::Indent();
+
+				// show the list of nodes
+				for (const NodeInfo& nodeInfo : sortedNodes)
+				{
+					ImGui::PushID(nodeInfo.nodeId);
+					auto start = ImGui::GetCursorScreenPos();
+
+					ax::NodeEditor::NodeId nodeId(nodeInfo.nodeId);
+
+					const std::string& nodeName = nodeInfo.name;
+
+					DrawMatchingStringBackground(searchQuery, nodeName);
+
+					bool isSelected = std::find(selectedNodes.begin(), selectedNodes.end(), nodeId) != selectedNodes.end();
+					if (ImGui::Selectable((nodeName + "##" + std::to_string(nodeInfo.nodeId)).c_str(), &isSelected))
+					{
+						if (io.KeyCtrl)
+						{
+							if (isSelected)
+								ed::SelectNode(nodeId, true);
+							else
+								ed::DeselectNode(nodeId);
+						}
+						else
+							ed::SelectNode(nodeId, false);
+
+						ed::NavigateToSelection();
+					}
+
+					ImGui::PopID();
+				}
+				ImGui::Unindent();
+            }
+            ImGui::EndChild();
+        }
+
         ImGui::End();
     }
 
@@ -1299,103 +1424,125 @@ struct Example :
             ed::NodeId selectedNodeId;
             ed::GetSelectedNodes(&selectedNodeId, 1);
 
-            float paneWidth = ImGui::GetContentRegionAvail().x;
-
-            // Specific node property editing
-            ImGui::GetWindowDrawList()->AddRectFilled(
-                ImGui::GetCursorScreenPos(),
-                ImGui::GetCursorScreenPos() + ImVec2(paneWidth, ImGui::GetTextLineHeight()),
-                ImColor(ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]), ImGui::GetTextLineHeight() * 0.25f);
-            ImGui::Spacing(); ImGui::SameLine();
-
-            RenderGraphNode& node = g_renderGraph.nodes[selectedNodeId.Get() - 1];
-
-            std::string title = GetNodeTypeName(node);
-            title += " Properties";
-
-            std::string oldNodeName = GetNodeName(node);
-
-            ImGui::TextUnformatted(title.c_str());
-            ImGui::Indent();
-            g_renderGraphDirty |= ShowUI(g_renderGraph, nullptr, nullptr, node, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes));
-
-            std::string newNodeName = GetNodeName(node);
-
-            if (oldNodeName != newNodeName)
+            if (selectedNodeId.Get() >= g_groupNodesStartId)
             {
-                // Force the new name to be unique or else updating node connections breaks connections. Workaround til we have a better fix.
-                // We should be linking together by index probably, instead of by name.
-                while (1)
+                ImGui::TextUnformatted("Group Properties");
+
+                const int32_t nodeIndex = int32_t(selectedNodeId.Get()) - g_groupNodesStartId;
+                EditorGroupNode& groupNode = g_renderGraph.editorGroupNodes.at(nodeIndex);
+
+				constexpr int32_t strBufferSize = 4096;
+
+                char buf[strBufferSize];
+                strcpy_s(buf, strBufferSize, groupNode.name.c_str());
+
+                if (ImGui::InputText("Name", buf, strBufferSize))
                 {
-                    int nodeNameCount = 0;
-                    for (const RenderGraphNode& node : g_renderGraph.nodes)
-                    {
-                        if (GetNodeName(node) == newNodeName)
-                            nodeNameCount++;
-                    }
-
-                    if (nodeNameCount == 1)
-                        break;
-
-                    newNodeName += " ";
-                    SetNodeName(node, newNodeName);
+                    groupNode.name = buf;
                 }
 
-                SetNodeName(node, oldNodeName);
-                OnNodeRename(oldNodeName, newNodeName);
-                SetNodeName(node, newNodeName);
+                ImGui::ColorEdit3("Color", groupNode.color.data());
             }
-
-            // custom UI for node types
-            switch (node._index)
+            else
             {
-                // an edit and explore button for the shader
-                case RenderGraphNode::c_index_actionComputeShader:
-                case RenderGraphNode::c_index_actionRayShader:
-                {
-                    int shaderIndex;
-                    if (node._index == RenderGraphNode::c_index_actionComputeShader)
-                        shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::Compute, node.actionComputeShader.shader.name.c_str());
-                    else
-                        shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::RTRayGen, node.actionRayShader.shader.name.c_str());
-                    if (shaderIndex < 0)
-                        break;
+				float paneWidth = ImGui::GetContentRegionAvail().x;
 
-                    if (g_renderGraph.shaders[shaderIndex].fileName.empty())
-                        break;
+				// Specific node property editing
+				ImGui::GetWindowDrawList()->AddRectFilled(
+					ImGui::GetCursorScreenPos(),
+					ImGui::GetCursorScreenPos() + ImVec2(paneWidth, ImGui::GetTextLineHeight()),
+					ImColor(ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]), ImGui::GetTextLineHeight() * 0.25f);
+				ImGui::Spacing(); ImGui::SameLine();
 
-                    ImGui::Text("Shader:");
-                    ImGui::SameLine();
-                    ImGui::InputText("##ShaderFileName", (char*)g_renderGraph.shaders[shaderIndex].fileName.c_str(), g_renderGraph.shaders[shaderIndex].fileName.length(), ImGuiInputTextFlags_ReadOnly);
+				RenderGraphNode& node = g_renderGraph.nodes[selectedNodeId.Get() - 1];
 
-                    std::filesystem::path defaultPath = std::filesystem::path(g_renderGraphFileName).remove_filename();
+				std::string title = GetNodeTypeName(node);
+				title += " Properties";
 
-                    std::string exploreLocation;
+				std::string oldNodeName = GetNodeName(node);
 
-                    if (g_renderGraph.shaders[shaderIndex].fileName.empty())
-                        exploreLocation = defaultPath.u8string();
-                    else
-                        exploreLocation = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).remove_filename().u8string();
-                    exploreLocation = std::filesystem::absolute(std::filesystem::path(exploreLocation)).u8string();
+				ImGui::TextUnformatted(title.c_str());
+				ImGui::Indent();
+				g_renderGraphDirty |= ShowUI(g_renderGraph, nullptr, nullptr, node, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes));
 
-                    if (ImGui::Button("Edit"))
-                    {
-                        std::string fullFileName = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).u8string();
-                        ShellExecuteA(NULL, "open", fullFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-                    }
+				std::string newNodeName = GetNodeName(node);
 
-                    ImGui::SameLine();
+				if (oldNodeName != newNodeName)
+				{
+					// Force the new name to be unique or else updating node connections breaks connections. Workaround til we have a better fix.
+					// We should be linking together by index probably, instead of by name.
+					while (1)
+					{
+						int nodeNameCount = 0;
+						for (const RenderGraphNode& node : g_renderGraph.nodes)
+						{
+							if (GetNodeName(node) == newNodeName)
+								nodeNameCount++;
+						}
 
-                    if (ImGui::Button("Explore"))
-                    {
-                        ShellExecuteA(NULL, "explore", exploreLocation.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-                    }
+						if (nodeNameCount == 1)
+							break;
 
-                    break;
-                }
+						newNodeName += " ";
+						SetNodeName(node, newNodeName);
+					}
+
+					SetNodeName(node, oldNodeName);
+					OnNodeRename(oldNodeName, newNodeName);
+					SetNodeName(node, newNodeName);
+				}
+
+				// custom UI for node types
+				switch (node._index)
+				{
+					// an edit and explore button for the shader
+				case RenderGraphNode::c_index_actionComputeShader:
+				case RenderGraphNode::c_index_actionRayShader:
+				{
+					int shaderIndex;
+					if (node._index == RenderGraphNode::c_index_actionComputeShader)
+						shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::Compute, node.actionComputeShader.shader.name.c_str());
+					else
+						shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::RTRayGen, node.actionRayShader.shader.name.c_str());
+					if (shaderIndex < 0)
+						break;
+
+					if (g_renderGraph.shaders[shaderIndex].fileName.empty())
+						break;
+
+					ImGui::Text("Shader:");
+					ImGui::SameLine();
+					ImGui::InputText("##ShaderFileName", (char*)g_renderGraph.shaders[shaderIndex].fileName.c_str(), g_renderGraph.shaders[shaderIndex].fileName.length(), ImGuiInputTextFlags_ReadOnly);
+
+					std::filesystem::path defaultPath = std::filesystem::path(g_renderGraphFileName).remove_filename();
+
+					std::string exploreLocation;
+
+					if (g_renderGraph.shaders[shaderIndex].fileName.empty())
+						exploreLocation = defaultPath.u8string();
+					else
+						exploreLocation = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).remove_filename().u8string();
+					exploreLocation = std::filesystem::absolute(std::filesystem::path(exploreLocation)).u8string();
+
+					if (ImGui::Button("Edit"))
+					{
+						std::string fullFileName = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).u8string();
+						ShellExecuteA(NULL, "open", fullFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+					}
+
+					ImGui::SameLine();
+
+					if (ImGui::Button("Explore"))
+					{
+						ShellExecuteA(NULL, "explore", exploreLocation.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+					}
+
+					break;
+				}
+				}
+
+				ImGui::Unindent();
             }
-
-            ImGui::Unindent();
         }
 
         ImGui::End();
@@ -1997,6 +2144,31 @@ struct Example :
         ImGui::DockBuilderFinish(dockspace_id);
     }
 
+    void DeleteGroupNode(int deleteIndex)
+    {
+        // Update all nodes with new indices
+        std::vector<EditorGroupNode> tempGroupNodes = g_renderGraph.editorGroupNodes;
+
+        int32_t realIndex = deleteIndex - g_groupNodesStartId;
+        g_renderGraph.editorGroupNodes.erase(g_renderGraph.editorGroupNodes.begin() + realIndex);
+
+        for (int32_t index = realIndex; index < g_renderGraph.editorGroupNodes.size(); ++index)
+        {
+            int32_t newId = g_groupNodesStartId + index;
+
+            EditorGroupNode& currentNode = g_renderGraph.editorGroupNodes[index];
+
+            currentNode = tempGroupNodes[index + 1];
+            currentNode.id = newId;
+
+            m_newNodePositions[newId] = ImVec2(currentNode.position[0], currentNode.position[1]);
+            m_newGroupSizes[newId] = ImVec2(currentNode.size[0], currentNode.size[1]);
+
+            ed::SetNodePosition(newId, m_newNodePositions[newId]);
+            ed::SetGroupSize(newId, m_newGroupSizes[newId]);
+        }
+    }
+
     void DeleteNode(int deleteIndex)
     {
         std::string deleteName = GetNodeName(g_renderGraph.nodes[deleteIndex]);
@@ -2093,7 +2265,7 @@ struct Example :
         // handle node double click
         {
             auto nodeId = ed::GetDoubleClickedNode();
-            if (nodeId)
+            if (nodeId && nodeId.Get() < g_groupNodesStartId)
                 HandleDoubleClick(g_renderGraph.nodes[nodeId.Get() - 1]);
         }
 
@@ -2268,6 +2440,81 @@ struct Example :
 			builder.End();
         }
 
+		// Set group node sizes
+		{
+			for (const auto& info : m_newGroupSizes)
+			{
+				ed::SetGroupSize(info.first, info.second);
+			}
+
+			m_newGroupSizes.clear();
+		}
+
+        // Draw groups
+        int32_t groupId = 0;
+        for (auto& groupNode : g_renderGraph.editorGroupNodes)
+        {
+            if (g_renderGraphFirstFrame)
+            {
+                groupNode.id = g_groupNodesStartId + groupId++;
+
+                ed::SetNodePosition(groupNode.id, ImVec2(groupNode.position[0], groupNode.position[1]));
+                ed::SetGroupSize(groupNode.id, ImVec2(groupNode.size[0], groupNode.size[1]));
+            }
+
+			const float commentAlpha = 0.75f;
+
+            ImColor groupColor = ImColor(groupNode.color[0], groupNode.color[1], groupNode.color[2], groupNode.color[3]);
+
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, commentAlpha);
+			ed::PushStyleColor(ed::StyleColor_NodeBg, groupColor);
+			ed::PushStyleColor(ed::StyleColor_NodeBorder, groupColor);
+			ed::BeginNode(groupNode.id);
+			ImGui::PushID(groupNode.id);
+			ImGui::TextUnformatted(groupNode.name.c_str());
+			ed::Group(ImVec2(groupNode.size[0], groupNode.size[1]));
+			ImGui::PopID();
+			ed::EndNode();
+			ed::PopStyleColor(2);
+			ImGui::PopStyleVar();
+
+            if (ed::BeginGroupHint(groupNode.id))
+            {
+                auto min = ed::GetGroupMin();
+
+                auto size = ed::GetNodeSize(groupNode.id);
+                auto position = ed::GetNodePosition(groupNode.id);
+
+                groupNode.size = { size.x, size.y };
+                groupNode.position = { position.x, position.y };
+
+				ImGui::SetCursorScreenPos(min - ImVec2(-8, ImGui::GetTextLineHeightWithSpacing() + 4));
+				ImGui::BeginGroup();
+				ImGui::TextUnformatted(groupNode.name.c_str());
+				ImGui::EndGroup();
+
+				auto drawList = ed::GetHintBackgroundDrawList();
+
+				ImRect hintBounds = ImRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax());
+				ImRect hintFrameBounds = hintBounds;
+                hintFrameBounds.Min.x -= 8;
+                hintFrameBounds.Min.y -= 4;
+                hintFrameBounds.Max.x += 8;
+                hintFrameBounds.Max.y += 4;
+
+				drawList->AddRectFilled(
+					hintFrameBounds.GetTL(),
+					hintFrameBounds.GetBR(),
+                    groupColor, 4.0f);
+
+				drawList->AddRect(
+					hintFrameBounds.GetTL(),
+					hintFrameBounds.GetBR(),
+                    groupColor, 4.0f);
+            }
+            ed::EndGroupHint();
+        }
+
         // set any new node positions that we need to
         {
             for (auto & info: m_newNodePositions)
@@ -2398,7 +2645,7 @@ struct Example :
                     if (ed::AcceptDeletedItem())
                     {
                         g_renderGraphDirty = true;
-                        deleteNodeIds.push_back((int)nodeId.Get() - 1);
+                        deleteNodeIds.push_back((int)nodeId.Get());
                     }
                 }
 
@@ -2408,7 +2655,14 @@ struct Example :
                 // delete each node
                 for (int deleteIndex : deleteNodeIds)
                 {
-                    DeleteNode(deleteIndex);
+                    if (deleteIndex >= g_groupNodesStartId)
+                    {
+                        DeleteGroupNode(deleteIndex);
+                    }
+                    else
+                    {
+						DeleteNode(deleteIndex - 1);
+                    }
                 }
             }
         }
@@ -2629,6 +2883,24 @@ struct Example :
             #include "Schemas/RenderGraphNodesVariant.h"
             // clang-format on
 
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Group"))
+            {
+                const ImVec2 defaultSize = ImVec2(380, 154);
+
+                auto& node = g_renderGraph.editorGroupNodes.emplace_back();
+                node.position = { newNodePostion.x, newNodePostion.y };
+                node.size = { defaultSize.x, defaultSize.y };
+                node.name = "New Group";
+                node.id = g_groupNodesStartId + int32_t(g_renderGraph.editorGroupNodes.size()) - 1;
+
+                ed::SetNodePosition(node.id, newNodePostion);
+                ed::SetGroupSize(node.id, defaultSize);
+
+                g_renderGraphDirty = true;
+            }
+
             ImGui::EndPopup();
         }
         ed::Resume();
@@ -2655,7 +2927,8 @@ struct Example :
     };
     std::unordered_map<int, EditorPinInfo> m_pins;
 
-    std::unordered_map<int, ImVec2> m_newNodePositions;
+	std::unordered_map<int, ImVec2> m_newNodePositions;
+	std::unordered_map<int, ImVec2> m_newGroupSizes;
 
     struct LinkInfo
     {
