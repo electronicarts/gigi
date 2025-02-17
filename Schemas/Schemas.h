@@ -166,6 +166,14 @@ STRUCT_BEGIN(CustomGigiToken, "Allows you to give values for custom gigi tokens,
     STRUCT_FIELD(std::string, value, "", "The value to replace the token with", SCHEMA_FLAG_UI_MULTILINETEXT)
 STRUCT_END()
 
+STRUCT_BEGIN(EditorGroupNode, "Data for group nodes in the editor")
+    STRUCT_FIELD(std::string, name, "", "Name of the group", 0)
+    STRUCT_FIELD(int32_t, id, 0, "Id of the group", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_STATIC_ARRAY(float, position, 2, { 0.f COMMA 0.f }, "Position of the group", 0)
+    STRUCT_STATIC_ARRAY(float, size, 2, { 0.f COMMA 0.f }, "Size of the group", 0)
+    STRUCT_STATIC_ARRAY(float, color, 4, { 1.f COMMA 1.f COMMA 1.f COMMA 0.25f }, "Color of the group", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
     STRUCT_FIELD(std::string, name, "Unnamed", "The name of the render graph.", 0)
     STRUCT_FIELD(std::string, comment, "", "Put author information, links, etc here.", SCHEMA_FLAG_UI_MULTILINETEXT)
@@ -187,6 +195,8 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
     STRUCT_DYNAMIC_ARRAY(CustomGigiToken, customTokens, "Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.", 0)
 
     STRUCT_FIELD(TextureNodeReference, PrimaryOutput, {}, "A hint to anything that might be able to use this information, such as generated code or the viewer.", 0)
+
+    STRUCT_DYNAMIC_ARRAY(EditorGroupNode, editorGroupNodes, "Editor group nodes", SCHEMA_FLAG_NO_UI)
 
     // Non serialized things below
 
