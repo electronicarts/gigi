@@ -52,3 +52,22 @@ In the private gitlab repo, find the job for the ExternalRelease branch and down
 To make the installer, extract that zip file. Inside, right click **Install.nsi** and select "Compile NSIS Script".  If you don't have NSIS installed, you can download it from https://sourceforge.net/projects/nsis/.  This will make a file named based on the version numbers E.g. Gigi-0.99.0.x64.windows.installer.exe.  This is the second file that needs to be manually added to the release as an asset.
 
 In the public github repo, create a new release through the web interface at https://github.com/electronicarts/gigi/releases/new.  You should create a new tag named from the version number (such as v0.99.0) and the release should be the same name.  You can put change notes into the description.  Then click "Publish release" and you are done!
+
+# Reviewing Public PRs
+
+To sync to a pull request, you can use these git commands:
+
+* git fetch origin pull/14/head:PR14
+* git switch PR14
+
+Switch "14" with whatever pull request number you want to look at.
+
+You should review the code, verify functionality of anything the code touched, and also verify that the unit tests still function correctly.
+
+I have been merging these down to main in the public repo, and if it isn't a huge priority, just leaving it there to be part of the next release.
+
+I then make a patch, apply it to the internal repo, and verify everything in the internal repo works fine as well.
+
+It's possible that changes which are fine externally need more work in the internal repo.  For instance, changing how a data field on a node works may work fine with the changes for DX12 and Viewer, but internally, may have problems with other platforms.
+
+If you have suspicions that internal work may be needed, you can delay merging the pull request publicly, until you have it sorted out internally.
