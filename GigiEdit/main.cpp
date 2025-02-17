@@ -1257,39 +1257,48 @@ struct Example :
             ImGui::EndChild();
         }
 
-		ImGui::Indent();
-
-        // show the list of nodes
-        for (const NodeInfo& nodeInfo : sortedNodes)
+        // Scrollable window
         {
-            ImGui::PushID(nodeInfo.nodeId);
-            auto start = ImGui::GetCursorScreenPos();
-
-            ax::NodeEditor::NodeId nodeId(nodeInfo.nodeId);
-
-            const std::string& nodeName = nodeInfo.name;
-
-            DrawMatchingStringBackground(searchQuery, nodeName);
-
-            bool isSelected = std::find(selectedNodes.begin(), selectedNodes.end(), nodeId) != selectedNodes.end();
-            if (ImGui::Selectable((nodeName + "##" + std::to_string(nodeInfo.nodeId)).c_str(), &isSelected))
+			const std::string scrollableId = "##nodesScrollable";
+            if (ImGui::BeginChild(scrollableId.c_str()))
             {
-                if (io.KeyCtrl)
-                {
-                    if (isSelected)
-                        ed::SelectNode(nodeId, true);
-                    else
-                        ed::DeselectNode(nodeId);
-                }
-                else
-                    ed::SelectNode(nodeId, false);
+				ImGui::Indent();
 
-                ed::NavigateToSelection();
+				// show the list of nodes
+				for (const NodeInfo& nodeInfo : sortedNodes)
+				{
+					ImGui::PushID(nodeInfo.nodeId);
+					auto start = ImGui::GetCursorScreenPos();
+
+					ax::NodeEditor::NodeId nodeId(nodeInfo.nodeId);
+
+					const std::string& nodeName = nodeInfo.name;
+
+					DrawMatchingStringBackground(searchQuery, nodeName);
+
+					bool isSelected = std::find(selectedNodes.begin(), selectedNodes.end(), nodeId) != selectedNodes.end();
+					if (ImGui::Selectable((nodeName + "##" + std::to_string(nodeInfo.nodeId)).c_str(), &isSelected))
+					{
+						if (io.KeyCtrl)
+						{
+							if (isSelected)
+								ed::SelectNode(nodeId, true);
+							else
+								ed::DeselectNode(nodeId);
+						}
+						else
+							ed::SelectNode(nodeId, false);
+
+						ed::NavigateToSelection();
+					}
+
+					ImGui::PopID();
+				}
+				ImGui::Unindent();
             }
-
-            ImGui::PopID();
+            ImGui::EndChild();
         }
-        ImGui::Unindent();
+
         ImGui::End();
     }
 
