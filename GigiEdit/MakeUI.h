@@ -2081,7 +2081,7 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
             if (!p.has_extension() || p.extension() != ".hlsl")
                 p.replace_extension(".hlsl");
 
-            std::string fileName = defaultPath.empty() ? outPath : std::filesystem::relative(p, defaultPath).u8string();
+            std::string fileName = defaultPath.empty() ? p.u8string() : std::filesystem::relative(p, defaultPath).u8string();
             if (value.fileName != fileName)
             {
                 value.fileName = fileName;

@@ -787,9 +787,6 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 
 		DescriptorTableCache::ResourceDescriptor desc;
 
-		if (dep.pinIndex < node.linkProperties.size())
-			desc.m_UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
-
 		const RenderGraphNode& resourceNode = m_renderGraph.nodes[dep.nodeIndex];
 		switch (resourceNode._index)
 		{
@@ -798,6 +795,11 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				const RuntimeTypes::RenderGraphNode_Resource_Texture& resourceInfo =  GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceNode.resourceTexture.name.c_str());
 				desc.m_resource = resourceInfo.m_resource;
 				desc.m_format = resourceInfo.m_format;
+
+				if (dep.pinIndex < node.linkProperties.size())
+				{
+					desc.m_UAVMipIndex = min(node.linkProperties[dep.pinIndex].UAVMipIndex, resourceInfo.m_numMips - 1);
+				}
 
 				switch (resourceNode.resourceTexture.dimension)
 				{

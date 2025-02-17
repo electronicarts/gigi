@@ -16,6 +16,13 @@
             "Enum": "ViewModes"
         },
         {
+            "name": "RemapRanges",
+            "comment": "Remaps Normals and Tangents to [0-1] range when using their respective ViewMode",
+            "type": "Bool",
+            "dflt": "1",
+            "visibility": "User"
+        },
+        {
             "name": "ViewerColor",
             "type": "Float4",
             "dflt": "1, 1, 1, 1",
@@ -153,7 +160,7 @@
             "resourceBuffer": {
                 "name": "VertexBuffer",
                 "editorPos": [
-                    -121.0,
+                    -217.0,
                     -158.0
                 ],
                 "visibility": "Imported"
@@ -269,7 +276,7 @@
             "resourceTexture": {
                 "name": "ColorU8sRGB",
                 "editorPos": [
-                    54.0,
+                    70.0,
                     18.0
                 ],
                 "format": {
