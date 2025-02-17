@@ -1211,13 +1211,14 @@ struct Example :
             int nodeId_ = 0;
             for (const RenderGraphNode& node : g_renderGraph.nodes)
             {
+				nodeId_++;
+
                 std::string nodeName = GetNodeName(node);
                 if (!searchQuery.empty() && StringFindForceLowercase(nodeName, searchQuery) == std::string::npos)
                 {
                     continue;
                 }
 
-                nodeId_++;
                 sortedNodes.push_back({ nodeName, nodeId_ });
             }
 
