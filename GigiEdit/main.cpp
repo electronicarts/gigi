@@ -160,14 +160,6 @@ void OnShaderResourceDelete(const Shader& shader, const std::string& resourceNam
                 if (node.actionComputeShader.shader.name != shader.name)
                     continue;
 
-                node.actionComputeShader.connections.erase(
-                    std::remove_if(
-                        node.actionComputeShader.connections.begin(),
-                        node.actionComputeShader.connections.end(),
-                        [&](const NodePinConnection& connection) { return connection.srcPin == resourceName; }),
-                    node.actionComputeShader.connections.end()
-                );
-
                 shaderNodes.push_back(node.actionComputeShader.name);
                 break;
             }

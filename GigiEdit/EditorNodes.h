@@ -335,57 +335,65 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     return ret;
 }
 
-inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_ComputeShader& node)
+template <typename NODE_ACTION_SHADER>
+inline void RebuildShaderNodePins(const RenderGraph& renderGraph, NODE_ACTION_SHADER& node, int shaderIndex, std::vector<NodePinInfo>& ret)
 {
-    std::vector<NodePinInfo> ret;
-
-    // Get the shader the shader reference
-    int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, node.shader.name.c_str());
-
     // It's ok if the shader wasn't found. it means the user isn't done editing
     if (shaderIndex != -1)
     {
         // make sure there is a connection on the node for each resource
+        std::vector<NodePinConnection> oldConnections{ node.connections };
+        std::vector<LinkProperties> oldLinkProps{ node.linkProperties };
+
+        node.connections.clear();
+        node.linkProperties.clear();
+
         const Shader& shader = renderGraph.shaders[shaderIndex];
-        for (const ShaderResource& resource : shader.resources)
+        for (size_t pinIdx = 0; pinIdx < shader.resources.size(); pinIdx++)
         {
+            const ShaderResource& resource = shader.resources[pinIdx];
+
             bool found = false;
-            for (NodePinConnection& connection : node.connections)
+            for (size_t i = 0; i < oldConnections.size(); i++)
             {
-                if (connection.srcPin == resource.name)
+                if (oldConnections[i].srcPin == resource.name)
                 {
                     found = true;
+                    node.connections.push_back(oldConnections[i]);
+                    node.linkProperties.push_back(oldLinkProps[i]);
                     break;
                 }
             }
 
             if (!found)
             {
-                node.connections.resize(node.connections.size() + 1);
-                node.connections.rbegin()->srcPin = resource.name;
-            }
-        }
+                // insert
+                NodePinConnection connection{};
+                connection.srcPin = resource.name;
+                LinkProperties link{};
 
-        // make a pin for each resource
-        for (const ShaderResource& resource : shader.resources)
-        {
+                node.connections.push_back(connection);
+                node.linkProperties.push_back(link);
+            }
+
+            // create pin:
             NodePinInfo pin;
             pin.name = resource.name;
-
-            for (NodePinConnection& connection : node.connections)
-            {
-                if (connection.srcPin == resource.name)
-                {
-                    pin.inputNode = &connection.dstNode;
-                    pin.inputNodePin = &connection.dstPin;
-                    pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                    break;
-                }
-            }
-
+            pin.inputNode = &node.connections.back().dstNode;
+            pin.inputNodePin = &node.connections.back().dstPin;
+            pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
             ret.push_back(pin);
         }
     }
+}
+
+inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_ComputeShader& node)
+{
+    std::vector<NodePinInfo> ret;
+
+    // Get the shader the shader reference
+    int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, node.shader.name.c_str());
+    RebuildShaderNodePins<RenderGraphNode_Action_ComputeShader>(renderGraph, node, shaderIndex, ret);
 
     // make a pin for indirect dispatch
     NodePinInfo pin;

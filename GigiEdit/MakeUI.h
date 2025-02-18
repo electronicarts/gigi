@@ -509,6 +509,12 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
         for (int index = (int)TDYNAMICARRAY_SIZE(value) - 1; index > duplicateIndex; --index)
             value[index] = value[index - 1];
 
+        // avoid names clashing
+        if constexpr (std::is_same_v<T, ShaderResource>)
+        {
+            value[duplicateIndex + 1].name += "[Copy]";
+        }
+
         // we modified the render graph
         ret = true;
     }
@@ -2145,7 +2151,13 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
         // If a resource was added, let it react
         if (value.resources.size() > oldResources.size())
         {
-            OnShaderResourceAdd(value, value.resources.rbegin()->name);
+            // find which index was added from the oldResources array. Note that it may have been the last one.
+            int index = 0;
+            while (index < value.resources.size() && value.resources[index].name == oldResources[index].name)
+                index++;
+
+            // TODO: check and add suffix to name if necessary so don't clash
+            OnShaderResourceAdd(value, value.resources[index].name);
         }
         // If a resource was deleted, we need to unhook everything that was plugged into that pin
         else if (value.resources.size() < oldResources.size())
@@ -2171,6 +2183,10 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                         break;
 
                     // otherwise it's a rename
+
+                    // TODO: check and add suffix to name if necessary so don't clash
+                    // alternative, don't change the name until there is no duplicate anymore, and give warning 
+                    // visual warning to the player that the name is invalid. e.g. red text.
                     OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
                     break;
                 }
