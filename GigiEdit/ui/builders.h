@@ -21,11 +21,17 @@ namespace Utilities {
 
 
 //------------------------------------------------------------------------------
+struct NodeStyle
+{
+    ImColor color;
+    float rounding;
+};
+
 struct BlueprintNodeBuilder
 {
     BlueprintNodeBuilder(ImTextureID texture = nullptr, int textureWidth = 0, int textureHeight = 0);
 
-    void Begin(NodeId id, bool isResourceNode, bool isDisabled);
+    void Begin(NodeId id, NodeStyle nodeStyle, bool isDisabled);
     void End();
 
     void Header(const ImVec4& color = ImVec4(1, 1, 1, 1));
