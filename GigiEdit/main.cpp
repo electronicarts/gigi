@@ -2276,6 +2276,42 @@ struct Example :
         }
     }
 
+    ax::NodeEditor::Utilities::NodeStyle GetNodeStyle(const RenderGraphNode& node)
+    {
+        auto GetColorFromArray = [](const std::array<float, 3>& arr, int32_t alpha) -> ImColor
+        {
+            return ImColor(arr[0], arr[1], arr[2], float(alpha) / 255.f);
+        };
+
+		// Default colors are from Frostbite FrameGraph
+        // slide 17 https://www.slideshare.net/DICEStudio/framegraph-extensible-rendering-architecture-in-frostbite
+
+        ax::NodeEditor::Utilities::NodeStyle result;
+        result.rounding = 12.f;
+        result.color = GetColorFromArray(g_renderGraph.styleSettings.actionNodeColor, 128);
+
+        if (GetNodeIsResourceNode(node))
+        {
+            result.rounding = 0.f;
+
+            bool isTransient = false;
+
+            // Use a different color for non transient resources.
+            if (node._index == RenderGraphNode::c_index_resourceBuffer)
+            {
+                isTransient = node.resourceBuffer.transient;
+            }
+            else if (node._index == RenderGraphNode::c_index_resourceTexture)
+            {
+                isTransient = node.resourceTexture.transient;
+            }
+
+            result.color = isTransient ? GetColorFromArray(g_renderGraph.styleSettings.resourceNodeColor, 128) : GetColorFromArray(g_renderGraph.styleSettings.nonTransientResourceNodeColor, 128);
+        }
+
+        return result;
+    }
+
     void OnFrame(float deltaTime) override
     {
         //ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(nullptr);
@@ -2412,7 +2448,7 @@ struct Example :
                 }
             );
 
-            builder.Begin(nodeEditorId, GetNodeIsResourceNode(node), nodeDisabled);
+            builder.Begin(nodeEditorId, GetNodeStyle(node), nodeDisabled);
 
             if (g_renderGraphFirstFrame)
             {

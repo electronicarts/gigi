@@ -301,47 +301,66 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
     bool ret = false;
 
     ImGui::PushID(label);
-    if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
+    // Special case where the array represents a color.
+    if ((_FLAGS & SCHEMA_FLAG_UI_COLOR) != 0 && (N == 3 || N == 4))
     {
-        ImGui::Text("%s[%i]", label, (int)N);
-        ShowUIToolTip(tooltip);
+        // Only enable this code path for float.
+        if constexpr (std::is_same_v<T, float>)
+        {
+			if (N == 3)
+			{
+				ImGui::ColorEdit3(label, value.data());
+			}
+			else if (N == 4)
+			{
+				ImGui::ColorEdit4(label, value.data());
+			}
+        }
     }
-
-    if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
+    else
     {
-        float width = ImGui::GetContentRegionAvail().x / float(N + 2);
-        ImGui::PushItemWidth(width);
-    }
+		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
+		{
+			ImGui::Text("%s[%i]", label, (int)N);
+			ShowUIToolTip(tooltip);
+		}
 
-    bool showIndex = ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX) == 0);
+		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
+		{
+			float width = ImGui::GetContentRegionAvail().x / float(N + 2);
+			ImGui::PushItemWidth(width);
+		}
 
-    if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
-        ImGui::Indent();
+		bool showIndex = ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX) == 0);
 
-    for (size_t index = 0; index < N; ++index)
-    {
-        ImGui::PushID((int)index);
-        char label[256];
-        sprintf_s(label, "[%i]", (int)index);
-        ret |= ShowUI(renderGraph, showIndex ? label : "", nullptr, value[index], path);
-        if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0 && index + 1 < N)
-            ImGui::SameLine();
-        ImGui::PopID();
-    }
+		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
+			ImGui::Indent();
 
-    if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
-    {
-        ImGui::SameLine();
-        ImGui::Text("%s", label);
-        ShowUIToolTip(tooltip);
-    }
+		for (size_t index = 0; index < N; ++index)
+		{
+			ImGui::PushID((int)index);
+			char label[256];
+			sprintf_s(label, "[%i]", (int)index);
+			ret |= ShowUI(renderGraph, showIndex ? label : "", nullptr, value[index], path);
+			if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0 && index + 1 < N)
+				ImGui::SameLine();
+			ImGui::PopID();
+		}
 
-    if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
-        ImGui::Unindent();
+		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
+		{
+			ImGui::SameLine();
+			ImGui::Text("%s", label);
+			ShowUIToolTip(tooltip);
+		}
 
-    if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
-    {
-        ImGui::PopItemWidth();
+		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
+			ImGui::Unindent();
+
+		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
+		{
+			ImGui::PopItemWidth();
+		}
     }
 
     ImGui::PopID();

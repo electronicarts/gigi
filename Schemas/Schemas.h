@@ -86,6 +86,12 @@ STRUCT_BEGIN(ConfigFromBackend, "Frontend configuration set by the backend.")
     STRUCT_FIELD(bool, RTSceneTakesSRVSlot, true, "If true, RT scenes will take an SRV register slot.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(StyleSettings, "Graph style settings.")
+    STRUCT_STATIC_ARRAY(float, resourceNodeColor, 3, { 128.f / 255.f COMMA 128.f / 255.f COMMA 1.f }, "Color of the resource node types.", SCHEMA_FLAG_UI_COLOR)
+    STRUCT_STATIC_ARRAY(float, nonTransientResourceNodeColor, 3, { 128.f / 255.f COMMA 128.f / 255.f COMMA 1.f }, "Color of the non transient resource node types.", SCHEMA_FLAG_UI_COLOR)
+    STRUCT_STATIC_ARRAY(float, actionNodeColor, 3, { 1.f COMMA 128.f / 255.f COMMA 64.f / 255.f }, "Color of the action node types.", SCHEMA_FLAG_UI_COLOR)
+STRUCT_END()
+
 STRUCT_BEGIN(ResourceTransition, "A single resource transition")
     STRUCT_FIELD(int, nodeIndex, -1, "The node for the resource being transitioned.", 0)
     STRUCT_FIELD(ShaderResourceAccessType, oldState, ShaderResourceAccessType::Count, "The previous state", 0)
@@ -191,6 +197,8 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
     STRUCT_FIELD(BackendSettings, settings, {}, "Backend settings", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(BuildSettings, buildSettings, {}, "Build settings", SCHEMA_FLAG_UI_COLLAPSABLE)
+
+    STRUCT_FIELD(StyleSettings, styleSettings, {}, "Style settings", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_DYNAMIC_ARRAY(CustomGigiToken, customTokens, "Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.", 0)
 
