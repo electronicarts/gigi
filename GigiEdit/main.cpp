@@ -1713,7 +1713,7 @@ struct Example :
 
                 bool isSelected = data.index == selectedIndex;
                 if (ImGui::Selectable(data.name.c_str(), &isSelected))
-                    selectedIndex = index;
+                    selectedIndex = data.index;
 
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
