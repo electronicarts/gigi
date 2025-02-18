@@ -2621,6 +2621,46 @@
           "type": "string"
         }
       }
+    },
+    "editorGroupNodes": {
+      "description": "Editor group nodes",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "description": "Name of the group",
+            "type": "string"
+          },
+          "position": {
+            "description": "Position of the group",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          },
+          "size": {
+            "description": "Size of the group",
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": {
+              "type": "number"
+            }
+          },
+          "color": {
+            "description": "Color of the group",
+            "type": "array",
+            "minItems": 4,
+            "maxItems": 4,
+            "items": {
+              "type": "number"
+            }
+          }
+        }
+      }
     }
   }
 }

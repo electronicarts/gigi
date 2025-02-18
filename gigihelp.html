@@ -1623,6 +1623,17 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>EditorGroupNode : Data for group nodes in the editor</b><br/><br/>
+<table>
+<tr><th colspan=3>EditorGroupNode</th></tr>
+<tr><td>std::string name</td><td>""</td><td>Name of the group</td></tr>
+<tr><td><i>int32_t id</i></td><td>0</td><td>Id of the group</td></tr>
+<tr><td>float position[2]</td><td>{ 0.f , 0.f }</td><td>Position of the group</td></tr>
+<tr><td>float size[2]</td><td>{ 0.f , 0.f }</td><td>Size of the group</td></tr>
+<tr><td>float color[4]</td><td>{ 1.f , 1.f , 1.f , 0.25f }</td><td>Color of the group</td></tr>
+</table>
+<br/>
+
 <b>RenderGraph : The root type of the render graph</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraph</th></tr>
@@ -1642,6 +1653,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>BuildSettings buildSettings</td><td>{}</td><td>Build settings</td></tr>
 <tr><td>CustomGigiToken customTokens[]</td><td></td><td>Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.</td></tr>
 <tr><td>TextureNodeReference PrimaryOutput</td><td>{}</td><td>A hint to anything that might be able to use this information, such as generated code or the viewer.</td></tr>
+<tr><td>EditorGroupNode editorGroupNodes[]</td><td></td><td>Editor group nodes</td></tr>
 <tr><td><i>std::string baseDirectory</i></td><td>""</td><td>The relative location of the render graph file.</td></tr>
 <tr><td><i>std::string outputDirectory</i></td><td>""</td><td>Where the render graph output should go (this field used by the compiler).</td></tr>
 <tr><td><i>std::vector<int> flattenedNodeList</i></td><td>{}</td><td>The flattened list of nodes, in the order they should be executed in. Calculated before being given to back end code.</td></tr>
