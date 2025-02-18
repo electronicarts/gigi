@@ -89,6 +89,7 @@ struct DataWindowState
 {
     bool show = true;
     size_t selectedIndex = 0;
+    std::string searchQuery;
 };
 
 bool g_resetLayout = true;
@@ -1643,20 +1644,76 @@ struct Example :
 			ShowUIToolTip("Down to Bottom");
         }
 
+        // Search bar
+        {
+			constexpr float searchBarHeight = 32.f;
+            std::string childId = "##" + std::string(dataName) + "SearchBar";
+            std::string inputId = "##" + std::string(dataName) + "searchInputStr";
+
+			ImGui::BeginChild(childId.c_str(), {ImGui::GetContentRegionAvail().x, searchBarHeight});
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().WindowPadding.x);
+			ImGui::InputTextWithHint(inputId.c_str(), "Search...", &windowState.searchQuery);
+			ImGui::PopItemWidth();
+			ImGui::EndChild();
+        }
+
+		struct DataInfo
+		{
+			std::string name;
+			size_t index;
+		};
+
+		std::vector<DataInfo> filteredData;
+        filteredData.reserve(dataList.size());
+
+        for (size_t index = 0; index < dataList.size(); index++)
+        {
+            std::string dataName = NameLambda(index, dataList[index]);
+            if (dataName.empty())
+            {
+                dataName = "<empty>";
+            }
+
+            if (!windowState.searchQuery.empty() && StringFindForceLowercase(dataName, windowState.searchQuery) == std::string::npos)
+            {
+                continue;
+            }
+
+            filteredData.push_back({ dataName, index });
+        }
+
+        // Sort by levenshtein distance
+        if (!windowState.searchQuery.empty())
+        {
+			std::unordered_map<std::string, int32_t> levenshteinScore;
+
+			for (const auto& data : filteredData)
+			{
+				levenshteinScore[data.name] = LevenshteinDistance(windowState.searchQuery, data.name);
+			}
+
+			std::sort(filteredData.begin(), filteredData.end(),
+				[&levenshteinScore](const DataInfo& a, const DataInfo& b)
+				{
+					return levenshteinScore.at(a.name) < levenshteinScore.at(b.name);
+				}
+			);
+        }
+
         // show the list of items and let them be selectable
         if (ImGui::BeginListBox("##items", ImVec2(300.0f, -FLT_MIN)))
         {
-            for (size_t index = 0; index < dataList.size(); ++index)
+            for (size_t index = 0; index < filteredData.size(); ++index)
             {
-                std::string itemName = NameLambda(index, dataList[index]);
-                if (itemName.empty())
-                    itemName = "<empty>";
+                auto& data = filteredData.at(index);
 
-                ImGui::PushID(itemName.c_str());
+                ImGui::PushID(data.name.c_str());
 
-                bool isSelected = index == selectedIndex;
-                if (ImGui::Selectable(itemName.c_str(), &isSelected))
-                    selectedIndex = index;
+                DrawMatchingStringBackground(windowState.searchQuery, data.name);
+
+                bool isSelected = data.index == selectedIndex;
+                if (ImGui::Selectable(data.name.c_str(), &isSelected))
+                    selectedIndex = data.index;
 
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
