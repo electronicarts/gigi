@@ -12,6 +12,7 @@
 #include <dxcapi.h>
 #include <vector>
 #include <filesystem>
+#include <comdef.h>
 
 #pragma comment(lib, "dxcompiler.lib")
 
@@ -112,7 +113,8 @@ static IDxcBlob* CompileShaderToByteCode_Private(
     arguments.push_back(L"-T");
     arguments.push_back(shaderModelW.c_str());
 
-    if ((shaderInfo.flags & ShaderCompilationFlags::Debug) != ShaderCompilationFlags::None)
+    // PDBs require shader debugging on to work
+    if ((shaderInfo.flags & ShaderCompilationFlags::Debug) != ShaderCompilationFlags::None || (shaderInfo.flags & ShaderCompilationFlags::CreatePDBsAndBinaries) != ShaderCompilationFlags::None)
     {
         arguments.push_back(DXC_ARG_DEBUG);
         arguments.push_back(DXC_ARG_DEBUG_NAME_FOR_SOURCE);
@@ -181,7 +183,7 @@ static IDxcBlob* CompileShaderToByteCode_Private(
     }
 
     IDxcBlob* code = nullptr;
-    result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&code), nullptr);
+    hr = result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&code), nullptr);
 
     if ((shaderInfo.flags & ShaderCompilationFlags::CreatePDBsAndBinaries) != ShaderCompilationFlags::None)
     {
@@ -211,9 +213,17 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 					fclose(fp);
 				}
 			}
+            else
+            {
+                _com_error err(hr);
+                logFn(LogLevel::Warn, "Shader %ls requested PDBs and binaries but we were unable to get them: %ls\n", fullFileName.c_str(), err.ErrorMessage());
+            }
 
-			pPDBName->Release();
-			pPDB->Release();
+            if (pPDBName)
+			    pPDBName->Release();
+
+            if(pPDB)
+			    pPDB->Release();
         }
 
         // Binaries
