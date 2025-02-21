@@ -37,6 +37,7 @@ ENUM_BEGIN(TextureViewType, "The type that a texture is actually viewed as, in a
     ENUM_ITEM(Int, "int")
     ENUM_ITEM(Int4, "int[4]")
     ENUM_ITEM(Uint, "uint")
+    ENUM_ITEM(Uint2, "uint[2]")
     ENUM_ITEM(Uint4, "uint[4]")
     ENUM_ITEM(Float, "float")
     ENUM_ITEM(Float2, "float[2]")

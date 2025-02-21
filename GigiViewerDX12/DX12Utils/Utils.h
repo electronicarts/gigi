@@ -110,6 +110,7 @@ inline DXGI_FORMAT_Info Get_DXGI_FORMAT_Info(DXGI_FORMAT format)
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_UNORM, uint8_t, 2, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, uint8_t, 4, true, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
+		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_B8G8R8A8_UNORM, uint8_t, 4, false, false, false, 0, 1, UNorm, false, DXGI_FORMAT_UNKNOWN);
 
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8_UINT, uint8_t, 1, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
 		DXGI_FORMAT_INFO_CASE(DXGI_FORMAT_R8G8_UINT, uint8_t, 2, false, false, false, 0, 1, None, false, DXGI_FORMAT_UNKNOWN);
