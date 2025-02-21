@@ -2572,6 +2572,14 @@
             "debugShaders": {
               "description": "If true, compiles shaders with debug options turned on, on available platforms.",
               "type": "boolean"
+            },
+            "shaderWarningAsErrors": {
+              "description": "If true, compiles shaders with warnings as errors turned on",
+              "type": "boolean"
+            },
+            "createPDBsAndBinaries": {
+              "description": "If true, will output PDBs and shader binaries, useful for crash debugging.",
+              "type": "boolean"
             }
           }
         }

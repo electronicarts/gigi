@@ -84,16 +84,19 @@ namespace SubGraphLoops
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::computeShader_FilterSub_Iteration_0_DoBlur_rootSig, (c_debugNames ? L"FilterSub_Iteration_0_DoBlur" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.entryPoint = "main";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_0_DoBlur" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/SubGraphLoopsInner/SubGraphLoopsBlur.hlsl", "main", "cs_6_1", defines,
-               ContextInternal::computeShader_FilterSub_Iteration_0_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_0_DoBlur_pso, c_debugShaders, (c_debugNames ? L"FilterSub_Iteration_0_DoBlur" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_FilterSub_Iteration_0_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_0_DoBlur_pso, Context::LogFn))
                 return false;
         }
 
@@ -127,16 +130,19 @@ namespace SubGraphLoops
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::computeShader_FilterSub_Iteration_1_DoBlur_rootSig, (c_debugNames ? L"FilterSub_Iteration_1_DoBlur" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.entryPoint = "main";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_1_DoBlur" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/SubGraphLoopsInner/SubGraphLoopsBlur.hlsl", "main", "cs_6_1", defines,
-               ContextInternal::computeShader_FilterSub_Iteration_1_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_1_DoBlur_pso, c_debugShaders, (c_debugNames ? L"FilterSub_Iteration_1_DoBlur" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_FilterSub_Iteration_1_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_1_DoBlur_pso, Context::LogFn))
                 return false;
         }
 
@@ -170,16 +176,19 @@ namespace SubGraphLoops
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::computeShader_FilterSub_Iteration_2_DoBlur_rootSig, (c_debugNames ? L"FilterSub_Iteration_2_DoBlur" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.entryPoint = "main";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_2_DoBlur" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/SubGraphLoopsInner/SubGraphLoopsBlur.hlsl", "main", "cs_6_1", defines,
-               ContextInternal::computeShader_FilterSub_Iteration_2_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_2_DoBlur_pso, c_debugShaders, (c_debugNames ? L"FilterSub_Iteration_2_DoBlur" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_FilterSub_Iteration_2_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_2_DoBlur_pso, Context::LogFn))
                 return false;
         }
 
@@ -213,16 +222,19 @@ namespace SubGraphLoops
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::computeShader_FilterSub_Iteration_3_DoBlur_rootSig, (c_debugNames ? L"FilterSub_Iteration_3_DoBlur" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.entryPoint = "main";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_3_DoBlur" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/SubGraphLoopsInner/SubGraphLoopsBlur.hlsl", "main", "cs_6_1", defines,
-               ContextInternal::computeShader_FilterSub_Iteration_3_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_3_DoBlur_pso, c_debugShaders, (c_debugNames ? L"FilterSub_Iteration_3_DoBlur" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_FilterSub_Iteration_3_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_3_DoBlur_pso, Context::LogFn))
                 return false;
         }
 
@@ -256,16 +268,19 @@ namespace SubGraphLoops
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::computeShader_FilterSub_Iteration_4_DoBlur_rootSig, (c_debugNames ? L"FilterSub_Iteration_4_DoBlur" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.entryPoint = "main";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_4_DoBlur" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/SubGraphLoopsInner/SubGraphLoopsBlur.hlsl", "main", "cs_6_1", defines,
-               ContextInternal::computeShader_FilterSub_Iteration_4_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_4_DoBlur_pso, c_debugShaders, (c_debugNames ? L"FilterSub_Iteration_4_DoBlur" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_FilterSub_Iteration_4_DoBlur_rootSig, &ContextInternal::computeShader_FilterSub_Iteration_4_DoBlur_pso, Context::LogFn))
                 return false;
         }
 

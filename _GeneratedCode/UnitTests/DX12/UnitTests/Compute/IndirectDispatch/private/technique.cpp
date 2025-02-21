@@ -71,16 +71,19 @@ namespace IndirectDispatch
             if(!DX12Utils::MakeRootSig(device, ranges, 2, samplers, 0, &ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_rootSig, (c_debugNames ? L"Fill_Indirect_Dispatch_Count" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IndirectDispatch_Fill.hlsl";
+            shaderCompilationInfo.entryPoint = "FillIndirectDispatchCount";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Fill_Indirect_Dispatch_Count" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/IndirectDispatch_Fill.hlsl", "FillIndirectDispatchCount", "cs_6_1", defines,
-               ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_rootSig, &ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_pso, c_debugShaders, (c_debugNames ? L"Fill_Indirect_Dispatch_Count" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_rootSig, &ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_pso, Context::LogFn))
                 return false;
         }
 
@@ -100,16 +103,19 @@ namespace IndirectDispatch
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_Do_Indirect_Dispatch_1_rootSig, (c_debugNames ? L"Do_Indirect_Dispatch_1" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IndirectDispatch_Execute.hlsl";
+            shaderCompilationInfo.entryPoint = "DoIndirectDispatch";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Do_Indirect_Dispatch_1" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/IndirectDispatch_Execute.hlsl", "DoIndirectDispatch", "cs_6_1", defines,
-               ContextInternal::computeShader_Do_Indirect_Dispatch_1_rootSig, &ContextInternal::computeShader_Do_Indirect_Dispatch_1_pso, c_debugShaders, (c_debugNames ? L"Do_Indirect_Dispatch_1" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Do_Indirect_Dispatch_1_rootSig, &ContextInternal::computeShader_Do_Indirect_Dispatch_1_pso, Context::LogFn))
                 return false;
         }
 
@@ -129,16 +135,19 @@ namespace IndirectDispatch
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_Do_Indirect_Dispatch_2_rootSig, (c_debugNames ? L"Do_Indirect_Dispatch_2" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IndirectDispatch_Execute.hlsl";
+            shaderCompilationInfo.entryPoint = "DoIndirectDispatch";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Do_Indirect_Dispatch_2" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/IndirectDispatch_Execute.hlsl", "DoIndirectDispatch", "cs_6_1", defines,
-               ContextInternal::computeShader_Do_Indirect_Dispatch_2_rootSig, &ContextInternal::computeShader_Do_Indirect_Dispatch_2_pso, c_debugShaders, (c_debugNames ? L"Do_Indirect_Dispatch_2" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Do_Indirect_Dispatch_2_rootSig, &ContextInternal::computeShader_Do_Indirect_Dispatch_2_pso, Context::LogFn))
                 return false;
         }
 
