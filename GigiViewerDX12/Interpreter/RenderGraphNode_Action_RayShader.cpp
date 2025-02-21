@@ -269,20 +269,37 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				}
 			}
 
-			// make the shader defines
-			std::vector<D3D_SHADER_MACRO> defines;
-			for (const ShaderDefine& define : node.shader.shader->defines)
-				defines.push_back({ define.name.c_str(), define.value.c_str() });
-			for (const ShaderDefine& define : node.defines)
-				defines.push_back({ define.name.c_str(), define.value.c_str() });
+			ShaderCompilationInfo shaderCompilationInfo;
+			shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelRayShaders;
+			shaderCompilationInfo.defines = node.shader.shader->defines;
 
-			char maxRecursionDepthStr[256];
-			sprintf_s(maxRecursionDepthStr, "%i", node.maxRecursionDepth);
-			defines.push_back({ "MAX_RECURSION_DEPTH", maxRecursionDepthStr });
-			char countHitGroupsStr[256];
-			sprintf_s(countHitGroupsStr, "%i", countHitGroups);
-			defines.push_back({ "RT_HIT_GROUP_COUNT", countHitGroupsStr });
-			defines.push_back({ nullptr, nullptr });
+			if (!node.defines.empty())
+			{
+				shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), node.defines.begin(), node.defines.end());
+			}
+			
+			shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH", std::to_string(node.maxRecursionDepth));
+			shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT", std::to_string(countHitGroups));
+
+			if (m_compileShadersForDebug)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+			}
+
+			if (m_renderGraph.settings.dx12.DXC_HLSL_2021)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;
+			}
+
+			if (m_renderGraph.settings.common.shaderWarningAsErrors)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+			}
+
+			if (m_renderGraph.settings.common.createPDBsAndBinaries)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+			}
 
 			// Ray tracing shader compilation must use dxc
 			for (const ShaderExport& shaderExport : shaderExports)
@@ -290,13 +307,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / shaderExport.fileName).string();
 
 				std::vector<std::string> allShaderFiles;
+
+				shaderCompilationInfo.fileName = fullFileName;
+
 				std::vector<unsigned char> code = CompileShaderToByteCode_dxc(
-					fullFileName.c_str(),
-					"",
-					m_renderGraph.settings.dx12.shaderModelRayShaders.c_str(),
-					defines.size() > 0 ? defines.data() : nullptr,
-					m_compileShadersForDebug,
-					m_renderGraph.settings.dx12.DXC_HLSL_2021,
+					shaderCompilationInfo,
 					m_logFn,
 					&allShaderFiles
 				);
