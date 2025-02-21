@@ -148,17 +148,41 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		// Make the PSO
 		{
 			// shader defines
-			std::vector<D3D_SHADER_MACRO> defines;
-			for (const ShaderDefine& define : node.shader.shader->defines)
-				defines.push_back({ define.name.c_str(), define.value.c_str() });
-			for (const ShaderDefine& define : node.defines)
-				defines.push_back({ define.name.c_str(), define.value.c_str() });
-			if (defines.size() > 0)
-				defines.push_back({ nullptr, nullptr });
-
 			std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / node.shader.shader->destFileName).string();
 
 			// Shader compilation depends on which shader compiler they opted to use for this technique
+			ShaderCompilationInfo shaderCompilationInfo;
+			shaderCompilationInfo.fileName = fullFileName;
+			shaderCompilationInfo.entryPoint = node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint;
+			shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelCs;
+			shaderCompilationInfo.debugName = node.name;
+			shaderCompilationInfo.defines = node.shader.shader->defines;
+
+			if (!node.defines.empty())
+			{
+				shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), node.defines.begin(), node.defines.end());
+			}
+
+			if (m_compileShadersForDebug)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+			}
+
+			if (m_renderGraph.settings.dx12.DXC_HLSL_2021)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;
+			}
+
+			if (m_renderGraph.settings.common.shaderWarningAsErrors)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+			}
+
+			if (m_renderGraph.settings.common.createPDBsAndBinaries)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+			}
+
 			std::vector<std::string> allShaderFiles;
 			switch (m_renderGraph.settings.dx12.shaderCompiler)
 			{
@@ -166,14 +190,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				{
 					MakeComputePSO_fxc(
 						m_device,
-						fullFileName.c_str(),
-						node.entryPoint.empty() ? node.shader.shader->entryPoint.c_str() : node.entryPoint.c_str(),
-						m_renderGraph.settings.dx12.shaderModelCs.c_str(),
-						defines.size() > 0 ? defines.data() : nullptr,
+						shaderCompilationInfo,
 						runtimeData.m_rootSignature,
 						&runtimeData.m_pso,
-						m_compileShadersForDebug,
-						node.name.c_str(),
 						m_logFn,
 						&allShaderFiles
 					);
@@ -183,15 +202,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				{
 					MakeComputePSO_dxc(
 						m_device,
-						fullFileName.c_str(),
-						node.entryPoint.empty() ? node.shader.shader->entryPoint.c_str() : node.entryPoint.c_str(),
-						m_renderGraph.settings.dx12.shaderModelCs.c_str(),
-						defines.size() > 0 ? defines.data() : nullptr,
+						shaderCompilationInfo,
 						runtimeData.m_rootSignature,
 						& runtimeData.m_pso,
-						m_compileShadersForDebug,
-						node.name.c_str(),
-						m_renderGraph.settings.dx12.DXC_HLSL_2021,
 						m_logFn,
 						&allShaderFiles
 					);

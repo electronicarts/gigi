@@ -66,6 +66,8 @@ STRUCT_END()
 STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
     STRUCT_FIELD(bool, debugNames, true, "If true, sets debug names to GPU objects on available platforms.", 0)
     STRUCT_FIELD(bool, debugShaders, true, "If true, compiles shaders with debug options turned on, on available platforms.", 0)
+    STRUCT_FIELD(bool, shaderWarningAsErrors, false, "If true, compiles shaders with warnings as errors turned on", 0)
+    STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging.", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(BackendSettings, "Backend settings")
