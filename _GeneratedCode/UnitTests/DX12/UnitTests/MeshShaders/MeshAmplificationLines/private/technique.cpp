@@ -1102,21 +1102,36 @@ namespace MeshAmplificationLines
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_rootSig->SetName(L"Rasterize");
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "MeshAmplificationLines_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/MeshAmplificationLines_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesAS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoAS;
+            shaderCompilationInfoAS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "MeshAmplificationLines_AS.hlsl";
+            shaderCompilationInfoAS.entryPoint = "ASMain";
+            shaderCompilationInfoAS.shaderModel = "as_6_5";
+            shaderCompilationInfoAS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoAS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeAS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/MeshAmplificationLines_AS.hlsl", "ASMain", "as_6_5", definesAS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeAS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoAS, Context::LogFn);
             if (byteCodeAS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesMS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoMS;
+            shaderCompilationInfoMS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "MeshAmplificationLines_MS.hlsl";
+            shaderCompilationInfoMS.entryPoint = "MSMain";
+            shaderCompilationInfoMS.shaderModel = "ms_6_5";
+            shaderCompilationInfoMS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoMS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeMS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/MeshAmplificationLines_MS.hlsl", "MSMain", "ms_6_5", definesMS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeMS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoMS, Context::LogFn);
             if (byteCodeMS.size() == 0)
                 return false;
 

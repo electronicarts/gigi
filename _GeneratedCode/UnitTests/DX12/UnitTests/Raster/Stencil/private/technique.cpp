@@ -1167,15 +1167,25 @@ namespace Stencil
             if (c_debugNames)
                 m_internal.drawCall_Draw_1_rootSig->SetName(L"Draw_1");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "StencilDraw1VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "Draw1VS";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Draw_1" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/StencilDraw1VS.hlsl", "Draw1VS", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "StencilDraw1PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "Draw1PS";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Draw_1" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/StencilDraw1PS.hlsl", "Draw1PS", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -1388,15 +1398,25 @@ namespace Stencil
             if (c_debugNames)
                 m_internal.drawCall_Draw_2_rootSig->SetName(L"Draw_2");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "StencilDraw2VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "Draw2VS";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Draw_2" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/StencilDraw2VS.hlsl", "Draw2VS", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "StencilDraw2PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "Draw2PS";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Draw_2" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/StencilDraw2PS.hlsl", "Draw2PS", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 

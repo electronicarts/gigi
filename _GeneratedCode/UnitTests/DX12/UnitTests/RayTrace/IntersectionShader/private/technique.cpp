@@ -88,37 +88,42 @@ namespace IntersectionShader
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 0, &ContextInternal::rayShader_Do_RT_rootSig, (c_debugNames ? L"Do_RT" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "1" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","1");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[5];
 
             // Compile RTIntersection : IntersectionShader.hlsl Intersection()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/IntersectionShader.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IntersectionShader.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
             // Compile RTMiss : IntersectionShader.hlsl Miss()
-            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/IntersectionShader.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IntersectionShader.hlsl";
+            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[1].empty())
                 return false;
 
             // Compile RTClosestHit : IntersectionShader.hlsl ClosestHit()
-            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/IntersectionShader.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IntersectionShader.hlsl";
+            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[2].empty())
                 return false;
 
             // Compile RTAnyHit : IntersectionShader.hlsl AnyHit()
-            shaderCode[3] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/IntersectionShader.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IntersectionShader.hlsl";
+            shaderCode[3] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[3].empty())
                 return false;
 
             // Compile RTRayGen : IntersectionShader.hlsl RayGen()
-            shaderCode[4] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/IntersectionShader.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IntersectionShader.hlsl";
+            shaderCode[4] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[4].empty())
                 return false;
 

@@ -58,16 +58,19 @@ namespace VRS
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_MakeShadingRate_rootSig, (c_debugNames ? L"MakeShadingRate" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_ShadingRateCS.hlsl";
+            shaderCompilationInfo.entryPoint = "ShadingRateCSMain";
+            shaderCompilationInfo.shaderModel = "cs_6_4";
+            shaderCompilationInfo.debugName = (c_debugNames ? "MakeShadingRate" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/VRS_ShadingRateCS.hlsl", "ShadingRateCSMain", "cs_6_4", defines,
-               ContextInternal::computeShader_MakeShadingRate_rootSig, &ContextInternal::computeShader_MakeShadingRate_pso, c_debugShaders, (c_debugNames ? L"MakeShadingRate" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_MakeShadingRate_rootSig, &ContextInternal::computeShader_MakeShadingRate_pso, Context::LogFn))
                 return false;
         }
 
@@ -1481,15 +1484,25 @@ namespace VRS
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_rootSig->SetName(L"Rasterize");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_4";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/VRS_VS.hlsl", "VSMain", "vs_6_4", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_4";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/VRS_PS.hlsl", "PSMain", "ps_6_4", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -1702,15 +1715,25 @@ namespace VRS
             if (c_debugNames)
                 m_internal.drawCall_Vignette_rootSig->SetName(L"Vignette");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_Vignette_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_4";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Vignette" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/VRS_Vignette_VS.hlsl", "VSMain", "vs_6_4", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_Vignette_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_4";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Vignette" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/VRS_Vignette_PS.hlsl", "PSMain", "ps_6_4", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -1906,15 +1929,25 @@ namespace VRS
             if (c_debugNames)
                 m_internal.drawCall_DrawQuad_rootSig->SetName(L"DrawQuad");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_Quad_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_4";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "DrawQuad" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/VRS_Quad_VS.hlsl", "VSMain", "vs_6_4", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "VRS_Quad_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_4";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "DrawQuad" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/VRS_Quad_PS.hlsl", "PSMain", "ps_6_4", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 

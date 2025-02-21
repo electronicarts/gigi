@@ -69,23 +69,39 @@ public:
 };
 
 static ID3DBlob* CompileShaderToByteCode_Private(
-    const std::wstring& fileName,
-    const char* entryPoint,
-    const char* shaderModel,
-    const D3D_SHADER_MACRO* defines,
-    bool debugShaders,
+	const ShaderCompilationInfo& shaderInfo,
     TLogFn logFn
     )
 {
-    // Compile Shaders
-    ID3DBlob* error = nullptr;
-    ID3DBlob* shader = nullptr;
-    UINT compileFlags = debugShaders ? D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION : 0;
+	// Compile Shaders
+	ID3DBlob* error = nullptr;
+	ID3DBlob* shader = nullptr;
+	UINT compileFlags = ((shaderInfo.flags & ShaderCompilationFlags::Debug) != ShaderCompilationFlags::None) ? D3DCOMPILE_DEBUG | D3DCOMPILE_SKIP_OPTIMIZATION : 0;
+
+	if ((shaderInfo.flags & ShaderCompilationFlags::WarningsAsErrors) != ShaderCompilationFlags::None)
+	{
+		compileFlags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+	}
 
     // compile the shader from file
-    std::string shaderDir = std::filesystem::path(fileName).parent_path().string();
-    IncludeHandlerFXC include(shaderDir.c_str());
-    HRESULT hr = D3DCompileFromFile(fileName.c_str(), defines, &include, entryPoint, shaderModel, compileFlags, 0, &shader, &error);
+	std::string shaderDir = shaderInfo.fileName.parent_path().string();
+	IncludeHandlerFXC include(shaderDir.c_str());
+
+	std::vector<D3D_SHADER_MACRO> d3dMacros;
+	d3dMacros.reserve(shaderInfo.defines.size());
+	for (const auto& shaderDefine : shaderInfo.defines)
+	{
+		if (!shaderDefine.name.empty() && !shaderDefine.value.empty())
+		{
+			D3D_SHADER_MACRO& macro = d3dMacros.emplace_back();
+			macro.Name = shaderDefine.name.c_str();
+			macro.Definition = shaderDefine.value.c_str();
+		}
+	}
+
+    HRESULT hr = D3DCompileFromFile(shaderInfo.fileName.c_str(), d3dMacros.data(), &include, shaderInfo.entryPoint.c_str(), shaderInfo.shaderModel.c_str(), compileFlags, 0, &shader, &error);
+
+	std::string fileNameStr = shaderInfo.fileName.string();
 
     if (FAILED(hr))
     {
@@ -93,20 +109,20 @@ static ID3DBlob* CompileShaderToByteCode_Private(
         if (error)
         {
             const char* errorMsg = (const char*)error->GetBufferPointer();
-            logFn(LogLevel::Error, "Could not compile shader %ls:\n%s\n%s", fileName.c_str(), err.ErrorMessage(), errorMsg);
+            logFn(LogLevel::Error, "Could not compile shader %ls:\n%s\n%s", fileNameStr.c_str(), err.ErrorMessage(), errorMsg);
             error->Release();
             error = nullptr;
         }
         else
         {
-            logFn(LogLevel::Error, "Could not compile shader %ls:\n%s", fileName.c_str(), err.ErrorMessage());
+            logFn(LogLevel::Error, "Could not compile shader %ls:\n%s", fileNameStr.c_str(), err.ErrorMessage());
         }
         return nullptr;
     }
     else if (error)
     {
         const char* errorMsg = (const char*)error->GetBufferPointer();
-        logFn(LogLevel::Warn, "Shader compilation warning %ls:\n%s", fileName.c_str(), errorMsg);
+        logFn(LogLevel::Warn, "Shader compilation warning %ls:\n%s", fileNameStr.c_str(), errorMsg);
         error->Release();
         error = nullptr;
     }
@@ -116,20 +132,12 @@ static ID3DBlob* CompileShaderToByteCode_Private(
 
 bool MakeComputePSO_FXC(
     ID3D12Device* device,
-    LPCWSTR shaderDir,
-    LPCWSTR shaderFile,
-    const char* entryPoint,
-    const char* shaderModel,
-    const D3D_SHADER_MACRO* defines,
+	const ShaderCompilationInfo& shaderInfo,
     ID3D12RootSignature* rootSig,
     ID3D12PipelineState** pso,
-    bool debugShaders,
-    LPCWSTR debugName,
     TLogFn logFn)
 {
-    std::wstring fileName = std::filesystem::path(shaderDir) / std::filesystem::path(shaderFile).wstring();
-
-    ID3DBlob* shader = CompileShaderToByteCode_Private(fileName, entryPoint, shaderModel, defines, debugShaders, logFn);
+    ID3DBlob* shader = CompileShaderToByteCode_Private(shaderInfo, logFn);
     if (!shader)
         return false;
 
@@ -143,33 +151,26 @@ bool MakeComputePSO_FXC(
     HRESULT hr = device->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso));
     if (FAILED(hr))
     {
-        logFn(LogLevel::Error, "Could not create PSO for shader %s", fileName);
+        logFn(LogLevel::Error, "Could not create PSO for shader %s", shaderInfo.fileName.string().c_str());
         return false;
     }
 
     if (shader) shader->Release();
     shader = nullptr;
 
-    if (debugName)
-        (*pso)->SetName(debugName);
+    if (!shaderInfo.debugName.empty())
+        (*pso)->SetName(ToWideString(shaderInfo.debugName.c_str()).c_str());
 
     return true;
 }
 
 std::vector<unsigned char> CompileShaderToByteCode_FXC(
-    LPCWSTR shaderDir,
-    LPCWSTR shaderFile,
-    const char* entryPoint,
-    const char* shaderModel,
-    const D3D_SHADER_MACRO* defines,
-    bool debugShaders,
+	const ShaderCompilationInfo& shaderInfo,
     TLogFn logFn)
 {
     std::vector<unsigned char> ret;
 
-    std::wstring fileName = std::filesystem::path(shaderDir) / std::filesystem::path(shaderFile).wstring();
-
-    ID3DBlob* shader = CompileShaderToByteCode_Private(fileName, entryPoint, shaderModel, defines, debugShaders, logFn);
+    ID3DBlob* shader = CompileShaderToByteCode_Private(shaderInfo, logFn);
     if (!shader)
         return ret;
 
