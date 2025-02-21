@@ -74,6 +74,7 @@ table, th, td, tr
 <tr><td>Int</td><td>int</td></tr>
 <tr><td>Int4</td><td>int[4]</td></tr>
 <tr><td>Uint</td><td>uint</td></tr>
+<tr><td>Uint2</td><td>uint[2]</td></tr>
 <tr><td>Uint4</td><td>uint[4]</td></tr>
 <tr><td>Float</td><td>float</td></tr>
 <tr><td>Float2</td><td>float[2]</td></tr>
@@ -284,6 +285,7 @@ table, th, td, tr
 <tr><td>RG8_Unorm</td><td>RG 8 bit unorm</td></tr>
 <tr><td>RGBA8_Unorm</td><td>RGBA 8 bit unorm</td></tr>
 <tr><td>RGBA8_Unorm_sRGB</td><td>RGBA 8 bit unorm, sRGB</td></tr>
+<tr><td>BGRA8_Unorm</td><td>BGRA 8 bit unorm</td></tr>
 <tr><td>R8_Snorm</td><td>R 8 bit snorm</td></tr>
 <tr><td>RG8_Snorm</td><td>RG 8 bit snorm</td></tr>
 <tr><td>RGBA8_Snorm</td><td>RGBA 8 bit snorm</td></tr>
@@ -298,10 +300,12 @@ table, th, td, tr
 <tr><td>RGBA16_Float</td><td>RGBA 16 bit float</td></tr>
 <tr><td>RGBA16_Unorm</td><td>RGBA 16 bit unorm</td></tr>
 <tr><td>RGBA16_Snorm</td><td>RGBA 16 bit snorm</td></tr>
+<tr><td>RG16_Uint</td><td>RG 16 bit uint</td></tr>
 <tr><td>R32_Float</td><td>R 32 bit float</td></tr>
 <tr><td>RG32_Float</td><td>RG 32 bit float</td></tr>
 <tr><td>RGBA32_Float</td><td>RGBA 32 bit float</td></tr>
 <tr><td>R32_Uint</td><td>R 32 bit uint</td></tr>
+<tr><td>RG32_Uint</td><td>RG 32 bit uint</td></tr>
 <tr><td>RGBA32_Uint</td><td>RGBA 32 bit uint</td></tr>
 <tr><td>R11G11B10_Float</td><td>RGB 32 bit (total) float</td></tr>
 <tr><td>D32_Float</td><td>32 bit float depth</td></tr>
@@ -1559,6 +1563,15 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>StyleSettings : Graph style settings.</b><br/><br/>
+<table>
+<tr><th colspan=3>StyleSettings</th></tr>
+<tr><td>float resourceNodeColor[3]</td><td>{ 128.f / 255.f , 128.f / 255.f , 1.f }</td><td>Color of the resource node types.</td></tr>
+<tr><td>float nonTransientResourceNodeColor[3]</td><td>{ 128.f / 255.f , 128.f / 255.f , 1.f }</td><td>Color of the non transient resource node types.</td></tr>
+<tr><td>float actionNodeColor[3]</td><td>{ 1.f , 128.f / 255.f , 64.f / 255.f }</td><td>Color of the action node types.</td></tr>
+</table>
+<br/>
+
 <b>ResourceTransition : A single resource transition</b><br/><br/>
 <table>
 <tr><th colspan=3>ResourceTransition</th></tr>
@@ -1651,6 +1664,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>RTHitGroup hitGroups[]</td><td></td><td>Ray tracing hit group definitions</td></tr>
 <tr><td>BackendSettings settings</td><td>{}</td><td>Backend settings</td></tr>
 <tr><td>BuildSettings buildSettings</td><td>{}</td><td>Build settings</td></tr>
+<tr><td>StyleSettings styleSettings</td><td>{}</td><td>Style settings</td></tr>
 <tr><td>CustomGigiToken customTokens[]</td><td></td><td>Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.</td></tr>
 <tr><td>TextureNodeReference PrimaryOutput</td><td>{}</td><td>A hint to anything that might be able to use this information, such as generated code or the viewer.</td></tr>
 <tr><td>EditorGroupNode editorGroupNodes[]</td><td></td><td>Editor group nodes</td></tr>
