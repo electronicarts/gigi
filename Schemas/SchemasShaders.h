@@ -28,6 +28,7 @@ ENUM_BEGIN(ShaderResourceAccessType, "The type of a shader resource")
     ENUM_ITEM(DepthTarget, "Used as a depth buffer")
     ENUM_ITEM(Barrier, "Used by the barrier node")
     ENUM_ITEM(ShadingRate, "Used as a shading rate image")
+    ENUM_ITEM(Noop, "Used by the reroute node")
     ENUM_ITEM(Count, "")
 ENUM_END()
 

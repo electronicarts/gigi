@@ -381,6 +381,18 @@ struct RenameReferencesVisitor
 
                 return true;
             }
+            case RenderGraphNode::c_index_reroute:
+            {
+                RenderGraphNode_Reroute& node = nodeBase.reroute;
+
+				for (NodePinConnection& connection : node.connections)
+				{
+					m_renameData.UpdateNodePin(connection.dstNode, connection.dstPin);
+					m_renameData.UpdateNodeName(connection.dstNode);
+				}
+
+				return true;
+            }
             default:
             {
                 ShowErrorMessage("Unhandled node type in Subgraphs.cpp " __FUNCTION__);

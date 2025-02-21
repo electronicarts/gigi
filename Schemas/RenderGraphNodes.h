@@ -460,6 +460,13 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_Barrier, RenderGraphNode_ActionBase,
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
+STRUCT_INHERIT_BEGIN(RenderGraphNode_Reroute, RenderGraphNode_ActionBase, "Used in editor only to reroute links")
+    STRUCT_CONST(std::string, c_editorName, "Reroute", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shortTypeName, "Reroute", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shorterTypeName, "Rr", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(bool, c_showInEditor, false, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
 //========================================================
 // Variant
 //========================================================

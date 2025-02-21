@@ -108,6 +108,9 @@
     </ClCompile>
     <ClCompile Include="ImageReadback.cpp" />
     <ClCompile Include="ImageSave.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Reroute.cpp">
+      <Filter>Interpreter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">

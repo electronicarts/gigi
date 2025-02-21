@@ -228,6 +228,19 @@ inline bool GetNodeIsResourceNode(const RenderGraphNode& node)
     return ret;
 }
 
+inline ImColor GetNodeColor(const RenderGraphNode& node)
+{
+    if (node._index == RenderGraphNode::c_index_reroute)
+    {
+        return ImColor(255, 255, 255, 200);
+    }
+
+	// colors like Frostbite FrameGraph
+    // slide 17 https://www.slideshare.net/DICEStudio/framegraph-extensible-rendering-architecture-in-frostbite
+    bool isResourceNode = GetNodeIsResourceNode(node);
+    return isResourceNode ? ImColor(128, 128, 255, 128) : ImColor(255, 128, 64, 128);
+}
+
 inline std::array<float, 2> GetNodeEditorPos(const RenderGraphNode& node)
 {
     std::array<float, 2> ret;
@@ -850,6 +863,21 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
         ret[i].accessLabel = " (Barrier)";
     }
     return ret;
+}
+
+inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Reroute& node)
+{
+    node.connections.resize(1);
+    node.connections[0].srcPin = "Pin";
+
+    std::vector<NodePinInfo> result(1);
+
+	result[0].name = node.connections[0].srcPin;
+	result[0].inputNode = &node.connections[0].dstNode;
+	result[0].inputNodePin = &node.connections[0].dstPin;
+	result[0].accessLabel = "";
+
+    return result;
 }
 
 inline int GetResourceNodeIndexForPin(RenderGraph& renderGraph, const char* nodeName, const char* pinName)

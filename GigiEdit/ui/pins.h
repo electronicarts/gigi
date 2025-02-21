@@ -39,13 +39,13 @@ ImColor GetIconColor(PinType type)
 
 // code is from imgui-node-editor blueprint example, reduced to single data type
 
-inline void DrawPinIcon(const NodePinInfo& pin, bool connected, int alpha)
+inline void DrawPinIcon(const NodePinInfo& pin, bool isReroute, bool connected, int alpha)
 {
 	ax::Drawing::IconType iconType;
 
 	PinType type = PinType::Object;
 	
-	ImColor color = GetIconColor(type);
+	ImColor color = isReroute ? ImColor(150, 150, 150, 255) : GetIconColor(type);
 	color.Value.w = alpha / 255.0f;
 
 	switch (type)

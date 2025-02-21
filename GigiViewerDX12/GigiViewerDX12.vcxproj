@@ -125,6 +125,7 @@
     <ClCompile Include="Interpreter\RenderGraphNode_Action_Barrier.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Action_RayShader.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Action_SubGraph.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Reroute.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Resource_Buffer.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Resource_ShaderConstants.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Resource_Texture.cpp" />
