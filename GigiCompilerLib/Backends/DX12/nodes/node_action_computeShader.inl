@@ -107,43 +107,40 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n            if(!DX12Utils::MakeRootSig(device, ranges, " << descriptorTableRangeCount << ", samplers, " << samplerCount << ", &ContextInternal::computeShader_" << node.name << "_rootSig, (c_debugNames ? L\"" << node.name << "\" : nullptr), Context::LogFn))"
         "\n                return false;";
 
-    // shader defines
-    if (node.defines.empty() && node.shader.shader->defines.empty())
+    // Shader compilation info
+    stringReplacementMap["/*$(CreateShared)*/"] <<
+        "\n"
+        "\n            ShaderCompilationInfo shaderCompilationInfo;"
+        "\n            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << node.shader.shader->destFileName << "\";"
+        "\n            shaderCompilationInfo.entryPoint = \"" << (node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint) << "\";"
+        "\n            shaderCompilationInfo.shaderModel = \"" << renderGraph.settings.dx12.shaderModelCs << "\";"
+        "\n            shaderCompilationInfo.debugName = (c_debugNames ? \"" << (node.name) << "\" : \"\");"
+        "\n            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;";
+
+    if (renderGraph.settings.dx12.DXC_HLSL_2021)
     {
-        stringReplacementMap["/*$(CreateShared)*/"] <<
-            "\n"
-            "\n            D3D_SHADER_MACRO* defines = nullptr;";
+		stringReplacementMap["/*$(CreateShared)*/"] <<
+        "\n            shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;";
     }
-    else
+
+    for (const ShaderDefine& define : node.shader.shader->defines)
     {
-        stringReplacementMap["/*$(CreateShared)*/"] <<
-            "\n"
-            "\n            D3D_SHADER_MACRO defines[] = {";
-
-
-        for (const ShaderDefine& define : node.shader.shader->defines)
-        {
-            stringReplacementMap["/*$(CreateShared)*/"] <<
-                "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-        }
-
-        for (const ShaderDefine& define : node.defines)
-        {
-            stringReplacementMap["/*$(CreateShared)*/"] <<
-                "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-        }
-
-        stringReplacementMap["/*$(CreateShared)*/"] <<
-            "\n                { nullptr, nullptr }"
-            "\n            };";
+		stringReplacementMap["/*$(CreateShared)*/"] <<
+        "\n            shaderCompilationInfo.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
     }
+
+	for (const ShaderDefine& define : node.defines)
+	{
+		stringReplacementMap["/*$(CreateShared)*/"] <<
+			"\n            shaderCompilationInfo.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
+	}
 
     // PSO
     const char* shaderCompiler = (renderGraph.settings.dx12.shaderCompiler == DXShaderCompiler::DXC) ? "_DXC" : "_FXC";
     stringReplacementMap["/*$(CreateShared)*/"] <<
         "\n"
-        "\n            if(!DX12Utils::MakeComputePSO" << shaderCompiler << "(device, Context::s_techniqueLocation.c_str(), L\"shaders/" << node.shader.shader->destFileName << "\", \"" << (node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint.c_str()) << "\", \"" << renderGraph.settings.dx12.shaderModelCs << "\", defines,"
-        "\n               ContextInternal::computeShader_" << node.name << "_rootSig, &ContextInternal::computeShader_" << node.name << "_pso, c_debugShaders, (c_debugNames ? L\"" << (node.name) << "\" : nullptr), Context::LogFn))"
+        "\n            if(!DX12Utils::MakeComputePSO" << shaderCompiler << "(device, shaderCompilationInfo,"
+        "\n               ContextInternal::computeShader_" << node.name << "_rootSig, &ContextInternal::computeShader_" << node.name << "_pso, Context::LogFn))"
         "\n                return false;"
         "\n        }"
     ;

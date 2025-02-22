@@ -920,29 +920,45 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 
 static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::vector<ShaderDefine>& nodeDefines, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, LogFn& logFn)
 {
-	// make the shader defines
-	std::vector<D3D_SHADER_MACRO> defines;
+	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
+
+	ShaderCompilationInfo shaderCompilationInfo;
+	shaderCompilationInfo.fileName = fullFileName;
+	shaderCompilationInfo.entryPoint = shader.entryPoint;
+	shaderCompilationInfo.shaderModel = shaderModel;
+	shaderCompilationInfo.defines = shader.defines;
+
+	if (!nodeDefines.empty())
 	{
-		for (const ShaderDefine& define : shader.defines)
-			defines.push_back({ define.name.c_str(), define.value.c_str() });
-		for (const ShaderDefine& define : nodeDefines)
-			defines.push_back({ define.name.c_str(), define.value.c_str() });
-		if (defines.size() > 0)
-			defines.push_back({ nullptr, nullptr });
+		shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), nodeDefines.begin(), nodeDefines.end());
 	}
 
-	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
+	if (compileShadersForDebug)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+	}
+
+	if (renderGraph.settings.dx12.DXC_HLSL_2021)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;
+	}
+
+	if (renderGraph.settings.common.shaderWarningAsErrors)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+	}
+
+	if (renderGraph.settings.common.createPDBsAndBinaries)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+	}
 
 	switch (renderGraph.settings.dx12.shaderCompiler)
 	{
 		case DXShaderCompiler::FXC:
 		{
 			shaderBytes = CompileShaderToByteCode_fxc(
-				fullFileName.c_str(),
-				shader.entryPoint.c_str(),
-				shaderModel,
-				defines.size() > 0 ? defines.data() : nullptr,
-				compileShadersForDebug,
+				shaderCompilationInfo,
 				logFn,
 				&allShaderFiles
 			);
@@ -951,12 +967,7 @@ static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader&
 		case DXShaderCompiler::DXC:
 		{
 			shaderBytes = CompileShaderToByteCode_dxc(
-				fullFileName.c_str(),
-				shader.entryPoint.c_str(),
-				shaderModel,
-				defines.size() > 0 ? defines.data() : nullptr,
-				compileShadersForDebug,
-				renderGraph.settings.dx12.DXC_HLSL_2021,
+				shaderCompilationInfo,
 				logFn,
 				&allShaderFiles
 			);

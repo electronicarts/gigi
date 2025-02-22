@@ -68,21 +68,17 @@ util::BlueprintNodeBuilder::BlueprintNodeBuilder(ImTextureID texture, int textur
 {
 }
 
-void util::BlueprintNodeBuilder::Begin(ed::NodeId id, bool isResourceNode, bool isDisabled)
+void util::BlueprintNodeBuilder::Begin(ed::NodeId id, NodeStyle nodeStyle, bool isDisabled)
 {
     HasHeader  = false;
     HeaderMin = HeaderMax = ImVec2();
 
-    // colors like Frostbite FrameGraph
-    // slide 17 https://www.slideshare.net/DICEStudio/framegraph-extensible-rendering-architecture-in-frostbite
-    ImColor color = isResourceNode ? ImColor(128, 128, 255, 128) : ImColor(255, 128, 64, 128);
-
     if (isDisabled)
-        color.Value.w /= 4.0f;
+        nodeStyle.color.Value.w /= 4.0f;
 
     ed::PushStyleVar(StyleVar_NodePadding, ImVec4(3, 3, 3, 3));
-	ed::PushStyleVar(StyleVar_NodeRounding, isResourceNode ? 0.0f : 12.0f);
-	ed::PushStyleColor(ed::StyleColor_NodeBg, color);
+	ed::PushStyleVar(StyleVar_NodeRounding, nodeStyle.rounding);
+	ed::PushStyleColor(ed::StyleColor_NodeBg, nodeStyle.color);
 	ed::PushStyleColor(ed::StyleColor_NodeBorder, ImColor(0, 0, 0, 64));
 
     ed::BeginNode(id);

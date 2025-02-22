@@ -47,3 +47,4 @@
 #define SCHEMA_FLAG_UI_MULTILINETEXT		((size_t) (1 << 5))  // if true, the text edit box is multiline
 #define SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX		((size_t) (1 << 6))  // If true, does not show the index of array items
 #define SCHEMA_FLAG_UI_CONST				((size_t) (1 << 7))  // If true, does not allow field to be edited
+#define SCHEMA_FLAG_UI_COLOR				((size_t) (1 << 8))  // If true, this value will be displayed as a color picker.

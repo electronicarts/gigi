@@ -912,6 +912,9 @@ struct ReferenceFixupVisitor
             return true;
         visitedNode[data.nodeIndex] = true;
 
+        // Make sure the indirect buffer is resolved too
+        Visit(data.dispatchSize.indirectBuffer, path);
+
         int connectionIndex = -1;
         Shader& shader = *data.shader.shader;
         for (NodePinConnection& connection : data.connections)

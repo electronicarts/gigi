@@ -192,27 +192,33 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     {
         // shader defines, including built in ones
         {
+			stringReplacementMap["/*$(CreateShared)*/"] <<
+				"\n"
+				"\n            ShaderCompilationInfo shaderCompilationInfo;"
+				"\n            shaderCompilationInfo.shaderModel = \"" << renderGraph.settings.dx12.shaderModelRayShaders << "\";"
+				"\n            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;";
+
+			if (renderGraph.settings.dx12.DXC_HLSL_2021)
+			{
+				stringReplacementMap["/*$(CreateShared)*/"] <<
+					"\n            shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;";
+			}
+
+			for (const ShaderDefine& define : node.shader.shader->defines)
+			{
+				stringReplacementMap["/*$(CreateShared)*/"] <<
+					"\n            shaderCompilationInfo.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
+			}
+
+			for (const ShaderDefine& define : node.defines)
+			{
+				stringReplacementMap["/*$(CreateShared)*/"] <<
+					"\n            shaderCompilationInfo.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
+			}
+
             stringReplacementMap["/*$(CreateShared)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO defines[] = {";
-
-            for (const ShaderDefine& define : node.defines)
-            {
-                stringReplacementMap["/*$(CreateShared)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
-
-            for (const ShaderDefine& define : node.shader.shader->defines)
-            {
-                stringReplacementMap["/*$(CreateShared)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
-
-            stringReplacementMap["/*$(CreateShared)*/"] <<
-                "\n                { \"MAX_RECURSION_DEPTH\", \"" << node.maxRecursionDepth << "\" },"
-                "\n                { \"RT_HIT_GROUP_COUNT\", \"" << node.shader.shader->Used_RTHitGroupIndex.size() << "\" },"
-                "\n                { nullptr, nullptr }"
-                "\n            };";
+                "\n                shaderCompilationInfo.defines.emplace_back(\"MAX_RECURSION_DEPTH\",\"" << node.maxRecursionDepth << "\");"
+                "\n                shaderCompilationInfo.defines.emplace_back(\"RT_HIT_GROUP_COUNT\",\"" << node.shader.shader->Used_RTHitGroupIndex.size() << "\");";
         }
 
         // compile shaders
@@ -227,7 +233,8 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             stringReplacementMap["/*$(CreateShared)*/"] <<
                 "\n"
                 "\n            // Compile " << EnumToString(shaderExports[i].shaderType) << " : " << shaderExports[i].fileName << " " << shaderExports[i].entryPoint << "()"
-                "\n            shaderCode[" << i << "] = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << shaderExports[i].fileName << "\", \"\", \"lib_6_3\", defines, c_debugShaders, Context::LogFn);"
+				"\n            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << shaderExports[i].fileName << "\";"
+                "\n            shaderCode[" << i << "] = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfo, Context::LogFn);"
                 "\n            if (shaderCode[" << i << "].empty())"
                 "\n                return false;";
         }

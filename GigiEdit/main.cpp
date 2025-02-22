@@ -89,6 +89,7 @@ struct DataWindowState
 {
     bool show = true;
     size_t selectedIndex = 0;
+    std::string searchQuery;
 };
 
 bool g_resetLayout = true;
@@ -1640,20 +1641,76 @@ struct Example :
 			ShowUIToolTip("Down to Bottom");
         }
 
+        // Search bar
+        {
+			constexpr float searchBarHeight = 32.f;
+            std::string childId = "##" + std::string(dataName) + "SearchBar";
+            std::string inputId = "##" + std::string(dataName) + "searchInputStr";
+
+			ImGui::BeginChild(childId.c_str(), {ImGui::GetContentRegionAvail().x, searchBarHeight});
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().WindowPadding.x);
+			ImGui::InputTextWithHint(inputId.c_str(), "Search...", &windowState.searchQuery);
+			ImGui::PopItemWidth();
+			ImGui::EndChild();
+        }
+
+		struct DataInfo
+		{
+			std::string name;
+			size_t index;
+		};
+
+		std::vector<DataInfo> filteredData;
+        filteredData.reserve(dataList.size());
+
+        for (size_t index = 0; index < dataList.size(); index++)
+        {
+            std::string dataName = NameLambda(index, dataList[index]);
+            if (dataName.empty())
+            {
+                dataName = "<empty>";
+            }
+
+            if (!windowState.searchQuery.empty() && StringFindForceLowercase(dataName, windowState.searchQuery) == std::string::npos)
+            {
+                continue;
+            }
+
+            filteredData.push_back({ dataName, index });
+        }
+
+        // Sort by levenshtein distance
+        if (!windowState.searchQuery.empty())
+        {
+			std::unordered_map<std::string, int32_t> levenshteinScore;
+
+			for (const auto& data : filteredData)
+			{
+				levenshteinScore[data.name] = LevenshteinDistance(windowState.searchQuery, data.name);
+			}
+
+			std::sort(filteredData.begin(), filteredData.end(),
+				[&levenshteinScore](const DataInfo& a, const DataInfo& b)
+				{
+					return levenshteinScore.at(a.name) < levenshteinScore.at(b.name);
+				}
+			);
+        }
+
         // show the list of items and let them be selectable
         if (ImGui::BeginListBox("##items", ImVec2(300.0f, -FLT_MIN)))
         {
-            for (size_t index = 0; index < dataList.size(); ++index)
+            for (size_t index = 0; index < filteredData.size(); ++index)
             {
-                std::string itemName = NameLambda(index, dataList[index]);
-                if (itemName.empty())
-                    itemName = "<empty>";
+                auto& data = filteredData.at(index);
 
-                ImGui::PushID(itemName.c_str());
+                ImGui::PushID(data.name.c_str());
 
-                bool isSelected = index == selectedIndex;
-                if (ImGui::Selectable(itemName.c_str(), &isSelected))
-                    selectedIndex = index;
+                DrawMatchingStringBackground(windowState.searchQuery, data.name);
+
+                bool isSelected = data.index == selectedIndex;
+                if (ImGui::Selectable(data.name.c_str(), &isSelected))
+                    selectedIndex = data.index;
 
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
@@ -2216,6 +2273,42 @@ struct Example :
         }
     }
 
+    ax::NodeEditor::Utilities::NodeStyle GetNodeStyle(const RenderGraphNode& node)
+    {
+        auto GetColorFromArray = [](const std::array<float, 3>& arr, int32_t alpha) -> ImColor
+        {
+            return ImColor(arr[0], arr[1], arr[2], float(alpha) / 255.f);
+        };
+
+		// Default colors are from Frostbite FrameGraph
+        // slide 17 https://www.slideshare.net/DICEStudio/framegraph-extensible-rendering-architecture-in-frostbite
+
+        ax::NodeEditor::Utilities::NodeStyle result;
+        result.rounding = 12.f;
+        result.color = GetColorFromArray(g_renderGraph.styleSettings.actionNodeColor, 128);
+
+        if (GetNodeIsResourceNode(node))
+        {
+            result.rounding = 0.f;
+
+            bool isTransient = false;
+
+            // Use a different color for non transient resources.
+            if (node._index == RenderGraphNode::c_index_resourceBuffer)
+            {
+                isTransient = node.resourceBuffer.transient;
+            }
+            else if (node._index == RenderGraphNode::c_index_resourceTexture)
+            {
+                isTransient = node.resourceTexture.transient;
+            }
+
+            result.color = isTransient ? GetColorFromArray(g_renderGraph.styleSettings.resourceNodeColor, 128) : GetColorFromArray(g_renderGraph.styleSettings.nonTransientResourceNodeColor, 128);
+        }
+
+        return result;
+    }
+
     void OnFrame(float deltaTime) override
     {
         //ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(nullptr);
@@ -2352,7 +2445,7 @@ struct Example :
                 }
             );
 
-            builder.Begin(nodeEditorId, GetNodeIsResourceNode(node), nodeDisabled);
+            builder.Begin(nodeEditorId, GetNodeStyle(node), nodeDisabled);
 
             if (g_renderGraphFirstFrame)
             {

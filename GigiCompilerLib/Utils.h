@@ -11,6 +11,16 @@
 #include "gigicompiler.h"
 // clang-format on
 
+#define SETUP_ENUM_CLASS_OPERATORS(enumType) \
+	inline           enumType& operator|=(enumType& Lhs, enumType Rhs) { return Lhs = (enumType)((std::underlying_type_t<enumType>)Lhs | (std::underlying_type_t<enumType>)Rhs); } \
+	inline           enumType& operator&=(enumType& Lhs, enumType Rhs) { return Lhs = (enumType)((std::underlying_type_t<enumType>)Lhs & (std::underlying_type_t<enumType>)Rhs); } \
+	inline           enumType& operator^=(enumType& Lhs, enumType Rhs) { return Lhs = (enumType)((std::underlying_type_t<enumType>)Lhs ^ (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr enumType  operator| (enumType  Lhs, enumType Rhs) { return (enumType)((std::underlying_type_t<enumType>)Lhs | (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr enumType  operator& (enumType  Lhs, enumType Rhs) { return (enumType)((std::underlying_type_t<enumType>)Lhs & (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr enumType  operator^ (enumType  Lhs, enumType Rhs) { return (enumType)((std::underlying_type_t<enumType>)Lhs ^ (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr bool  operator! (enumType e)             { return !(std::underlying_type_t<enumType>)e; } \
+	inline constexpr enumType  operator~ (enumType e)             { return (enumType)~(std::underlying_type_t<enumType>)e; }
+
 enum class LogLevel
 {
 	Info,
