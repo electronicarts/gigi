@@ -100,8 +100,6 @@ Stephane Levesque
 
 Tristan Calderbank
 
-Jan Werbrouck
-
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)
 
 # Contributing
