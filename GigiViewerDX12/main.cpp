@@ -2720,8 +2720,8 @@ void ShowSystemVariables()
         ShowVariableDropDown("Jittered Projection Matrix", DataFieldType::Float4x4, g_systemVariables.JitteredProjMtx_varName);
         ShowVariableDropDown("Inverse Jittered Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvJitteredProjMtx_varName);
 
-        ShowVariableDropDown("Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.ViewProjMtx_varName);
-        ShowVariableDropDown("Inverse Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvViewProjMtx_varName);
+        ShowVariableDropDown("Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.JitteredViewProjMtx_varName);
+        ShowVariableDropDown("Inverse Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvJitteredViewProjMtx_varName);
 
         ShowVariableDropDown("Camera Jitter", DataFieldType::Float2, g_systemVariables.CameraJitter_varName);
         ShowVariableDropDown("Camera FOV", DataFieldType::Float, g_systemVariables.CameraFOV_varName);
