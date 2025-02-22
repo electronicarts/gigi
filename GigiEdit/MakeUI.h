@@ -509,12 +509,6 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
         for (int index = (int)TDYNAMICARRAY_SIZE(value) - 1; index > duplicateIndex; --index)
             value[index] = value[index - 1];
 
-        // avoid names clashing
-        if constexpr (std::is_same_v<T, ShaderResource>)
-        {
-            value[duplicateIndex + 1].name += "[Copy]";
-        }
-
         // we modified the render graph
         ret = true;
     }
@@ -2153,10 +2147,28 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
         {
             // find which index was added from the oldResources array. Note that it may have been the last one.
             int index = 0;
-            while (index < value.resources.size() && value.resources[index].name == oldResources[index].name)
+
+            while (index < value.resources.size() 
+                && index < oldResources.size() 
+                && value.resources[index].name == oldResources[index].name)
                 index++;
 
-            // TODO: check and add suffix to name if necessary so don't clash
+            // make sure name is unique
+            bool isUnique = false;
+            while (!isUnique)
+            {
+                isUnique = true;
+                for (const ShaderResource& old : oldResources)
+                {
+                    if (old.name == value.resources[index].name)
+                    {
+                        isUnique = false; // wasn't unique, check the version with the suffix
+                        value.resources[index].name += " Copy";
+                        break;
+                    }
+                }
+            }
+            
             OnShaderResourceAdd(value, value.resources[index].name);
         }
         // If a resource was deleted, we need to unhook everything that was plugged into that pin
@@ -2182,12 +2194,20 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                     if (index + 1 < value.resources.size() && value.resources[index + 1].name != oldResources[index + 1].name)
                         break;
 
-                    // otherwise it's a rename
-
-                    // TODO: check and add suffix to name if necessary so don't clash
-                    // alternative, don't change the name until there is no duplicate anymore, and give warning 
-                    // visual warning to the player that the name is invalid. e.g. red text.
-                    OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
+                    // otherwise it's a rename --- don't allow duplicates
+                    // // this doesn't reallydo anything except not call the callback, it  
+                    bool isUnique = true;
+                    for (const ShaderResource& old : oldResources)
+                    {
+                        if (old.name == value.resources[index].name)
+                        {
+                            isUnique = false; // wasn't unique, check the version with the suffix
+                            value.resources[index].name = oldResources[index].name;
+                            break;
+                        }
+                    }
+                    if (isUnique)
+                        OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
                     break;
                 }
             }

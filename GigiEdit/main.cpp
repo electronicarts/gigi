@@ -167,16 +167,18 @@ void OnShaderResourceDelete(const Shader& shader, const std::string& resourceNam
             {
                 if (node.actionRayShader.shader.name != shader.name)
                     continue;
-
-                node.actionRayShader.connections.erase(
-                    std::remove_if(
-                        node.actionRayShader.connections.begin(),
-                        node.actionRayShader.connections.end(),
-                        [&](const NodePinConnection& connection) { return connection.srcPin == resourceName; }),
-                    node.actionRayShader.connections.end()
-                );
-
                 shaderNodes.push_back(node.actionRayShader.name);
+                break;
+            }
+            case RenderGraphNode::c_index_actionDrawCall:
+            {
+                if (node.actionDrawCall.pixelShader.name != shader.name
+                    && node.actionDrawCall.vertexShader.name != shader.name
+                    && node.actionDrawCall.amplificationShader.name != shader.name
+                    && node.actionDrawCall.meshShader.name != shader.name)
+                    continue;
+
+                shaderNodes.push_back(node.actionDrawCall.name);
                 break;
             }
         }
@@ -244,7 +246,10 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
             }
             case RenderGraphNode::c_index_actionDrawCall:
             {
-                if (node.actionDrawCall.vertexShader.name != shader.name && node.actionDrawCall.pixelShader.name != shader.name)
+                if (node.actionDrawCall.vertexShader.name != shader.name 
+                    && node.actionDrawCall.pixelShader.name != shader.name
+                    && node.actionDrawCall.meshShader.name != shader.name
+                    && node.actionDrawCall.amplificationShader.name != shader.name)
                     continue;
                 shaderNodes.push_back(shader.name);
 

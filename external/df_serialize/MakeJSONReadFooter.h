@@ -272,6 +272,105 @@ inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
             }
             renderGraph.version = "0.99b";
         }
+        else if (renderGraph.version == "0.99b")
+        {
+            renderGraph.versionUpgradedMessage += 
+                R"(
+                 reordered links and nodes in the code.
+                )";
+
+            auto GetShaderIndexByName = [](const RenderGraph& renderGraph, ShaderType shaderType, const char* name)
+                {
+                    // Get the shader the shader reference
+                    for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+                    {
+                        if (shaderType != ShaderType::Count && renderGraph.shaders[index].type != shaderType)
+                            continue;
+
+                        if (!_stricmp(renderGraph.shaders[index].name.c_str(), name))
+                            return index;
+                    }
+                    return -1;
+                };
+            auto RebuildNodes = [](const RenderGraph& renderGraph, int shaderIndex, RenderGraphNode_ActionBase& node, size_t nodeOffset)
+            {
+                size_t numNewConnections = 0;
+
+                if (shaderIndex != -1)
+                {
+                    const Shader& shader = renderGraph.shaders[shaderIndex];
+
+                    std::vector<NodePinConnection> ogNodes = node.connections;
+                    std::vector<LinkProperties> ogLinks = node.linkProperties;
+
+                    for (size_t dstIdx = 0; dstIdx < shader.resources.size(); dstIdx++)
+                    {
+                        size_t dstNodeIdx = nodeOffset + dstIdx;
+                        const ShaderResource& resource = shader.resources[dstIdx];
+
+                        bool found = false;
+                        for (size_t srcNodeIdx = 0; srcNodeIdx < ogNodes.size(); srcNodeIdx++)
+                        {
+                            if (ogNodes[srcNodeIdx].srcPin == resource.name)
+                            {
+                                found = true;
+                                node.connections[dstNodeIdx] = ogNodes[srcNodeIdx];
+                                node.linkProperties[dstNodeIdx] = ogLinks[dstNodeIdx];
+                                break;
+                            }
+                        }
+
+                    numNewConnections++;
+                    }
+                }
+
+                return numNewConnections;
+            };
+
+            for (RenderGraphNode& node : renderGraph.nodes)
+            {
+                switch (node._index)
+                {
+                case RenderGraphNode::c_index_actionComputeShader:
+                    {
+                        RenderGraphNode_Action_ComputeShader& computeNode = node.actionComputeShader;
+                        int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, computeNode.shader.name.c_str());
+                        size_t numNewConnections = RebuildNodes(renderGraph, shaderIndex, computeNode, 0);
+                        computeNode.connections.resize(numNewConnections);
+                    }
+                    break;
+                case RenderGraphNode::c_index_actionRayShader:
+                    {
+                        RenderGraphNode_Action_RayShader& rayNode = node.actionRayShader;
+                        int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::RTRayGen, rayNode.shader.name.c_str());
+                        size_t numNewConnections = RebuildNodes(renderGraph, shaderIndex, rayNode, 0);
+                        rayNode.connections.resize(numNewConnections);
+                    }
+                    break;
+                case RenderGraphNode::c_index_actionDrawCall:
+                    {
+                        RenderGraphNode_Action_DrawCall& dcNode = node.actionDrawCall;
+                        size_t numNewConnections = 0;
+
+                        int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Vertex, dcNode.vertexShader.name.c_str());
+                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
+                        shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Pixel, dcNode.pixelShader.name.c_str());
+                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
+                        shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Amplification, dcNode.amplificationShader.name.c_str());
+                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
+                        shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Mesh, dcNode.meshShader.name.c_str());
+                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
+
+                        dcNode.connections.resize(numNewConnections);
+                    }
+                    break;
+                }
+
+            }
+
+
+            renderGraph.version = "0.991b";
+        }
         else
         {
             return false;
