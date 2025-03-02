@@ -138,8 +138,8 @@ bool parseLine(const Char*& p, std::string& Out)
 	return !Out.empty();
 }
 
-// @param c charcter we look for
-// @param str null terminated set of charcters, e.g. ";'?", must not be 0
+// @param c character we look for
+// @param str null terminated set of characters, e.g. ";'?", must not be 0
 // @return true if in set
 bool isInSet(const Char c, const char *str)
 {
