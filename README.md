@@ -84,6 +84,10 @@ Berk Emre Saribas
 
 Chris Lewin
 
+Christian Deiss
+
+Gabriel Kannenberg
+
 Ivar Jönsson
 
 Jan Werbrouck
@@ -99,6 +103,8 @@ Richard Raquepo
 Stephane Levesque
 
 Tristan Calderbank
+
+William Donnelly
 
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)
 

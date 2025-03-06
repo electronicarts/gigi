@@ -1,5 +1,6 @@
 **/.vs/*
 **/Debug/*
+**/enc_temp_folder/*
 **/Release/*
 **/out/**/*.obj
 Debug-windows-x86_64/

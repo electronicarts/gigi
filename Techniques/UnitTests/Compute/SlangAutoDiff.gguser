@@ -1,53 +1,46 @@
 {
+    "version": "2.0",
     "systemVars": {
         "iResolution_textureName": "Output",
         "iFrame_varName": "FrameIndex"
     },
-    "resourceViewNodeIndex": 2,
-    "resourceViewResourceIndex": 3,
-    "importedResources": [
-        {
-            "nodeName": "Output",
-            "texture": {
-                "size": [
-                    512,
-                    512,
-                    1
-                ],
-                "format": "RGBA8_Unorm"
+    "snapshot": {
+        "resourceViewNodeIndex": 2,
+        "resourceViewResourceIndex": 3,
+        "importedResources": [
+            {
+                "nodeName": "Output",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "format": "RGBA8_Unorm"
+                }
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "NumGaussians",
-            "value": "10"
-        },
-        {
-            "name": "LearningRate",
-            "value": "0.100000"
-        },
-        {
-            "name": "MaximumStepSize",
-            "value": "0.010000"
-        },
-        {
-            "name": "UseBackwardAD",
-            "value": "true"
-        },
-        {
-            "name": "QuantizeDisplay",
-            "value": "true"
-        }
-    ],
-    "bookmarks": [
-        {
-            "name": "Data",
-            "viewableResourceDisplayName": "GradientDescend.Data: Data (UAV - After)"
-        },
-        {
-            "name": "Output",
-            "viewableResourceDisplayName": "Render.Output: Output (UAV - After)"
-        }
-    ]
+        ],
+        "savedVariables": [
+            {
+                "name": "NumGaussians",
+                "value": "10"
+            },
+            {
+                "name": "LearningRate",
+                "value": "0.100000"
+            },
+            {
+                "name": "MaximumStepSize",
+                "value": "0.010000"
+            },
+            {
+                "name": "UseBackwardAD",
+                "value": "true"
+            },
+            {
+                "name": "QuantizeDisplay",
+                "value": "true"
+            }
+        ]
+    }
 }
