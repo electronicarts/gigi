@@ -4825,7 +4825,7 @@ void CopyImageToClipBoard(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC 
 
             for (int y = 0; y < decodedHeight; ++y)
             {
-                const unsigned char* src = &decodedPixels[(zIndex * decodedHeight + y) * decodedWidth * decodedFormatInfo.bytesPerPixel];
+                const unsigned char* src = &decodedPixels[y * decodedWidth * decodedFormatInfo.bytesPerPixel];
                 unsigned char* dest = (unsigned char*)buffer + sizeof(header) + (decodedHeight - 1 - y) * decodedWidth * 4;
 
                 for (int x = 0; x < decodedWidth; ++x)
@@ -5621,6 +5621,11 @@ void ShowResourceView()
                                 }
                                 g_resourceView.mouseWasDownLastFrame = io.MouseDown[0];
                             }
+                        }
+                        else
+                        {
+							g_resourceView.systemVarMouseState[2] = 0.0f;
+							g_resourceView.systemVarMouseState[3] = 0.0f;
                         }
 						ImGui::EndChild();
 
@@ -7265,6 +7270,11 @@ int main(int argc, char** argv)
                 g_runPyArgs.push_back(ToWideString(argv[argumentIndex]));
 
             break;
+        }
+        else if (!_stricmp(argv[argIndex], "-logdebuglayer"))
+        {
+            g_debugLayerShown = true;
+            argIndex++;
         }
         else if (!_stricmp(argv[argIndex], "-nodebuglayer"))
         {

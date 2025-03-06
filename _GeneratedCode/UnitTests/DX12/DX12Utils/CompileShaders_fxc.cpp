@@ -88,7 +88,7 @@ static ID3DBlob* CompileShaderToByteCode_Private(
 	IncludeHandlerFXC include(shaderDir.c_str());
 
 	std::vector<D3D_SHADER_MACRO> d3dMacros;
-	d3dMacros.reserve(shaderInfo.defines.size());
+    d3dMacros.reserve(shaderInfo.defines.size() + 1);
 	for (const auto& shaderDefine : shaderInfo.defines)
 	{
 		if (!shaderDefine.name.empty() && !shaderDefine.value.empty())
@@ -98,6 +98,10 @@ static ID3DBlob* CompileShaderToByteCode_Private(
 			macro.Definition = shaderDefine.value.c_str();
 		}
 	}
+
+    D3D_SHADER_MACRO& macro = d3dMacros.emplace_back();
+    macro.Name = nullptr;
+    macro.Definition = nullptr;
 
     HRESULT hr = D3DCompileFromFile(shaderInfo.fileName.c_str(), d3dMacros.data(), &include, shaderInfo.entryPoint.c_str(), shaderInfo.shaderModel.c_str(), compileFlags, 0, &shader, &error);
 
