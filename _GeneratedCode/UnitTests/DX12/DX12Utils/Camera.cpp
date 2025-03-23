@@ -30,7 +30,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
         }
 
         altitudeAzimuth[0] += dy * m_mouseSensitivity;
-        altitudeAzimuth[0] = std::max(std::min(altitudeAzimuth[0], c_pi * 0.95f), -c_pi * 0.95f);
+        altitudeAzimuth[0] = std::max(std::min(altitudeAzimuth[0], c_pi * 0.49f), -c_pi * 0.49f);
 
         altitudeAzimuth[1] += dx * m_mouseSensitivity;
         if (altitudeAzimuth[1] < 0.0f)
