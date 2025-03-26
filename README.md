@@ -106,6 +106,8 @@ Tristan Calderbank
 
 William Donnelly
 
+Kyle Bostelmann
+
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)
 
 # Contributing
