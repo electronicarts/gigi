@@ -1069,7 +1069,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 							break;
 						}
 						default: {
-							m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because is not supported", node.name.c_str());
+							m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
 							break;
 						}
 						}
@@ -1622,7 +1622,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				break;
 			}
 			default: {
-				m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because is not supported", node.name.c_str());
+				m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
 				break;
 			}
 			}
