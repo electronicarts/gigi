@@ -1054,17 +1054,41 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					// transition
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE, GetNodeName(resourceNode).c_str()) });
 
-					ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
-					if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
+					bool sparseSampling = false;
+					D3D12_FEATURE_DATA_D3D12_OPTIONS6 options;
+					if (S_OK == m_device->CheckFeatureSupport(
+						D3D12_FEATURE_D3D12_OPTIONS6,
+						&options,
+						sizeof(options)))
 					{
-						m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
-						return false;
+						switch (options.VariableShadingRateTier) {
+						case D3D12_VARIABLE_SHADING_RATE_TIER_1:
+						case D3D12_VARIABLE_SHADING_RATE_TIER_2:
+						{
+							sparseSampling = true;
+							break;
+						}
+						default: {
+							m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
+							break;
+						}
+						}
 					}
 
-					// Set the shading rate image
-					VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
+					if (sparseSampling)
+					{
+						ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
+						if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
+						{
+							m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
+							return false;
+						}
 
-					VRSCommandList->Release();
+						// Set the shading rate image
+						VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
+
+						VRSCommandList->Release();
+					}
 				}
 			}
 		}
@@ -1584,7 +1608,28 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		m_commandList->OMSetRenderTargets((UINT)colorTargetHandles.size(), colorTargetHandles.data(), false, depthTargetHandlePtr);
 		m_commandList->OMSetStencilRef(node.stencilRef);
 
+		bool sparseSampling = false;
+		D3D12_FEATURE_DATA_D3D12_OPTIONS6 options;
+		if (S_OK == m_device->CheckFeatureSupport(
+			D3D12_FEATURE_D3D12_OPTIONS6,
+			&options,
+			sizeof(options)))
+		{
+			switch (options.VariableShadingRateTier) {
+			case D3D12_VARIABLE_SHADING_RATE_TIER_1:
+			case D3D12_VARIABLE_SHADING_RATE_TIER_2: {
+				sparseSampling = true;
+				break;
+			}
+			default: {
+				m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
+				break;
+			}
+			}
+		}
+
 		// variable rate shading - set sparse sampling
+		if (sparseSampling)
 		{
 			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
@@ -1729,6 +1774,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		}
 
 		// variable rate shading - set it back to dense sampling
+		if (sparseSampling)
 		{
 			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
