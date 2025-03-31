@@ -105,6 +105,8 @@ bool ReadFromJSONFile(TROOT& root, const char* fileName, bool fileMustExist = tr
     return ReadFromJSONBuffer(root, fileData);
 }
 
+inline bool RebuildConnections_PostLoad(RenderGraph& renderGraph);
+
 // version fixup
 inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
 {
@@ -274,100 +276,12 @@ inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
         }
         else if (renderGraph.version == "0.99b")
         {
-            renderGraph.versionUpgradedMessage += 
+            renderGraph.versionUpgradedMessage +=
                 R"(
-                 reordered links and nodes in the code.
+                 reordered node connections in the code.
                 )";
 
-            auto GetShaderIndexByName = [](const RenderGraph& renderGraph, ShaderType shaderType, const char* name)
-                {
-                    // Get the shader the shader reference
-                    for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
-                    {
-                        if (shaderType != ShaderType::Count && renderGraph.shaders[index].type != shaderType)
-                            continue;
-
-                        if (!_stricmp(renderGraph.shaders[index].name.c_str(), name))
-                            return index;
-                    }
-                    return -1;
-                };
-            auto RebuildNodes = [](const RenderGraph& renderGraph, int shaderIndex, RenderGraphNode_ActionBase& node, size_t nodeOffset)
-            {
-                size_t numNewConnections = 0;
-
-                if (shaderIndex != -1)
-                {
-                    const Shader& shader = renderGraph.shaders[shaderIndex];
-
-                    std::vector<NodePinConnection> ogNodes = node.connections;
-                    std::vector<LinkProperties> ogLinks = node.linkProperties;
-
-                    for (size_t dstIdx = 0; dstIdx < shader.resources.size(); dstIdx++)
-                    {
-                        size_t dstNodeIdx = nodeOffset + dstIdx;
-                        const ShaderResource& resource = shader.resources[dstIdx];
-
-                        bool found = false;
-                        for (size_t srcNodeIdx = 0; srcNodeIdx < ogNodes.size(); srcNodeIdx++)
-                        {
-                            if (ogNodes[srcNodeIdx].srcPin == resource.name)
-                            {
-                                found = true;
-                                node.connections[dstNodeIdx] = ogNodes[srcNodeIdx];
-                                node.linkProperties[dstNodeIdx] = ogLinks[dstNodeIdx];
-                                break;
-                            }
-                        }
-
-                    numNewConnections++;
-                    }
-                }
-
-                return numNewConnections;
-            };
-
-            for (RenderGraphNode& node : renderGraph.nodes)
-            {
-                switch (node._index)
-                {
-                case RenderGraphNode::c_index_actionComputeShader:
-                    {
-                        RenderGraphNode_Action_ComputeShader& computeNode = node.actionComputeShader;
-                        int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, computeNode.shader.name.c_str());
-                        size_t numNewConnections = RebuildNodes(renderGraph, shaderIndex, computeNode, 0);
-                        computeNode.connections.resize(numNewConnections);
-                    }
-                    break;
-                case RenderGraphNode::c_index_actionRayShader:
-                    {
-                        RenderGraphNode_Action_RayShader& rayNode = node.actionRayShader;
-                        int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::RTRayGen, rayNode.shader.name.c_str());
-                        size_t numNewConnections = RebuildNodes(renderGraph, shaderIndex, rayNode, 0);
-                        rayNode.connections.resize(numNewConnections);
-                    }
-                    break;
-                case RenderGraphNode::c_index_actionDrawCall:
-                    {
-                        RenderGraphNode_Action_DrawCall& dcNode = node.actionDrawCall;
-                        size_t numNewConnections = 0;
-
-                        int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Vertex, dcNode.vertexShader.name.c_str());
-                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
-                        shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Pixel, dcNode.pixelShader.name.c_str());
-                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
-                        shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Amplification, dcNode.amplificationShader.name.c_str());
-                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
-                        shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Mesh, dcNode.meshShader.name.c_str());
-                        numNewConnections += RebuildNodes(renderGraph, shaderIndex, dcNode, numNewConnections);
-
-                        dcNode.connections.resize(numNewConnections);
-                    }
-                    break;
-                }
-
-            }
-
+            RebuildConnections_PostLoad(renderGraph);
 
             renderGraph.version = "0.991b";
         }
@@ -378,4 +292,97 @@ inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
     }
 
     return true;
+}
+
+inline void BuildConnections(const RenderGraph& renderGraph, int shaderIndex, std::vector<NodePinConnection>& newConnections, const std::vector<NodePinConnection>& oldConnections);
+inline bool RebuildConnections_PostLoad(RenderGraph& renderGraph)
+{
+    auto GetShaderIndexByName = [](const RenderGraph& renderGraph, ShaderType shaderType, const char* name)
+        {
+            // Get the shader the shader reference
+            for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+            {
+                if (shaderType != ShaderType::Count && renderGraph.shaders[index].type != shaderType)
+                    continue;
+
+                if (!_stricmp(renderGraph.shaders[index].name.c_str(), name))
+                    return index;
+            }
+            return -1;
+        };
+
+    for (RenderGraphNode& node : renderGraph.nodes)
+    {
+        std::vector<NodePinConnection> newConnections{};
+
+        switch (node._index)
+        {
+        case RenderGraphNode::c_index_actionComputeShader:
+        {
+            RenderGraphNode_Action_ComputeShader& computeNode = node.actionComputeShader;
+            int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, computeNode.shader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, computeNode.connections);
+
+            // get rid of all unnecessary connections (now all at the back of the vector)
+            computeNode.connections.swap(newConnections);
+        }
+        break;
+        case RenderGraphNode::c_index_actionRayShader:
+        {
+            RenderGraphNode_Action_RayShader& rayNode = node.actionRayShader;
+            int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::RTRayGen, rayNode.shader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, rayNode.connections);
+
+            // get rid of all unnecessary connections (now all at the back of the vector)
+            rayNode.connections.swap(newConnections);
+        }
+        break;
+        case RenderGraphNode::c_index_actionDrawCall:
+        {
+            RenderGraphNode_Action_DrawCall& dcNode = node.actionDrawCall;
+
+            int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Vertex, dcNode.vertexShader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, dcNode.connections);
+            shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Pixel, dcNode.pixelShader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, dcNode.connections);
+            shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Amplification, dcNode.amplificationShader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, dcNode.connections);
+            shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Mesh, dcNode.meshShader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, dcNode.connections);
+
+            // get rid of all unnecessary connections (now all at the back of the vector)
+            dcNode.connections.swap(newConnections);
+        }
+        break;
+        }
+    }
+    return true;
+}
+
+inline void BuildConnections(const RenderGraph& renderGraph, int shaderIndex, std::vector<NodePinConnection>& newConnections ,const std::vector<NodePinConnection>& oldConnections)
+{
+    if (shaderIndex > -1 && shaderIndex < renderGraph.shaders.size())
+    {
+        const Shader& shader = renderGraph.shaders[shaderIndex];
+
+        size_t connectionOffset = newConnections.size();
+        for (size_t dstIdx = 0; dstIdx < shader.resources.size(); dstIdx++)
+        {
+            size_t dstConnectionIdx = connectionOffset + dstIdx; // this is the next connection we try to make
+            const ShaderResource& resource = shader.resources[dstIdx]; // corresponding to this shader resource
+
+            // create a default connection
+            newConnections.push_back(NodePinConnection{});
+
+            // try to find that resource's connection in the original node
+            for (size_t srcConnectionIdx = 0; srcConnectionIdx < oldConnections.size(); srcConnectionIdx++)
+            {
+                if (oldConnections[srcConnectionIdx].srcPin == resource.name)
+                {
+                    newConnections[dstConnectionIdx] = oldConnections[srcConnectionIdx];
+                    break;
+                }
+            }
+        }
+    }
 }

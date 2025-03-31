@@ -336,7 +336,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
 }
 
 template <typename NODE_ACTION_SHADER>
-inline size_t RebuildShaderNodePins(const RenderGraph& renderGraph, int shaderIndex, NODE_ACTION_SHADER& node, size_t nodeOffset, std::vector<NodePinInfo>& ret)
+inline size_t RebuildShaderNodePins(const RenderGraph& renderGraph, int shaderIndex, NODE_ACTION_SHADER& node, size_t pinOffset, std::vector<NodePinInfo>& ret)
 {
     size_t numNewConnections = 0;
 
@@ -347,17 +347,17 @@ inline size_t RebuildShaderNodePins(const RenderGraph& renderGraph, int shaderIn
 
         for (size_t dstIdx = 0; dstIdx < shader.resources.size(); dstIdx++)
         {
-            size_t dstNodeIdx = nodeOffset + dstIdx;
+            size_t dstPinIdx = pinOffset + dstIdx;
             const ShaderResource& resource = shader.resources[dstIdx];
 
             bool found = false;
-            for (size_t srcNodeIdx = nodeOffset; srcNodeIdx < node.connections.size(); srcNodeIdx++)
+            for (size_t srcPinIdx = pinOffset; srcPinIdx < node.connections.size(); srcPinIdx++)
             {
-                if (node.connections[srcNodeIdx].srcPin == resource.name)
+                if (node.connections[srcPinIdx].srcPin == resource.name)
                 {
                     found = true;
-                    std::swap(node.connections[dstNodeIdx], node.connections[srcNodeIdx]);
-                    std::swap(node.linkProperties[dstNodeIdx], node.linkProperties[srcNodeIdx]);
+                    std::swap(node.connections[dstPinIdx], node.connections[srcPinIdx]);
+                    std::swap(node.linkProperties[dstPinIdx], node.linkProperties[srcPinIdx]);
                     break;
                 }
             }
@@ -368,15 +368,15 @@ inline size_t RebuildShaderNodePins(const RenderGraph& renderGraph, int shaderIn
                 connection.srcPin = resource.name;
                 LinkProperties link{};
 
-                node.connections.insert(node.connections.begin() + dstNodeIdx, connection);
-                node.linkProperties.insert(node.linkProperties.begin() + dstNodeIdx, link);
+                node.connections.insert(node.connections.begin() + dstPinIdx, connection);
+                node.linkProperties.insert(node.linkProperties.begin() + dstPinIdx, link);
             }
 
             // create pin:
             NodePinInfo pin;
             pin.name = resource.name;
-            pin.inputNode = &node.connections[dstNodeIdx].dstNode;
-            pin.inputNodePin = &node.connections[dstNodeIdx].dstPin;
+            pin.inputNode = &node.connections[dstPinIdx].dstNode;
+            pin.inputNodePin = &node.connections[dstPinIdx].dstPin;
             pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
             ret.push_back(pin);
 
