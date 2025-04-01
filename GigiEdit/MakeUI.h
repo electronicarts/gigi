@@ -2213,8 +2213,7 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                     if (index + 1 < value.resources.size() && value.resources[index + 1].name != oldResources[index + 1].name)
                         break;
 
-                    // otherwise it's a rename --- don't allow duplicates
-                    // // this doesn't reallydo anything except not call the callback, it  
+                    // otherwise it's a rename --- don't allow duplicates though.
                     bool isUnique = true;
                     for (const ShaderResource& old : oldResources)
                     {
