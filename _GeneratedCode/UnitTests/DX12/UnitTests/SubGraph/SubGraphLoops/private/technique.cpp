@@ -85,7 +85,7 @@ namespace SubGraphLoops
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner_FilterSub Iteration 0/SubGraphLoopsBlur.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_0_DoBlur" : "");
@@ -131,7 +131,7 @@ namespace SubGraphLoops
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner_FilterSub Iteration 1/SubGraphLoopsBlur.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_1_DoBlur" : "");
@@ -177,7 +177,7 @@ namespace SubGraphLoops
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner_FilterSub Iteration 2/SubGraphLoopsBlur.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_2_DoBlur" : "");
@@ -223,7 +223,7 @@ namespace SubGraphLoops
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner_FilterSub Iteration 3/SubGraphLoopsBlur.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_3_DoBlur" : "");
@@ -269,7 +269,7 @@ namespace SubGraphLoops
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner/SubGraphLoopsBlur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphLoopsInner_FilterSub Iteration 4/SubGraphLoopsBlur.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "FilterSub_Iteration_4_DoBlur" : "");

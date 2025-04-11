@@ -2164,7 +2164,31 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
         // If a resource was added, let it react
         if (value.resources.size() > oldResources.size())
         {
-            OnShaderResourceAdd(value, value.resources.rbegin()->name);
+            // find which index was added from the oldResources array. Note that it may have been the last one.
+            int index = 0;
+
+            while (index < value.resources.size()
+                && index < oldResources.size()
+                && value.resources[index].name == oldResources[index].name)
+                index++;
+
+            // make sure name is unique
+            bool isUnique = false;
+            while (!isUnique)
+            {
+                isUnique = true;
+                for (const ShaderResource& old : oldResources)
+                {
+                    if (old.name == value.resources[index].name)
+                    {
+                        isUnique = false; // wasn't unique, check the version with the suffix
+                        value.resources[index].name += " Copy";
+                        break;
+                    }
+                }
+            }
+
+            OnShaderResourceAdd(value, value.resources[index].name);
         }
         // If a resource was deleted, we need to unhook everything that was plugged into that pin
         else if (value.resources.size() < oldResources.size())
@@ -2189,8 +2213,20 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                     if (index + 1 < value.resources.size() && value.resources[index + 1].name != oldResources[index + 1].name)
                         break;
 
-                    // otherwise it's a rename
-                    OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
+                    // otherwise it's a rename --- don't allow duplicates
+                    // // this doesn't reallydo anything except not call the callback, it
+                    bool isUnique = true;
+                    for (const ShaderResource& old : oldResources)
+                    {
+                        if (old.name == value.resources[index].name)
+                        {
+                            isUnique = false; // wasn't unique, check the version with the suffix
+                            value.resources[index].name = oldResources[index].name;
+                            break;
+                        }
+                    }
+                    if (isUnique)
+                        OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
                     break;
                 }
             }

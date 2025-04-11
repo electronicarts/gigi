@@ -266,6 +266,8 @@ inline DataFieldTypeInfoStructDX12 DataFieldTypeInfoDX12(DataFieldType type)
         case DataFieldType::Bool: return DATA_FIELD_TYPE_INFO_DX12(uint32_t, 1, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32_UINT, 1);
         case DataFieldType::Float4x4: return DATA_FIELD_TYPE_INFO_DX12(float, 16, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_FLOAT, 16);
         case DataFieldType::Uint_16: return DATA_FIELD_TYPE_INFO_DX12(uint16_t, 1, DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R16_UINT, 1);
+        case DataFieldType::Int_64: return DATA_FIELD_TYPE_INFO_DX12(int64_t, 1, DXGI_FORMAT_R32_SINT, DXGI_FORMAT_R32_SINT, 1);
+        case DataFieldType::Uint_64: return DATA_FIELD_TYPE_INFO_DX12(uint64_t, 1, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32_UINT, 1);
         default:
         {
             Assert(false, "Unknown data field type: %i", type);

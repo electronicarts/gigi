@@ -73,7 +73,7 @@ namespace SubInSub
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubInSubInner2/SubInSubInner2_CS.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubInSubInner2_Inner1.Inner2/SubInSubInner2_CS.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "Inner1_Inner2_Rotate_Colors" : "");

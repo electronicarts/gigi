@@ -70,6 +70,7 @@ public:
 	virtual void SetImportedTextureBinaryFormat(const char* textureName, int textureFormat) = 0;
 	virtual void SetFrameDeltaTime(float seconds) = 0;
 	virtual void SetCameraPos(float X, float Y, float Z) = 0;
+	virtual void SetCameraFOV(float fov) = 0;
 	virtual void SetCameraAltitudeAzimuth(float altitude, float azimuth) = 0;
 	virtual void SetCameraNearFarZ(float nearZ, float farZ) = 0;
 	virtual void SetCameraFlySpeed(float speed) = 0;

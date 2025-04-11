@@ -225,6 +225,9 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 #include "UnitTests\RayTrace\TwoRayGensSubgraph\public\technique.h"
 #include "UnitTests\RayTrace\TwoRayGensSubgraph\public\imgui.h"
 #include "UnitTests\RayTrace\TwoRayGensSubgraph\private\technique.h"
+#include "UnitTests\SubGraph\ConstOverride\public\technique.h"
+#include "UnitTests\SubGraph\ConstOverride\public\imgui.h"
+#include "UnitTests\SubGraph\ConstOverride\private\technique.h"
 #include "UnitTests\SubGraph\SubGraphLoops\public\technique.h"
 #include "UnitTests\SubGraph\SubGraphLoops\public\imgui.h"
 #include "UnitTests\SubGraph\SubGraphLoops\private\technique.h"
@@ -340,6 +343,7 @@ simpleRT::Context* m_simpleRT = nullptr;
 simpleRT_inline::Context* m_simpleRT_inline = nullptr;
 TwoRayGens::Context* m_TwoRayGens = nullptr;
 TwoRayGensSubgraph::Context* m_TwoRayGensSubgraph = nullptr;
+ConstOverride::Context* m_ConstOverride = nullptr;
 SubGraphLoops::Context* m_SubGraphLoops = nullptr;
 SubGraphTest::Context* m_SubGraphTest = nullptr;
 SubInSub::Context* m_SubInSub = nullptr;
@@ -405,6 +409,7 @@ bool g_doTest_simpleRT = false;
 bool g_doTest_simpleRT_inline = false;
 bool g_doTest_TwoRayGens = false;
 bool g_doTest_TwoRayGensSubgraph = false;
+bool g_doTest_ConstOverride = false;
 bool g_doTest_SubGraphLoops = false;
 bool g_doTest_SubGraphTest = false;
 bool g_doTest_SubInSub = false;
@@ -1023,6 +1028,20 @@ int main(int, char**)
         }
     }
 
+    if (!g_doSubsetTest || g_doTest_ConstOverride)
+    {
+        ConstOverride::Context::LogFn = &LogFunction;
+        ConstOverride::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        ConstOverride::Context::PerfEventEndFn = &PerfEventEndFn;
+        ConstOverride::Context::s_techniqueLocation = L".\\UnitTests\\SubGraph\\ConstOverride\\";
+        m_ConstOverride = ConstOverride::CreateContext(g_pd3dDevice);
+        if (!m_ConstOverride)
+        {
+            printf("Could not create m_ConstOverride context");
+            return 1;
+        }
+    }
+
     if (!g_doSubsetTest || g_doTest_SubGraphLoops)
     {
         SubGraphLoops::Context::LogFn = &LogFunction;
@@ -1509,6 +1528,8 @@ int main(int, char**)
             TwoRayGens::MakeUI(m_TwoRayGens, g_pd3dCommandQueue);
         if (m_TwoRayGensSubgraph && ImGui::CollapsingHeader("TwoRayGensSubgraph"))
             TwoRayGensSubgraph::MakeUI(m_TwoRayGensSubgraph, g_pd3dCommandQueue);
+        if (m_ConstOverride && ImGui::CollapsingHeader("ConstOverride"))
+            ConstOverride::MakeUI(m_ConstOverride, g_pd3dCommandQueue);
         if (m_SubGraphLoops && ImGui::CollapsingHeader("SubGraphLoops"))
             SubGraphLoops::MakeUI(m_SubGraphLoops, g_pd3dCommandQueue);
         if (m_SubGraphTest && ImGui::CollapsingHeader("SubGraphTest"))
@@ -1697,6 +1718,8 @@ int main(int, char**)
             TwoRayGens::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_TwoRayGensSubgraph)
             TwoRayGensSubgraph::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_ConstOverride)
+            ConstOverride::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_SubGraphLoops)
             SubGraphLoops::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_SubGraphTest)
@@ -1818,6 +1841,8 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PreExecute);
         if (m_TwoRayGensSubgraph)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PreExecute);
+        if (m_ConstOverride)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ConstOverride, UnitTestEvent::PreExecute);
         if (m_SubGraphLoops)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PreExecute);
         if (m_SubGraphTest)
@@ -1939,6 +1964,8 @@ int main(int, char**)
             TwoRayGens::Execute(m_TwoRayGens, g_pd3dDevice, g_pd3dCommandList);
         if (m_TwoRayGensSubgraph)
             TwoRayGensSubgraph::Execute(m_TwoRayGensSubgraph, g_pd3dDevice, g_pd3dCommandList);
+        if (m_ConstOverride)
+            ConstOverride::Execute(m_ConstOverride, g_pd3dDevice, g_pd3dCommandList);
         if (m_SubGraphLoops)
             SubGraphLoops::Execute(m_SubGraphLoops, g_pd3dDevice, g_pd3dCommandList);
         if (m_SubGraphTest)
@@ -2060,6 +2087,8 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGens, UnitTestEvent::PostExecute);
         if (m_TwoRayGensSubgraph)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_TwoRayGensSubgraph, UnitTestEvent::PostExecute);
+        if (m_ConstOverride)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_ConstOverride, UnitTestEvent::PostExecute);
         if (m_SubGraphLoops)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SubGraphLoops, UnitTestEvent::PostExecute);
         if (m_SubGraphTest)
@@ -2314,6 +2343,11 @@ int main(int, char**)
     {
         TwoRayGensSubgraph::DestroyContext(m_TwoRayGensSubgraph);
         m_TwoRayGensSubgraph = nullptr;
+    }
+    if (m_ConstOverride)
+    {
+        ConstOverride::DestroyContext(m_ConstOverride);
+        m_ConstOverride = nullptr;
     }
     if (m_SubGraphLoops)
     {

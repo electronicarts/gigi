@@ -1,0 +1,30 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 2,
+        "importedResources": [
+            {
+                "nodeName": "Color",
+                "texture": {
+                    "size": [
+                        512,
+                        512,
+                        1
+                    ],
+                    "binaryFormat": "Any"
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "MinX",
+                "value": "0"
+            },
+            {
+                "name": "MaxX",
+                "value": "100"
+            }
+        ]
+    }
+}

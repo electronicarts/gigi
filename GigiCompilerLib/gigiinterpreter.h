@@ -32,6 +32,15 @@ public:
 		void* dflt = nullptr;
 
 		size_t size = 0;
+
+		// If true, the variable was changed in the viewer and should not use the default from the editor
+		bool overrideValue = false;
+		bool systemValue = false;
+
+		bool isDefault() const
+		{
+			return memcmp(value, dflt, size) == 0;
+		}
 	};
 
 	void Clear() { m_storage.Clear(); }
@@ -41,10 +50,12 @@ public:
 	static void SetFromString(const char* text, size_t count, float* value);
 	static void SetFromString(const char* text, size_t count, bool* value);
 	static void SetFromString(const char* text, size_t count, uint16_t* value);
+	static void SetFromString(const char* text, size_t count, int64_t* value);
+	static void SetFromString(const char* text, size_t count, uint64_t* value);
 
 private:
 	template<typename T>
-	Storage Get(const Variable& variable, size_t count, T* dummy)
+	Storage Get(const RenderGraph& renderGraph, const Variable& variable, size_t count, T* dummy)
 	{
 		// Get or create variable storage.
 		// Allocate double the memory needed because we need to store both the value and the default value
@@ -57,10 +68,35 @@ private:
 		Storage ret;
 		ret.size  = sizeof(T) * count;
 		ret.value = storage.data();
-		ret.dflt  = &((char*)ret.value)[ret.size];
+		ret.dflt = &((char*)ret.value)[ret.size];
 
 		// parse the dflt and set the value to the dflt if it's new storage
-		SetFromString(variable.dflt.c_str(), count, (T*)ret.dflt);
+		// If it's an enum, find the numerical value and set the default to that
+		if (variable.enumIndex >= 0)
+		{
+			const Enum& e = renderGraph.enums[variable.enumIndex];
+			size_t foundIndex = 0;
+
+			for (size_t itemIndex = 0; itemIndex < e.items.size(); ++itemIndex)
+			{
+				std::string scopedLabel = e.name + "::" + e.items[itemIndex].label;
+
+				if (!strcmp(variable.dflt.c_str(), e.items[itemIndex].label.c_str()) ||
+					!strcmp(variable.dflt.c_str(), scopedLabel.c_str()))
+				{
+					foundIndex = itemIndex;
+					break;
+				}
+			}
+
+			char buffer[64];
+			sprintf_s(buffer, "%i", (int)foundIndex);
+			SetFromString(buffer, count, (T*)ret.dflt);
+		}
+		else
+		{
+			SetFromString(variable.dflt.c_str(), count, (T*)ret.dflt);
+		}
 		if (newStorage)
 			memcpy(ret.value, ret.dflt, ret.size);
 
@@ -73,170 +109,193 @@ private:
 	static std::string GetAsString(size_t count, float* value);
 	static std::string GetAsString(size_t count, bool* value);
 	static std::string GetAsString(size_t count, uint16_t* value);
+	static std::string GetAsString(size_t count, int64_t* value);
+	static std::string GetAsString(size_t count, uint64_t* value);
 
 	template<typename LAMBDA>
-	void CallFor_Int(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Int2(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int2(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 2;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Int3(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int3(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 3;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Int4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 4;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint2(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint2(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 2;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint3(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint3(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 3;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 4;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float2(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float2(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 2;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float3(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float3(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 3;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 4;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Bool(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Bool(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = bool;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float4x4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float4x4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 16;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint_16(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint_16(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = uint16_t;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
+		lambda(TheCount, (TheType*)storage.value);
+	}
+
+
+	template<typename LAMBDA>
+	void CallFor_Int_64(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
+	{
+		using TheType = int64_t;
+		static const size_t TheCount = 1;
+
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Count(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint_64(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
+	{
+		using TheType = uint64_t;
+		static const size_t TheCount = 1;
+
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
+		lambda(TheCount, (TheType*)storage.value);
+	}
+
+	template<typename LAMBDA>
+	void CallFor_Count(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 	}
 
 	template<typename LAMBDA>
-	void CallForVariable(const Variable& variable, const LAMBDA& lambda)
+	void CallForVariable(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		switch (variable.type)
 		{
 #include "external/df_serialize/_common.h"
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
-	case DataFieldType::_NAME: CallFor_##_NAME(variable, lambda); break;
+	case DataFieldType::_NAME: CallFor_##_NAME(renderGraph, variable, lambda); break;
 // clang-format off
 #include "external/df_serialize/_fillunsetdefines.h"
 #include "Schemas/DataFieldTypes.h"
@@ -245,19 +304,19 @@ private:
 	}
 
 public:
-	void SetValueFromString(const Variable& variable, const char* textValue)
+	void SetValueFromString(const RenderGraph& renderGraph, const Variable& variable, const char* textValue)
 	{
-		CallForVariable(variable,
+		CallForVariable(renderGraph, variable,
 			[&](size_t count, auto* value)
 			{
 				SetFromString(textValue, count, value);
 			});
 	}
 
-	std::string GetValueAsString(const Variable& variable)
+	std::string GetValueAsString(const RenderGraph& renderGraph, const Variable& variable)
 	{
 		std::string ret;
-		CallForVariable(variable,
+		CallForVariable(renderGraph, variable,
 			[&](size_t count, auto* value)
 			{
 				ret = GetAsString(count, value);
@@ -265,13 +324,13 @@ public:
 		return ret;
 	}
 
-	Storage Get(const Variable& variable)
+	Storage Get(const RenderGraph& renderGraph, const Variable& variable)
 	{
 		Storage ret;
-		CallForVariable(variable,
+		CallForVariable(renderGraph, variable,
 			[&](size_t count, auto* value)
 			{
-				ret = Get(variable, count, value);
+				ret = Get(renderGraph, variable, count, value);
 			});
 		return ret;
 	}
@@ -577,6 +636,16 @@ public:
 				DoSetVarOperation<uint16_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
 				break;
 			}
+            case DataFieldType::Int_64:
+            {
+                DoSetVarOperation<int64_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
+                break;
+            }
+			case DataFieldType::Uint_64:
+			{
+				DoSetVarOperation<uint64_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
+				break;
+			}
 			case DataFieldType::Uint:
 			{
 				DoSetVarOperation<uint32_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
@@ -815,6 +884,10 @@ public:
 	{
 		return m_runtimeVariables[index];
 	}
+	RuntimeVariable& GetRuntimeVariable(int index)
+	{
+		return m_runtimeVariables[index];
+	}
 
 	int GetRuntimeVariableIndex(const char* name) const
 	{
@@ -836,7 +909,7 @@ public:
 
 	std::string GetRuntimeVariableValueAsString(int index)
 	{
-		return m_variableStorage.GetValueAsString(*m_runtimeVariables[index].variable);
+		return m_variableStorage.GetValueAsString(m_renderGraph, *m_runtimeVariables[index].variable);
 	}
 
 	void SetRuntimeVariableFromString(int index, const char* textValue)
@@ -851,12 +924,15 @@ public:
 			{
 				char valueIntString[256];
 				sprintf_s(valueIntString, "%i", valueInt);
-				m_variableStorage.SetValueFromString(*m_runtimeVariables[index].variable, valueIntString);
+				m_variableStorage.SetValueFromString(m_renderGraph, *m_runtimeVariables[index].variable, valueIntString);
 				return;
 			}
 		}
 
-		m_variableStorage.SetValueFromString(*m_runtimeVariables[index].variable, textValue);
+		m_variableStorage.SetValueFromString(m_renderGraph, *m_runtimeVariables[index].variable, textValue);
+
+		// The variable was in the file means the user overrides the setting
+		m_runtimeVariables[index].storage.overrideValue = true;
 	}
 
 	void SetRuntimeVariableToDflt(int index)
@@ -1010,7 +1086,7 @@ private:
 		for (size_t i = 0; i < renderGraph.variables.size(); ++i)
 		{
 			m_runtimeVariables[i].variable = &renderGraph.variables[i];
-			m_runtimeVariables[i].storage  = m_variableStorage.Get(*m_runtimeVariables[i].variable);
+			m_runtimeVariables[i].storage  = m_variableStorage.Get(m_renderGraph, *m_runtimeVariables[i].variable);
 		}
 	}
 

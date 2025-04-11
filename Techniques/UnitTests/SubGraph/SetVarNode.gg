@@ -1,0 +1,78 @@
+{
+    "$schema": "gigischema.json",
+    "version": "0.99b",
+    "nodes": [
+        {
+            "actionSubGraph": {
+                "name": "Sub",
+                "editorPos": [
+                    47.0,
+                    79.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "ImportedBuffer",
+                        "dstNode": "Buf",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "ImportedTexture",
+                        "dstNode": "Tex",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "SetVarNodeInner.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "ImportedBuffer",
+                        "ImportedTexture"
+                    ],
+                    "variables": [
+                        {
+                            "name": "BufferSize",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "TextureSize",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "BufferSize",
+                        "visibility": "User"
+                    },
+                    {
+                        "name": "TextureSize",
+                        "visibility": "User"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Buf",
+                "editorPos": [
+                    -85.0,
+                    66.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Tex",
+                "editorPos": [
+                    -85.0,
+                    114.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

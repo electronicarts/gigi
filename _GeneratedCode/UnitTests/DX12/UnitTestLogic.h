@@ -1965,6 +1965,12 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\TwoRayGensSubgraph\\0.png");
 }
 
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, ConstOverride::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Subgraph\\ConstOverride\\0.png");
+}
+
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, simpleRT::Context* context, UnitTestEvent event)
 {
     if (testContext.IsFirstPreExecute(event))

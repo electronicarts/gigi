@@ -43,6 +43,8 @@ ENUM_BEGIN(TextureViewType, "The type that a texture is actually viewed as, in a
     ENUM_ITEM(Float2, "float[2]")
     ENUM_ITEM(Float3, "float[3]")
     ENUM_ITEM(Float4, "float[4]")
+	ENUM_ITEM(Int_64, "int64_t")
+	ENUM_ITEM(Uint_64, "uint64_t")
 ENUM_END()
 
 ENUM_BEGIN(SamplerFilter, "The type of filter a sampler uses")
@@ -329,8 +331,27 @@ STRUCT_END()
 // Slang settings
 //========================================================
 
-STRUCT_BEGIN(SlangOptions, "A declaration of a shader")
+ENUM_BEGIN(GigiSlangOptimizationLevel, "The level of optimizations")
+    ENUM_ITEM(None, "Don't optimize at all.")
+    ENUM_ITEM(Default, "Default optimization level: balance code quality and compilation time.")
+    ENUM_ITEM(High, "Optimize aggressively.")
+    ENUM_ITEM(Maximum, "Include optimizations that may take a very long time, or may involve severe space-vs-speed tradeoffs.")
+ENUM_END()
+
+ENUM_BEGIN(GigiSlangFloatingPointMode, "Floating point mode")
+    ENUM_ITEM(Default, "")
+    ENUM_ITEM(Fast, "")
+    ENUM_ITEM(Precise, "")
+ENUM_END()
+
+STRUCT_BEGIN(SlangOptions, "Slang options")
     STRUCT_FIELD(bool, process, false, "if true, this shader will be processed by slang", 0)
+    STRUCT_FIELD(bool, noNameMangling, false, "Do as little mangling of names as possible, to try to preserve original names.", 0)
+    STRUCT_FIELD(bool, lineDirectives, true, "Whether to output line directives in the shader.", 0)
+    STRUCT_FIELD(bool, warningsAsErrors, false, "Warnings are errors.", 0)
+    STRUCT_FIELD(bool, verbosePaths, false, "Verbose Paths.", 0)
+    STRUCT_FIELD(GigiSlangFloatingPointMode, floatingPointMode, GigiSlangFloatingPointMode::Default, "Floating point mode", 0)
+    STRUCT_FIELD(GigiSlangOptimizationLevel, optimizationLevel, GigiSlangOptimizationLevel::Default, "Optimization level", 0)
 STRUCT_END()
 
 //========================================================
@@ -354,7 +375,7 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
     STRUCT_STATIC_ARRAY(int, NumThreads, 3, { 8 COMMA 8 COMMA 1 }, "The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
 
     STRUCT_FIELD(bool, copyFile, true, "if false, will not copy the file over. A hackaround for when you have multiple raytracing shaders in the same file. TODO: resolve this better.", 0)
-    STRUCT_FIELD(SlangOptions, slangOptions, {}, "Settings for optionally processing shaders with slang", 0)
+    STRUCT_FIELD(SlangOptions, slangOptions, {}, "Settings for optionally processing shaders with slang", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(BackendRestriction, backends, {}, "The backends this file copy happens for.", SCHEMA_FLAG_UI_COLLAPSABLE)
 

@@ -1,0 +1,69 @@
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/RayTracing/RayTracingCommon.ush"
+
+// TwoRayGens technique
+
+
+RWTexture2D<float4> g_texture;
+RaytracingAccelerationStructure g_scene;
+float3 cb_A_TwoRayGens1CB_cameraPos;
+float cb_A_TwoRayGens1CB__padding0;
+float4x4 cb_A_TwoRayGens1CB_clipToWorld;
+float cb_A_TwoRayGens1CB_depthNearPlane;
+float3 cb_A_TwoRayGens1CB__padding1;
+
+
+struct Payload
+{
+	bool hit;
+};
+
+RAY_TRACING_ENTRY_RAYGEN(RayGen1)
+{
+	uint2 px = DispatchRaysIndex().xy;
+	float2 dimensions = float2(DispatchRaysDimensions().xy);
+
+	float2 screenPos = (float2(px)+0.5f) / dimensions * 2.0 - 1.0;
+	screenPos.y = -screenPos.y;
+
+	float4 world = mul(float4(screenPos, _A_TwoRayGens1CB_depthNearPlane, 1), _A_TwoRayGens1CB_clipToWorld);
+	world.xyz /= world.w;
+
+	RayDesc ray;
+	ray.Origin = _A_TwoRayGens1CB_cameraPos;
+	ray.Direction = normalize(world.xyz - ray.Origin);
+	ray.TMin = 0;
+	ray.TMax = 1000.0f;
+
+	Payload payload = (Payload)0;
+
+	TraceRay(g_scene, // Scene (TLAS) buffer
+		RAY_FLAG_FORCE_OPAQUE, // Ray flags
+		0xFF, // Ray mask
+		0,
+		0,
+		1,
+		ray,
+		payload);
+
+	float4 color = g_texture[px];
+	color.a = 1.0f;
+	color.r = payload.hit ? 1.0f : 0.0f;
+	g_texture[px] = color;
+}
+
+RAY_TRACING_ENTRY_MISS(Miss1, Payload, payload)
+{
+	payload.hit = false;
+}
+
+RAY_TRACING_ENTRY_CLOSEST_HIT(ClosestHit1, Payload, payload, FRayTracingIntersectionAttributes, intersection)
+{
+	payload.hit = true;
+}
+
+/*
+Shader Resources:
+	Texture g_texture (as UAV)
+	Buffer g_scene (as RTScene)
+*/

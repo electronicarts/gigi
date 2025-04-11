@@ -77,6 +77,38 @@ void VariableStorage::SetFromString(const char* text, size_t count, uint16_t* va
 	);
 }
 
+void VariableStorage::SetFromString(const char* text, size_t count, int64_t* value)
+{
+	ParseCSV::ForEachValue(text, false,
+		[&](int tokenIndex, const char* token)
+		{
+			if (tokenIndex < count)
+			{
+				int64_t temp;
+				sscanf_s(token, "%lli", &temp);
+				value[tokenIndex] = temp;
+			}
+			return true;
+		}
+	);
+}
+
+void VariableStorage::SetFromString(const char* text, size_t count, uint64_t* value)
+{
+	ParseCSV::ForEachValue(text, false,
+		[&](int tokenIndex, const char* token)
+		{
+			if (tokenIndex < count)
+			{
+				uint64_t temp;
+				sscanf_s(token, "%llu", &temp);
+				value[tokenIndex] = temp;
+			}
+			return true;
+		}
+	);
+}
+
 std::string VariableStorage::GetAsString(size_t count, int* value)
 {
 	std::string ret;
@@ -146,3 +178,32 @@ std::string VariableStorage::GetAsString(size_t count, uint16_t* value)
 
 	return ret;
 }
+
+std::string VariableStorage::GetAsString(size_t count, int64_t* value)
+{
+	std::string ret;
+
+	char buffer[256];
+	for (size_t i = 0; i < count; ++i)
+	{
+		sprintf_s(buffer, "%s%lli", ((i > 0) ? "," : ""), (int64_t)value[i]);
+		ret += std::string(buffer);
+	}
+
+	return ret;
+}
+
+std::string VariableStorage::GetAsString(size_t count, uint64_t* value)
+{
+	std::string ret;
+
+	char buffer[256];
+	for (size_t i = 0; i < count; ++i)
+	{
+		sprintf_s(buffer, "%s%llu", ((i > 0) ? "," : ""), (uint64_t)value[i]);
+		ret += std::string(buffer);
+	}
+
+	return ret;
+}
+
