@@ -32,7 +32,7 @@
           "type": {
             "description": "The type of the variable",
             "type": "string",
-            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
           },
           "Const": {
             "description": "If true, the variable is declared const and cannot change at runtime",
@@ -181,6 +181,32 @@
               "process": {
                 "description": "if true, this shader will be processed by slang",
                 "type": "boolean"
+              },
+              "noNameMangling": {
+                "description": "Do as little mangling of names as possible, to try to preserve original names.",
+                "type": "boolean"
+              },
+              "lineDirectives": {
+                "description": "Whether to output line directives in the shader.",
+                "type": "boolean"
+              },
+              "warningsAsErrors": {
+                "description": "Warnings are errors.",
+                "type": "boolean"
+              },
+              "verbosePaths": {
+                "description": "Verbose Paths.",
+                "type": "boolean"
+              },
+              "floatingPointMode": {
+                "description": "Floating point mode",
+                "type": "string",
+                "enum": ["Default", "Fast", "Precise"]
+              },
+              "optimizationLevel": {
+                "description": "Optimization level",
+                "type": "string",
+                "enum": ["None", "Default", "High", "Maximum"]
               }
             }
           },
@@ -229,7 +255,7 @@
                     "type": {
                       "description": "The data type of the buffer if a simple type",
                       "type": "string",
-                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
                     },
                     "typeStruct": {
                       "description": "The data type of the buffer if a struct type",
@@ -267,7 +293,7 @@
                     "viewType": {
                       "description": "The dimensionality of the texture",
                       "type": "string",
-                      "enum": ["Int", "Int4", "Uint", "Uint2", "Uint4", "Float", "Float2", "Float3", "Float4"]
+                      "enum": ["Int", "Int4", "Uint", "Uint2", "Uint4", "Float", "Float2", "Float3", "Float4", "Int_64", "Uint_64"]
                     },
                     "globallyCoherent": {
                       "description": "Set this to true if you want the resource to be declared as globallycoherent.",
@@ -366,7 +392,7 @@
                 "type": {
                   "description": "The type of the field",
                   "type": "string",
-                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
                 },
                 "dflt": {
                   "description": "The default value",
@@ -528,7 +554,7 @@
                   "type": {
                     "description": "The buffer type. May become a typed or structured buffer, depending on the type chosen.",
                     "type": "string",
-                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
                   }
                 }
               },

@@ -1123,7 +1123,7 @@ namespace simpleRasterInSubgraph
                 m_internal.drawCall_DoSimpleRaster_Rasterize_rootSig->SetName(L"DoSimpleRaster_Rasterize");
 
             ShaderCompilationInfo shaderCompilationInfoVS;
-            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRaster/simpleRaster_VS.hlsl";
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRaster_DoSimpleRaster/simpleRaster_VS.hlsl";
             shaderCompilationInfoVS.entryPoint = "VSMain";
             shaderCompilationInfoVS.shaderModel = "vs_6_1";
             shaderCompilationInfoVS.debugName = (c_debugNames ? "DoSimpleRaster_Rasterize" : "");
@@ -1134,7 +1134,7 @@ namespace simpleRasterInSubgraph
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfoPS;
-            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRaster/simpleRaster_PS.hlsl";
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRaster_DoSimpleRaster/simpleRaster_PS.hlsl";
             shaderCompilationInfoPS.entryPoint = "PSMain";
             shaderCompilationInfoPS.shaderModel = "ps_6_1";
             shaderCompilationInfoPS.debugName = (c_debugNames ? "DoSimpleRaster_Rasterize" : "");

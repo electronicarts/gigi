@@ -335,6 +335,58 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     return ret;
 }
 
+template <typename NODE_ACTION_SHADER>
+inline size_t RebuildShaderNodePins(const RenderGraph& renderGraph, int shaderIndex, NODE_ACTION_SHADER& node, size_t pinOffset, std::vector<NodePinInfo>& ret)
+{
+    size_t numNewConnections = 0;
+
+    // It's ok if the shader wasn't found. it means the user isn't done editing
+    if (shaderIndex != -1)
+    {
+        const Shader& shader = renderGraph.shaders[shaderIndex];
+
+        for (size_t dstIdx = 0; dstIdx < shader.resources.size(); dstIdx++)
+        {
+            size_t dstPinIdx = pinOffset + dstIdx;
+            const ShaderResource& resource = shader.resources[dstIdx];
+
+            bool found = false;
+            for (size_t srcPinIdx = pinOffset; srcPinIdx < node.connections.size(); srcPinIdx++)
+            {
+                if (node.connections[srcPinIdx].srcPin == resource.name)
+                {
+                    found = true;
+                    std::swap(node.connections[dstPinIdx], node.connections[srcPinIdx]);
+                    std::swap(node.linkProperties[dstPinIdx], node.linkProperties[srcPinIdx]);
+                    break;
+                }
+            }
+
+            if (!found)
+            {
+                NodePinConnection connection{};
+                connection.srcPin = resource.name;
+                LinkProperties link{};
+
+                node.connections.insert(node.connections.begin() + dstPinIdx, connection);
+                node.linkProperties.insert(node.linkProperties.begin() + dstPinIdx, link);
+            }
+
+            // create pin:
+            NodePinInfo pin;
+            pin.name = resource.name;
+            pin.inputNode = &node.connections[dstPinIdx].dstNode;
+            pin.inputNodePin = &node.connections[dstPinIdx].dstPin;
+            pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
+            ret.push_back(pin);
+
+            numNewConnections++;
+        }
+    }
+
+    return numNewConnections;
+}
+
 inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_ComputeShader& node)
 {
     std::vector<NodePinInfo> ret;
@@ -342,50 +394,8 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     // Get the shader the shader reference
     int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, node.shader.name.c_str());
 
-    // It's ok if the shader wasn't found. it means the user isn't done editing
-    if (shaderIndex != -1)
-    {
-        // make sure there is a connection on the node for each resource
-        const Shader& shader = renderGraph.shaders[shaderIndex];
-        for (const ShaderResource& resource : shader.resources)
-        {
-            bool found = false;
-            for (NodePinConnection& connection : node.connections)
-            {
-                if (connection.srcPin == resource.name)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                node.connections.resize(node.connections.size() + 1);
-                node.connections.rbegin()->srcPin = resource.name;
-            }
-        }
-
-        // make a pin for each resource
-        for (const ShaderResource& resource : shader.resources)
-        {
-            NodePinInfo pin;
-            pin.name = resource.name;
-
-            for (NodePinConnection& connection : node.connections)
-            {
-                if (connection.srcPin == resource.name)
-                {
-                    pin.inputNode = &connection.dstNode;
-                    pin.inputNodePin = &connection.dstPin;
-                    pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                    break;
-                }
-            }
-
-            ret.push_back(pin);
-        }
-    }
+    size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_ComputeShader>(renderGraph, shaderIndex, node, 0, ret);
+    node.connections.resize(numNewConnections);
 
     // make a pin for indirect dispatch
     NodePinInfo pin;
@@ -404,51 +414,8 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
 
     // Get the shader the shader reference
     int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::RTRayGen, node.shader.name.c_str());
-
-    // It's ok if the shader wasn't found. it means the user isn't done editing
-    if (shaderIndex != -1)
-    {
-        // make sure there is a connection on the node for each resource
-        const Shader& shader = renderGraph.shaders[shaderIndex];
-        for (const ShaderResource& resource : shader.resources)
-        {
-            bool found = false;
-            for (NodePinConnection& connection : node.connections)
-            {
-                if (connection.srcPin == resource.name)
-                {
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                node.connections.resize(node.connections.size() + 1);
-                node.connections.rbegin()->srcPin = resource.name;
-            }
-        }
-
-        // make a pin for each resource
-        for (const ShaderResource& resource : shader.resources)
-        {
-            NodePinInfo pin;
-            pin.name = resource.name;
-
-            for (NodePinConnection& connection : node.connections)
-            {
-                if (connection.srcPin == resource.name)
-                {
-                    pin.inputNode = &connection.dstNode;
-                    pin.inputNodePin = &connection.dstPin;
-                    pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                    break;
-                }
-            }
-
-            ret.push_back(pin);
-        }
-    }
+    size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_RayShader>(renderGraph, shaderIndex, node, 0, ret);
+    node.connections.resize(numNewConnections);
 
     return ret;
 }
@@ -477,209 +444,36 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
 {
     std::vector<NodePinInfo> ret;
 
+    size_t numNewConnections = 0;
     // Vertex Shader Pins
     {
         // Get the shader the shader reference
         int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Vertex, node.vertexShader.name.c_str());
-
-        // It's ok if the shader wasn't found. it means the user isn't done editing
-        if (shaderIndex != -1)
-        {
-            // make sure there is a connection on the node for each resource
-            const Shader& shader = renderGraph.shaders[shaderIndex];
-            for (const ShaderResource& resource : shader.resources)
-            {
-                bool found = false;
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    node.connections.resize(node.connections.size() + 1);
-                    node.connections.rbegin()->srcPin = resource.name;
-                }
-            }
-
-            // make a pin for each resource
-            for (const ShaderResource& resource : shader.resources)
-            {
-                NodePinInfo pin;
-                pin.name = resource.name;
-
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        pin.inputNode = &connection.dstNode;
-                        pin.inputNodePin = &connection.dstPin;
-                        pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                        break;
-                    }
-                }
-
-                ret.push_back(pin);
-            }
-        }
+        numNewConnections += RebuildShaderNodePins<RenderGraphNode_Action_DrawCall>(renderGraph, shaderIndex, node, numNewConnections, ret);
     }
 
     // Pixel Shader Pins
     {
         // Get the shader the shader reference
         int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Pixel, node.pixelShader.name.c_str());
-
-        // It's ok if the shader wasn't found. it means the user isn't done editing
-        if (shaderIndex != -1)
-        {
-            // make sure there is a connection on the node for each resource
-            const Shader& shader = renderGraph.shaders[shaderIndex];
-            for (const ShaderResource& resource : shader.resources)
-            {
-                bool found = false;
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    node.connections.resize(node.connections.size() + 1);
-                    node.connections.rbegin()->srcPin = resource.name;
-                }
-            }
-
-            // make a pin for each resource
-            for (const ShaderResource& resource : shader.resources)
-            {
-                NodePinInfo pin;
-                pin.name = resource.name;
-
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        pin.inputNode = &connection.dstNode;
-                        pin.inputNodePin = &connection.dstPin;
-                        pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                        break;
-                    }
-                }
-
-                ret.push_back(pin);
-            }
-        }
+        numNewConnections += RebuildShaderNodePins<RenderGraphNode_Action_DrawCall>(renderGraph, shaderIndex, node, numNewConnections, ret);
     }
 
     // Amplification Shader Pins
     {
         // Get the shader the shader reference
         int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Amplification, node.amplificationShader.name.c_str());
-
-        // It's ok if the shader wasn't found. it means the user isn't done editing
-        if (shaderIndex != -1)
-        {
-            // make sure there is a connection on the node for each resource
-            const Shader& shader = renderGraph.shaders[shaderIndex];
-            for (const ShaderResource& resource : shader.resources)
-            {
-                bool found = false;
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    node.connections.resize(node.connections.size() + 1);
-                    node.connections.rbegin()->srcPin = resource.name;
-                }
-            }
-
-            // make a pin for each resource
-            for (const ShaderResource& resource : shader.resources)
-            {
-                NodePinInfo pin;
-                pin.name = resource.name;
-
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        pin.inputNode = &connection.dstNode;
-                        pin.inputNodePin = &connection.dstPin;
-                        pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                        break;
-                    }
-                }
-
-                ret.push_back(pin);
-            }
-        }
+        numNewConnections += RebuildShaderNodePins<RenderGraphNode_Action_DrawCall>(renderGraph, shaderIndex, node, numNewConnections, ret);
     }
 
     // Mesh Shader Pins
     {
         // Get the shader the shader reference
         int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Mesh, node.meshShader.name.c_str());
-
-        // It's ok if the shader wasn't found. it means the user isn't done editing
-        if (shaderIndex != -1)
-        {
-            // make sure there is a connection on the node for each resource
-            const Shader& shader = renderGraph.shaders[shaderIndex];
-            for (const ShaderResource& resource : shader.resources)
-            {
-                bool found = false;
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if (!found)
-                {
-                    node.connections.resize(node.connections.size() + 1);
-                    node.connections.rbegin()->srcPin = resource.name;
-                }
-            }
-
-            // make a pin for each resource
-            for (const ShaderResource& resource : shader.resources)
-            {
-                NodePinInfo pin;
-                pin.name = resource.name;
-
-                for (NodePinConnection& connection : node.connections)
-                {
-                    if (connection.srcPin == resource.name)
-                    {
-                        pin.inputNode = &connection.dstNode;
-                        pin.inputNodePin = &connection.dstPin;
-                        pin.accessLabel = ShaderResourceTypeIsReadOnly(resource.access) ? " (R)" : " (RW)";
-                        break;
-                    }
-                }
-
-                ret.push_back(pin);
-            }
-        }
+        numNewConnections += RebuildShaderNodePins<RenderGraphNode_Action_DrawCall>(renderGraph, shaderIndex, node, numNewConnections, ret);
     }
+
+    node.connections.resize(numNewConnections);
 
     // Shading Rate Image
     NodePinInfo pin;

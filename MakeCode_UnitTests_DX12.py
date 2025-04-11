@@ -33,6 +33,7 @@ unsupportedTests = [
     "Textures\\Mips_Imported_Cube",
     "Textures\\Load_Tex2DArray",
     "Textures\\Load_Tex3D",
+    "SubGraph\\SetVarNode",
 
     # Just need to make work
     "RayTrace\\simpleRTDynamic",

@@ -231,6 +231,9 @@ struct RenameReferencesVisitor
 
     bool Visit(SetVariable& setVariable, const std::string& path)
     {
+        m_renameData.UpdateNodeName(setVariable.ANode.name);
+        m_renameData.UpdateNodeName(setVariable.BNode.name);
+
         m_renameData.UpdateVariableName(setVariable.destination.name);
         m_renameData.UpdateVariableName(setVariable.AVar.name);
         m_renameData.UpdateVariableName(setVariable.BVar.name);
@@ -522,7 +525,8 @@ struct RenameChildVisitor
         // Need to handle the subgraph possibly being in a parent directory etc.
         if (s.destFileName.empty())
             s.destFileName = s.fileName;
-        s.destFileName = (std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension() / s.destFileName).string();
+        std::string destFolder = std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension().string() + "_" + m_subGraphNode.name;
+        s.destFileName = (std::filesystem::path(destFolder) / s.destFileName).string();
         StringReplaceAll(s.destFileName, "\\", "/");
 
         // Update where the file lives on disk

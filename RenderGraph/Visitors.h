@@ -34,6 +34,8 @@ inline void ZeroDfltIfEmpty(std::string& dflt, DataFieldType type, const std::st
             case DataFieldType::Bool: dflt = "false"; break;
             case DataFieldType::Float4x4: dflt = "0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f"; break;
             case DataFieldType::Uint_16: dflt = "0"; break;
+            case DataFieldType::Int_64: dflt = "0"; break;
+            case DataFieldType::Uint_64: dflt = "0"; break;
             default:
             {
                 Assert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(type), type, path.c_str());

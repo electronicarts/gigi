@@ -7,4 +7,6 @@
 
 #include <string>
 
-bool ProcessWithSlang(std::string& source, const char* fileName, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const char* workingDirectory);
+struct SlangOptions;
+
+bool ProcessWithSlang(std::string& source, const char* fileName, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const char* workingDirectory, const SlangOptions& options);

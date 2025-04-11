@@ -11,6 +11,12 @@
 #include <unordered_set>
 // clang-format on
 
+// needed to make ImGui::Text() align with UI that is larger because of FarmePadding
+void ShowUI_StartGap()
+{
+	ImGui::SetCursorPosY(ImGui::GetCursorPosY() + ImGui::GetStyle().FramePadding.y);
+}
+
 static void ShowToolTip(const char* tooltip)
 {
 	if (!tooltip || !tooltip[0])
@@ -519,6 +525,7 @@ static void ShowUI_Bool(const RenderGraph& renderGraph, const bool paused, const
 
 static void ShowUI_Float4x4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+	ShowUI_StartGap();
 	ImGui::Text(variable.originalName.c_str());
 	ImGui::InputFloat4("row 0", (float*)storage + 0);
 	ImGui::InputFloat4("row 1", (float*)storage + 4);
@@ -567,6 +574,89 @@ static void ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, co
 	v2[0] = v[0];
 }
 
+static void ShowUI_Int_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+{
+	int64_t* v2 = (int64_t*)storage;
+	int		  v[] = { (int)v2[0] };
+
+	if (variable.UISettings.UIHint == VariableUIHint::Drag)
+	{
+		float speed = 1.0f;
+		int	  min = 0;
+		int	  max = 0;
+
+		if (!variable.UISettings.step.empty())
+			sscanf_s(variable.UISettings.step.c_str(), "%f", &speed);
+
+		if (!variable.UISettings.min.empty())
+			sscanf_s(variable.UISettings.min.c_str(), "%i", &min);
+
+		if (!variable.UISettings.max.empty())
+			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
+
+		ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
+	}
+	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
+	{
+		int min = 0;
+		int max = 65535;
+
+		if (!variable.UISettings.min.empty())
+			sscanf_s(variable.UISettings.min.c_str(), "%i", &min);
+
+		if (!variable.UISettings.max.empty())
+			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
+
+		ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
+	}
+	else
+		ImGui::InputInt(variable.originalName.c_str(), v);
+
+	v2[0] = v[0];
+}
+
+static void ShowUI_Uint_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+{
+	uint64_t* v2 = (uint64_t*)storage;
+	int		  v[] = { (int)v2[0] };
+
+	if (variable.UISettings.UIHint == VariableUIHint::Drag)
+	{
+		float speed = 1.0f;
+		int	  min = 0;
+		int	  max = 0;
+
+		if (!variable.UISettings.step.empty())
+			sscanf_s(variable.UISettings.step.c_str(), "%f", &speed);
+
+		if (!variable.UISettings.min.empty())
+			sscanf_s(variable.UISettings.min.c_str(), "%i", &min);
+
+		if (!variable.UISettings.max.empty())
+			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
+
+		ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
+	}
+	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
+	{
+		int min = 0;
+		int max = 65535;
+
+		if (!variable.UISettings.min.empty())
+			sscanf_s(variable.UISettings.min.c_str(), "%i", &min);
+
+		if (!variable.UISettings.max.empty())
+			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
+
+		ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
+	}
+	else
+		ImGui::InputInt(variable.originalName.c_str(), v);
+
+	v2[0] = v[0];
+}
+
+
 static void ShowUI_Count(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	// No-op. Shouldn't ever happen
@@ -586,6 +676,132 @@ static std::string VariableUIScope(const Variable& variable)
 	}
 
 	return ret;
+}
+
+
+// copied from ImGui::Bullet()
+void LargeBullet(ImVec4 color, float scale = 1.0f)
+{
+	ImGuiWindow* window = ImGui::GetCurrentWindow();
+	if (window->SkipItems)
+		return;
+
+	ImGuiContext& g = *GImGui;
+	const ImGuiStyle& style = g.Style;
+	ImVec2 size(g.FontSize * scale, g.FontSize * scale);
+
+	const ImRect bb(window->DC.CursorPos, ImVec2(window->DC.CursorPos.x + size.y, window->DC.CursorPos.y + size.y));
+	ImGui::ItemSize(bb);
+	if (!ImGui::ItemAdd(bb, 0))
+	{
+		ImGui::SameLine(0, style.FramePadding.x * 2);
+		return;
+	}
+	
+	ImDrawList* draw_list = window->DrawList;
+
+	// Render and stay on same line
+	ImVec2 pos;
+	pos.x = bb.Min.x + style.FramePadding.x + size.x * 0.5f;
+	pos.y = bb.Min.y + style.FramePadding.y + size.y * 0.5f;
+	draw_list->AddCircleFilled(pos, size.x * 0.50f, ImGui::GetColorU32(color), 24);	// was *0.2f for small bullet
+}
+
+void setToDefault(GigiInterpreterPreviewWindowDX12::RuntimeVariable& variable)
+{
+	memcpy(variable.storage.value, variable.storage.dflt, variable.storage.size);
+	variable.storage.overrideValue = false;
+}
+
+// assumes we are in an Indent Block
+void VariableUIStart(GigiInterpreterPreviewWindowDX12::RuntimeVariable& variable)
+{
+	static std::string deferredReset;
+
+	if (variable.variable->name == deferredReset)
+	{
+		setToDefault(variable);
+		deferredReset.clear();
+	}
+
+	const ImVec4 oldTextColor = ImVec4(0.1f, 0.1f, 0.8f, 1);;
+	const ImVec4 constColor = ImVec4(0.4f, 0.4f, 0.4f, 1);
+	const ImVec4 overrrideColor = ImVec4(1, 1, 0.2f, 1);
+	const ImVec4 transientColor = ImVec4(1, 1, 0.4f, 1);
+	const ImVec4 systemColor = ImVec4(1, 0.4f, 1, 1);
+
+	ImVec4 color = oldTextColor;
+	const char* txt = "default (value comes from .gg file)";
+
+	bool canReset = true;
+
+	if (variable.storage.overrideValue)
+	{
+		color = overrrideColor;
+		txt = "override (stored in .gguser file)";
+	}
+	if (variable.variable->Const)
+	{
+		color = constColor;
+		txt = "constant (cannot be changed, will not be saved)";
+		canReset = false;
+	}
+	if (variable.variable->transient)
+	{
+		color = transientColor;
+		txt = "transient (will not be saved)";
+	}
+	if (variable.storage.systemValue)
+	{
+		color = systemColor;
+		txt = "system (set by the viewer, will not be saved)";
+		canReset = false;
+	}
+
+	if (variable.storage.isDefault())
+		canReset = false;
+
+	float space = ImGui::GetStyle().IndentSpacing;
+
+	float oldX = ImGui::GetCursorPosX();
+	ImGui::SetCursorPosX(ImGui::GetCursorPosX() - space);
+	ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 100);
+	LargeBullet(color);
+	ImGui::SameLine();
+	ImGui::PopStyleVar();
+	ImGui::SetCursorPosX(oldX);
+
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+	{
+		if (ImGui::BeginTooltipEx(ImGuiTooltipFlags_OverridePreviousTooltip, ImGuiWindowFlags_None))
+		{
+			ImVec2 pos = ImGui::GetCursorPos();
+			LargeBullet(color, 2.0f);
+			float gap = ImGui::GetItemRectSize().x + 2 * ImGui::GetStyle().FramePadding.x + ImGui::GetStyle().WindowPadding.x;
+			ImGui::SetCursorPos(pos);
+
+			ImGui::Indent(gap);
+			ImGui::Text("Variable: %s", variable.variable->name.c_str());
+			ImGui::Text(" Comment: %s", variable.variable->comment.c_str());
+			ImGui::Unindent(gap);
+			ImGui::Text("");
+			ImGui::Text("Default%s: %s", 
+				canReset ? " (left click to reset)" : "", variable.variable->dflt.c_str());
+
+			ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+			ImGui::Text("\nColor code meaning: %s", txt);
+			ImGui::PopStyleVar();
+
+			ImGui::EndTooltip();
+		}
+	}
+	// we could put this in a context menu
+	if (canReset && ImGui::IsItemClicked())
+	{
+		// Sadly with ImGui we have to defer the operation a frame, even ClearActiveID() does not fix it.
+		// This is to fix the case where the element is currently in edit mode.
+		deferredReset = variable.variable->name;
+	}
 }
 
 void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
@@ -615,9 +831,28 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 		// Reset variables to default if we should
 		if (ImGui::Button("Reset To Defaults"))
 		{
-			for (const RuntimeVariable& variable : m_runtimeVariables)
-				memcpy(variable.storage.value, variable.storage.dflt, variable.storage.size);
+			for (RuntimeVariable& variable : m_runtimeVariables)
+			{
+				setToDefault(variable);
+			}
 		}
+
+		/*
+		// Color Legend
+		{
+//			ImGui::Text("Colors: ");
+			ImGui::SameLine();
+			ImGui::TextColored(overrrideColor, "default");
+			ImGui::SameLine();
+			ImGui::TextColored(oldTextColor, "override");
+			ImGui::SameLine();
+			ImGui::TextColored(constColor, "const");
+			ImGui::SameLine();
+			ImGui::TextColored(transientColor, "transient");
+			ImGui::SameLine();
+			ImGui::TextColored(systemColor, "system");
+		}
+		*/
 
 		struct VariableGroup
 		{
@@ -691,6 +926,7 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 						}
 					}
 					visibilityHeaderShown = true;
+
 					ImGui::Indent();
 				}
 
@@ -708,12 +944,22 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 				// Show variable labels and value
 				for (const RuntimeVariable* var : runtimeVariablesSorted)
 				{
-					const RuntimeVariable& variable = *var;
-
+					RuntimeVariable& variable = (RuntimeVariable&)*var;
+					
 					if (variable.variable->Const)
 					{
 						ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
 					}
+
+					// copy variable.storage.value to get "hasChanged" without affecting a lot of UI code
+					// static to avoid reallocations, makes this no reentrant
+					static std::vector<const char*> valueCopy;
+					valueCopy.clear();
+					valueCopy.resize(variable.storage.size);
+					memcpy(valueCopy.data(), variable.storage.value, variable.storage.size);
+
+					VariableUIStart(variable);
+//					ImGui::PushStyleColor(ImGuiCol_Text, color);
 
 					switch (variable.variable->type)
 					{
@@ -726,7 +972,17 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 						// clang-format on
 					}
 
+//					ImGui::PopStyleColor(1);
+
 					ShowToolTip(variable.variable->comment.c_str());
+
+					bool hasChanged = valueCopy.size() != variable.storage.size
+						|| memcmp(variable.storage.value, valueCopy.data(), valueCopy.size()) != 0;
+
+					if (hasChanged)
+					{
+						variable.storage.overrideValue = true;
+					}
 
 					if (variable.variable->Const)
 					{

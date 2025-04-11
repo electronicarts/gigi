@@ -35,6 +35,8 @@ struct BackendDX12 : public BackendBase
             case DataFieldType::Float3: return "DXGI_FORMAT_R32G32B32_FLOAT";
             case DataFieldType::Uint: return "DXGI_FORMAT_R32_UINT";
             case DataFieldType::Uint_16: return "DXGI_FORMAT_R16_UINT";
+            case DataFieldType::Int_64: return "DXGI_FORMAT_RG32_INT";
+            case DataFieldType::Uint_64: return "DXGI_FORMAT_RG32_UINT";
             default:
             {
                 Assert(false, "Unhandled DataFieldType: %i", (int)type);
@@ -438,6 +440,8 @@ struct BackendDX12 : public BackendBase
             case DataFieldType::Float4: return "float4";
             case DataFieldType::Bool: return "bool";
             case DataFieldType::Float4x4: return "float4x4";
+            case DataFieldType::Int_64: return "int64_t";
+            case DataFieldType::Uint_64: return "uint64_t";
             default:
             {
                 Assert(false, "Unhandled data field type: %s (%i)", EnumToString(type), type);
@@ -802,6 +806,8 @@ struct BackendDX12 : public BackendBase
                     case DataFieldType::Bool: varSymbols = "b"; break;
                     case DataFieldType::Float4x4: varSymbols = "ffffffffffffffff"; varRefs = "&value[0], &value[1], &value[2], &value[3], &value[4], &value[5], &value[6], &value[7], &value[8], &value[9], &value[10], &value[11], &value[12], &value[13], &value[14], &value[15]"; break;
                     case DataFieldType::Uint_16: varSymbols = "I"; break;
+                    case DataFieldType::Int_64: varSymbols = "I"; break;
+                    case DataFieldType::Uint_64: varSymbols = "I"; break;
                     default: Assert(false, "Unhandled Variable Type: %i", variable.type); break;
                 }
 
@@ -2055,7 +2061,7 @@ void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::stri
 
         std::string workingDirectory = (std::filesystem::path(outFolder) / "shaders" / "").string();
         std::string slangErrorMessage;
-        if (!ProcessWithSlang(shaderFileContents, shader.fileName.c_str(), stage, shader.entryPoint.c_str(), shaderModel, slangErrorMessage, workingDirectory.c_str()))
+        if (!ProcessWithSlang(shaderFileContents, shader.fileName.c_str(), stage, shader.entryPoint.c_str(), shaderModel, slangErrorMessage, workingDirectory.c_str(), shader.slangOptions))
         {
             ShowErrorMessage("Slang:%s\n%s\n", shader.fileName.c_str(), slangErrorMessage.c_str());
         }

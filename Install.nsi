@@ -10,8 +10,8 @@
   !define APPNAME "Gigi"
   !define DESCRIPTION "Rapid Graphics Development Platform"
   !define VERSIONMAJOR 0
-  !define VERSIONMINOR 99
-  !define VERSIONBUILD 8
+  !define VERSIONMINOR 991
+  !define VERSIONBUILD 0
   !define SLUG "${APPNAME} v${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
 
   # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
