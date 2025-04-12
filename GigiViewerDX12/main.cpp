@@ -116,6 +116,8 @@ static int const                    NUM_FRAMES_IN_FLIGHT = 3;
 static FrameContext                 g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 static UINT                         g_frameIndex = 0;
 
+static bool g_useWarpAdapter = false;
+
 HWND g_hwnd = NULL;
 static int const                    NUM_BACK_BUFFERS = 3;
 static ID3D12Device2* g_pd3dDevice = NULL;
@@ -173,7 +175,7 @@ static RENDERDOC_API_1_6_0* g_renderDocAPI = nullptr;
 static bool g_renderDocCaptureNextFrame = false;
 static bool g_renderDocIsCapturing = false;
 static bool g_renderDocLaunchUI = false;
-static bool g_renderDocEnabled = false;
+static bool g_renderDocEnabled = true;
 static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
 
@@ -838,6 +840,9 @@ void GatherSnapshotData(GGUserFileV2Snapshot& snapshot)
         if (rtVar.variable->transient)
             continue;
 
+        if (!rtVar.storage.overrideValue)
+            continue;
+
         // don't save system variables
         if (rtVar.variable->name == g_systemVariables.iResolution_varName ||
             rtVar.variable->name == g_systemVariables.iTime_varName ||
@@ -1479,7 +1484,7 @@ void HandleMainMenu()
             static int captureFrames = 1;
             static std::string waitingToOpenFileName = "";
             static bool openCapture = true;
-            if (g_pixCaptureEnabled && ImGui::Button("Pix Capture"))
+            if (g_pixCaptureEnabled && ImGui::Button("Pix"))
             {
                 wchar_t fileName[1024];
                 int i = 0;
@@ -1514,7 +1519,7 @@ void HandleMainMenu()
                 }
             }
 
-			if (g_renderDocEnabled && ImGui::Button("RenderDoc Capture"))
+			if (g_renderDocEnabled && ImGui::Button("RenderDoc"))
 			{
 				g_renderDocCaptureNextFrame = true;
                 g_renderDocFrameCaptureCount = captureFrames;
@@ -1968,7 +1973,12 @@ bool AssignVariable(const char* name, DataFieldType type, T value)
 
         if (variable.name == name && variable.type == type)
         {
-            auto rtVar = g_interpreter.GetRuntimeVariable(varIndex);
+            auto& rtVar = g_interpreter.GetRuntimeVariable(varIndex);
+
+//            Variable& nonConstVar = (Variable&)(rtVar.variable);
+//            nonConstVar.system = true;
+            rtVar.storage.systemValue = true;
+
             memcpy(rtVar.storage.value, &value, rtVar.storage.size);
             return true;
         }
@@ -5845,13 +5855,28 @@ void ShowProfilerWindow()
 
     static std::vector<StableSample> stableSamples;
     static bool stableProfiling = true;
-    if (ImGui::BeginTable("profiling", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+    static int accumFrames = 0;
+    static bool pauseAccum = false;
+    static int accumLimit = 0;
+
+    if (!pauseAccum)
+        accumFrames++;
+
+    static std::unordered_map<std::string, float> accumCPU;
+    static std::unordered_map<std::string, float> accumGPU;
+    static std::unordered_map<std::string, bool> sumCheckBoxes;
+    bool wantsSum = false;
+    float sums[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    if (ImGui::BeginTable("profiling", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
     {
         ImGuiIO& io = ImGui::GetIO();
 
         ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("CPU ms", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("A. CPU", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("A. GPU", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Sum", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
 
         int entryIndex = -1;
@@ -5878,10 +5903,95 @@ void ShowProfilerWindow()
             ImGui::Text("%0.3f", stableProfiling ? stableSampleCPU.getStableAverage() : stableSampleCPU.getCurrentValue());
             ImGui::TableNextColumn();
             ImGui::Text("%0.3f", stableProfiling ? stableSampleGPU.getStableAverage() : stableSampleGPU.getCurrentValue());
+
+            // Accumulated CPU
+            {
+                ImGui::TableNextColumn();
+                float value = accumCPU[entry.label];
+                if (!pauseAccum)
+                {
+                    value = Lerp(value, entry.CPUDurationSeconds * 1000.0f, 1.0f / float(accumFrames));
+                    accumCPU[entry.label] = value;
+                }
+                ImGui::Text("%0.3f", value);
+            }
+
+            // Accumulated GPU
+            {
+                ImGui::TableNextColumn();
+                float value = accumGPU[entry.label];
+                if (!pauseAccum)
+                {
+                    value = Lerp(value, entry.GPUDurationSeconds * 1000.0f, 1.0f / float(accumFrames));
+                    accumGPU[entry.label] = value;
+                }
+                ImGui::Text("%0.3f", value);
+            }
+
+            // Sum checkbox
+            {
+                ImGui::TableNextColumn();
+
+                if (entry.label != "Total")
+                {
+                    ImGui::PushID(entry.label.c_str());
+                    ImGui::PushID("sumcb");
+                    bool includeInSum = sumCheckBoxes[entry.label];
+                    ImGui::Checkbox("", &includeInSum);
+                    sumCheckBoxes[entry.label] = includeInSum;
+                    ImGui::PopID();
+                    ImGui::PopID();
+
+                    if (includeInSum)
+                    {
+                        wantsSum = true;
+                        sums[0] += stableProfiling ? stableSampleCPU.getStableAverage() : stableSampleCPU.getCurrentValue();
+                        sums[1] += stableProfiling ? stableSampleGPU.getStableAverage() : stableSampleGPU.getCurrentValue();
+                        sums[2] += accumCPU[entry.label];
+                        sums[3] += accumGPU[entry.label];
+                    }
+                }
+            }
+        }
+        // sum row
+        if (wantsSum)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted("Selection Sum");
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[0]);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[1]);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[2]);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[3]);
+
+            ImGui::TableNextColumn();
         }
         ImGui::EndTable();
 
         ImGui::Checkbox("Stabilize", &stableProfiling);
+
+        if (ImGui::Button((pauseAccum ? "Unpause Accum" : "Pause Accum")))
+            pauseAccum = !pauseAccum;
+        ImGui::SameLine();
+        char buttonText[1024];
+        sprintf_s(buttonText, "Reset Accum (%i frames)###ResetAccum", accumFrames);
+        if (ImGui::Button(buttonText) || g_techniqueFrameIndex < accumFrames)
+        {
+            pauseAccum = false;
+            accumFrames = 0;
+        }
+        if (ImGui::InputInt("Accum Limit", &accumLimit))
+            pauseAccum = false;
+        if (accumLimit > 0 && accumFrames >= accumLimit)
+            pauseAccum = true;
 
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
         ImGui::TextWrapped(
@@ -6844,6 +6954,11 @@ public:
         g_systemVariables.camera.cameraPos[2] = Z;
     }
 
+    void SetCameraFOV(float fov) override final
+    {
+        g_systemVariables.camera.FOV = fov;
+    }
+
     void SetCameraAltitudeAzimuth(float altitude, float azimuth) override final
     {
         g_systemVariables.camera.cameraAltitudeAzimuth[0] = altitude;
@@ -7286,9 +7401,9 @@ int main(int argc, char** argv)
             g_GPUValidation = true;
             argIndex++;
         }
-        else if (!_stricmp(argv[argIndex], "-renderdoc"))
+        else if (!_stricmp(argv[argIndex], "-norenderdoc"))
         {
-            g_renderDocEnabled = true;
+            g_renderDocEnabled = false;
             argIndex++;
         }
         else if (!_stricmp(argv[argIndex], "-nopixcapture"))
@@ -7299,6 +7414,11 @@ int main(int argc, char** argv)
         else if (!_stricmp(argv[argIndex], "-compileshadersfordebug"))
         {
             g_interpreter.m_compileShadersForDebug = true;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-warpadapter"))
+        {
+            g_useWarpAdapter = true;
             argIndex++;
         }
         else
@@ -7384,7 +7504,7 @@ int main(int argc, char** argv)
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
-    // adjustment to make log scroll regision more recognizable
+    // adjustment to make log scroll revision more recognizable
     {
         ImGuiStyle* style = &ImGui::GetStyle();
         ImVec4* colors = style->Colors;
@@ -7400,6 +7520,8 @@ int main(int argc, char** argv)
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    // Menus and Popups partial see through is cool but can be distracting.
+    style.Colors[ImGuiCol_PopupBg].w = 1.0f;
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(g_hwnd);
@@ -7680,11 +7802,9 @@ bool CreateDeviceD3D(HWND hWnd)
     }
 
     // Gather the adapters
-    IDXGIAdapter1* adapter = nullptr; 
-    if (SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(
-        0,
-        DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-        IID_PPV_ARGS(&adapter))))
+    IDXGIAdapter1* adapter = nullptr;
+    if ((g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)))) ||
+        (!g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)))))
     {
         DXGI_ADAPTER_DESC1 desc;
         adapter->GetDesc1(&desc);

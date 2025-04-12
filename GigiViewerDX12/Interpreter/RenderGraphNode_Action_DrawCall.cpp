@@ -1054,17 +1054,24 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					// transition
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE, GetNodeName(resourceNode).c_str()) });
 
-					ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
-					if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
+					if (VRSSupportLevel() == D3D12_VARIABLE_SHADING_RATE_TIER_2)
 					{
-						m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
-						return false;
+						ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
+						if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
+						{
+							m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
+							return false;
+						}
+
+						// Set the shading rate image
+						VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
+
+						VRSCommandList->Release();
 					}
-
-					// Set the shading rate image
-					VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
-
-					VRSCommandList->Release();
+					else
+					{
+						m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
+					}
 				}
 			}
 		}
@@ -1585,6 +1592,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		m_commandList->OMSetStencilRef(node.stencilRef);
 
 		// variable rate shading - set sparse sampling
+		if (VRSSupportLevel() > D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED)
 		{
 			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
@@ -1729,6 +1737,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		}
 
 		// variable rate shading - set it back to dense sampling
+		if (VRSSupportLevel() > D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED)
 		{
 			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
@@ -1738,7 +1747,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			}
 
 			VRSCommandList->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
-			VRSCommandList->RSSetShadingRateImage(nullptr);
+
+			if (VRSSupportLevel() == D3D12_VARIABLE_SHADING_RATE_TIER_2)
+				VRSCommandList->RSSetShadingRateImage(nullptr);
 
 			VRSCommandList->Release();
 		}

@@ -45,6 +45,8 @@ STRUCT_BEGIN(Variable, "A variable definition")
     STRUCT_FIELD(std::string, originalName, "", "The name before renames and sanitization", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, scope, "", "The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.", SCHEMA_FLAG_NO_SERIALIZE)
 
+	STRUCT_FIELD(bool, system, false, "Is set if the runtime overrides the value", SCHEMA_FLAG_NO_SERIALIZE | SCHEMA_FLAG_NO_UI)
+
     // deprecated in 0.94b
     // replaced by UISettings.UIHint
     STRUCT_FIELD(VariableUIHint, UIHint, VariableUIHint::Count, "Any hints for UI", SCHEMA_FLAG_NO_UI)

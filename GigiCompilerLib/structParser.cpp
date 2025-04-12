@@ -32,6 +32,8 @@ DataFieldType getDataFieldType(const std::string& value)
 	if (value == "bool") return DataFieldType::Bool;
 	if (value == "float4x4") return DataFieldType::Float4x4;
 	if (value == "uint16") return DataFieldType::Uint_16;
+	if (value == "int64_t") return DataFieldType::Int_64;
+	if (value == "uint64_t") return DataFieldType::Uint_64;
 
 	// not recognized
 	return DataFieldType::Count;

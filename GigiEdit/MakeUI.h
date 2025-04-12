@@ -2167,8 +2167,8 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
             // find which index was added from the oldResources array. Note that it may have been the last one.
             int index = 0;
 
-            while (index < value.resources.size() 
-                && index < oldResources.size() 
+            while (index < value.resources.size()
+                && index < oldResources.size()
                 && value.resources[index].name == oldResources[index].name)
                 index++;
 
@@ -2187,7 +2187,6 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                     }
                 }
             }
-            
             OnShaderResourceAdd(value, value.resources[index].name);
         }
         // If a resource was deleted, we need to unhook everything that was plugged into that pin
@@ -2213,7 +2212,8 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                     if (index + 1 < value.resources.size() && value.resources[index + 1].name != oldResources[index + 1].name)
                         break;
 
-                    // otherwise it's a rename --- don't allow duplicates though.
+                    // otherwise it's a rename --- don't allow duplicates
+                    // // this doesn't reallydo anything except not call the callback, it
                     bool isUnique = true;
                     for (const ShaderResource& old : oldResources)
                     {

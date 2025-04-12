@@ -584,6 +584,11 @@ public:
 		return m_dxrDevice != nullptr;
 	}
 
+	D3D12_VARIABLE_SHADING_RATE_TIER VRSSupportLevel() const
+	{
+		return m_dx12_options6.VariableShadingRateTier;
+	}
+
 	const D3D12_FEATURE_DATA_D3D12_OPTIONS5& GetOptions5() const
 	{
 		return m_dx12_options5;

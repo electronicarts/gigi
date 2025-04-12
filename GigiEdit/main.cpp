@@ -247,7 +247,7 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
             }
             case RenderGraphNode::c_index_actionDrawCall:
             {
-                if (node.actionDrawCall.vertexShader.name != shader.name 
+                if (node.actionDrawCall.vertexShader.name != shader.name
                     && node.actionDrawCall.pixelShader.name != shader.name
                     && node.actionDrawCall.meshShader.name != shader.name
                     && node.actionDrawCall.amplificationShader.name != shader.name)
@@ -657,8 +657,12 @@ struct Example :
     {
 		if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
 		{
+			// e.g. "C:\\gitlab\\gigi"
+			std::filesystem::path defaultPath = std::filesystem::current_path();
+			std::string exploreLocation = (defaultPath / "Techniques").u8string();
+
 			nfdchar_t* outPath = nullptr;
-			if (NFD_OpenDialog("gg", "Techniques", &outPath) == NFD_OKAY)
+			if (NFD_OpenDialog("gg", exploreLocation.c_str(), &outPath) == NFD_OKAY)
 				LoadJSONFile(outPath);
 		}
     }
@@ -1488,55 +1492,6 @@ struct Example :
 					SetNodeName(node, oldNodeName);
 					OnNodeRename(oldNodeName, newNodeName);
 					SetNodeName(node, newNodeName);
-				}
-
-				// custom UI for node types
-				switch (node._index)
-				{
-					// an edit and explore button for the shader
-				case RenderGraphNode::c_index_actionComputeShader:
-				case RenderGraphNode::c_index_actionRayShader:
-				{
-					int shaderIndex;
-					if (node._index == RenderGraphNode::c_index_actionComputeShader)
-						shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::Compute, node.actionComputeShader.shader.name.c_str());
-					else
-						shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::RTRayGen, node.actionRayShader.shader.name.c_str());
-					if (shaderIndex < 0)
-						break;
-
-					if (g_renderGraph.shaders[shaderIndex].fileName.empty())
-						break;
-
-					ImGui::Text("Shader:");
-					ImGui::SameLine();
-					ImGui::InputText("##ShaderFileName", (char*)g_renderGraph.shaders[shaderIndex].fileName.c_str(), g_renderGraph.shaders[shaderIndex].fileName.length(), ImGuiInputTextFlags_ReadOnly);
-
-					std::filesystem::path defaultPath = std::filesystem::path(g_renderGraphFileName).remove_filename();
-
-					std::string exploreLocation;
-
-					if (g_renderGraph.shaders[shaderIndex].fileName.empty())
-						exploreLocation = defaultPath.u8string();
-					else
-						exploreLocation = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).remove_filename().u8string();
-					exploreLocation = std::filesystem::absolute(std::filesystem::path(exploreLocation)).u8string();
-
-					if (ImGui::Button("Edit"))
-					{
-						std::string fullFileName = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).u8string();
-						ShellExecuteA(NULL, "open", fullFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-					}
-
-					ImGui::SameLine();
-
-					if (ImGui::Button("Explore"))
-					{
-						ShellExecuteA(NULL, "explore", exploreLocation.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-					}
-
-					break;
-				}
 				}
 
 				ImGui::Unindent();

@@ -64,6 +64,8 @@ table, th, td, tr
 <tr><td>Bool</td><td>bool</td></tr>
 <tr><td>Float4x4</td><td>float[4][4]</td></tr>
 <tr><td>Uint_16</td><td>a 16 bit uint</td></tr>
+<tr><td>Int_64</td><td>a 64 bit int</td></tr>
+<tr><td>Uint_64</td><td>a 64 bit uint</td></tr>
 <tr><td>Count</td><td></td></tr>
 </table>
 <br/>
@@ -80,6 +82,8 @@ table, th, td, tr
 <tr><td>Float2</td><td>float[2]</td></tr>
 <tr><td>Float3</td><td>float[3]</td></tr>
 <tr><td>Float4</td><td>float[4]</td></tr>
+<tr><td>Int_64</td><td>int64_t</td></tr>
+<tr><td>Uint_64</td><td>uint64_t</td></tr>
 </table>
 <br/>
 
@@ -141,6 +145,25 @@ table, th, td, tr
 <tr><td>MaterialID</td><td>int</td></tr>
 <tr><td>ShapeID</td><td>int</td></tr>
 <tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>GigiSlangOptimizationLevel : The level of optimizations</b><br/><br/>
+<table>
+<tr><th colspan=2>GigiSlangOptimizationLevel</th></tr>
+<tr><td>None</td><td>Don't optimize at all.</td></tr>
+<tr><td>Default</td><td>Default optimization level: balance code quality and compilation time.</td></tr>
+<tr><td>High</td><td>Optimize aggressively.</td></tr>
+<tr><td>Maximum</td><td>Include optimizations that may take a very long time, or may involve severe space-vs-speed tradeoffs.</td></tr>
+</table>
+<br/>
+
+<b>GigiSlangFloatingPointMode : Floating point mode</b><br/><br/>
+<table>
+<tr><th colspan=2>GigiSlangFloatingPointMode</th></tr>
+<tr><td>Default</td><td></td></tr>
+<tr><td>Fast</td><td></td></tr>
+<tr><td>Precise</td><td></td></tr>
 </table>
 <br/>
 
@@ -730,10 +753,16 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
-<b>SlangOptions : A declaration of a shader</b><br/><br/>
+<b>SlangOptions : Slang options</b><br/><br/>
 <table>
 <tr><th colspan=3>SlangOptions</th></tr>
 <tr><td>bool process</td><td>false</td><td>if true, this shader will be processed by slang</td></tr>
+<tr><td>bool noNameMangling</td><td>false</td><td>Do as little mangling of names as possible, to try to preserve original names.</td></tr>
+<tr><td>bool lineDirectives</td><td>true</td><td>Whether to output line directives in the shader.</td></tr>
+<tr><td>bool warningsAsErrors</td><td>false</td><td>Warnings are errors.</td></tr>
+<tr><td>bool verbosePaths</td><td>false</td><td>Verbose Paths.</td></tr>
+<tr><td>GigiSlangFloatingPointMode floatingPointMode</td><td>GigiSlangFloatingPointMode::Default</td><td>Floating point mode</td></tr>
+<tr><td>GigiSlangOptimizationLevel optimizationLevel</td><td>GigiSlangOptimizationLevel::Default</td><td>Optimization level</td></tr>
 </table>
 <br/>
 
@@ -792,6 +821,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>int enumIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
 <tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
+<tr><td><i>bool system</i></td><td>false</td><td>Is set if the runtime overrides the value</td></tr>
 <tr><td>VariableUIHint UIHint</td><td>VariableUIHint::Count</td><td>Any hints for UI</td></tr>
 </table>
 <br/>

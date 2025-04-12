@@ -543,6 +543,8 @@ inline size_t DataFieldTypeToSize(DataFieldType type)
         case DataFieldType::Bool: return 4;
         case DataFieldType::Float4x4: return 4 * 4 * 4;
         case DataFieldType::Uint_16: return 2;
+        case DataFieldType::Int_64: return 8;
+        case DataFieldType::Uint_64: return 8;
         default:
         {
             Assert(false, "Unknown data field type: %i", type);
@@ -570,6 +572,8 @@ inline size_t DataFieldTypeComponentCount(DataFieldType type)
         case DataFieldType::Bool: return 1;
         case DataFieldType::Float4x4: return 16;
         case DataFieldType::Uint_16: return 1;
+        case DataFieldType::Int_64: return 1;
+        case DataFieldType::Uint_64: return 1;
         default:
         {
             Assert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
@@ -685,6 +689,8 @@ static std::string DataFieldTypeToShaderType(DataFieldType type)
         case DataFieldType::Bool: return "uint";
         case DataFieldType::Float4x4: return "float4x4";
         case DataFieldType::Uint_16: return "uint";
+        case DataFieldType::Int_64: return "int64";
+        case DataFieldType::Uint_64: return "uint64";
         case DataFieldType::Count:
         {
             Assert(false, "Invalid data field type: Count");
@@ -791,6 +797,8 @@ enum class DataFieldComponentType
 	_int,
 	_uint16_t,
 	_uint32_t,
+    _int64_t,
+    _uint64_t,
 	_float,
 };
 
@@ -835,6 +843,8 @@ inline DataFieldTypeInfoStruct DataFieldTypeInfo(DataFieldType type)
         case DataFieldType::Bool: return DATA_FIELD_TYPE_INFO(uint32_t, 1, DataFieldType::Bool);
         case DataFieldType::Float4x4: return DATA_FIELD_TYPE_INFO(float, 16, DataFieldType::Float);
         case DataFieldType::Uint_16: return DATA_FIELD_TYPE_INFO(uint16_t, 1, DataFieldType::Uint_16);
+        case DataFieldType::Int_64: return DATA_FIELD_TYPE_INFO(int64_t, 1, DataFieldType::Int_64);
+        case DataFieldType::Uint_64: return DATA_FIELD_TYPE_INFO(uint64_t, 1, DataFieldType::Uint_64);
         default:
         {
             Assert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SlangAutoDiff",
-    "version": "0.98b",
+    "version": "0.991b",
     "variables": [
         {
             "name": "NumGaussians",
@@ -95,7 +95,8 @@
                     "type": "Buffer",
                     "access": "UAV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -110,13 +111,17 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
@@ -143,7 +148,8 @@
                     "type": "Buffer",
                     "access": "UAV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
