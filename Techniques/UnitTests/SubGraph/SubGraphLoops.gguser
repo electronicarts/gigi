@@ -1,54 +1,57 @@
 {
-    "resourceViewNodeIndex": 7,
-    "resourceViewResourceIndex": 3,
-    "importedResources": [
-        {
-            "nodeName": "Input",
-            "texture": {
-                "fileName": "..\\cabinsmall.png"
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 7,
+        "resourceViewResourceIndex": 3,
+        "importedResources": [
+            {
+                "nodeName": "Input",
+                "texture": {
+                    "fileName": "..\\cabinsmall.png"
+                }
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "FilterSub_Iteration_0_LoopIndex",
-            "value": "0"
-        },
-        {
-            "name": "FilterSub_Iteration_0_sRGB",
-            "value": "true"
-        },
-        {
-            "name": "FilterSub_Iteration_1_LoopIndex",
-            "value": "0"
-        },
-        {
-            "name": "FilterSub_Iteration_1_sRGB",
-            "value": "true"
-        },
-        {
-            "name": "FilterSub_Iteration_2_LoopIndex",
-            "value": "0"
-        },
-        {
-            "name": "FilterSub_Iteration_2_sRGB",
-            "value": "true"
-        },
-        {
-            "name": "FilterSub_Iteration_3_LoopIndex",
-            "value": "0"
-        },
-        {
-            "name": "FilterSub_Iteration_3_sRGB",
-            "value": "true"
-        },
-        {
-            "name": "FilterSub_Iteration_4_LoopIndex",
-            "value": "0"
-        },
-        {
-            "name": "FilterSub_Iteration_4_sRGB",
-            "value": "true"
-        }
-    ]
+        ],
+        "savedVariables": [
+            {
+                "name": "FilterSub_Iteration_0_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "FilterSub_Iteration_0_sRGB",
+                "value": "true"
+            },
+            {
+                "name": "FilterSub_Iteration_1_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "FilterSub_Iteration_1_sRGB",
+                "value": "true"
+            },
+            {
+                "name": "FilterSub_Iteration_2_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "FilterSub_Iteration_2_sRGB",
+                "value": "true"
+            },
+            {
+                "name": "FilterSub_Iteration_3_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "FilterSub_Iteration_3_sRGB",
+                "value": "true"
+            },
+            {
+                "name": "FilterSub_Iteration_4_LoopIndex",
+                "value": "0"
+            },
+            {
+                "name": "FilterSub_Iteration_4_sRGB",
+                "value": "true"
+            }
+        ]
+    }
 }

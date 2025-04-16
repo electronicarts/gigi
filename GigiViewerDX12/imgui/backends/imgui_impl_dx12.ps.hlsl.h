@@ -10,6 +10,7 @@ static const uint ImGuiShaderFlag_UINTByteCountBit1 = 1 << 6;
 static const uint ImGuiShaderFlag_UINTByteCountBit2 = 1 << 7;
 static const uint ImGuiShaderFlag_UINTByteCountBit3 = 1 << 8;
 static const uint ImGuiShaderFlag_Signed = 1 << 9;
+static const uint ImGuiShaderFlag_Clamp = 1 << 10;
 
 static const uint ImGuiShaderFlag_HideBits = ImGuiShaderFlag_HideR | ImGuiShaderFlag_HideG | ImGuiShaderFlag_HideB | ImGuiShaderFlag_HideA;
 
@@ -40,6 +41,14 @@ float4 main(PS_INPUT input) : SV_Target
         (flags & ImGuiShaderFlag_HideB) ? 0.0f : 1.0f,
         (flags & ImGuiShaderFlag_HideA) ? 0.0f : 1.0f);
     float2 uv = input.uv;
+    if (flags & ImGuiShaderFlag_Clamp)
+    {
+        uint w,h;
+        texture0.GetDimensions(w, h);
+        float2 minUV = float2(0.5f, 0.5f) / float2(w, h);
+        float2 maxUV = (float2(w,h) - float2(0.5f, 0.5f)) / float2(w, h);
+        uv = clamp(uv, minUV, maxUV);
+    }
     if (flags & ImGuiShaderFlag_Nearest)
     {
         uint w,h;

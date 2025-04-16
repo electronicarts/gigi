@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.98b",
+    "version": "0.991b",
     "variables": [
         {
             "name": "LoopIndex",
@@ -23,14 +23,26 @@
                 {
                     "name": "Input",
                     "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "sRGB.hlsli",
+            "type": "Shader"
         }
     ],
     "nodes": [
