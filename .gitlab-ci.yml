@@ -24,6 +24,7 @@ win64_build_release:
       - GigiCompiler.exe
       - GigiCompiler.pdb
       - python310.dll
+      - renderdoc.dll
       - libcurl-x64.dll
       - WinPixEventRuntime.dll
       - dxcompiler.dll

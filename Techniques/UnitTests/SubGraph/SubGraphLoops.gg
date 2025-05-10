@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SubGraphLoops",
-    "version": "0.98b",
+    "version": "0.991b",
     "nodes": [
         {
             "actionSubGraph": {

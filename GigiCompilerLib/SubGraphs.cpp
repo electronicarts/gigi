@@ -602,7 +602,9 @@ struct RenameChildVisitor
         // Need to handle the subgraph possibly being in a parent directory etc.
         if (fileCopy.destFileName.empty())
             fileCopy.destFileName = fileCopy.fileName;
-        fileCopy.destFileName = (std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension() / fileCopy.destFileName).string();
+        std::string destFolder = std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension().string() + "_" + m_subGraphNode.name;
+        fileCopy.destFileName = (std::filesystem::path(destFolder) / fileCopy.destFileName).string();
+        StringReplaceAll(fileCopy.destFileName, "\\", "/");
 
         // make the file path relative to the parent graph, not the child
         std::filesystem::path GGFilePath = std::filesystem::path(m_childGraph.baseDirectory) / std::filesystem::path(fileCopy.fileName);

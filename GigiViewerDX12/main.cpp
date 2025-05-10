@@ -104,6 +104,7 @@ static const uint64_t ImGuiShaderFlag_UINTByteCountBit1 = 1 << 6;
 static const uint64_t ImGuiShaderFlag_UINTByteCountBit2 = 1 << 7;
 static const uint64_t ImGuiShaderFlag_UINTByteCountBit3 = 1 << 8;
 static const uint64_t ImGuiShaderFlag_Signed = 1 << 9;
+static const uint64_t ImGuiShaderFlag_Clamp = 1 << 10;
 
 struct FrameContext
 {
@@ -1674,7 +1675,7 @@ void MakeInitialLayout(ImGuiID dockspace_id)
 
 uint64_t GetImGuiImageShaderFlags(DXGI_FORMAT format, bool mainView)
 {
-    uint64_t flags = ImGuiShaderFlag_Checker;
+    uint64_t flags = ImGuiShaderFlag_Checker | ImGuiShaderFlag_Clamp;
 
     // Depth stencil buffer formats, specifically wanting to see the stencil bits
     if (format == DXGI_FORMAT_X24_TYPELESS_G8_UINT || format == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT)
