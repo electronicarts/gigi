@@ -1,4 +1,0 @@
-1.614.1 
-downloaded from https://www.nuget.org/packages/Microsoft.Direct3D.D3D12/1.614.1
-I renamed the .nupkg to .zip and grabbed the bin and include from the build/native folder.
-I also copied the contents of bin/x64 to bin and deleted the 3 subfolders (arm64, win32, x64)
