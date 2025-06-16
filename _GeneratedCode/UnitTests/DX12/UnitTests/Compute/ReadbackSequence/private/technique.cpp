@@ -175,12 +175,12 @@ namespace ReadbackSequence
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_input.texture_Output;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_input.texture_Output_state;
     }
 
     void OnNewFrame(int framesInFlight)

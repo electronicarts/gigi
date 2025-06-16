@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "Texture2DRW_CS",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RWCS",
@@ -11,17 +11,26 @@
                 {
                     "name": "nodeTexture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "importedTexture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "importedColor",
                     "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -107,5 +116,8 @@
                 "visibility": "Imported"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "NodeTexture"
+    }
 }

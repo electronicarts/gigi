@@ -13,6 +13,75 @@
 
 typedef std::array<int, 3> IVec3;
 
+inline bool D3D12_LINEAR_ALGEBRA_DATATYPE_Size(D3D12_LINEAR_ALGEBRA_DATATYPE type, size_t& size)
+{
+	switch (type)
+	{
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16: size = 2; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16: size = 2; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16: size = 2; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8: size = 1; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8: size = 1; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3: size = 1; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2: size = 1; return true;
+		default: return false;
+	}
+
+	return false;
+}
+
+inline bool CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(CooperativeVectorDataType input, D3D12_LINEAR_ALGEBRA_DATATYPE& output)
+{
+	switch (input)
+	{
+		case CooperativeVectorDataType::_sint16: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16; return true;
+		case CooperativeVectorDataType::_uint16: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16; return true;
+		case CooperativeVectorDataType::_sint32: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32; return true;
+		case CooperativeVectorDataType::_uint32: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32; return true;
+		case CooperativeVectorDataType::_float16: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16; return true;
+		case CooperativeVectorDataType::_float32: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32; return true;
+		case CooperativeVectorDataType::_sint8x4: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED; return true;
+		case CooperativeVectorDataType::_uint8x4: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED; return true;
+		case CooperativeVectorDataType::_uint8: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8; return true;
+		case CooperativeVectorDataType::_sint8: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8; return true;
+		case CooperativeVectorDataType::_float8_e4m3: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3; return true;
+		case CooperativeVectorDataType::_float8_e5m2: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2; return true;
+		default: return false;
+	}
+	return false;
+}
+
+inline bool CooperativeVectorBufferLayoutIsOptimized(CooperativeVectorBufferLayout layout)
+{
+	switch (layout)
+	{
+		case CooperativeVectorBufferLayout::RowMajor: return false;
+		case CooperativeVectorBufferLayout::ColMajor: return false;
+		case CooperativeVectorBufferLayout::MulOptimal: return true;
+		case CooperativeVectorBufferLayout::OuterProductOptimal: return true;
+		default: return false;
+	}
+	return false;
+}
+
+inline bool CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(CooperativeVectorBufferLayout layout, D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT& output)
+{
+	switch (layout)
+	{
+		case CooperativeVectorBufferLayout::RowMajor: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_ROW_MAJOR; return true;
+		case CooperativeVectorBufferLayout::ColMajor: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_COLUMN_MAJOR; return true;
+		case CooperativeVectorBufferLayout::MulOptimal: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_MUL_OPTIMAL; return true;
+		case CooperativeVectorBufferLayout::OuterProductOptimal: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_OUTER_PRODUCT_OPTIMAL; return true;
+		default: return false;
+	}
+	return false;
+}
+
 inline bool ShadingRateToD3D12_SHADING_RATE(ShadingRate shadingRate, D3D12_SHADING_RATE& d3d12ShadingRate)
 {
 	switch (shadingRate)
@@ -268,6 +337,7 @@ inline DataFieldTypeInfoStructDX12 DataFieldTypeInfoDX12(DataFieldType type)
         case DataFieldType::Uint_16: return DATA_FIELD_TYPE_INFO_DX12(uint16_t, 1, DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R16_UINT, 1);
         case DataFieldType::Int_64: return DATA_FIELD_TYPE_INFO_DX12(int64_t, 1, DXGI_FORMAT_R32_SINT, DXGI_FORMAT_R32_SINT, 1);
         case DataFieldType::Uint_64: return DATA_FIELD_TYPE_INFO_DX12(uint64_t, 1, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32_UINT, 1);
+        case DataFieldType::Float_16: return DATA_FIELD_TYPE_INFO_DX12(uint16_t, 1, DXGI_FORMAT_R16_FLOAT, DXGI_FORMAT_R16_FLOAT, 1);
         default:
         {
             Assert(false, "Unknown data field type: %i", type);

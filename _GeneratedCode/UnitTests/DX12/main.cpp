@@ -41,7 +41,7 @@ static const unsigned int c_renderSize[2] = { 1024, 768 };
 #endif
 
 // Gigi Modification Begin
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 616; }
 extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\AgilitySDK\\bin\\"; }
 
 #include "DX12Utils/FileCache.h"
@@ -138,6 +138,12 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 #include "UnitTests\Compute\boxblur\public\technique.h"
 #include "UnitTests\Compute\boxblur\public\imgui.h"
 #include "UnitTests\Compute\boxblur\private\technique.h"
+#include "UnitTests\Compute\BufferAtomics\public\technique.h"
+#include "UnitTests\Compute\BufferAtomics\public\imgui.h"
+#include "UnitTests\Compute\BufferAtomics\private\technique.h"
+#include "UnitTests\Compute\Defines\public\technique.h"
+#include "UnitTests\Compute\Defines\public\imgui.h"
+#include "UnitTests\Compute\Defines\private\technique.h"
 #include "UnitTests\Compute\IndirectDispatch\public\technique.h"
 #include "UnitTests\Compute\IndirectDispatch\public\imgui.h"
 #include "UnitTests\Compute\IndirectDispatch\private\technique.h"
@@ -314,6 +320,8 @@ BarrierTest::Context* m_BarrierTest = nullptr;
 buffertest::Context* m_buffertest = nullptr;
 StructuredBuffer::Context* m_StructuredBuffer = nullptr;
 boxblur::Context* m_boxblur = nullptr;
+BufferAtomics::Context* m_BufferAtomics = nullptr;
+Defines::Context* m_Defines = nullptr;
 IndirectDispatch::Context* m_IndirectDispatch = nullptr;
 ReadbackSequence::Context* m_ReadbackSequence = nullptr;
 simple::Context* m_simple = nullptr;
@@ -374,12 +382,14 @@ TextureFormats::Context* m_TextureFormats = nullptr;
 
 #include "UnitTestLogic.h"
 
-bool g_doSubsetTest = false; // If true, it will only test the techniques set to true below
+bool g_doSubsetTest = false; // If true, it will only test the techniques set to true below. Good for testing single techniques.
 
 bool g_doTest_BarrierTest = false;
 bool g_doTest_buffertest = false;
 bool g_doTest_StructuredBuffer = false;
 bool g_doTest_boxblur = false;
+bool g_doTest_BufferAtomics = false;
+bool g_doTest_Defines = false;
 bool g_doTest_IndirectDispatch = false;
 bool g_doTest_ReadbackSequence = false;
 bool g_doTest_simple = false;
@@ -618,6 +628,34 @@ int main(int, char**)
         if (!m_boxblur)
         {
             printf("Could not create m_boxblur context");
+            return 1;
+        }
+    }
+
+    if (!g_doSubsetTest || g_doTest_BufferAtomics)
+    {
+        BufferAtomics::Context::LogFn = &LogFunction;
+        BufferAtomics::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        BufferAtomics::Context::PerfEventEndFn = &PerfEventEndFn;
+        BufferAtomics::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\BufferAtomics\\";
+        m_BufferAtomics = BufferAtomics::CreateContext(g_pd3dDevice);
+        if (!m_BufferAtomics)
+        {
+            printf("Could not create m_BufferAtomics context");
+            return 1;
+        }
+    }
+
+    if (!g_doSubsetTest || g_doTest_Defines)
+    {
+        Defines::Context::LogFn = &LogFunction;
+        Defines::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        Defines::Context::PerfEventEndFn = &PerfEventEndFn;
+        Defines::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\Defines\\";
+        m_Defines = Defines::CreateContext(g_pd3dDevice);
+        if (!m_Defines)
+        {
+            printf("Could not create m_Defines context");
             return 1;
         }
     }
@@ -1470,6 +1508,10 @@ int main(int, char**)
             StructuredBuffer::MakeUI(m_StructuredBuffer, g_pd3dCommandQueue);
         if (m_boxblur && ImGui::CollapsingHeader("boxblur"))
             boxblur::MakeUI(m_boxblur, g_pd3dCommandQueue);
+        if (m_BufferAtomics && ImGui::CollapsingHeader("BufferAtomics"))
+            BufferAtomics::MakeUI(m_BufferAtomics, g_pd3dCommandQueue);
+        if (m_Defines && ImGui::CollapsingHeader("Defines"))
+            Defines::MakeUI(m_Defines, g_pd3dCommandQueue);
         if (m_IndirectDispatch && ImGui::CollapsingHeader("IndirectDispatch"))
             IndirectDispatch::MakeUI(m_IndirectDispatch, g_pd3dCommandQueue);
         if (m_ReadbackSequence && ImGui::CollapsingHeader("ReadbackSequence"))
@@ -1660,6 +1702,10 @@ int main(int, char**)
             StructuredBuffer::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_boxblur)
             boxblur::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_BufferAtomics)
+            BufferAtomics::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_Defines)
+            Defines::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_IndirectDispatch)
             IndirectDispatch::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_ReadbackSequence)
@@ -1783,6 +1829,10 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PreExecute);
         if (m_boxblur)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PreExecute);
+        if (m_BufferAtomics)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BufferAtomics, UnitTestEvent::PreExecute);
+        if (m_Defines)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Defines, UnitTestEvent::PreExecute);
         if (m_IndirectDispatch)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PreExecute);
         if (m_ReadbackSequence)
@@ -1906,6 +1956,10 @@ int main(int, char**)
             StructuredBuffer::Execute(m_StructuredBuffer, g_pd3dDevice, g_pd3dCommandList);
         if (m_boxblur)
             boxblur::Execute(m_boxblur, g_pd3dDevice, g_pd3dCommandList);
+        if (m_BufferAtomics)
+            BufferAtomics::Execute(m_BufferAtomics, g_pd3dDevice, g_pd3dCommandList);
+        if (m_Defines)
+            Defines::Execute(m_Defines, g_pd3dDevice, g_pd3dCommandList);
         if (m_IndirectDispatch)
             IndirectDispatch::Execute(m_IndirectDispatch, g_pd3dDevice, g_pd3dCommandList);
         if (m_ReadbackSequence)
@@ -2029,6 +2083,10 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_StructuredBuffer, UnitTestEvent::PostExecute);
         if (m_boxblur)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_boxblur, UnitTestEvent::PostExecute);
+        if (m_BufferAtomics)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_BufferAtomics, UnitTestEvent::PostExecute);
+        if (m_Defines)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_Defines, UnitTestEvent::PostExecute);
         if (m_IndirectDispatch)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_IndirectDispatch, UnitTestEvent::PostExecute);
         if (m_ReadbackSequence)
@@ -2198,6 +2256,16 @@ int main(int, char**)
     {
         boxblur::DestroyContext(m_boxblur);
         m_boxblur = nullptr;
+    }
+    if (m_BufferAtomics)
+    {
+        BufferAtomics::DestroyContext(m_BufferAtomics);
+        m_BufferAtomics = nullptr;
+    }
+    if (m_Defines)
+    {
+        Defines::DestroyContext(m_Defines);
+        m_Defines = nullptr;
     }
     if (m_IndirectDispatch)
     {

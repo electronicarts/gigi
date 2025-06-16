@@ -121,12 +121,12 @@ namespace Mips_DrawCall
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Final_Color_Buffer;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Final_Color_Buffer_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -1792,7 +1792,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_internal.texture_Color_Buffer, context->m_internal.texture_Color_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
+                { context->m_internal.texture_Color_Buffer, context->m_internal.texture_Color_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_internal.texture_Color_Buffer_size[2], 0 },
                 { context->m_internal.constantBuffer__PixelShaderSphereCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 2, Context::LogFn);

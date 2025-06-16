@@ -73,6 +73,8 @@ void Miss(inout Payload payload : SV_RayPayload)
 
 float TestSphereTrace(in float3 rayPos, in float3 rayDir, in float4 sphere, out float3 normal)
 {
+	normal = float3(0.0f, 0.0f, 0.0f);
+
 	//get the vector from the center of this sphere to where the ray begins.
 	float3 m = rayPos - sphere.xyz;
 
@@ -107,14 +109,14 @@ float TestSphereTrace(in float3 rayPos, in float3 rayDir, in float4 sphere, out 
 }
 
 [shader("closesthit")]
-#line 90
+#line 92
 void ClosestHit(inout Payload payload : SV_RayPayload, in HitAttributes intersection : SV_IntersectionAttributes)
 {
 	payload.normal = intersection.normal;
 }
 
 [shader("anyhit")]
-#line 95
+#line 97
 void AnyHit(inout Payload payload, in HitAttributes attr)
 {
 	if (attr.normal.y > 0.5f && attr.normal.y < 0.6f)
@@ -122,7 +124,7 @@ void AnyHit(inout Payload payload, in HitAttributes attr)
 }
 
 [shader("intersection")]
-#line 101
+#line 103
 void Intersection()
 {
 	HitAttributes attr;

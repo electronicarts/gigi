@@ -30,9 +30,9 @@ namespace IntersectionShader
 
         struct Struct__Ray_GenCB
         {
-            float3 CameraPos = {0.0f, 0.0f, 0.0f};
+            float3 CameraPos = {0.000000f, 0.000000f, 0.000000f};
             float _padding0 = 0.000000f;  // Padding
-            float4x4 InvViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
+            float4x4 InvViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
         };
 
         Struct__Ray_GenCB constantBuffer__Ray_GenCB_cpu;

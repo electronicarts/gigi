@@ -30,18 +30,18 @@ namespace Mips_DrawCall
 
         struct Struct__VertexShaderCB
         {
-            float4x4 ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
+            float4x4 ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
         };
 
         struct Struct__VertexShaderSphereCB
         {
-            float4x4 ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
+            float4x4 ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
         };
 
         struct Struct__PixelShaderSphereCB
         {
             unsigned int UseMips = true;
-            float3 _padding0 = {0.0f,0.0f,0.0f};  // Padding
+            float3 _padding0 = {0.000000f, 0.000000f, 0.000000f};  // Padding
         };
 
         ID3D12Resource* texture_Color_Buffer = nullptr;

@@ -30,10 +30,12 @@ target_include_directories(UnitTests PRIVATE ./AgilitySDK/include/)
 target_include_directories(UnitTests PRIVATE ./DX12Utils/tinyexr/)
 target_include_directories(UnitTests PRIVATE ./DX12Utils/tinyexr/deps/miniz/)
 target_include_directories(UnitTests PRIVATE ./WinPixEventRuntime.1.0.240308001/Include/)
+target_include_directories(UnitTests PRIVATE ./DXC/inc/)
 
 target_link_directories(UnitTests PRIVATE ./WinPixEventRuntime.1.0.240308001/bin/x64/)
+target_link_directories(UnitTests PRIVATE ./DXC/lib/x64/)
 
-target_link_libraries(UnitTests d3d12.lib dxgi.lib d3dcompiler.lib WinPixEventRuntime.lib)
+target_link_libraries(UnitTests d3d12.lib dxgi.lib d3dcompiler.lib WinPixEventRuntime.lib dxcompiler.lib)
 
 target_sources(UnitTests PUBLIC ${SOURCE_FILES})
 

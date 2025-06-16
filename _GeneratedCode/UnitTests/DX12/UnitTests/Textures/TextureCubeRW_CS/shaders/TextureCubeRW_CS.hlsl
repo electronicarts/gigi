@@ -34,11 +34,11 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 		sin(uv.x)*cos(uv.y),
 		sin(uv.x)*sin(uv.y),
 		cos(uv.x)
-	);	
+	);
 
-	float3 loadedTexturePx = _loadedTexture_0.SampleLevel(LinearWrap, dir1, 0).rgb;
-	float3 importedTexturePx = importedTexture[uint3(px, 1)].rgb;
-	float3 importedColorPx = importedColor.SampleLevel(LinearWrap, dir2, 0).rgb;
+    float3 loadedTexturePx = _loadedTexture_0.SampleLevel(LinearWrap, dir1, 0).rgb;
+    float3 importedTexturePx = importedTexture[uint3(px, 1)].rgb;
+    float3 importedColorPx = importedColor.SampleLevel(LinearWrap, dir2, 0).rgb;
 
 	nodeTexture[uint3(px, 0)] = float4((loadedTexturePx * importedTexturePx) * importedColorPx, 1.0f);
 	importedTexture[uint3(px, 2)] = float4((loadedTexturePx + importedTexturePx) / 2.0f * importedColorPx, 1.0f);

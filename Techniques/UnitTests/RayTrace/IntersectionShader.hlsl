@@ -54,6 +54,8 @@ struct HitAttributes
 
 float TestSphereTrace(in float3 rayPos, in float3 rayDir, in float4 sphere, out float3 normal)
 {
+	normal = float3(0.0f, 0.0f, 0.0f);
+
 	//get the vector from the center of this sphere to where the ray begins.
 	float3 m = rayPos - sphere.xyz;
 

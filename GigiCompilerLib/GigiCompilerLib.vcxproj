@@ -111,6 +111,7 @@
     <ClCompile Include="..\external\timyxml2\tinyxml2.cpp" />
     <ClCompile Include="..\FlattenRenderGraph.cpp" />
     <ClCompile Include="..\GigiAssert.cpp" />
+    <ClCompile Include="..\RenderGraph\Visitors.cpp" />
     <ClCompile Include="Backends\DX12\Backend_DX12.cpp" />
     <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -178,7 +179,9 @@
     </ClCompile>
     <ClCompile Include="Backends\GraphViz.cpp" />
     <ClCompile Include="Backends\Interpreter\Backend_Interpreter.cpp" />
+    <ClCompile Include="Backends\ProcessShader_HLSL.cpp" />
     <ClCompile Include="Backends\Shared.cpp" />
+    <None Include="..\.editorconfig" />
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -207,6 +210,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
+    <None Include="Backends\Interpreter\templates\ggconfig.json">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <ClCompile Include="Backends\WebGPU\Backend_WebGPU.cpp" />
     <ClCompile Include="gigicompiler.cpp" />
     <ClCompile Include="gigiinterpreter.cpp" />
     <ClCompile Include="Parse.cpp" />
@@ -214,6 +222,72 @@
     <ClCompile Include="structParser.cpp" />
     <ClCompile Include="SubGraphs.cpp" />
     <ClCompile Include="Utils.cpp" />
+    <None Include="Backends\WebGPU\nodes\nodes.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_barrier.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_computeShader.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_copyResource.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl" />
+    <None Include="Backends\WebGPU\nodes\node_resource_buffer.inl" />
+    <None Include="Backends\WebGPU\nodes\node_resource_shaderConstants.inl" />
+    <None Include="Backends\WebGPU\nodes\node_resource_texture.inl" />
+    <None Include="Backends\WebGPU\templates\Application\.gitignore">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\index.html">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\index.js">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\jquery-csv.js">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Node_GetPackages.bat">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Node_Run.bat">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\style.css">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Web_Open.bat">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Web_Start.bat">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\BVH.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\ggconfig.json">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\GigiRayTracingEmulation.hlsli">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\Module.js">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\Shared.js">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\timyxml2\tinyxml2.h" />
@@ -228,6 +302,7 @@
     <ClInclude Include="..\Schemas\PreviewWindow\PreviewWindowSchemas.h" />
     <ClInclude Include="..\Schemas\TextureFormats.h" />
     <ClInclude Include="..\Schemas\Utils.h" />
+    <ClInclude Include="..\Schemas\WebGPU\WebGPUSchemas.h" />
     <ClInclude Include="Backends\DX12\templates\Application\imgui\imconfig.h">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -417,6 +492,11 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClInclude>
     <ClInclude Include="Backends\GraphViz.h" />
+    <ClInclude Include="Backends\Interpreter\templates\linalg.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClInclude>
+    <ClInclude Include="Backends\ProcessShader.h" />
     <ClInclude Include="Backends\Shared.h" />
     <ClInclude Include="GigiBuildFlavor.h" />
     <ClInclude Include="GigiBuildFlavorList.h" />
@@ -440,14 +520,6 @@
     <None Include="Backends\DX12\nodes\node_resource_shaderConstants.inl" />
     <None Include="Backends\DX12\nodes\node_resource_texture.inl" />
     <None Include="Backends\DX12\templates\Application\.gitignore">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </None>
-    <None Include="Backends\DX12\templates\Application\dxcompiler.dll">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </None>
-    <None Include="Backends\DX12\templates\Application\dxil.dll">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
@@ -531,6 +603,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </Text>
+    <Text Include="Backends\WebGPU\templates\Application\Readme.txt">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.idl">
@@ -557,6 +633,12 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Backends\WebGPU\templates\Application\favicon.ico">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </Image>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

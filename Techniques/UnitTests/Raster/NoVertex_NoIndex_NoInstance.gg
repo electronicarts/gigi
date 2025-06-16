@@ -2,7 +2,7 @@
     "$schema": "gigischema.json",
     "name": "NoVertex_NoIndex_NoInstance",
     "comment": "Vertices generated in vertex shader based on vertex ID.\nInstanceID used to make each instance unique.",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -222,5 +222,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Color Buffer"
+    }
 }

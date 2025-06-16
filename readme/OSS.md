@@ -23,3 +23,4 @@ tinyxml2 | https://github.com/leethomason/tinyxml2 | Read/write xml files.
 DirectXTex | https://github.com/microsoft/DirectXTex | Load, encode and decode dds files.
 Git | https://git-scm.com/downloads | Used by the browser to synchronize local files to remote machines.
 SQLite | https://www.sqlite.org/ | Used by the browser to store and search through known techniques.
+tinybvh | https://github.com/jbikker/tinybvh | Used by the viewer to save vertex data as BVHs

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "TextureFormats",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "csmain",
@@ -11,7 +11,10 @@
                 {
                     "name": "tex",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }

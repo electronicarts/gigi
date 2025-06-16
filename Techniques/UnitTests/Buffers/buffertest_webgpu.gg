@@ -1,0 +1,226 @@
+{
+    "$schema": "gigischema.json",
+    "name": "buffertest_webgpu",
+    "version": "1.0",
+    "variables": [
+        {
+            "name": "gain",
+            "comment": "Overall Volume Adjustment",
+            "type": "Float",
+            "dflt": "0.5",
+            "visibility": "User"
+        },
+        {
+            "name": "alpha1",
+            "comment": "Adjusts the contribution of sample n-1",
+            "type": "Float",
+            "dflt": "1.0",
+            "visibility": "User"
+        },
+        {
+            "name": "alpha2",
+            "comment": "Adjusts the contribution of sample n-2",
+            "type": "Float",
+            "dflt": "0.0",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "BufferTest",
+            "fileName": "BufferTest_webgpu.hlsl",
+            "entryPoint": "Main",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "InputTyped",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputTyped",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "InputStructured",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "TestStruct"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "OutputStructured",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "TestStruct"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                64,
+                1,
+                1
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "TestStruct",
+            "fields": [
+                {
+                    "name": "TheFloat4",
+                    "type": "Float4",
+                    "dflt": "0.0, 0.0, 0.0, 0.0"
+                },
+                {
+                    "name": "TheInt4",
+                    "type": "Int4",
+                    "dflt": "0, 0, 0, 0"
+                },
+                {
+                    "name": "TheBool",
+                    "type": "Bool",
+                    "dflt": "false"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "InputTypedBuffer",
+                "comment": "This is the buffer to be filtered.",
+                "editorPos": [
+                    1145.0,
+                    -191.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutputTypedBuffer",
+                "comment": "An internal buffer used during the filtering process.",
+                "editorPos": [
+                    1129.0,
+                    -111.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "InputTypedBuffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "InputTypedBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "InputStructuredBuffer",
+                "editorPos": [
+                    1097.0,
+                    -31.0
+                ],
+                "visibility": "Imported",
+                "format": {
+                    "structureType": {
+                        "name": "TestStruct"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutputStructuredBuffer",
+                "editorPos": [
+                    1097.0,
+                    48.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "InputStructuredBuffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "InputStructuredBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BufferTest",
+                "comment": "BufferTest compute shader",
+                "editorPos": [
+                    1455.0,
+                    -94.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "InputTyped",
+                        "dstNode": "InputTypedBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputTyped",
+                        "dstNode": "OutputTypedBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "InputStructured",
+                        "dstNode": "InputStructuredBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputStructured",
+                        "dstNode": "OutputStructuredBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BufferTest"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "InputTypedBuffer"
+                    }
+                },
+                "entryPoint": "Main"
+            }
+        }
+    ]
+}

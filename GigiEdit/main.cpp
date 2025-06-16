@@ -565,11 +565,13 @@ struct Example :
         RenderGraph renderGraph;
         if (ReadFromJSONFile(renderGraph, fileName))
         {
+            /*
             if (renderGraph.version != std::string(GIGI_VERSION()))
             {
                 EditorShowMessageBox("File %s is version %s, but needs to be %s.", fileName, renderGraph.version.c_str(), GIGI_VERSION());
             }
             else
+                */
             {
                 g_renderGraph = renderGraph;
                 g_renderGraphDirty = renderGraph.versionUpgraded;
@@ -679,8 +681,17 @@ struct Example :
         }
         else
         {
+            // try absolute path of current filename first
+            std::string path = std::filesystem::path(g_renderGraphFileName).remove_filename().string();
+			if (!path.empty() && path.back() == std::filesystem::path::preferred_separator)
+				path.pop_back();  // remove trailing slash
+
+            // fall back to absolute path with techniques folder
+            if(path.empty())
+	            path = (std::filesystem::current_path() / "Techniques").string();
+
 			nfdchar_t* outPath = nullptr;
-            if (NFD_SaveDialog("gg", "Techniques", &outPath) == NFD_OKAY)
+            if (NFD_SaveDialog("gg", (nfdchar_t*)path.c_str(), &outPath) == NFD_OKAY)
 			{
 				g_renderGraphFileName = outPath;
 
@@ -1461,6 +1472,10 @@ struct Example :
 				std::string title = GetNodeTypeName(node);
 				title += " Properties";
 
+                char buffer[256];
+                sprintf_s(buffer, " (Node %i)", int(selectedNodeId.Get()) - 1);
+                title += buffer;
+
 				std::string oldNodeName = GetNodeName(node);
 
 				ImGui::TextUnformatted(title.c_str());
@@ -1669,6 +1684,8 @@ struct Example :
 
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
+
+                ShowUIToolTip(data.name.c_str());
 
                 ImGui::PopID();
             }
@@ -1968,6 +1985,8 @@ struct Example :
             EnsureVariableExists("CameraAltitudeAzimuth", VariableVisibility::Host, DataFieldType::Float2, "0.0f, 0.0f");
             EnsureVariableExists("CameraChanged", VariableVisibility::Host, DataFieldType::Bool, "false");
             EnsureVariableExists("CameraJitter", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
+            EnsureVariableExists("CameraNearPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+            EnsureVariableExists("CameraFarPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
             EnsureVariableExists("ShadingRateImageTileSize", VariableVisibility::Host, DataFieldType::Uint, "16");
             EnsureVariableExists("WindowSize", VariableVisibility::Host, DataFieldType::Float2, "1.0f, 1.0f");
         }
@@ -2839,6 +2858,9 @@ struct Example :
                     g_renderGraph.nodes.push_back(newNode);
                     m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion;
 
+                    // Mark this as the created node, so it will be selected
+                    g_createdNodeIndex = (int)g_renderGraph.nodes.size();
+
                     g_renderGraphDirty = true;
                 }
 
@@ -2988,11 +3010,11 @@ struct Example :
 
 	void ImGuiRecentFiles()
 	{
-		if (!m_recentFiles.m_Entries.empty())
+		if (!m_recentFiles.GetEntries().empty())
 		{
 			if (ImGui::BeginMenu("Recent Files"))
 			{
-				for (const auto& el : m_recentFiles.m_Entries)
+				for (const auto& el : m_recentFiles.GetEntries())
 				{
                     if (el.empty())
                         continue;

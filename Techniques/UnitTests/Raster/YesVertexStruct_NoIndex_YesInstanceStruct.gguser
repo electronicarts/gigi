@@ -1,40 +1,33 @@
 {
+    "version": "2.0",
     "systemVars": {
         "ProjMtx_textureName": "Color_Buffer"
     },
-    "resourceViewResourceIndex": 6,
-    "importedResources": [
-        {
-            "nodeName": "Instance_Buffer",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "YesVertexStruct_NoIndex_YesInstanceStruct_InstanceBuffer.csv",
-                "structIndex": 1
+    "snapshot": {
+        "resourceViewResourceIndex": 6,
+        "importedResources": [
+            {
+                "nodeName": "Instance_Buffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "YesVertexStruct_NoIndex_YesInstanceStruct_InstanceBuffer.bin",
+                    "structIndex": 1
+                }
+            },
+            {
+                "nodeName": "Vertex_Buffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "StencilVB.bin",
+                    "structIndex": 0
+                }
             }
-        },
-        {
-            "nodeName": "Vertex_Buffer",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\OBJAssets\\bunny.obj",
-                "structIndex": 0
+        ],
+        "savedVariables": [
+            {
+                "name": "viewMode",
+                "value": "0"
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "viewMode",
-            "value": "0"
-        }
-    ],
-    "bookmarks": [
-        {
-            "name": "Output",
-            "viewableResourceDisplayName": "Rasterize.colorTarget0 (After)"
-        },
-        {
-            "name": "Depth",
-            "viewableResourceDisplayName": "Rasterize.depthTarget (After)"
-        }
-    ]
+        ]
+    }
 }

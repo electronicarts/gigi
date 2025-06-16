@@ -12,7 +12,7 @@ namespace simpleRT_inline
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -46,11 +46,11 @@ namespace simpleRT_inline
 
             // Variables
             bool variable_enabled = false;
-            float4x4 variable_clipToWorld = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
-            float3 variable_cameraPos = {0.0f,0.0f,0.0f};
+            float4x4 variable_clipToWorld = {0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float3 variable_cameraPos = {0.000000f, 0.000000f, 0.000000f};
             float variable_depthNearPlane = 0.000000f;  // The depth value for the near plane.
-            float3 variable_hitColor = {0.0f, 1.0f, 0.0f};
-            float3 variable_missColor = {1.0f, 0.0f, 0.0f};
+            float3 variable_hitColor = {0.000000f, 1.000000f, 0.000000f};
+            float3 variable_missColor = {1.000000f, 0.000000f, 0.000000f};
 
             // The raytracing scene
             ID3D12Resource* buffer_Scene = nullptr;
@@ -214,8 +214,8 @@ namespace simpleRT_inline
 
     struct Struct_VertexBuffer
     {
-        float3 Color = {0.0f,0.0f,0.0f};
-        float3 Position = {0.0f,0.0f,0.0f};
-        float3 Normal = {0.0f,0.0f,0.0f};
+        float3 Color = {0.000000f, 0.000000f, 0.000000f};
+        float3 Position = {0.000000f, 0.000000f, 0.000000f};
+        float3 Normal = {0.000000f, 0.000000f, 0.000000f};
     };
 };

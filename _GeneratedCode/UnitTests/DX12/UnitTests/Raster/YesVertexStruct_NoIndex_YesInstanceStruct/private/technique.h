@@ -48,13 +48,13 @@ namespace YesVertexStruct_NoIndex_YesInstanceStruct
 
         struct Struct__VertexShaderCB
         {
-            float4x4 ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
+            float4x4 ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
         };
 
         struct Struct__PixelShaderCB
         {
             int viewMode = (int)ViewMode::Normal;
-            float3 _padding0 = {0.0f,0.0f,0.0f};  // Padding
+            float3 _padding0 = {0.000000f, 0.000000f, 0.000000f};  // Padding
         };
 
         Struct__VertexShaderCB constantBuffer__VertexShaderCB_cpu;

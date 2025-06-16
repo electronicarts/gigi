@@ -2,7 +2,7 @@
     "$schema": "gigischema.json",
     "name": "YesVertexType_NoIndex_NoInstance",
     "comment": "Vertices are provided by a typed buffer.\nInstanceID used to make each instance unique.",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -235,5 +235,8 @@
                 "visibility": "Imported"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Color Buffer"
+    }
 }

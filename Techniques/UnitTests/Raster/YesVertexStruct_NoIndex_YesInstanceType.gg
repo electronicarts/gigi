@@ -2,7 +2,7 @@
     "$schema": "gigischema.json",
     "name": "YesVertexStruct_NoIndex_YesInstanceType",
     "comment": "Vertices are provided by a structured buffer.\nInstance data is provided by a typed buffer",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -296,5 +296,8 @@
                 }
             ]
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Color Buffer"
+    }
 }

@@ -1,17 +1,19 @@
 {
     "$schema": "gigischema.json",
     "name": "StructuredBuffer",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "frameIndex",
             "type": "Int",
-            "dflt": "0"
+            "dflt": "0",
+            "visibility": "Host"
         },
         {
             "name": "frameDeltaTime",
             "type": "Float",
-            "dflt": "0.0f"
+            "dflt": "0.0f",
+            "visibility": "Host"
         }
     ],
     "shaders": [
@@ -19,11 +21,6 @@
             "name": "csmain",
             "fileName": "StructuredBuffer.hlsl",
             "entryPoint": "csmain",
-            "CSNumThreads": [
-                1,
-                1,
-                1
-            ],
             "NumThreads": [
                 1,
                 1,
@@ -38,9 +35,15 @@
                         "type": "Int",
                         "typeStruct": {
                             "name": "TheStructure"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
             ]
         }
     ],

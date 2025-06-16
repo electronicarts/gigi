@@ -1,8 +1,33 @@
 {
     "version": "2.0",
+    "systemVars": {
+        "iResolution_textureName": "DoSimpleRaster_Color_Buffer",
+        "camera": {
+            "startingCameraPos": [
+                -2.280210018157959,
+                0.5389089584350586,
+                2.548781633377075
+            ],
+            "startingCameraAltitudeAzimuth": [
+                0.05885862931609154,
+                3.751868724822998
+            ]
+        },
+        "ProjMtx_textureName": "DoSimpleRaster_Color_Buffer",
+        "ViewProjMtx_varName": "DoSimpleRaster_ViewProjMtx"
+    },
     "snapshot": {
         "resourceViewNodeIndex": 1,
         "resourceViewResourceIndex": 4,
+        "cameraPos": [
+            -2.280210018157959,
+            0.5389089584350586,
+            2.548781633377075
+        ],
+        "cameraAltitudeAzimuth": [
+            0.05885862931609154,
+            3.751868724822998
+        ],
         "importedResources": [
             {
                 "nodeName": "VB",
@@ -61,10 +86,6 @@
             },
             {
                 "name": "DoSimpleRaster_InvProjMtx",
-                "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
-            },
-            {
-                "name": "DoSimpleRaster_ViewProjMtx",
                 "value": "1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000,0.000000,0.000000,0.000000,0.000000,1.000000"
             },
             {

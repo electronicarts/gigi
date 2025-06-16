@@ -206,6 +206,7 @@
     <None Include="..\external\imgui-node-editor\examples\application\source\config.h.in">
       <Filter>imgui-node-editor\examples\application</Filter>
     </None>
+    <None Include="..\.editorconfig" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiEdit.rc">

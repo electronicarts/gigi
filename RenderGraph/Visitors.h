@@ -7,11 +7,15 @@
 
 #include <stdio.h>
 #include "Schemas/Types.h"
-#include "Backends/Shared.h"
+#include "GigiCompilerLib/Backends/Shared.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
 #include "GigiCompilerLib/Utils.h"
+#include "GigiCompilerLib/ParseCSV.h"
+
+bool AdjustStructForAlignment_WebGPU(Struct& s, const std::string& path, bool isUniformBuffer);
+bool AdjustUniformStructForAlignment_DX12(Struct& s, const std::string& path);
 
 inline void ZeroDfltIfEmpty(std::string& dflt, DataFieldType type, const std::string& path)
 {
@@ -36,6 +40,7 @@ inline void ZeroDfltIfEmpty(std::string& dflt, DataFieldType type, const std::st
             case DataFieldType::Uint_16: dflt = "0"; break;
             case DataFieldType::Int_64: dflt = "0"; break;
             case DataFieldType::Uint_64: dflt = "0"; break;
+            case DataFieldType::Float_16: dflt = "0"; break;
             default:
             {
                 Assert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(type), type, path.c_str());
@@ -59,6 +64,12 @@ inline int GetEnumIndex(const RenderGraph& renderGraph, const char* scope, const
 
 struct DfltFixupVisitor
 {
+    DfltFixupVisitor(Backend backend)
+        : m_backend(backend)
+    {
+
+    }
+
     template <typename TDATA>
     bool Visit(TDATA& data, const std::string& path)
     {
@@ -70,15 +81,35 @@ struct DfltFixupVisitor
         DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(type);
 
         // Lazily implementing the cases that need to be fixed. add more as needed.
-        if (typeInfo.componentCount == 1 && typeInfo.componentType2 == DataFieldType::Float)
+        if (typeInfo.componentType2 == DataFieldType::Float)
         {
-            float f = 0.0f;
-            if (sscanf_s(dflt.c_str(), "%f", &f) == 1)
+            std::vector<float> values;
+            ParseCSV::ForEachValue(dflt.c_str(), false,
+                [&](int tokenIndex, const char* token)
+                {
+                    float f;
+                    sscanf_s(token, "%f", &f);
+                    values.push_back(f);
+                    return true;
+                }
+            );
+
+            std::ostringstream stream;
+
+            while (values.size() < typeInfo.componentCount)
+                values.push_back(0.0f);
+
+            for (int componentIndex = 0; componentIndex < typeInfo.componentCount; ++componentIndex)
             {
-                char buffer[256];
-                sprintf_s(buffer, "%ff", f);
-                dflt = buffer;
+                if (componentIndex > 0)
+                    stream << ", ";
+
+                stream << std::fixed << std::setprecision(std::numeric_limits<float>::digits10) << values[componentIndex];
+
+                if (m_backend != Backend::WebGPU)
+                    stream << "f";
             }
+            dflt = stream.str();
         }
 
         return true;
@@ -95,10 +126,22 @@ struct DfltFixupVisitor
         FixupTypeDflt(variable.type, variable.dflt);
         return true;
     }
+
+    Backend m_backend;
 };
 
 struct DataFixupVisitor
 {
+    DataFixupVisitor(RenderGraph& renderGraph_, Backend& backend_)
+        : renderGraph(renderGraph_)
+        , backend(backend_)
+    { }
+
+    ~DataFixupVisitor()
+    {
+        renderGraph.structs.insert(renderGraph.structs.end(), newStructs.begin(), newStructs.end());
+    }
+
     template <typename TDATA>
     bool Visit(TDATA& data, const std::string& path)
     {
@@ -115,6 +158,27 @@ struct DataFixupVisitor
 
         return true;
     }
+
+    bool Visit(Struct& s, const std::string& path)
+    {
+        if (backend != Backend::WebGPU || s.isForShaderConstants)
+            return true;
+
+        Struct sCopy = s;
+
+        if (AdjustStructForAlignment_WebGPU(s, path, false))
+        {
+            sCopy.name += "_Unpadded";
+            newStructs.push_back(sCopy);
+        }
+
+        return true;
+    }
+
+    std::vector<Struct> newStructs;
+
+    RenderGraph& renderGraph;
+    Backend backend;
 };
 
 struct AddNodeInfoToShadersVisitor
@@ -1263,6 +1327,8 @@ struct ReferenceFixupVisitor
                 }
             }
         }
+        for (size_t samplerIndex = 0; samplerIndex < data.samplers.size(); ++samplerIndex)
+            data.samplers[samplerIndex].registerIndex = (int)samplerIndex;
 
         return true;
     }
@@ -1524,7 +1590,7 @@ struct ValidationVisitor
             if (setVar.AVarIndex != -1)
                 AVarType = DataFieldTypeInfo(AVarType).componentType2;
 
-            if (destVarType != AVarType)
+            if (destVarType != AVarType && setVar.op != SetVariableOperator::Noop)
             {
                 Assert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[AVarIndex].type), setVar.AVar.name.c_str(), path.c_str());
                 return false;
@@ -1718,8 +1784,14 @@ struct SanitizeVisitor
     {
         StringReplaceAll(s, " ", "_");
         StringReplaceAll(s, "+", "plus");
+        StringReplaceAll(s, "=", "equals");
+        StringReplaceAll(s, "#", "number");
         StringReplaceAll(s, ":", "_");
         StringReplaceAll(s, ".", "_");
+        StringReplaceAll(s, "(", "_");
+        StringReplaceAll(s, ")", "_");
+        StringReplaceAll(s, "[", "_");
+        StringReplaceAll(s, "]", "_");
     }
 
     void Sanitize(std::string& s, std::string& originalName)
@@ -2049,6 +2121,15 @@ struct SanitizeVisitor
             ),
             data.connections.end()
         );
+        return true;
+    }
+
+    bool Visit(WebGPU_RWTextureSplit& data, const std::string& path)
+    {
+        Sanitize(data.nodeName);
+        Sanitize(data.shaderName);
+        Sanitize(data.pinName);
+        Sanitize(data.pinNameR);
         return true;
     }
 
@@ -2464,8 +2545,9 @@ struct ShaderAssertsVisitor
 
 struct ShaderDataVisitor
 {
-    ShaderDataVisitor(RenderGraph& renderGraph_)
+    ShaderDataVisitor(RenderGraph& renderGraph_, Backend& backend_)
         : renderGraph(renderGraph_)
+        , backend(backend_)
     { }
 
     template <typename TDATA>
@@ -2824,6 +2906,21 @@ struct ShaderDataVisitor
             }
         );
 
+        // On WebGPU, RTRayGen shaders  need extra variables.
+        if (shader.type == ShaderType::RTRayGen && backend == Backend::WebGPU)
+        {
+            // A uint3 variable for dispatchSize to emulate DispatchRaysDimensions()
+            char variableName[1024];
+            sprintf_s(variableName, "_dispatchSize_%s", shader.name.c_str());
+
+            Variable newVariable;
+            newVariable.name = variableName;
+            newVariable.type = DataFieldType::Uint3;
+            newVariable.transient = true;
+            renderGraph.variables.push_back(newVariable);
+            variablesAccessedUnsorted.insert(variableName);
+        }
+
         // if no variables referenced, we are done
         if (variablesAccessedUnsorted.empty())
             return true;
@@ -2836,9 +2933,8 @@ struct ShaderDataVisitor
 
         // add a struct for this constant buffer
         {
-            int paddingIndex = -1;
-            size_t byteCount = 0;
             Struct newStruct;
+            newStruct.isForShaderConstants = true;
             newStruct.name = "_" + shader.name + "CB";
 
             for (const std::string& variableName : variablesAccessed)
@@ -2846,45 +2942,6 @@ struct ShaderDataVisitor
                 int variableIndex = GetVariableIndex(renderGraph, variableName.c_str());
                 Assert(variableIndex >= 0, "Could not find variable %s.\nIn %s\n", variableName.c_str(), path.c_str());
                 const Variable& variable = renderGraph.variables[variableIndex];
-
-                // automatically pad constant buffers per this documentation:
-                // https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-packing-rules
-                size_t variableSize = DataFieldTypeToSize(variable.type);
-                if (byteCount > 0 && byteCount + variableSize > 16)
-                {
-                    paddingIndex++;
-                    StructField padding;
-                    std::ostringstream paddingName;
-                    paddingName << "_padding" << paddingIndex;
-                    padding.name = paddingName.str();
-                    switch ((16 - byteCount) / 4)
-                    {
-                        case 1:
-                        {
-                            padding.type = DataFieldType::Float;
-                            padding.dflt = "0.0f";
-                            break;
-                        }
-                        case 2:
-                        {
-                            padding.type = DataFieldType::Float2;
-                            break;
-                        }
-                        case 3:
-                        {
-                            padding.type = DataFieldType::Float3;
-                            break;
-                        }
-                        default:
-                        {
-                            Assert(false, "error while calculating padding.\nIn %s\n", path.c_str());
-                        }
-                    }
-                    padding.comment = "Padding";
-                    newStruct.fields.push_back(padding);
-                    byteCount = 0;
-                }
-                byteCount = (byteCount + variableSize) % 16;
 
                 StructField newField;
                 newField.name = variableName;
@@ -2913,40 +2970,11 @@ struct ShaderDataVisitor
                 newStruct.fields.push_back(newField);
             }
 
-            // Also, if the struct's final size isn't a multiple of 16 bytes, pad it to be.
-            if (byteCount % 16 != 0)
+            // re-arrange and/or pad the struct fields to conform to alignment rules
+            switch (backend)
             {
-                paddingIndex++;
-                StructField padding;
-                std::ostringstream paddingName;
-                paddingName << "_padding" << paddingIndex;
-                padding.name = paddingName.str();
-                switch ((16 - byteCount) / 4)
-                {
-                    case 1:
-                    {
-                        padding.type = DataFieldType::Float;
-                        padding.dflt = "0.0f";
-                        break;
-                    }
-                    case 2:
-                    {
-                        padding.type = DataFieldType::Float2;
-                        break;
-                    }
-                    case 3:
-                    {
-                        padding.type = DataFieldType::Float3;
-                        break;
-                    }
-                    default:
-                    {
-                        Assert(false, "error while calculating terminating padding.\nIn %s\n", path.c_str());
-                    }
-                }
-                padding.comment = "Padding";
-                newStruct.fields.push_back(padding);
-                byteCount = 0;
+                case Backend::WebGPU: AdjustStructForAlignment_WebGPU(newStruct, path, true); break;
+                default: AdjustUniformStructForAlignment_DX12(newStruct, path); break;
             }
 
             renderGraph.structs.push_back(newStruct);
@@ -3057,7 +3085,24 @@ struct ShaderDataVisitor
                     }
                 }
                 if (!isLoadedTexture)
-                    ShowWarningMessage("shader %s (%s) does not seem to actually use resource %s.\n[%s] %s\n\n", shader.name.c_str(), fileName.c_str(), resource.name.c_str(), EnumToString(GigiCompileWarning::ShaderUnusedResource), EnumToDescription(GigiCompileWarning::ShaderUnusedResource));
+                {
+                    // Don't warn about read only pins of texture splits not being used.
+                    // We added those and are responsible for using them as needed.
+                    bool isTextureSplit = false;
+                    for (const WebGPU_RWTextureSplit& textureSplit : renderGraph.backendData.webGPU.RWTextureSplits)
+                    {
+                        if (textureSplit.pinNameR == resource.name)
+                        {
+                            isTextureSplit = true;
+                            break;
+                        }
+                    }
+
+                    if (!isTextureSplit)
+                    {
+                        ShowWarningMessage("shader %s (%s) does not seem to actually use resource %s.\n[%s] %s\n\n", shader.name.c_str(), fileName.c_str(), resource.name.c_str(), EnumToString(GigiCompileWarning::ShaderUnusedResource), EnumToDescription(GigiCompileWarning::ShaderUnusedResource));
+                    }
+                }
             }
         }
 
@@ -3087,10 +3132,10 @@ struct ShaderDataVisitor
     }
 
     RenderGraph& renderGraph;
+    Backend backend;
 
     int nextLoadedTextureIndex = 0;
 };
-
 
 struct ResolveBackendRestrictions
 {

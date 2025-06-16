@@ -30,7 +30,7 @@ namespace simpleRaster
 
         struct Struct__VertexShaderCB
         {
-            float4x4 ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
+            float4x4 ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
         };
 
         // This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.

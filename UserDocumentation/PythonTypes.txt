@@ -3,6 +3,12 @@
   BackendFromString()
   BackendToString()
 
+  CooperativeVectorBufferLayoutFromString()
+  CooperativeVectorBufferLayoutToString()
+
+  CooperativeVectorDataTypeFromString()
+  CooperativeVectorDataTypeToString()
+
   ShaderResourceTypeFromString()
   ShaderResourceTypeToString()
 
@@ -26,6 +32,9 @@
 
   ShaderTypeFromString()
   ShaderTypeToString()
+
+  ShaderLanguageFromString()
+  ShaderLanguageToString()
 
   StructFieldSemanticFromString()
   StructFieldSemanticToString()
@@ -78,8 +87,14 @@
   GGUserFile_TLASBuildFlagsFromString()
   GGUserFile_TLASBuildFlagsToString()
 
+  GGUserFile_BLASCullModeFromString()
+  GGUserFile_BLASCullModeToString()
+
   GGUserFile_CameraJitterTypeFromString()
   GGUserFile_CameraJitterTypeToString()
+
+  BackendTemplateFileTypeFromString()
+  BackendTemplateFileTypeToString()
 
   GigiCompileResultFromString()
   GigiCompileResultToString()
@@ -101,9 +116,36 @@
   Backend:
     Host.Backend_FIRST = 0
     Host.Backend_DX12 = 0
-    Host.Backend_Interpreter = 1
-    Host.Backend_LAST = 1
-    Host.Backend_COUNT = 2
+    Host.Backend_WebGPU = 1
+    Host.Backend_Interpreter = 2
+    Host.Backend_LAST = 2
+    Host.Backend_COUNT = 3
+
+  CooperativeVectorBufferLayout:
+    Host.CooperativeVectorBufferLayout_FIRST = 0
+    Host.CooperativeVectorBufferLayout_RowMajor = 0
+    Host.CooperativeVectorBufferLayout_ColMajor = 1
+    Host.CooperativeVectorBufferLayout_MulOptimal = 2
+    Host.CooperativeVectorBufferLayout_OuterProductOptimal = 3
+    Host.CooperativeVectorBufferLayout_LAST = 3
+    Host.CooperativeVectorBufferLayout_COUNT = 4
+
+  CooperativeVectorDataType:
+    Host.CooperativeVectorDataType_FIRST = 0
+    Host.CooperativeVectorDataType__sint16 = 0
+    Host.CooperativeVectorDataType__uint16 = 1
+    Host.CooperativeVectorDataType__sint32 = 2
+    Host.CooperativeVectorDataType__uint32 = 3
+    Host.CooperativeVectorDataType__float16 = 4
+    Host.CooperativeVectorDataType__float32 = 5
+    Host.CooperativeVectorDataType__sint8x4 = 6
+    Host.CooperativeVectorDataType__uint8x4 = 7
+    Host.CooperativeVectorDataType__uint8 = 8
+    Host.CooperativeVectorDataType__sint8 = 9
+    Host.CooperativeVectorDataType__float8_e4m3 = 10
+    Host.CooperativeVectorDataType__float8_e5m2 = 11
+    Host.CooperativeVectorDataType_LAST = 11
+    Host.CooperativeVectorDataType_COUNT = 12
 
   ShaderResourceType:
     Host.ShaderResourceType_FIRST = 0
@@ -152,9 +194,10 @@
     Host.DataFieldType_Uint_16 = 14
     Host.DataFieldType_Int_64 = 15
     Host.DataFieldType_Uint_64 = 16
-    Host.DataFieldType_Count = 17
-    Host.DataFieldType_LAST = 17
-    Host.DataFieldType_COUNT = 18
+    Host.DataFieldType_Float_16 = 17
+    Host.DataFieldType_Count = 18
+    Host.DataFieldType_LAST = 18
+    Host.DataFieldType_COUNT = 19
 
   TextureViewType:
     Host.TextureViewType_FIRST = 0
@@ -214,6 +257,14 @@
     Host.ShaderType_Count = 10
     Host.ShaderType_LAST = 10
     Host.ShaderType_COUNT = 11
+
+  ShaderLanguage:
+    Host.ShaderLanguage_FIRST = 0
+    Host.ShaderLanguage_HLSL = 0
+    Host.ShaderLanguage_Slang = 1
+    Host.ShaderLanguage_WGSL = 2
+    Host.ShaderLanguage_LAST = 2
+    Host.ShaderLanguage_COUNT = 3
 
   StructFieldSemantic:
     Host.StructFieldSemantic_FIRST = 0
@@ -431,6 +482,14 @@
     Host.GGUserFile_TLASBuildFlags_LAST = 5
     Host.GGUserFile_TLASBuildFlags_COUNT = 6
 
+  GGUserFile_BLASCullMode:
+    Host.GGUserFile_BLASCullMode_FIRST = 0
+    Host.GGUserFile_BLASCullMode_CullNone = 0
+    Host.GGUserFile_BLASCullMode_FrontIsClockwise = 1
+    Host.GGUserFile_BLASCullMode_FrontIsCounterClockwise = 2
+    Host.GGUserFile_BLASCullMode_LAST = 2
+    Host.GGUserFile_BLASCullMode_COUNT = 3
+
   GGUserFile_CameraJitterType:
     Host.GGUserFile_CameraJitterType_FIRST = 0
     Host.GGUserFile_CameraJitterType_None = 0
@@ -438,6 +497,13 @@
     Host.GGUserFile_CameraJitterType_Halton23 = 2
     Host.GGUserFile_CameraJitterType_LAST = 2
     Host.GGUserFile_CameraJitterType_COUNT = 3
+
+  BackendTemplateFileType:
+    Host.BackendTemplateFileType_FIRST = 0
+    Host.BackendTemplateFileType_Output = 0
+    Host.BackendTemplateFileType_InternalShader = 1
+    Host.BackendTemplateFileType_LAST = 1
+    Host.BackendTemplateFileType_COUNT = 2
 
   GigiCompileResult:
     Host.GigiCompileResult_FIRST = 0

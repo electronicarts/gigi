@@ -8,8 +8,6 @@
 #include <vector>
 #include <filesystem>
 
-#pragma comment(lib, "dxcompiler.lib")
-
 #include <Windows.h>
 
 static std::wstring ToWideString(const char* string)

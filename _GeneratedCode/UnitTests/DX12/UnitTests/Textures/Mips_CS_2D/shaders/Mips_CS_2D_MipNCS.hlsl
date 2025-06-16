@@ -35,11 +35,11 @@ void main(uint3 DTid : SV_DispatchThreadID)
 {
 	uint2 px = DTid.xy;
 
-	float3 result = 
-		SRGBToLinear(Input[px*2 + uint2(0,0)].rgb) +
-		SRGBToLinear(Input[px*2 + uint2(1,0)].rgb) +
-		SRGBToLinear(Input[px*2 + uint2(1,1)].rgb) +
-		SRGBToLinear(Input[px*2 + uint2(0,1)].rgb);
+    float3 result =
+		SRGBToLinear(Input[px * 2 + uint2(0, 0)].rgb) +
+		SRGBToLinear(Input[px * 2 + uint2(1, 0)].rgb) +
+		SRGBToLinear(Input[px * 2 + uint2(1, 1)].rgb) +
+		SRGBToLinear(Input[px * 2 + uint2(0,1)].rgb);
 	
 	result /= 4.0f;
 

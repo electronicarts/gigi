@@ -1,4 +1,3 @@
-
 // Specialize this function to implement post load work, such as version upgrade fixups
 template <typename T>
 bool ReadFromJSON_PostLoad(T& value)
@@ -285,9 +284,24 @@ inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
 
             renderGraph.version = "0.991b";
         }
+        else if (renderGraph.version == "0.991b")
+        {
+            // version 1.0 adds a language to each shader definition, including slang as an option.
+            for (Shader& shader : renderGraph.shaders)
+            {
+                // If we previously marked a shader as needing to be processed by slang, that means the shader's language is slang
+                if (shader.slangOptions.process)
+                    shader.language = ShaderLanguage::Slang;
+            }
+
+            renderGraph.version = "1.0";
+        }
         else
         {
-            return false;
+            char buffer[1024];
+            sprintf_s(buffer, "This Gigi file is for version \"%s\" and you are using version \"%s\". This file may not work correctly, and you may need to update Gigi and try again.\n", renderGraph.version.c_str(), GIGI_VERSION());
+            renderGraph.versionUpgradedMessage += buffer;
+            return true;
         }
     }
 

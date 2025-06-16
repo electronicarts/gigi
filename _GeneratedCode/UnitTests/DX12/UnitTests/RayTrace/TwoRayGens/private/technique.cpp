@@ -678,12 +678,12 @@ namespace TwoRayGens
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Texture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Texture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

@@ -58,6 +58,8 @@ public:
 
 	static void SetRefreshSearchResults() { s_singularBrowser->m_refreshSearchResults = true; }
 
+	static void RefreshScreenshot(const std::string& fileName) { s_singularBrowser->RefreshScreenshotInternal(fileName); }
+
 	static void PendingDownload(const std::string& summaryHash, bool starting)
 	{
 		if (starting)
@@ -67,6 +69,8 @@ public:
 	}
 
 private:
+	void RefreshScreenshotInternal(const std::string& fileName);
+
 	void MakeInitialLayout();
 	void ShowBrowserWindow();
 	void ShowLogWindow();
@@ -93,6 +97,7 @@ private:
 	TextureCache m_textureCache;
 	std::unordered_map<std::string, ID3D12Resource*> m_textureResources;
 	std::unordered_set<std::string> m_pendingTextureLoads;
+	std::vector<ID3D12Resource*> m_orphanedTextureResources;
 
 	// ImGui SRV heap
 	DescriptorTableCache m_descriptorTableCache_imgui;

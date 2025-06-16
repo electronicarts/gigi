@@ -37,7 +37,7 @@ struct Payload
 		ray,
 		payload);
 
-	float4 color = g_texture[px];
+	float4 color = /*$(RWTextureR:g_texture)*/[px];
 	color.a = 1.0f;
 	color.g = payload.hit ? 1.0f : 0.0f;
 
@@ -45,7 +45,7 @@ struct Payload
 	g_blueChannel.GetDimensions(blueChannelDims.x, blueChannelDims.y);
 	color.b = dot(g_blueChannel[px % blueChannelDims].rgb, float3(0.3f, 0.59f, 0.11f)) * payload.blueChannelMultiplier;
 
-	g_texture[px] = color;
+	/*$(RWTextureW:g_texture)*/[px] = color;
 }
 
 /*$(_miss:Miss2A)*/

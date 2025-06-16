@@ -37,9 +37,15 @@ unsupportedTests = [
 
     # Just need to make work
     "RayTrace\\simpleRTDynamic",
+
+    # WebGPU only
+    "Buffers\\buffertest_webgpu",
+    "Textures\\Mips_VSPS_2D_WebGPU",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES
+
+UnitTests = []
 
 print(".\\GigiCompiler.exe DX12_Application ./Techniques/UnitTests/UnitTests.gg _GeneratedCode/UnitTests/DX12/")
 subprocess.run(".\\GigiCompiler.exe DX12_Application ./Techniques/UnitTests/UnitTests.gg _GeneratedCode/UnitTests/DX12/")
@@ -62,6 +68,14 @@ for fileName in glob.glob(os.getcwd() + "/Techniques/UnitTests/**/*.py", recursi
 
     if not relFileNameNoExtension.startswith(requiredTestPrefix):
         continue
+
+    unitTest = {
+        "module": "_GeneratedCode\\UnitTests\\DX12\\UnitTests\\" + relFileNameNoExtension,
+        "relPath": relFileNameNoExtension,
+        "moduleName" : relFileNameNoExtension.split(os.sep)[-1],
+    }
+
+    UnitTests.append(unitTest)
 
     outDirName = "_GeneratedCode/UnitTests/DX12/UnitTests/" + relFileNameNoExtension
     print(relFileNameNoExtension)
@@ -98,12 +112,13 @@ for fileName in glob.glob(path + "UnitTests\\**\\readme.txt", recursive = True):
     fileName = '\\'.join(fileName.split('\\')[0:-1])
     dirName = os.path.relpath(fileName, path)
     techniqueName = os.path.basename(dirName)
-    techniqueList.append([dirName, techniqueName])
+    if "\\DXC" not in dirName:
+        techniqueList.append([dirName, techniqueName])
 
 # // Gigi Modification Begin - Includes And Context
 newString1 = ""
 newString2 = ""
-newString3 = "\nbool g_doSubsetTest = false; // If true, it will only test the techniques set to true below\n"
+newString3 = "\nbool g_doSubsetTest = false; // If true, it will only test the techniques set to true below. Good for testing single techniques.\n"
 for technique in techniqueList:
     newString1 += "\n#include \"" + technique[0] + "\\public\\technique.h\""
     newString1 += "\n#include \"" + technique[0] + "\\public\\imgui.h\""
@@ -180,3 +195,33 @@ for dirName in glob.glob(os.getcwd() + "/_GeneratedCode/UnitTests/DX12/**/Agilit
     relDirName = os.path.relpath(dirName, os.getcwd() + "/_GeneratedCode/UnitTests/DX12/")
     if (relDirName != "AgilitySDK"):
         shutil.rmtree(dirName)
+
+for dirName in glob.glob(os.getcwd() + "/_GeneratedCode/UnitTests/DX12/**/DXC/", recursive = True):
+    relDirName = os.path.relpath(dirName, os.getcwd() + "/_GeneratedCode/UnitTests/DX12/")
+    if (relDirName != "DXC"):
+        shutil.rmtree(dirName)
+
+for dirName in glob.glob(os.getcwd() + "/_GeneratedCode/UnitTests/DX12/**/dxcompiler.dll", recursive = True):
+    relDirName = os.path.relpath(dirName, os.getcwd() + "/_GeneratedCode/UnitTests/DX12/")
+    if (relDirName != "dxcompiler.dll"):
+        os.remove(dirName)
+
+for dirName in glob.glob(os.getcwd() + "/_GeneratedCode/UnitTests/DX12/**/dxil.dll", recursive = True):
+    relDirName = os.path.relpath(dirName, os.getcwd() + "/_GeneratedCode/UnitTests/DX12/")
+    if (relDirName != "dxil.dll"):
+        os.remove(dirName)
+
+# ==================== Modify public\\technique.h files
+
+for index, unitTest in enumerate(UnitTests):
+    fileName = unitTest["module"] + "\\public\\technique.h"
+    #print(fileName)
+    #print(unitTest)
+    #print(unitTest["relPath"].split("\\"))
+    data = open(fileName, "r").read()
+
+    data = data.replace("static const bool c_debugShaders = true;","static const bool c_debugShaders = false;")
+
+    # Write the file data out
+    with open(fileName, 'w') as f:
+        f.write(data)

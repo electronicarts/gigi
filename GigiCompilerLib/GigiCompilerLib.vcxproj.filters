@@ -80,6 +80,15 @@
     <ClCompile Include="Backends\Shared.cpp">
       <Filter>Backends</Filter>
     </ClCompile>
+    <ClCompile Include="Backends\ProcessShader_HLSL.cpp">
+      <Filter>Backends</Filter>
+    </ClCompile>
+    <ClCompile Include="Backends\WebGPU\Backend_WebGPU.cpp">
+      <Filter>Backends\WebGPU</Filter>
+    </ClCompile>
+    <ClCompile Include="..\RenderGraph\Visitors.cpp">
+      <Filter>RenderGraph</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="gigicompiler.h" />
@@ -392,8 +401,17 @@
     <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h">
       <Filter>schemas\Browser</Filter>
     </ClInclude>
+    <ClInclude Include="Backends\ProcessShader.h">
+      <Filter>Backends</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Schemas\WebGPU\WebGPUSchemas.h">
+      <Filter>schemas\WebGPU</Filter>
+    </ClInclude>
     <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\ShaderCompilerCommon.h">
       <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\Interpreter\templates\linalg.h">
+      <Filter>Backends\Interpreter\templates</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -490,6 +508,27 @@
     <Filter Include="schemas\Browser">
       <UniqueIdentifier>{c824d9a0-2bc5-4b45-8dcc-1c5e0913d765}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Backends\WebGPU">
+      <UniqueIdentifier>{debf4e0c-4e07-4422-8ce9-1bd0b4c158d0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\WebGPU\nodes">
+      <UniqueIdentifier>{60e1e444-855a-4198-b367-c0fed4256eb5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\WebGPU\templates">
+      <UniqueIdentifier>{60d39be5-572d-4c42-8222-f06ed8cf3ade}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\WebGPU\templates\Application">
+      <UniqueIdentifier>{df9e89ef-049d-41a2-b63f-b8e434523a04}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\WebGPU\templates\Module">
+      <UniqueIdentifier>{fe8333e4-d039-4bda-9c71-519bd3ab8c41}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="schemas\WebGPU">
+      <UniqueIdentifier>{3b19a543-4551-4444-a25e-6748b9c1345b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\Interpreter\templates">
+      <UniqueIdentifier>{70910021-e323-4186-9f2b-57f649a8f2b1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Backends\DX12\nodes\node_action_barrier.inl">
@@ -528,12 +567,6 @@
     <None Include="Backends\DX12\templates\Application\.gitignore">
       <Filter>Backends\DX12\templates\Application</Filter>
     </None>
-    <None Include="Backends\DX12\templates\Application\dxcompiler.dll">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Application\dxil.dll">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </None>
     <None Include="Backends\DX12\templates\Application\MakeSolution.bat">
       <Filter>Backends\DX12\templates\Application</Filter>
     </None>
@@ -567,6 +600,82 @@
     <None Include="Backends\DX12\templates\Module\ggconfig.json">
       <Filter>Backends\DX12\templates\Module</Filter>
     </None>
+    <None Include="Backends\WebGPU\templates\Module\ggconfig.json">
+      <Filter>Backends\WebGPU\templates\Module</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\Module.js">
+      <Filter>Backends\WebGPU\templates\Module</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\index.html">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\index.js">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\nodes.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_barrier.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_computeShader.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_copyResource.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_resource_buffer.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_resource_shaderConstants.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_resource_texture.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\.gitignore">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Node_GetPackages.bat">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Node_Run.bat">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Web_Open.bat">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\Web_Start.bat">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\jquery-csv.js">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Application\style.css">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\Shared.js">
+      <Filter>Backends\WebGPU\templates\Module</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\GigiRayTracingEmulation.hlsli">
+      <Filter>Backends\WebGPU\templates\Module</Filter>
+    </None>
+    <None Include="Backends\WebGPU\templates\Module\BVH.hlsli">
+      <Filter>Backends\WebGPU\templates\Module</Filter>
+    </None>
+    <None Include="..\.editorconfig" />
+    <None Include="Backends\Interpreter\templates\ggconfig.json">
+      <Filter>Backends\Interpreter\templates</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Backends\DX12\templates\Module\readme.txt">
@@ -580,6 +689,9 @@
     </Text>
     <Text Include="Backends\DX12\templates\Application\imgui\LICENSE.txt">
       <Filter>Backends\DX12\templates\Application\imgui</Filter>
+    </Text>
+    <Text Include="Backends\WebGPU\templates\Application\Readme.txt">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>
@@ -601,5 +713,10 @@
     <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\dxgiformat.idl">
       <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Backends\WebGPU\templates\Application\favicon.ico">
+      <Filter>Backends\WebGPU\templates\Application</Filter>
+    </Image>
   </ItemGroup>
 </Project>

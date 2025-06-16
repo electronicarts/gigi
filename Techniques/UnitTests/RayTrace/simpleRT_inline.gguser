@@ -1,4 +1,5 @@
 {
+    "version": "2.0",
     "systemVars": {
         "camera": {
             "flySpeed": 1.0,
@@ -16,45 +17,56 @@
         "InvViewProjMtx_varName": "clipToWorld",
         "CameraPos_varName": "cameraPos"
     },
-    "resourceViewNodeIndex": 2,
-    "resourceViewResourceIndex": 4,
-    "importedResources": [
-        {
-            "nodeName": "Scene",
-            "resetEveryFrame": false,
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\OBJAssets\\bunny.obj",
-                "structIndex": 0,
-                "BLASOpaque": true
+    "snapshot": {
+        "resourceViewNodeIndex": 2,
+        "resourceViewResourceIndex": 4,
+        "cameraPos": [
+            -2.200000047683716,
+            0.5389999747276306,
+            2.5490000247955324
+        ],
+        "cameraAltitudeAzimuth": [
+            0.05900000035762787,
+            3.741950750350952
+        ],
+        "importedResources": [
+            {
+                "nodeName": "Scene",
+                "resetEveryFrame": false,
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "simpleRT_inlineVB.bin",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
+            },
+            {
+                "nodeName": "Scene_VB",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "simpleRT_inlineVB.bin",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
             }
-        },
-        {
-            "nodeName": "Scene_VB",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\OBJAssets\\bunny.obj",
-                "structIndex": 0,
-                "BLASOpaque": true
+        ],
+        "savedVariables": [
+            {
+                "name": "enabled",
+                "value": "true"
+            },
+            {
+                "name": "depthNearPlane",
+                "value": "0.000000"
+            },
+            {
+                "name": "hitColor",
+                "value": "0.000000,1.000000,0.000000"
+            },
+            {
+                "name": "missColor",
+                "value": "0.200000,0.200000,0.200000"
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "enabled",
-            "value": "true"
-        },
-        {
-            "name": "depthNearPlane",
-            "value": "0.000000"
-        },
-        {
-            "name": "hitColor",
-            "value": "0.000000,1.000000,0.000000"
-        },
-        {
-            "name": "missColor",
-            "value": "0.200000,0.200000,0.200000"
-        }
-    ]
+        ]
+    }
 }

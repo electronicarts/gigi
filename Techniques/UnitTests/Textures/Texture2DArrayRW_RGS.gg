@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "Texture2DArrayRW_RGS",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RWRGS",
@@ -13,6 +13,9 @@
                     "name": "nodeTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture2DArray"
                     }
@@ -21,6 +24,9 @@
                     "name": "importedTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture2DArray"
                     }
@@ -29,6 +35,9 @@
                     "name": "importedColor",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture2DArray"
                     }
@@ -37,13 +46,14 @@
         },
         {
             "name": "RWCHS",
-            "fileName": "Texture2DArrayRW_CHS_MISS.hlsl",
+            "fileName": "Texture2DArrayRW_RGS.hlsl",
             "type": "RTClosestHit",
-            "entryPoint": "chsmain"
+            "entryPoint": "chsmain",
+            "copyFile": false
         },
         {
             "name": "RWMISS",
-            "fileName": "Texture2DArrayRW_CHS_MISS.hlsl",
+            "fileName": "Texture2DArrayRW_RGS.hlsl",
             "type": "RTMiss",
             "entryPoint": "missmain",
             "copyFile": false
@@ -140,5 +150,8 @@
                 "name": "RWCHS"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "NodeTexture"
+    }
 }

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SubGraphTest",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "Swap Colors",
@@ -11,7 +11,10 @@
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -90,5 +93,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Inner.Exported Tex"
+    }
 }

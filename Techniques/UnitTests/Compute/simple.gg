@@ -1,16 +1,20 @@
 {
     "$schema": "gigischema.json",
     "name": "simple",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "Simple",
             "fileName": "simple.hlsl",
+            "entryPoint": "Main",
             "resources": [
                 {
                     "name": "Input",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -53,5 +57,8 @@
                 "entryPoint": "Main"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Input"
+    }
 }

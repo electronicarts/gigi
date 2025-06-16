@@ -1,0 +1,18 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 2,
+        "cameraPos": [
+            0.0,
+            0.0,
+            -10.829870223999024
+        ],
+        "savedVariables": [
+            {
+                "name": "RenderSize",
+                "value": "256,256"
+            }
+        ]
+    }
+}

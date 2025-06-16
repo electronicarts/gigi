@@ -97,6 +97,7 @@ inline std::string DataFieldTypeToHLSLType(DataFieldType type)
         case DataFieldType::Uint_16: return "uint";
         case DataFieldType::Int_64: return "uint64_t";
         case DataFieldType::Uint_64: return "uint64_t";
+        case DataFieldType::Float_16: return "float16_t";
         case DataFieldType::Count:
         {
             Assert(false, "Invalid data field type: Count");

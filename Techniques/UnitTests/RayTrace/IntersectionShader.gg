@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "IntersectionShader",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -112,7 +112,8 @@
                     "type": "Buffer",
                     "access": "RTScene",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
@@ -120,13 +121,17 @@
                     "type": "Buffer",
                     "access": "SRV",
                     "buffer": {
-                        "type": "Float"
+                        "type": "Float",
+                        "PODAsStructuredBuffer": false
                     }
                 },
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
@@ -259,5 +264,8 @@
                 "name": "Intersection"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

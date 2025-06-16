@@ -29,11 +29,11 @@ float3 SRGBToLinear(in float3 sRGBCol)
 
 	// [0]
 	{
-		float3 result = 
-			SRGBToLinear(Input[uint3(px*2 + uint2(0,0), 0)].rgb) +
-			SRGBToLinear(Input[uint3(px*2 + uint2(1,0), 0)].rgb) +
-			SRGBToLinear(Input[uint3(px*2 + uint2(1,1), 0)].rgb) +
-			SRGBToLinear(Input[uint3(px*2 + uint2(0,1), 0)].rgb);
+        float3 result =
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px * 2 + uint2(0, 0), 0)].rgb) +
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px * 2 + uint2(1, 0), 0)].rgb) +
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px * 2 + uint2(1, 1), 0)].rgb) +
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px*2 + uint2(0,1), 0)].rgb);
 		
 		result /= 4.0f;
 
@@ -42,11 +42,11 @@ float3 SRGBToLinear(in float3 sRGBCol)
 
 	// [1]
 	{
-		float3 result = 
-			SRGBToLinear(Input[uint3(px*2 + uint2(0,0), 1)].rgb) +
-			SRGBToLinear(Input[uint3(px*2 + uint2(1,0), 1)].rgb) +
-			SRGBToLinear(Input[uint3(px*2 + uint2(1,1), 1)].rgb) +
-			SRGBToLinear(Input[uint3(px*2 + uint2(0,1), 1)].rgb);
+        float3 result =
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px * 2 + uint2(0, 0), 1)].rgb) +
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px * 2 + uint2(1, 0), 1)].rgb) +
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px * 2 + uint2(1, 1), 1)].rgb) +
+            SRGBToLinear(/*$(RWTextureR:Input)*/[uint3(px*2 + uint2(0,1), 1)].rgb);
 		
 		result /= 4.0f;
 

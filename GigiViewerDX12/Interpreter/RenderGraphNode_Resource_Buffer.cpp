@@ -252,6 +252,13 @@ bool GigiInterpreterPreviewWindowDX12::MakeAccelerationStructures(const RenderGr
 		instanceDesc.InstanceMask = 1;
 		instanceDesc.AccelerationStructure = runtimeData.m_blas->GetGPUVirtualAddress();
 
+		switch (resourceDesc.buffer.BLASCullMode)
+		{
+			case GGUserFile_BLASCullMode::CullNone: instanceDesc.Flags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE; break;
+			case GGUserFile_BLASCullMode::FrontIsClockwise: break;
+			case GGUserFile_BLASCullMode::FrontIsCounterClockwise: instanceDesc.Flags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE; break;
+		}
+
 		runtimeData.m_instanceDescs = CreateBuffer(
 			m_device,
 			sizeof(instanceDesc),
@@ -861,6 +868,135 @@ static std::vector<char> LoadCSVTypedBuffer(const GigiInterpreterPreviewWindowDX
 	return ret;
 }
 
+void GigiInterpreterPreviewWindowDX12::CooperativeVectorAdjustBufferSize(const CooperativeVectorData& cvData, int& size)
+{
+    if (!cvData.convert)
+        return;
+
+    if (!m_previewDevice)
+    {
+        m_logFn(LogLevel::Error, "CooperativeVectorConvert() failed cooperative vectors are not enabled.  Please see UserDocumentation/CooperativeVectors.pdf for info on enabling them.");
+        return;
+    }
+
+    // Gather the conversion data
+    D3D12_LINEAR_ALGEBRA_DATATYPE destType;
+    CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(cvData.destType, destType);
+
+    D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT destLayout;
+    CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(cvData.destLayout, destLayout);
+    bool destLayoutOptimized = CooperativeVectorBufferLayoutIsOptimized(cvData.destLayout);
+
+    unsigned int width = cvData.width;
+    unsigned int height = cvData.height;
+
+    size_t destTypeSize = 0;
+    D3D12_LINEAR_ALGEBRA_DATATYPE_Size(destType, destTypeSize);
+
+    // Figure out the size of our destination matrix
+    D3D12_LINEAR_ALGEBRA_MATRIX_CONVERSION_DEST_INFO conversionDestInfo =
+    {
+        destLayoutOptimized ? 0 : (unsigned int)(width * height * destTypeSize),
+        destLayout,
+        destLayoutOptimized ? 0 : (unsigned int)(width * destTypeSize),
+        width,
+        height,
+        destType
+    };
+    m_previewDevice->GetLinearAlgebraMatrixConversionDestinationInfo(&conversionDestInfo);
+
+    size = max(size, (int)conversionDestInfo.DestSize);
+}
+
+void GigiInterpreterPreviewWindowDX12::CooperativeVectorConvert(ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, const CooperativeVectorData& cvData)
+{
+	if (!cvData.convert)
+		return;
+
+	if (!m_previewDevice)
+	{
+		m_logFn(LogLevel::Error, "CooperativeVectorConvert() failed cooperative vectors are not enabled.  Please see UserDocumentation/CooperativeVectors.pdf for info on enabling them.");
+		return;
+	}
+
+	// Make a temporary buffer to convert to
+	// Conversion dest buffer must be in D3D12_RESOURCE_STATE_UNORDERED_ACCESS state
+	D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
+	ID3D12Resource* tempResource = CreateBuffer(m_device, (unsigned int)resourceDesc.Width, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, "CooperativeVectorConvert() tempResource");
+	m_transitions.Track(TRANSITION_DEBUG_INFO(tempResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+	// Delay destroy the tempResource since we only need it here, within this function
+	m_delayedRelease.Add(tempResource);
+
+	// Gather the conversion data
+	D3D12_LINEAR_ALGEBRA_DATATYPE srcType;
+	CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(cvData.srcType, srcType);
+
+	D3D12_LINEAR_ALGEBRA_DATATYPE destType;
+	CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(cvData.destType, destType);
+
+	D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT srcLayout;
+	CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(cvData.srcLayout, srcLayout);
+
+	D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT destLayout;
+	CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(cvData.destLayout, destLayout);
+	bool destLayoutOptimized = CooperativeVectorBufferLayoutIsOptimized(cvData.destLayout);
+
+	unsigned int width = cvData.width;
+	unsigned int height = cvData.height;
+
+	size_t srcTypeSize = 0;
+	D3D12_LINEAR_ALGEBRA_DATATYPE_Size(srcType, srcTypeSize);
+
+	size_t destTypeSize = 0;
+	D3D12_LINEAR_ALGEBRA_DATATYPE_Size(destType, destTypeSize);
+
+	// Set up conversion info struct
+	D3D12_LINEAR_ALGEBRA_MATRIX_CONVERSION_INFO infoDesc =
+	{
+		// DestInfo
+		{
+			destLayoutOptimized ? 0 : (unsigned int)(width * height * destTypeSize),
+			destLayout,
+			destLayoutOptimized ? 0 : (unsigned int)(width * destTypeSize),
+			width,
+			height,
+			destType
+		},
+
+		// SrcInfo
+		{
+			(unsigned int)(width * height * srcTypeSize),
+			srcType,
+			srcLayout,
+			(unsigned int)(width * srcTypeSize)
+		},
+
+		// DataDesc
+		{
+			tempResource->GetGPUVirtualAddress(),
+			resource->GetGPUVirtualAddress()
+		}
+	};
+	m_previewDevice->GetLinearAlgebraMatrixConversionDestinationInfo(&infoDesc.DestInfo);
+
+	// make sure the resource is in the correct state
+	// Conversion source buffer must be in D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE state
+	if (!m_transitions.IsTracked(resource))
+		m_transitions.Track(TRANSITION_DEBUG_INFO(resource, resourceState));
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	m_transitions.Flush(m_commandList);
+
+	// Convert
+	m_previewCommandList->ConvertLinearAlgebraMatrix(&infoDesc, 1);
+
+	// Copy from tempResource to resource
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(tempResource, D3D12_RESOURCE_STATE_COPY_SOURCE));
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(resource, D3D12_RESOURCE_STATE_COPY_DEST));
+	m_transitions.Flush(m_commandList);
+	m_commandList->CopyResource(resource, tempResource);
+}
+
 bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNode_Resource_Buffer& node, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData, NodeAction nodeAction)
 {
 	// If this resource is imported, add it to the list of imported resources.
@@ -1066,6 +1202,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				return false;
 			}
 
+            CooperativeVectorAdjustBufferSize(desc.buffer.cvData, runtimeData.m_size);
+
 			// Make a resource for the "live" texture which may be modified during running, and also for the initial state.
 			D3D12_RESOURCE_FLAGS resourceFlags = ShaderResourceAccessToD3D12_RESOURCE_FLAGs(node.accessedAs);
 			std::string nodeNameInitialState = node.name + " Initial State";
@@ -1122,6 +1260,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST));
 				m_transitions.Flush(m_commandList);
 				m_commandList->CopyResource(runtimeData.m_resourceInitialState, uploadBuffer->buffer);
+
+				// Do conversion for cooperative vectors if we should
+				CooperativeVectorConvert(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST, desc.buffer.cvData);
 			}
 
 			// Note that the resource wants to be reset to the initial state.

@@ -10,16 +10,19 @@
 
 // Recent open file list, Data is stored in the Windows registry
 // at the specifies location.
-// A size limit is implemented in AddEntry().
 
 class RecentFiles
 {
 	// most recent entries ones are in the front
 	std::string m_registryAppName;
 
-public:
-	// access in UI code to present the data
 	std::vector<std::string> m_Entries;
+
+public:
+	const std::vector<std::string>& GetEntries() { return m_Entries; }
+
+	// >0
+	size_t maxSize = 10;
 
 	// @param registryAppName e.g. "Software\\MyAppName"
 	// the data is stored in "HKEY_CURRENT_USER\\Software\\MyAppName"
@@ -32,4 +35,6 @@ public:
 
 	// @param fileName must not be 0
 	void AddEntry(const char* fileName);
+
+	void EnsureMaxSize();
 };

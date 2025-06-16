@@ -45,12 +45,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(SolutionDir)\external\DXC\inc\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
+    <LibraryPath>$(SolutionDir)\external\DXC\lib\x64\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(SolutionDir)\external\DXC\inc\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
+    <LibraryPath>$(SolutionDir)\external\DXC\lib\x64\;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -59,15 +61,16 @@
       <PreprocessorDefinitions>USE_PIX;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;$(SolutionDir)external\RenderDoc\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\Preview\include\;$(SolutionDir)external\RenderDoc\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>python310.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;WinPixEventRuntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>python310.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;WinPixEventRuntime.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(ProjectDir)python\Python310\libs\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -79,7 +82,7 @@
       <PreprocessorDefinitions>USE_PIX;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\include\;$(SolutionDir)external\RenderDoc\</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\Pix\Include\;$(ProjectDir)\tinyexr\deps\miniz\;$(ProjectDir);$(SolutionDir)external\AgilitySDK\Preview\include\;$(SolutionDir)external\RenderDoc\</AdditionalIncludeDirectories>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -87,9 +90,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>python310.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;WinPixEventRuntime.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>python310.lib;d3d12.lib;dxgi.lib;d3dcompiler.lib;WinPixEventRuntime.lib;dxcompiler.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalLibraryDirectories>$(ProjectDir)Pix\bin\x64\;$(ProjectDir)python\Python310\libs\;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ShowProgress>NotSet</ShowProgress>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -97,6 +101,7 @@
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\external\OpenFBX\libdeflate.c" />
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
+    <ClCompile Include="BVH.cpp" />
     <ClCompile Include="ImageReadback.cpp" />
     <ClCompile Include="DX12Utils\Camera.cpp" />
     <ClCompile Include="DX12Utils\FBXCache.cpp" />
@@ -141,6 +146,7 @@
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
     <ClInclude Include="..\external\OpenFBX\libdeflate.h" />
     <ClInclude Include="..\external\OpenFBX\ofbx.h" />
+    <ClInclude Include="BVH.h" />
     <ClInclude Include="ImageReadback.h" />
     <ClInclude Include="DX12Utils\Camera.h" />
     <ClInclude Include="DX12Utils\CompileShaders.h" />
@@ -192,6 +198,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig" />
     <None Include="packages.config" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

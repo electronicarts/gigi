@@ -1,10 +1,13 @@
 {
-    "resourceViewNodeIndex": 4,
-    "resourceViewResourceIndex": 3,
-    "savedVariables": [
-        {
-            "name": "RenderSize",
-            "value": "256,256"
-        }
-    ]
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 4,
+        "resourceViewResourceIndex": 3,
+        "savedVariables": [
+            {
+                "name": "RenderSize",
+                "value": "256,256"
+            }
+        ]
+    }
 }

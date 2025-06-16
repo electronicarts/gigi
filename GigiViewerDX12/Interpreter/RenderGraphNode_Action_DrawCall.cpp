@@ -160,7 +160,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				desc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 				desc.MinLOD = 0.0f;
 				desc.MaxLOD = D3D12_FLOAT32_MAX;
-				desc.ShaderRegister = (UINT)samplerIndex;
+				desc.ShaderRegister = sampler.registerIndex;
 				desc.RegisterSpace = 1;
 				desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_MESH;
 
@@ -335,6 +335,11 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			if (error) error->Release();
 			return false;
 		}
+
+		OnRootSignature(sig, node.amplificationShader.shader);
+		OnRootSignature(sig, node.meshShader.shader);
+		OnRootSignature(sig, node.vertexShader.shader);
+		OnRootSignature(sig, node.pixelShader.shader);
 
 		char* sigptr = (char*)sig->GetBufferPointer();
 		auto sigsize = sig->GetBufferSize();
@@ -834,9 +839,25 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				else
 				{
 					desc.m_resource = resourceInfo.m_resource;
-					desc.m_format = resourceInfo.m_format;
-					desc.m_stride = (desc.m_format == DXGI_FORMAT_UNKNOWN) ? resourceInfo.m_size / resourceInfo.m_count : 0;
-					desc.m_count = resourceInfo.m_count;
+
+					const ShaderResourceBuffer& shaderResourceBuffer = shader.resources[resourceIndex].buffer;
+					bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
+					if (isStructuredBuffer)
+					{
+						desc.m_format = DXGI_FORMAT_UNKNOWN;
+						if (shaderResourceBuffer.typeStruct.structIndex != -1)
+							desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
+						else
+							desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
+						desc.m_count = resourceInfo.m_size / desc.m_stride;
+					}
+					else
+					{
+						desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
+						desc.m_stride = 0;
+						desc.m_count = resourceInfo.m_count;
+					}
+
 					desc.m_raw = shader.resources[resourceIndex].buffer.raw;
 				}
 				break;
@@ -918,7 +939,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 	return true;
 }
 
-static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::vector<ShaderDefine>& nodeDefines, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, LogFn& logFn)
+static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::vector<ShaderDefine>& nodeDefines, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn)
 {
 	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
 
@@ -937,6 +958,9 @@ static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader&
 	{
 		shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
 	}
+
+	if (renderGraph.settings.dx12.Allow16BitTypes && native16BitShaderOpsSupported)
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::Enable16BitTypes;
 
 	if (renderGraph.settings.dx12.DXC_HLSL_2021)
 	{
@@ -990,16 +1014,16 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		bool compiledOK = true;
 
 		if (node.vertexShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.pixelShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.amplificationShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.meshShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 		for (const std::string& fileName : allShaderFiles)
@@ -1699,6 +1723,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			if (dispatchSize[0] == 0 || dispatchSize[1] == 0 || dispatchSize[2] == 0)
 			{
 				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to do a dispatch of size 0.  dispatchSize = (%u, %u, %u)", node.name.c_str(), dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+				return false;
+			}
+
+			if (node.meshShader.shader->NumThreads[0] == 0 || node.meshShader.shader->NumThreads[1] == 0 || node.meshShader.shader->NumThreads[2] == 0)
+			{
+				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run mesh shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.meshShader.shader->NumThreads[0], node.meshShader.shader->NumThreads[1], node.meshShader.shader->NumThreads[2]);
 				return false;
 			}
 

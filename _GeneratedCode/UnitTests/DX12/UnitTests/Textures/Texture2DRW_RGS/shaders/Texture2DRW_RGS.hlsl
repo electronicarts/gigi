@@ -27,3 +27,17 @@ void rgsmain()
 	nodeTexture[px] = float4((loadedTexturePx * importedTexturePx) * importedColorPx, 1.0f);
 	importedTexture[px] = float4((loadedTexturePx + importedTexturePx) / 2.0f * importedColorPx, 1.0f);
 }
+
+[shader("closesthit")]
+#line 21
+void chsmain(inout Payload payload : SV_RayPayload, in BuiltInTriangleIntersectionAttributes intersection : SV_IntersectionAttributes)
+{
+    payload.hit = true;
+}
+
+[shader("miss")]
+#line 26
+void missmain(inout Payload payload : SV_RayPayload)
+{
+    payload.hit = false;
+}

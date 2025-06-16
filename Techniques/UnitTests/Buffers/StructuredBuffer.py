@@ -23,7 +23,7 @@ def DoTest():
 		return False
 
 	# Make this test deterministic
-	Host.SetFrameIndex(0)
+	Host.SetFrameIndex(10)
 	Host.SetFrameDeltaTime(1.0 / 30.0)
 
 	# Do one execution to ensure everything is initialized

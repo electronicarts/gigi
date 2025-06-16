@@ -53,12 +53,11 @@
 
 #include "ImageReadback.h"
 #include "ImageSave.h"
+#include "BVH.h"
 #include <comdef.h>
 // clang-format on
 
 #include <thread>
-
-#define USE_AGILITY_SDK() true
 
 #ifdef _DEBUG
 #define BUILD_FLAVOR "Debug"
@@ -77,6 +76,15 @@
 
 #define BREAK_ON_GIGI_ASSERTS() false
 
+static const UINT D3D12SDKVersion_Preview = 717;
+static const UINT D3D12SDKVersion_Retail = 616;
+
+static const UUID ExperimentalFeaturesEnabled[] =
+{
+    D3D12ExperimentalShaderModels,
+    D3D12CooperativeVectorExperiment
+};
+
 #include "Interpreter/GigiInterpreterPreviewWindowDX12.h"
 #include "Interpreter/NodesShared.h"
 #include "GigiEdit/StableSample.h"
@@ -85,11 +93,6 @@
 #pragma comment(lib, "dxguid.lib")
 
 #include "renderdoc_app.h"
-
-#if USE_AGILITY_SDK()
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
-extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\bin\\"; }
-#endif
 
 #define ImDrawCallback_SetShaderFlags (ImDrawCallback)(-2)
 #define ImDrawCallback_SetHistogramMin (ImDrawCallback)(-3)
@@ -105,6 +108,7 @@ static const uint64_t ImGuiShaderFlag_UINTByteCountBit2 = 1 << 7;
 static const uint64_t ImGuiShaderFlag_UINTByteCountBit3 = 1 << 8;
 static const uint64_t ImGuiShaderFlag_Signed = 1 << 9;
 static const uint64_t ImGuiShaderFlag_Clamp = 1 << 10;
+static const uint64_t ImGuiShaderFlag_notSRGB = 1 << 11; // show it as linear space, not sRGB
 
 struct FrameContext
 {
@@ -121,7 +125,7 @@ static bool g_useWarpAdapter = false;
 
 HWND g_hwnd = NULL;
 static int const                    NUM_BACK_BUFFERS = 3;
-static ID3D12Device2* g_pd3dDevice = NULL;
+static ID3D12Device14* g_pd3dDevice = NULL;
 static ID3D12InfoQueue* g_pd3dInfoQueue = NULL;
 static ID3D12DescriptorHeap* g_pd3dRtvDescHeap = NULL;
 static ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
@@ -148,6 +152,14 @@ static float g_histogramMinMax[2] = { 0.0f, 1.0f };
 static float g_imageZoom = 1.0f;
 static bool g_imageLinearFilter = true;
 
+enum class SRGBSettings : int
+{
+    Auto = 0,
+    On = 1,
+    Off = 2
+};
+static SRGBSettings g_sRGB = SRGBSettings::Auto;
+
 static bool g_hideUI = false;
 static bool g_hideResourceNodes = true;  // in profiler, and render graph window. To reduce clutter of things that we don't care about.
 static bool g_onlyShowWrites = true;     // Hide SRV, UAV before, etc. Only show the result of writes.
@@ -170,6 +182,15 @@ static std::string g_meshInfoName = "";
 RecentFiles g_recentFiles("Software\\GigiViewer");
 RecentFiles g_recentPythonScripts("Software\\GigiViewerPy");
 
+// We always compile against external/AgilitySDK/Preview/include as a superset of all choices.
+// The DLL's we choose at runtime can come from different places though.
+enum class AgilitySDKChoice
+{
+    Retail,  // external/AgilitySDK/Retail/bin/
+    Preview, // external/AgilitySDK/Preview/bin/
+    None     // Use the binaries the OS has.
+};
+
 // RenderDoc
 static HMODULE g_renderDocModule = NULL;
 static RENDERDOC_API_1_6_0* g_renderDocAPI = nullptr;
@@ -179,6 +200,7 @@ static bool g_renderDocLaunchUI = false;
 static bool g_renderDocEnabled = true;
 static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
+static AgilitySDKChoice g_agilitySDKChoice = AgilitySDKChoice::Retail;
 
 void RenderFrame(bool forceExecute);
 
@@ -325,6 +347,32 @@ static void ShowToolTip(const char* tooltip, bool delay = false)
 		ImGui::SetTooltip("%s", tooltip);
 }
 
+template <typename T>
+static bool ShowGigiEnumDropDown(T& value, const char* label, const char* tooltip = nullptr)
+{
+    bool ret = false;
+
+    std::vector<const char*> options;
+    float comboWidth = 0.0f;
+    for (int i = 0; i < EnumCount<T>(); ++i)
+    {
+        const char* label = EnumToString((T)i);
+        options.push_back(label);
+        comboWidth = std::max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+    }
+    ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+
+    int valueInt = (int)value;
+    if (ImGui::Combo(label, &valueInt, options.data(), (int)options.size()))
+    {
+        value = (T)valueInt;
+        ret = true;
+    }
+    if (tooltip && tooltip[0])
+        ShowToolTip(tooltip);
+    return ret;
+}
+
 std::string GetCPUName()
 {
     int CPUInfo[4] = { -1 };
@@ -450,6 +498,7 @@ bool g_techniquePaused = false;
 
 bool g_logCollectedShaderAsserts = true;
 
+uint32_t g_GPUDeviceIndex = 0;
 std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
 std::vector<std::wstring> g_runPyArgs;
@@ -627,6 +676,9 @@ void TryBeginRenderDocCapture()
 	if (g_renderDocCaptureNextFrame)
 	{
 		g_renderDocIsCapturing = true;
+
+		g_renderDocAPI->SetCaptureFilePathTemplate(g_interpreter.GetTempDirectory().c_str());
+
 		g_renderDocAPI->StartFrameCapture(nullptr, nullptr);
 		g_renderDocFrameCaptureCount--;
 
@@ -699,7 +751,9 @@ GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResour
         outDesc.buffer.RT_BuildFlags = inDesc.buffer.RT_BuildFlags;
         outDesc.buffer.BLASOpaque = inDesc.buffer.BLASOpaque;
         outDesc.buffer.BLASNoDuplicateAnyhitInvocations = inDesc.buffer.BLASNoDuplicateAnyhitInvocations;
+        outDesc.buffer.BLASCullMode = inDesc.buffer.BLASCullMode;
         outDesc.buffer.IsAABBs = inDesc.buffer.IsAABBs;
+        outDesc.buffer.cvData = inDesc.buffer.cvData;
     }
 
     return outDesc;
@@ -750,7 +804,9 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
         outDesc.buffer.RT_BuildFlags = inDesc.buffer.RT_BuildFlags;
         outDesc.buffer.BLASOpaque = inDesc.buffer.BLASOpaque;
         outDesc.buffer.BLASNoDuplicateAnyhitInvocations = inDesc.buffer.BLASNoDuplicateAnyhitInvocations;
+        outDesc.buffer.BLASCullMode = inDesc.buffer.BLASCullMode;
         outDesc.buffer.IsAABBs = inDesc.buffer.IsAABBs;
+        outDesc.buffer.cvData = inDesc.buffer.cvData;
     }
 
     return outDesc;
@@ -1238,11 +1294,11 @@ void UpdateWindowTitle()
 
 void ImGuiRecentFiles()
 {
-    if (!g_recentFiles.m_Entries.empty())
+    if (!g_recentFiles.GetEntries().empty())
     {
         if (ImGui::BeginMenu("Recent Files"))
         {
-            for (const auto& el : g_recentFiles.m_Entries)
+            for (const auto& el : g_recentFiles.GetEntries())
             {
                 if (el.empty())
                     continue;
@@ -1262,11 +1318,11 @@ void ImGuiRecentFiles()
 
 void ImGuiRecentPythonScripts()
 {
-    if (!g_recentPythonScripts.m_Entries.empty())
+    if (!g_recentPythonScripts.GetEntries().empty())
     {
         if (ImGui::BeginMenu("Recent Python Scripts"))
         {
-            for (const auto& el : g_recentPythonScripts.m_Entries)
+            for (const auto& el : g_recentPythonScripts.GetEntries())
             {
                 if (el.empty())
                     continue;
@@ -1483,40 +1539,41 @@ void HandleMainMenu()
         {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
             static int captureFrames = 1;
-            static std::string waitingToOpenFileName = "";
+            static std::wstring waitingToOpenFileName = L"";
             static bool openCapture = true;
+
             if (g_pixCaptureEnabled && ImGui::Button("Pix"))
             {
-                wchar_t fileName[1024];
+                std::filesystem::path tempDir = g_interpreter.GetTempDirectory();
+                std::wstring fullFileName;
                 int i = 0;
                 while (1)
                 {
-                    swprintf_s(fileName, L"capture%i.wpix", i);
-                    FILE* file = nullptr;
-                    _wfopen_s(&file, fileName, L"rb");
-                    if (!file)
+                    char fileName[1024];
+                    sprintf_s(fileName, "capture%i.wpix", i);
+
+                    fullFileName = std::filesystem::weakly_canonical(tempDir / fileName).wstring();
+
+                    if (!FileExists(fullFileName))
                         break;
-                    fclose(file);
+
                     i++;
                 }
 
-                char currentDirectory[4096];
-                GetCurrentDirectoryA(4096, currentDirectory);
-
-                HRESULT hr = PIXGpuCaptureNextFrames(fileName, captureFrames);
+                HRESULT hr = PIXGpuCaptureNextFrames(fullFileName.c_str(), captureFrames);
                 if (FAILED(hr))
                 {
                     _com_error err(hr);
-                    Log(LogLevel::Error, "Could not save pix capture to %s:\n%s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str(), FromWideString(err.ErrorMessage()).c_str());
+                    Log(LogLevel::Error, "Could not save pix capture to %ls:\n%s", fullFileName.c_str(), FromWideString(err.ErrorMessage()).c_str());
                 }
                 else
                 {
-                    Log(LogLevel::Info, "Pix capture saved to %s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str());
+                    Log(LogLevel::Info, "Pix capture saved to %ls", fullFileName.c_str());
 
                     if (openCapture)
-                        waitingToOpenFileName = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string();
+                        waitingToOpenFileName = fullFileName;
                     else
-                        waitingToOpenFileName = "";
+                        waitingToOpenFileName = L"";
                 }
             }
 
@@ -1525,6 +1582,8 @@ void HandleMainMenu()
 				g_renderDocCaptureNextFrame = true;
                 g_renderDocFrameCaptureCount = captureFrames;
                 g_renderDocLaunchUI = openCapture;
+
+                Log(LogLevel::Info, "Renderdoc capture is being saved to %s", g_interpreter.GetTempDirectory().c_str());
 			}
 
             ImGui::SetNextItemWidth(50);
@@ -1533,8 +1592,8 @@ void HandleMainMenu()
 
             if (!waitingToOpenFileName.empty() && FileExists(waitingToOpenFileName))
             {
-                ShellExecuteA(NULL, "open", waitingToOpenFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-                waitingToOpenFileName = "";
+                ShellExecuteW(NULL, L"open", waitingToOpenFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                waitingToOpenFileName = L"";
             }
         }
 
@@ -1676,6 +1735,16 @@ void MakeInitialLayout(ImGuiID dockspace_id)
 uint64_t GetImGuiImageShaderFlags(DXGI_FORMAT format, bool mainView)
 {
     uint64_t flags = ImGuiShaderFlag_Checker | ImGuiShaderFlag_Clamp;
+
+    if (!mainView || g_sRGB == SRGBSettings::Auto)
+    {
+        if (!Get_DXGI_FORMAT_Info(format).sRGB)
+            flags |= ImGuiShaderFlag_notSRGB;
+    }
+    else if (g_sRGB == SRGBSettings::Off)
+    {
+        flags |= ImGuiShaderFlag_notSRGB;
+    }
 
     // Depth stencil buffer formats, specifically wanting to see the stencil bits
     if (format == DXGI_FORMAT_X24_TYPELESS_G8_UINT || format == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT)
@@ -3197,6 +3266,27 @@ void ShowImportedResources()
                     desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
                 ShowToolTip("By default, ray tracing APIs may call an any hit shader more than once for the same geometry, as a BVH traversal optimization. Turn this on to disable that.");
 
+                // cull mode
+                {
+                    std::vector<const char*> options;
+                    float comboWidth = 0.0f;
+                    for (int i = 0; i < EnumCount<GGUserFile_BLASCullMode>(); ++i)
+                    {
+                        const char* label = EnumToString((GGUserFile_BLASCullMode)i);
+                        options.push_back(label);
+                        comboWidth = std::max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+                    }
+                    ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+
+                    int value = (int)desc.buffer.BLASCullMode;
+                    if (ImGui::Combo("BLAS Cull Mode", &value, options.data(), (int)options.size()))
+                    {
+                        desc.buffer.BLASCullMode = (GGUserFile_BLASCullMode)value;
+                        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                    }
+                    ShowToolTip("Controls D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE and D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE");
+                }
+
                 if (ImGui::Checkbox("Is AABBs", &desc.buffer.IsAABBs))
                     desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
                 ShowToolTip("Set to true if the buffer has AABB data in it, for ray tracing with intersection shaders. Format is Min XYZ, Max XYZ.");
@@ -3289,6 +3379,50 @@ void ShowImportedResources()
 
                 if (!desc.buffer.fileName.empty())
                     ImGui::EndDisabled();
+            }
+
+            // Cooperative Vector
+            if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
+            {
+                ImGui::Indent();
+                ImGui::Text("Cooperative Vectors");
+                ImGui::PushID("Cooperative Vectors");
+
+                // enabled
+                if (ImGui::Checkbox("Convert", &desc.buffer.cvData.convert))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                ShowToolTip("If true, will do the data conversion described below");
+
+                // width / height
+                {
+                    int wh[2] = { (int)desc.buffer.cvData.width, (int)desc.buffer.cvData.height };
+                    if (ImGui::InputInt2("Width Height", wh))
+                    {
+                        desc.buffer.cvData.width = (unsigned int)std::max(wh[0], 0);
+                        desc.buffer.cvData.height = (unsigned int)std::max(wh[1], 0);
+                        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                    }
+                    ShowToolTip("How many columns and rows in the matrix or vector");
+                }
+
+                // source type
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.srcType, "Source Type", "The data type of the source data."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                // source layout
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.srcLayout, "Source Layout", "The layout of the source data."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                // dest type
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.destType, "Dest Type", "The data type you want it to be converted to before use in the shader."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                // dest layout
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.destLayout, "Dest Layout", "The layout you want it to be converted to before use in the shader."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                ImGui::PopID();
+                ImGui::Unindent();
             }
 
             // Mesh Details
@@ -3489,6 +3623,22 @@ void ShowImGuiWindows()
             {
                 const D3D12_FEATURE_DATA_D3D12_OPTIONS11& options = g_interpreter.GetOptions11();
                 ImGui::Text("AtomicInt64OnDescriptorHeapResourceSupported: %s", options.AtomicInt64OnDescriptorHeapResourceSupported ? "True" : "False");
+            }
+
+            // Options Experimental
+            ImGui::SeparatorText("Options Experimental");
+            {
+                const D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL& options = g_interpreter.GetOptionsExperimental();
+
+                const char* CVTier = "Unknown";
+                switch (options.CooperativeVectorTier)
+                {
+                    case D3D12_COOPERATIVE_VECTOR_TIER_NOT_SUPPORTED: CVTier = "None"; break;
+                    case D3D12_COOPERATIVE_VECTOR_TIER_1_0: CVTier = "1.0"; break;
+                    case D3D12_COOPERATIVE_VECTOR_TIER_1_1: CVTier = "1.1"; break;
+                }
+
+                ImGui::Text("Cooperative Vector Tier: %s", CVTier);
             }
 
             // TODO: do the rest at some point!
@@ -4119,6 +4269,15 @@ void SaveAsCSV(const char* fileName, const unsigned char* bytes, DXGI_FORMAT for
                 }
                 break;
             }
+            case DXGI_FORMAT_Info::ChannelType::_half:
+            {
+                for (int c = 0; c < actualChannelCount; ++c)
+                {
+                    fprintf(file, "%s\"%f\"", (c > 0 ? "," : ""), (float)*((half*)&bytes[offset]));
+                    offset += sizeof(float);
+                }
+                break;
+            }
         }
 
         fprintf(file, "\n");
@@ -4326,6 +4485,7 @@ void ShowTypedBuffer(unsigned char* bytes, DXGI_FORMAT format, int formatCount, 
             case DXGI_FORMAT_Info::ChannelType::_int16_t: rowBytes = sizeof(int16_t) * actualChannelCount; break;
             case DXGI_FORMAT_Info::ChannelType::_int32_t: rowBytes = sizeof(int32_t) * actualChannelCount; break;
             case DXGI_FORMAT_Info::ChannelType::_float: rowBytes = sizeof(float) * actualChannelCount; break;
+            case DXGI_FORMAT_Info::ChannelType::_half: rowBytes = sizeof(half) * actualChannelCount; break;
         }
 
         for (int index = indexStart; index < indexEnd; ++index)
@@ -4405,6 +4565,18 @@ void ShowTypedBuffer(unsigned char* bytes, DXGI_FORMAT format, int formatCount, 
                             ImGui::Text("%.8X", ((unsigned int*)rowBegin)[c]);
                         else
                             ImGui::Text("%f", ((float*)rowBegin)[c]);
+                    }
+                    break;
+                }
+                case DXGI_FORMAT_Info::ChannelType::_half:
+                {
+                    for (int c = 0; c < actualChannelCount; ++c)
+                    {
+                        ImGui::TableNextColumn();
+                        if (showAsHex)
+                            ImGui::Text("%.8X", (float)((half*)rowBegin)[c]);
+                        else
+                            ImGui::Text("%f", (float)((half*)rowBegin)[c]);
                     }
                     break;
                 }
@@ -5188,6 +5360,8 @@ void ShowResourceView()
                                 static bool s_bc6_signed = false;
                                 static bool s_bc7_srgb = true;
 
+                                ImGui::SameLine();
+
                                 ImGuiStyle& style = ImGui::GetStyle();
                                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
 
@@ -5450,6 +5624,38 @@ void ShowResourceView()
                             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
                             ImGui::SameLine();
                             ImGui::Checkbox("Linear Filter", &g_imageLinearFilter);
+
+                            // sRGB
+                            {
+                                static const char* sRGBLabels[] =
+                                {
+                                    "Auto",
+                                    "sRGB",
+                                    "Linear"
+                                };
+
+                                // Get the longest text width of the server names
+                                float comboWidth = 0.0f;
+                                for (const char* label : sRGBLabels)
+                                    comboWidth = std::max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+
+                                ImGui::SameLine();
+                                ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+                                const char* selectedLabel = sRGBLabels[(int)g_sRGB];
+                                if (ImGui::BeginCombo("sRGB", selectedLabel, ImGuiComboFlags_None))
+                                {
+                                    for (int n = 0; n < _countof(sRGBLabels); n++)
+                                    {
+                                        const bool is_selected = ((int)g_sRGB == n);
+                                        if (ImGui::Selectable(sRGBLabels[n], is_selected))
+                                            g_sRGB = (SRGBSettings)n;
+
+                                        if (is_selected)
+                                            ImGui::SetItemDefaultFocus();
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                            }
                         }
 
                         g_contentRegionSize = ImGui::GetContentRegionAvail();
@@ -5775,6 +5981,52 @@ void ShowResourceView()
                             viewInfo.showAsHex = showAsHex;
                         }
 
+                        // See if we can save this as a BVH for WebGPU
+                        const unsigned char* BVHFirstPos = nullptr;
+                        size_t BVHPosStride = 0;
+                        size_t BVHPosCount = 0;
+                        {
+                            DXGI_FORMAT BVHVertexFormat = DXGI_FORMAT_FORCE_UINT;
+                            size_t BVHVertexOffset = 0;
+
+                            // Get the information about the position data
+                            if (viewInfo.structIndex != -1)
+                            {
+                                for (const StructField& field : renderGraph.structs[viewInfo.structIndex].fields)
+                                {
+                                    if (field.semantic == StructFieldSemantic::Position)
+                                    {
+                                        BVHVertexFormat = DataFieldTypeInfoDX12(field.type).typeFormat;
+                                        break;
+                                    }
+                                    BVHVertexOffset += field.sizeInBytes;
+                                }
+
+                                BVHPosStride = renderGraph.structs[viewInfo.structIndex].sizeInBytes;
+                            }
+                            else
+                            {
+                                BVHVertexFormat = viewInfo.format;
+                                BVHPosStride = Get_DXGI_FORMAT_Info(BVHVertexFormat).bytesPerPixel;
+                            }
+
+                            // Only allow float and float3 format
+                            switch (BVHVertexFormat)
+                            {
+                                case DXGI_FORMAT_R32G32B32_FLOAT:
+                                case DXGI_FORMAT_R32_FLOAT:
+                                {
+                                    BVHFirstPos = &bytes[BVHVertexOffset];
+                                    BVHPosCount = bytes.size() / BVHPosStride;
+                                    break;
+                                }
+                                default:
+                                {
+                                    BVHVertexFormat = DXGI_FORMAT_FORCE_UINT;
+                                }
+                            }
+                        }
+
                         // Typed buffer
                         if (viewInfo.structIndex == -1)
                         {
@@ -5790,6 +6042,14 @@ void ShowResourceView()
                             ImGui::SameLine();
                             if (ImGui::Button("Save as .hex") && NFD_SaveDialog("hex", "", &outPath) == NFD_OKAY)
                                 SaveAsHex(outPath, bytes.data(), (int)bytes.size());
+
+                            // Save as BVH, for WebGPU
+                            if (BVHFirstPos != nullptr)
+                            {
+                                ImGui::SameLine();
+                                if (ImGui::Button("Save as .bvh") && NFD_SaveDialog("bvh", "", &outPath) == NFD_OKAY)
+                                    SaveAsBVH(outPath, BVHFirstPos, BVHPosStride, BVHPosCount);
+                            }
 
                             // Show it
                             ShowTypedBuffer(bytes.data(), viewInfo.format, viewInfo.formatCount, viewInfo.count, viewInfo.showAsHex);
@@ -5816,6 +6076,14 @@ void ShowResourceView()
                             ImGui::SameLine();
                             if (ImGui::Button("Save as .hex") && NFD_SaveDialog("hex", "", &outPath) == NFD_OKAY)
                                 SaveAsHex(outPath, bytes.data(), (int)bytes.size());
+
+                            // Save as BVH, for WebGPU
+                            if (BVHFirstPos != nullptr)
+                            {
+                                ImGui::SameLine();
+                                if (ImGui::Button("Save as .bvh") && NFD_SaveDialog("bvh", "", &outPath) == NFD_OKAY)
+                                    SaveAsBVH(outPath, BVHFirstPos, BVHPosStride, BVHPosCount);
+                            }
 
                             // Show it
                             ShowStructuredBuffer(renderGraph, bytes.data(), structDesc, viewInfo.count, viewInfo.showAsHex, viewInfo.showStructuredBuffersVertically);
@@ -6359,6 +6627,7 @@ public:
                     case DXGI_FORMAT_Info::ChannelType::_int16_t: data.formatString = "h"; break;
                     case DXGI_FORMAT_Info::ChannelType::_int32_t: data.formatString = "i"; break;
                     case DXGI_FORMAT_Info::ChannelType::_float: data.formatString = "f"; break;
+                    case DXGI_FORMAT_Info::ChannelType::_half: data.formatString = "e"; break;
                 }
                 data.itemSize = formatInfo.bytesPerChannel;
 
@@ -6413,6 +6682,7 @@ public:
                             case DXGI_FORMAT_Info::ChannelType::_int16_t: data.formatString += "h"; break;
                             case DXGI_FORMAT_Info::ChannelType::_int32_t: data.formatString += "i"; break;
                             case DXGI_FORMAT_Info::ChannelType::_float: data.formatString += "f"; break;
+                            case DXGI_FORMAT_Info::ChannelType::_half: data.formatString += "e"; break;
                         }
                     }
                 }
@@ -7331,7 +7601,6 @@ int main(int argc, char** argv)
 
     SetGigiHeadlessMode(!BREAK_ON_GIGI_ASSERTS());
 
-
     // Parse command line parameters
     int argIndex = 0;
     while (argIndex < argc)
@@ -7368,6 +7637,16 @@ int main(int argc, char** argv)
                 return 1;
             }
             g_commandLineLoadGGFileName = argv[argIndex + 1];
+            argIndex += 2;
+        }
+        else if (!_stricmp(argv[argIndex], "-device"))
+        {
+            if (argc <= argIndex + 1)
+            {
+                printf("Not enough arguments given. Expected: -device <index>\n");
+                return 1;
+            }
+            g_GPUDeviceIndex = atoi(argv[argIndex + 1]);
             argIndex += 2;
         }
         else if (!_stricmp(argv[argIndex], "-run"))
@@ -7420,6 +7699,16 @@ int main(int argc, char** argv)
         else if (!_stricmp(argv[argIndex], "-warpadapter"))
         {
             g_useWarpAdapter = true;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-AgilitySDKNone"))
+        {
+            g_agilitySDKChoice = AgilitySDKChoice::None;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-AgilitySDKPreview"))
+        {
+            g_agilitySDKChoice = AgilitySDKChoice::Preview;
             argIndex++;
         }
         else
@@ -7478,6 +7767,8 @@ int main(int argc, char** argv)
 
     g_hwnd = ::CreateWindowW(wc.lpszClassName, L"Gigi Viewer - DX12 (Gigi v" GIGI_VERSION() ")", WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
     DragAcceptFiles(g_hwnd, true);
+
+	Log(LogLevel::Info, "GiGi Viewer " GIGI_VERSION() " DX12 " BUILD_FLAVOR);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(g_hwnd))
@@ -7568,10 +7859,12 @@ int main(int argc, char** argv)
     //IM_ASSERT(font != NULL);
 
     // just to have something in the log making it clear where the content is located
-    Log(LogLevel::Info, "GiGi Viewer " GIGI_VERSION() " DX12 " BUILD_FLAVOR);
-    Log(LogLevel::Info, "GPU: %s (driver %s)", g_adapterName.c_str(), g_driverVersion.c_str());
-    Log(LogLevel::Info, "CPU: %s", GetCPUName().c_str());
-    Log(LogLevel::Info, "Ray tracing support: %s", g_interpreter.SupportsRaytracing() ? "Yes" : "No");
+    Log(LogLevel::Info, "GPU: '%s' (driver %s) RayTracing:%s",
+        g_adapterName.c_str(),
+        g_driverVersion.c_str(),
+        g_interpreter.SupportsRaytracing() ? "Yes" : "No"
+    );
+    Log(LogLevel::Info, "CPU: '%s'", GetCPUName().c_str());
 
     // Main loop
     int mainRet = 0;
@@ -7759,6 +8052,46 @@ int main(int argc, char** argv)
 // Helper functions
 bool CreateDeviceD3D(HWND hWnd)
 {
+    // Handle Agility SDK Choice
+    if (g_agilitySDKChoice != AgilitySDKChoice::None)
+    {
+        ID3D12SDKConfiguration* sdkConfig = nullptr;
+        D3D12GetInterface(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdkConfig));
+
+        ID3D12SDKConfiguration1* sdkConfig1 = nullptr;
+        sdkConfig->QueryInterface(IID_PPV_ARGS(&sdkConfig1));
+
+        HRESULT hr = E_FAIL;
+        switch (g_agilitySDKChoice)
+        {
+            case AgilitySDKChoice::Retail:
+            {
+                hr = sdkConfig1->SetSDKVersion(D3D12SDKVersion_Retail, ".\\external\\AgilitySDK\\Retail\\bin\\");
+                Log(LogLevel::Info, "D3D12SDKVersion: %u", D3D12SDKVersion_Retail);
+                break;
+            }
+            case AgilitySDKChoice::Preview:
+            {
+                hr = sdkConfig1->SetSDKVersion(D3D12SDKVersion_Preview, ".\\external\\AgilitySDK\\Preview\\bin\\");
+                Log(LogLevel::Info, "D3D12SDKVersion: %u%s", D3D12SDKVersion_Preview, (D3D12SDKVersion_Retail != D3D12SDKVersion_Preview ? " (Preview)" : ""));
+                break;
+            }
+        }
+
+        if (FAILED(hr))
+            return false;
+
+        sdkConfig1->Release();
+        sdkConfig->Release();
+    }
+
+    // Enable experimental features
+    {
+        HRESULT hr = D3D12EnableExperimentalFeatures(_countof(ExperimentalFeaturesEnabled), ExperimentalFeaturesEnabled, nullptr, nullptr);
+        if (FAILED(hr))
+            return false;
+    }
+
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC1 sd;
     {
@@ -7802,10 +8135,24 @@ bool CreateDeviceD3D(HWND hWnd)
         return false;
     }
 
+    {
+        Log(LogLevel::Info, "GPU devices (command line -device <index>):");
+        IDXGIAdapter1* adapter = nullptr;
+        uint32_t index = 0;
+        while (SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter))))
+        {
+            DXGI_ADAPTER_DESC1 desc;
+            adapter->GetDesc1(&desc);
+            std::string adapterName = FromWideString(desc.Description);
+            Log(LogLevel::Info, "  %d. '%s'", index, adapterName.c_str());
+            ++index;
+        }
+    }
+
     // Gather the adapters
     IDXGIAdapter1* adapter = nullptr;
     if ((g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)))) ||
-        (!g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(0, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)))))
+        (!g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(g_GPUDeviceIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)))))
     {
         DXGI_ADAPTER_DESC1 desc;
         adapter->GetDesc1(&desc);
@@ -7917,9 +8264,20 @@ bool CreateDeviceD3D(HWND hWnd)
         if (g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_frameContext[i].CommandAllocator)) != S_OK)
             return false;
 
-    if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
-        g_pd3dCommandList->Close() != S_OK)
-        return false;
+    if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
+    {
+        ID3D12GraphicsCommandListPreview* commandList = nullptr;
+        if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&commandList)) != S_OK ||
+            commandList->Close() != S_OK)
+            return false;
+        g_pd3dCommandList = commandList;
+    }
+    else
+    {
+        if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
+            g_pd3dCommandList->Close() != S_OK)
+            return false;
+    }
 
     if (g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)) != S_OK)
         return false;

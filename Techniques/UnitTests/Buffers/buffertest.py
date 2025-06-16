@@ -5,6 +5,7 @@ import os
 
 resources = [
 	"BufferTest.OutputTyped: OutputTypedBuffer (UAV - After)",
+	"BufferTest.OutputTypedStruct: OutputTypedStructBuffer (UAV - After)",
 	"BufferTest.OutputStructured: OutputStructuredBuffer (UAV - After)",
 	"BufferTest.OutputTypedRaw: OutputTypedBufferRaw (UAV - After)"
 ]

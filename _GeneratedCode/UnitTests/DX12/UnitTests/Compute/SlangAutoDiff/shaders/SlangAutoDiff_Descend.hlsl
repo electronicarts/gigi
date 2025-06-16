@@ -1,12 +1,12 @@
-#pragma pack_matrix(row_major)
-#ifdef SLANG_HLSL_ENABLE_NVAPI
-#include "nvHLSLExtns.h"
-#endif
-
-#ifndef __DXC_VERSION_MAJOR
+//#pragma pack_matrix(row_major)
+//#ifdef SLANG_HLSL_ENABLE_NVAPI
+//#include "nvHLSLExtns.h"
+//#endif
+//
+//#ifndef __DXC_VERSION_MAJOR
 // warning X3557: loop doesn't seem to do anything, forcing loop to unroll
-#pragma warning(disable : 3557)
-#endif
+//#pragma warning(disable : 3557)
+//#endif
 
 
 #line 12 "SlangAutoDiff_Descend.hlsl"
@@ -28,7 +28,7 @@ cbuffer _DescendCB_0 : register(b0)
     Struct_DescendCB_0 _DescendCB_0;
 }
 
-#line 7818 "hlsl.meta.slang"
+#line 7960 "hlsl.meta.slang"
 struct DiffPair_float_0
 {
     float primal_0;

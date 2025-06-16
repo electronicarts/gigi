@@ -12,7 +12,7 @@ namespace boxblur
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -48,14 +48,14 @@ namespace boxblur
             bool variable_enabled = true;  // Enables or disables the blurring effect.
             int variable_radius = 2;  // The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2
             bool variable_sRGB = true;
-            float3 variable_iResolution = {0.0f, 0.0f, 0.0f};
+            float3 variable_iResolution = {0.000000f, 0.000000f, 0.000000f};
             float variable_iTime = 0.000000f;
             float variable_iTimeDelta = 0.000000f;
             float variable_iFrameRate = 0.000000f;
             int variable_iFrame = 0;
-            float4 variable_iMouse = {0.0f, 0.0f, 0.0f, 0.0f};
-            float4 variable_MouseState = {0.0f, 0.0f, 0.0f, 0.0f};
-            float4 variable_MouseStateLastFrame = {0.0f, 0.0f, 0.0f, 0.0f};
+            float4 variable_iMouse = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float4 variable_MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float4 variable_MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
 
             // This is the texture to be blurred
             ID3D12Resource* texture_InputTexture = nullptr;

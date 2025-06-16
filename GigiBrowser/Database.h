@@ -31,7 +31,10 @@ public:
 		const char* tail = nullptr;
 		int result = sqlite3_prepare_v2(s_dataBase, text, (int)strlen(text), &statement, &tail);
 		if (result != SQLITE_OK)
+		{
+			const char* errorMsg = sqlite3_errmsg(s_dataBase);
 			return false;
+		}
 
 		// Bind the text parameters (to properly escape them etc)
 		{
@@ -41,7 +44,10 @@ public:
 				paramIndex++;
 				result = sqlite3_bind_text(statement, paramIndex, s.c_str(), (int)s.length(), nullptr);
 				if (result != SQLITE_OK)
+				{
+					const char* errorMsg = sqlite3_errmsg(s_dataBase);
 					return false;
+				}
 			}
 		}
 

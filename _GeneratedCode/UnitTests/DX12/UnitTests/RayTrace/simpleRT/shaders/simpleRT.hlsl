@@ -1,5 +1,11 @@
 
 
+struct Struct_VertexBuffer
+{
+    float3 Color;
+    float3 Position;
+};
+
 struct Struct__SimpleRTRayGenCB
 {
     float3 cameraPos;

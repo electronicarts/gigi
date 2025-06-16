@@ -14,7 +14,7 @@
 #include <filesystem>
 #include <comdef.h>
 
-#pragma comment(lib, "dxcompiler.lib")
+// Note: you can specify include directories by pushing into arguments "-I <path>" which i think would get rid of the need for a custom include handler.
 
 class IncludeHandlerDXC : public IDxcIncludeHandler
 {
@@ -129,6 +129,9 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     if ((shaderInfo.flags & ShaderCompilationFlags::HLSL2021) != ShaderCompilationFlags::None)
         arguments.push_back(L"-HV 2021");
+
+    if ((shaderInfo.flags & ShaderCompilationFlags::Enable16BitTypes) != ShaderCompilationFlags::None)
+        arguments.push_back(L"-enable-16bit-types");
 
     std::vector<std::wstring> shaderDefinitions;
     shaderDefinitions.reserve(shaderInfo.defines.size());
