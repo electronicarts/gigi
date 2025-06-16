@@ -34,10 +34,10 @@ struct Payload
 		ray,
 		payload);
 
-	float4 color = g_texture[px];
+	float4 color = /*$(RWTextureR:g_texture)*/[px];
 	color.a = 1.0f;
 	color.r = payload.hit ? 1.0f : 0.0f;
-	g_texture[px] = color;
+	/*$(RWTextureW:g_texture)*/[px] = color;
 }
 
 /*$(_miss:Miss1)*/

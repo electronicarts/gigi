@@ -343,6 +343,8 @@ inline size_t RebuildShaderNodePins(const RenderGraph& renderGraph, int shaderIn
     // It's ok if the shader wasn't found. it means the user isn't done editing
     if (shaderIndex != -1)
     {
+        node.linkProperties.resize(node.connections.size());
+
         const Shader& shader = renderGraph.shaders[shaderIndex];
 
         for (size_t dstIdx = 0; dstIdx < shader.resources.size(); dstIdx++)

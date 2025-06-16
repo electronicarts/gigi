@@ -1,4 +1,5 @@
 {
+    "version": "2.0",
     "systemVars": {
         "camera": {
             "startingCameraPos": [
@@ -12,36 +13,47 @@
             ]
         }
     },
-    "resourceViewNodeIndex": 14,
-    "resourceViewResourceIndex": 6,
-    "importedResources": [
-        {
-            "nodeName": "SphereVB",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\OBJAssets\\sphere.obj",
-                "structIndex": 0,
-                "BLASOpaque": true
+    "snapshot": {
+        "resourceViewNodeIndex": 14,
+        "resourceViewResourceIndex": 6,
+        "cameraPos": [
+            1.8031275272369385,
+            1.0489977598190308,
+            -0.7343816161155701
+        ],
+        "cameraAltitudeAzimuth": [
+            -0.37311917543411257,
+            1.1492680311203004
+        ],
+        "importedResources": [
+            {
+                "nodeName": "SphereVB",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "Mips_DrawCall_Sphere.bin",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
+            },
+            {
+                "nodeName": "VertexBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "Mips_DrawCall_Bunny.bin",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
             }
-        },
-        {
-            "nodeName": "VertexBuffer",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\OBJAssets\\bunny.obj",
-                "structIndex": 0,
-                "BLASOpaque": true
+        ],
+        "savedVariables": [
+            {
+                "name": "UseMips",
+                "value": "true"
+            },
+            {
+                "name": "RenderSize",
+                "value": "512,512"
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "UseMips",
-            "value": "true"
-        },
-        {
-            "name": "RenderSize",
-            "value": "512,512"
-        }
-    ]
+        ]
+    }
 }

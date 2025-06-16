@@ -12,7 +12,36 @@ table, th, td, tr
 <table>
 <tr><th colspan=2>Backend</th></tr>
 <tr><td>DX12</td><td></td></tr>
+<tr><td>WebGPU</td><td></td></tr>
 <tr><td>Interpreter</td><td></td></tr>
+</table>
+<br/>
+
+<b>CooperativeVectorBufferLayout : Describe the format of a buffer for use in cooperative vectors</b><br/><br/>
+<table>
+<tr><th colspan=2>CooperativeVectorBufferLayout</th></tr>
+<tr><td>RowMajor</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_ROW_MAJOR</td></tr>
+<tr><td>ColMajor</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_COLUMN_MAJOR</td></tr>
+<tr><td>MulOptimal</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_MUL_OPTIMAL</td></tr>
+<tr><td>OuterProductOptimal</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_OUTER_PRODUCT_OPTIMAL</td></tr>
+</table>
+<br/>
+
+<b>CooperativeVectorDataType : The data type stored. D3D12_LINEAR_ALGEBRA_DATATYPE</b><br/><br/>
+<table>
+<tr><th colspan=2>CooperativeVectorDataType</th></tr>
+<tr><td>_sint16</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16</td></tr>
+<tr><td>_uint16</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16</td></tr>
+<tr><td>_sint32</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32</td></tr>
+<tr><td>_uint32</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32</td></tr>
+<tr><td>_float16</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16</td></tr>
+<tr><td>_float32</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32</td></tr>
+<tr><td>_sint8x4</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED</td></tr>
+<tr><td>_uint8x4</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED</td></tr>
+<tr><td>_uint8</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8</td></tr>
+<tr><td>_sint8</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8</td></tr>
+<tr><td>_float8_e4m3</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3. 8 bits: 1 sign, 4 exp, 3 mantissa.</td></tr>
+<tr><td>_float8_e5m2</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2. 8 bits: 1 sign, 5 exp, 2 mantissa.</td></tr>
 </table>
 <br/>
 
@@ -66,6 +95,7 @@ table, th, td, tr
 <tr><td>Uint_16</td><td>a 16 bit uint</td></tr>
 <tr><td>Int_64</td><td>a 64 bit int</td></tr>
 <tr><td>Uint_64</td><td>a 64 bit uint</td></tr>
+<tr><td>Float_16</td><td>a 16 bit float</td></tr>
 <tr><td>Count</td><td></td></tr>
 </table>
 <br/>
@@ -120,7 +150,7 @@ table, th, td, tr
 <b>ShaderType : The type of a shader resource</b><br/><br/>
 <table>
 <tr><th colspan=2>ShaderType</th></tr>
-<tr><td>Compute</td><td>Ray generation shader</td></tr>
+<tr><td>Compute</td><td>Compute shader</td></tr>
 <tr><td>RTRayGen</td><td>Ray generation shader</td></tr>
 <tr><td>RTClosestHit</td><td>Closest hit shader</td></tr>
 <tr><td>RTAnyHit</td><td>Any hit shader</td></tr>
@@ -131,6 +161,15 @@ table, th, td, tr
 <tr><td>Amplification</td><td>Amplification shader</td></tr>
 <tr><td>Mesh</td><td>Mesh shader</td></tr>
 <tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>ShaderLanguage : A shader source code language</b><br/><br/>
+<table>
+<tr><th colspan=2>ShaderLanguage</th></tr>
+<tr><td>HLSL</td><td>The directx shader language. https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl</td></tr>
+<tr><td>Slang</td><td>The slang shader language. https://shader-slang.org/</td></tr>
+<tr><td>WGSL</td><td>The WebGPU shader language. https://www.w3.org/TR/WGSL/</td></tr>
 </table>
 <br/>
 
@@ -367,12 +406,29 @@ table, th, td, tr
 </table>
 <br/>
 
+<b>GGUserFile_BLASCullMode : controls D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE and D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE</b><br/><br/>
+<table>
+<tr><th colspan=2>GGUserFile_BLASCullMode</th></tr>
+<tr><td>CullNone</td><td></td></tr>
+<tr><td>FrontIsClockwise</td><td></td></tr>
+<tr><td>FrontIsCounterClockwise</td><td></td></tr>
+</table>
+<br/>
+
 <b>GGUserFile_CameraJitterType : The sequence of the jittered projection matrix</b><br/><br/>
 <table>
 <tr><th colspan=2>GGUserFile_CameraJitterType</th></tr>
 <tr><td>None</td><td>No Jitter</td></tr>
 <tr><td>UniformWhite</td><td>Uniform white noise</td></tr>
 <tr><td>Halton23</td><td>Halton(2,3)</td></tr>
+</table>
+<br/>
+
+<b>BackendTemplateFileType : </b><br/><br/>
+<table>
+<tr><th colspan=2>BackendTemplateFileType</th></tr>
+<tr><td>Output</td><td>This goes into the output package</td></tr>
+<tr><td>InternalShader</td><td>This is a shader used during the code gen process, but should not be part of the output package</td></tr>
 </table>
 <br/>
 
@@ -444,7 +500,7 @@ table, th, td, tr
 <tr><td>BitwiseAnd</td><td>A & B</td></tr>
 <tr><td>BitwiseXor</td><td>A ^ B</td></tr>
 <tr><td>BitwiseNot</td><td>~A</td></tr>
-<tr><td>Noop</td><td>Dont do anything, returns the left value</td></tr>
+<tr><td>Noop</td><td>Dont do anything, returns the left value. Useful for assignment. This does implicit type casting.</td></tr>
 </table>
 <br/>
 
@@ -457,6 +513,19 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>Backend backends[]</td><td></td><td>A list of backends supported. Empty list means all backends</td></tr>
 <tr><td>bool isWhiteList</td><td>true</td><td>If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.</td></tr>
 <tr><td><i>unsigned int backendFlags</i></td><td>0</td><td>Calculated for convenience.</td></tr>
+</table>
+<br/>
+
+<b>CooperativeVectorData : Data needed for cooperative vectors support for imported buffer resources</b><br/><br/>
+<table>
+<tr><th colspan=3>CooperativeVectorData</th></tr>
+<tr><td>bool convert</td><td>false</td><td>If true, does the data conversion described below</td></tr>
+<tr><td>unsigned int width</td><td>1</td><td>How many columns in the matrix or vector.</td></tr>
+<tr><td>unsigned int height</td><td>1</td><td>How many rows in the matrix or vector.</td></tr>
+<tr><td>CooperativeVectorDataType srcType</td><td>CooperativeVectorDataType::_float32</td><td>The data type of the source data.</td></tr>
+<tr><td>CooperativeVectorBufferLayout srcLayout</td><td>CooperativeVectorBufferLayout::RowMajor</td><td>The layout of the source data.</td></tr>
+<tr><td>CooperativeVectorDataType destType</td><td>CooperativeVectorDataType::_float16</td><td>The data type you want it to be converted to.</td></tr>
+<tr><td>CooperativeVectorBufferLayout destLayout</td><td>CooperativeVectorBufferLayout::RowMajor</td><td>The layout you want it to be converted to.</td></tr>
 </table>
 <br/>
 
@@ -646,6 +715,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string Enum</td><td>""</td><td>Integer types can specify an enum, which will then make symbols in both C++ and shader code.</td></tr>
 <tr><td>StructFieldSemantic semantic</td><td>StructFieldSemantic::Count</td><td>Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer. If none is given, it shows up in shaders as an autonumbering text coordinate.</td></tr>
 <tr><td>int semanticIndex</td><td>0</td><td>Some semantics can have multiple channels, like UVs and colors</td></tr>
+<tr><td>bool allowAtomicOps</td><td>false</td><td>Nedeed by WebGPU. Check this box to allow atopic operations on this field.</td></tr>
+<tr><td><i>bool isPadding</i></td><td>false</td><td>true if this field was added to pad the struct for alignment reasons.</td></tr>
 <tr><td><i>int enumIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
 <tr><td><i>size_t sizeInBytes</i></td><td>0</td><td>The size in bytes of this field</td></tr>
 </table>
@@ -662,6 +733,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string definition</td><td>""</td><td>The parsed string definition of the struct.</td></tr>
 <tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
+<tr><td><i>bool isForShaderConstants</i></td><td>false</td><td>If true, this struct is used by shader constants, else it isn't</td></tr>
 </table>
 <br/>
 
@@ -691,6 +763,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string name</td><td>""</td><td>The name of the resource in the shader</td></tr>
 <tr><td>SamplerFilter filter</td><td>SamplerFilter::MinMagMipLinear</td><td>The type of filtering to do</td></tr>
 <tr><td>SamplerAddressMode addressMode</td><td>SamplerAddressMode::Wrap</td><td>The sampling address mode</td></tr>
+<tr><td><i>int registerIndex</i></td><td>-1</td><td>For root signatures and shader code that wants registers declared. Calculated before backend code is called, for convenience of backends.</td></tr>
+<tr><td><i>std::string registerSpaceString</i></td><td>""</td><td>Displayed after the register in the shader</td></tr>
 </table>
 <br/>
 
@@ -703,8 +777,11 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>ShaderResourceBuffer buffer</td><td>{}</td><td>Data specific to buffers</td></tr>
 <tr><td>ShaderResourceTexture texture</td><td>{}</td><td>Data specific to textures</td></tr>
 <tr><td>BackendRestriction backends</td><td>{}</td><td>The backends this resource is present for.</td></tr>
+<tr><td>bool allowAtomicOps</td><td>false</td><td>Nedeed by WebGPU. Check this box to allow atopic operations on this field.</td></tr>
 <tr><td><i>int registerIndex</i></td><td>-1</td><td>For root signatures and shader code that wants registers declared. Calculated before backend code is called, for convenience of backends.</td></tr>
+<tr><td><i>std::string registerSpaceString</i></td><td>""</td><td>Displayed after the register in the shader</td></tr>
 <tr><td><i>int constantBufferStructIndex</i></td><td>-1</td><td>for CBVs, this is the index in renderGraph.structs that describes the constant buffer</td></tr>
+<tr><td><i>ShaderResourceAccessType originalAccess</i></td><td>ShaderResourceAccessType::Count</td><td>If the access is changed (like in post load), this is what it was originally. If this is Count, it wasn't changed.</td></tr>
 </table>
 <br/>
 
@@ -756,13 +833,13 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>SlangOptions : Slang options</b><br/><br/>
 <table>
 <tr><th colspan=3>SlangOptions</th></tr>
-<tr><td>bool process</td><td>false</td><td>if true, this shader will be processed by slang</td></tr>
 <tr><td>bool noNameMangling</td><td>false</td><td>Do as little mangling of names as possible, to try to preserve original names.</td></tr>
 <tr><td>bool lineDirectives</td><td>true</td><td>Whether to output line directives in the shader.</td></tr>
 <tr><td>bool warningsAsErrors</td><td>false</td><td>Warnings are errors.</td></tr>
 <tr><td>bool verbosePaths</td><td>false</td><td>Verbose Paths.</td></tr>
 <tr><td>GigiSlangFloatingPointMode floatingPointMode</td><td>GigiSlangFloatingPointMode::Default</td><td>Floating point mode</td></tr>
 <tr><td>GigiSlangOptimizationLevel optimizationLevel</td><td>GigiSlangOptimizationLevel::Default</td><td>Optimization level</td></tr>
+<tr><td>bool process</td><td>false</td><td>if true, this shader will be processed by slang</td></tr>
 </table>
 <br/>
 
@@ -772,11 +849,11 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string name</td><td>""</td><td>The name of the shader, as it will be referenced by nodes</td></tr>
 <tr><td>std::string fileName</td><td>""</td><td>The file name of the shader file.</td></tr>
 <tr><td><i>std::string destFileName</i></td><td>""</td><td>Filled out by compiler.  Where the shader file is supposed to go after compilation.</td></tr>
+<tr><td>ShaderLanguage language</td><td>ShaderLanguage::HLSL</td><td>What language the shader is written in</td></tr>
 <tr><td>ShaderType type</td><td>ShaderType::Compute</td><td>The type of shader it is</td></tr>
 <tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint.</td></tr>
 <tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with.</td></tr>
 <tr><td><i>TokenReplacement tokenReplacements[]</i></td><td></td><td>The token replacements specific for the shader.</td></tr>
-<tr><td>int CSNumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 <tr><td>int NumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 <tr><td>bool copyFile</td><td>true</td><td>if false, will not copy the file over. A hackaround for when you have multiple raytracing shaders in the same file. TODO: resolve this better.</td></tr>
 <tr><td>SlangOptions slangOptions</td><td>{}</td><td>Settings for optionally processing shaders with slang</td></tr>
@@ -790,6 +867,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
 <tr><td><i>std::string Used_RTHitGroupIndex[]</i></td><td></td><td>All RTHitGroupIndex names used in the shader</td></tr>
 <tr><td><i>std::string Used_RTMissIndex[]</i></td><td></td><td>All RTMissIndex names used in the shader</td></tr>
+<tr><td>int CSNumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 </table>
 <br/>
 
@@ -1085,6 +1163,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>ShaderResourceAccessType startingState</i></td><td>ShaderResourceAccessType::Count</td><td>The first state that a reosurce is in. Calculated for convenience.</td></tr>
 <tr><td><i>ShaderResourceAccessType finalState</i></td><td>ShaderResourceAccessType::Count</td><td>The last state that a reosurce is in. Calculated for convenience.</td></tr>
 <tr><td><i>unsigned int accessedAs</i></td><td>0</td><td>A bitfield of all the ways this resource is accessed (ShaderResourceAccessType). Useful for creating resources with the correct usage flags.</td></tr>
+<tr><td><i>unsigned int originallyAccessedAs</i></td><td>0</td><td>Same as accessedAs, but uses original access instead of access, in case access was modified</td></tr>
 </table>
 <br/>
 
@@ -1323,7 +1402,9 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>GGUserFile_TLASBuildFlags RT_BuildFlags</td><td>GGUserFile_TLASBuildFlags::PreferFastTrace</td><td>D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE etc</td></tr>
 <tr><td>bool BLASOpaque</td><td>false</td><td>DXR BLAS Option</td></tr>
 <tr><td>bool BLASNoDuplicateAnyhitInvocations</td><td>false</td><td>DXR BLAS Option</td></tr>
+<tr><td>GGUserFile_BLASCullMode BLASCullMode</td><td>GGUserFile_BLASCullMode::CullNone</td><td>BLAS triangle culling settings</td></tr>
 <tr><td>bool IsAABBs</td><td>false</td><td>Set to true if ray tracing AABBs with intersection shaders. Format is Min XYZ, Max XYZ.</td></tr>
+<tr><td>CooperativeVectorData cvData</td><td>{}</td><td>Data needed for cooperative vectors support for imported buffer resources</td></tr>
 </table>
 <br/>
 
@@ -1521,6 +1602,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool isDirectory</td><td>false</td><td>If this is a directory, set this to true to make this apply to all files in the directory recursively.</td></tr>
 <tr><td>bool onlyIncludeIfRaytracing</td><td>false</td><td>If a file should only be copied when the render graph uses raytracing, set this to true.</td></tr>
 <tr><td>bool onlyIncludeIfDX12AgilitySDKRequired</td><td>false</td><td>If a file should only be copied when the dx12 agility sdk is required, set this to true</td></tr>
+<tr><td>BackendTemplateFileType type</td><td>BackendTemplateFileType::Output</td><td>The type of the file determines what happens to it during code generation</td></tr>
 </table>
 <br/>
 
@@ -1543,6 +1625,23 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>WebGPU_RWTextureSplit : </b><br/><br/>
+<table>
+<tr><th colspan=3>WebGPU_RWTextureSplit</th></tr>
+<tr><td>std::string nodeName</td><td>""</td><td>The name of the shader affected</td></tr>
+<tr><td>std::string shaderName</td><td>""</td><td>The name of the shader affected</td></tr>
+<tr><td>std::string pinName</td><td>""</td><td>The name of the pin affected. This pin is also write only.</td></tr>
+<tr><td>std::string pinNameR</td><td>""</td><td>The name of the read only version of the pin.</td></tr>
+</table>
+<br/>
+
+<b>BackendData_WebGPU : </b><br/><br/>
+<table>
+<tr><th colspan=3>BackendData_WebGPU</th></tr>
+<tr><td>WebGPU_RWTextureSplit RWTextureSplits[]</td><td></td><td>All RW textures that got split into an R texture and a W texture</td></tr>
+</table>
+<br/>
+
 <b>BackendSettings_DX12 : DX12 Settings</b><br/><br/>
 <table>
 <tr><th colspan=3>BackendSettings_DX12</th></tr>
@@ -1557,6 +1656,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string shaderModelAs</td><td>"as_6_5"</td><td>The default shader model to use for amplification shaders</td></tr>
 <tr><td>std::string shaderModelMs</td><td>"ms_6_5"</td><td>The default shader model to use for mesh shaders</td></tr>
 <tr><td>bool DXC_HLSL_2021</td><td>false</td><td>When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021</td></tr>
+<tr><td>bool Allow16BitTypes</td><td>false</td><td>DXC option -enable-16bit-types. Only usable for shader model >= 6.1, and HLSL language >= 2018.</td></tr>
 <tr><td>bool AgilitySDKRequired</td><td>false</td><td>True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.</td></tr>
 </table>
 <br/>
@@ -1568,6 +1668,12 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool debugShaders</td><td>true</td><td>If true, compiles shaders with debug options turned on, on available platforms.</td></tr>
 <tr><td>bool shaderWarningAsErrors</td><td>false</td><td>If true, compiles shaders with warnings as errors turned on</td></tr>
 <tr><td>bool createPDBsAndBinaries</td><td>false</td><td>If true, will output PDBs and shader binaries, useful for crash debugging.</td></tr>
+<tr><td>std::string rgaPath</td><td>"C:\\Apps\\RadeonDeveloperToolSuite\\rga.exe"</td><td>The default path where rga.exe can be found.
+This is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.
+see https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute</td></tr>
+<tr><td>std::string rgaASIC</td><td>"gfx1032"</td><td>The hardware generation to target for rga.exe
+gfx1032: AMD Radeon PRO W6600
+See .bat for more info</td></tr>
 </table>
 <br/>
 
@@ -1579,11 +1685,19 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>BackendData : Backend Data</b><br/><br/>
+<table>
+<tr><th colspan=3>BackendData</th></tr>
+<tr><td>BackendData_WebGPU webGPU</td><td>{}</td><td></td></tr>
+</table>
+<br/>
+
 <b>BuildSettings : Backend settings</b><br/><br/>
 <table>
 <tr><th colspan=3>BuildSettings</th></tr>
 <tr><td>GigiCompileWarning disableWarnings[]</td><td></td><td>Warnings listed here will be suppressed</td></tr>
 <tr><td>std::string outDX12</td><td>"out/dx12/"</td><td>The output location for DX12</td></tr>
+<tr><td>std::string outWebGPU</td><td>"out/WebGPU/"</td><td>The output location for WebGPU</td></tr>
 <tr><td><i>std::string outInterpreter</i></td><td>"out/interpreter/"</td><td>The output location for the interpreter backend</td></tr>
 </table>
 <br/>
@@ -1717,6 +1831,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>bool generateGraphVizFlag</i></td><td>false</td><td>Set to true if the generating GraphViz. Should be set to true from a command line parameter</td></tr>
 <tr><td><i>std::vector<std::string> assertsFormatStrings</i></td><td>{}</td><td>The unique formatting strings of the asserts messages</td></tr>
 <tr><td><i>std::unordered_set<std::string> firedAssertsIdentifiers</i></td><td>{}</td><td>The identifiers of the fired asserts to ignore them later on</td></tr>
+<tr><td><i>BackendData backendData</i></td><td>{}</td><td>Backend Data</td></tr>
 </table>
 <br/>
 

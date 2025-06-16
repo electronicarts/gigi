@@ -83,7 +83,7 @@ void ShowWarningMessage(const char* msg, ...)
 	{
 		va_list args;
 		va_start(args, msg);
-		vsprintf_s(buffer, msg, args);
+		vsnprintf_s(buffer, _TRUNCATE, msg, args);
 		va_end(args);
 		g_printMessageFn(MessageType::Warn, buffer);
 	}
@@ -95,7 +95,7 @@ bool ShowErrorMessage(const char* msg, ...)
 	{
 		va_list args;
 		va_start(args, msg);
-		vsprintf_s(buffer, msg, args);
+		vsnprintf_s(buffer, _TRUNCATE, msg, args);
 		va_end(args);
 		g_printMessageFn(MessageType::Error, buffer);
 

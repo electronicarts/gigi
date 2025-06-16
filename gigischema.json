@@ -32,7 +32,7 @@
           "type": {
             "description": "The type of the variable",
             "type": "string",
-            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
+            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
           },
           "Const": {
             "description": "If true, the variable is declared const and cannot change at runtime",
@@ -64,7 +64,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Interpreter"]
+                "enum": ["DX12", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -126,6 +126,11 @@
             "description": "The file name of the shader file.",
             "type": "string"
           },
+          "language": {
+            "description": "What language the shader is written in",
+            "type": "string",
+            "enum": ["HLSL", "Slang", "WGSL"]
+          },
           "type": {
             "description": "The type of shader it is",
             "type": "string",
@@ -152,15 +157,6 @@
               }
             }
           },
-          "CSNumThreads": {
-            "description": "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
-            "type": "array",
-            "minItems": 3,
-            "maxItems": 3,
-            "items": {
-              "type": "integer"
-            }
-          },
           "NumThreads": {
             "description": "The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
             "type": "array",
@@ -178,10 +174,6 @@
             "description": "Settings for optionally processing shaders with slang",
             "type": "object",
             "properties": {
-              "process": {
-                "description": "if true, this shader will be processed by slang",
-                "type": "boolean"
-              },
               "noNameMangling": {
                 "description": "Do as little mangling of names as possible, to try to preserve original names.",
                 "type": "boolean"
@@ -207,6 +199,10 @@
                 "description": "Optimization level",
                 "type": "string",
                 "enum": ["None", "Default", "High", "Maximum"]
+              },
+              "process": {
+                "description": "if true, this shader will be processed by slang",
+                "type": "boolean"
               }
             }
           },
@@ -219,7 +215,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Interpreter"]
+                "enum": ["DX12", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -255,7 +251,7 @@
                     "type": {
                       "description": "The data type of the buffer if a simple type",
                       "type": "string",
-                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
+                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
                     },
                     "typeStruct": {
                       "description": "The data type of the buffer if a struct type",
@@ -310,7 +306,7 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                      "enum": ["DX12", "Interpreter"]
+                      "enum": ["DX12", "WebGPU", "Interpreter"]
                       }
                     },
                     "isWhiteList": {
@@ -318,6 +314,10 @@
                       "type": "boolean"
                     }
                   }
+                },
+                "allowAtomicOps": {
+                  "description": "Nedeed by WebGPU. Check this box to allow atopic operations on this field.",
+                  "type": "boolean"
                 }
               }
             }
@@ -361,6 +361,15 @@
                 }
               }
             }
+          },
+          "CSNumThreads": {
+            "description": "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            }
           }
         }
       }
@@ -392,7 +401,7 @@
                 "type": {
                   "description": "The type of the field",
                   "type": "string",
-                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
+                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
                 },
                 "dflt": {
                   "description": "The default value",
@@ -414,6 +423,10 @@
                 "semanticIndex": {
                   "description": "Some semantics can have multiple channels, like UVs and colors",
                   "type": "integer"
+                },
+                "allowAtomicOps": {
+                  "description": "Nedeed by WebGPU. Check this box to allow atopic operations on this field.",
+                  "type": "boolean"
                 }
               }
             }
@@ -453,7 +466,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Interpreter"]
+                "enum": ["DX12", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -496,7 +509,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -554,7 +567,7 @@
                   "type": {
                     "description": "The buffer type. May become a typed or structured buffer, depending on the type chosen.",
                     "type": "string",
-                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Count"]
+                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
                   }
                 }
               },
@@ -619,7 +632,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -697,7 +710,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -849,7 +862,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -938,7 +951,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1090,7 +1103,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1179,7 +1192,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1311,7 +1324,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1400,7 +1413,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1459,7 +1472,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1548,7 +1561,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2014,7 +2027,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2103,7 +2116,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2230,7 +2243,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2319,7 +2332,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2581,6 +2594,10 @@
               "description": "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021",
               "type": "boolean"
             },
+            "Allow16BitTypes": {
+              "description": "DXC option -enable-16bit-types. Only usable for shader model >= 6.1, and HLSL language >= 2018.",
+              "type": "boolean"
+            },
             "AgilitySDKRequired": {
               "description": "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.",
               "type": "boolean"
@@ -2606,6 +2623,18 @@
             "createPDBsAndBinaries": {
               "description": "If true, will output PDBs and shader binaries, useful for crash debugging.",
               "type": "boolean"
+            },
+            "rgaPath": {
+              "description": "The default path where rga.exe can be found.
+This is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.
+see https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute",
+              "type": "string"
+            },
+            "rgaASIC": {
+              "description": "The hardware generation to target for rga.exe
+gfx1032: AMD Radeon PRO W6600
+See .bat for more info",
+              "type": "string"
             }
           }
         }
@@ -2625,6 +2654,10 @@
         },
         "outDX12": {
           "description": "The output location for DX12",
+          "type": "string"
+        },
+        "outWebGPU": {
+          "description": "The output location for WebGPU",
           "type": "string"
         }
       }

@@ -40,7 +40,7 @@ public:
 	{
 	}
 
-	bool Init(ID3D12Device2* device, ID3D12CommandQueue* commandQueue, int maxFramesInFlight, ID3D12DescriptorHeap* ImGuiSRVHeap, int ImGuiSRVHeapDescriptorCount, int ImGuiSRVHeapDescriptorSize)
+	bool Init(ID3D12Device14* device, ID3D12CommandQueue* commandQueue, int maxFramesInFlight, ID3D12DescriptorHeap* ImGuiSRVHeap, int ImGuiSRVHeapDescriptorCount, int ImGuiSRVHeapDescriptorSize)
 	{
 		m_device = device;
 		m_commandQueue = commandQueue;
@@ -108,6 +108,9 @@ public:
 		}
 
 		// DX12 capabilities
+		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &m_dx12_options4, sizeof(m_dx12_options4))))
+			return false;
+
 		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &m_dx12_options5, sizeof(m_dx12_options5))))
 			return false;
 
@@ -129,9 +132,15 @@ public:
 		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &m_dx12_options11, sizeof(m_dx12_options11))))
 			return false;
 
+		// Note: this can fail, and that's just fine.
+		HRESULT hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS_EXPERIMENTAL, &m_dx12_options_experimental, sizeof(m_dx12_options_experimental));
+
 		// Create the DXR device
 		if (m_dx12_options5.RaytracingTier != D3D12_RAYTRACING_TIER_NOT_SUPPORTED)
 			m_device->QueryInterface(IID_PPV_ARGS(&m_dxrDevice));
+
+		// Create the preview device
+		hr = m_device->QueryInterface(IID_PPV_ARGS(&m_previewDevice));
 
 		return true;
 	}
@@ -234,6 +243,12 @@ public:
 			m_dxrDevice->Release();
 			m_dxrDevice = nullptr;
 		}
+
+		if (m_previewDevice)
+		{
+			m_previewDevice->Release();
+			m_previewDevice = nullptr;
+		}
 	}
 
 	void ShowUI(bool minimalUI, bool paused);
@@ -243,6 +258,11 @@ public:
 		m_GPUResourceWrites.clear();
 		m_fileWatcher.Clear();
 		m_sourceFilesModified = false;
+
+		// Preview device
+		HRESULT hr;
+		if (!m_previewDevice)
+			hr = m_device->QueryInterface(IID_PPV_ARGS(&m_previewDevice));
 
 		// See if DXR is supported
 		// DXR is supported if m_dxrDevice is not null
@@ -320,6 +340,7 @@ public:
 			case DXGI_FORMAT_Info::ChannelType::_int16_t:copyWithCast((int16_t*)bufferStart, keyStates, N); break;
 			case DXGI_FORMAT_Info::ChannelType::_int32_t:copyWithCast((int32_t*)bufferStart, keyStates, N); break;
 			case DXGI_FORMAT_Info::ChannelType::_float:copyWithCast((float*)bufferStart, keyStates, N); break;
+            case DXGI_FORMAT_Info::ChannelType::_half:copyWithCast((half*)bufferStart, keyStates, N); break;
 		}
 
 		uploadBuffer->buffer->Unmap(0, nullptr);
@@ -387,6 +408,9 @@ public:
 	{
 		// Set the command list
 		m_commandList = commandList;
+
+		// Get the preview command list
+		HRESULT hr = m_commandList->QueryInterface(IID_PPV_ARGS(&m_previewCommandList));
 
 		// Get the DXR command list
 		if (SupportsRaytracing())
@@ -460,6 +484,12 @@ public:
 		{
 			m_dxrCommandList->Release();
 			m_dxrCommandList = nullptr;
+		}
+
+		if (m_previewCommandList)
+		{
+			m_previewCommandList->Release();
+			m_previewCommandList = nullptr;
 		}
 
 		// Clear out the GPU resource writes
@@ -540,7 +570,11 @@ public:
 		GGUserFile_TLASBuildFlags RT_BuildFlags = GGUserFile_TLASBuildFlags::PreferFastTrace;
 		bool BLASOpaque = true;
 		bool BLASNoDuplicateAnyhitInvocations = false;
+		GGUserFile_BLASCullMode BLASCullMode = GGUserFile_BLASCullMode::CullNone;
 		bool IsAABBs = false; // only for ray tracing AABBs which have an intersection shader
+
+		// Cooperative vectors
+		CooperativeVectorData cvData;
 	};
 
 	struct ImportedResourceDesc
@@ -589,6 +623,16 @@ public:
 		return m_dx12_options6.VariableShadingRateTier;
 	}
 
+	const bool ShadersSupport16BitTypes() const
+	{
+		return m_dx12_options4.Native16BitShaderOpsSupported;
+	}
+
+	const D3D12_FEATURE_DATA_D3D12_OPTIONS4& GetOptions4() const
+	{
+		return m_dx12_options4;
+	}
+
 	const D3D12_FEATURE_DATA_D3D12_OPTIONS5& GetOptions5() const
 	{
 		return m_dx12_options5;
@@ -622,6 +666,11 @@ public:
 	const D3D12_FEATURE_DATA_D3D12_OPTIONS11& GetOptions11() const
 	{
 		return m_dx12_options11;
+	}
+
+	const D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL& GetOptionsExperimental() const
+	{
+		return m_dx12_options_experimental;
 	}
 
 	UploadBufferTracker getUploadBufferTracker()
@@ -691,6 +740,9 @@ public:
 		return m_fileWatcher;
 	}
 
+	// @param sig 0 makes the function not fail
+	// @param shader 0 makes the function not fail
+	void OnRootSignature(ID3DBlob *sig, const Shader* shader);
 
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
@@ -706,6 +758,9 @@ private:
 	bool LoadTexture(std::vector<TextureCache::Texture>& loadedTextures, const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::string fileName, bool fileIsSRGB, const ImportedTextureBinaryDesc& binaryDesc, DXGI_FORMAT desiredFormat);
 	bool CreateAndUploadTextures(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::vector<TextureCache::Texture>& loadedTextures);
 
+	void CooperativeVectorConvert(ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, const CooperativeVectorData& cvData);
+    void CooperativeVectorAdjustBufferSize(const CooperativeVectorData& cvData, int& size);
+
 	bool OnNodeActionImported(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, NodeAction nodeAction);
 	bool OnNodeActionNotImported(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, NodeAction nodeAction);
 	bool OnNodeActionImported(const RenderGraphNode_Resource_Buffer& node, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData, NodeAction nodeAction);
@@ -717,7 +772,7 @@ private:
 
 	std::vector<FiredAssertInfo> collectedAsserts;
 
-	ID3D12Device2* m_device = nullptr;
+	ID3D12Device14* m_device = nullptr;
 	ID3D12CommandQueue* m_commandQueue = nullptr;
 	ID3D12GraphicsCommandList* m_commandList = nullptr;
 	UploadBufferTracker m_uploadBufferTracker;
@@ -745,6 +800,10 @@ private:
 	ID3D12Device5* m_dxrDevice = nullptr;
 	ID3D12GraphicsCommandList4* m_dxrCommandList = nullptr;
 
+	// Preview features
+	ID3D12DevicePreview* m_previewDevice = nullptr;
+	ID3D12GraphicsCommandListPreview* m_previewCommandList = nullptr;
+
 	// ImGui SRV heap
 	DescriptorTableCache m_descriptorTableCache_imgui;
 	HeapAllocationTracker m_SRVHeapAllocationTracker_imgui;
@@ -766,6 +825,7 @@ private:
 	ID3D12CommandSignature* m_commandSignatureDispatch = nullptr;
 
 	// DX12 Capabilities
+	D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS7 m_dx12_options7 = {};
@@ -773,6 +833,7 @@ private:
 	D3D12_FEATURE_DATA_D3D12_OPTIONS9 m_dx12_options9 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
+	D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
 };
 
 inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "TwoRayGensSubgraph",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "clipToWorld",
@@ -313,5 +313,8 @@
         "frostbite": {
             "shaderProgramsProviderVersion": 1340
         }
+    },
+    "PrimaryOutput": {
+        "name": "Texture"
     }
 }

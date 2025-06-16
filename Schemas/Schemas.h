@@ -11,6 +11,7 @@
 #include "PreviewWindow/PreviewWindowSchemas.h"
 #include "Browser/BrowserSchemas.h"
 #include "Misc/BackendTemplateSchemas.h"
+#include "WebGPU/WebGPUSchemas.h"
 // clang-format on
 
 ENUM_BEGIN(GigiCompileResult, "")
@@ -59,6 +60,7 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(std::string, shaderModelAs, "as_6_5", "The default shader model to use for amplification shaders", 0)
     STRUCT_FIELD(std::string, shaderModelMs, "ms_6_5", "The default shader model to use for mesh shaders", 0)
     STRUCT_FIELD(bool, DXC_HLSL_2021, false, "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021", 0)
+    STRUCT_FIELD(bool, Allow16BitTypes, false, "DXC option -enable-16bit-types. Only usable for shader model >= 6.1, and HLSL language >= 2018.", 0)
     STRUCT_FIELD(bool, AgilitySDKRequired, false, "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.", 0)
 STRUCT_END()
 
@@ -68,6 +70,8 @@ STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
     STRUCT_FIELD(bool, debugShaders, true, "If true, compiles shaders with debug options turned on, on available platforms.", 0)
     STRUCT_FIELD(bool, shaderWarningAsErrors, false, "If true, compiles shaders with warnings as errors turned on", 0)
     STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging.", 0)
+	STRUCT_FIELD(std::string, rgaPath, "C:\\Apps\\RadeonDeveloperToolSuite\\rga.exe", "The default path where rga.exe can be found.\nThis is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.\nsee https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute", 0)
+	STRUCT_FIELD(std::string, rgaASIC, "gfx1032", "The hardware generation to target for rga.exe\ngfx1032: AMD Radeon PRO W6600\nSee .bat for more info", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(BackendSettings, "Backend settings")
@@ -75,12 +79,16 @@ STRUCT_BEGIN(BackendSettings, "Backend settings")
     STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
 STRUCT_END()
 
+STRUCT_BEGIN(BackendData, "Backend Data")
+    STRUCT_FIELD(BackendData_WebGPU, webGPU, {}, "", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(BuildSettings, "Backend settings")
     STRUCT_DYNAMIC_ARRAY(GigiCompileWarning, disableWarnings, "Warnings listed here will be suppressed", 0)
 
     // Only used by editor
     STRUCT_FIELD(std::string, outDX12, "out/dx12/", "The output location for DX12", 0)
-
+    STRUCT_FIELD(std::string, outWebGPU, "out/WebGPU/", "The output location for WebGPU", 0)
     STRUCT_FIELD(std::string, outInterpreter, "out/interpreter/", "The output location for the interpreter backend", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
@@ -137,7 +145,7 @@ ENUM_BEGIN(SetVariableOperator, "")
     ENUM_ITEM(BitwiseXor, "A ^ B")
     ENUM_ITEM(BitwiseNot, "~A")
 
-    ENUM_ITEM(Noop, "Dont do anything, returns the left value")
+    ENUM_ITEM(Noop, "Dont do anything, returns the left value. Useful for assignment. This does implicit type casting.")
 ENUM_END()
 
 STRUCT_BEGIN(SetVariable, "A variable modification")
@@ -235,4 +243,6 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
 
     STRUCT_FIELD(std::vector<std::string>, assertsFormatStrings, {}, "The unique formatting strings of the asserts messages", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::unordered_set<std::string>, firedAssertsIdentifiers, {}, "The identifiers of the fired asserts to ignore them later on", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(BackendData, backendData, {}, "Backend Data", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()

@@ -12,7 +12,7 @@ namespace buffertest
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -74,6 +74,15 @@ namespace buffertest
             D3D12_RESOURCE_STATES buffer_InputTypedBufferRaw_state = D3D12_RESOURCE_STATE_COMMON;
 
             static const D3D12_RESOURCE_FLAGS c_buffer_InputTypedBufferRaw_flags =  D3D12_RESOURCE_FLAG_NONE; // Flags the buffer needs to have been created with
+
+            // This is the buffer to be filtered.
+            ID3D12Resource* buffer_InputTypedStructBuffer = nullptr;
+            DXGI_FORMAT buffer_InputTypedStructBuffer_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
+            unsigned int buffer_InputTypedStructBuffer_stride = 0; // For structured buffers, the size of the structure
+            unsigned int buffer_InputTypedStructBuffer_count = 0; // How many items there are
+            D3D12_RESOURCE_STATES buffer_InputTypedStructBuffer_state = D3D12_RESOURCE_STATE_COMMON;
+
+            static const D3D12_RESOURCE_FLAGS c_buffer_InputTypedStructBuffer_flags =  D3D12_RESOURCE_FLAG_NONE; // Flags the buffer needs to have been created with
         };
         ContextInput m_input;
 
@@ -106,6 +115,15 @@ namespace buffertest
             const D3D12_RESOURCE_STATES c_buffer_OutputTypedBufferRaw_endingState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
 
             static const D3D12_RESOURCE_FLAGS c_buffer_OutputTypedBufferRaw_flags =  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS; // Flags the buffer needs to have been created with
+
+            // An internal buffer used during the filtering process.
+            ID3D12Resource* buffer_OutputTypedStructBuffer = nullptr;
+            DXGI_FORMAT buffer_OutputTypedStructBuffer_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
+            unsigned int buffer_OutputTypedStructBuffer_stride = 0; // For structured buffers, the size of the structure
+            unsigned int buffer_OutputTypedStructBuffer_count = 0; // How many items there are
+            const D3D12_RESOURCE_STATES c_buffer_OutputTypedStructBuffer_endingState = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+
+            static const D3D12_RESOURCE_FLAGS c_buffer_OutputTypedStructBuffer_flags =  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS; // Flags the buffer needs to have been created with
         };
         ContextOutput m_output;
 
@@ -232,7 +250,7 @@ namespace buffertest
 
     struct Struct_TestStruct
     {
-        float4 TheFloat4 = {0.0, 0.0, 0.0, 0.0};
+        float4 TheFloat4 = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
         int4 TheInt4 = {0, 0, 0, 0};
         unsigned int TheBool = false;
     };

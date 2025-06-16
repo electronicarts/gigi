@@ -28,6 +28,9 @@ namespace IndirectDispatch
 
     ID3D12CommandSignature* ContextInternal::s_commandSignatureDispatch = nullptr;
 
+    ID3D12PipelineState* ContextInternal::computeShader_Clear_Render_Target_pso = nullptr;
+    ID3D12RootSignature* ContextInternal::computeShader_Clear_Render_Target_rootSig = nullptr;
+
     ID3D12PipelineState* ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_pso = nullptr;
     ID3D12RootSignature* ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_rootSig = nullptr;
 
@@ -47,6 +50,38 @@ namespace IndirectDispatch
 
     bool CreateShared(ID3D12Device* device)
     {
+
+        // Compute Shader: Clear_Render_Target
+        {
+            D3D12_STATIC_SAMPLER_DESC* samplers = nullptr;
+
+            D3D12_DESCRIPTOR_RANGE ranges[1];
+
+            // Render_Target
+            ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+            ranges[0].NumDescriptors = 1;
+            ranges[0].BaseShaderRegister = 0;
+            ranges[0].RegisterSpace = 0;
+            ranges[0].OffsetInDescriptorsFromTableStart = 0;
+
+            if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_Clear_Render_Target_rootSig, (c_debugNames ? L"Clear_Render_Target" : nullptr), Context::LogFn))
+                return false;
+
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "IndirectDispatch_Clear.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Clear_Render_Target" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
+
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Clear_Render_Target_rootSig, &ContextInternal::computeShader_Clear_Render_Target_pso, Context::LogFn))
+                return false;
+        }
 
         // Compute Shader: Fill_Indirect_Dispatch_Count
         {
@@ -187,6 +222,18 @@ namespace IndirectDispatch
     void DestroyShared()
     {
 
+        if(ContextInternal::computeShader_Clear_Render_Target_pso)
+        {
+            s_delayedRelease.Add(ContextInternal::computeShader_Clear_Render_Target_pso);
+            ContextInternal::computeShader_Clear_Render_Target_pso = nullptr;
+        }
+
+        if(ContextInternal::computeShader_Clear_Render_Target_rootSig)
+        {
+            s_delayedRelease.Add(ContextInternal::computeShader_Clear_Render_Target_rootSig);
+            ContextInternal::computeShader_Clear_Render_Target_rootSig = nullptr;
+        }
+
         if(ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_pso)
         {
             s_delayedRelease.Add(ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_pso);
@@ -269,12 +316,12 @@ namespace IndirectDispatch
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Render_Target;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Render_Target_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -756,11 +803,12 @@ namespace IndirectDispatch
 
         D3D12_RANGE range;
         range.Begin = 0;
-        range.End = ((3 + 1) * 2) * sizeof(uint64_t);
+        range.End = ((4 + 1) * 2) * sizeof(uint64_t);
 
         uint64_t* timeStampBuffer = nullptr;
         m_internal.m_TimestampReadbackBuffer->Map(0, &range, (void**)&timeStampBuffer);
 
+        m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // compute shader: Clear_Render_Target
         m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // compute shader: Fill_Indirect_Dispatch_Count
         m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // compute shader: Do_Indirect_Dispatch_1
         m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // compute shader: Do_Indirect_Dispatch_2
@@ -823,7 +871,7 @@ namespace IndirectDispatch
         // reset the timer index
         s_timerIndex = 0;
 
-        ScopedPerfEvent scopedPerf("IndirectDispatch", commandList, 6);
+        ScopedPerfEvent scopedPerf("IndirectDispatch", commandList, 7);
 
         std::chrono::high_resolution_clock::time_point startPointCPUTechnique;
         if(context->m_profile)
@@ -832,14 +880,14 @@ namespace IndirectDispatch
             if(context->m_internal.m_TimestampQueryHeap == nullptr)
             {
                 D3D12_QUERY_HEAP_DESC QueryHeapDesc;
-                QueryHeapDesc.Count = (3+1) * 2;
+                QueryHeapDesc.Count = (4+1) * 2;
                 QueryHeapDesc.NodeMask = 1;
                 QueryHeapDesc.Type = D3D12_QUERY_HEAP_TYPE_TIMESTAMP;
                 device->CreateQueryHeap(&QueryHeapDesc, IID_PPV_ARGS(&context->m_internal.m_TimestampQueryHeap));
                 if (c_debugNames)
                     context->m_internal.m_TimestampQueryHeap->SetName(L"IndirectDispatch Time Stamp Query Heap");
 
-                context->m_internal.m_TimestampReadbackBuffer = DX12Utils::CreateBuffer(device, sizeof(uint64_t) * (3+1) * 2, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, (c_debugNames ? L"IndirectDispatch Time Stamp Query Heap" : nullptr), nullptr);
+                context->m_internal.m_TimestampReadbackBuffer = DX12Utils::CreateBuffer(device, sizeof(uint64_t) * (4+1) * 2, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, D3D12_HEAP_TYPE_READBACK, (c_debugNames ? L"IndirectDispatch Time Stamp Query Heap" : nullptr), nullptr);
             }
             commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
         }
@@ -853,6 +901,59 @@ namespace IndirectDispatch
             s_srvHeap.m_heap,
         };
         commandList->SetDescriptorHeaps(_countof(heaps), heaps);
+
+        // Transition resources for the next action
+        {
+            D3D12_RESOURCE_BARRIER barriers[1];
+
+            barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+            barriers[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barriers[0].UAV.pResource = context->m_output.texture_Render_Target;
+
+            commandList->ResourceBarrier(1, barriers);
+        }
+
+        // Compute Shader: Clear_Render_Target
+        {
+            ScopedPerfEvent scopedPerf("Compute Shader: Clear_Render_Target", commandList, 5);
+            std::chrono::high_resolution_clock::time_point startPointCPU;
+            if(context->m_profile)
+            {
+                startPointCPU = std::chrono::high_resolution_clock::now();
+                commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
+            }
+
+            commandList->SetComputeRootSignature(ContextInternal::computeShader_Clear_Render_Target_rootSig);
+            commandList->SetPipelineState(ContextInternal::computeShader_Clear_Render_Target_pso);
+
+            DX12Utils::ResourceDescriptor descriptors[] = {
+                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+            };
+
+            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
+            commandList->SetComputeRootDescriptorTable(0, descriptorTable);
+
+            unsigned int baseDispatchSize[3] = {
+                context->m_output.texture_Render_Target_size[0],
+                context->m_output.texture_Render_Target_size[1],
+                context->m_output.texture_Render_Target_size[2]
+            };
+
+            unsigned int dispatchSize[3] = {
+                (((baseDispatchSize[0] + 0) * 1) / 1 + 0 + 8 - 1) / 8,
+                (((baseDispatchSize[1] + 0) * 1) / 1 + 0 + 8 - 1) / 8,
+                (((baseDispatchSize[2] + 0) * 1) / 1 + 0 + 1 - 1) / 1
+            };
+
+            commandList->Dispatch(dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+
+            if(context->m_profile)
+            {
+                context->m_profileData[(s_timerIndex-1)/2].m_label = "Clear_Render_Target";
+                context->m_profileData[(s_timerIndex-1)/2].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
+                commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
+            }
+        }
 
         // Shader Constants: _Fill_Indirect_Dispatch_CountCB
         {

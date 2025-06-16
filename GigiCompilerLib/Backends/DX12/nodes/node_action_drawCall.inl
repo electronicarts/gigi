@@ -678,7 +678,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         }
 
                         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                            "\n                vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 0, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
+                            "\n            vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 0, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
                             ;
                         fieldCount++;
                     }
@@ -690,7 +690,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             else
             {
                 stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
+                    "\n            vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
                     ;
             }
         }
@@ -740,7 +740,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         }
 
                         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                            "\n                vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 1, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
+                            "\n            vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 1, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
                             ;
                         fieldCount++;
                     }
@@ -752,7 +752,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             else
             {
                 stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
+                    "\n            vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
                     ;
             }
         }

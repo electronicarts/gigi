@@ -15,8 +15,7 @@
                         512,
                         512,
                         1
-                    ],
-                    "format": "RGBA8_Unorm"
+                    ]
                 }
             }
         ],
@@ -39,7 +38,7 @@
             },
             {
                 "name": "QuantizeDisplay",
-                "value": "true"
+                "value": "false"
             }
         ]
     }

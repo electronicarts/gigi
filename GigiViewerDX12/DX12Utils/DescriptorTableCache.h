@@ -110,12 +110,32 @@ public:
 					{
 						case ResourceType::Buffer:
 						{
+							bool isStructuredBuffer = (descriptor.m_stride > 0);
+							bool isByteAddressBuffer = (descriptor.m_raw);
+
 							srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
 							srvDesc.Buffer.FirstElement = 0;
-							srvDesc.Buffer.NumElements = descriptor.m_count;
-							srvDesc.Buffer.StructureByteStride = descriptor.m_stride;
-							srvDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
-							srvDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
+
+							// A buffer can't both be structured and raw in DX12. Raw takes precedence in Gigi.
+							if (isByteAddressBuffer)
+							{
+								srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_RAW;
+								srvDesc.Buffer.StructureByteStride = 0;
+								srvDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+
+                                // We need to translate the NumElements into "how many uint32s do we have?" since we use R32_TYPELESS
+                                UINT itemBytes = isStructuredBuffer
+                                    ? descriptor.m_stride
+                                    : (UINT)Get_DXGI_FORMAT_Info(descriptor.m_format).bytesPerPixel;
+                                srvDesc.Buffer.NumElements = descriptor.m_count * itemBytes / 4;
+							}
+							else
+							{
+								srvDesc.Buffer.Flags = D3D12_BUFFER_SRV_FLAG_NONE;
+								srvDesc.Buffer.StructureByteStride = descriptor.m_stride;
+								srvDesc.Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : descriptor.m_format;
+                                srvDesc.Buffer.NumElements = descriptor.m_count;
+							}
 							break;
 						}
 						case ResourceType::Texture2D:
@@ -178,13 +198,33 @@ public:
 				{
 					case ResourceType::Buffer:
 					{
+						bool isStructuredBuffer = (descriptor.m_stride > 0);
+						bool isByteAddressBuffer = (descriptor.m_raw);
+
 						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
 						uavDesc.Buffer.FirstElement = 0;
-						uavDesc.Buffer.NumElements = descriptor.m_count;
-						uavDesc.Buffer.StructureByteStride = descriptor.m_stride;
 						uavDesc.Buffer.CounterOffsetInBytes = 0;
-						uavDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;
-						uavDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
+
+						// A buffer can't both be structured and raw in DX12. Raw takes precedence in Gigi.
+						if (isByteAddressBuffer)
+						{
+							uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_RAW;
+							uavDesc.Buffer.StructureByteStride = 0;
+							uavDesc.Format = DXGI_FORMAT_R32_TYPELESS;
+
+                            // We need to translate the NumElements into "how many uint32s do we have?" since we use R32_TYPELESS
+                            UINT itemBytes = isStructuredBuffer
+                                ? descriptor.m_stride
+                                : (UINT)Get_DXGI_FORMAT_Info(descriptor.m_format).bytesPerPixel;
+                            uavDesc.Buffer.NumElements = descriptor.m_count * itemBytes / 4;
+						}
+						else
+						{
+							uavDesc.Buffer.Flags = D3D12_BUFFER_UAV_FLAG_NONE;
+							uavDesc.Buffer.StructureByteStride = descriptor.m_stride;
+							uavDesc.Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : descriptor.m_format;
+                            uavDesc.Buffer.NumElements = descriptor.m_count;
+						}
 						break;
 					}
 					case ResourceType::Texture2D:

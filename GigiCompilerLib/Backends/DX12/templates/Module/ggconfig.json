@@ -1,5 +1,17 @@
 {
     "fileProperties":[
-        {"fileName": "AgilitySDK", "isDirectory": true, "onlyIncludeIfDX12AgilitySDKRequired": true}
+      {
+        "fileName": "AgilitySDK",
+        "isDirectory": true,
+        "onlyIncludeIfDX12AgilitySDKRequired": true
+      },
+      {
+        "fileName": "DXC\\bin\\x64\\dxcompiler.dll",
+        "renameTo": "dxcompiler.dll"
+      },
+      {
+        "fileName": "DXC\\bin\\x64\\dxil.dll",
+        "renameTo": "dxil.dll"
+      }
     ]
 }

@@ -10,7 +10,8 @@ enum class ShaderCompilationFlags : uint32_t
 	Debug = 1 << 0,
 	WarningsAsErrors = 1 << 1,
 	HLSL2021 = 1 << 2,
-	CreatePDBsAndBinaries = 1 << 3
+	CreatePDBsAndBinaries = 1 << 3,
+	Enable16BitTypes = 1 << 4
 };
 
 SETUP_ENUM_CLASS_OPERATORS(ShaderCompilationFlags)

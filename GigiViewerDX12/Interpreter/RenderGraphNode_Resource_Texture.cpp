@@ -163,6 +163,7 @@ bool RuntimeTypes::RenderGraphNode_Resource_Texture::GetRTV(ID3D12Device2* devic
 			rtvDesc.Texture3D.MipSlice = mipLevel;
 			rtvDesc.Texture3D.WSize = 1;
 			rtvDesc.Texture3D.FirstWSlice = arrayIndex;
+			break;
 		}
 		default:
 		{

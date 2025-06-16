@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SubInSub",
-    "version": "0.99b",
+    "version": "1.0",
     "nodes": [
         {
             "actionSubGraph": {
@@ -50,5 +50,8 @@
                 "visibility": "Imported"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Input"
+    }
 }

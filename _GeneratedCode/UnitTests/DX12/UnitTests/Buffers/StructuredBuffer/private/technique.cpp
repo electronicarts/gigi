@@ -781,8 +781,8 @@ namespace StructuredBuffer
 
         // Shader Constants: _csmainCB
         {
-            context->m_internal.constantBuffer__csmainCB_cpu.frameDeltaTime = context->m_internal.variable_frameDeltaTime;
-            context->m_internal.constantBuffer__csmainCB_cpu.frameIndex = context->m_internal.variable_frameIndex;
+            context->m_internal.constantBuffer__csmainCB_cpu.frameDeltaTime = context->m_input.variable_frameDeltaTime;
+            context->m_internal.constantBuffer__csmainCB_cpu.frameIndex = context->m_input.variable_frameIndex;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__csmainCB, context->m_internal.constantBuffer__csmainCB_cpu, Context::LogFn);
         }
 

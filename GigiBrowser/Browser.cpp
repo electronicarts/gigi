@@ -22,6 +22,8 @@
 
 bool g_logOpen = false;
 
+std::vector<BrowserServerInfo> g_serverList;
+
 bool ShowErrorMessage(const char* fmt, ...)
 {
 	char buffer[4096];
@@ -272,7 +274,7 @@ bool Browser::Init(ID3D12Device* device, int maxFramesInFlight, ID3D12Descriptor
 	}
 
 	// Load the servers from browserservers.txt
-	std::vector<BrowserServerInfo> serverList;
+	g_serverList.clear();
 	{
 		// If no servers we won't list any
 		std::vector<char> data;
@@ -294,7 +296,7 @@ bool Browser::Init(ID3D12Device* device, int maxFramesInFlight, ID3D12Descriptor
 			if (!success)
 				break;
 
-			serverList.push_back(serverInfo);
+			g_serverList.push_back(serverInfo);
 		}
 	}
 
@@ -347,7 +349,7 @@ bool Browser::Init(ID3D12Device* device, int maxFramesInFlight, ID3D12Descriptor
 				searchServers.insert((const char*)sqlite3_column_text(statement, 0));
 			}
 		);
-		for (BrowserServerInfo& serverInfo : serverList)
+		for (BrowserServerInfo& serverInfo : g_serverList)
 			searchServers.insert(serverInfo.Name);
 
 		for (const std::string& serverName : searchServers)
@@ -356,7 +358,7 @@ bool Browser::Init(ID3D12Device* device, int maxFramesInFlight, ID3D12Descriptor
 	}
 
 	// Get the technique list for each server
-	for (BrowserServerInfo& serverInfo : serverList)
+	for (BrowserServerInfo& serverInfo : g_serverList)
 		m_workerThreads.Add<Job_UpdateServer>(serverInfo);
 
 	// If we are testing a technique, show only the "LocalTest" items by default
@@ -397,6 +399,11 @@ void Browser::Release()
 		it.second->Release();
 	}
 	m_textureResources.clear();
+	for (ID3D12Resource* resource: m_orphanedTextureResources)
+	{
+		resource->Release();
+	}
+	m_orphanedTextureResources.clear();
 }
 
 void Browser::ProcessPendingTextureLoads(ID3D12GraphicsCommandList* commandList)
@@ -492,6 +499,27 @@ void Browser::ProcessPendingTextureLoads(ID3D12GraphicsCommandList* commandList)
 		}
 	}
 	m_pendingTextureLoads.clear();
+}
+
+void Browser::RefreshScreenshotInternal(const std::string& fileName_)
+{
+	// normalize the file name
+	std::filesystem::path p = std::filesystem::weakly_canonical(fileName_);
+	std::string s = p.string();
+	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+	const char* fileName = s.c_str();
+
+	// Remove it from the file and texture cache
+	m_fileCache.Remove(fileName);
+	m_textureCache.Remove(fileName);
+
+	// remove (orphan) the loaded resource
+	auto it = m_textureResources.find(fileName);
+	if (it != m_textureResources.end())
+	{
+		m_orphanedTextureResources.push_back(it->second);
+		m_textureResources.erase(fileName);
+	}
 }
 
 void* Browser::GetDescriptorTableForImage(const char* path, int& width, int& height)
@@ -654,6 +682,13 @@ void Browser::ShowBrowserWindow()
 	if (ImGui::Button("Search") || ImGui::IsKeyPressed(ImGuiKey_Enter))
 		GetSearchResults(false);
 
+	ImGui::SameLine();
+	if (ImGui::Button("Refresh Servers"))
+	{
+		for (BrowserServerInfo& serverInfo : g_serverList)
+			m_workerThreads.Add<Job_UpdateServer>(serverInfo);
+	}
+
 	ImGui::Separator();
 
 	ImGui::Text("%i search result%s", m_searchResults.size(), (m_searchResults.size() == 1 ? "" : "s"));
@@ -798,12 +833,15 @@ void Browser::ShowBrowserWindow()
 
 				ImGui::TextWrapped("%s", technique.Details.Description.c_str());
 
-				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(96, 96, 96, 255));
-				ImGui::Text("Gigi Version: %s", technique.Details.GigiVersion.c_str());
-				ImGui::Text("Listed On: %s (%s)", technique.Origin.Name.c_str(), technique.Summary.ListedDate.c_str());
-				ImGui::Text("%s (%s)\n%s", technique.Summary.Repo.c_str(), technique.Summary.Commit.c_str(), technique.Summary.DetailsFile.c_str());
-				ImGui::Text("%s", GetSummaryHashString(technique.Summary).c_str());
-				ImGui::PopStyleColor();
+				if (g_logOpen)
+				{
+					ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(96, 96, 96, 255));
+					ImGui::Text("Gigi Version: %s", technique.Details.GigiVersion.c_str());
+					ImGui::Text("Listed On: %s (%s)", technique.Origin.Name.c_str(), technique.Summary.ListedDate.c_str());
+					ImGui::Text("%s (%s)\n%s", technique.Summary.Repo.c_str(), technique.Summary.Commit.c_str(), technique.Summary.DetailsFile.c_str());
+					ImGui::Text("%s", GetSummaryHashString(technique.Summary).c_str());
+					ImGui::PopStyleColor();
+				}
 
 				//////////////////////////////////////////////////////////
 
@@ -870,6 +908,16 @@ void Browser::ShowBrowserWindow()
 				{
 					ShellExecuteA(nullptr, nullptr, technique.Details.Website.c_str(), nullptr, nullptr, SW_SHOW);
 				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Repository"))
+				{
+					ShellExecuteA(nullptr, nullptr, technique.Summary.Repo.c_str(), nullptr, nullptr, SW_SHOW);
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Delete"))
+					m_workerThreads.Add<Job_DeleteTechnique>(technique);
 
 				ImGui::PopID();
 			}

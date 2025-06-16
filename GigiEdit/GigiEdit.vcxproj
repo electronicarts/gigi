@@ -154,6 +154,7 @@
     <ClInclude Include="PreviewServer.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\.editorconfig" />
     <None Include="..\external\imgui-node-editor\examples\application\source\config.h.in" />
     <None Include="..\external\imgui-node-editor\imgui_bezier_math.inl" />
     <None Include="..\external\imgui-node-editor\imgui_extra_math.inl" />

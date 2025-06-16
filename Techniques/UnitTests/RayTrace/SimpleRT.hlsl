@@ -32,7 +32,7 @@ struct Payload
 		ray,
 		payload);
 
-	g_texture[px] = float4(payload.RGB, 1.0f);
+	/*$(RWTextureW:g_texture)*/[px] = float4(payload.RGB, 1.0f);
 }
 
 /*$(_miss:Miss)*/

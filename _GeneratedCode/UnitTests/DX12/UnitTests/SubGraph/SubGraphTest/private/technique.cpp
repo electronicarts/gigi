@@ -168,12 +168,12 @@ namespace SubGraphTest
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Inner_Exported_Tex;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Inner_Exported_Tex_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

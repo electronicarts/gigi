@@ -34,6 +34,7 @@ DataFieldType getDataFieldType(const std::string& value)
 	if (value == "uint16") return DataFieldType::Uint_16;
 	if (value == "int64_t") return DataFieldType::Int_64;
 	if (value == "uint64_t") return DataFieldType::Uint_64;
+	if (value == "half") return DataFieldType::Float_16;
 
 	// not recognized
 	return DataFieldType::Count;

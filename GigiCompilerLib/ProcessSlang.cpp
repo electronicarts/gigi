@@ -157,8 +157,20 @@ public:
 #endif
 
 // https://github.com/shader-slang/slang/tree/master/docs#readme
-bool ProcessWithSlang(std::string& source, const char* fileName, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const char* workingDirectory, const SlangOptions& options)
+bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage destinationLanguage, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const std::vector<std::string>& includeDirectories, const SlangOptions& options)
 {
+    SlangCompileTarget targetLanguage = SlangCompileTarget::SLANG_HLSL;
+    switch (destinationLanguage)
+    {
+        case ShaderLanguage::HLSL: targetLanguage = SlangCompileTarget::SLANG_HLSL; break;
+        case ShaderLanguage::WGSL: targetLanguage = SlangCompileTarget::SLANG_WGSL; break;
+        default:
+        {
+            errorMessage = std::string("ProcessWithSlang() is unable to output shader language \"") + EnumToString(destinationLanguage) + "\"";
+            return false;
+        }
+    }
+
     bool ret = true;
     char errorBuffer[1024];
 
@@ -189,7 +201,7 @@ bool ProcessWithSlang(std::string& source, const char* fileName, const char* sta
     }
 
     // Set what type of thing we want to come out of the slang compiler
-    spSetCodeGenTarget(request, SlangCompileTarget::SLANG_HLSL);
+    spSetCodeGenTarget(request, targetLanguage);
 
     switch (options.floatingPointMode)
     {
@@ -198,14 +210,16 @@ bool ProcessWithSlang(std::string& source, const char* fileName, const char* sta
         case GigiSlangFloatingPointMode::Precise: request->setTargetFloatingPointMode(0, SLANG_FLOATING_POINT_MODE_PRECISE); break;
     }
 
-    spAddSearchPath(request, workingDirectory);
+    for (const std::string& includeDirectory : includeDirectories)
+        spAddSearchPath(request, includeDirectory.c_str());
 
     int translationUnitIndex = spAddTranslationUnit(request, SLANG_SOURCE_LANGUAGE_SLANG, "");
 
     // set the source code
     spAddTranslationUnitSourceString(request, translationUnitIndex, fileName, source.data());
 
-    spSetTargetProfile(request, 0, spFindProfile(session, profile));
+    if (profile)
+        spSetTargetProfile(request, 0, spFindProfile(session, profile));
 
     SlangStage stageEnum = SlangStage::SLANG_STAGE_NONE;
     if (!_stricmp(stage, "fragment"))
@@ -246,6 +260,9 @@ bool ProcessWithSlang(std::string& source, const char* fileName, const char* sta
     // Clean up
     spDestroyCompileRequest(request);
     spDestroySession(session);
+
+    if (!errorMessage.empty())
+        errorMessage = std::string("[Slang] ") + errorMessage;
 
     return ret;
 }

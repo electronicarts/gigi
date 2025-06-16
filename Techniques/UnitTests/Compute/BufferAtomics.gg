@@ -1,0 +1,121 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "shaders": [
+        {
+            "name": "BufferAtomicsCS",
+            "fileName": "BufferAtomics.hlsl",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "TheBuffer",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    },
+                    "allowAtomicOps": true
+                }
+            ]
+        },
+        {
+            "name": "ClearBufferCS",
+            "fileName": "BufferAtomicsClear.hlsl",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "TheBuffer",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "RunShader",
+                "editorPos": [
+                    875.0,
+                    402.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "TheBuffer",
+                        "dstNode": "ClearBuffer",
+                        "dstPin": "TheBuffer"
+                    }
+                ],
+                "shader": {
+                    "name": "BufferAtomicsCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "TheBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "TheBuffer",
+                "editorPos": [
+                    571.0,
+                    402.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 4
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ClearBuffer",
+                "editorPos": [
+                    693.0,
+                    402.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "TheBuffer",
+                        "dstNode": "TheBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ClearBufferCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "TheBuffer"
+                    }
+                }
+            }
+        }
+    ]
+}

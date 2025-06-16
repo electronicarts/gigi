@@ -1,0 +1,23 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: TinyBVH
+message: >-
+  If you use TinyBVH in your research, please cite it as
+  below.
+type: software
+authors:
+  - family-names: Bikker
+    given-names: Jacco
+    orcid: 'https://orcid.org/0000-0002-9909-6182'
+identifiers:
+  - type: url
+    value: 'https://github.com/jbikker/tinybvh'
+repository-code: 'https://github.com/jbikker/tinybvh'
+abstract: ' C/C++ Single-header library for BVH construction and traversal'
+keywords:
+  - 'raytracing, bvh'
+license: MIT
+version: 1.5.5
+date-released: '2025-05-21'

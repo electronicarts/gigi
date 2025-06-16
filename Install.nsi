@@ -9,9 +9,9 @@
 ; Custom defines
   !define APPNAME "Gigi"
   !define DESCRIPTION "Rapid Graphics Development Platform"
-  !define VERSIONMAJOR 0
-  !define VERSIONMINOR 991
-  !define VERSIONBUILD 2
+  !define VERSIONMAJOR 1
+  !define VERSIONMINOR 0
+  !define VERSIONBUILD 0
   !define SLUG "${APPNAME} v${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
 
   # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
@@ -72,6 +72,8 @@
     createShortCut "$SMPROGRAMS\${APPNAME}\GigiBrowser.lnk" "$INSTDIR\GigiBrowser.exe" "" "$INSTDIR\GigiBrowser.ico"
     createShortCut "$SMPROGRAMS\${APPNAME}\GigiEdit.lnk" "$INSTDIR\GigiEdit.exe" "" "$INSTDIR\GigiEdit.ico"
     createShortCut "$SMPROGRAMS\${APPNAME}\GigiViewerDX12.lnk" "$INSTDIR\GigiViewerDX12.exe" "" "$INSTDIR\GigiViewerDX12.ico"
+    createShortCut "$SMPROGRAMS\${APPNAME}\Techniques.lnk" "$INSTDIR\Techniques\" "" ""
+    createShortCut "$SMPROGRAMS\${APPNAME}\UserDocumentation.lnk" "$INSTDIR\UserDocumentation\" "" ""
 
     # Registry information for add/remove programs
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME} ${APPNAME}" "DisplayName" "${APPNAME} - ${DESCRIPTION}"
@@ -131,6 +133,9 @@ Section "Uninstall"
   delete "$SMPROGRAMS\${APPNAME}\GigiBrowser.lnk"
   delete "$SMPROGRAMS\${APPNAME}\GigiEdit.lnk"
   delete "$SMPROGRAMS\${APPNAME}\GigiViewerDX12.lnk"
+  delete "$SMPROGRAMS\${APPNAME}\Techniques.lnk"
+  delete "$SMPROGRAMS\${APPNAME}\UserDocumentation.lnk"
+
   # Try to remove the Start Menu folder - this will only happen if it is empty
   rmDir "$SMPROGRAMS\${APPNAME}"
 

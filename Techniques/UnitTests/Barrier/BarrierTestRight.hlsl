@@ -5,7 +5,7 @@
 {
 	uint2 dims;
 	Output.GetDimensions(dims.x, dims.y);
-	Output[DTid.xy + uint2(dims.x / 2, 0)] = float4(0.0f, 0.5f, 0.0f, 1.0f);
+	/*$(RWTextureW:Output)*/[DTid.xy + uint2(dims.x / 2, 0)] = float4(0.0f, 0.5f, 0.0f, 1.0f);
 }
 
 /*

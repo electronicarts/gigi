@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SlangAutoDiff",
-    "version": "0.991b",
+    "version": "1.0",
     "variables": [
         {
             "name": "NumGaussians",
@@ -79,11 +79,6 @@
             "name": "Init",
             "fileName": "SlangAutoDiff_Initialize.hlsl",
             "entryPoint": "csmain",
-            "CSNumThreads": [
-                1,
-                1,
-                1
-            ],
             "NumThreads": [
                 1,
                 1,
@@ -99,6 +94,11 @@
                         "PODAsStructuredBuffer": false
                     }
                 }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
             ]
         },
         {
@@ -128,20 +128,13 @@
         {
             "name": "Descend",
             "fileName": "SlangAutoDiff_Descend.hlsl",
+            "language": "Slang",
             "entryPoint": "csmain",
-            "CSNumThreads": [
-                1,
-                1,
-                1
-            ],
             "NumThreads": [
                 1,
                 1,
                 1
             ],
-            "slangOptions": {
-                "process": true
-            },
             "resources": [
                 {
                     "name": "Data",
@@ -152,6 +145,14 @@
                         "PODAsStructuredBuffer": false
                     }
                 }
+            ],
+            "slangOptions": {
+                "process": true
+            },
+            "CSNumThreads": [
+                1,
+                1,
+                1
             ]
         }
     ],
@@ -291,5 +292,8 @@
                 "comparison": "IsFalse"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

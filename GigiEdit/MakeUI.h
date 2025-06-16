@@ -745,26 +745,69 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TextureNodeReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
+    auto ProcessLabel = [&value, &dirtyFlag](const std::string& label)
+    {
+        bool is_selected = value.name == label;
+        std::string safeLabel = label + "##";
+        if (ImGui::Selectable(safeLabel.c_str(), is_selected))
+        {
+            value.name = (label == " ") ? "" : label;
+            dirtyFlag = true;
+        }
+        if (is_selected)
+            ImGui::SetItemDefaultFocus();
+    };
+
     // Texture nodes drop down
     if (ImGui::BeginCombo(label, value.name.c_str()))
     {
-        for (int index = 0; index < renderGraph.nodes.size() + 1; ++index)
+        std::vector<std::string> labels;
+
+        for (const RenderGraphNode& nodeBase : renderGraph.nodes)
         {
-            if (index > 0 && renderGraph.nodes[index - 1]._index != RenderGraphNode::c_index_resourceTexture)
-                continue;
-
-            std::string label = (index == 0) ? " " : GetNodeName(renderGraph.nodes[index - 1]).c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
+            switch (nodeBase._index)
             {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
+                // Show textures
+                case RenderGraphNode::c_index_resourceTexture:
+                {
+                    const RenderGraphNode_Resource_Texture& node = nodeBase.resourceTexture;
+                    labels.push_back(node.name);
+                    break;
+                }
+                // Show resources exported from subgraph nodes.
+                // We should limit to textures if we can.
+                case RenderGraphNode::c_index_actionSubGraph:
+                {
+                    const RenderGraphNode_Action_SubGraph& node = nodeBase.actionSubGraph;
+
+                    if (node.loopCount > 1)
+                    {
+                        for (int loopIndex = 0; loopIndex < node.loopCount; ++loopIndex)
+                        {
+                            for (const std::string& exportedResource : node.subGraphData.exportedResources)
+                            {
+                                char buffer[1024];
+                                sprintf_s(buffer, "%s_Iteration_%i.%s", node.name.c_str(), loopIndex, exportedResource.c_str());
+                                labels.push_back(buffer);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (const std::string& exportedResource : node.subGraphData.exportedResources)
+                            labels.push_back(node.name + "." + exportedResource);
+                    }
+
+                    break;
+                }
             }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
         }
+
+        std::sort(labels.begin(), labels.end());
+
+        ProcessLabel(" ");
+        for (const std::string& label : labels)
+            ProcessLabel(label);
 
         ImGui::EndCombo();
     }
@@ -1631,6 +1674,54 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     if (ImGui::Button("Refresh GG File Data"))
         dirtyFlag = RefreshSubGraphNode(node);
     return UIOverrideResult::Continue;
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceAccessType& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    // As of writing this, the only place ShaderResourceAccessType is used, that is displayed to the user (goes through this function) is in Shader.resources[] ShaderResource.Action
+
+    struct AllowedTypes
+    {
+        ShaderResourceAccessType value;
+        const char* label = nullptr;
+    };
+
+    static const AllowedTypes allowedTypes[] =
+    {
+        { ShaderResourceAccessType::Count, " " },
+        { ShaderResourceAccessType::SRV, "Read Only" },
+        { ShaderResourceAccessType::UAV, "Read/Write" },
+        { ShaderResourceAccessType::RTScene, "Ray Tracing Scene" },
+    };
+
+    int allowedTypeIndex = 0;
+    for (int index = 0; index < _countof(allowedTypes); ++index)
+    {
+        if (allowedTypes[index].value == value)
+        {
+            allowedTypeIndex = index;
+            break;
+        }
+    }
+
+    if (ImGui::BeginCombo(label, allowedTypes[allowedTypeIndex].label))
+    {
+        for (int index = 0; index < _countof(allowedTypes); ++index)
+        {
+            bool is_selected = (allowedTypeIndex == index);
+            if (ImGui::Selectable(allowedTypes[index].label, is_selected))
+            {
+                value = allowedTypes[index].value;
+                dirtyFlag = true;
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    ShowUIToolTip(tooltip);
+
+    return UIOverrideResult::Finished;
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceType& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)

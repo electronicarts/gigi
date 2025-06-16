@@ -12,7 +12,7 @@ namespace simpleRaster2
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -45,21 +45,21 @@ namespace simpleRaster2
         {
 
             // Variables
-            float4 variable_MouseState = {0.0f, 0.0f, 0.0f, 0.0f};
-            float4 variable_MouseStateLastFrame = {0.0f, 0.0f, 0.0f, 0.0f};
-            float3 variable_iResolution = {0.0f, 0.0f, 0.0f};
+            float4 variable_MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float4 variable_MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float3 variable_iResolution = {0.000000f, 0.000000f, 0.000000f};
             float variable_iTime = 0.000000f;
             float variable_iTimeDelta = 0.000000f;
             float variable_iFrameRate = 0.000000f;
             int variable_iFrame = 0;
-            float4 variable_iMouse = {0.0f, 0.0f, 0.0f, 0.0f};
-            float4x4 variable_ViewMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
-            float4x4 variable_InvViewMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
-            float4x4 variable_ProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
-            float4x4 variable_InvProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
-            float4x4 variable_ViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
-            float4x4 variable_InvViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
-            float3 variable_CameraPos = {0.0f, 0.0f, 0.0f};
+            float4 variable_iMouse = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float4x4 variable_ViewMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float4x4 variable_InvViewMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float4x4 variable_ProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float4x4 variable_InvProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float4x4 variable_ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float4x4 variable_InvViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float3 variable_CameraPos = {0.000000f, 0.000000f, 0.000000f};
 
             ID3D12Resource* buffer_VertexBuffer = nullptr;
             DXGI_FORMAT buffer_VertexBuffer_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
@@ -215,7 +215,7 @@ namespace simpleRaster2
 
     struct Struct_VertexFormat
     {
-        float3 Position = {0, 0, 0};
-        float3 Normal = {0.0f,0.0f,0.0f};
+        float3 Position = {0.000000f, 0.000000f, 0.000000f};
+        float3 Normal = {0.000000f, 0.000000f, 0.000000f};
     };
 };

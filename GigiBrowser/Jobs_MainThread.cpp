@@ -18,17 +18,45 @@ Job_CleanTechnique::Job_CleanTechnique(const BrowserCachedTechnique& techniqueIn
 
 void Job_CleanTechnique::ExecuteMainThread()
 {
-	if (!m_info.str().empty())
-		Browser::Log(false, "%s", m_info.str().c_str());
-
-	if (!m_errors.str().empty())
-		Browser::Log(true, "%s", m_info.str().c_str());
+	// Invalidate the loaded screenshot image, in case it changed
+	std::filesystem::path techniquePath = s_cacheDir / std::filesystem::path("Techniques") / GetSummaryHashString(m_techniqueInfo.Summary) / m_techniqueInfo.Summary.DetailsFile;
+	std::filesystem::path rootPath = techniquePath.replace_filename("");
+	std::filesystem::path screenshotPath = rootPath / m_techniqueInfo.Details.Screenshot;
+	Browser::RefreshScreenshot(screenshotPath.string());
 
 	Browser::SetRefreshSearchResults();
 
 	Browser::PendingDownload(GetSummaryHashString(m_techniqueInfo.Summary), false);
 
+	if (!m_info.str().empty())
+		Browser::Log(false, "%s", m_info.str().c_str());
+
+	if (!m_errors.str().empty())
+		Browser::Log(true, "%s", m_errors.str().c_str());
+
 	Browser::Log(false, "[%s] Technique \"%s\" cleaned", m_techniqueInfo.Origin.Name.c_str(), m_techniqueInfo.Details.Title.c_str());
+}
+
+Job_DeleteTechnique::Job_DeleteTechnique(const BrowserCachedTechnique& techniqueInfo)
+	: m_techniqueInfo(techniqueInfo)
+{
+}
+
+void Job_DeleteTechnique::ExecuteMainThread()
+{
+	// Delete from the database
+	std::vector<std::string> params;
+	params.push_back(GetSummaryHashString(m_techniqueInfo.Summary));
+	Database::ExecuteSQL("delete from Techniques where SummaryHash = ?", params);
+
+	// Delete from disk
+	std::filesystem::path techniquePath = s_cacheDir / std::filesystem::path("Techniques") / GetSummaryHashString(m_techniqueInfo.Summary);
+	std::filesystem::remove_all(techniquePath);
+
+	// Refresh search results
+	Browser::SetRefreshSearchResults();
+
+	Browser::Log(false, "[%s] Technique \"%s\" deleted", m_techniqueInfo.Origin.Name.c_str(), m_techniqueInfo.Details.Title.c_str());
 }
 
 Job_DownloadTechnique::Job_DownloadTechnique(const BrowserCachedTechnique& techniqueInfo)
@@ -45,7 +73,7 @@ void Job_DownloadTechnique::ExecuteMainThread()
 		Browser::Log(false, "%s", m_info.str().c_str());
 
 	if (!m_errors.str().empty())
-		Browser::Log(true, "%s", m_info.str().c_str());
+		Browser::Log(true, "%s", m_errors.str().c_str());
 
 	Browser::SetRefreshSearchResults();
 
@@ -122,7 +150,7 @@ void Job_UpdateTechnique::ExecuteMainThread()
 		Browser::Log(false, "%s", m_info.str().c_str());
 
 	if (!m_errors.str().empty())
-		Browser::Log(true, "%s", m_info.str().c_str());
+		Browser::Log(true, "%s", m_errors.str().c_str());
 }
 
 Job_UpdateServer::Job_UpdateServer(const BrowserServerInfo& serverInfo)

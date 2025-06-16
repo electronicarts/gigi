@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "simpleRaster2",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -151,7 +151,7 @@
                     "name": "PixelShader"
                 },
                 "depthTargetClear": true,
-                "depthTargetClearValue": 1.0,
+                "depthTest": "Greater",
                 "colorTargetSettings": [
                     {
                         "clear": true,
@@ -251,5 +251,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Color Buffer"
+    }
 }

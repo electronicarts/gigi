@@ -1,0 +1,83 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "shaders": [
+        {
+            "name": "WriteOutputCS",
+            "fileName": "Defines.hlsl",
+            "entryPoint": "csmain",
+            "defines": [
+                {
+                    "name": "RED",
+                    "value": "0.75"
+                }
+            ],
+            "resources": [
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "WriteOutput",
+                "editorPos": [
+                    -27.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "WriteOutputCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "GREEN",
+                        "value": "0.5"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -149.0,
+                    -14.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        64,
+                        64,
+                        1
+                    ]
+                }
+            }
+        }
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
+}

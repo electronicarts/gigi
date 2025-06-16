@@ -262,6 +262,15 @@ private:
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
+	template<typename LAMBDA>
+	void CallFor_Float_16(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
+	{
+		using TheType = uint16_t;
+		static const size_t TheCount = 1;
+
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
+		lambda(TheCount, (TheType*)storage.value);
+	}
 
 	template<typename LAMBDA>
 	void CallFor_Int_64(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
@@ -359,8 +368,9 @@ public:
 
 		// Remove everything aready there, to prevent stale things interfering
 		// Then, make sure the directory is created
-		std::filesystem::remove_all(m_tempDirectory.c_str());
-		std::filesystem::create_directories(m_tempDirectory.c_str());
+		std::error_code ec;
+		std::filesystem::remove_all(m_tempDirectory.c_str(), ec);
+		std::filesystem::create_directories(m_tempDirectory.c_str(), ec);
 
 		m_compileResult = GigiCompile(GigiBuildFlavor::Interpreter_Interpreter, fileName, m_tempDirectory.c_str(), PostLoad, &m_renderGraph, false);
 		if (m_compileResult != GigiCompileResult::OK)
@@ -595,25 +605,114 @@ public:
 			DoOp(A[i], B[i], dest[i], setVar.op);
 	}
 
+	template <typename T, typename U>
+	void ConvertTypedBinaryValueInternal2(const U* src, T* dest)
+	{
+		dest[0] = static_cast<T>(src[0]);
+	}
+
+	template <typename T>
+	void ConvertTypedBinaryValueInternal(const void* src, DataFieldComponentType srcType, T* dest)
+	{
+		switch (srcType)
+		{
+			case DataFieldComponentType::_int: dest[0] = static_cast<T>(((int*)src)[0]); break;
+			case DataFieldComponentType::_uint16_t: dest[0] = static_cast<T>(((uint16_t*)src)[0]); break;
+			case DataFieldComponentType::_uint32_t: dest[0] = static_cast<T>(((uint32_t*)src)[0]); break;
+			case DataFieldComponentType::_int64_t: dest[0] = static_cast<T>(((int64_t*)src)[0]); break;
+			case DataFieldComponentType::_uint64_t: dest[0] = static_cast<T>(((uint64_t*)src)[0]); break;
+			case DataFieldComponentType::_float: dest[0] = static_cast<T>(((float*)src)[0]); break;
+			default:
+			{
+				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				break;
+			}
+		}
+	}
+
+	void ConvertTypedBinaryValue(const void* src, DataFieldComponentType srcType, void* dest, DataFieldComponentType destType)
+	{
+		switch (destType)
+		{
+			case DataFieldComponentType::_int: ConvertTypedBinaryValueInternal(src, srcType, (int*)dest); break;
+			case DataFieldComponentType::_uint16_t: ConvertTypedBinaryValueInternal(src, srcType, (uint16_t*)dest); break;
+			case DataFieldComponentType::_uint32_t: ConvertTypedBinaryValueInternal(src, srcType, (uint32_t*)dest); break;
+			case DataFieldComponentType::_int64_t: ConvertTypedBinaryValueInternal(src, srcType, (int64_t*)dest); break;
+			case DataFieldComponentType::_uint64_t: ConvertTypedBinaryValueInternal(src, srcType, (uint64_t*)dest); break;
+			case DataFieldComponentType::_float: ConvertTypedBinaryValueInternal(src, srcType, (float*)dest); break;
+			default:
+			{
+				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				break;
+			}
+		}
+	}
+
+	// Returns false if the cast is a no-op, and no work was done
+	bool CastTypedBinaryValues(void* srcBytes, DataFieldType srcType, std::vector<char>& destBytes, DataFieldType destType)
+	{
+		DataFieldTypeInfoStruct srcTypeInfo = DataFieldTypeInfo(srcType);
+		DataFieldTypeInfoStruct destTypeInfo = DataFieldTypeInfo(destType);
+
+		Assert(srcTypeInfo.componentCount == destTypeInfo.componentCount, __FUNCTION__ " failed because they have different component counts!");
+
+		if (srcTypeInfo.componentType == destTypeInfo.componentType)
+			return false;
+
+		destBytes.resize(destTypeInfo.typeBytes);
+		for (int componentIndex = 0; componentIndex < destTypeInfo.componentCount; ++componentIndex)
+		{
+			const void* src = &(((const char*)srcBytes)[srcTypeInfo.componentBytes * componentIndex]);
+			void* dest = &destBytes[destTypeInfo.componentBytes * componentIndex];
+			ConvertTypedBinaryValue(src, srcTypeInfo.componentType, dest, destTypeInfo.componentType);
+		}
+
+		return true;
+	}
+
 	void ExecuteSetvar(const SetVariable& setVar)
 	{
-		DataFieldType			type	 = m_renderGraph.variables[setVar.destination.variableIndex].type;
+		DataFieldType			type = m_renderGraph.variables[setVar.destination.variableIndex].type;
 		DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(type);
 
 		void* destBytes = GetRuntimeVariable(setVar.destination.variableIndex).storage.value;
-		void* ABytes	= (setVar.AVar.variableIndex != -1) ? GetRuntimeVariable(setVar.AVar.variableIndex).storage.value : nullptr;
-		void* BBytes	= (setVar.BVar.variableIndex != -1) ? GetRuntimeVariable(setVar.BVar.variableIndex).storage.value : nullptr;
+		void* ABytes = (setVar.AVar.variableIndex != -1) ? GetRuntimeVariable(setVar.AVar.variableIndex).storage.value : nullptr;
+		void* BBytes = (setVar.BVar.variableIndex != -1) ? GetRuntimeVariable(setVar.BVar.variableIndex).storage.value : nullptr;
 
 		std::vector<char> ABuffer;
 		std::vector<char> BBuffer;
 
-		if (!ABytes)
+		if (setVar.AVar.variableIndex != -1)
+		{
+			// Cast our variable to the destination variable type if we need to.
+			// We should cast the result of the operation and work in this type, but the only casting we do is for no-op (assign) so that doesn't come up in practice currently.
+			const Variable& var = m_renderGraph.variables[setVar.AVar.variableIndex];
+			DataFieldTypeInfoStruct varTypeInfo = DataFieldTypeInfo(var.type);
+			if (varTypeInfo.componentType != typeInfo.componentType)
+			{
+				CastTypedBinaryValues(ABytes, var.type, ABuffer, type);
+				ABytes = ABuffer.data();
+			}
+		}
+		else
 		{
 			ABuffer.resize(typeInfo.typeBytes);
 			ABytes = ABuffer.data();
 		}
 
-		if (!BBytes)
+		if (setVar.BVar.variableIndex != -1)
+		{
+			// Cast our variable to the destination variable type if we need to.
+			// We should cast the result of the operation and work in this type, but the only casting we do is for no-op (assign) so that doesn't come up in practice currently.
+			const Variable& var = m_renderGraph.variables[setVar.BVar.variableIndex];
+			DataFieldTypeInfoStruct varTypeInfo = DataFieldTypeInfo(var.type);
+			if (varTypeInfo.componentType != typeInfo.componentType)
+			{
+				CastTypedBinaryValues(ABytes, var.type, BBuffer, type);
+				BBytes = ABuffer.data();
+			}
+		}
+		else
 		{
 			BBuffer.resize(typeInfo.typeBytes);
 			BBytes = BBuffer.data();
@@ -654,6 +753,11 @@ public:
 			case DataFieldType::Float:
 			{
 				DoSetVarOperation<float>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
+				break;
+			}
+			case DataFieldType::Float_16:
+			{
+				DoSetVarOperation<uint16_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
 				break;
 			}
 		}

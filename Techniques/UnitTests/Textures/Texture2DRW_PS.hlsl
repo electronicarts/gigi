@@ -14,8 +14,8 @@ struct PSOutput
 PSOutput psmain(PSInput input)
 {
 	float3 loadedTexturePx = /*$(Image2D:../cabinsmall.png:RGBA8_Unorm:float4:false)*/[input.position.xy].rgb;
-	float3 importedTexturePx = importedTexture[input.position.xy].rgb;
-	float3 importedColorPx = importedColor[input.position.xy].rgb;
+	float3 importedTexturePx = /*$(RWTextureR:importedTexture)*/[input.position.xy].rgb;
+	float3 importedColorPx = /*$(RWTextureR:importedColor)*/[input.position.xy].rgb;
 
 	nodeTexture[input.position.xy] = float4((loadedTexturePx * importedTexturePx) * importedColorPx, 1.0f);
 	importedTexture[input.position.xy] = float4((loadedTexturePx + importedTexturePx) / 2.0f * importedColorPx, 1.0f);

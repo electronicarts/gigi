@@ -14,7 +14,7 @@ Host.DisableGGUserSave(True)
 def compare_binary_files(file1, file2):
 	return filecmp.cmp(file1, file2, shallow=False)
 
-def TestFilesEqual(fileNameA, fileNameB):
+def TestFilesEqual(fileNameA, fileNameB, mode):
 	if not os.path.exists(fileNameA):
 		Host.Log("Error", fileNameA + " did not exist")
 		return False
@@ -25,9 +25,19 @@ def TestFilesEqual(fileNameA, fileNameB):
 		os.remove(fileNameA)
 		return False
 
-	if compare_binary_files(fileNameA, fileNameB):
-		os.remove(fileNameA)
-		return True
+	if mode == "b":
+		if compare_binary_files(fileNameA, fileNameB):
+			os.remove(fileNameA)
+			return True
+	elif mode == "t":
+		content1 = ""
+		content2 = ""
+		with open(fileNameA, 'rt') as file1, open(fileNameB, 'rt') as file2:
+			content1 = file1.read()
+			content2 = file2.read()
+		if content1 == content2:
+			os.remove(fileNameA)
+			return True
 
 	Host.Log("Error", fileNameA + " did not match " + fileNameB)
 	os.remove(fileNameA)
@@ -109,21 +119,21 @@ def DoTest():
 
 	# Verify everything is ok
 	filesToTest = [
-		"SDR.index0.mip0.png",
-		"SDR_BC4.dds",
-		"SDR_BC5.dds",
-		"SDR_BC7.dds",
-		"SDR.index0.mip0.csv",
-		"SDR.bin",
-		"HDR.index0.mip0.exr",
-		"HDR.index0.mip0.hdr",
-		"HDR_BC6.dds",
-		"HDR.index0.mip0.csv",
-		"HDR.bin",
+		["SDR.index0.mip0.png", "b"],
+		["SDR_BC4.dds", "b"],
+		["SDR_BC5.dds", "b"],
+		["SDR_BC7.dds", "b"],
+		["SDR.index0.mip0.csv", "t"],
+		["SDR.bin", "b"],
+		["HDR.index0.mip0.exr", "b"],
+		["HDR.index0.mip0.hdr", "b"],
+		["HDR_BC6.dds", "b"],
+		["HDR.index0.mip0.csv", "t"],
+		["HDR.bin", "b"],
 	]
 
-	for file in filesToTest:
-		if(not TestFilesEqual(outDirName + "_" + file, outDirName + file)):
+	for file,mode in filesToTest:
+		if(not TestFilesEqual(outDirName + "_" + file, outDirName + file, mode)):
 			TestPassed = False
 
 	Host.Print("Testing Done")

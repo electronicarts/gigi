@@ -1,6 +1,11 @@
 // TwoRayGens technique
 
 
+struct Struct_VertexBufferSimple
+{
+    float3 Position;
+};
+
 struct Struct__B_TwoRayGens2CB
 {
     float3 cameraPos;

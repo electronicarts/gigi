@@ -48,6 +48,7 @@ namespace FrontEndNodes
                 if (connection.srcNodePinIndex == pinIndex)
                 {
                     ret.access = node.shader.shader->resources[index].access;
+                    ret.originalAccess = node.shader.shader->resources[index].originalAccess;
                     ret.nodeIndex = connection.dstNodeIndex;
                     ret.pinIndex = connection.dstNodePinIndex;
                     return ret;

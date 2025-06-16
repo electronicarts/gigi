@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "simpleRT_inline",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "enabled",
@@ -48,12 +48,21 @@
                 {
                     "name": "g_texture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "g_scene",
                     "type": "Buffer",
-                    "access": "RTScene"
+                    "access": "RTScene",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexBuffer"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "g_vertexBuffer",
@@ -62,7 +71,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "VertexBuffer"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -232,5 +242,8 @@
         "frostbite": {
             "shaderProgramsProviderVersion": 1340
         }
+    },
+    "PrimaryOutput": {
+        "name": "Texture"
     }
 }

@@ -118,6 +118,7 @@ namespace FrontEndNodes
                     if (connection.srcNodePinIndex == origPinIndex)
                     {
                         ret.access = node.vertexShader.shader->resources[index - shaderPinCountSoFar].access;
+                        ret.originalAccess = node.vertexShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
                         return ret;
@@ -139,6 +140,7 @@ namespace FrontEndNodes
                     if (connection.srcNodePinIndex == origPinIndex)
                     {
                         ret.access = node.pixelShader.shader->resources[index - shaderPinCountSoFar].access;
+                        ret.originalAccess = node.pixelShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
                         return ret;
@@ -160,6 +162,7 @@ namespace FrontEndNodes
                     if (connection.srcNodePinIndex == origPinIndex)
                     {
                         ret.access = node.amplificationShader.shader->resources[index - shaderPinCountSoFar].access;
+                        ret.originalAccess = node.amplificationShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
                         return ret;
@@ -181,6 +184,7 @@ namespace FrontEndNodes
                     if (connection.srcNodePinIndex == origPinIndex)
                     {
                         ret.access = node.meshShader.shader->resources[index - shaderPinCountSoFar].access;
+                        ret.originalAccess = node.meshShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
                         return ret;

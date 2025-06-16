@@ -30,27 +30,27 @@ namespace simpleRT_inline
 
         struct Struct_VertexBufferSimple
         {
-            float3 Position = {0.0f,0.0f,0.0f};
+            float3 Position = {0.000000f, 0.000000f, 0.000000f};
         };
 
         struct Struct_VertexBufferFull
         {
-            float3 Position = {0.0f,0.0f,0.0f};
-            float3 Color = {0.0f,0.0f,0.0f};
-            float3 Normal = {0.0f,0.0f,0.0f};
-            float4 Tangent = {0.0f,0.0f,0.0f,0.0f};
-            float2 UV = {0.0f,0.0f};
+            float3 Position = {0.000000f, 0.000000f, 0.000000f};
+            float3 Color = {0.000000f, 0.000000f, 0.000000f};
+            float3 Normal = {0.000000f, 0.000000f, 0.000000f};
+            float4 Tangent = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float2 UV = {0.000000f, 0.000000f};
             int MaterialID = 0;
         };
 
         struct Struct__SimpleRTCSCB
         {
-            float3 cameraPos = {0.0f,0.0f,0.0f};
+            float3 cameraPos = {0.000000f, 0.000000f, 0.000000f};
             float _padding0 = 0.000000f;  // Padding
-            float4x4 clipToWorld = {0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f};
+            float4x4 clipToWorld = {0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f};
             float depthNearPlane = 0.000000f;  // The depth value for the near plane.
-            float3 hitColor = {0.0f, 1.0f, 0.0f};
-            float3 missColor = {1.0f, 0.0f, 0.0f};
+            float3 hitColor = {0.000000f, 1.000000f, 0.000000f};
+            float3 missColor = {1.000000f, 0.000000f, 0.000000f};
             float _padding1 = 0.000000f;  // Padding
         };
 

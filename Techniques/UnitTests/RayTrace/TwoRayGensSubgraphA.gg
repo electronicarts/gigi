@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "TwoRayGensSubgraphA",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "clipToWorld",
@@ -53,6 +53,9 @@
                     "type": "Buffer",
                     "access": "RTScene",
                     "buffer": {
+                        "typeStruct": {
+                            "name": "VertexBufferSimple"
+                        },
                         "PODAsStructuredBuffer": false
                     }
                 }

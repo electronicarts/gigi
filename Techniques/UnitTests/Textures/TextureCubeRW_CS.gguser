@@ -1,33 +1,36 @@
 {
-    "resourceViewNodeIndex": 1,
-    "resourceViewResourceIndex": 4,
-    "importedResources": [
-        {
-            "nodeName": "ImportedColor",
-            "texture": {
-                "size": [
-                    64,
-                    64,
-                    6
-                ],
-                "color": [
-                    0.250980406999588,
-                    0.501960813999176,
-                    0.7686274647712708,
-                    1.0
-                ]
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 1,
+        "resourceViewResourceIndex": 5,
+        "importedResources": [
+            {
+                "nodeName": "ImportedColor",
+                "texture": {
+                    "size": [
+                        64,
+                        64,
+                        6
+                    ],
+                    "color": [
+                        0.250980406999588,
+                        0.501960813999176,
+                        0.7686274647712708,
+                        1.0
+                    ]
+                }
+            },
+            {
+                "nodeName": "ImportedTexture",
+                "texture": {
+                    "fileName": "Cube%s.png",
+                    "size": [
+                        0,
+                        0,
+                        6
+                    ]
+                }
             }
-        },
-        {
-            "nodeName": "ImportedTexture",
-            "texture": {
-                "fileName": "Cube%s.png",
-                "size": [
-                    0,
-                    0,
-                    6
-                ]
-            }
-        }
-    ]
+        ]
+    }
 }

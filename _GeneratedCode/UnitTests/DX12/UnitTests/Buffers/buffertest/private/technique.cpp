@@ -48,7 +48,7 @@ namespace buffertest
         {
             D3D12_STATIC_SAMPLER_DESC* samplers = nullptr;
 
-            D3D12_DESCRIPTOR_RANGE ranges[7];
+            D3D12_DESCRIPTOR_RANGE ranges[9];
 
             // InputTyped
             ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
@@ -64,42 +64,56 @@ namespace buffertest
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // InputStructured
+            // InputTypedStruct
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 1;
             ranges[2].RegisterSpace = 0;
             ranges[2].OffsetInDescriptorsFromTableStart = 2;
 
-            // OutputStructured
+            // OutputTypedStruct
             ranges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
             ranges[3].NumDescriptors = 1;
             ranges[3].BaseShaderRegister = 1;
             ranges[3].RegisterSpace = 0;
             ranges[3].OffsetInDescriptorsFromTableStart = 3;
 
-            // InputTypedRaw
+            // InputStructured
             ranges[4].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
             ranges[4].NumDescriptors = 1;
             ranges[4].BaseShaderRegister = 2;
             ranges[4].RegisterSpace = 0;
             ranges[4].OffsetInDescriptorsFromTableStart = 4;
 
-            // OutputTypedRaw
+            // OutputStructured
             ranges[5].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
             ranges[5].NumDescriptors = 1;
             ranges[5].BaseShaderRegister = 2;
             ranges[5].RegisterSpace = 0;
             ranges[5].OffsetInDescriptorsFromTableStart = 5;
 
-            // _BufferTestCB
-            ranges[6].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+            // InputTypedRaw
+            ranges[6].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV;
             ranges[6].NumDescriptors = 1;
-            ranges[6].BaseShaderRegister = 0;
+            ranges[6].BaseShaderRegister = 3;
             ranges[6].RegisterSpace = 0;
             ranges[6].OffsetInDescriptorsFromTableStart = 6;
 
-            if(!DX12Utils::MakeRootSig(device, ranges, 7, samplers, 0, &ContextInternal::computeShader_BufferTest_rootSig, (c_debugNames ? L"BufferTest" : nullptr), Context::LogFn))
+            // OutputTypedRaw
+            ranges[7].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+            ranges[7].NumDescriptors = 1;
+            ranges[7].BaseShaderRegister = 3;
+            ranges[7].RegisterSpace = 0;
+            ranges[7].OffsetInDescriptorsFromTableStart = 7;
+
+            // _BufferTestCB
+            ranges[8].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+            ranges[8].NumDescriptors = 1;
+            ranges[8].BaseShaderRegister = 0;
+            ranges[8].RegisterSpace = 0;
+            ranges[8].OffsetInDescriptorsFromTableStart = 8;
+
+            if(!DX12Utils::MakeRootSig(device, ranges, 9, samplers, 0, &ContextInternal::computeShader_BufferTest_rootSig, (c_debugNames ? L"BufferTest" : nullptr), Context::LogFn))
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
@@ -760,6 +774,13 @@ namespace buffertest
             m_output.buffer_OutputTypedBufferRaw = nullptr;
         }
 
+        // An internal buffer used during the filtering process.
+        if(m_output.buffer_OutputTypedStructBuffer)
+        {
+            s_delayedRelease.Add(m_output.buffer_OutputTypedStructBuffer);
+            m_output.buffer_OutputTypedStructBuffer = nullptr;
+        }
+
         // _BufferTestCB
         if (m_internal.constantBuffer__BufferTestCB)
         {
@@ -773,7 +794,7 @@ namespace buffertest
         // reset the timer index
         s_timerIndex = 0;
 
-        ScopedPerfEvent scopedPerf("buffertest", commandList, 8);
+        ScopedPerfEvent scopedPerf("buffertest", commandList, 10);
 
         std::chrono::high_resolution_clock::time_point startPointCPUTechnique;
         if(context->m_profile)
@@ -812,6 +833,12 @@ namespace buffertest
             return;
         }
 
+        if (!context->m_input.buffer_InputTypedStructBuffer)
+        {
+            Context::LogFn(LogLevel::Error, "buffertest: Imported buffer \"InputTypedStructBuffer\" is null.\n");
+            return;
+        }
+
         // Make sure internally owned resources are created and are the right size and format
         context->EnsureResourcesCreated(device, commandList);
 
@@ -825,7 +852,7 @@ namespace buffertest
         // Make sure imported resources are in the correct state
         {
             int barrierCount = 0;
-            D3D12_RESOURCE_BARRIER barriers[3];
+            D3D12_RESOURCE_BARRIER barriers[4];
 
             if(context->m_input.buffer_InputTypedBuffer_state != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
             {
@@ -860,6 +887,17 @@ namespace buffertest
                 barrierCount++;
             }
 
+            if(context->m_input.buffer_InputTypedStructBuffer_state != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+            {
+                barriers[barrierCount].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                barriers[barrierCount].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                barriers[barrierCount].Transition.pResource = context->m_input.buffer_InputTypedStructBuffer;
+                barriers[barrierCount].Transition.StateBefore = context->m_input.buffer_InputTypedStructBuffer_state;
+                barriers[barrierCount].Transition.StateAfter = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+                barriers[barrierCount].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                barrierCount++;
+            }
+
             if(barrierCount > 0)
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
@@ -874,7 +912,7 @@ namespace buffertest
 
         // Transition resources for the next action
         {
-            D3D12_RESOURCE_BARRIER barriers[3];
+            D3D12_RESOURCE_BARRIER barriers[4];
 
             barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
             barriers[0].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
@@ -888,7 +926,11 @@ namespace buffertest
             barriers[2].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
             barriers[2].UAV.pResource = context->m_output.buffer_OutputTypedBufferRaw;
 
-            commandList->ResourceBarrier(3, barriers);
+            barriers[3].Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+            barriers[3].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+            barriers[3].UAV.pResource = context->m_output.buffer_OutputTypedStructBuffer;
+
+            commandList->ResourceBarrier(4, barriers);
         }
 
         // Compute Shader: BufferTest
@@ -908,6 +950,8 @@ namespace buffertest
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.buffer_InputTypedBuffer, context->m_input.buffer_InputTypedBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputTypedBuffer_stride, context->m_input.buffer_InputTypedBuffer_count, 0 },
                 { context->m_output.buffer_OutputTypedBuffer, context->m_output.buffer_OutputTypedBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputTypedBuffer_stride, context->m_output.buffer_OutputTypedBuffer_count, 0 },
+                { context->m_input.buffer_InputTypedStructBuffer, context->m_input.buffer_InputTypedStructBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputTypedStructBuffer_stride, context->m_input.buffer_InputTypedStructBuffer_count, 0 },
+                { context->m_output.buffer_OutputTypedStructBuffer, context->m_output.buffer_OutputTypedStructBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputTypedStructBuffer_stride, context->m_output.buffer_OutputTypedStructBuffer_count, 0 },
                 { context->m_input.buffer_InputStructuredBuffer, context->m_input.buffer_InputStructuredBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputStructuredBuffer_stride, context->m_input.buffer_InputStructuredBuffer_count, 0 },
                 { context->m_output.buffer_OutputStructuredBuffer, context->m_output.buffer_OutputStructuredBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputStructuredBuffer_stride, context->m_output.buffer_OutputStructuredBuffer_count, 0 },
                 { context->m_input.buffer_InputTypedBufferRaw, context->m_input.buffer_InputTypedBufferRaw_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, true, context->m_input.buffer_InputTypedBufferRaw_stride, context->m_input.buffer_InputTypedBufferRaw_count, 0 },
@@ -915,7 +959,7 @@ namespace buffertest
                 { context->m_internal.constantBuffer__BufferTestCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
             };
 
-            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 7, Context::LogFn);
+            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 9, Context::LogFn);
             commandList->SetComputeRootDescriptorTable(0, descriptorTable);
 
             unsigned int baseDispatchSize[3] = { context->m_input.buffer_InputTypedBuffer_count, 1, 1 };
@@ -939,7 +983,7 @@ namespace buffertest
         // Make sure imported resources are put back in the state they were given to us in
         {
             int barrierCount = 0;
-            D3D12_RESOURCE_BARRIER barriers[3];
+            D3D12_RESOURCE_BARRIER barriers[4];
 
             if(context->m_input.buffer_InputTypedBuffer_state != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
             {
@@ -970,6 +1014,17 @@ namespace buffertest
                 barriers[barrierCount].Transition.pResource = context->m_input.buffer_InputTypedBufferRaw;
                 barriers[barrierCount].Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
                 barriers[barrierCount].Transition.StateAfter = context->m_input.buffer_InputTypedBufferRaw_state;
+                barriers[barrierCount].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                barrierCount++;
+            }
+
+            if(context->m_input.buffer_InputTypedStructBuffer_state != D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+            {
+                barriers[barrierCount].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                barriers[barrierCount].Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                barriers[barrierCount].Transition.pResource = context->m_input.buffer_InputTypedStructBuffer;
+                barriers[barrierCount].Transition.StateBefore = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+                barriers[barrierCount].Transition.StateAfter = context->m_input.buffer_InputTypedStructBuffer_state;
                 barriers[barrierCount].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
                 barrierCount++;
             }
@@ -1065,6 +1120,32 @@ namespace buffertest
                 m_output.buffer_OutputTypedBufferRaw_count = desiredCount;
                 m_output.buffer_OutputTypedBufferRaw_format = desiredFormat;
                 m_output.buffer_OutputTypedBufferRaw_stride = desiredStride;
+            }
+        }
+
+        // OutputTypedStructBuffer
+        // An internal buffer used during the filtering process.
+        {
+            unsigned int baseCount = m_input.buffer_InputTypedBuffer_count;
+            unsigned int desiredCount = ((baseCount + 0 ) * 1) / 1 + 0;
+            DXGI_FORMAT desiredFormat = m_input.buffer_InputTypedBuffer_format;
+            unsigned int desiredStride = m_input.buffer_InputTypedBuffer_stride;
+
+            if(!m_output.buffer_OutputTypedStructBuffer ||
+               m_output.buffer_OutputTypedStructBuffer_count != desiredCount ||
+               m_output.buffer_OutputTypedStructBuffer_format != desiredFormat ||
+               m_output.buffer_OutputTypedStructBuffer_stride != desiredStride)
+            {
+                dirty = true;
+                if(m_output.buffer_OutputTypedStructBuffer)
+                    s_delayedRelease.Add(m_output.buffer_OutputTypedStructBuffer);
+
+                unsigned int desiredSize = desiredCount * ((desiredStride > 0) ? desiredStride : DX12Utils::Get_DXGI_FORMAT_Info(desiredFormat, Context::LogFn).bytesPerPixel);
+
+                m_output.buffer_OutputTypedStructBuffer = DX12Utils::CreateBuffer(device, desiredSize, m_output.c_buffer_OutputTypedStructBuffer_flags, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"OutputTypedStructBuffer" : nullptr), Context::LogFn);
+                m_output.buffer_OutputTypedStructBuffer_count = desiredCount;
+                m_output.buffer_OutputTypedStructBuffer_format = desiredFormat;
+                m_output.buffer_OutputTypedStructBuffer_stride = desiredStride;
             }
         }
 

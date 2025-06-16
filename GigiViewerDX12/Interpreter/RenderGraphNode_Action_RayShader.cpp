@@ -96,7 +96,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				desc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 				desc.MinLOD = 0.0f;
 				desc.MaxLOD = D3D12_FLOAT32_MAX;
-				desc.ShaderRegister = (UINT)samplers.size();
+				desc.ShaderRegister = sampler.registerIndex;
 				desc.RegisterSpace = 0;
 				desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
@@ -159,6 +159,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				if (error) error->Release();
 				return false;
 			}
+
+			OnRootSignature(sig, node.shader.shader);
 
 			hr = m_device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&runtimeData.m_rootSignature));
 			if (FAILED(hr))
@@ -239,7 +241,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				newExport.shaderType = shader.type;
 				shaderExports.push_back(newExport);
 			}
-			shaderExports.push_back({ node.shader.shader, node.shader.shader->destFileName, (node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint), ToWideString((node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint).c_str()), L"", ShaderType::RTRayGen});
+			shaderExports.push_back({ node.shader.shader, node.shader.shader->destFileName, node.shader.shader->entryPoint, ToWideString(node.shader.shader->entryPoint.c_str()), L"", ShaderType::RTRayGen});
 
 			// give each shader export a unique name
 			for (size_t i = 0; i < shaderExports.size(); ++i)
@@ -285,6 +287,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			{
 				shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
 			}
+
+			if (m_renderGraph.settings.dx12.Allow16BitTypes && m_dx12_options4.Native16BitShaderOpsSupported)
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::Enable16BitTypes;
 
 			if (m_renderGraph.settings.dx12.DXC_HLSL_2021)
 			{
@@ -710,9 +715,25 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 						else
 						{
 							desc.m_resource = resourceInfo.m_resource;
-							desc.m_format = resourceInfo.m_format;
-							desc.m_stride = (desc.m_format == DXGI_FORMAT_UNKNOWN) ? resourceInfo.m_size / resourceInfo.m_count : 0;
-							desc.m_count = resourceInfo.m_count;
+
+							const ShaderResourceBuffer& shaderResourceBuffer = node.shader.shader->resources[depIndex].buffer;
+							bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
+							if (isStructuredBuffer)
+							{
+								desc.m_format = DXGI_FORMAT_UNKNOWN;
+								if (shaderResourceBuffer.typeStruct.structIndex != -1)
+									desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
+								else
+									desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
+								desc.m_count = resourceInfo.m_size / desc.m_stride;
+							}
+							else
+							{
+								desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
+								desc.m_stride = 0;
+								desc.m_count = resourceInfo.m_count;
+							}
+
 							desc.m_raw = node.shader.shader->resources[depIndex].buffer.raw;
 						}
 						break;

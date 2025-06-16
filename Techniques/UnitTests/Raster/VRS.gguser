@@ -18,13 +18,22 @@
     "snapshot": {
         "resourceViewNodeIndex": 4,
         "resourceViewResourceIndex": 3,
+        "cameraPos": [
+            0.1683070808649063,
+            0.38305947184562685,
+            7.200263023376465
+        ],
+        "cameraAltitudeAzimuth": [
+            -0.0033773789182305338,
+            3.0792999267578127
+        ],
         "importedResources": [
             {
                 "nodeName": "VertexBuffer",
                 "resetEveryFrame": false,
                 "isATexture": false,
                 "buffer": {
-                    "fileName": "..\\OBJAssets\\bunny.obj",
+                    "fileName": "simpleRasterVB.bin",
                     "structIndex": 0
                 }
             }

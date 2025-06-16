@@ -61,6 +61,7 @@ def DoTest():
 				else:
 					Host.Log("Error", outFileName + " didn't exist, creating")
 					numpy.save(outFileName, lastReadbackNp)
+					lastReadbackNp.tofile(outDirName + str(i) + ".bin", "")
 					TestPassed = False
 		else:
 			Host.Log("Error", "Could not readback " + resource[0])

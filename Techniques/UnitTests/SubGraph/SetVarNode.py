@@ -15,8 +15,8 @@ def DoTest():
 	TestPassed = True
 
 	# make sure the output directory exists
-	outDirName = "Techniques/UnitTests/_GoldImages/SubGraph/SetVarNode/"
-	os.makedirs(outDirName, exist_ok=True)
+	#outDirName = "Techniques/UnitTests/_GoldImages/SubGraph/SetVarNode/"
+	#os.makedirs(outDirName, exist_ok=True)
 
 	# Load the technique
 	if not Host.LoadGG("Techniques/UnitTests/SubGraph/SetVarNode.gg"):

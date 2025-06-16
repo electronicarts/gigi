@@ -574,6 +574,53 @@ static void ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, co
 	v2[0] = v[0];
 }
 
+static void ShowUI_Float_16(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* rawStorage)
+{
+    half* storageHalf = (half*)rawStorage;
+    float value = *storageHalf;
+
+    if (variable.UISettings.UIHint == VariableUIHint::Angle)
+    {
+        ImGui::SliderAngle(variable.originalName.c_str(), &value);
+    }
+    else if (variable.UISettings.UIHint == VariableUIHint::Drag)
+    {
+        float speed = 1.0f;
+        float min = 0.0f;
+        float max = 0.0f;
+
+        if (!variable.UISettings.step.empty())
+            sscanf_s(variable.UISettings.step.c_str(), "%f", &speed);
+
+        if (!variable.UISettings.min.empty())
+            sscanf_s(variable.UISettings.min.c_str(), "%f", &min);
+
+        if (!variable.UISettings.max.empty())
+            sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
+
+        ImGui::DragFloat(variable.originalName.c_str(), &value, speed, min, max);
+    }
+    else if (variable.UISettings.UIHint == VariableUIHint::Slider)
+    {
+        float min = 0.0f;
+        float max = 1.0f;
+
+        if (!variable.UISettings.min.empty())
+            sscanf_s(variable.UISettings.min.c_str(), "%f", &min);
+
+        if (!variable.UISettings.max.empty())
+            sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
+
+        ImGui::SliderFloat(variable.originalName.c_str(), &value, min, max);
+    }
+    else
+    {
+        ImGui::InputFloat(variable.originalName.c_str(), &value);
+    }
+
+    *storageHalf = value;
+}
+
 static void ShowUI_Int_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	int64_t* v2 = (int64_t*)storage;

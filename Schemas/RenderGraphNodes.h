@@ -270,6 +270,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_ResourceBase, RenderGraphNode_Base, "The ba
     STRUCT_FIELD(ShaderResourceAccessType, finalState, ShaderResourceAccessType::Count, "The last state that a reosurce is in. Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(unsigned int, accessedAs, 0, "A bitfield of all the ways this resource is accessed (ShaderResourceAccessType). Useful for creating resources with the correct usage flags.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(unsigned int, originallyAccessedAs, 0, "Same as accessedAs, but uses original access instead of access, in case access was modified", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_ActionBase, RenderGraphNode_Base, "The base type for action node types")

@@ -121,12 +121,12 @@ namespace simpleRaster
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Color_Buffer;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Color_Buffer_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -1147,8 +1147,8 @@ namespace simpleRaster
             std::vector<D3D12_INPUT_ELEMENT_DESC> vertexInputLayout;
 
             // Vertex buffer vertex input layout
-                vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
-                vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            vertexInputLayout.push_back({ "POSITION", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
+            vertexInputLayout.push_back({ "NORMAL", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 12, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
 
             // Make the PSO desc
             D3D12_GRAPHICS_PIPELINE_STATE_DESC psoDesc = {};

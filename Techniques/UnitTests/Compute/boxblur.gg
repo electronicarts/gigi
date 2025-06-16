@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "boxblur",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "enabled",
@@ -80,12 +80,18 @@
                 {
                     "name": "Input",
                     "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -202,5 +208,8 @@
                 "entryPoint": "BlurV"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "InputTexture"
+    }
 }

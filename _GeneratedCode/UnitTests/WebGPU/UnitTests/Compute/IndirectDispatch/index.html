@@ -1,0 +1,548 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>IndirectDispatch</title>
+        <link rel="stylesheet" href="../../../style.css">
+        <script type="module">
+            import { test_Compute_IndirectDispatch } from "../../../UnitTestLogic.js";
+
+
+            const VK_SHIFT = 0x10;
+            const VK_CONTROL = 0x11;
+            const VK_UP = 0x26;
+            const VK_DOWN = 0x28;
+            const VK_LEFT = 0x25;
+            const VK_RIGHT = 0x27;
+            const VK_PRIOR = 0x21;
+            const VK_NEXT = 0x22;
+
+            const VK_W = 87;
+            const VK_A = 65;
+            const VK_S = 83;
+            const VK_D = 68;
+            const VK_E = 69;
+            const VK_Q = 81;
+
+            const VK_w = 87 + 32;
+            const VK_a = 65 + 32;
+            const VK_s = 83 + 32;
+            const VK_d = 68 + 32;
+            const VK_e = 69 + 32;
+            const VK_q = 81 + 32;
+
+            // Handle collapsible variable tables
+            var coll = document.getElementsByClassName("collapsible");
+            for (let i = 0; i < coll.length; i++)
+            {
+                coll[i].addEventListener("click", function ()
+                {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.display === "block")
+                        content.style.display = "none";
+                    else
+                        content.style.display = "block";
+                });
+            }
+
+            // Handle viewing texture drop down
+            let viewingTextureName = "Render_Target";
+            document.getElementById("Viewing").addEventListener('change', (event) => { if (event.target.value.length != 0) viewingTextureName = event.target.value; });
+
+            function parseUint(value)
+            {
+                value = parseInt(value);
+                if (value < 0)
+                    value = 0;
+                return value;
+            }
+
+            let CameraPos = [ 0, 0, -10 ];
+            let CameraAltitudeAzimuth = [ 0, 0 ];
+            let CameraLeftHanded = true;
+            let CameraFlySpeed = 0.1;
+            let CameraMouseSensitivity = 0.01;
+            let CameraChanged = false;
+
+            let CameraPos_Starting = [ 0, 0, -10 ];
+            let CameraAltitudeAzimuth_Starting = [ 0, 0 ];
+
+            SetCameraUIToCamera();
+
+            function ResetCamera()
+            {
+                CameraPos = CameraPos_Starting.slice();
+                CameraAltitudeAzimuth = CameraAltitudeAzimuth_Starting.slice();
+                SetCameraUIToCamera();
+            }
+            document.getElementById('ResetCamera').addEventListener('click', (event) => { ResetCamera(); });
+
+            document.getElementById("CameraPos0").addEventListener('change', (event) => { CameraPos[0] = event.target.value; });
+            document.getElementById("CameraPos1").addEventListener('change', (event) => { CameraPos[1] = event.target.value; });
+            document.getElementById("CameraPos2").addEventListener('change', (event) => { CameraPos[2] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth0").addEventListener('change', (event) => { CameraAltitudeAzimuth[0] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth1").addEventListener('change', (event) => { CameraAltitudeAzimuth[1] = event.target.value; });
+
+            // Camera mouse sensitivity and fly speed
+            document.getElementById("CameraMouseSensitivity").value = 0.01;
+            document.getElementById("CameraFlySpeed").value = 0.1;
+            document.getElementById("CameraMouseSensitivity").addEventListener('change', (event) => { CameraMouseSensitivity = event.target.value; });
+            document.getElementById("CameraFlySpeed").addEventListener('change', (event) => { CameraFlySpeed = event.target.value; });
+
+            function SetCameraUIToCamera()
+            {
+                document.getElementById("CameraPos0").value = CameraPos[0];
+                document.getElementById("CameraPos1").value = CameraPos[1];
+                document.getElementById("CameraPos2").value = CameraPos[2];
+
+                document.getElementById("CameraAltitudeAzimuth0").value = CameraAltitudeAzimuth[0];
+                document.getElementById("CameraAltitudeAzimuth1").value = CameraAltitudeAzimuth[1];
+            }
+
+            function UpdateCamera(frameTimeSeconds)
+            {
+                CameraChanged = false;
+
+                // To account for frame time
+                const movementMultiplier = frameTimeSeconds * 60.0;
+
+                // If the mouse is dragging, rotate the camera
+                if (MouseState[2] && MouseStateLastFrame[2])
+                {
+                    let dx = MouseStateLastFrame[0] - MouseState[0];
+                    let dy = MouseStateLastFrame[1] - MouseState[1];
+
+                    dx *= movementMultiplier;
+                    dy *= movementMultiplier;
+
+                    if (!CameraLeftHanded)
+                    {
+                        dx *= -1.0;
+                        dy *= -1.0;
+                    }
+
+                    CameraAltitudeAzimuth[0] += dy * CameraMouseSensitivity;
+                    CameraAltitudeAzimuth[0] = Math.max(Math.min(CameraAltitudeAzimuth[0], Math.PI * 0.49), -Math.PI * 0.49);
+
+                    CameraAltitudeAzimuth[1] += dx * CameraMouseSensitivity;
+                    if (CameraAltitudeAzimuth[1] < 0.0)
+                        CameraAltitudeAzimuth[1] += 2.0 * Math.PI;
+                    CameraAltitudeAzimuth[1] = CameraAltitudeAzimuth[1] % (2.0 * Math.PI);
+
+                    if (dx != 0.0 || dy != 0.0)
+                        CameraChanged = true;
+                }
+
+                // Handle WASD
+                {
+                    const viewMatrix = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+
+                    const left = [ viewMatrix[0], viewMatrix[4], viewMatrix[8] ];
+                    const up   = [ viewMatrix[1], viewMatrix[5], viewMatrix[9] ];
+                    const fwd  = [ viewMatrix[2], viewMatrix[6], viewMatrix[10] ];
+
+                    let flySpeed = CameraFlySpeed * movementMultiplier;
+
+                    if (KeyStates[VK_SHIFT])
+                        flySpeed *= 10.0;
+                    else if (KeyStates[VK_CONTROL])
+                        flySpeed /= 10.0;
+
+                    if (!CameraLeftHanded)
+                    {
+                        fwd[0] *= -1.0;
+                        fwd[1] *= -1.0;
+                        fwd[2] *= -1.0;
+                    }
+
+                    if (KeyStates[VK_W] || KeyStates[VK_w] || KeyStates[VK_UP])
+                    {
+                        CameraPos[0] += fwd[0] * flySpeed;
+                        CameraPos[1] += fwd[1] * flySpeed;
+                        CameraPos[2] += fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_S] || KeyStates[VK_s] || KeyStates[VK_DOWN])
+                    {
+                        CameraPos[0] -= fwd[0] * flySpeed;
+                        CameraPos[1] -= fwd[1] * flySpeed;
+                        CameraPos[2] -= fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_A] || KeyStates[VK_a] || KeyStates[VK_LEFT])
+                    {
+                        CameraPos[0] -= left[0] * flySpeed;
+                        CameraPos[1] -= left[1] * flySpeed;
+                        CameraPos[2] -= left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_D] || KeyStates[VK_d] || KeyStates[VK_RIGHT])
+                    {
+                        CameraPos[0] += left[0] * flySpeed;
+                        CameraPos[1] += left[1] * flySpeed;
+                        CameraPos[2] += left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_E] || KeyStates[VK_e] || KeyStates[VK_PRIOR])
+                    {
+                        CameraPos[0] += up[0] * flySpeed;
+                        CameraPos[1] += up[1] * flySpeed;
+                        CameraPos[2] += up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_Q] || KeyStates[VK_q] || KeyStates[VK_NEXT])
+                    {
+                        CameraPos[0] -= up[0] * flySpeed;
+                        CameraPos[1] -= up[1] * flySpeed;
+                        CameraPos[2] -= up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+                }
+
+                if (CameraChanged)
+                    SetCameraUIToCamera();
+            }
+
+            // Import the technique
+            import IndirectDispatch from "./IndirectDispatch_Module.js"
+            import * as Shared from '../../../Shared.js';
+
+            // Initialize WebGPU
+            const canvas = document.getElementById('mainCanvas');
+            if (!navigator.gpu)
+            {
+                alert("WebGPU not supported on this browser.");
+                throw new Error("WebGPU not supported on this browser.");
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter)
+            {
+                alert("No appropriate GPUAdapter found.");
+                throw new Error("No appropriate GPUAdapter found.");
+            }
+
+            const device = await adapter.requestDevice({
+                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
+                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+            });
+
+            const context = canvas.getContext("webgpu");
+            //const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+            const canvasFormat = "rgba8unorm";
+            context.configure({
+                device: device,
+                format: canvasFormat,
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+            });
+
+            // Setup canvas events
+            let iMouse = [0, 0, 0, 0];
+            let MouseState = [0, 0, 0, 0];
+            let MouseStateLastFrame = [0, 0, 0, 0];
+            let KeyStates = Array(256).fill(0);
+            let KeyStatesLastFrame = Array(256).fill(0);
+            canvas.addEventListener('click', (event) => { if (event.button == 0) { iMouse[0] = event.offsetX; iMouse[1] = event.offsetY; iMouse[2] = iMouse[0]; iMouse[3] = iMouse[1]; } });
+            canvas.addEventListener('mousemove', (event) => { MouseState[0] = event.offsetX; MouseState[1] = event.offsetY; });
+            canvas.addEventListener('mousedown', (event) => { if (event.button == 0) { MouseState[2] = 1 } else if (event.button == 2) { MouseState[3] = 1 } });
+            canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
+            canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
+            canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_Dispatch_Count_10').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); IndirectDispatch.variable_Dispatch_Count_1[0]=event.target.value;});
+            document.getElementById('inputBox_Dispatch_Count_11').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); IndirectDispatch.variable_Dispatch_Count_1[1]=event.target.value;});
+            document.getElementById('inputBox_Dispatch_Count_12').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); IndirectDispatch.variable_Dispatch_Count_1[2]=event.target.value;});
+            document.getElementById('inputBox_Dispatch_Count_20').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); IndirectDispatch.variable_Dispatch_Count_2[0]=event.target.value;});
+            document.getElementById('inputBox_Dispatch_Count_21').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); IndirectDispatch.variable_Dispatch_Count_2[1]=event.target.value;});
+            document.getElementById('inputBox_Dispatch_Count_22').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); IndirectDispatch.variable_Dispatch_Count_2[2]=event.target.value;});
+            document.getElementById('inputBox_Second_Dispatch_Offset').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); IndirectDispatch.variable_Second_Dispatch_Offset=event.target.value;});
+
+            function ResetVariables()
+            {
+                    IndirectDispatch.variable_Dispatch_Count_1[0] = IndirectDispatch.variableDefault_Dispatch_Count_1[0];
+                    IndirectDispatch.variable_Dispatch_Count_1[1] = IndirectDispatch.variableDefault_Dispatch_Count_1[1];
+                    IndirectDispatch.variable_Dispatch_Count_1[2] = IndirectDispatch.variableDefault_Dispatch_Count_1[2];
+                    IndirectDispatch.variable_Dispatch_Count_2[0] = IndirectDispatch.variableDefault_Dispatch_Count_2[0];
+                    IndirectDispatch.variable_Dispatch_Count_2[1] = IndirectDispatch.variableDefault_Dispatch_Count_2[1];
+                    IndirectDispatch.variable_Dispatch_Count_2[2] = IndirectDispatch.variableDefault_Dispatch_Count_2[2];
+                    IndirectDispatch.variable_Second_Dispatch_Offset = IndirectDispatch.variableDefault_Second_Dispatch_Offset;
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_Dispatch_Count_10').value = IndirectDispatch.variable_Dispatch_Count_1[0];
+                    document.getElementById('inputBox_Dispatch_Count_11').value = IndirectDispatch.variable_Dispatch_Count_1[1];
+                    document.getElementById('inputBox_Dispatch_Count_12').value = IndirectDispatch.variable_Dispatch_Count_1[2];
+                    document.getElementById('inputBox_Dispatch_Count_20').value = IndirectDispatch.variable_Dispatch_Count_2[0];
+                    document.getElementById('inputBox_Dispatch_Count_21').value = IndirectDispatch.variable_Dispatch_Count_2[1];
+                    document.getElementById('inputBox_Dispatch_Count_22').value = IndirectDispatch.variable_Dispatch_Count_2[2];
+                    document.getElementById('inputBox_Second_Dispatch_Offset').value = IndirectDispatch.variable_Second_Dispatch_Offset;
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
+            // Initialize the technique from unit test logic
+            await test_Compute_IndirectDispatch.Init(device, IndirectDispatch);
+
+            // Set variables to what they were saved as in the gguser file
+            IndirectDispatch.variable_Dispatch_Count_1 = [50,50,1];
+            IndirectDispatch.variable_Dispatch_Count_2 = [100,100,1];
+            IndirectDispatch.variable_Second_Dispatch_Offset = 2;
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
+
+            // Frame rendering function
+            let startTimeMs;
+            let lastTimeMs;
+            let frameIndex = 0
+            async function RenderFrame(currentTimeMs) {
+
+                // Handle frame timing
+                if (startTimeMs === undefined)
+                {
+                    startTimeMs = currentTimeMs;
+                    lastTimeMs = currentTimeMs;
+                }
+
+                // Show FPS
+                document.getElementById("FPS").innerHTML = "<br><br>FPS: " + (1000.0 / (currentTimeMs - lastTimeMs)).toFixed(2) + "<br>ms: " + (currentTimeMs - lastTimeMs).toFixed(2);
+
+                // Update the camera based on user input
+                UpdateCamera((currentTimeMs - lastTimeMs) / 1000);
+
+                // Run the technique
+                const encoder = device.createCommandEncoder();
+
+                // Do pre execute unit test logic
+                test_Compute_IndirectDispatch.PreExecute(device, encoder, IndirectDispatch, frameIndex);
+
+                // Projection matrix resolution texture
+                const projMtxResolution = [ 1, 1 ];
+
+                const executeResult = await IndirectDispatch.Execute(device, encoder, false);
+                if (!executeResult)
+                {
+                    alert("Could not execute IndirectDispatch");
+                    throw new Error("Could not execute IndirectDispatch");
+                }
+
+                if (viewingTextureName.length != 0 && IndirectDispatch["texture_" + viewingTextureName] !== null)
+                {
+                    // Update size of the canvas
+                    document.getElementById("mainCanvas").width = IndirectDispatch["texture_" + viewingTextureName].width;
+                    document.getElementById("mainCanvas").height = IndirectDispatch["texture_" + viewingTextureName].height;
+
+                    if (!Shared.CopyCompatibleFormats(IndirectDispatch["texture_" + viewingTextureName].format, canvasFormat))
+                    {
+                        Shared.CopyTextureLinearToSRGB(device, encoder, IndirectDispatch["texture_" + viewingTextureName], context.getCurrentTexture());
+                    }
+                    else
+                    {
+                        encoder.copyTextureToTexture(
+                            { texture: IndirectDispatch["texture_" + viewingTextureName] },
+                            { texture: context.getCurrentTexture() },
+                            {
+                                width: Math.min(IndirectDispatch["texture_" + viewingTextureName].width, context.getCurrentTexture().width),
+                                height: Math.min(IndirectDispatch["texture_" + viewingTextureName].height, context.getCurrentTexture().height),
+                                depthOrArrayLayers: Math.min(IndirectDispatch["texture_" + viewingTextureName].depthOrArrayLayers, context.getCurrentTexture().depthOrArrayLayers)
+                            }
+                        );
+                    }
+                }
+
+                // If the technique changed the variables, update the UI
+                if (IndirectDispatch.variableChanged_Dispatch_Count_1[0])
+                {
+                    document.getElementById('inputBox_Dispatch_Count_10').value = IndirectDispatch.variable_Dispatch_Count_1[0];
+                    IndirectDispatch.variableChanged_Dispatch_Count_1[0] = false;
+                }
+
+                if (IndirectDispatch.variableChanged_Dispatch_Count_1[1])
+                {
+                    document.getElementById('inputBox_Dispatch_Count_11').value = IndirectDispatch.variable_Dispatch_Count_1[1];
+                    IndirectDispatch.variableChanged_Dispatch_Count_1[1] = false;
+                }
+
+                if (IndirectDispatch.variableChanged_Dispatch_Count_1[2])
+                {
+                    document.getElementById('inputBox_Dispatch_Count_12').value = IndirectDispatch.variable_Dispatch_Count_1[2];
+                    IndirectDispatch.variableChanged_Dispatch_Count_1[2] = false;
+                }
+
+                if (IndirectDispatch.variableChanged_Dispatch_Count_2[0])
+                {
+                    document.getElementById('inputBox_Dispatch_Count_20').value = IndirectDispatch.variable_Dispatch_Count_2[0];
+                    IndirectDispatch.variableChanged_Dispatch_Count_2[0] = false;
+                }
+
+                if (IndirectDispatch.variableChanged_Dispatch_Count_2[1])
+                {
+                    document.getElementById('inputBox_Dispatch_Count_21').value = IndirectDispatch.variable_Dispatch_Count_2[1];
+                    IndirectDispatch.variableChanged_Dispatch_Count_2[1] = false;
+                }
+
+                if (IndirectDispatch.variableChanged_Dispatch_Count_2[2])
+                {
+                    document.getElementById('inputBox_Dispatch_Count_22').value = IndirectDispatch.variable_Dispatch_Count_2[2];
+                    IndirectDispatch.variableChanged_Dispatch_Count_2[2] = false;
+                }
+
+                if (IndirectDispatch.variableChanged_Second_Dispatch_Offset)
+                {
+                    document.getElementById('inputBox_Second_Dispatch_Offset').value = IndirectDispatch.variable_Second_Dispatch_Offset;
+                    IndirectDispatch.variableChanged_Second_Dispatch_Offset = false;
+                }
+
+
+                // Submit the command encoder
+                device.queue.submit([encoder.finish()]);
+
+                // advance to the next frame
+                lastTimeMs = currentTimeMs;
+
+                // Only do end of frame logic if we should.
+                // If we are waiting on promises (shader compiles), Execute()
+                // has frame start logic, but is waiting to do frame end logic, so we should too.
+                if (!IndirectDispatch.waitingOnPromises)
+                {
+                    frameIndex = frameIndex + 1;
+
+                    // Update mouse states
+                    iMouse[2] = 0;
+                    iMouse[3] = 0;
+                    MouseStateLastFrame = MouseState.slice();
+
+                    // Update keyboard states
+                    KeyStatesLastFrame = KeyStates.slice();
+                }
+
+                // Update the loading list
+                let loadingText = "";
+                if (IndirectDispatch.loadingPromises.size > 0)
+                    loadingText = "Nodes building shaders:";
+                for (const label of IndirectDispatch.loadingPromises)
+                    loadingText = loadingText + "<br/>" + label;
+                document.getElementById("LoadingText").innerHTML = loadingText;
+
+                // Render the next frame
+                requestAnimationFrame(RenderFrame);
+            }
+
+            // Render the first frame
+            requestAnimationFrame(RenderFrame);
+        </script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td valign="top">
+                    <a href="/index.html">Index</a>
+                    <a href="/UnitTests\Compute\Defines\index.html"> << </a>
+                    7 / 49
+                    <a href="/UnitTests\Compute\ReadbackSequence\index.html"> >> </a><br/>
+                    <canvas width="512" height="512" id="mainCanvas" tabindex="0"></canvas>
+                    <br/><br/>
+                    <label for="Viewing">Viewing</label>
+                    <select name="Viewing" id="Viewing">
+                        <option value="Render_Target">Render_Target</option><br/>
+                        <option value="">----- Exported Textures -----</option><br/>
+                        <option value="Render_Target">Render_Target</option><br/>
+                        <option value="">----- Internal Textures -----</option><br/>
+                        <option value="Clear_Render_Target_Render_Target_ReadOnly">Clear_Render_Target_Render_Target_ReadOnly</option><br/>
+                        <option value="Do_Indirect_Dispatch_1_Render_Target_ReadOnly">Do_Indirect_Dispatch_1_Render_Target_ReadOnly</option><br/>
+                        <option value="Do_Indirect_Dispatch_2_Render_Target_ReadOnly">Do_Indirect_Dispatch_2_Render_Target_ReadOnly</option><br/>
+                    </select>
+                </td>
+                <td>&nbsp;</td>
+                <td valign="top">
+                    <b>IndirectDispatch</b><br/>
+                    <button type="button" class="collapsible">User Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td valign="top">Dispatch_Count_1&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_Dispatch_Count_10">
+                                <input type="text" id="inputBox_Dispatch_Count_11">
+                                <input type="text" id="inputBox_Dispatch_Count_12">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Dispatch_Count_2&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_Dispatch_Count_20">
+                                <input type="text" id="inputBox_Dispatch_Count_21">
+                                <input type="text" id="inputBox_Dispatch_Count_22">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Second_Dispatch_Offset&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_Second_Dispatch_Offset">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
+
+                    <button type=button class="collapsible">Camera</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td>Camera Pos</td>
+                            <td>
+                                <input type="text" id="CameraPos0" />
+                                <input type="text" id="CameraPos1" />
+                                <input type="text" id="CameraPos2" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Altitude Azimuth</td>
+                            <td>
+                                <input type="text" id="CameraAltitudeAzimuth0" />
+                                <input type="text" id="CameraAltitudeAzimuth1" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td>Mouse Sensitivity</td>
+                            <td><input type="text" id="CameraMouseSensitivity" /></td>
+                        </tr>
+                        <tr>
+                            <td>Fly Speed</td>
+                            <td><input type="text" id="CameraFlySpeed" /></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><br /><button type="button" id="ResetCamera">Reset Camera</button><br /></td>
+                        </tr>
+                    </table>
+                    <br/><br/>
+                    <button type=button class="collapsible">Loading</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td><span id="LoadingText"></span></td>
+                        </tr>
+                    </table>
+                    <span id="FPS"></span>
+                    <br />
+                    <br />
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

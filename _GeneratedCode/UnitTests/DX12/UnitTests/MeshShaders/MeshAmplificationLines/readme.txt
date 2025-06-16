@@ -107,5 +107,5 @@ there instead of in the usual windows SDK location.
 
 You also need to add this to a single cpp file (such as where your main function exists):
 
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 616; }
 extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\AgilitySDK\\bin\\"; }

@@ -1,6 +1,6 @@
 {
     "systemVars": {
-        "iFrameRate_varName": "frameDeltaTime",
+        "iTimeDelta_varName": "frameDeltaTime",
         "iFrame_varName": "frameIndex"
     },
     "resourceViewType": 3,

@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "SubGraphLoops",
-    "version": "0.991b",
+    "version": "1.0",
     "nodes": [
         {
             "actionSubGraph": {
@@ -67,5 +67,8 @@
                 "visibility": "Imported"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "FilterSub_Iteration_4.Output"
+    }
 }

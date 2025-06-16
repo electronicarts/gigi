@@ -50,8 +50,13 @@ namespace FrontEndNodes
         return node.visibility;
     }
 
-    inline void AddResourceAccessedAs(RenderGraphNode_Resource_Texture& node, ShaderResourceAccessType state)
+    inline void AddResourceAccessedAs(RenderGraphNode_Resource_Texture& node, ShaderResourceAccessType state, ShaderResourceAccessType originalState)
     {
         node.accessedAs |= (1 << (unsigned int)state);
+
+        if (originalState == ShaderResourceAccessType::Count)
+            originalState = state;
+
+        node.originallyAccessedAs |= (1 << (unsigned int)originalState);
     }
 };

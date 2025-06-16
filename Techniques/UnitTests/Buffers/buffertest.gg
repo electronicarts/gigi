@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "buffertest",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "gain",
@@ -29,11 +29,6 @@
         {
             "name": "BufferTest",
             "fileName": "BufferTest.hlsl",
-            "CSNumThreads": [
-                64,
-                1,
-                1
-            ],
             "NumThreads": [
                 64,
                 1,
@@ -56,6 +51,22 @@
                     "buffer": {
                         "type": "Float",
                         "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "InputTypedStruct",
+                    "type": "Buffer",
+                    "access": "SRV",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "OutputTypedStruct",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float"
                     }
                 },
                 {
@@ -100,6 +111,11 @@
                         "PODAsStructuredBuffer": false
                     }
                 }
+            ],
+            "CSNumThreads": [
+                64,
+                1,
+                1
             ]
         }
     ],
@@ -131,8 +147,8 @@
                 "name": "InputTypedBuffer",
                 "comment": "This is the buffer to be filtered.",
                 "editorPos": [
-                    1145.0,
-                    -191.0
+                    1133.0,
+                    -206.0
                 ],
                 "visibility": "Imported"
             }
@@ -142,8 +158,8 @@
                 "name": "OutputTypedBuffer",
                 "comment": "An internal buffer used during the filtering process.",
                 "editorPos": [
-                    1129.0,
-                    -111.0
+                    1124.0,
+                    -158.0
                 ],
                 "visibility": "Exported",
                 "format": {
@@ -162,8 +178,8 @@
             "resourceBuffer": {
                 "name": "InputStructuredBuffer",
                 "editorPos": [
-                    1097.0,
-                    -31.0
+                    1108.0,
+                    -14.0
                 ],
                 "visibility": "Imported",
                 "format": {
@@ -177,8 +193,8 @@
             "resourceBuffer": {
                 "name": "OutputStructuredBuffer",
                 "editorPos": [
-                    1097.0,
-                    48.0
+                    1099.0,
+                    34.0
                 ],
                 "visibility": "Exported",
                 "format": {
@@ -198,8 +214,8 @@
                 "name": "InputTypedBufferRaw",
                 "comment": "This is the buffer to be filtered.",
                 "editorPos": [
-                    1113.0,
-                    128.0
+                    1110.0,
+                    82.0
                 ],
                 "visibility": "Imported"
             }
@@ -209,8 +225,8 @@
                 "name": "OutputTypedBufferRaw",
                 "comment": "An internal buffer used during the filtering process.",
                 "editorPos": [
-                    1113.0,
-                    208.0
+                    1101.0,
+                    130.0
                 ],
                 "visibility": "Exported",
                 "format": {
@@ -230,10 +246,12 @@
                 "name": "BufferTest",
                 "comment": "BufferTest compute shader",
                 "editorPos": [
-                    1456.0,
-                    0.0
+                    1493.0,
+                    -122.0
                 ],
                 "linkProperties": [
+                    {},
+                    {},
                     {},
                     {},
                     {},
@@ -251,6 +269,16 @@
                     {
                         "srcPin": "OutputTyped",
                         "dstNode": "OutputTypedBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "InputTypedStruct",
+                        "dstNode": "InputTypedStructBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "OutputTypedStruct",
+                        "dstNode": "OutputTypedStructBuffer",
                         "dstPin": "resource"
                     },
                     {
@@ -283,6 +311,38 @@
                     }
                 },
                 "entryPoint": "Main"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "InputTypedStructBuffer",
+                "comment": "This is the buffer to be filtered.",
+                "editorPos": [
+                    1101.0,
+                    -110.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "OutputTypedStructBuffer",
+                "comment": "An internal buffer used during the filtering process.",
+                "editorPos": [
+                    1092.0,
+                    -62.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "InputTypedBuffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "InputTypedBuffer"
+                    }
+                }
             }
         }
     ]

@@ -182,12 +182,12 @@ namespace SubInSub
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_input.texture_Input;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_input.texture_Input_state;
     }
 
     void OnNewFrame(int framesInFlight)

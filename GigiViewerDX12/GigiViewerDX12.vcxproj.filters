@@ -108,6 +108,7 @@
     </ClCompile>
     <ClCompile Include="ImageReadback.cpp" />
     <ClCompile Include="ImageSave.cpp" />
+    <ClCompile Include="BVH.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">
@@ -241,6 +242,7 @@
     </ClInclude>
     <ClInclude Include="ImageReadback.h" />
     <ClInclude Include="ImageSave.h" />
+    <ClInclude Include="BVH.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiViewerDX12.rc" />
@@ -250,5 +252,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
+    <None Include="..\.editorconfig" />
   </ItemGroup>
 </Project>
