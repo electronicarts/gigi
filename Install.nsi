@@ -103,7 +103,7 @@
 Section "Visual Studio Runtime"
   SetOutPath "$INSTDIR"
   File "VC_redist.x64.exe"
-  ExecWait '"$INSTDIR\VC_redist.x64.exe" /quiet'
+  ExecWait '"$INSTDIR\VC_redist.x64.exe"'
 SectionEnd
 
 ;--------------------------------
