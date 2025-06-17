@@ -701,6 +701,7 @@ bool ProcessShader_HLSL(const Shader& shader, const char* entryPoint, ShaderLang
     includeDirectory.replace_filename("");
 
     std::vector<std::string> includeDirectories;
+    includeDirectories.push_back(includeDirectory.string());
 
     // Process the shader code in memory
     std::string shaderCode;
