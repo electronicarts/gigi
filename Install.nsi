@@ -99,6 +99,14 @@
   SectionEnd
 
 ;--------------------------------
+; Visual Studio Runtime
+Section "Visual Studio Runtime"
+  SetOutPath "$INSTDIR"
+  File "VC_redist.x64.exe"
+  ExecWait '"$INSTDIR\VC_redist.x64.exe" /quiet'
+SectionEnd
+
+;--------------------------------
 ; Remove empty parent directories
 
   Function un.RMDirUP

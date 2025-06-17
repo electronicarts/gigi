@@ -16,6 +16,7 @@ unsupportedTests = [
 
     # Viewer only
     "Buffers\\MultipleUVMesh",
+    "Buffers\\uint16",
     "Data\\ply_cube_uv_struct",
     "Data\\ply_cube_binary_type",
     "Data\\binaryTexU8",
