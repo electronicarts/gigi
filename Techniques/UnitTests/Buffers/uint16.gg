@@ -1,0 +1,86 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "variables": [
+        {
+            "name": "a_big_float3",
+            "type": "Float3",
+            "dflt": "1.0f, 2.0f, 3.0f"
+        },
+        {
+            "name": "a_tiny_uint16",
+            "type": "Uint_16",
+            "dflt": "4"
+        },
+        {
+            "name": "something_big_too",
+            "type": "Uint2",
+            "dflt": "5, 6"
+        },
+        {
+            "name": "z_another_uint16",
+            "type": "Uint_16",
+            "dflt": "7.0f"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Dummy",
+            "fileName": "DummyCS.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Test",
+                    "type": "Buffer",
+                    "access": "UAV",
+                    "buffer": {
+                        "type": "Float3"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "Node 1",
+                "editorPos": [
+                    -37.0,
+                    -46.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Test",
+                        "dstNode": "Node 2",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Dummy"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Node 2",
+                "editorPos": [
+                    -149.0,
+                    -30.0
+                ],
+                "format": {
+                    "type": "Float3"
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_2",
+            "Allow16BitTypes": true
+        }
+    }
+}

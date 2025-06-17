@@ -714,7 +714,7 @@ inline const char* DataFieldTypeToShaderType(DataFieldType type)
         // for true and false instead of 0xffffffff and 0. better to dodge the problem.
         case DataFieldType::Bool: return "uint";
         case DataFieldType::Float4x4: return "float4x4";
-        case DataFieldType::Uint_16: return "uint";
+        case DataFieldType::Uint_16: return "uint16_t";
         case DataFieldType::Int_64: return "int64";
         case DataFieldType::Uint_64: return "uint64";
         case DataFieldType::Float_16: return "float16_t";

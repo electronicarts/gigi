@@ -79,6 +79,9 @@
 static const UINT D3D12SDKVersion_Preview = 717;
 static const UINT D3D12SDKVersion_Retail = 616;
 
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12SDKVersion_Retail; }
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\Retail\\bin\\"; }
+
 static const UUID ExperimentalFeaturesEnabled[] =
 {
     D3D12ExperimentalShaderModels,
@@ -188,7 +191,6 @@ enum class AgilitySDKChoice
 {
     Retail,  // external/AgilitySDK/Retail/bin/
     Preview, // external/AgilitySDK/Preview/bin/
-    None     // Use the binaries the OS has.
 };
 
 // RenderDoc
@@ -7701,11 +7703,6 @@ int main(int argc, char** argv)
             g_useWarpAdapter = true;
             argIndex++;
         }
-        else if (!_stricmp(argv[argIndex], "-AgilitySDKNone"))
-        {
-            g_agilitySDKChoice = AgilitySDKChoice::None;
-            argIndex++;
-        }
         else if (!_stricmp(argv[argIndex], "-AgilitySDKPreview"))
         {
             g_agilitySDKChoice = AgilitySDKChoice::Preview;
@@ -8053,43 +8050,32 @@ int main(int argc, char** argv)
 bool CreateDeviceD3D(HWND hWnd)
 {
     // Handle Agility SDK Choice
-    if (g_agilitySDKChoice != AgilitySDKChoice::None)
+    if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
     {
-        ID3D12SDKConfiguration* sdkConfig = nullptr;
-        D3D12GetInterface(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdkConfig));
-
-        ID3D12SDKConfiguration1* sdkConfig1 = nullptr;
-        sdkConfig->QueryInterface(IID_PPV_ARGS(&sdkConfig1));
-
-        HRESULT hr = E_FAIL;
-        switch (g_agilitySDKChoice)
+        // SDK version
         {
-            case AgilitySDKChoice::Retail:
-            {
-                hr = sdkConfig1->SetSDKVersion(D3D12SDKVersion_Retail, ".\\external\\AgilitySDK\\Retail\\bin\\");
-                Log(LogLevel::Info, "D3D12SDKVersion: %u", D3D12SDKVersion_Retail);
-                break;
-            }
-            case AgilitySDKChoice::Preview:
-            {
-                hr = sdkConfig1->SetSDKVersion(D3D12SDKVersion_Preview, ".\\external\\AgilitySDK\\Preview\\bin\\");
-                Log(LogLevel::Info, "D3D12SDKVersion: %u%s", D3D12SDKVersion_Preview, (D3D12SDKVersion_Retail != D3D12SDKVersion_Preview ? " (Preview)" : ""));
-                break;
-            }
+            ID3D12SDKConfiguration1* sdkConfig1 = nullptr;
+            D3D12GetInterface(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdkConfig1));
+
+            HRESULT hr = sdkConfig1->SetSDKVersion(D3D12SDKVersion_Preview, ".\\external\\AgilitySDK\\Preview\\bin\\");
+            Log(LogLevel::Info, "D3D12SDKVersion: %u%s", D3D12SDKVersion_Preview, (D3D12SDKVersion_Retail != D3D12SDKVersion_Preview ? " (Preview)" : ""));
+
+            if (FAILED(hr))
+                return false;
+
+            sdkConfig1->Release();
         }
 
-        if (FAILED(hr))
-            return false;
-
-        sdkConfig1->Release();
-        sdkConfig->Release();
+        // Enable experimental features
+        {
+            HRESULT hr = D3D12EnableExperimentalFeatures(_countof(ExperimentalFeaturesEnabled), ExperimentalFeaturesEnabled, nullptr, nullptr);
+            if (FAILED(hr))
+                return false;
+        }
     }
-
-    // Enable experimental features
+    else
     {
-        HRESULT hr = D3D12EnableExperimentalFeatures(_countof(ExperimentalFeaturesEnabled), ExperimentalFeaturesEnabled, nullptr, nullptr);
-        if (FAILED(hr))
-            return false;
+        Log(LogLevel::Info, "D3D12SDKVersion: %u", D3D12SDKVersion_Retail);
     }
 
     // Setup swap chain

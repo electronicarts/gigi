@@ -20,40 +20,56 @@ bool AdjustUniformStructForAlignment_DX12(Struct& s, const std::string& path)
         size_t variableSize = DataFieldTypeToSize(s.fields[fieldIndex].type);
         if (byteCount > 0 && byteCount + variableSize > 16)
         {
-            paddingIndex++;
-            StructField padding;
-            std::ostringstream paddingName;
-            paddingName << "_padding" << paddingIndex;
-            padding.name = paddingName.str();
-            switch ((16 - byteCount) / 4)
+            size_t bytesToPad = 16 - byteCount;
+            while (bytesToPad > 0)
             {
-                case 1:
-                {
-                    padding.type = DataFieldType::Float;
-                    padding.dflt = "0.0f";
-                    break;
-                }
-                case 2:
-                {
-                    padding.type = DataFieldType::Float2;
-                    break;
-                }
-                case 3:
-                {
-                    padding.type = DataFieldType::Float3;
-                    break;
-                }
-                default:
-                {
-                    Assert(false, "error while calculating padding.\nIn %s\n", path.c_str());
-                }
-            }
-            padding.comment = "Padding";
-            padding.sizeInBytes = DataFieldTypeInfo(padding.type).typeBytes;
-            padding.isPadding = true;
+                paddingIndex++;
+                StructField padding;
+                std::ostringstream paddingName;
+                paddingName << "_padding" << paddingIndex;
+                padding.name = paddingName.str();
 
-            s.fields.insert(s.fields.begin() + fieldIndex, padding);
-            fieldIndex++;
+                if (bytesToPad % 4 == 2)
+                {
+                    padding.type = DataFieldType::Uint_16;
+                    padding.dflt = "0";
+
+                    bytesToPad -= 2;
+                }
+                else
+                {
+                    switch (bytesToPad)
+                    {
+                        case 4:
+                        {
+                            padding.type = DataFieldType::Float;
+                            padding.dflt = "0.0f";
+                            break;
+                        }
+                        case 8:
+                        {
+                            padding.type = DataFieldType::Float2;
+                            break;
+                        }
+                        case 12:
+                        {
+                            padding.type = DataFieldType::Float3;
+                            break;
+                        }
+                        default:
+                        {
+                            Assert(false, "error while calculating padding.\nIn %s\n", path.c_str());
+                        }
+                    }
+                    bytesToPad = 0;
+                }
+                padding.comment = "Padding";
+                padding.sizeInBytes = DataFieldTypeInfo(padding.type).typeBytes;
+                padding.isPadding = true;
+
+                s.fields.insert(s.fields.begin() + fieldIndex, padding);
+                fieldIndex++;
+            }
 
             byteCount = 0;
         }
@@ -62,41 +78,59 @@ bool AdjustUniformStructForAlignment_DX12(Struct& s, const std::string& path)
     }
 
     // Also, if the struct's final size isn't a multiple of 16 bytes, pad it to be.
-    if (byteCount % 16 != 0)
+    byteCount = byteCount % 16;
+    if (byteCount != 0)
     {
-        paddingIndex++;
-        StructField padding;
-        std::ostringstream paddingName;
-        paddingName << "_padding" << paddingIndex;
-        padding.name = paddingName.str();
-        switch ((16 - (byteCount % 16)) / 4)
-        {
-            case 1:
-            {
-                padding.type = DataFieldType::Float;
-                padding.dflt = "0.0f";
-                break;
-            }
-            case 2:
-            {
-                padding.type = DataFieldType::Float2;
-                break;
-            }
-            case 3:
-            {
-                padding.type = DataFieldType::Float3;
-                break;
-            }
-            default:
-            {
-                Assert(false, "error while calculating terminating padding.\nIn %s\n", path.c_str());
-            }
-        }
-        padding.comment = "Padding";
-        padding.sizeInBytes = DataFieldTypeInfo(padding.type).typeBytes;
-        padding.isPadding = true;
+        size_t bytesToPad = 16 - byteCount;
 
-        s.fields.push_back(padding);
+        while(bytesToPad > 0)
+        {
+            paddingIndex++;
+            StructField padding;
+            std::ostringstream paddingName;
+            paddingName << "_padding" << paddingIndex;
+            padding.name = paddingName.str();
+
+            if (bytesToPad % 4 == 2)
+            {
+                padding.type = DataFieldType::Uint_16;
+                padding.dflt = "0";
+
+                bytesToPad -= 2;
+            }
+            else
+            {
+                switch (bytesToPad)
+                {
+                    case 4:
+                    {
+                        padding.type = DataFieldType::Float;
+                        padding.dflt = "0.0f";
+                        break;
+                    }
+                    case 8:
+                    {
+                        padding.type = DataFieldType::Float2;
+                        break;
+                    }
+                    case 12:
+                    {
+                        padding.type = DataFieldType::Float3;
+                        break;
+                    }
+                    default:
+                    {
+                        Assert(false, "error while calculating terminating padding.\nIn %s\n", path.c_str());
+                    }
+                }
+                bytesToPad = 0;
+            }
+            padding.comment = "Padding";
+            padding.sizeInBytes = DataFieldTypeInfo(padding.type).typeBytes;
+            padding.isPadding = true;
+
+            s.fields.push_back(padding);
+        }
         byteCount = 0;
     }
 

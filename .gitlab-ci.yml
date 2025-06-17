@@ -10,6 +10,8 @@ win64_build_release:
     - .\\buildscripts\\Build_Release.bat
   artifacts:
     paths:
+      - VC_redist.x64.exe
+      - GigiBrowser.ico
       - GigiBrowser.exe
       - GigiBrowser.pdb
       - browserservers.txt

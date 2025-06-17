@@ -56,6 +56,7 @@ unsupportedTests = [
 
     # Viewer only tests
     "Buffers\\MultipleUVMesh",
+    "Buffers\\uint16",
     "Python\\profiling",
     "Python\\GPUWrite",
     "Data\\ply_cube_uv_struct",
