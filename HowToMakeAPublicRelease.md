@@ -71,3 +71,13 @@ I then make a patch, apply it to the internal repo, and verify everything in the
 It's possible that changes which are fine externally need more work in the internal repo.  For instance, changing how a data field on a node works may work fine with the changes for DX12 and Viewer, but internally, may have problems with other platforms.
 
 If you have suspicions that internal work may be needed, you can delay merging the pull request publicly, until you have it sorted out internally.
+
+# Testing on a Clean Windows Install
+
+Sometimes changes accidentally require software to be installed, or OS settings to be set, that won't typically be present on some end user machines.
+
+I've found that testing in "Windows Sandbox" to have a clean windows install helps minimize these problems, and is very convinient to use.
+
+It takes a moment to enable the windows feature, and reboot.  Each time you start it up, it gives you a fresh and clean windows install, taking only a couple seconds to launch.
+
+See this for more information: https://learn.microsoft.com/en-us/windows/security/application-security/application-isolation/windows-sandbox/
