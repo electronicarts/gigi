@@ -1,0 +1,997 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>mnist</title>
+        <link rel="stylesheet" href="./style.css">
+        <script type="module">
+
+            const VK_SHIFT = 0x10;
+            const VK_CONTROL = 0x11;
+            const VK_UP = 0x26;
+            const VK_DOWN = 0x28;
+            const VK_LEFT = 0x25;
+            const VK_RIGHT = 0x27;
+            const VK_PRIOR = 0x21;
+            const VK_NEXT = 0x22;
+
+            const VK_W = 87;
+            const VK_A = 65;
+            const VK_S = 83;
+            const VK_D = 68;
+            const VK_E = 69;
+            const VK_Q = 81;
+
+            const VK_w = 87 + 32;
+            const VK_a = 65 + 32;
+            const VK_s = 83 + 32;
+            const VK_d = 68 + 32;
+            const VK_e = 69 + 32;
+            const VK_q = 81 + 32;
+
+            // Handle collapsible variable tables
+            var coll = document.getElementsByClassName("collapsible");
+            for (let i = 0; i < coll.length; i++)
+            {
+                coll[i].addEventListener("click", function ()
+                {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.display === "block")
+                        content.style.display = "none";
+                    else
+                        content.style.display = "block";
+                });
+            }
+
+            // Handle viewing texture drop down
+            let viewingTextureName = "Presentation_Canvas";
+            document.getElementById("Viewing").addEventListener('change', (event) => { if (event.target.value.length != 0) viewingTextureName = event.target.value; });
+
+            function parseUint(value)
+            {
+                value = parseInt(value);
+                if (value < 0)
+                    value = 0;
+                return value;
+            }
+
+            let CameraPos = [ 0, 0, -10 ];
+            let CameraAltitudeAzimuth = [ 0, 0 ];
+            let CameraLeftHanded = true;
+            let CameraFlySpeed = 0.1;
+            let CameraMouseSensitivity = 0.01;
+            let CameraChanged = false;
+
+            let CameraPos_Starting = [ 0, 0, -10 ];
+            let CameraAltitudeAzimuth_Starting = [ 0, 0 ];
+
+            SetCameraUIToCamera();
+
+            function ResetCamera()
+            {
+                CameraPos = CameraPos_Starting.slice();
+                CameraAltitudeAzimuth = CameraAltitudeAzimuth_Starting.slice();
+                SetCameraUIToCamera();
+            }
+            document.getElementById('ResetCamera').addEventListener('click', (event) => { ResetCamera(); });
+
+            document.getElementById("CameraPos0").addEventListener('change', (event) => { CameraPos[0] = event.target.value; });
+            document.getElementById("CameraPos1").addEventListener('change', (event) => { CameraPos[1] = event.target.value; });
+            document.getElementById("CameraPos2").addEventListener('change', (event) => { CameraPos[2] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth0").addEventListener('change', (event) => { CameraAltitudeAzimuth[0] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth1").addEventListener('change', (event) => { CameraAltitudeAzimuth[1] = event.target.value; });
+
+            // Camera mouse sensitivity and fly speed
+            document.getElementById("CameraMouseSensitivity").value = 0.01;
+            document.getElementById("CameraFlySpeed").value = 0.1;
+            document.getElementById("CameraMouseSensitivity").addEventListener('change', (event) => { CameraMouseSensitivity = event.target.value; });
+            document.getElementById("CameraFlySpeed").addEventListener('change', (event) => { CameraFlySpeed = event.target.value; });
+
+            function SetCameraUIToCamera()
+            {
+                document.getElementById("CameraPos0").value = CameraPos[0];
+                document.getElementById("CameraPos1").value = CameraPos[1];
+                document.getElementById("CameraPos2").value = CameraPos[2];
+
+                document.getElementById("CameraAltitudeAzimuth0").value = CameraAltitudeAzimuth[0];
+                document.getElementById("CameraAltitudeAzimuth1").value = CameraAltitudeAzimuth[1];
+            }
+
+            function UpdateCamera(frameTimeSeconds)
+            {
+                CameraChanged = false;
+
+                // To account for frame time
+                const movementMultiplier = frameTimeSeconds * 60.0;
+
+                // If the mouse is dragging, rotate the camera
+                if (MouseState[2] && MouseStateLastFrame[2])
+                {
+                    let dx = MouseStateLastFrame[0] - MouseState[0];
+                    let dy = MouseStateLastFrame[1] - MouseState[1];
+
+                    dx *= movementMultiplier;
+                    dy *= movementMultiplier;
+
+                    if (!CameraLeftHanded)
+                    {
+                        dx *= -1.0;
+                        dy *= -1.0;
+                    }
+
+                    CameraAltitudeAzimuth[0] += dy * CameraMouseSensitivity;
+                    CameraAltitudeAzimuth[0] = Math.max(Math.min(CameraAltitudeAzimuth[0], Math.PI * 0.49), -Math.PI * 0.49);
+
+                    CameraAltitudeAzimuth[1] += dx * CameraMouseSensitivity;
+                    if (CameraAltitudeAzimuth[1] < 0.0)
+                        CameraAltitudeAzimuth[1] += 2.0 * Math.PI;
+                    CameraAltitudeAzimuth[1] = CameraAltitudeAzimuth[1] % (2.0 * Math.PI);
+
+                    if (dx != 0.0 || dy != 0.0)
+                        CameraChanged = true;
+                }
+
+                // Handle WASD
+                {
+                    const viewMatrix = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+
+                    const left = [ viewMatrix[0], viewMatrix[4], viewMatrix[8] ];
+                    const up   = [ viewMatrix[1], viewMatrix[5], viewMatrix[9] ];
+                    const fwd  = [ viewMatrix[2], viewMatrix[6], viewMatrix[10] ];
+
+                    let flySpeed = CameraFlySpeed * movementMultiplier;
+
+                    if (KeyStates[VK_SHIFT])
+                        flySpeed *= 10.0;
+                    else if (KeyStates[VK_CONTROL])
+                        flySpeed /= 10.0;
+
+                    if (!CameraLeftHanded)
+                    {
+                        fwd[0] *= -1.0;
+                        fwd[1] *= -1.0;
+                        fwd[2] *= -1.0;
+                    }
+
+                    if (KeyStates[VK_W] || KeyStates[VK_w] || KeyStates[VK_UP])
+                    {
+                        CameraPos[0] += fwd[0] * flySpeed;
+                        CameraPos[1] += fwd[1] * flySpeed;
+                        CameraPos[2] += fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_S] || KeyStates[VK_s] || KeyStates[VK_DOWN])
+                    {
+                        CameraPos[0] -= fwd[0] * flySpeed;
+                        CameraPos[1] -= fwd[1] * flySpeed;
+                        CameraPos[2] -= fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_A] || KeyStates[VK_a] || KeyStates[VK_LEFT])
+                    {
+                        CameraPos[0] -= left[0] * flySpeed;
+                        CameraPos[1] -= left[1] * flySpeed;
+                        CameraPos[2] -= left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_D] || KeyStates[VK_d] || KeyStates[VK_RIGHT])
+                    {
+                        CameraPos[0] += left[0] * flySpeed;
+                        CameraPos[1] += left[1] * flySpeed;
+                        CameraPos[2] += left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_E] || KeyStates[VK_e] || KeyStates[VK_PRIOR])
+                    {
+                        CameraPos[0] += up[0] * flySpeed;
+                        CameraPos[1] += up[1] * flySpeed;
+                        CameraPos[2] += up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_Q] || KeyStates[VK_q] || KeyStates[VK_NEXT])
+                    {
+                        CameraPos[0] -= up[0] * flySpeed;
+                        CameraPos[1] -= up[1] * flySpeed;
+                        CameraPos[2] -= up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+                }
+
+                if (CameraChanged)
+                    SetCameraUIToCamera();
+            }
+
+            // Import the technique
+            import mnist from "./mnist_Module.js"
+            import * as Shared from './Shared.js';
+
+            // Initialize WebGPU
+            const canvas = document.getElementById('mainCanvas');
+            if (!navigator.gpu)
+            {
+                alert("WebGPU not supported on this browser.");
+                throw new Error("WebGPU not supported on this browser.");
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter)
+            {
+                alert("No appropriate GPUAdapter found.");
+                throw new Error("No appropriate GPUAdapter found.");
+            }
+
+            const device = await adapter.requestDevice({
+                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
+                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+            });
+
+            const context = canvas.getContext("webgpu");
+            //const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+            const canvasFormat = "rgba8unorm";
+            context.configure({
+                device: device,
+                format: canvasFormat,
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+            });
+
+            // Setup canvas events
+            let iMouse = [0, 0, 0, 0];
+            let MouseState = [0, 0, 0, 0];
+            let MouseStateLastFrame = [0, 0, 0, 0];
+            let KeyStates = Array(256).fill(0);
+            let KeyStatesLastFrame = Array(256).fill(0);
+            canvas.addEventListener('click', (event) => { if (event.button == 0) { iMouse[0] = event.offsetX; iMouse[1] = event.offsetY; iMouse[2] = iMouse[0]; iMouse[3] = iMouse[1]; } });
+            canvas.addEventListener('mousemove', (event) => { MouseState[0] = event.offsetX; MouseState[1] = event.offsetY; });
+            canvas.addEventListener('mousedown', (event) => { if (event.button == 0) { MouseState[2] = 1 } else if (event.button == 2) { MouseState[3] = 1 } });
+            canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
+            canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
+            canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_Clear').addEventListener('click',(event) => {mnist.variable_Clear=true;});
+            document.getElementById('inputBox_MouseState0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseState[0]=event.target.value;});
+            document.getElementById('inputBox_MouseState1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseState[1]=event.target.value;});
+            document.getElementById('inputBox_MouseState2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseState[2]=event.target.value;});
+            document.getElementById('inputBox_MouseState3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseState[3]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseStateLastFrame[0]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseStateLastFrame[1]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseStateLastFrame[2]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_MouseStateLastFrame[3]=event.target.value;});
+            document.getElementById('inputBox_iResolution0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iResolution[0]=event.target.value;});
+            document.getElementById('inputBox_iResolution1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iResolution[1]=event.target.value;});
+            document.getElementById('inputBox_iResolution2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iResolution[2]=event.target.value;});
+            document.getElementById('inputBox_iTime').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iTime=event.target.value;});
+            document.getElementById('inputBox_iTimeDelta').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iTimeDelta=event.target.value;});
+            document.getElementById('inputBox_iFrameRate').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iFrameRate=event.target.value;});
+            document.getElementById('inputBox_iFrame').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); mnist.variable_iFrame=event.target.value;});
+            document.getElementById('inputBox_iMouse0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iMouse[0]=event.target.value;});
+            document.getElementById('inputBox_iMouse1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iMouse[1]=event.target.value;});
+            document.getElementById('inputBox_iMouse2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iMouse[2]=event.target.value;});
+            document.getElementById('inputBox_iMouse3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_iMouse[3]=event.target.value;});
+            document.getElementById('inputBox_c_numInputNeurons').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); mnist.variable_c_numInputNeurons=event.target.value;});
+            document.getElementById('inputBox_c_numHiddenNeurons').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); mnist.variable_c_numHiddenNeurons=event.target.value;});
+            document.getElementById('inputBox_c_numOutputNeurons').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); mnist.variable_c_numOutputNeurons=event.target.value;});
+            document.getElementById('inputBox_c_numHiddenWeights').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); mnist.variable_c_numHiddenWeights=event.target.value;});
+            document.getElementById('inputBox_c_numOutputWeights').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); mnist.variable_c_numOutputWeights=event.target.value;});
+            document.getElementById('inputBox_PenSize').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); mnist.variable_PenSize=event.target.value;});
+            document.getElementById('inputBox_c_NNInputImageSize0').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); mnist.variable_c_NNInputImageSize[0]=event.target.value;});
+            document.getElementById('inputBox_c_NNInputImageSize1').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); mnist.variable_c_NNInputImageSize[1]=event.target.value;});
+            document.getElementById('inputBox_c_drawingCanvasSize0').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); mnist.variable_c_drawingCanvasSize[0]=event.target.value;});
+            document.getElementById('inputBox_c_drawingCanvasSize1').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); mnist.variable_c_drawingCanvasSize[1]=event.target.value;});
+            document.getElementById('inputBox_UseImportedImage').addEventListener('change',(event) => {mnist.variable_UseImportedImage=event.target.checked;});
+            document.getElementById('inputBox_NormalizeDrawing').addEventListener('change',(event) => {mnist.variable_NormalizeDrawing=event.target.checked;});
+            document.getElementById('inputBox_initialized').addEventListener('change',(event) => {mnist.variable_initialized=event.target.checked;});
+
+            function ResetVariables()
+            {
+                    mnist.variable_MouseState[0] = mnist.variableDefault_MouseState[0];
+                    mnist.variable_MouseState[1] = mnist.variableDefault_MouseState[1];
+                    mnist.variable_MouseState[2] = mnist.variableDefault_MouseState[2];
+                    mnist.variable_MouseState[3] = mnist.variableDefault_MouseState[3];
+                    mnist.variable_MouseStateLastFrame[0] = mnist.variableDefault_MouseStateLastFrame[0];
+                    mnist.variable_MouseStateLastFrame[1] = mnist.variableDefault_MouseStateLastFrame[1];
+                    mnist.variable_MouseStateLastFrame[2] = mnist.variableDefault_MouseStateLastFrame[2];
+                    mnist.variable_MouseStateLastFrame[3] = mnist.variableDefault_MouseStateLastFrame[3];
+                    mnist.variable_iResolution[0] = mnist.variableDefault_iResolution[0];
+                    mnist.variable_iResolution[1] = mnist.variableDefault_iResolution[1];
+                    mnist.variable_iResolution[2] = mnist.variableDefault_iResolution[2];
+                    mnist.variable_iTime = mnist.variableDefault_iTime;
+                    mnist.variable_iTimeDelta = mnist.variableDefault_iTimeDelta;
+                    mnist.variable_iFrameRate = mnist.variableDefault_iFrameRate;
+                    mnist.variable_iFrame = mnist.variableDefault_iFrame;
+                    mnist.variable_iMouse[0] = mnist.variableDefault_iMouse[0];
+                    mnist.variable_iMouse[1] = mnist.variableDefault_iMouse[1];
+                    mnist.variable_iMouse[2] = mnist.variableDefault_iMouse[2];
+                    mnist.variable_iMouse[3] = mnist.variableDefault_iMouse[3];
+                    mnist.variable_c_numInputNeurons = mnist.variableDefault_c_numInputNeurons;
+                    mnist.variable_c_numHiddenNeurons = mnist.variableDefault_c_numHiddenNeurons;
+                    mnist.variable_c_numOutputNeurons = mnist.variableDefault_c_numOutputNeurons;
+                    mnist.variable_c_numHiddenWeights = mnist.variableDefault_c_numHiddenWeights;
+                    mnist.variable_c_numOutputWeights = mnist.variableDefault_c_numOutputWeights;
+                    mnist.variable_PenSize = mnist.variableDefault_PenSize;
+                    mnist.variable_c_NNInputImageSize[0] = mnist.variableDefault_c_NNInputImageSize[0];
+                    mnist.variable_c_NNInputImageSize[1] = mnist.variableDefault_c_NNInputImageSize[1];
+                    mnist.variable_c_drawingCanvasSize[0] = mnist.variableDefault_c_drawingCanvasSize[0];
+                    mnist.variable_c_drawingCanvasSize[1] = mnist.variableDefault_c_drawingCanvasSize[1];
+                    mnist.variable_UseImportedImage = mnist.variableDefault_UseImportedImage;
+                    mnist.variable_NormalizeDrawing = mnist.variableDefault_NormalizeDrawing;
+                    mnist.variable_initialized = mnist.variableDefault_initialized;
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_MouseState0').value = mnist.variable_MouseState[0];
+                    document.getElementById('inputBox_MouseState1').value = mnist.variable_MouseState[1];
+                    document.getElementById('inputBox_MouseState2').value = mnist.variable_MouseState[2];
+                    document.getElementById('inputBox_MouseState3').value = mnist.variable_MouseState[3];
+                    document.getElementById('inputBox_MouseStateLastFrame0').value = mnist.variable_MouseStateLastFrame[0];
+                    document.getElementById('inputBox_MouseStateLastFrame1').value = mnist.variable_MouseStateLastFrame[1];
+                    document.getElementById('inputBox_MouseStateLastFrame2').value = mnist.variable_MouseStateLastFrame[2];
+                    document.getElementById('inputBox_MouseStateLastFrame3').value = mnist.variable_MouseStateLastFrame[3];
+                    document.getElementById('inputBox_iResolution0').value = mnist.variable_iResolution[0];
+                    document.getElementById('inputBox_iResolution1').value = mnist.variable_iResolution[1];
+                    document.getElementById('inputBox_iResolution2').value = mnist.variable_iResolution[2];
+                    document.getElementById('inputBox_iTime').value = mnist.variable_iTime;
+                    document.getElementById('inputBox_iTimeDelta').value = mnist.variable_iTimeDelta;
+                    document.getElementById('inputBox_iFrameRate').value = mnist.variable_iFrameRate;
+                    document.getElementById('inputBox_iFrame').value = mnist.variable_iFrame;
+                    document.getElementById('inputBox_iMouse0').value = mnist.variable_iMouse[0];
+                    document.getElementById('inputBox_iMouse1').value = mnist.variable_iMouse[1];
+                    document.getElementById('inputBox_iMouse2').value = mnist.variable_iMouse[2];
+                    document.getElementById('inputBox_iMouse3').value = mnist.variable_iMouse[3];
+                    document.getElementById('inputBox_c_numInputNeurons').value = mnist.variable_c_numInputNeurons;
+                    document.getElementById('inputBox_c_numHiddenNeurons').value = mnist.variable_c_numHiddenNeurons;
+                    document.getElementById('inputBox_c_numOutputNeurons').value = mnist.variable_c_numOutputNeurons;
+                    document.getElementById('inputBox_c_numHiddenWeights').value = mnist.variable_c_numHiddenWeights;
+                    document.getElementById('inputBox_c_numOutputWeights').value = mnist.variable_c_numOutputWeights;
+                    document.getElementById('inputBox_PenSize').value = mnist.variable_PenSize;
+                    document.getElementById('inputBox_c_NNInputImageSize0').value = mnist.variable_c_NNInputImageSize[0];
+                    document.getElementById('inputBox_c_NNInputImageSize1').value = mnist.variable_c_NNInputImageSize[1];
+                    document.getElementById('inputBox_c_drawingCanvasSize0').value = mnist.variable_c_drawingCanvasSize[0];
+                    document.getElementById('inputBox_c_drawingCanvasSize1').value = mnist.variable_c_drawingCanvasSize[1];
+                    document.getElementById('inputBox_UseImportedImage').checked = Boolean(mnist.variable_UseImportedImage);
+                    document.getElementById('inputBox_NormalizeDrawing').checked = Boolean(mnist.variable_NormalizeDrawing);
+                    document.getElementById('inputBox_initialized').checked = Boolean(mnist.variable_initialized);
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
+            // Load the imported texture
+            let Imported_Image = await Shared.CreateTextureWithPNG(device, "assets/9.png", mnist.texture_Imported_Image_usageFlags);
+            mnist.texture_Imported_Image_size = Imported_Image.size;
+            mnist.texture_Imported_Image_format = Imported_Image.format;
+            mnist.texture_Imported_Image = Imported_Image.texture;
+
+            // Load the neural network weights
+            let weightsFloatBin;
+            if (!await Shared.LoadBin("assets/Backprop_Weights.bin", (data) => weightsFloatBin = data ))
+            {
+                Shared.LogError("Could not load assets/Backprop_Weights.bin");
+            }
+
+            // Create the buffer and write to it
+            mnist.buffer_NN_Weights = device.createBuffer({
+                label: "mnist.buffer_NN_Weights",
+                size: weightsFloatBin.byteLength,
+                usage: mnist.buffer_NN_Weights_usageFlags,
+            });
+            device.queue.writeBuffer(mnist.buffer_NN_Weights, 0, weightsFloatBin);
+
+            // Set variables to what they were saved as in the gguser file
+            mnist.variable_Clear = false;
+            mnist.variable_PenSize = 10.000000;
+            mnist.variable_UseImportedImage = false;
+            mnist.variable_NormalizeDrawing = true;
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
+
+            // Frame rendering function
+            let startTimeMs;
+            let lastTimeMs;
+            let frameIndex = 0
+            async function RenderFrame(currentTimeMs) {
+
+                // Handle frame timing
+                if (startTimeMs === undefined)
+                {
+                    startTimeMs = currentTimeMs;
+                    lastTimeMs = currentTimeMs;
+                }
+
+                // Show FPS
+                document.getElementById("FPS").innerHTML = "<br><br>FPS: " + (1000.0 / (currentTimeMs - lastTimeMs)).toFixed(2) + "<br>ms: " + (currentTimeMs - lastTimeMs).toFixed(2);
+
+                // Update the camera based on user input
+                UpdateCamera((currentTimeMs - lastTimeMs) / 1000);
+
+                // Run the technique
+                const encoder = device.createCommandEncoder();
+
+                /* TODO:
+            provide imported resources or variable values to the technique that need to change every frame:
+                    mnist.buffer_NN_Weights = null;
+                    mnist.buffer_NN_Weights_count = 0;
+                    mnist.buffer_NN_Weights_stride = 0;
+                    mnist.texture_Imported_Image = null;
+                    mnist.texture_Imported_Image_size = [0, 0, 0];
+                    mnist.texture_Imported_Image_format = "";
+                Host Variables:
+                    mnist.variable_MouseState = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    mnist.variable_MouseStateLastFrame = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    mnist.variable_iResolution = 0.000000, 0.000000, 0.000000; // (Float3)
+                    mnist.variable_iTime = 0.000000; // (Float)
+                    mnist.variable_iTimeDelta = 0.000000; // (Float)
+                    mnist.variable_iFrameRate = 0.000000; // (Float)
+                    mnist.variable_iFrame = 0; // (Int)
+                    mnist.variable_iMouse = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                User Variables (These show in the UI):
+                    mnist.variable_Clear = false; // (Bool)
+                    mnist.variable_PenSize = 10.000000; // (Float)
+                    mnist.variable_UseImportedImage = false; // (Bool)
+                    mnist.variable_NormalizeDrawing = true; // (Bool) MNIST normalization: shrink image to 20x20 and put center of mass in the middle of a 28x28 image
+                */
+
+                // Set the resolution
+                if (mnist.texture_Drawing_Canvas !== null)
+                {
+                    mnist.variable_iResolution[0] = mnist.texture_Drawing_Canvas.width;
+                    mnist.variableChanged_iResolution[0] = true;
+                    mnist.variable_iResolution[1] = mnist.texture_Drawing_Canvas.height;
+                    mnist.variableChanged_iResolution[1] = true;
+                    mnist.variable_iResolution[2] = 1;
+                    mnist.variableChanged_iResolution[2] = true;
+                }
+
+                // Time in seconds since this started running
+                mnist.variable_iTime = (currentTimeMs - startTimeMs) / 1000;
+                mnist.variableChanged_iTime = true;
+
+                // How long RenderFrame() took last frame, in seconds
+                mnist.variable_iTimeDelta = (currentTimeMs - lastTimeMs) / 1000;
+                mnist.variableChanged_iTimeDelta = true;
+
+                // Frames per second
+                mnist.variable_iFrameRate = 1000 / (currentTimeMs - lastTimeMs);
+                mnist.variableChanged_iFrameRate = true;
+
+                // Mouse: xy is where user last clicked. zw is the click location for the single frame when a user clicks, else is zero.
+                mnist.variable_iMouse[0] = iMouse[0];
+                mnist.variableChanged_iMouse[0] = true;
+                mnist.variable_iMouse[1] = iMouse[1];
+                mnist.variableChanged_iMouse[1] = true;
+                mnist.variable_iMouse[2] = iMouse[2];
+                mnist.variableChanged_iMouse[2] = true;
+                mnist.variable_iMouse[3] = iMouse[3];
+                mnist.variableChanged_iMouse[3] = true;
+
+                // Mouse State: xy is mouse position. z is left mouse button state. w is right mouse button state.
+                mnist.variable_MouseState[0] = MouseState[0];
+                mnist.variableChanged_MouseState[0] = true;
+                mnist.variable_MouseState[1] = MouseState[1];
+                mnist.variableChanged_MouseState[1] = true;
+                mnist.variable_MouseState[2] = MouseState[2];
+                mnist.variableChanged_MouseState[2] = true;
+                mnist.variable_MouseState[3] = MouseState[3];
+                mnist.variableChanged_MouseState[3] = true;
+
+                // Mouse State Last Frame: xy is mouse position. z is left mouse button state. w is right mouse button state.
+                mnist.variable_MouseStateLastFrame[0] = MouseStateLastFrame[0];
+                mnist.variableChanged_MouseStateLastFrame[0] = true;
+                mnist.variable_MouseStateLastFrame[1] = MouseStateLastFrame[1];
+                mnist.variableChanged_MouseStateLastFrame[1] = true;
+                mnist.variable_MouseStateLastFrame[2] = MouseStateLastFrame[2];
+                mnist.variableChanged_MouseStateLastFrame[2] = true;
+                mnist.variable_MouseStateLastFrame[3] = MouseStateLastFrame[3];
+                mnist.variableChanged_MouseStateLastFrame[3] = true;
+
+                // Projection matrix resolution texture
+                const projMtxResolution = [ 1, 1 ];
+
+                const executeResult = await mnist.Execute(device, encoder, false);
+                if (!executeResult)
+                {
+                    alert("Could not execute mnist");
+                    throw new Error("Could not execute mnist");
+                }
+
+                if (viewingTextureName.length != 0 && mnist["texture_" + viewingTextureName] !== null)
+                {
+                    // Update size of the canvas
+                    document.getElementById("mainCanvas").width = mnist["texture_" + viewingTextureName].width;
+                    document.getElementById("mainCanvas").height = mnist["texture_" + viewingTextureName].height;
+
+                    if (!Shared.CopyCompatibleFormats(mnist["texture_" + viewingTextureName].format, canvasFormat))
+                    {
+                        Shared.CopyTextureLinearToSRGB(device, encoder, mnist["texture_" + viewingTextureName], context.getCurrentTexture());
+                    }
+                    else
+                    {
+                        encoder.copyTextureToTexture(
+                            { texture: mnist["texture_" + viewingTextureName] },
+                            { texture: context.getCurrentTexture() },
+                            {
+                                width: Math.min(mnist["texture_" + viewingTextureName].width, context.getCurrentTexture().width),
+                                height: Math.min(mnist["texture_" + viewingTextureName].height, context.getCurrentTexture().height),
+                                depthOrArrayLayers: Math.min(mnist["texture_" + viewingTextureName].depthOrArrayLayers, context.getCurrentTexture().depthOrArrayLayers)
+                            }
+                        );
+                    }
+                }
+
+                // If the technique changed the variables, update the UI
+                mnist.variable_Clear=false;
+
+                if (mnist.variableChanged_MouseState[0])
+                {
+                    document.getElementById('inputBox_MouseState0').value = mnist.variable_MouseState[0];
+                    mnist.variableChanged_MouseState[0] = false;
+                }
+
+                if (mnist.variableChanged_MouseState[1])
+                {
+                    document.getElementById('inputBox_MouseState1').value = mnist.variable_MouseState[1];
+                    mnist.variableChanged_MouseState[1] = false;
+                }
+
+                if (mnist.variableChanged_MouseState[2])
+                {
+                    document.getElementById('inputBox_MouseState2').value = mnist.variable_MouseState[2];
+                    mnist.variableChanged_MouseState[2] = false;
+                }
+
+                if (mnist.variableChanged_MouseState[3])
+                {
+                    document.getElementById('inputBox_MouseState3').value = mnist.variable_MouseState[3];
+                    mnist.variableChanged_MouseState[3] = false;
+                }
+
+                if (mnist.variableChanged_MouseStateLastFrame[0])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame0').value = mnist.variable_MouseStateLastFrame[0];
+                    mnist.variableChanged_MouseStateLastFrame[0] = false;
+                }
+
+                if (mnist.variableChanged_MouseStateLastFrame[1])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame1').value = mnist.variable_MouseStateLastFrame[1];
+                    mnist.variableChanged_MouseStateLastFrame[1] = false;
+                }
+
+                if (mnist.variableChanged_MouseStateLastFrame[2])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame2').value = mnist.variable_MouseStateLastFrame[2];
+                    mnist.variableChanged_MouseStateLastFrame[2] = false;
+                }
+
+                if (mnist.variableChanged_MouseStateLastFrame[3])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame3').value = mnist.variable_MouseStateLastFrame[3];
+                    mnist.variableChanged_MouseStateLastFrame[3] = false;
+                }
+
+                if (mnist.variableChanged_iResolution[0])
+                {
+                    document.getElementById('inputBox_iResolution0').value = mnist.variable_iResolution[0];
+                    mnist.variableChanged_iResolution[0] = false;
+                }
+
+                if (mnist.variableChanged_iResolution[1])
+                {
+                    document.getElementById('inputBox_iResolution1').value = mnist.variable_iResolution[1];
+                    mnist.variableChanged_iResolution[1] = false;
+                }
+
+                if (mnist.variableChanged_iResolution[2])
+                {
+                    document.getElementById('inputBox_iResolution2').value = mnist.variable_iResolution[2];
+                    mnist.variableChanged_iResolution[2] = false;
+                }
+
+                if (mnist.variableChanged_iTime)
+                {
+                    document.getElementById('inputBox_iTime').value = mnist.variable_iTime;
+                    mnist.variableChanged_iTime = false;
+                }
+
+                if (mnist.variableChanged_iTimeDelta)
+                {
+                    document.getElementById('inputBox_iTimeDelta').value = mnist.variable_iTimeDelta;
+                    mnist.variableChanged_iTimeDelta = false;
+                }
+
+                if (mnist.variableChanged_iFrameRate)
+                {
+                    document.getElementById('inputBox_iFrameRate').value = mnist.variable_iFrameRate;
+                    mnist.variableChanged_iFrameRate = false;
+                }
+
+                if (mnist.variableChanged_iFrame)
+                {
+                    document.getElementById('inputBox_iFrame').value = mnist.variable_iFrame;
+                    mnist.variableChanged_iFrame = false;
+                }
+
+                if (mnist.variableChanged_iMouse[0])
+                {
+                    document.getElementById('inputBox_iMouse0').value = mnist.variable_iMouse[0];
+                    mnist.variableChanged_iMouse[0] = false;
+                }
+
+                if (mnist.variableChanged_iMouse[1])
+                {
+                    document.getElementById('inputBox_iMouse1').value = mnist.variable_iMouse[1];
+                    mnist.variableChanged_iMouse[1] = false;
+                }
+
+                if (mnist.variableChanged_iMouse[2])
+                {
+                    document.getElementById('inputBox_iMouse2').value = mnist.variable_iMouse[2];
+                    mnist.variableChanged_iMouse[2] = false;
+                }
+
+                if (mnist.variableChanged_iMouse[3])
+                {
+                    document.getElementById('inputBox_iMouse3').value = mnist.variable_iMouse[3];
+                    mnist.variableChanged_iMouse[3] = false;
+                }
+
+                if (mnist.variableChanged_c_numInputNeurons)
+                {
+                    document.getElementById('inputBox_c_numInputNeurons').value = mnist.variable_c_numInputNeurons;
+                    mnist.variableChanged_c_numInputNeurons = false;
+                }
+
+                if (mnist.variableChanged_c_numHiddenNeurons)
+                {
+                    document.getElementById('inputBox_c_numHiddenNeurons').value = mnist.variable_c_numHiddenNeurons;
+                    mnist.variableChanged_c_numHiddenNeurons = false;
+                }
+
+                if (mnist.variableChanged_c_numOutputNeurons)
+                {
+                    document.getElementById('inputBox_c_numOutputNeurons').value = mnist.variable_c_numOutputNeurons;
+                    mnist.variableChanged_c_numOutputNeurons = false;
+                }
+
+                if (mnist.variableChanged_c_numHiddenWeights)
+                {
+                    document.getElementById('inputBox_c_numHiddenWeights').value = mnist.variable_c_numHiddenWeights;
+                    mnist.variableChanged_c_numHiddenWeights = false;
+                }
+
+                if (mnist.variableChanged_c_numOutputWeights)
+                {
+                    document.getElementById('inputBox_c_numOutputWeights').value = mnist.variable_c_numOutputWeights;
+                    mnist.variableChanged_c_numOutputWeights = false;
+                }
+
+                if (mnist.variableChanged_PenSize)
+                {
+                    document.getElementById('inputBox_PenSize').value = mnist.variable_PenSize;
+                    mnist.variableChanged_PenSize = false;
+                }
+
+                if (mnist.variableChanged_c_NNInputImageSize[0])
+                {
+                    document.getElementById('inputBox_c_NNInputImageSize0').value = mnist.variable_c_NNInputImageSize[0];
+                    mnist.variableChanged_c_NNInputImageSize[0] = false;
+                }
+
+                if (mnist.variableChanged_c_NNInputImageSize[1])
+                {
+                    document.getElementById('inputBox_c_NNInputImageSize1').value = mnist.variable_c_NNInputImageSize[1];
+                    mnist.variableChanged_c_NNInputImageSize[1] = false;
+                }
+
+                if (mnist.variableChanged_c_drawingCanvasSize[0])
+                {
+                    document.getElementById('inputBox_c_drawingCanvasSize0').value = mnist.variable_c_drawingCanvasSize[0];
+                    mnist.variableChanged_c_drawingCanvasSize[0] = false;
+                }
+
+                if (mnist.variableChanged_c_drawingCanvasSize[1])
+                {
+                    document.getElementById('inputBox_c_drawingCanvasSize1').value = mnist.variable_c_drawingCanvasSize[1];
+                    mnist.variableChanged_c_drawingCanvasSize[1] = false;
+                }
+
+                if (mnist.variableChanged_UseImportedImage)
+                {
+                    document.getElementById('inputBox_UseImportedImage').checked=Boolean(mnist.variable_UseImportedImage);
+                    mnist.variableChanged_UseImportedImage = false;
+                }
+
+                if (mnist.variableChanged_NormalizeDrawing)
+                {
+                    document.getElementById('inputBox_NormalizeDrawing').checked=Boolean(mnist.variable_NormalizeDrawing);
+                    mnist.variableChanged_NormalizeDrawing = false;
+                }
+
+                if (mnist.variableChanged_initialized)
+                {
+                    document.getElementById('inputBox_initialized').checked=Boolean(mnist.variable_initialized);
+                    mnist.variableChanged_initialized = false;
+                }
+
+
+                // Submit the command encoder
+                device.queue.submit([encoder.finish()]);
+
+                // advance to the next frame
+                lastTimeMs = currentTimeMs;
+
+                // Only do end of frame logic if we should.
+                // If we are waiting on promises (shader compiles), Execute()
+                // has frame start logic, but is waiting to do frame end logic, so we should too.
+                if (!mnist.waitingOnPromises)
+                {
+                    frameIndex = frameIndex + 1;
+
+                    // Update mouse states
+                    iMouse[2] = 0;
+                    iMouse[3] = 0;
+                    MouseStateLastFrame = MouseState.slice();
+
+                    // Update keyboard states
+                    KeyStatesLastFrame = KeyStates.slice();
+                }
+
+                // Update the loading list
+                let loadingText = "";
+                if (mnist.loadingPromises.size > 0)
+                    loadingText = "Nodes building shaders:";
+                for (const label of mnist.loadingPromises)
+                    loadingText = loadingText + "<br/>" + label;
+                document.getElementById("LoadingText").innerHTML = loadingText;
+
+                // Render the next frame
+                requestAnimationFrame(RenderFrame);
+            }
+
+            // Render the first frame
+            requestAnimationFrame(RenderFrame);
+        </script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td valign="top">
+                    <canvas width="512" height="512" id="mainCanvas" tabindex="0"></canvas>
+                    <br/><br/>
+                    <label for="Viewing">Viewing</label>
+                    <select name="Viewing" id="Viewing">
+                        <option value="Presentation_Canvas">Presentation_Canvas</option><br/>
+                        <option value="">----- Exported Textures -----</option><br/>
+                        <option value="Presentation_Canvas">Presentation_Canvas</option><br/>
+                        <option value="">----- Imported Textures -----</option><br/>
+                        <option value="Imported_Image">Imported_Image</option><br/>
+                        <option value="">----- Internal Textures -----</option><br/>
+                        <option value="Draw_Canvas_ReadOnly">Draw_Canvas_ReadOnly</option><br/>
+                        <option value="Drawing_Canvas">Drawing_Canvas</option><br/>
+                        <option value="NN_Input">NN_Input</option><br/>
+                        <option value="Presentation_PresentationCanvas_ReadOnly">Presentation_PresentationCanvas_ReadOnly</option><br/>
+                        <option value="Shrink_NNInput_ReadOnly">Shrink_NNInput_ReadOnly</option><br/>
+                        <option value="_loadedTexture_0">_loadedTexture_0</option><br/>
+                        <option value="_loadedTexture_1">_loadedTexture_1</option><br/>
+                        <option value="_loadedTexture_10">_loadedTexture_10</option><br/>
+                        <option value="_loadedTexture_2">_loadedTexture_2</option><br/>
+                        <option value="_loadedTexture_3">_loadedTexture_3</option><br/>
+                        <option value="_loadedTexture_4">_loadedTexture_4</option><br/>
+                        <option value="_loadedTexture_5">_loadedTexture_5</option><br/>
+                        <option value="_loadedTexture_6">_loadedTexture_6</option><br/>
+                        <option value="_loadedTexture_7">_loadedTexture_7</option><br/>
+                        <option value="_loadedTexture_8">_loadedTexture_8</option><br/>
+                        <option value="_loadedTexture_9">_loadedTexture_9</option><br/>
+                    </select>
+                </td>
+                <td>&nbsp;</td>
+                <td valign="top">
+                    <b>mnist</b><br/>
+                    <button type="button" class="collapsible">User Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td valign="top"></td>
+                            <td>
+                                <button type="button" id="inputBox_Clear">Clear</button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">PenSize&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_PenSize">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">UseImportedImage&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_UseImportedImage">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">NormalizeDrawing&nbsp;<span class="tooltiptext">MNIST normalization: shrink image to 20x20 and put center of mass in the middle of a 28x28 image</span></div></td>
+                            <td>
+                                <input type="checkbox" id="inputBox_NormalizeDrawing">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Host Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">MouseState&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_MouseState0">
+                                <input type="text" id="inputBox_MouseState1">
+                                <input type="text" id="inputBox_MouseState2">
+                                <input type="text" id="inputBox_MouseState3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">MouseStateLastFrame&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_MouseStateLastFrame0">
+                                <input type="text" id="inputBox_MouseStateLastFrame1">
+                                <input type="text" id="inputBox_MouseStateLastFrame2">
+                                <input type="text" id="inputBox_MouseStateLastFrame3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iResolution&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iResolution0">
+                                <input type="text" id="inputBox_iResolution1">
+                                <input type="text" id="inputBox_iResolution2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iTime&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iTime">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iTimeDelta&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iTimeDelta">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iFrameRate&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iFrameRate">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iFrame&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iFrame">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iMouse&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iMouse0">
+                                <input type="text" id="inputBox_iMouse1">
+                                <input type="text" id="inputBox_iMouse2">
+                                <input type="text" id="inputBox_iMouse3">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">c_numInputNeurons&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_numInputNeurons" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">c_numHiddenNeurons&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_numHiddenNeurons" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">c_numOutputNeurons&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_numOutputNeurons" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">c_numHiddenWeights&nbsp;<span class="tooltiptext">(c_numInputNeurons + 1) * c_numHiddenNeurons</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_c_numHiddenWeights" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">c_numOutputWeights&nbsp;<span class="tooltiptext">(c_numHiddenNeurons + 1) * c_numOutputNeurons</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_c_numOutputWeights" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">c_NNInputImageSize&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_NNInputImageSize0" disabled="true">
+                                <input type="text" id="inputBox_c_NNInputImageSize1" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">c_drawingCanvasSize&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_drawingCanvasSize0" disabled="true">
+                                <input type="text" id="inputBox_c_drawingCanvasSize1" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">initialized&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_initialized">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
+
+                    <button type=button class="collapsible">Camera</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td>Camera Pos</td>
+                            <td>
+                                <input type="text" id="CameraPos0" />
+                                <input type="text" id="CameraPos1" />
+                                <input type="text" id="CameraPos2" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Altitude Azimuth</td>
+                            <td>
+                                <input type="text" id="CameraAltitudeAzimuth0" />
+                                <input type="text" id="CameraAltitudeAzimuth1" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td>Mouse Sensitivity</td>
+                            <td><input type="text" id="CameraMouseSensitivity" /></td>
+                        </tr>
+                        <tr>
+                            <td>Fly Speed</td>
+                            <td><input type="text" id="CameraFlySpeed" /></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><br /><button type="button" id="ResetCamera">Reset Camera</button><br /></td>
+                        </tr>
+                    </table>
+                    <br/><br/>
+                    <button type=button class="collapsible">Loading</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td><span id="LoadingText"></span></td>
+                        </tr>
+                    </table>
+                    <span id="FPS"></span>
+                    <br />
+                    <br />
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0 [Internal]</a></b>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

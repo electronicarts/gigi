@@ -1,0 +1,1939 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>DemofoxMinesweeper</title>
+        <link rel="stylesheet" href="./style.css">
+        <script type="module">
+
+            const VK_SHIFT = 0x10;
+            const VK_CONTROL = 0x11;
+            const VK_UP = 0x26;
+            const VK_DOWN = 0x28;
+            const VK_LEFT = 0x25;
+            const VK_RIGHT = 0x27;
+            const VK_PRIOR = 0x21;
+            const VK_NEXT = 0x22;
+
+            const VK_W = 87;
+            const VK_A = 65;
+            const VK_S = 83;
+            const VK_D = 68;
+            const VK_E = 69;
+            const VK_Q = 81;
+
+            const VK_w = 87 + 32;
+            const VK_a = 65 + 32;
+            const VK_s = 83 + 32;
+            const VK_d = 68 + 32;
+            const VK_e = 69 + 32;
+            const VK_q = 81 + 32;
+
+            // Handle collapsible variable tables
+            var coll = document.getElementsByClassName("collapsible");
+            for (let i = 0; i < coll.length; i++)
+            {
+                coll[i].addEventListener("click", function ()
+                {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.display === "block")
+                        content.style.display = "none";
+                    else
+                        content.style.display = "block";
+                });
+            }
+
+            // Handle viewing texture drop down
+            let viewingTextureName = "Output";
+            document.getElementById("Viewing").addEventListener('change', (event) => { if (event.target.value.length != 0) viewingTextureName = event.target.value; });
+
+            function parseUint(value)
+            {
+                value = parseInt(value);
+                if (value < 0)
+                    value = 0;
+                return value;
+            }
+
+            let CameraPos = [ 0, 0, -10 ];
+            let CameraAltitudeAzimuth = [ 0, 0 ];
+            let CameraLeftHanded = true;
+            let CameraFlySpeed = 0.1;
+            let CameraMouseSensitivity = 0.01;
+            let CameraChanged = false;
+
+            let CameraPos_Starting = [ 0, 0, -10 ];
+            let CameraAltitudeAzimuth_Starting = [ 0, 0 ];
+
+            SetCameraUIToCamera();
+
+            function ResetCamera()
+            {
+                CameraPos = CameraPos_Starting.slice();
+                CameraAltitudeAzimuth = CameraAltitudeAzimuth_Starting.slice();
+                SetCameraUIToCamera();
+            }
+            document.getElementById('ResetCamera').addEventListener('click', (event) => { ResetCamera(); });
+
+            document.getElementById("CameraPos0").addEventListener('change', (event) => { CameraPos[0] = event.target.value; });
+            document.getElementById("CameraPos1").addEventListener('change', (event) => { CameraPos[1] = event.target.value; });
+            document.getElementById("CameraPos2").addEventListener('change', (event) => { CameraPos[2] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth0").addEventListener('change', (event) => { CameraAltitudeAzimuth[0] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth1").addEventListener('change', (event) => { CameraAltitudeAzimuth[1] = event.target.value; });
+
+            // Camera mouse sensitivity and fly speed
+            document.getElementById("CameraMouseSensitivity").value = 0.01;
+            document.getElementById("CameraFlySpeed").value = 0.1;
+            document.getElementById("CameraMouseSensitivity").addEventListener('change', (event) => { CameraMouseSensitivity = event.target.value; });
+            document.getElementById("CameraFlySpeed").addEventListener('change', (event) => { CameraFlySpeed = event.target.value; });
+
+            function SetCameraUIToCamera()
+            {
+                document.getElementById("CameraPos0").value = CameraPos[0];
+                document.getElementById("CameraPos1").value = CameraPos[1];
+                document.getElementById("CameraPos2").value = CameraPos[2];
+
+                document.getElementById("CameraAltitudeAzimuth0").value = CameraAltitudeAzimuth[0];
+                document.getElementById("CameraAltitudeAzimuth1").value = CameraAltitudeAzimuth[1];
+            }
+
+            function UpdateCamera(frameTimeSeconds)
+            {
+                CameraChanged = false;
+
+                // To account for frame time
+                const movementMultiplier = frameTimeSeconds * 60.0;
+
+                // If the mouse is dragging, rotate the camera
+                if (MouseState[2] && MouseStateLastFrame[2])
+                {
+                    let dx = MouseStateLastFrame[0] - MouseState[0];
+                    let dy = MouseStateLastFrame[1] - MouseState[1];
+
+                    dx *= movementMultiplier;
+                    dy *= movementMultiplier;
+
+                    if (!CameraLeftHanded)
+                    {
+                        dx *= -1.0;
+                        dy *= -1.0;
+                    }
+
+                    CameraAltitudeAzimuth[0] += dy * CameraMouseSensitivity;
+                    CameraAltitudeAzimuth[0] = Math.max(Math.min(CameraAltitudeAzimuth[0], Math.PI * 0.49), -Math.PI * 0.49);
+
+                    CameraAltitudeAzimuth[1] += dx * CameraMouseSensitivity;
+                    if (CameraAltitudeAzimuth[1] < 0.0)
+                        CameraAltitudeAzimuth[1] += 2.0 * Math.PI;
+                    CameraAltitudeAzimuth[1] = CameraAltitudeAzimuth[1] % (2.0 * Math.PI);
+
+                    if (dx != 0.0 || dy != 0.0)
+                        CameraChanged = true;
+                }
+
+                // Handle WASD
+                {
+                    const viewMatrix = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+
+                    const left = [ viewMatrix[0], viewMatrix[4], viewMatrix[8] ];
+                    const up   = [ viewMatrix[1], viewMatrix[5], viewMatrix[9] ];
+                    const fwd  = [ viewMatrix[2], viewMatrix[6], viewMatrix[10] ];
+
+                    let flySpeed = CameraFlySpeed * movementMultiplier;
+
+                    if (KeyStates[VK_SHIFT])
+                        flySpeed *= 10.0;
+                    else if (KeyStates[VK_CONTROL])
+                        flySpeed /= 10.0;
+
+                    if (!CameraLeftHanded)
+                    {
+                        fwd[0] *= -1.0;
+                        fwd[1] *= -1.0;
+                        fwd[2] *= -1.0;
+                    }
+
+                    if (KeyStates[VK_W] || KeyStates[VK_w] || KeyStates[VK_UP])
+                    {
+                        CameraPos[0] += fwd[0] * flySpeed;
+                        CameraPos[1] += fwd[1] * flySpeed;
+                        CameraPos[2] += fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_S] || KeyStates[VK_s] || KeyStates[VK_DOWN])
+                    {
+                        CameraPos[0] -= fwd[0] * flySpeed;
+                        CameraPos[1] -= fwd[1] * flySpeed;
+                        CameraPos[2] -= fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_A] || KeyStates[VK_a] || KeyStates[VK_LEFT])
+                    {
+                        CameraPos[0] -= left[0] * flySpeed;
+                        CameraPos[1] -= left[1] * flySpeed;
+                        CameraPos[2] -= left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_D] || KeyStates[VK_d] || KeyStates[VK_RIGHT])
+                    {
+                        CameraPos[0] += left[0] * flySpeed;
+                        CameraPos[1] += left[1] * flySpeed;
+                        CameraPos[2] += left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_E] || KeyStates[VK_e] || KeyStates[VK_PRIOR])
+                    {
+                        CameraPos[0] += up[0] * flySpeed;
+                        CameraPos[1] += up[1] * flySpeed;
+                        CameraPos[2] += up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_Q] || KeyStates[VK_q] || KeyStates[VK_NEXT])
+                    {
+                        CameraPos[0] -= up[0] * flySpeed;
+                        CameraPos[1] -= up[1] * flySpeed;
+                        CameraPos[2] -= up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+                }
+
+                if (CameraChanged)
+                    SetCameraUIToCamera();
+            }
+
+            // Import the technique
+            import DemofoxMinesweeper from "./DemofoxMinesweeper_Module.js"
+            import * as Shared from './Shared.js';
+
+            // Initialize WebGPU
+            const canvas = document.getElementById('mainCanvas');
+            if (!navigator.gpu)
+            {
+                alert("WebGPU not supported on this browser.");
+                throw new Error("WebGPU not supported on this browser.");
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter)
+            {
+                alert("No appropriate GPUAdapter found.");
+                throw new Error("No appropriate GPUAdapter found.");
+            }
+
+            const device = await adapter.requestDevice({
+                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
+                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+            });
+
+            const context = canvas.getContext("webgpu");
+            //const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+            const canvasFormat = "rgba8unorm";
+            context.configure({
+                device: device,
+                format: canvasFormat,
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+            });
+
+            // Setup canvas events
+            let iMouse = [0, 0, 0, 0];
+            let MouseState = [0, 0, 0, 0];
+            let MouseStateLastFrame = [0, 0, 0, 0];
+            let KeyStates = Array(256).fill(0);
+            let KeyStatesLastFrame = Array(256).fill(0);
+            canvas.addEventListener('click', (event) => { if (event.button == 0) { iMouse[0] = event.offsetX; iMouse[1] = event.offsetY; iMouse[2] = iMouse[0]; iMouse[3] = iMouse[1]; } });
+            canvas.addEventListener('mousemove', (event) => { MouseState[0] = event.offsetX; MouseState[1] = event.offsetY; });
+            canvas.addEventListener('mousedown', (event) => { if (event.button == 0) { MouseState[2] = 1 } else if (event.button == 2) { MouseState[3] = 1 } });
+            canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
+            canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
+            canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_c_gridSize1D').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_c_gridSize1D=event.target.value;});
+            document.getElementById('inputBox_c_gridSize2D0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_c_gridSize2D[0]=event.target.value;});
+            document.getElementById('inputBox_c_gridSize2D1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_c_gridSize2D[1]=event.target.value;});
+            document.getElementById('inputBox_MouseState0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseState[0]=event.target.value;});
+            document.getElementById('inputBox_MouseState1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseState[1]=event.target.value;});
+            document.getElementById('inputBox_MouseState2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseState[2]=event.target.value;});
+            document.getElementById('inputBox_MouseState3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseState[3]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseStateLastFrame[0]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseStateLastFrame[1]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseStateLastFrame[2]=event.target.value;});
+            document.getElementById('inputBox_MouseStateLastFrame3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_MouseStateLastFrame[3]=event.target.value;});
+            document.getElementById('inputBox_iResolution0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iResolution[0]=event.target.value;});
+            document.getElementById('inputBox_iResolution1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iResolution[1]=event.target.value;});
+            document.getElementById('inputBox_iResolution2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iResolution[2]=event.target.value;});
+            document.getElementById('inputBox_iTime').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iTime=event.target.value;});
+            document.getElementById('inputBox_iTimeDelta').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iTimeDelta=event.target.value;});
+            document.getElementById('inputBox_iFrameRate').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iFrameRate=event.target.value;});
+            document.getElementById('inputBox_iFrame').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); DemofoxMinesweeper.variable_iFrame=event.target.value;});
+            document.getElementById('inputBox_iMouse0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iMouse[0]=event.target.value;});
+            document.getElementById('inputBox_iMouse1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iMouse[1]=event.target.value;});
+            document.getElementById('inputBox_iMouse2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iMouse[2]=event.target.value;});
+            document.getElementById('inputBox_iMouse3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_iMouse[3]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[0]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[1]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[2]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[3]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[4]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[5]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[6]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[7]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[8]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[9]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[10]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[11]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[12]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[13]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[14]=event.target.value;});
+            document.getElementById('inputBox_ViewMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewMtx[15]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[0]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[1]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[2]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[3]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[4]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[5]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[6]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[7]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[8]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[9]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[10]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[11]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[12]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[13]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[14]=event.target.value;});
+            document.getElementById('inputBox_InvViewMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewMtx[15]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[0]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[1]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[2]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[3]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[4]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[5]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[6]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[7]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[8]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[9]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[10]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[11]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[12]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[13]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[14]=event.target.value;});
+            document.getElementById('inputBox_ProjMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ProjMtx[15]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[0]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[1]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[2]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[3]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[4]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[5]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[6]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[7]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[8]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[9]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[10]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[11]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[12]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[13]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[14]=event.target.value;});
+            document.getElementById('inputBox_InvProjMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvProjMtx[15]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[0]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[1]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[2]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[3]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[4]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[5]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[6]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[7]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[8]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[9]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[10]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[11]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[12]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[13]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[14]=event.target.value;});
+            document.getElementById('inputBox_ViewProjMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_ViewProjMtx[15]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[0]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[1]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[2]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[3]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[4]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[5]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[6]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[7]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[8]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[9]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[10]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[11]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[12]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[13]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[14]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_InvViewProjMtx[15]=event.target.value;});
+            document.getElementById('inputBox_CameraPos0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_CameraPos[0]=event.target.value;});
+            document.getElementById('inputBox_CameraPos1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_CameraPos[1]=event.target.value;});
+            document.getElementById('inputBox_CameraPos2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); DemofoxMinesweeper.variable_CameraPos[2]=event.target.value;});
+            document.getElementById('inputBox_CameraChanged').addEventListener('change',(event) => {DemofoxMinesweeper.variable_CameraChanged=event.target.checked;});
+            document.getElementById('inputBox_Reset').addEventListener('click',(event) => {DemofoxMinesweeper.variable_Reset=true;});
+
+            function ResetVariables()
+            {
+                    DemofoxMinesweeper.variable_c_gridSize1D = DemofoxMinesweeper.variableDefault_c_gridSize1D;
+                    DemofoxMinesweeper.variable_c_gridSize2D[0] = DemofoxMinesweeper.variableDefault_c_gridSize2D[0];
+                    DemofoxMinesweeper.variable_c_gridSize2D[1] = DemofoxMinesweeper.variableDefault_c_gridSize2D[1];
+                    DemofoxMinesweeper.variable_MouseState[0] = DemofoxMinesweeper.variableDefault_MouseState[0];
+                    DemofoxMinesweeper.variable_MouseState[1] = DemofoxMinesweeper.variableDefault_MouseState[1];
+                    DemofoxMinesweeper.variable_MouseState[2] = DemofoxMinesweeper.variableDefault_MouseState[2];
+                    DemofoxMinesweeper.variable_MouseState[3] = DemofoxMinesweeper.variableDefault_MouseState[3];
+                    DemofoxMinesweeper.variable_MouseStateLastFrame[0] = DemofoxMinesweeper.variableDefault_MouseStateLastFrame[0];
+                    DemofoxMinesweeper.variable_MouseStateLastFrame[1] = DemofoxMinesweeper.variableDefault_MouseStateLastFrame[1];
+                    DemofoxMinesweeper.variable_MouseStateLastFrame[2] = DemofoxMinesweeper.variableDefault_MouseStateLastFrame[2];
+                    DemofoxMinesweeper.variable_MouseStateLastFrame[3] = DemofoxMinesweeper.variableDefault_MouseStateLastFrame[3];
+                    DemofoxMinesweeper.variable_iResolution[0] = DemofoxMinesweeper.variableDefault_iResolution[0];
+                    DemofoxMinesweeper.variable_iResolution[1] = DemofoxMinesweeper.variableDefault_iResolution[1];
+                    DemofoxMinesweeper.variable_iResolution[2] = DemofoxMinesweeper.variableDefault_iResolution[2];
+                    DemofoxMinesweeper.variable_iTime = DemofoxMinesweeper.variableDefault_iTime;
+                    DemofoxMinesweeper.variable_iTimeDelta = DemofoxMinesweeper.variableDefault_iTimeDelta;
+                    DemofoxMinesweeper.variable_iFrameRate = DemofoxMinesweeper.variableDefault_iFrameRate;
+                    DemofoxMinesweeper.variable_iFrame = DemofoxMinesweeper.variableDefault_iFrame;
+                    DemofoxMinesweeper.variable_iMouse[0] = DemofoxMinesweeper.variableDefault_iMouse[0];
+                    DemofoxMinesweeper.variable_iMouse[1] = DemofoxMinesweeper.variableDefault_iMouse[1];
+                    DemofoxMinesweeper.variable_iMouse[2] = DemofoxMinesweeper.variableDefault_iMouse[2];
+                    DemofoxMinesweeper.variable_iMouse[3] = DemofoxMinesweeper.variableDefault_iMouse[3];
+                    DemofoxMinesweeper.variable_ViewMtx[0] = DemofoxMinesweeper.variableDefault_ViewMtx[0];
+                    DemofoxMinesweeper.variable_ViewMtx[1] = DemofoxMinesweeper.variableDefault_ViewMtx[1];
+                    DemofoxMinesweeper.variable_ViewMtx[2] = DemofoxMinesweeper.variableDefault_ViewMtx[2];
+                    DemofoxMinesweeper.variable_ViewMtx[3] = DemofoxMinesweeper.variableDefault_ViewMtx[3];
+                    DemofoxMinesweeper.variable_ViewMtx[4] = DemofoxMinesweeper.variableDefault_ViewMtx[4];
+                    DemofoxMinesweeper.variable_ViewMtx[5] = DemofoxMinesweeper.variableDefault_ViewMtx[5];
+                    DemofoxMinesweeper.variable_ViewMtx[6] = DemofoxMinesweeper.variableDefault_ViewMtx[6];
+                    DemofoxMinesweeper.variable_ViewMtx[7] = DemofoxMinesweeper.variableDefault_ViewMtx[7];
+                    DemofoxMinesweeper.variable_ViewMtx[8] = DemofoxMinesweeper.variableDefault_ViewMtx[8];
+                    DemofoxMinesweeper.variable_ViewMtx[9] = DemofoxMinesweeper.variableDefault_ViewMtx[9];
+                    DemofoxMinesweeper.variable_ViewMtx[10] = DemofoxMinesweeper.variableDefault_ViewMtx[10];
+                    DemofoxMinesweeper.variable_ViewMtx[11] = DemofoxMinesweeper.variableDefault_ViewMtx[11];
+                    DemofoxMinesweeper.variable_ViewMtx[12] = DemofoxMinesweeper.variableDefault_ViewMtx[12];
+                    DemofoxMinesweeper.variable_ViewMtx[13] = DemofoxMinesweeper.variableDefault_ViewMtx[13];
+                    DemofoxMinesweeper.variable_ViewMtx[14] = DemofoxMinesweeper.variableDefault_ViewMtx[14];
+                    DemofoxMinesweeper.variable_ViewMtx[15] = DemofoxMinesweeper.variableDefault_ViewMtx[15];
+                    DemofoxMinesweeper.variable_InvViewMtx[0] = DemofoxMinesweeper.variableDefault_InvViewMtx[0];
+                    DemofoxMinesweeper.variable_InvViewMtx[1] = DemofoxMinesweeper.variableDefault_InvViewMtx[1];
+                    DemofoxMinesweeper.variable_InvViewMtx[2] = DemofoxMinesweeper.variableDefault_InvViewMtx[2];
+                    DemofoxMinesweeper.variable_InvViewMtx[3] = DemofoxMinesweeper.variableDefault_InvViewMtx[3];
+                    DemofoxMinesweeper.variable_InvViewMtx[4] = DemofoxMinesweeper.variableDefault_InvViewMtx[4];
+                    DemofoxMinesweeper.variable_InvViewMtx[5] = DemofoxMinesweeper.variableDefault_InvViewMtx[5];
+                    DemofoxMinesweeper.variable_InvViewMtx[6] = DemofoxMinesweeper.variableDefault_InvViewMtx[6];
+                    DemofoxMinesweeper.variable_InvViewMtx[7] = DemofoxMinesweeper.variableDefault_InvViewMtx[7];
+                    DemofoxMinesweeper.variable_InvViewMtx[8] = DemofoxMinesweeper.variableDefault_InvViewMtx[8];
+                    DemofoxMinesweeper.variable_InvViewMtx[9] = DemofoxMinesweeper.variableDefault_InvViewMtx[9];
+                    DemofoxMinesweeper.variable_InvViewMtx[10] = DemofoxMinesweeper.variableDefault_InvViewMtx[10];
+                    DemofoxMinesweeper.variable_InvViewMtx[11] = DemofoxMinesweeper.variableDefault_InvViewMtx[11];
+                    DemofoxMinesweeper.variable_InvViewMtx[12] = DemofoxMinesweeper.variableDefault_InvViewMtx[12];
+                    DemofoxMinesweeper.variable_InvViewMtx[13] = DemofoxMinesweeper.variableDefault_InvViewMtx[13];
+                    DemofoxMinesweeper.variable_InvViewMtx[14] = DemofoxMinesweeper.variableDefault_InvViewMtx[14];
+                    DemofoxMinesweeper.variable_InvViewMtx[15] = DemofoxMinesweeper.variableDefault_InvViewMtx[15];
+                    DemofoxMinesweeper.variable_ProjMtx[0] = DemofoxMinesweeper.variableDefault_ProjMtx[0];
+                    DemofoxMinesweeper.variable_ProjMtx[1] = DemofoxMinesweeper.variableDefault_ProjMtx[1];
+                    DemofoxMinesweeper.variable_ProjMtx[2] = DemofoxMinesweeper.variableDefault_ProjMtx[2];
+                    DemofoxMinesweeper.variable_ProjMtx[3] = DemofoxMinesweeper.variableDefault_ProjMtx[3];
+                    DemofoxMinesweeper.variable_ProjMtx[4] = DemofoxMinesweeper.variableDefault_ProjMtx[4];
+                    DemofoxMinesweeper.variable_ProjMtx[5] = DemofoxMinesweeper.variableDefault_ProjMtx[5];
+                    DemofoxMinesweeper.variable_ProjMtx[6] = DemofoxMinesweeper.variableDefault_ProjMtx[6];
+                    DemofoxMinesweeper.variable_ProjMtx[7] = DemofoxMinesweeper.variableDefault_ProjMtx[7];
+                    DemofoxMinesweeper.variable_ProjMtx[8] = DemofoxMinesweeper.variableDefault_ProjMtx[8];
+                    DemofoxMinesweeper.variable_ProjMtx[9] = DemofoxMinesweeper.variableDefault_ProjMtx[9];
+                    DemofoxMinesweeper.variable_ProjMtx[10] = DemofoxMinesweeper.variableDefault_ProjMtx[10];
+                    DemofoxMinesweeper.variable_ProjMtx[11] = DemofoxMinesweeper.variableDefault_ProjMtx[11];
+                    DemofoxMinesweeper.variable_ProjMtx[12] = DemofoxMinesweeper.variableDefault_ProjMtx[12];
+                    DemofoxMinesweeper.variable_ProjMtx[13] = DemofoxMinesweeper.variableDefault_ProjMtx[13];
+                    DemofoxMinesweeper.variable_ProjMtx[14] = DemofoxMinesweeper.variableDefault_ProjMtx[14];
+                    DemofoxMinesweeper.variable_ProjMtx[15] = DemofoxMinesweeper.variableDefault_ProjMtx[15];
+                    DemofoxMinesweeper.variable_InvProjMtx[0] = DemofoxMinesweeper.variableDefault_InvProjMtx[0];
+                    DemofoxMinesweeper.variable_InvProjMtx[1] = DemofoxMinesweeper.variableDefault_InvProjMtx[1];
+                    DemofoxMinesweeper.variable_InvProjMtx[2] = DemofoxMinesweeper.variableDefault_InvProjMtx[2];
+                    DemofoxMinesweeper.variable_InvProjMtx[3] = DemofoxMinesweeper.variableDefault_InvProjMtx[3];
+                    DemofoxMinesweeper.variable_InvProjMtx[4] = DemofoxMinesweeper.variableDefault_InvProjMtx[4];
+                    DemofoxMinesweeper.variable_InvProjMtx[5] = DemofoxMinesweeper.variableDefault_InvProjMtx[5];
+                    DemofoxMinesweeper.variable_InvProjMtx[6] = DemofoxMinesweeper.variableDefault_InvProjMtx[6];
+                    DemofoxMinesweeper.variable_InvProjMtx[7] = DemofoxMinesweeper.variableDefault_InvProjMtx[7];
+                    DemofoxMinesweeper.variable_InvProjMtx[8] = DemofoxMinesweeper.variableDefault_InvProjMtx[8];
+                    DemofoxMinesweeper.variable_InvProjMtx[9] = DemofoxMinesweeper.variableDefault_InvProjMtx[9];
+                    DemofoxMinesweeper.variable_InvProjMtx[10] = DemofoxMinesweeper.variableDefault_InvProjMtx[10];
+                    DemofoxMinesweeper.variable_InvProjMtx[11] = DemofoxMinesweeper.variableDefault_InvProjMtx[11];
+                    DemofoxMinesweeper.variable_InvProjMtx[12] = DemofoxMinesweeper.variableDefault_InvProjMtx[12];
+                    DemofoxMinesweeper.variable_InvProjMtx[13] = DemofoxMinesweeper.variableDefault_InvProjMtx[13];
+                    DemofoxMinesweeper.variable_InvProjMtx[14] = DemofoxMinesweeper.variableDefault_InvProjMtx[14];
+                    DemofoxMinesweeper.variable_InvProjMtx[15] = DemofoxMinesweeper.variableDefault_InvProjMtx[15];
+                    DemofoxMinesweeper.variable_ViewProjMtx[0] = DemofoxMinesweeper.variableDefault_ViewProjMtx[0];
+                    DemofoxMinesweeper.variable_ViewProjMtx[1] = DemofoxMinesweeper.variableDefault_ViewProjMtx[1];
+                    DemofoxMinesweeper.variable_ViewProjMtx[2] = DemofoxMinesweeper.variableDefault_ViewProjMtx[2];
+                    DemofoxMinesweeper.variable_ViewProjMtx[3] = DemofoxMinesweeper.variableDefault_ViewProjMtx[3];
+                    DemofoxMinesweeper.variable_ViewProjMtx[4] = DemofoxMinesweeper.variableDefault_ViewProjMtx[4];
+                    DemofoxMinesweeper.variable_ViewProjMtx[5] = DemofoxMinesweeper.variableDefault_ViewProjMtx[5];
+                    DemofoxMinesweeper.variable_ViewProjMtx[6] = DemofoxMinesweeper.variableDefault_ViewProjMtx[6];
+                    DemofoxMinesweeper.variable_ViewProjMtx[7] = DemofoxMinesweeper.variableDefault_ViewProjMtx[7];
+                    DemofoxMinesweeper.variable_ViewProjMtx[8] = DemofoxMinesweeper.variableDefault_ViewProjMtx[8];
+                    DemofoxMinesweeper.variable_ViewProjMtx[9] = DemofoxMinesweeper.variableDefault_ViewProjMtx[9];
+                    DemofoxMinesweeper.variable_ViewProjMtx[10] = DemofoxMinesweeper.variableDefault_ViewProjMtx[10];
+                    DemofoxMinesweeper.variable_ViewProjMtx[11] = DemofoxMinesweeper.variableDefault_ViewProjMtx[11];
+                    DemofoxMinesweeper.variable_ViewProjMtx[12] = DemofoxMinesweeper.variableDefault_ViewProjMtx[12];
+                    DemofoxMinesweeper.variable_ViewProjMtx[13] = DemofoxMinesweeper.variableDefault_ViewProjMtx[13];
+                    DemofoxMinesweeper.variable_ViewProjMtx[14] = DemofoxMinesweeper.variableDefault_ViewProjMtx[14];
+                    DemofoxMinesweeper.variable_ViewProjMtx[15] = DemofoxMinesweeper.variableDefault_ViewProjMtx[15];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[0] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[0];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[1] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[1];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[2] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[2];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[3] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[3];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[4] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[4];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[5] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[5];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[6] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[6];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[7] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[7];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[8] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[8];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[9] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[9];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[10] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[10];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[11] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[11];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[12] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[12];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[13] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[13];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[14] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[14];
+                    DemofoxMinesweeper.variable_InvViewProjMtx[15] = DemofoxMinesweeper.variableDefault_InvViewProjMtx[15];
+                    DemofoxMinesweeper.variable_CameraPos[0] = DemofoxMinesweeper.variableDefault_CameraPos[0];
+                    DemofoxMinesweeper.variable_CameraPos[1] = DemofoxMinesweeper.variableDefault_CameraPos[1];
+                    DemofoxMinesweeper.variable_CameraPos[2] = DemofoxMinesweeper.variableDefault_CameraPos[2];
+                    DemofoxMinesweeper.variable_CameraChanged = DemofoxMinesweeper.variableDefault_CameraChanged;
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_c_gridSize1D').value = DemofoxMinesweeper.variable_c_gridSize1D;
+                    document.getElementById('inputBox_c_gridSize2D0').value = DemofoxMinesweeper.variable_c_gridSize2D[0];
+                    document.getElementById('inputBox_c_gridSize2D1').value = DemofoxMinesweeper.variable_c_gridSize2D[1];
+                    document.getElementById('inputBox_MouseState0').value = DemofoxMinesweeper.variable_MouseState[0];
+                    document.getElementById('inputBox_MouseState1').value = DemofoxMinesweeper.variable_MouseState[1];
+                    document.getElementById('inputBox_MouseState2').value = DemofoxMinesweeper.variable_MouseState[2];
+                    document.getElementById('inputBox_MouseState3').value = DemofoxMinesweeper.variable_MouseState[3];
+                    document.getElementById('inputBox_MouseStateLastFrame0').value = DemofoxMinesweeper.variable_MouseStateLastFrame[0];
+                    document.getElementById('inputBox_MouseStateLastFrame1').value = DemofoxMinesweeper.variable_MouseStateLastFrame[1];
+                    document.getElementById('inputBox_MouseStateLastFrame2').value = DemofoxMinesweeper.variable_MouseStateLastFrame[2];
+                    document.getElementById('inputBox_MouseStateLastFrame3').value = DemofoxMinesweeper.variable_MouseStateLastFrame[3];
+                    document.getElementById('inputBox_iResolution0').value = DemofoxMinesweeper.variable_iResolution[0];
+                    document.getElementById('inputBox_iResolution1').value = DemofoxMinesweeper.variable_iResolution[1];
+                    document.getElementById('inputBox_iResolution2').value = DemofoxMinesweeper.variable_iResolution[2];
+                    document.getElementById('inputBox_iTime').value = DemofoxMinesweeper.variable_iTime;
+                    document.getElementById('inputBox_iTimeDelta').value = DemofoxMinesweeper.variable_iTimeDelta;
+                    document.getElementById('inputBox_iFrameRate').value = DemofoxMinesweeper.variable_iFrameRate;
+                    document.getElementById('inputBox_iFrame').value = DemofoxMinesweeper.variable_iFrame;
+                    document.getElementById('inputBox_iMouse0').value = DemofoxMinesweeper.variable_iMouse[0];
+                    document.getElementById('inputBox_iMouse1').value = DemofoxMinesweeper.variable_iMouse[1];
+                    document.getElementById('inputBox_iMouse2').value = DemofoxMinesweeper.variable_iMouse[2];
+                    document.getElementById('inputBox_iMouse3').value = DemofoxMinesweeper.variable_iMouse[3];
+                    document.getElementById('inputBox_ViewMtx0').value = DemofoxMinesweeper.variable_ViewMtx[0];
+                    document.getElementById('inputBox_ViewMtx1').value = DemofoxMinesweeper.variable_ViewMtx[1];
+                    document.getElementById('inputBox_ViewMtx2').value = DemofoxMinesweeper.variable_ViewMtx[2];
+                    document.getElementById('inputBox_ViewMtx3').value = DemofoxMinesweeper.variable_ViewMtx[3];
+                    document.getElementById('inputBox_ViewMtx4').value = DemofoxMinesweeper.variable_ViewMtx[4];
+                    document.getElementById('inputBox_ViewMtx5').value = DemofoxMinesweeper.variable_ViewMtx[5];
+                    document.getElementById('inputBox_ViewMtx6').value = DemofoxMinesweeper.variable_ViewMtx[6];
+                    document.getElementById('inputBox_ViewMtx7').value = DemofoxMinesweeper.variable_ViewMtx[7];
+                    document.getElementById('inputBox_ViewMtx8').value = DemofoxMinesweeper.variable_ViewMtx[8];
+                    document.getElementById('inputBox_ViewMtx9').value = DemofoxMinesweeper.variable_ViewMtx[9];
+                    document.getElementById('inputBox_ViewMtx10').value = DemofoxMinesweeper.variable_ViewMtx[10];
+                    document.getElementById('inputBox_ViewMtx11').value = DemofoxMinesweeper.variable_ViewMtx[11];
+                    document.getElementById('inputBox_ViewMtx12').value = DemofoxMinesweeper.variable_ViewMtx[12];
+                    document.getElementById('inputBox_ViewMtx13').value = DemofoxMinesweeper.variable_ViewMtx[13];
+                    document.getElementById('inputBox_ViewMtx14').value = DemofoxMinesweeper.variable_ViewMtx[14];
+                    document.getElementById('inputBox_ViewMtx15').value = DemofoxMinesweeper.variable_ViewMtx[15];
+                    document.getElementById('inputBox_InvViewMtx0').value = DemofoxMinesweeper.variable_InvViewMtx[0];
+                    document.getElementById('inputBox_InvViewMtx1').value = DemofoxMinesweeper.variable_InvViewMtx[1];
+                    document.getElementById('inputBox_InvViewMtx2').value = DemofoxMinesweeper.variable_InvViewMtx[2];
+                    document.getElementById('inputBox_InvViewMtx3').value = DemofoxMinesweeper.variable_InvViewMtx[3];
+                    document.getElementById('inputBox_InvViewMtx4').value = DemofoxMinesweeper.variable_InvViewMtx[4];
+                    document.getElementById('inputBox_InvViewMtx5').value = DemofoxMinesweeper.variable_InvViewMtx[5];
+                    document.getElementById('inputBox_InvViewMtx6').value = DemofoxMinesweeper.variable_InvViewMtx[6];
+                    document.getElementById('inputBox_InvViewMtx7').value = DemofoxMinesweeper.variable_InvViewMtx[7];
+                    document.getElementById('inputBox_InvViewMtx8').value = DemofoxMinesweeper.variable_InvViewMtx[8];
+                    document.getElementById('inputBox_InvViewMtx9').value = DemofoxMinesweeper.variable_InvViewMtx[9];
+                    document.getElementById('inputBox_InvViewMtx10').value = DemofoxMinesweeper.variable_InvViewMtx[10];
+                    document.getElementById('inputBox_InvViewMtx11').value = DemofoxMinesweeper.variable_InvViewMtx[11];
+                    document.getElementById('inputBox_InvViewMtx12').value = DemofoxMinesweeper.variable_InvViewMtx[12];
+                    document.getElementById('inputBox_InvViewMtx13').value = DemofoxMinesweeper.variable_InvViewMtx[13];
+                    document.getElementById('inputBox_InvViewMtx14').value = DemofoxMinesweeper.variable_InvViewMtx[14];
+                    document.getElementById('inputBox_InvViewMtx15').value = DemofoxMinesweeper.variable_InvViewMtx[15];
+                    document.getElementById('inputBox_ProjMtx0').value = DemofoxMinesweeper.variable_ProjMtx[0];
+                    document.getElementById('inputBox_ProjMtx1').value = DemofoxMinesweeper.variable_ProjMtx[1];
+                    document.getElementById('inputBox_ProjMtx2').value = DemofoxMinesweeper.variable_ProjMtx[2];
+                    document.getElementById('inputBox_ProjMtx3').value = DemofoxMinesweeper.variable_ProjMtx[3];
+                    document.getElementById('inputBox_ProjMtx4').value = DemofoxMinesweeper.variable_ProjMtx[4];
+                    document.getElementById('inputBox_ProjMtx5').value = DemofoxMinesweeper.variable_ProjMtx[5];
+                    document.getElementById('inputBox_ProjMtx6').value = DemofoxMinesweeper.variable_ProjMtx[6];
+                    document.getElementById('inputBox_ProjMtx7').value = DemofoxMinesweeper.variable_ProjMtx[7];
+                    document.getElementById('inputBox_ProjMtx8').value = DemofoxMinesweeper.variable_ProjMtx[8];
+                    document.getElementById('inputBox_ProjMtx9').value = DemofoxMinesweeper.variable_ProjMtx[9];
+                    document.getElementById('inputBox_ProjMtx10').value = DemofoxMinesweeper.variable_ProjMtx[10];
+                    document.getElementById('inputBox_ProjMtx11').value = DemofoxMinesweeper.variable_ProjMtx[11];
+                    document.getElementById('inputBox_ProjMtx12').value = DemofoxMinesweeper.variable_ProjMtx[12];
+                    document.getElementById('inputBox_ProjMtx13').value = DemofoxMinesweeper.variable_ProjMtx[13];
+                    document.getElementById('inputBox_ProjMtx14').value = DemofoxMinesweeper.variable_ProjMtx[14];
+                    document.getElementById('inputBox_ProjMtx15').value = DemofoxMinesweeper.variable_ProjMtx[15];
+                    document.getElementById('inputBox_InvProjMtx0').value = DemofoxMinesweeper.variable_InvProjMtx[0];
+                    document.getElementById('inputBox_InvProjMtx1').value = DemofoxMinesweeper.variable_InvProjMtx[1];
+                    document.getElementById('inputBox_InvProjMtx2').value = DemofoxMinesweeper.variable_InvProjMtx[2];
+                    document.getElementById('inputBox_InvProjMtx3').value = DemofoxMinesweeper.variable_InvProjMtx[3];
+                    document.getElementById('inputBox_InvProjMtx4').value = DemofoxMinesweeper.variable_InvProjMtx[4];
+                    document.getElementById('inputBox_InvProjMtx5').value = DemofoxMinesweeper.variable_InvProjMtx[5];
+                    document.getElementById('inputBox_InvProjMtx6').value = DemofoxMinesweeper.variable_InvProjMtx[6];
+                    document.getElementById('inputBox_InvProjMtx7').value = DemofoxMinesweeper.variable_InvProjMtx[7];
+                    document.getElementById('inputBox_InvProjMtx8').value = DemofoxMinesweeper.variable_InvProjMtx[8];
+                    document.getElementById('inputBox_InvProjMtx9').value = DemofoxMinesweeper.variable_InvProjMtx[9];
+                    document.getElementById('inputBox_InvProjMtx10').value = DemofoxMinesweeper.variable_InvProjMtx[10];
+                    document.getElementById('inputBox_InvProjMtx11').value = DemofoxMinesweeper.variable_InvProjMtx[11];
+                    document.getElementById('inputBox_InvProjMtx12').value = DemofoxMinesweeper.variable_InvProjMtx[12];
+                    document.getElementById('inputBox_InvProjMtx13').value = DemofoxMinesweeper.variable_InvProjMtx[13];
+                    document.getElementById('inputBox_InvProjMtx14').value = DemofoxMinesweeper.variable_InvProjMtx[14];
+                    document.getElementById('inputBox_InvProjMtx15').value = DemofoxMinesweeper.variable_InvProjMtx[15];
+                    document.getElementById('inputBox_ViewProjMtx0').value = DemofoxMinesweeper.variable_ViewProjMtx[0];
+                    document.getElementById('inputBox_ViewProjMtx1').value = DemofoxMinesweeper.variable_ViewProjMtx[1];
+                    document.getElementById('inputBox_ViewProjMtx2').value = DemofoxMinesweeper.variable_ViewProjMtx[2];
+                    document.getElementById('inputBox_ViewProjMtx3').value = DemofoxMinesweeper.variable_ViewProjMtx[3];
+                    document.getElementById('inputBox_ViewProjMtx4').value = DemofoxMinesweeper.variable_ViewProjMtx[4];
+                    document.getElementById('inputBox_ViewProjMtx5').value = DemofoxMinesweeper.variable_ViewProjMtx[5];
+                    document.getElementById('inputBox_ViewProjMtx6').value = DemofoxMinesweeper.variable_ViewProjMtx[6];
+                    document.getElementById('inputBox_ViewProjMtx7').value = DemofoxMinesweeper.variable_ViewProjMtx[7];
+                    document.getElementById('inputBox_ViewProjMtx8').value = DemofoxMinesweeper.variable_ViewProjMtx[8];
+                    document.getElementById('inputBox_ViewProjMtx9').value = DemofoxMinesweeper.variable_ViewProjMtx[9];
+                    document.getElementById('inputBox_ViewProjMtx10').value = DemofoxMinesweeper.variable_ViewProjMtx[10];
+                    document.getElementById('inputBox_ViewProjMtx11').value = DemofoxMinesweeper.variable_ViewProjMtx[11];
+                    document.getElementById('inputBox_ViewProjMtx12').value = DemofoxMinesweeper.variable_ViewProjMtx[12];
+                    document.getElementById('inputBox_ViewProjMtx13').value = DemofoxMinesweeper.variable_ViewProjMtx[13];
+                    document.getElementById('inputBox_ViewProjMtx14').value = DemofoxMinesweeper.variable_ViewProjMtx[14];
+                    document.getElementById('inputBox_ViewProjMtx15').value = DemofoxMinesweeper.variable_ViewProjMtx[15];
+                    document.getElementById('inputBox_InvViewProjMtx0').value = DemofoxMinesweeper.variable_InvViewProjMtx[0];
+                    document.getElementById('inputBox_InvViewProjMtx1').value = DemofoxMinesweeper.variable_InvViewProjMtx[1];
+                    document.getElementById('inputBox_InvViewProjMtx2').value = DemofoxMinesweeper.variable_InvViewProjMtx[2];
+                    document.getElementById('inputBox_InvViewProjMtx3').value = DemofoxMinesweeper.variable_InvViewProjMtx[3];
+                    document.getElementById('inputBox_InvViewProjMtx4').value = DemofoxMinesweeper.variable_InvViewProjMtx[4];
+                    document.getElementById('inputBox_InvViewProjMtx5').value = DemofoxMinesweeper.variable_InvViewProjMtx[5];
+                    document.getElementById('inputBox_InvViewProjMtx6').value = DemofoxMinesweeper.variable_InvViewProjMtx[6];
+                    document.getElementById('inputBox_InvViewProjMtx7').value = DemofoxMinesweeper.variable_InvViewProjMtx[7];
+                    document.getElementById('inputBox_InvViewProjMtx8').value = DemofoxMinesweeper.variable_InvViewProjMtx[8];
+                    document.getElementById('inputBox_InvViewProjMtx9').value = DemofoxMinesweeper.variable_InvViewProjMtx[9];
+                    document.getElementById('inputBox_InvViewProjMtx10').value = DemofoxMinesweeper.variable_InvViewProjMtx[10];
+                    document.getElementById('inputBox_InvViewProjMtx11').value = DemofoxMinesweeper.variable_InvViewProjMtx[11];
+                    document.getElementById('inputBox_InvViewProjMtx12').value = DemofoxMinesweeper.variable_InvViewProjMtx[12];
+                    document.getElementById('inputBox_InvViewProjMtx13').value = DemofoxMinesweeper.variable_InvViewProjMtx[13];
+                    document.getElementById('inputBox_InvViewProjMtx14').value = DemofoxMinesweeper.variable_InvViewProjMtx[14];
+                    document.getElementById('inputBox_InvViewProjMtx15').value = DemofoxMinesweeper.variable_InvViewProjMtx[15];
+                    document.getElementById('inputBox_CameraPos0').value = DemofoxMinesweeper.variable_CameraPos[0];
+                    document.getElementById('inputBox_CameraPos1').value = DemofoxMinesweeper.variable_CameraPos[1];
+                    document.getElementById('inputBox_CameraPos2').value = DemofoxMinesweeper.variable_CameraPos[2];
+                    document.getElementById('inputBox_CameraChanged').checked = Boolean(DemofoxMinesweeper.variable_CameraChanged);
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
+            /* TODO:
+            provide imported resources or variable values to the technique that only need to be set once:
+                Host Variables:
+                    DemofoxMinesweeper.variable_MouseState = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    DemofoxMinesweeper.variable_MouseStateLastFrame = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    DemofoxMinesweeper.variable_iResolution = 0.000000, 0.000000, 0.000000; // (Float3)
+                    DemofoxMinesweeper.variable_iTime = 0.000000; // (Float)
+                    DemofoxMinesweeper.variable_iTimeDelta = 0.000000; // (Float)
+                    DemofoxMinesweeper.variable_iFrameRate = 0.000000; // (Float)
+                    DemofoxMinesweeper.variable_iFrame = 0; // (Int)
+                    DemofoxMinesweeper.variable_iMouse = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    DemofoxMinesweeper.variable_ViewMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_InvViewMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_ProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_InvProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_ViewProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_InvViewProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_CameraPos = 0.000000, 0.000000, 0.000000; // (Float3)
+                    DemofoxMinesweeper.variable_CameraChanged = false; // (Bool)
+                User Variables (These show in the UI):
+                    DemofoxMinesweeper.variable_Reset = false; // (Bool)
+            */
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
+
+            // Frame rendering function
+            let startTimeMs;
+            let lastTimeMs;
+            let frameIndex = 0
+            async function RenderFrame(currentTimeMs) {
+
+                // Handle frame timing
+                if (startTimeMs === undefined)
+                {
+                    startTimeMs = currentTimeMs;
+                    lastTimeMs = currentTimeMs;
+                }
+
+                // Show FPS
+                document.getElementById("FPS").innerHTML = "<br><br>FPS: " + (1000.0 / (currentTimeMs - lastTimeMs)).toFixed(2) + "<br>ms: " + (currentTimeMs - lastTimeMs).toFixed(2);
+
+                // Update the camera based on user input
+                UpdateCamera((currentTimeMs - lastTimeMs) / 1000);
+
+                // Run the technique
+                const encoder = device.createCommandEncoder();
+
+                /* TODO:
+            provide imported resources or variable values to the technique that need to change every frame:
+                Host Variables:
+                    DemofoxMinesweeper.variable_MouseState = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    DemofoxMinesweeper.variable_MouseStateLastFrame = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    DemofoxMinesweeper.variable_iResolution = 0.000000, 0.000000, 0.000000; // (Float3)
+                    DemofoxMinesweeper.variable_iTime = 0.000000; // (Float)
+                    DemofoxMinesweeper.variable_iTimeDelta = 0.000000; // (Float)
+                    DemofoxMinesweeper.variable_iFrameRate = 0.000000; // (Float)
+                    DemofoxMinesweeper.variable_iFrame = 0; // (Int)
+                    DemofoxMinesweeper.variable_iMouse = 0.000000, 0.000000, 0.000000, 0.000000; // (Float4)
+                    DemofoxMinesweeper.variable_ViewMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_InvViewMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_ProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_InvProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_ViewProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_InvViewProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
+                    DemofoxMinesweeper.variable_CameraPos = 0.000000, 0.000000, 0.000000; // (Float3)
+                    DemofoxMinesweeper.variable_CameraChanged = false; // (Bool)
+                User Variables (These show in the UI):
+                    DemofoxMinesweeper.variable_Reset = false; // (Bool)
+                */
+
+                // Set the frame index
+                DemofoxMinesweeper.variable_iFrame = frameIndex;
+                DemofoxMinesweeper.variableChanged_iFrame = true;
+
+                // Set the resolution
+                if (DemofoxMinesweeper.texture_Output !== null)
+                {
+                    DemofoxMinesweeper.variable_iResolution[0] = DemofoxMinesweeper.texture_Output.width;
+                    DemofoxMinesweeper.variableChanged_iResolution[0] = true;
+                    DemofoxMinesweeper.variable_iResolution[1] = DemofoxMinesweeper.texture_Output.height;
+                    DemofoxMinesweeper.variableChanged_iResolution[1] = true;
+                    DemofoxMinesweeper.variable_iResolution[2] = 1;
+                    DemofoxMinesweeper.variableChanged_iResolution[2] = true;
+                }
+
+                // Time in seconds since this started running
+                DemofoxMinesweeper.variable_iTime = (currentTimeMs - startTimeMs) / 1000;
+                DemofoxMinesweeper.variableChanged_iTime = true;
+
+                // How long RenderFrame() took last frame, in seconds
+                DemofoxMinesweeper.variable_iTimeDelta = (currentTimeMs - lastTimeMs) / 1000;
+                DemofoxMinesweeper.variableChanged_iTimeDelta = true;
+
+                // Frames per second
+                DemofoxMinesweeper.variable_iFrameRate = 1000 / (currentTimeMs - lastTimeMs);
+                DemofoxMinesweeper.variableChanged_iFrameRate = true;
+
+                // Mouse: xy is where user last clicked. zw is the click location for the single frame when a user clicks, else is zero.
+                DemofoxMinesweeper.variable_iMouse[0] = iMouse[0];
+                DemofoxMinesweeper.variableChanged_iMouse[0] = true;
+                DemofoxMinesweeper.variable_iMouse[1] = iMouse[1];
+                DemofoxMinesweeper.variableChanged_iMouse[1] = true;
+                DemofoxMinesweeper.variable_iMouse[2] = iMouse[2];
+                DemofoxMinesweeper.variableChanged_iMouse[2] = true;
+                DemofoxMinesweeper.variable_iMouse[3] = iMouse[3];
+                DemofoxMinesweeper.variableChanged_iMouse[3] = true;
+
+                // Mouse State: xy is mouse position. z is left mouse button state. w is right mouse button state.
+                DemofoxMinesweeper.variable_MouseState[0] = MouseState[0];
+                DemofoxMinesweeper.variableChanged_MouseState[0] = true;
+                DemofoxMinesweeper.variable_MouseState[1] = MouseState[1];
+                DemofoxMinesweeper.variableChanged_MouseState[1] = true;
+                DemofoxMinesweeper.variable_MouseState[2] = MouseState[2];
+                DemofoxMinesweeper.variableChanged_MouseState[2] = true;
+                DemofoxMinesweeper.variable_MouseState[3] = MouseState[3];
+                DemofoxMinesweeper.variableChanged_MouseState[3] = true;
+
+                // Mouse State Last Frame: xy is mouse position. z is left mouse button state. w is right mouse button state.
+                DemofoxMinesweeper.variable_MouseStateLastFrame[0] = MouseStateLastFrame[0];
+                DemofoxMinesweeper.variableChanged_MouseStateLastFrame[0] = true;
+                DemofoxMinesweeper.variable_MouseStateLastFrame[1] = MouseStateLastFrame[1];
+                DemofoxMinesweeper.variableChanged_MouseStateLastFrame[1] = true;
+                DemofoxMinesweeper.variable_MouseStateLastFrame[2] = MouseStateLastFrame[2];
+                DemofoxMinesweeper.variableChanged_MouseStateLastFrame[2] = true;
+                DemofoxMinesweeper.variable_MouseStateLastFrame[3] = MouseStateLastFrame[3];
+                DemofoxMinesweeper.variableChanged_MouseStateLastFrame[3] = true;
+
+                // View matrix
+                DemofoxMinesweeper.variable_ViewMtx = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+                DemofoxMinesweeper.variableChanged_ViewMtx = new Array(16).fill(true);
+
+                // Inverse view matrix
+                DemofoxMinesweeper.variable_InvViewMtx = Shared.GetInvViewMatrix(CameraPos, CameraAltitudeAzimuth);
+                DemofoxMinesweeper.variableChanged_InvViewMtx = new Array(16).fill(true);
+
+                // Projection matrix resolution texture
+                const projMtxResolution = [ DemofoxMinesweeper.texture_Output_size[0], DemofoxMinesweeper.texture_Output_size[1] ];
+
+                // Proj matrix
+                DemofoxMinesweeper.variable_ProjMtx = Shared.GetProjMatrix(45, projMtxResolution, 0.1, 1000, true, true, CameraLeftHanded);
+                DemofoxMinesweeper.variableChanged_ProjMtx = new Array(16).fill(true);
+
+                // Inverse Proj matrix
+                DemofoxMinesweeper.variable_InvProjMtx = Shared.GetInvProjMatrix(45, projMtxResolution, 0.1, 1000, true, true, CameraLeftHanded);
+                DemofoxMinesweeper.variableChanged_InvProjMtx = new Array(16).fill(true);
+
+                // View Proj matrix
+                {
+                    const viewMtx = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+                    const projMtx = Shared.GetProjMatrix(45, projMtxResolution, 0.1, 1000, true, true, CameraLeftHanded);
+                    DemofoxMinesweeper.variable_ViewProjMtx = Shared.MatMul(viewMtx, projMtx);
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx = new Array(16).fill(true);
+                }
+
+                // Inverse View Proj matrix
+                {
+                    const viewMtx = Shared.GetInvViewMatrix(CameraPos, CameraAltitudeAzimuth);
+                    const projMtx = Shared.GetInvProjMatrix(45, projMtxResolution, 0.1, 1000, true, true, CameraLeftHanded);
+                    DemofoxMinesweeper.variable_InvViewProjMtx = Shared.MatMul(projMtx, viewMtx);
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx = new Array(16).fill(true);
+                }
+
+                // Camera Position
+                DemofoxMinesweeper.variable_CameraPos = CameraPos.slice();
+                DemofoxMinesweeper.variableChanged_CameraPos = new Array(3).fill(true);
+
+                // Camera Changed
+                DemofoxMinesweeper.variable_CameraChanged = CameraChanged;
+                DemofoxMinesweeper.variableChanged_CameraChanged = true;
+
+                const executeResult = await DemofoxMinesweeper.Execute(device, encoder, false);
+                if (!executeResult)
+                {
+                    alert("Could not execute DemofoxMinesweeper");
+                    throw new Error("Could not execute DemofoxMinesweeper");
+                }
+
+                if (viewingTextureName.length != 0 && DemofoxMinesweeper["texture_" + viewingTextureName] !== null)
+                {
+                    // Update size of the canvas
+                    document.getElementById("mainCanvas").width = DemofoxMinesweeper["texture_" + viewingTextureName].width;
+                    document.getElementById("mainCanvas").height = DemofoxMinesweeper["texture_" + viewingTextureName].height;
+
+                    if (!Shared.CopyCompatibleFormats(DemofoxMinesweeper["texture_" + viewingTextureName].format, canvasFormat))
+                    {
+                        Shared.CopyTextureLinearToSRGB(device, encoder, DemofoxMinesweeper["texture_" + viewingTextureName], context.getCurrentTexture());
+                    }
+                    else
+                    {
+                        encoder.copyTextureToTexture(
+                            { texture: DemofoxMinesweeper["texture_" + viewingTextureName] },
+                            { texture: context.getCurrentTexture() },
+                            {
+                                width: Math.min(DemofoxMinesweeper["texture_" + viewingTextureName].width, context.getCurrentTexture().width),
+                                height: Math.min(DemofoxMinesweeper["texture_" + viewingTextureName].height, context.getCurrentTexture().height),
+                                depthOrArrayLayers: Math.min(DemofoxMinesweeper["texture_" + viewingTextureName].depthOrArrayLayers, context.getCurrentTexture().depthOrArrayLayers)
+                            }
+                        );
+                    }
+                }
+
+                // If the technique changed the variables, update the UI
+                if (DemofoxMinesweeper.variableChanged_c_gridSize1D)
+                {
+                    document.getElementById('inputBox_c_gridSize1D').value = DemofoxMinesweeper.variable_c_gridSize1D;
+                    DemofoxMinesweeper.variableChanged_c_gridSize1D = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_c_gridSize2D[0])
+                {
+                    document.getElementById('inputBox_c_gridSize2D0').value = DemofoxMinesweeper.variable_c_gridSize2D[0];
+                    DemofoxMinesweeper.variableChanged_c_gridSize2D[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_c_gridSize2D[1])
+                {
+                    document.getElementById('inputBox_c_gridSize2D1').value = DemofoxMinesweeper.variable_c_gridSize2D[1];
+                    DemofoxMinesweeper.variableChanged_c_gridSize2D[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseState[0])
+                {
+                    document.getElementById('inputBox_MouseState0').value = DemofoxMinesweeper.variable_MouseState[0];
+                    DemofoxMinesweeper.variableChanged_MouseState[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseState[1])
+                {
+                    document.getElementById('inputBox_MouseState1').value = DemofoxMinesweeper.variable_MouseState[1];
+                    DemofoxMinesweeper.variableChanged_MouseState[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseState[2])
+                {
+                    document.getElementById('inputBox_MouseState2').value = DemofoxMinesweeper.variable_MouseState[2];
+                    DemofoxMinesweeper.variableChanged_MouseState[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseState[3])
+                {
+                    document.getElementById('inputBox_MouseState3').value = DemofoxMinesweeper.variable_MouseState[3];
+                    DemofoxMinesweeper.variableChanged_MouseState[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseStateLastFrame[0])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame0').value = DemofoxMinesweeper.variable_MouseStateLastFrame[0];
+                    DemofoxMinesweeper.variableChanged_MouseStateLastFrame[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseStateLastFrame[1])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame1').value = DemofoxMinesweeper.variable_MouseStateLastFrame[1];
+                    DemofoxMinesweeper.variableChanged_MouseStateLastFrame[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseStateLastFrame[2])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame2').value = DemofoxMinesweeper.variable_MouseStateLastFrame[2];
+                    DemofoxMinesweeper.variableChanged_MouseStateLastFrame[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_MouseStateLastFrame[3])
+                {
+                    document.getElementById('inputBox_MouseStateLastFrame3').value = DemofoxMinesweeper.variable_MouseStateLastFrame[3];
+                    DemofoxMinesweeper.variableChanged_MouseStateLastFrame[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iResolution[0])
+                {
+                    document.getElementById('inputBox_iResolution0').value = DemofoxMinesweeper.variable_iResolution[0];
+                    DemofoxMinesweeper.variableChanged_iResolution[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iResolution[1])
+                {
+                    document.getElementById('inputBox_iResolution1').value = DemofoxMinesweeper.variable_iResolution[1];
+                    DemofoxMinesweeper.variableChanged_iResolution[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iResolution[2])
+                {
+                    document.getElementById('inputBox_iResolution2').value = DemofoxMinesweeper.variable_iResolution[2];
+                    DemofoxMinesweeper.variableChanged_iResolution[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iTime)
+                {
+                    document.getElementById('inputBox_iTime').value = DemofoxMinesweeper.variable_iTime;
+                    DemofoxMinesweeper.variableChanged_iTime = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iTimeDelta)
+                {
+                    document.getElementById('inputBox_iTimeDelta').value = DemofoxMinesweeper.variable_iTimeDelta;
+                    DemofoxMinesweeper.variableChanged_iTimeDelta = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iFrameRate)
+                {
+                    document.getElementById('inputBox_iFrameRate').value = DemofoxMinesweeper.variable_iFrameRate;
+                    DemofoxMinesweeper.variableChanged_iFrameRate = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iFrame)
+                {
+                    document.getElementById('inputBox_iFrame').value = DemofoxMinesweeper.variable_iFrame;
+                    DemofoxMinesweeper.variableChanged_iFrame = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iMouse[0])
+                {
+                    document.getElementById('inputBox_iMouse0').value = DemofoxMinesweeper.variable_iMouse[0];
+                    DemofoxMinesweeper.variableChanged_iMouse[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iMouse[1])
+                {
+                    document.getElementById('inputBox_iMouse1').value = DemofoxMinesweeper.variable_iMouse[1];
+                    DemofoxMinesweeper.variableChanged_iMouse[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iMouse[2])
+                {
+                    document.getElementById('inputBox_iMouse2').value = DemofoxMinesweeper.variable_iMouse[2];
+                    DemofoxMinesweeper.variableChanged_iMouse[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_iMouse[3])
+                {
+                    document.getElementById('inputBox_iMouse3').value = DemofoxMinesweeper.variable_iMouse[3];
+                    DemofoxMinesweeper.variableChanged_iMouse[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[0])
+                {
+                    document.getElementById('inputBox_ViewMtx0').value = DemofoxMinesweeper.variable_ViewMtx[0];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[1])
+                {
+                    document.getElementById('inputBox_ViewMtx1').value = DemofoxMinesweeper.variable_ViewMtx[1];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[2])
+                {
+                    document.getElementById('inputBox_ViewMtx2').value = DemofoxMinesweeper.variable_ViewMtx[2];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[3])
+                {
+                    document.getElementById('inputBox_ViewMtx3').value = DemofoxMinesweeper.variable_ViewMtx[3];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[4])
+                {
+                    document.getElementById('inputBox_ViewMtx4').value = DemofoxMinesweeper.variable_ViewMtx[4];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[4] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[5])
+                {
+                    document.getElementById('inputBox_ViewMtx5').value = DemofoxMinesweeper.variable_ViewMtx[5];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[5] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[6])
+                {
+                    document.getElementById('inputBox_ViewMtx6').value = DemofoxMinesweeper.variable_ViewMtx[6];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[6] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[7])
+                {
+                    document.getElementById('inputBox_ViewMtx7').value = DemofoxMinesweeper.variable_ViewMtx[7];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[7] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[8])
+                {
+                    document.getElementById('inputBox_ViewMtx8').value = DemofoxMinesweeper.variable_ViewMtx[8];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[8] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[9])
+                {
+                    document.getElementById('inputBox_ViewMtx9').value = DemofoxMinesweeper.variable_ViewMtx[9];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[9] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[10])
+                {
+                    document.getElementById('inputBox_ViewMtx10').value = DemofoxMinesweeper.variable_ViewMtx[10];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[10] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[11])
+                {
+                    document.getElementById('inputBox_ViewMtx11').value = DemofoxMinesweeper.variable_ViewMtx[11];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[11] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[12])
+                {
+                    document.getElementById('inputBox_ViewMtx12').value = DemofoxMinesweeper.variable_ViewMtx[12];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[12] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[13])
+                {
+                    document.getElementById('inputBox_ViewMtx13').value = DemofoxMinesweeper.variable_ViewMtx[13];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[13] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[14])
+                {
+                    document.getElementById('inputBox_ViewMtx14').value = DemofoxMinesweeper.variable_ViewMtx[14];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[14] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewMtx[15])
+                {
+                    document.getElementById('inputBox_ViewMtx15').value = DemofoxMinesweeper.variable_ViewMtx[15];
+                    DemofoxMinesweeper.variableChanged_ViewMtx[15] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[0])
+                {
+                    document.getElementById('inputBox_InvViewMtx0').value = DemofoxMinesweeper.variable_InvViewMtx[0];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[1])
+                {
+                    document.getElementById('inputBox_InvViewMtx1').value = DemofoxMinesweeper.variable_InvViewMtx[1];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[2])
+                {
+                    document.getElementById('inputBox_InvViewMtx2').value = DemofoxMinesweeper.variable_InvViewMtx[2];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[3])
+                {
+                    document.getElementById('inputBox_InvViewMtx3').value = DemofoxMinesweeper.variable_InvViewMtx[3];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[4])
+                {
+                    document.getElementById('inputBox_InvViewMtx4').value = DemofoxMinesweeper.variable_InvViewMtx[4];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[4] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[5])
+                {
+                    document.getElementById('inputBox_InvViewMtx5').value = DemofoxMinesweeper.variable_InvViewMtx[5];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[5] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[6])
+                {
+                    document.getElementById('inputBox_InvViewMtx6').value = DemofoxMinesweeper.variable_InvViewMtx[6];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[6] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[7])
+                {
+                    document.getElementById('inputBox_InvViewMtx7').value = DemofoxMinesweeper.variable_InvViewMtx[7];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[7] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[8])
+                {
+                    document.getElementById('inputBox_InvViewMtx8').value = DemofoxMinesweeper.variable_InvViewMtx[8];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[8] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[9])
+                {
+                    document.getElementById('inputBox_InvViewMtx9').value = DemofoxMinesweeper.variable_InvViewMtx[9];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[9] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[10])
+                {
+                    document.getElementById('inputBox_InvViewMtx10').value = DemofoxMinesweeper.variable_InvViewMtx[10];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[10] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[11])
+                {
+                    document.getElementById('inputBox_InvViewMtx11').value = DemofoxMinesweeper.variable_InvViewMtx[11];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[11] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[12])
+                {
+                    document.getElementById('inputBox_InvViewMtx12').value = DemofoxMinesweeper.variable_InvViewMtx[12];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[12] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[13])
+                {
+                    document.getElementById('inputBox_InvViewMtx13').value = DemofoxMinesweeper.variable_InvViewMtx[13];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[13] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[14])
+                {
+                    document.getElementById('inputBox_InvViewMtx14').value = DemofoxMinesweeper.variable_InvViewMtx[14];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[14] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewMtx[15])
+                {
+                    document.getElementById('inputBox_InvViewMtx15').value = DemofoxMinesweeper.variable_InvViewMtx[15];
+                    DemofoxMinesweeper.variableChanged_InvViewMtx[15] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[0])
+                {
+                    document.getElementById('inputBox_ProjMtx0').value = DemofoxMinesweeper.variable_ProjMtx[0];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[1])
+                {
+                    document.getElementById('inputBox_ProjMtx1').value = DemofoxMinesweeper.variable_ProjMtx[1];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[2])
+                {
+                    document.getElementById('inputBox_ProjMtx2').value = DemofoxMinesweeper.variable_ProjMtx[2];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[3])
+                {
+                    document.getElementById('inputBox_ProjMtx3').value = DemofoxMinesweeper.variable_ProjMtx[3];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[4])
+                {
+                    document.getElementById('inputBox_ProjMtx4').value = DemofoxMinesweeper.variable_ProjMtx[4];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[4] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[5])
+                {
+                    document.getElementById('inputBox_ProjMtx5').value = DemofoxMinesweeper.variable_ProjMtx[5];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[5] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[6])
+                {
+                    document.getElementById('inputBox_ProjMtx6').value = DemofoxMinesweeper.variable_ProjMtx[6];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[6] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[7])
+                {
+                    document.getElementById('inputBox_ProjMtx7').value = DemofoxMinesweeper.variable_ProjMtx[7];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[7] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[8])
+                {
+                    document.getElementById('inputBox_ProjMtx8').value = DemofoxMinesweeper.variable_ProjMtx[8];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[8] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[9])
+                {
+                    document.getElementById('inputBox_ProjMtx9').value = DemofoxMinesweeper.variable_ProjMtx[9];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[9] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[10])
+                {
+                    document.getElementById('inputBox_ProjMtx10').value = DemofoxMinesweeper.variable_ProjMtx[10];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[10] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[11])
+                {
+                    document.getElementById('inputBox_ProjMtx11').value = DemofoxMinesweeper.variable_ProjMtx[11];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[11] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[12])
+                {
+                    document.getElementById('inputBox_ProjMtx12').value = DemofoxMinesweeper.variable_ProjMtx[12];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[12] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[13])
+                {
+                    document.getElementById('inputBox_ProjMtx13').value = DemofoxMinesweeper.variable_ProjMtx[13];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[13] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[14])
+                {
+                    document.getElementById('inputBox_ProjMtx14').value = DemofoxMinesweeper.variable_ProjMtx[14];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[14] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ProjMtx[15])
+                {
+                    document.getElementById('inputBox_ProjMtx15').value = DemofoxMinesweeper.variable_ProjMtx[15];
+                    DemofoxMinesweeper.variableChanged_ProjMtx[15] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[0])
+                {
+                    document.getElementById('inputBox_InvProjMtx0').value = DemofoxMinesweeper.variable_InvProjMtx[0];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[1])
+                {
+                    document.getElementById('inputBox_InvProjMtx1').value = DemofoxMinesweeper.variable_InvProjMtx[1];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[2])
+                {
+                    document.getElementById('inputBox_InvProjMtx2').value = DemofoxMinesweeper.variable_InvProjMtx[2];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[3])
+                {
+                    document.getElementById('inputBox_InvProjMtx3').value = DemofoxMinesweeper.variable_InvProjMtx[3];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[4])
+                {
+                    document.getElementById('inputBox_InvProjMtx4').value = DemofoxMinesweeper.variable_InvProjMtx[4];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[4] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[5])
+                {
+                    document.getElementById('inputBox_InvProjMtx5').value = DemofoxMinesweeper.variable_InvProjMtx[5];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[5] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[6])
+                {
+                    document.getElementById('inputBox_InvProjMtx6').value = DemofoxMinesweeper.variable_InvProjMtx[6];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[6] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[7])
+                {
+                    document.getElementById('inputBox_InvProjMtx7').value = DemofoxMinesweeper.variable_InvProjMtx[7];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[7] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[8])
+                {
+                    document.getElementById('inputBox_InvProjMtx8').value = DemofoxMinesweeper.variable_InvProjMtx[8];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[8] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[9])
+                {
+                    document.getElementById('inputBox_InvProjMtx9').value = DemofoxMinesweeper.variable_InvProjMtx[9];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[9] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[10])
+                {
+                    document.getElementById('inputBox_InvProjMtx10').value = DemofoxMinesweeper.variable_InvProjMtx[10];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[10] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[11])
+                {
+                    document.getElementById('inputBox_InvProjMtx11').value = DemofoxMinesweeper.variable_InvProjMtx[11];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[11] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[12])
+                {
+                    document.getElementById('inputBox_InvProjMtx12').value = DemofoxMinesweeper.variable_InvProjMtx[12];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[12] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[13])
+                {
+                    document.getElementById('inputBox_InvProjMtx13').value = DemofoxMinesweeper.variable_InvProjMtx[13];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[13] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[14])
+                {
+                    document.getElementById('inputBox_InvProjMtx14').value = DemofoxMinesweeper.variable_InvProjMtx[14];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[14] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvProjMtx[15])
+                {
+                    document.getElementById('inputBox_InvProjMtx15').value = DemofoxMinesweeper.variable_InvProjMtx[15];
+                    DemofoxMinesweeper.variableChanged_InvProjMtx[15] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[0])
+                {
+                    document.getElementById('inputBox_ViewProjMtx0').value = DemofoxMinesweeper.variable_ViewProjMtx[0];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[1])
+                {
+                    document.getElementById('inputBox_ViewProjMtx1').value = DemofoxMinesweeper.variable_ViewProjMtx[1];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[2])
+                {
+                    document.getElementById('inputBox_ViewProjMtx2').value = DemofoxMinesweeper.variable_ViewProjMtx[2];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[3])
+                {
+                    document.getElementById('inputBox_ViewProjMtx3').value = DemofoxMinesweeper.variable_ViewProjMtx[3];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[4])
+                {
+                    document.getElementById('inputBox_ViewProjMtx4').value = DemofoxMinesweeper.variable_ViewProjMtx[4];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[4] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[5])
+                {
+                    document.getElementById('inputBox_ViewProjMtx5').value = DemofoxMinesweeper.variable_ViewProjMtx[5];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[5] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[6])
+                {
+                    document.getElementById('inputBox_ViewProjMtx6').value = DemofoxMinesweeper.variable_ViewProjMtx[6];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[6] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[7])
+                {
+                    document.getElementById('inputBox_ViewProjMtx7').value = DemofoxMinesweeper.variable_ViewProjMtx[7];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[7] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[8])
+                {
+                    document.getElementById('inputBox_ViewProjMtx8').value = DemofoxMinesweeper.variable_ViewProjMtx[8];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[8] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[9])
+                {
+                    document.getElementById('inputBox_ViewProjMtx9').value = DemofoxMinesweeper.variable_ViewProjMtx[9];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[9] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[10])
+                {
+                    document.getElementById('inputBox_ViewProjMtx10').value = DemofoxMinesweeper.variable_ViewProjMtx[10];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[10] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[11])
+                {
+                    document.getElementById('inputBox_ViewProjMtx11').value = DemofoxMinesweeper.variable_ViewProjMtx[11];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[11] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[12])
+                {
+                    document.getElementById('inputBox_ViewProjMtx12').value = DemofoxMinesweeper.variable_ViewProjMtx[12];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[12] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[13])
+                {
+                    document.getElementById('inputBox_ViewProjMtx13').value = DemofoxMinesweeper.variable_ViewProjMtx[13];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[13] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[14])
+                {
+                    document.getElementById('inputBox_ViewProjMtx14').value = DemofoxMinesweeper.variable_ViewProjMtx[14];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[14] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_ViewProjMtx[15])
+                {
+                    document.getElementById('inputBox_ViewProjMtx15').value = DemofoxMinesweeper.variable_ViewProjMtx[15];
+                    DemofoxMinesweeper.variableChanged_ViewProjMtx[15] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[0])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx0').value = DemofoxMinesweeper.variable_InvViewProjMtx[0];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[1])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx1').value = DemofoxMinesweeper.variable_InvViewProjMtx[1];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[2])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx2').value = DemofoxMinesweeper.variable_InvViewProjMtx[2];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[3])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx3').value = DemofoxMinesweeper.variable_InvViewProjMtx[3];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[3] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[4])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx4').value = DemofoxMinesweeper.variable_InvViewProjMtx[4];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[4] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[5])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx5').value = DemofoxMinesweeper.variable_InvViewProjMtx[5];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[5] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[6])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx6').value = DemofoxMinesweeper.variable_InvViewProjMtx[6];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[6] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[7])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx7').value = DemofoxMinesweeper.variable_InvViewProjMtx[7];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[7] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[8])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx8').value = DemofoxMinesweeper.variable_InvViewProjMtx[8];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[8] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[9])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx9').value = DemofoxMinesweeper.variable_InvViewProjMtx[9];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[9] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[10])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx10').value = DemofoxMinesweeper.variable_InvViewProjMtx[10];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[10] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[11])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx11').value = DemofoxMinesweeper.variable_InvViewProjMtx[11];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[11] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[12])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx12').value = DemofoxMinesweeper.variable_InvViewProjMtx[12];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[12] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[13])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx13').value = DemofoxMinesweeper.variable_InvViewProjMtx[13];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[13] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[14])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx14').value = DemofoxMinesweeper.variable_InvViewProjMtx[14];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[14] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_InvViewProjMtx[15])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx15').value = DemofoxMinesweeper.variable_InvViewProjMtx[15];
+                    DemofoxMinesweeper.variableChanged_InvViewProjMtx[15] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_CameraPos[0])
+                {
+                    document.getElementById('inputBox_CameraPos0').value = DemofoxMinesweeper.variable_CameraPos[0];
+                    DemofoxMinesweeper.variableChanged_CameraPos[0] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_CameraPos[1])
+                {
+                    document.getElementById('inputBox_CameraPos1').value = DemofoxMinesweeper.variable_CameraPos[1];
+                    DemofoxMinesweeper.variableChanged_CameraPos[1] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_CameraPos[2])
+                {
+                    document.getElementById('inputBox_CameraPos2').value = DemofoxMinesweeper.variable_CameraPos[2];
+                    DemofoxMinesweeper.variableChanged_CameraPos[2] = false;
+                }
+
+                if (DemofoxMinesweeper.variableChanged_CameraChanged)
+                {
+                    document.getElementById('inputBox_CameraChanged').checked=Boolean(DemofoxMinesweeper.variable_CameraChanged);
+                    DemofoxMinesweeper.variableChanged_CameraChanged = false;
+                }
+
+                DemofoxMinesweeper.variable_Reset=false;
+
+
+                // Submit the command encoder
+                device.queue.submit([encoder.finish()]);
+
+                // advance to the next frame
+                lastTimeMs = currentTimeMs;
+
+                // Only do end of frame logic if we should.
+                // If we are waiting on promises (shader compiles), Execute()
+                // has frame start logic, but is waiting to do frame end logic, so we should too.
+                if (!DemofoxMinesweeper.waitingOnPromises)
+                {
+                    frameIndex = frameIndex + 1;
+
+                    // Update mouse states
+                    iMouse[2] = 0;
+                    iMouse[3] = 0;
+                    MouseStateLastFrame = MouseState.slice();
+
+                    // Update keyboard states
+                    KeyStatesLastFrame = KeyStates.slice();
+                }
+
+                // Update the loading list
+                let loadingText = "";
+                if (DemofoxMinesweeper.loadingPromises.size > 0)
+                    loadingText = "Nodes building shaders:";
+                for (const label of DemofoxMinesweeper.loadingPromises)
+                    loadingText = loadingText + "<br/>" + label;
+                document.getElementById("LoadingText").innerHTML = loadingText;
+
+                // Render the next frame
+                requestAnimationFrame(RenderFrame);
+            }
+
+            // Render the first frame
+            requestAnimationFrame(RenderFrame);
+        </script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td valign="top">
+                    <canvas width="512" height="512" id="mainCanvas" tabindex="0"></canvas>
+                    <br/><br/>
+                    <label for="Viewing">Viewing</label>
+                    <select name="Viewing" id="Viewing">
+                        <option value="Output">Output</option><br/>
+                        <option value="">----- Exported Textures -----</option><br/>
+                        <option value="Output">Output</option><br/>
+                        <option value="">----- Internal Textures -----</option><br/>
+                        <option value="Display_output_ReadOnly">Display_output_ReadOnly</option><br/>
+                        <option value="GameBoard">GameBoard</option><br/>
+                        <option value="Gameplay_gameBoard_ReadOnly">Gameplay_gameBoard_ReadOnly</option><br/>
+                        <option value="_loadedTexture_0">_loadedTexture_0</option><br/>
+                    </select>
+                </td>
+                <td>&nbsp;</td>
+                <td valign="top">
+                    <b>DemofoxMinesweeper</b><br/>
+                    <pre>A port of https://www.shadertoy.com/view/XdK3z
+Right click to place a flag, left click to reveal a square.
+Reset button to reset the game.
+Random board each play!</pre>
+                    <button type="button" class="collapsible">User Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td valign="top"></td>
+                            <td>
+                                <button type="button" id="inputBox_Reset">Reset</button>
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Host Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">MouseState&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_MouseState0">
+                                <input type="text" id="inputBox_MouseState1">
+                                <input type="text" id="inputBox_MouseState2">
+                                <input type="text" id="inputBox_MouseState3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">MouseStateLastFrame&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_MouseStateLastFrame0">
+                                <input type="text" id="inputBox_MouseStateLastFrame1">
+                                <input type="text" id="inputBox_MouseStateLastFrame2">
+                                <input type="text" id="inputBox_MouseStateLastFrame3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iResolution&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iResolution0">
+                                <input type="text" id="inputBox_iResolution1">
+                                <input type="text" id="inputBox_iResolution2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iTime&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iTime">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iTimeDelta&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iTimeDelta">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iFrameRate&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iFrameRate">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iFrame&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iFrame">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">iMouse&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_iMouse0">
+                                <input type="text" id="inputBox_iMouse1">
+                                <input type="text" id="inputBox_iMouse2">
+                                <input type="text" id="inputBox_iMouse3">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">ViewMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_ViewMtx0">
+                                <input type="text" id="inputBox_ViewMtx1">
+                                <input type="text" id="inputBox_ViewMtx2">
+                                <input type="text" id="inputBox_ViewMtx3">
+                                <br>
+                                <input type="text" id="inputBox_ViewMtx4">
+                                <input type="text" id="inputBox_ViewMtx5">
+                                <input type="text" id="inputBox_ViewMtx6">
+                                <input type="text" id="inputBox_ViewMtx7">
+                                <br>
+                                <input type="text" id="inputBox_ViewMtx8">
+                                <input type="text" id="inputBox_ViewMtx9">
+                                <input type="text" id="inputBox_ViewMtx10">
+                                <input type="text" id="inputBox_ViewMtx11">
+                                <br>
+                                <input type="text" id="inputBox_ViewMtx12">
+                                <input type="text" id="inputBox_ViewMtx13">
+                                <input type="text" id="inputBox_ViewMtx14">
+                                <input type="text" id="inputBox_ViewMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">InvViewMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_InvViewMtx0">
+                                <input type="text" id="inputBox_InvViewMtx1">
+                                <input type="text" id="inputBox_InvViewMtx2">
+                                <input type="text" id="inputBox_InvViewMtx3">
+                                <br>
+                                <input type="text" id="inputBox_InvViewMtx4">
+                                <input type="text" id="inputBox_InvViewMtx5">
+                                <input type="text" id="inputBox_InvViewMtx6">
+                                <input type="text" id="inputBox_InvViewMtx7">
+                                <br>
+                                <input type="text" id="inputBox_InvViewMtx8">
+                                <input type="text" id="inputBox_InvViewMtx9">
+                                <input type="text" id="inputBox_InvViewMtx10">
+                                <input type="text" id="inputBox_InvViewMtx11">
+                                <br>
+                                <input type="text" id="inputBox_InvViewMtx12">
+                                <input type="text" id="inputBox_InvViewMtx13">
+                                <input type="text" id="inputBox_InvViewMtx14">
+                                <input type="text" id="inputBox_InvViewMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">ProjMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_ProjMtx0">
+                                <input type="text" id="inputBox_ProjMtx1">
+                                <input type="text" id="inputBox_ProjMtx2">
+                                <input type="text" id="inputBox_ProjMtx3">
+                                <br>
+                                <input type="text" id="inputBox_ProjMtx4">
+                                <input type="text" id="inputBox_ProjMtx5">
+                                <input type="text" id="inputBox_ProjMtx6">
+                                <input type="text" id="inputBox_ProjMtx7">
+                                <br>
+                                <input type="text" id="inputBox_ProjMtx8">
+                                <input type="text" id="inputBox_ProjMtx9">
+                                <input type="text" id="inputBox_ProjMtx10">
+                                <input type="text" id="inputBox_ProjMtx11">
+                                <br>
+                                <input type="text" id="inputBox_ProjMtx12">
+                                <input type="text" id="inputBox_ProjMtx13">
+                                <input type="text" id="inputBox_ProjMtx14">
+                                <input type="text" id="inputBox_ProjMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">InvProjMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_InvProjMtx0">
+                                <input type="text" id="inputBox_InvProjMtx1">
+                                <input type="text" id="inputBox_InvProjMtx2">
+                                <input type="text" id="inputBox_InvProjMtx3">
+                                <br>
+                                <input type="text" id="inputBox_InvProjMtx4">
+                                <input type="text" id="inputBox_InvProjMtx5">
+                                <input type="text" id="inputBox_InvProjMtx6">
+                                <input type="text" id="inputBox_InvProjMtx7">
+                                <br>
+                                <input type="text" id="inputBox_InvProjMtx8">
+                                <input type="text" id="inputBox_InvProjMtx9">
+                                <input type="text" id="inputBox_InvProjMtx10">
+                                <input type="text" id="inputBox_InvProjMtx11">
+                                <br>
+                                <input type="text" id="inputBox_InvProjMtx12">
+                                <input type="text" id="inputBox_InvProjMtx13">
+                                <input type="text" id="inputBox_InvProjMtx14">
+                                <input type="text" id="inputBox_InvProjMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">ViewProjMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_ViewProjMtx0">
+                                <input type="text" id="inputBox_ViewProjMtx1">
+                                <input type="text" id="inputBox_ViewProjMtx2">
+                                <input type="text" id="inputBox_ViewProjMtx3">
+                                <br>
+                                <input type="text" id="inputBox_ViewProjMtx4">
+                                <input type="text" id="inputBox_ViewProjMtx5">
+                                <input type="text" id="inputBox_ViewProjMtx6">
+                                <input type="text" id="inputBox_ViewProjMtx7">
+                                <br>
+                                <input type="text" id="inputBox_ViewProjMtx8">
+                                <input type="text" id="inputBox_ViewProjMtx9">
+                                <input type="text" id="inputBox_ViewProjMtx10">
+                                <input type="text" id="inputBox_ViewProjMtx11">
+                                <br>
+                                <input type="text" id="inputBox_ViewProjMtx12">
+                                <input type="text" id="inputBox_ViewProjMtx13">
+                                <input type="text" id="inputBox_ViewProjMtx14">
+                                <input type="text" id="inputBox_ViewProjMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">InvViewProjMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_InvViewProjMtx0">
+                                <input type="text" id="inputBox_InvViewProjMtx1">
+                                <input type="text" id="inputBox_InvViewProjMtx2">
+                                <input type="text" id="inputBox_InvViewProjMtx3">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx4">
+                                <input type="text" id="inputBox_InvViewProjMtx5">
+                                <input type="text" id="inputBox_InvViewProjMtx6">
+                                <input type="text" id="inputBox_InvViewProjMtx7">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx8">
+                                <input type="text" id="inputBox_InvViewProjMtx9">
+                                <input type="text" id="inputBox_InvViewProjMtx10">
+                                <input type="text" id="inputBox_InvViewProjMtx11">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx12">
+                                <input type="text" id="inputBox_InvViewProjMtx13">
+                                <input type="text" id="inputBox_InvViewProjMtx14">
+                                <input type="text" id="inputBox_InvViewProjMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">CameraPos&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_CameraPos0">
+                                <input type="text" id="inputBox_CameraPos1">
+                                <input type="text" id="inputBox_CameraPos2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">CameraChanged&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_CameraChanged">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">c_gridSize1D&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_gridSize1D" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">c_gridSize2D&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_c_gridSize2D0" disabled="true">
+                                <input type="text" id="inputBox_c_gridSize2D1" disabled="true">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
+
+                    <button type=button class="collapsible">Camera</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td>Camera Pos</td>
+                            <td>
+                                <input type="text" id="CameraPos0" />
+                                <input type="text" id="CameraPos1" />
+                                <input type="text" id="CameraPos2" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Altitude Azimuth</td>
+                            <td>
+                                <input type="text" id="CameraAltitudeAzimuth0" />
+                                <input type="text" id="CameraAltitudeAzimuth1" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td>Mouse Sensitivity</td>
+                            <td><input type="text" id="CameraMouseSensitivity" /></td>
+                        </tr>
+                        <tr>
+                            <td>Fly Speed</td>
+                            <td><input type="text" id="CameraFlySpeed" /></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><br /><button type="button" id="ResetCamera">Reset Camera</button><br /></td>
+                        </tr>
+                    </table>
+                    <br/><br/>
+                    <button type=button class="collapsible">Loading</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td><span id="LoadingText"></span></td>
+                        </tr>
+                    </table>
+                    <span id="FPS"></span>
+                    <br />
+                    <br />
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

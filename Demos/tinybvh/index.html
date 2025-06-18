@@ -1,0 +1,1188 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>tinybvh</title>
+        <link rel="stylesheet" href="./style.css">
+        <script type="module">
+
+            const VK_SHIFT = 0x10;
+            const VK_CONTROL = 0x11;
+            const VK_UP = 0x26;
+            const VK_DOWN = 0x28;
+            const VK_LEFT = 0x25;
+            const VK_RIGHT = 0x27;
+            const VK_PRIOR = 0x21;
+            const VK_NEXT = 0x22;
+
+            const VK_W = 87;
+            const VK_A = 65;
+            const VK_S = 83;
+            const VK_D = 68;
+            const VK_E = 69;
+            const VK_Q = 81;
+
+            const VK_w = 87 + 32;
+            const VK_a = 65 + 32;
+            const VK_s = 83 + 32;
+            const VK_d = 68 + 32;
+            const VK_e = 69 + 32;
+            const VK_q = 81 + 32;
+
+            // Handle collapsible variable tables
+            var coll = document.getElementsByClassName("collapsible");
+            for (let i = 0; i < coll.length; i++)
+            {
+                coll[i].addEventListener("click", function ()
+                {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.display === "block")
+                        content.style.display = "none";
+                    else
+                        content.style.display = "block";
+                });
+            }
+
+            // Handle viewing texture drop down
+            let viewingTextureName = "Output";
+            document.getElementById("Viewing").addEventListener('change', (event) => { if (event.target.value.length != 0) viewingTextureName = event.target.value; });
+
+            function parseUint(value)
+            {
+                value = parseInt(value);
+                if (value < 0)
+                    value = 0;
+                return value;
+            }
+
+            let CameraPos = [ -1.80792, 2.13352, 4.50046 ];
+            let CameraAltitudeAzimuth = [ -0.338166, 3.47082 ];
+            let CameraLeftHanded = true;
+            let CameraFlySpeed = 0.1;
+            let CameraMouseSensitivity = 0.01;
+            let CameraChanged = false;
+
+            let CameraPos_Starting = [ -1.80792, 2.13352, 4.50046 ];
+            let CameraAltitudeAzimuth_Starting = [ -0.338166, 3.47082 ];
+
+            SetCameraUIToCamera();
+
+            function ResetCamera()
+            {
+                CameraPos = CameraPos_Starting.slice();
+                CameraAltitudeAzimuth = CameraAltitudeAzimuth_Starting.slice();
+                SetCameraUIToCamera();
+            }
+            document.getElementById('ResetCamera').addEventListener('click', (event) => { ResetCamera(); });
+
+            document.getElementById("CameraPos0").addEventListener('change', (event) => { CameraPos[0] = event.target.value; });
+            document.getElementById("CameraPos1").addEventListener('change', (event) => { CameraPos[1] = event.target.value; });
+            document.getElementById("CameraPos2").addEventListener('change', (event) => { CameraPos[2] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth0").addEventListener('change', (event) => { CameraAltitudeAzimuth[0] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth1").addEventListener('change', (event) => { CameraAltitudeAzimuth[1] = event.target.value; });
+
+            // Camera mouse sensitivity and fly speed
+            document.getElementById("CameraMouseSensitivity").value = 0.01;
+            document.getElementById("CameraFlySpeed").value = 0.1;
+            document.getElementById("CameraMouseSensitivity").addEventListener('change', (event) => { CameraMouseSensitivity = event.target.value; });
+            document.getElementById("CameraFlySpeed").addEventListener('change', (event) => { CameraFlySpeed = event.target.value; });
+
+            function SetCameraUIToCamera()
+            {
+                document.getElementById("CameraPos0").value = CameraPos[0];
+                document.getElementById("CameraPos1").value = CameraPos[1];
+                document.getElementById("CameraPos2").value = CameraPos[2];
+
+                document.getElementById("CameraAltitudeAzimuth0").value = CameraAltitudeAzimuth[0];
+                document.getElementById("CameraAltitudeAzimuth1").value = CameraAltitudeAzimuth[1];
+            }
+
+            function UpdateCamera(frameTimeSeconds)
+            {
+                CameraChanged = false;
+
+                // To account for frame time
+                const movementMultiplier = frameTimeSeconds * 60.0;
+
+                // If the mouse is dragging, rotate the camera
+                if (MouseState[2] && MouseStateLastFrame[2])
+                {
+                    let dx = MouseStateLastFrame[0] - MouseState[0];
+                    let dy = MouseStateLastFrame[1] - MouseState[1];
+
+                    dx *= movementMultiplier;
+                    dy *= movementMultiplier;
+
+                    if (!CameraLeftHanded)
+                    {
+                        dx *= -1.0;
+                        dy *= -1.0;
+                    }
+
+                    CameraAltitudeAzimuth[0] += dy * CameraMouseSensitivity;
+                    CameraAltitudeAzimuth[0] = Math.max(Math.min(CameraAltitudeAzimuth[0], Math.PI * 0.49), -Math.PI * 0.49);
+
+                    CameraAltitudeAzimuth[1] += dx * CameraMouseSensitivity;
+                    if (CameraAltitudeAzimuth[1] < 0.0)
+                        CameraAltitudeAzimuth[1] += 2.0 * Math.PI;
+                    CameraAltitudeAzimuth[1] = CameraAltitudeAzimuth[1] % (2.0 * Math.PI);
+
+                    if (dx != 0.0 || dy != 0.0)
+                        CameraChanged = true;
+                }
+
+                // Handle WASD
+                {
+                    const viewMatrix = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+
+                    const left = [ viewMatrix[0], viewMatrix[4], viewMatrix[8] ];
+                    const up   = [ viewMatrix[1], viewMatrix[5], viewMatrix[9] ];
+                    const fwd  = [ viewMatrix[2], viewMatrix[6], viewMatrix[10] ];
+
+                    let flySpeed = CameraFlySpeed * movementMultiplier;
+
+                    if (KeyStates[VK_SHIFT])
+                        flySpeed *= 10.0;
+                    else if (KeyStates[VK_CONTROL])
+                        flySpeed /= 10.0;
+
+                    if (!CameraLeftHanded)
+                    {
+                        fwd[0] *= -1.0;
+                        fwd[1] *= -1.0;
+                        fwd[2] *= -1.0;
+                    }
+
+                    if (KeyStates[VK_W] || KeyStates[VK_w] || KeyStates[VK_UP])
+                    {
+                        CameraPos[0] += fwd[0] * flySpeed;
+                        CameraPos[1] += fwd[1] * flySpeed;
+                        CameraPos[2] += fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_S] || KeyStates[VK_s] || KeyStates[VK_DOWN])
+                    {
+                        CameraPos[0] -= fwd[0] * flySpeed;
+                        CameraPos[1] -= fwd[1] * flySpeed;
+                        CameraPos[2] -= fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_A] || KeyStates[VK_a] || KeyStates[VK_LEFT])
+                    {
+                        CameraPos[0] -= left[0] * flySpeed;
+                        CameraPos[1] -= left[1] * flySpeed;
+                        CameraPos[2] -= left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_D] || KeyStates[VK_d] || KeyStates[VK_RIGHT])
+                    {
+                        CameraPos[0] += left[0] * flySpeed;
+                        CameraPos[1] += left[1] * flySpeed;
+                        CameraPos[2] += left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_E] || KeyStates[VK_e] || KeyStates[VK_PRIOR])
+                    {
+                        CameraPos[0] += up[0] * flySpeed;
+                        CameraPos[1] += up[1] * flySpeed;
+                        CameraPos[2] += up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_Q] || KeyStates[VK_q] || KeyStates[VK_NEXT])
+                    {
+                        CameraPos[0] -= up[0] * flySpeed;
+                        CameraPos[1] -= up[1] * flySpeed;
+                        CameraPos[2] -= up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+                }
+
+                if (CameraChanged)
+                    SetCameraUIToCamera();
+            }
+
+            // Import the technique
+            import tinybvh from "./tinybvh_Module.js"
+            import * as Shared from './Shared.js';
+
+            // Initialize WebGPU
+            const canvas = document.getElementById('mainCanvas');
+            if (!navigator.gpu)
+            {
+                alert("WebGPU not supported on this browser.");
+                throw new Error("WebGPU not supported on this browser.");
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter)
+            {
+                alert("No appropriate GPUAdapter found.");
+                throw new Error("No appropriate GPUAdapter found.");
+            }
+
+            const device = await adapter.requestDevice({
+                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
+                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+            });
+
+            const context = canvas.getContext("webgpu");
+            //const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+            const canvasFormat = "rgba8unorm";
+            context.configure({
+                device: device,
+                format: canvasFormat,
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+            });
+
+            // Setup canvas events
+            let iMouse = [0, 0, 0, 0];
+            let MouseState = [0, 0, 0, 0];
+            let MouseStateLastFrame = [0, 0, 0, 0];
+            let KeyStates = Array(256).fill(0);
+            let KeyStatesLastFrame = Array(256).fill(0);
+            canvas.addEventListener('click', (event) => { if (event.button == 0) { iMouse[0] = event.offsetX; iMouse[1] = event.offsetY; iMouse[2] = iMouse[0]; iMouse[3] = iMouse[1]; } });
+            canvas.addEventListener('mousemove', (event) => { MouseState[0] = event.offsetX; MouseState[1] = event.offsetY; });
+            canvas.addEventListener('mousedown', (event) => { if (event.button == 0) { MouseState[2] = 1 } else if (event.button == 2) { MouseState[3] = 1 } });
+            canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
+            canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
+            canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_RenderSize0').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); tinybvh.variable_RenderSize[0]=event.target.value;});
+            document.getElementById('inputBox_RenderSize1').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); tinybvh.variable_RenderSize[1]=event.target.value;});
+            document.getElementById('inputBox_ViewMode').addEventListener('change',(event) => {event.target.value=event.target.value; tinybvh.variable_ViewMode=event.target.value;});
+            document.getElementById('inputBox_TMax').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_TMax=event.target.value;});
+            document.getElementById('inputBox_CameraPos0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_CameraPos[0]=event.target.value;});
+            document.getElementById('inputBox_CameraPos1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_CameraPos[1]=event.target.value;});
+            document.getElementById('inputBox_CameraPos2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_CameraPos[2]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[0]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[1]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[2]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[3]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[4]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[5]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[6]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[7]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[8]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[9]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[10]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[11]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[12]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[13]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[14]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_InvViewProjMtx[15]=event.target.value;});
+            document.getElementById('inputBox_CostDivider').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_CostDivider=event.target.value;});
+            document.getElementById('inputBox_DistanceDivider').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_DistanceDivider=event.target.value;});
+            document.getElementById('inputBox_LightDirection0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightDirection[0]=event.target.value;});
+            document.getElementById('inputBox_LightDirection1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightDirection[1]=event.target.value;});
+            document.getElementById('inputBox_LightDirection2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightDirection[2]=event.target.value;});
+            document.getElementById('inputBox_LightColor0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightColor[0]=event.target.value;});
+            document.getElementById('inputBox_LightColor1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightColor[1]=event.target.value;});
+            document.getElementById('inputBox_LightColor2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightColor[2]=event.target.value;});
+            document.getElementById('inputBox_LightBrightness').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_LightBrightness=event.target.value;});
+            document.getElementById('inputBox_AmbientColor0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_AmbientColor[0]=event.target.value;});
+            document.getElementById('inputBox_AmbientColor1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_AmbientColor[1]=event.target.value;});
+            document.getElementById('inputBox_AmbientColor2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_AmbientColor[2]=event.target.value;});
+            document.getElementById('inputBox_AmbientBrightness').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_AmbientBrightness=event.target.value;});
+            document.getElementById('inputBox_Albedo0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_Albedo[0]=event.target.value;});
+            document.getElementById('inputBox_Albedo1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_Albedo[1]=event.target.value;});
+            document.getElementById('inputBox_Albedo2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_Albedo[2]=event.target.value;});
+            document.getElementById('inputBox_Roughness').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_Roughness=event.target.value;});
+            document.getElementById('inputBox_SpecularLevel').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_SpecularLevel=event.target.value;});
+            document.getElementById('inputBox_Metalic').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); tinybvh.variable_Metalic=event.target.value;});
+            document.getElementById('inputBox_RayTestAgainst').addEventListener('change',(event) => {event.target.value=event.target.value; tinybvh.variable_RayTestAgainst=event.target.value;});
+
+            function ResetVariables()
+            {
+                    tinybvh.variable_RenderSize[0] = tinybvh.variableDefault_RenderSize[0];
+                    tinybvh.variable_RenderSize[1] = tinybvh.variableDefault_RenderSize[1];
+                    tinybvh.variable_ViewMode = tinybvh.variableDefault_ViewMode;
+                    tinybvh.variable_TMax = tinybvh.variableDefault_TMax;
+                    tinybvh.variable_CameraPos[0] = tinybvh.variableDefault_CameraPos[0];
+                    tinybvh.variable_CameraPos[1] = tinybvh.variableDefault_CameraPos[1];
+                    tinybvh.variable_CameraPos[2] = tinybvh.variableDefault_CameraPos[2];
+                    tinybvh.variable_InvViewProjMtx[0] = tinybvh.variableDefault_InvViewProjMtx[0];
+                    tinybvh.variable_InvViewProjMtx[1] = tinybvh.variableDefault_InvViewProjMtx[1];
+                    tinybvh.variable_InvViewProjMtx[2] = tinybvh.variableDefault_InvViewProjMtx[2];
+                    tinybvh.variable_InvViewProjMtx[3] = tinybvh.variableDefault_InvViewProjMtx[3];
+                    tinybvh.variable_InvViewProjMtx[4] = tinybvh.variableDefault_InvViewProjMtx[4];
+                    tinybvh.variable_InvViewProjMtx[5] = tinybvh.variableDefault_InvViewProjMtx[5];
+                    tinybvh.variable_InvViewProjMtx[6] = tinybvh.variableDefault_InvViewProjMtx[6];
+                    tinybvh.variable_InvViewProjMtx[7] = tinybvh.variableDefault_InvViewProjMtx[7];
+                    tinybvh.variable_InvViewProjMtx[8] = tinybvh.variableDefault_InvViewProjMtx[8];
+                    tinybvh.variable_InvViewProjMtx[9] = tinybvh.variableDefault_InvViewProjMtx[9];
+                    tinybvh.variable_InvViewProjMtx[10] = tinybvh.variableDefault_InvViewProjMtx[10];
+                    tinybvh.variable_InvViewProjMtx[11] = tinybvh.variableDefault_InvViewProjMtx[11];
+                    tinybvh.variable_InvViewProjMtx[12] = tinybvh.variableDefault_InvViewProjMtx[12];
+                    tinybvh.variable_InvViewProjMtx[13] = tinybvh.variableDefault_InvViewProjMtx[13];
+                    tinybvh.variable_InvViewProjMtx[14] = tinybvh.variableDefault_InvViewProjMtx[14];
+                    tinybvh.variable_InvViewProjMtx[15] = tinybvh.variableDefault_InvViewProjMtx[15];
+                    tinybvh.variable_CostDivider = tinybvh.variableDefault_CostDivider;
+                    tinybvh.variable_DistanceDivider = tinybvh.variableDefault_DistanceDivider;
+                    tinybvh.variable_LightDirection[0] = tinybvh.variableDefault_LightDirection[0];
+                    tinybvh.variable_LightDirection[1] = tinybvh.variableDefault_LightDirection[1];
+                    tinybvh.variable_LightDirection[2] = tinybvh.variableDefault_LightDirection[2];
+                    tinybvh.variable_LightColor[0] = tinybvh.variableDefault_LightColor[0];
+                    tinybvh.variable_LightColor[1] = tinybvh.variableDefault_LightColor[1];
+                    tinybvh.variable_LightColor[2] = tinybvh.variableDefault_LightColor[2];
+                    tinybvh.variable_LightBrightness = tinybvh.variableDefault_LightBrightness;
+                    tinybvh.variable_AmbientColor[0] = tinybvh.variableDefault_AmbientColor[0];
+                    tinybvh.variable_AmbientColor[1] = tinybvh.variableDefault_AmbientColor[1];
+                    tinybvh.variable_AmbientColor[2] = tinybvh.variableDefault_AmbientColor[2];
+                    tinybvh.variable_AmbientBrightness = tinybvh.variableDefault_AmbientBrightness;
+                    tinybvh.variable_Albedo[0] = tinybvh.variableDefault_Albedo[0];
+                    tinybvh.variable_Albedo[1] = tinybvh.variableDefault_Albedo[1];
+                    tinybvh.variable_Albedo[2] = tinybvh.variableDefault_Albedo[2];
+                    tinybvh.variable_Roughness = tinybvh.variableDefault_Roughness;
+                    tinybvh.variable_SpecularLevel = tinybvh.variableDefault_SpecularLevel;
+                    tinybvh.variable_Metalic = tinybvh.variableDefault_Metalic;
+                    tinybvh.variable_RayTestAgainst = tinybvh.variableDefault_RayTestAgainst;
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_RenderSize0').value = tinybvh.variable_RenderSize[0];
+                    document.getElementById('inputBox_RenderSize1').value = tinybvh.variable_RenderSize[1];
+                    document.getElementById('inputBox_ViewMode').value = tinybvh.variable_ViewMode;
+                    document.getElementById('inputBox_TMax').value = tinybvh.variable_TMax;
+                    document.getElementById('inputBox_CameraPos0').value = tinybvh.variable_CameraPos[0];
+                    document.getElementById('inputBox_CameraPos1').value = tinybvh.variable_CameraPos[1];
+                    document.getElementById('inputBox_CameraPos2').value = tinybvh.variable_CameraPos[2];
+                    document.getElementById('inputBox_InvViewProjMtx0').value = tinybvh.variable_InvViewProjMtx[0];
+                    document.getElementById('inputBox_InvViewProjMtx1').value = tinybvh.variable_InvViewProjMtx[1];
+                    document.getElementById('inputBox_InvViewProjMtx2').value = tinybvh.variable_InvViewProjMtx[2];
+                    document.getElementById('inputBox_InvViewProjMtx3').value = tinybvh.variable_InvViewProjMtx[3];
+                    document.getElementById('inputBox_InvViewProjMtx4').value = tinybvh.variable_InvViewProjMtx[4];
+                    document.getElementById('inputBox_InvViewProjMtx5').value = tinybvh.variable_InvViewProjMtx[5];
+                    document.getElementById('inputBox_InvViewProjMtx6').value = tinybvh.variable_InvViewProjMtx[6];
+                    document.getElementById('inputBox_InvViewProjMtx7').value = tinybvh.variable_InvViewProjMtx[7];
+                    document.getElementById('inputBox_InvViewProjMtx8').value = tinybvh.variable_InvViewProjMtx[8];
+                    document.getElementById('inputBox_InvViewProjMtx9').value = tinybvh.variable_InvViewProjMtx[9];
+                    document.getElementById('inputBox_InvViewProjMtx10').value = tinybvh.variable_InvViewProjMtx[10];
+                    document.getElementById('inputBox_InvViewProjMtx11').value = tinybvh.variable_InvViewProjMtx[11];
+                    document.getElementById('inputBox_InvViewProjMtx12').value = tinybvh.variable_InvViewProjMtx[12];
+                    document.getElementById('inputBox_InvViewProjMtx13').value = tinybvh.variable_InvViewProjMtx[13];
+                    document.getElementById('inputBox_InvViewProjMtx14').value = tinybvh.variable_InvViewProjMtx[14];
+                    document.getElementById('inputBox_InvViewProjMtx15').value = tinybvh.variable_InvViewProjMtx[15];
+                    document.getElementById('inputBox_CostDivider').value = tinybvh.variable_CostDivider;
+                    document.getElementById('inputBox_DistanceDivider').value = tinybvh.variable_DistanceDivider;
+                    document.getElementById('inputBox_LightDirection0').value = tinybvh.variable_LightDirection[0];
+                    document.getElementById('inputBox_LightDirection1').value = tinybvh.variable_LightDirection[1];
+                    document.getElementById('inputBox_LightDirection2').value = tinybvh.variable_LightDirection[2];
+                    document.getElementById('inputBox_LightColor0').value = tinybvh.variable_LightColor[0];
+                    document.getElementById('inputBox_LightColor1').value = tinybvh.variable_LightColor[1];
+                    document.getElementById('inputBox_LightColor2').value = tinybvh.variable_LightColor[2];
+                    document.getElementById('inputBox_LightBrightness').value = tinybvh.variable_LightBrightness;
+                    document.getElementById('inputBox_AmbientColor0').value = tinybvh.variable_AmbientColor[0];
+                    document.getElementById('inputBox_AmbientColor1').value = tinybvh.variable_AmbientColor[1];
+                    document.getElementById('inputBox_AmbientColor2').value = tinybvh.variable_AmbientColor[2];
+                    document.getElementById('inputBox_AmbientBrightness').value = tinybvh.variable_AmbientBrightness;
+                    document.getElementById('inputBox_Albedo0').value = tinybvh.variable_Albedo[0];
+                    document.getElementById('inputBox_Albedo1').value = tinybvh.variable_Albedo[1];
+                    document.getElementById('inputBox_Albedo2').value = tinybvh.variable_Albedo[2];
+                    document.getElementById('inputBox_Roughness').value = tinybvh.variable_Roughness;
+                    document.getElementById('inputBox_SpecularLevel').value = tinybvh.variable_SpecularLevel;
+                    document.getElementById('inputBox_Metalic').value = tinybvh.variable_Metalic;
+                    document.getElementById('inputBox_RayTestAgainst').value = tinybvh.variable_RayTestAgainst;
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
+            const scenes = ["bunny", "sponza"];
+            for (let sceneIndex = 0; sceneIndex < scenes.length; sceneIndex++)
+            {
+                const baseName = scenes[sceneIndex];
+                // Load Vertices
+                {
+                    // Load file
+                    let loadedData;
+                    if (!await Shared.LoadBin(baseName + ".vertices.bvh", (data) => loadedData = data ))
+                        Shared.LogError("Could not load " + baseName + ".vertices.bvh");
+
+                    // Create buffer
+                    tinybvh[baseName + "_buffer_Vertices"] = device.createBuffer({
+                        label: "tinybvh.buffer_Vertices",
+                        size: loadedData.byteLength,
+                        usage: tinybvh.buffer_Vertices_usageFlags,
+                    });
+
+                    // Write the data to the buffer
+                    device.queue.writeBuffer(tinybvh[baseName + "_buffer_Vertices"], 0, loadedData);
+
+                    // Set the buffer attributes
+                    tinybvh[baseName + "_buffer_Vertices_stride"] = 16; // float4
+                    tinybvh[baseName + "_buffer_Vertices_count"] = Math.floor(loadedData.byteLength / tinybvh[baseName + "_buffer_Vertices_stride"]);
+                }
+
+                // Load TriIndices
+                {
+                    // Load file
+                    let loadedData;
+                    if (!await Shared.LoadBin(baseName + ".triindices.bvh", (data) => loadedData = data ))
+                        Shared.LogError("Could not load " + baseName + ".triindices.bvh");
+
+                    // Create buffer
+                    tinybvh[baseName + "_buffer_TriIndices"] = device.createBuffer({
+                        label: "tinybvh.buffer_TriIndices",
+                        size: loadedData.byteLength,
+                        usage: tinybvh.buffer_TriIndices_usageFlags,
+                    });
+
+                    // Write the data to the buffer
+                    device.queue.writeBuffer(tinybvh[baseName + "_buffer_TriIndices"], 0, loadedData);
+
+                    // Set the buffer attributes
+                    tinybvh[baseName + "_buffer_TriIndices_stride"] = 4; // uint32
+                    tinybvh[baseName + "_buffer_TriIndices_count"] = Math.floor(loadedData.byteLength / tinybvh[baseName + "_buffer_TriIndices_stride"]);
+                }
+
+                // Load BVHNodes
+                {
+                    // Load file
+                    let loadedData;
+                    if (!await Shared.LoadBin(baseName + ".nodes.bvh", (data) => loadedData = data ))
+                        Shared.LogError("Could not load " + baseName + ".nodes.bvh");
+
+                    // Create buffer
+                    tinybvh[baseName + "_buffer_BVHNodes"] = device.createBuffer({
+                        label: "tinybvh.buffer_BVHNodes",
+                        size: loadedData.byteLength,
+                        usage: tinybvh.buffer_BVHNodes_usageFlags,
+                    });
+
+                    // Write the data to the buffer
+                    device.queue.writeBuffer(tinybvh[baseName + "_buffer_BVHNodes"], 0, loadedData);
+
+                    // Set the buffer attributes
+                    tinybvh[baseName + "_buffer_BVHNodes_stride"] = tinybvh.constructor.StructOffsets_BVHNode._size;
+                    tinybvh[baseName + "_buffer_BVHNodes_count"] = Math.floor(loadedData.byteLength / tinybvh[baseName + "_buffer_BVHNodes_stride"]);
+                }
+
+                // Load BVHCombinedData
+                {
+                    // Load file
+                    let loadedData;
+                    if (!await Shared.LoadBin(baseName + ".combined.bvh", (data) => loadedData = data ))
+                        Shared.LogError("Could not load " + baseName + ".combined.bvh");
+
+                    // Create buffer
+                    tinybvh[baseName + "_buffer_BVHCombinedData"] = device.createBuffer({
+                        label: "tinybvh.buffer_BVHCombinedData",
+                        size: loadedData.byteLength,
+                        usage: tinybvh.buffer_BVHCombinedData_usageFlags,
+                    });
+
+                    // Write the data to the buffer
+                    device.queue.writeBuffer(tinybvh[baseName + "_buffer_BVHCombinedData"], 0, loadedData);
+
+                    // Set the buffer attributes
+                    tinybvh[baseName + "_buffer_BVHCombinedData_stride"] = 4; // uint32
+                    tinybvh[baseName + "_buffer_BVHCombinedData_count"] = Math.floor(loadedData.byteLength / tinybvh[baseName + "_buffer_BVHCombinedData_stride"]);
+                }
+            }
+
+            /* TODO:
+            provide imported resources or variable values to the technique that only need to be set once:
+                    tinybvh.buffer_Vertices = null;
+                    tinybvh.buffer_Vertices_count = 0;
+                    tinybvh.buffer_Vertices_stride = 0;
+                    tinybvh.buffer_TriIndices = null;
+                    tinybvh.buffer_TriIndices_count = 0;
+                    tinybvh.buffer_TriIndices_stride = 0;
+                    tinybvh.buffer_BVHNodes = null;
+                    tinybvh.buffer_BVHNodes_count = 0;
+                    tinybvh.buffer_BVHNodes_stride = 0;
+                    tinybvh.buffer_BVHCombinedData = null;
+                    tinybvh.buffer_BVHCombinedData_count = 0;
+                    tinybvh.buffer_BVHCombinedData_stride = 0;
+                User Variables (These show in the UI):
+                    tinybvh.variable_RenderSize = 1024, 768; // (Uint2)
+                    tinybvh.variable_ViewMode = this.constructor.Enum_ViewModes.Shaded; // (Int)
+                    tinybvh.variable_TMax = 1000.000000; // (Float) The maximum length ray allowed
+                    tinybvh.variable_CostDivider = 100.000000; // (Float) Cost View Mode: divides by this number to help show the range.
+                    tinybvh.variable_DistanceDivider = 10.000000; // (Float) Distance View Mode: divides by this number to help show the range.
+                    tinybvh.variable_LightDirection = 1.000000, -1.000000, 0.000000; // (Float3) The direction the light is shining.
+                    tinybvh.variable_LightColor = 1.000000, 1.000000, 1.000000; // (Float3)
+                    tinybvh.variable_LightBrightness = 3.000000; // (Float)
+                    tinybvh.variable_AmbientColor = 0.020000, 0.020000, 0.020000; // (Float3)
+                    tinybvh.variable_AmbientBrightness = 1.000000; // (Float)
+                    tinybvh.variable_Albedo = 0.800000, 0.800000, 0.800000; // (Float3)
+                    tinybvh.variable_Roughness = 0.400000; // (Float)
+                    tinybvh.variable_SpecularLevel = 0.500000; // (Float)
+                    tinybvh.variable_Metalic = 0.000000; // (Float)
+                    tinybvh.variable_RayTestAgainst = this.constructor.Enum_RayTestAgainsts.BVHSeparate; // (Int)
+            */
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
+
+            // Frame rendering function
+            let startTimeMs;
+            let lastTimeMs;
+            let frameIndex = 0
+            async function RenderFrame(currentTimeMs) {
+
+                // Handle frame timing
+                if (startTimeMs === undefined)
+                {
+                    startTimeMs = currentTimeMs;
+                    lastTimeMs = currentTimeMs;
+                }
+
+                // Show FPS
+                document.getElementById("FPS").innerHTML = "<br><br>FPS: " + (1000.0 / (currentTimeMs - lastTimeMs)).toFixed(2) + "<br>ms: " + (currentTimeMs - lastTimeMs).toFixed(2);
+
+                // Update the camera based on user input
+                UpdateCamera((currentTimeMs - lastTimeMs) / 1000);
+
+                // Run the technique
+                const encoder = device.createCommandEncoder();
+
+                const Scene = document.getElementById("Scene").value;
+                if (Scene == "bunny")
+                {
+                    CameraFlySpeed = 0.1;
+                    document.getElementById("CameraFlySpeed").value = CameraFlySpeed;
+                    tinybvh.variable_TMax = 1000.0;
+                    document.getElementById("inputBox_TMax").value = tinybvh.variable_TMax;
+                }
+                else if (Scene == "sponza")
+                {
+                    CameraFlySpeed = 10.0;
+                    document.getElementById("CameraFlySpeed").value = CameraFlySpeed;
+                    tinybvh.variable_TMax = 10000.0;
+                    document.getElementById("inputBox_TMax").value = tinybvh.variable_TMax;
+                }
+
+                // Set the BVH buffers for the chosen scene
+                tinybvh.buffer_Vertices = tinybvh[Scene + "_buffer_Vertices"];
+                tinybvh.buffer_Vertices_Stride = tinybvh[Scene + "_buffer_Vertices_Stride"];
+                tinybvh.buffer_Vertices_Count = tinybvh[Scene + "_buffer_Vertices_Count"];
+
+                tinybvh.buffer_TriIndices = tinybvh[Scene + "_buffer_TriIndices"];
+                tinybvh.buffer_TriIndices_Stride = tinybvh[Scene + "_buffer_TriIndices_Stride"];
+                tinybvh.buffer_TriIndices_Count = tinybvh[Scene + "_buffer_TriIndices_Count"];
+
+                tinybvh.buffer_BVHNodes = tinybvh[Scene + "_buffer_BVHNodes"];
+                tinybvh.buffer_BVHNodes_Stride = tinybvh[Scene + "_buffer_BVHNodes_Stride"];
+                tinybvh.buffer_BVHNodes_Count = tinybvh[Scene + "_buffer_BVHNodes_Count"];
+
+                tinybvh.buffer_BVHCombinedData = tinybvh[Scene + "_buffer_BVHCombinedData"];
+                tinybvh.buffer_BVHCombinedData_Stride = tinybvh[Scene + "_buffer_BVHCombinedData_Stride"];
+                tinybvh.buffer_BVHCombinedData_Count = tinybvh[Scene + "_buffer_BVHCombinedData_Count"];
+
+                /* TODO:
+            provide imported resources or variable values to the technique that need to change every frame:
+                    tinybvh.buffer_Vertices = null;
+                    tinybvh.buffer_Vertices_count = 0;
+                    tinybvh.buffer_Vertices_stride = 0;
+                    tinybvh.buffer_TriIndices = null;
+                    tinybvh.buffer_TriIndices_count = 0;
+                    tinybvh.buffer_TriIndices_stride = 0;
+                    tinybvh.buffer_BVHNodes = null;
+                    tinybvh.buffer_BVHNodes_count = 0;
+                    tinybvh.buffer_BVHNodes_stride = 0;
+                    tinybvh.buffer_BVHCombinedData = null;
+                    tinybvh.buffer_BVHCombinedData_count = 0;
+                    tinybvh.buffer_BVHCombinedData_stride = 0;
+                User Variables (These show in the UI):
+                    tinybvh.variable_RenderSize = 1024, 768; // (Uint2)
+                    tinybvh.variable_ViewMode = this.constructor.Enum_ViewModes.Shaded; // (Int)
+                    tinybvh.variable_TMax = 1000.000000; // (Float) The maximum length ray allowed
+                    tinybvh.variable_CostDivider = 100.000000; // (Float) Cost View Mode: divides by this number to help show the range.
+                    tinybvh.variable_DistanceDivider = 10.000000; // (Float) Distance View Mode: divides by this number to help show the range.
+                    tinybvh.variable_LightDirection = 1.000000, -1.000000, 0.000000; // (Float3) The direction the light is shining.
+                    tinybvh.variable_LightColor = 1.000000, 1.000000, 1.000000; // (Float3)
+                    tinybvh.variable_LightBrightness = 3.000000; // (Float)
+                    tinybvh.variable_AmbientColor = 0.020000, 0.020000, 0.020000; // (Float3)
+                    tinybvh.variable_AmbientBrightness = 1.000000; // (Float)
+                    tinybvh.variable_Albedo = 0.800000, 0.800000, 0.800000; // (Float3)
+                    tinybvh.variable_Roughness = 0.400000; // (Float)
+                    tinybvh.variable_SpecularLevel = 0.500000; // (Float)
+                    tinybvh.variable_Metalic = 0.000000; // (Float)
+                    tinybvh.variable_RayTestAgainst = this.constructor.Enum_RayTestAgainsts.BVHSeparate; // (Int)
+                */
+
+                // Projection matrix resolution texture
+                const projMtxResolution = [ tinybvh.texture_Output_size[0], tinybvh.texture_Output_size[1] ];
+
+                // Inverse View Proj matrix
+                {
+                    const viewMtx = Shared.GetInvViewMatrix(CameraPos, CameraAltitudeAzimuth);
+                    const projMtx = Shared.GetInvProjMatrix(45, projMtxResolution, 0.1, 1000, true, true, CameraLeftHanded);
+                    tinybvh.variable_InvViewProjMtx = Shared.MatMul(projMtx, viewMtx);
+                    tinybvh.variableChanged_InvViewProjMtx = new Array(16).fill(true);
+                }
+
+                // Camera Position
+                tinybvh.variable_CameraPos = CameraPos.slice();
+                tinybvh.variableChanged_CameraPos = new Array(3).fill(true);
+
+                const executeResult = await tinybvh.Execute(device, encoder, false);
+                if (!executeResult)
+                {
+                    alert("Could not execute tinybvh");
+                    throw new Error("Could not execute tinybvh");
+                }
+
+                if (viewingTextureName.length != 0 && tinybvh["texture_" + viewingTextureName] !== null)
+                {
+                    // Update size of the canvas
+                    document.getElementById("mainCanvas").width = tinybvh["texture_" + viewingTextureName].width;
+                    document.getElementById("mainCanvas").height = tinybvh["texture_" + viewingTextureName].height;
+
+                    if (!Shared.CopyCompatibleFormats(tinybvh["texture_" + viewingTextureName].format, canvasFormat))
+                    {
+                        Shared.CopyTextureLinearToSRGB(device, encoder, tinybvh["texture_" + viewingTextureName], context.getCurrentTexture());
+                    }
+                    else
+                    {
+                        encoder.copyTextureToTexture(
+                            { texture: tinybvh["texture_" + viewingTextureName] },
+                            { texture: context.getCurrentTexture() },
+                            {
+                                width: Math.min(tinybvh["texture_" + viewingTextureName].width, context.getCurrentTexture().width),
+                                height: Math.min(tinybvh["texture_" + viewingTextureName].height, context.getCurrentTexture().height),
+                                depthOrArrayLayers: Math.min(tinybvh["texture_" + viewingTextureName].depthOrArrayLayers, context.getCurrentTexture().depthOrArrayLayers)
+                            }
+                        );
+                    }
+                }
+
+                // If the technique changed the variables, update the UI
+                if (tinybvh.variableChanged_RenderSize[0])
+                {
+                    document.getElementById('inputBox_RenderSize0').value = tinybvh.variable_RenderSize[0];
+                    tinybvh.variableChanged_RenderSize[0] = false;
+                }
+
+                if (tinybvh.variableChanged_RenderSize[1])
+                {
+                    document.getElementById('inputBox_RenderSize1').value = tinybvh.variable_RenderSize[1];
+                    tinybvh.variableChanged_RenderSize[1] = false;
+                }
+
+                if (tinybvh.variableChanged_ViewMode)
+                {
+                    document.getElementById('inputBox_ViewMode').value = tinybvh.variable_ViewMode;
+                    tinybvh.variableChanged_ViewMode = false;
+                }
+
+                if (tinybvh.variableChanged_TMax)
+                {
+                    document.getElementById('inputBox_TMax').value = tinybvh.variable_TMax;
+                    tinybvh.variableChanged_TMax = false;
+                }
+
+                if (tinybvh.variableChanged_CameraPos[0])
+                {
+                    document.getElementById('inputBox_CameraPos0').value = tinybvh.variable_CameraPos[0];
+                    tinybvh.variableChanged_CameraPos[0] = false;
+                }
+
+                if (tinybvh.variableChanged_CameraPos[1])
+                {
+                    document.getElementById('inputBox_CameraPos1').value = tinybvh.variable_CameraPos[1];
+                    tinybvh.variableChanged_CameraPos[1] = false;
+                }
+
+                if (tinybvh.variableChanged_CameraPos[2])
+                {
+                    document.getElementById('inputBox_CameraPos2').value = tinybvh.variable_CameraPos[2];
+                    tinybvh.variableChanged_CameraPos[2] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[0])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx0').value = tinybvh.variable_InvViewProjMtx[0];
+                    tinybvh.variableChanged_InvViewProjMtx[0] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[1])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx1').value = tinybvh.variable_InvViewProjMtx[1];
+                    tinybvh.variableChanged_InvViewProjMtx[1] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[2])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx2').value = tinybvh.variable_InvViewProjMtx[2];
+                    tinybvh.variableChanged_InvViewProjMtx[2] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[3])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx3').value = tinybvh.variable_InvViewProjMtx[3];
+                    tinybvh.variableChanged_InvViewProjMtx[3] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[4])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx4').value = tinybvh.variable_InvViewProjMtx[4];
+                    tinybvh.variableChanged_InvViewProjMtx[4] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[5])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx5').value = tinybvh.variable_InvViewProjMtx[5];
+                    tinybvh.variableChanged_InvViewProjMtx[5] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[6])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx6').value = tinybvh.variable_InvViewProjMtx[6];
+                    tinybvh.variableChanged_InvViewProjMtx[6] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[7])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx7').value = tinybvh.variable_InvViewProjMtx[7];
+                    tinybvh.variableChanged_InvViewProjMtx[7] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[8])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx8').value = tinybvh.variable_InvViewProjMtx[8];
+                    tinybvh.variableChanged_InvViewProjMtx[8] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[9])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx9').value = tinybvh.variable_InvViewProjMtx[9];
+                    tinybvh.variableChanged_InvViewProjMtx[9] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[10])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx10').value = tinybvh.variable_InvViewProjMtx[10];
+                    tinybvh.variableChanged_InvViewProjMtx[10] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[11])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx11').value = tinybvh.variable_InvViewProjMtx[11];
+                    tinybvh.variableChanged_InvViewProjMtx[11] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[12])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx12').value = tinybvh.variable_InvViewProjMtx[12];
+                    tinybvh.variableChanged_InvViewProjMtx[12] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[13])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx13').value = tinybvh.variable_InvViewProjMtx[13];
+                    tinybvh.variableChanged_InvViewProjMtx[13] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[14])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx14').value = tinybvh.variable_InvViewProjMtx[14];
+                    tinybvh.variableChanged_InvViewProjMtx[14] = false;
+                }
+
+                if (tinybvh.variableChanged_InvViewProjMtx[15])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx15').value = tinybvh.variable_InvViewProjMtx[15];
+                    tinybvh.variableChanged_InvViewProjMtx[15] = false;
+                }
+
+                if (tinybvh.variableChanged_CostDivider)
+                {
+                    document.getElementById('inputBox_CostDivider').value = tinybvh.variable_CostDivider;
+                    tinybvh.variableChanged_CostDivider = false;
+                }
+
+                if (tinybvh.variableChanged_DistanceDivider)
+                {
+                    document.getElementById('inputBox_DistanceDivider').value = tinybvh.variable_DistanceDivider;
+                    tinybvh.variableChanged_DistanceDivider = false;
+                }
+
+                if (tinybvh.variableChanged_LightDirection[0])
+                {
+                    document.getElementById('inputBox_LightDirection0').value = tinybvh.variable_LightDirection[0];
+                    tinybvh.variableChanged_LightDirection[0] = false;
+                }
+
+                if (tinybvh.variableChanged_LightDirection[1])
+                {
+                    document.getElementById('inputBox_LightDirection1').value = tinybvh.variable_LightDirection[1];
+                    tinybvh.variableChanged_LightDirection[1] = false;
+                }
+
+                if (tinybvh.variableChanged_LightDirection[2])
+                {
+                    document.getElementById('inputBox_LightDirection2').value = tinybvh.variable_LightDirection[2];
+                    tinybvh.variableChanged_LightDirection[2] = false;
+                }
+
+                if (tinybvh.variableChanged_LightColor[0])
+                {
+                    document.getElementById('inputBox_LightColor0').value = tinybvh.variable_LightColor[0];
+                    tinybvh.variableChanged_LightColor[0] = false;
+                }
+
+                if (tinybvh.variableChanged_LightColor[1])
+                {
+                    document.getElementById('inputBox_LightColor1').value = tinybvh.variable_LightColor[1];
+                    tinybvh.variableChanged_LightColor[1] = false;
+                }
+
+                if (tinybvh.variableChanged_LightColor[2])
+                {
+                    document.getElementById('inputBox_LightColor2').value = tinybvh.variable_LightColor[2];
+                    tinybvh.variableChanged_LightColor[2] = false;
+                }
+
+                if (tinybvh.variableChanged_LightBrightness)
+                {
+                    document.getElementById('inputBox_LightBrightness').value = tinybvh.variable_LightBrightness;
+                    tinybvh.variableChanged_LightBrightness = false;
+                }
+
+                if (tinybvh.variableChanged_AmbientColor[0])
+                {
+                    document.getElementById('inputBox_AmbientColor0').value = tinybvh.variable_AmbientColor[0];
+                    tinybvh.variableChanged_AmbientColor[0] = false;
+                }
+
+                if (tinybvh.variableChanged_AmbientColor[1])
+                {
+                    document.getElementById('inputBox_AmbientColor1').value = tinybvh.variable_AmbientColor[1];
+                    tinybvh.variableChanged_AmbientColor[1] = false;
+                }
+
+                if (tinybvh.variableChanged_AmbientColor[2])
+                {
+                    document.getElementById('inputBox_AmbientColor2').value = tinybvh.variable_AmbientColor[2];
+                    tinybvh.variableChanged_AmbientColor[2] = false;
+                }
+
+                if (tinybvh.variableChanged_AmbientBrightness)
+                {
+                    document.getElementById('inputBox_AmbientBrightness').value = tinybvh.variable_AmbientBrightness;
+                    tinybvh.variableChanged_AmbientBrightness = false;
+                }
+
+                if (tinybvh.variableChanged_Albedo[0])
+                {
+                    document.getElementById('inputBox_Albedo0').value = tinybvh.variable_Albedo[0];
+                    tinybvh.variableChanged_Albedo[0] = false;
+                }
+
+                if (tinybvh.variableChanged_Albedo[1])
+                {
+                    document.getElementById('inputBox_Albedo1').value = tinybvh.variable_Albedo[1];
+                    tinybvh.variableChanged_Albedo[1] = false;
+                }
+
+                if (tinybvh.variableChanged_Albedo[2])
+                {
+                    document.getElementById('inputBox_Albedo2').value = tinybvh.variable_Albedo[2];
+                    tinybvh.variableChanged_Albedo[2] = false;
+                }
+
+                if (tinybvh.variableChanged_Roughness)
+                {
+                    document.getElementById('inputBox_Roughness').value = tinybvh.variable_Roughness;
+                    tinybvh.variableChanged_Roughness = false;
+                }
+
+                if (tinybvh.variableChanged_SpecularLevel)
+                {
+                    document.getElementById('inputBox_SpecularLevel').value = tinybvh.variable_SpecularLevel;
+                    tinybvh.variableChanged_SpecularLevel = false;
+                }
+
+                if (tinybvh.variableChanged_Metalic)
+                {
+                    document.getElementById('inputBox_Metalic').value = tinybvh.variable_Metalic;
+                    tinybvh.variableChanged_Metalic = false;
+                }
+
+                if (tinybvh.variableChanged_RayTestAgainst)
+                {
+                    document.getElementById('inputBox_RayTestAgainst').value = tinybvh.variable_RayTestAgainst;
+                    tinybvh.variableChanged_RayTestAgainst = false;
+                }
+
+
+                // Submit the command encoder
+                device.queue.submit([encoder.finish()]);
+
+                // advance to the next frame
+                lastTimeMs = currentTimeMs;
+
+                // Only do end of frame logic if we should.
+                // If we are waiting on promises (shader compiles), Execute()
+                // has frame start logic, but is waiting to do frame end logic, so we should too.
+                if (!tinybvh.waitingOnPromises)
+                {
+                    frameIndex = frameIndex + 1;
+
+                    // Update mouse states
+                    iMouse[2] = 0;
+                    iMouse[3] = 0;
+                    MouseStateLastFrame = MouseState.slice();
+
+                    // Update keyboard states
+                    KeyStatesLastFrame = KeyStates.slice();
+                }
+
+                // Update the loading list
+                let loadingText = "";
+                if (tinybvh.loadingPromises.size > 0)
+                    loadingText = "Nodes building shaders:";
+                for (const label of tinybvh.loadingPromises)
+                    loadingText = loadingText + "<br/>" + label;
+                document.getElementById("LoadingText").innerHTML = loadingText;
+
+                // Render the next frame
+                requestAnimationFrame(RenderFrame);
+            }
+
+            // Render the first frame
+            requestAnimationFrame(RenderFrame);
+        </script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td valign="top">
+                    <canvas width="512" height="512" id="mainCanvas" tabindex="0"></canvas>
+                    <br/><br/>
+                    <label for="Viewing">Viewing</label>
+                    <select name="Viewing" id="Viewing">
+                        <option value="Output">Output</option><br/>
+                        <option value="">----- Internal Textures -----</option><br/>
+                        <option value="DoRTCS_Output_ReadOnly">DoRTCS_Output_ReadOnly</option><br/>
+                        <option value="Output">Output</option><br/>
+                        <option value="_loadedTexture_0">_loadedTexture_0</option><br/>
+                    </select>
+                    <label for="Scene">Scene</label>
+                    <select name="Scene" id="Scene">
+                        <option value="bunny">bunny</option>
+                        <option value="sponza">sponza</option>
+                    </select>
+                </td>
+                <td>&nbsp;</td>
+                <td valign="top">
+                    <b>tinybvh</b><br/>
+                    <pre>Porting tiny_bvh_minimal_gpu to Gigi.
+BVHs in BVH_GPU format can be saved from the viewer.
+This uses the traverse.cl logic to trace the rays.
+tinybvh is at: https://github.com/jbikker/tinybvh/</pre>
+                    <button type="button" class="collapsible">User Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td valign="top">RenderSize&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_RenderSize0">
+                                <input type="text" id="inputBox_RenderSize1">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">ViewMode&nbsp;</td>
+                            <td>
+                                <select id="inputBox_ViewMode">
+                                    <option value="0">Shaded</option>
+                                    <option value="1">Occluded</option>
+                                    <option value="2">Cost</option>
+                                    <option value="3">Normals</option>
+                                    <option value="4">Distance</option>
+                                    <option value="5">Barycentrics</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">TMax&nbsp;<span class="tooltiptext">The maximum length ray allowed</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_TMax">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">CostDivider&nbsp;<span class="tooltiptext">Cost View Mode: divides by this number to help show the range.</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_CostDivider">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">DistanceDivider&nbsp;<span class="tooltiptext">Distance View Mode: divides by this number to help show the range.</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_DistanceDivider">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">LightDirection&nbsp;<span class="tooltiptext">The direction the light is shining.</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_LightDirection0">
+                                <input type="text" id="inputBox_LightDirection1">
+                                <input type="text" id="inputBox_LightDirection2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">LightColor&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_LightColor0">
+                                <input type="text" id="inputBox_LightColor1">
+                                <input type="text" id="inputBox_LightColor2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">LightBrightness&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_LightBrightness">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">AmbientColor&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_AmbientColor0">
+                                <input type="text" id="inputBox_AmbientColor1">
+                                <input type="text" id="inputBox_AmbientColor2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">AmbientBrightness&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_AmbientBrightness">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Albedo&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_Albedo0">
+                                <input type="text" id="inputBox_Albedo1">
+                                <input type="text" id="inputBox_Albedo2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Roughness&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_Roughness">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">SpecularLevel&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_SpecularLevel">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Metalic&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_Metalic">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">RayTestAgainst&nbsp;</td>
+                            <td>
+                                <select id="inputBox_RayTestAgainst">
+                                    <option value="0">BVHSeparate</option>
+                                    <option value="1">BVHCombined</option>
+                                    <option value="2">NoBVH</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">CameraPos&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_CameraPos0">
+                                <input type="text" id="inputBox_CameraPos1">
+                                <input type="text" id="inputBox_CameraPos2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">InvViewProjMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_InvViewProjMtx0">
+                                <input type="text" id="inputBox_InvViewProjMtx1">
+                                <input type="text" id="inputBox_InvViewProjMtx2">
+                                <input type="text" id="inputBox_InvViewProjMtx3">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx4">
+                                <input type="text" id="inputBox_InvViewProjMtx5">
+                                <input type="text" id="inputBox_InvViewProjMtx6">
+                                <input type="text" id="inputBox_InvViewProjMtx7">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx8">
+                                <input type="text" id="inputBox_InvViewProjMtx9">
+                                <input type="text" id="inputBox_InvViewProjMtx10">
+                                <input type="text" id="inputBox_InvViewProjMtx11">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx12">
+                                <input type="text" id="inputBox_InvViewProjMtx13">
+                                <input type="text" id="inputBox_InvViewProjMtx14">
+                                <input type="text" id="inputBox_InvViewProjMtx15">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
+
+                    <button type=button class="collapsible">Camera</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td>Camera Pos</td>
+                            <td>
+                                <input type="text" id="CameraPos0" />
+                                <input type="text" id="CameraPos1" />
+                                <input type="text" id="CameraPos2" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Altitude Azimuth</td>
+                            <td>
+                                <input type="text" id="CameraAltitudeAzimuth0" />
+                                <input type="text" id="CameraAltitudeAzimuth1" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td>Mouse Sensitivity</td>
+                            <td><input type="text" id="CameraMouseSensitivity" /></td>
+                        </tr>
+                        <tr>
+                            <td>Fly Speed</td>
+                            <td><input type="text" id="CameraFlySpeed" /></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><br /><button type="button" id="ResetCamera">Reset Camera</button><br /></td>
+                        </tr>
+                    </table>
+                    <br/><br/>
+                    <button type=button class="collapsible">Loading</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td><span id="LoadingText"></span></td>
+                        </tr>
+                    </table>
+                    <span id="FPS"></span>
+                    <br />
+                    <br />
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0 [Internal]</a></b>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>

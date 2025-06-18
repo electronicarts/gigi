@@ -1,0 +1,1237 @@
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <title>BlueNoiseAreaLights</title>
+        <link rel="stylesheet" href="./style.css">
+        <script type="module">
+
+            const VK_SHIFT = 0x10;
+            const VK_CONTROL = 0x11;
+            const VK_UP = 0x26;
+            const VK_DOWN = 0x28;
+            const VK_LEFT = 0x25;
+            const VK_RIGHT = 0x27;
+            const VK_PRIOR = 0x21;
+            const VK_NEXT = 0x22;
+
+            const VK_W = 87;
+            const VK_A = 65;
+            const VK_S = 83;
+            const VK_D = 68;
+            const VK_E = 69;
+            const VK_Q = 81;
+
+            const VK_w = 87 + 32;
+            const VK_a = 65 + 32;
+            const VK_s = 83 + 32;
+            const VK_d = 68 + 32;
+            const VK_e = 69 + 32;
+            const VK_q = 81 + 32;
+
+            // Handle collapsible variable tables
+            var coll = document.getElementsByClassName("collapsible");
+            for (let i = 0; i < coll.length; i++)
+            {
+                coll[i].addEventListener("click", function ()
+                {
+                    this.classList.toggle("active");
+                    var content = this.nextElementSibling;
+                    if (content.style.display === "block")
+                        content.style.display = "none";
+                    else
+                        content.style.display = "block";
+                });
+            }
+
+            // Handle viewing texture drop down
+            let viewingTextureName = "RenderTarget";
+            document.getElementById("Viewing").addEventListener('change', (event) => { if (event.target.value.length != 0) viewingTextureName = event.target.value; });
+
+            function parseUint(value)
+            {
+                value = parseInt(value);
+                if (value < 0)
+                    value = 0;
+                return value;
+            }
+
+            let CameraPos = [ 6.30233, 96.8238, -200.32 ];
+            let CameraAltitudeAzimuth = [ -0.386228, 0.0748035 ];
+            let CameraLeftHanded = true;
+            let CameraFlySpeed = 2;
+            let CameraMouseSensitivity = 0.01;
+            let CameraChanged = false;
+
+            let CameraPos_Starting = [ 6.30233, 96.8238, -200.32 ];
+            let CameraAltitudeAzimuth_Starting = [ -0.386228, 0.0748035 ];
+
+            SetCameraUIToCamera();
+
+            function ResetCamera()
+            {
+                CameraPos = CameraPos_Starting.slice();
+                CameraAltitudeAzimuth = CameraAltitudeAzimuth_Starting.slice();
+                SetCameraUIToCamera();
+            }
+            document.getElementById('ResetCamera').addEventListener('click', (event) => { ResetCamera(); });
+
+            document.getElementById("CameraPos0").addEventListener('change', (event) => { CameraPos[0] = event.target.value; });
+            document.getElementById("CameraPos1").addEventListener('change', (event) => { CameraPos[1] = event.target.value; });
+            document.getElementById("CameraPos2").addEventListener('change', (event) => { CameraPos[2] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth0").addEventListener('change', (event) => { CameraAltitudeAzimuth[0] = event.target.value; });
+            document.getElementById("CameraAltitudeAzimuth1").addEventListener('change', (event) => { CameraAltitudeAzimuth[1] = event.target.value; });
+
+            // Camera mouse sensitivity and fly speed
+            document.getElementById("CameraMouseSensitivity").value = 0.01;
+            document.getElementById("CameraFlySpeed").value = 2;
+            document.getElementById("CameraMouseSensitivity").addEventListener('change', (event) => { CameraMouseSensitivity = event.target.value; });
+            document.getElementById("CameraFlySpeed").addEventListener('change', (event) => { CameraFlySpeed = event.target.value; });
+
+            function SetCameraUIToCamera()
+            {
+                document.getElementById("CameraPos0").value = CameraPos[0];
+                document.getElementById("CameraPos1").value = CameraPos[1];
+                document.getElementById("CameraPos2").value = CameraPos[2];
+
+                document.getElementById("CameraAltitudeAzimuth0").value = CameraAltitudeAzimuth[0];
+                document.getElementById("CameraAltitudeAzimuth1").value = CameraAltitudeAzimuth[1];
+            }
+
+            function UpdateCamera(frameTimeSeconds)
+            {
+                CameraChanged = false;
+
+                // To account for frame time
+                const movementMultiplier = frameTimeSeconds * 60.0;
+
+                // If the mouse is dragging, rotate the camera
+                if (MouseState[2] && MouseStateLastFrame[2])
+                {
+                    let dx = MouseStateLastFrame[0] - MouseState[0];
+                    let dy = MouseStateLastFrame[1] - MouseState[1];
+
+                    dx *= movementMultiplier;
+                    dy *= movementMultiplier;
+
+                    if (!CameraLeftHanded)
+                    {
+                        dx *= -1.0;
+                        dy *= -1.0;
+                    }
+
+                    CameraAltitudeAzimuth[0] += dy * CameraMouseSensitivity;
+                    CameraAltitudeAzimuth[0] = Math.max(Math.min(CameraAltitudeAzimuth[0], Math.PI * 0.49), -Math.PI * 0.49);
+
+                    CameraAltitudeAzimuth[1] += dx * CameraMouseSensitivity;
+                    if (CameraAltitudeAzimuth[1] < 0.0)
+                        CameraAltitudeAzimuth[1] += 2.0 * Math.PI;
+                    CameraAltitudeAzimuth[1] = CameraAltitudeAzimuth[1] % (2.0 * Math.PI);
+
+                    if (dx != 0.0 || dy != 0.0)
+                        CameraChanged = true;
+                }
+
+                // Handle WASD
+                {
+                    const viewMatrix = Shared.GetViewMatrix(CameraPos, CameraAltitudeAzimuth);
+
+                    const left = [ viewMatrix[0], viewMatrix[4], viewMatrix[8] ];
+                    const up   = [ viewMatrix[1], viewMatrix[5], viewMatrix[9] ];
+                    const fwd  = [ viewMatrix[2], viewMatrix[6], viewMatrix[10] ];
+
+                    let flySpeed = CameraFlySpeed * movementMultiplier;
+
+                    if (KeyStates[VK_SHIFT])
+                        flySpeed *= 10.0;
+                    else if (KeyStates[VK_CONTROL])
+                        flySpeed /= 10.0;
+
+                    if (!CameraLeftHanded)
+                    {
+                        fwd[0] *= -1.0;
+                        fwd[1] *= -1.0;
+                        fwd[2] *= -1.0;
+                    }
+
+                    if (KeyStates[VK_W] || KeyStates[VK_w] || KeyStates[VK_UP])
+                    {
+                        CameraPos[0] += fwd[0] * flySpeed;
+                        CameraPos[1] += fwd[1] * flySpeed;
+                        CameraPos[2] += fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_S] || KeyStates[VK_s] || KeyStates[VK_DOWN])
+                    {
+                        CameraPos[0] -= fwd[0] * flySpeed;
+                        CameraPos[1] -= fwd[1] * flySpeed;
+                        CameraPos[2] -= fwd[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_A] || KeyStates[VK_a] || KeyStates[VK_LEFT])
+                    {
+                        CameraPos[0] -= left[0] * flySpeed;
+                        CameraPos[1] -= left[1] * flySpeed;
+                        CameraPos[2] -= left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_D] || KeyStates[VK_d] || KeyStates[VK_RIGHT])
+                    {
+                        CameraPos[0] += left[0] * flySpeed;
+                        CameraPos[1] += left[1] * flySpeed;
+                        CameraPos[2] += left[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_E] || KeyStates[VK_e] || KeyStates[VK_PRIOR])
+                    {
+                        CameraPos[0] += up[0] * flySpeed;
+                        CameraPos[1] += up[1] * flySpeed;
+                        CameraPos[2] += up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+
+                    if (KeyStates[VK_Q] || KeyStates[VK_q] || KeyStates[VK_NEXT])
+                    {
+                        CameraPos[0] -= up[0] * flySpeed;
+                        CameraPos[1] -= up[1] * flySpeed;
+                        CameraPos[2] -= up[2] * flySpeed;
+                        CameraChanged = true;
+                    }
+                }
+
+                if (CameraChanged)
+                    SetCameraUIToCamera();
+            }
+
+            // Import the technique
+            import BlueNoiseAreaLights from "./BlueNoiseAreaLights_Module.js"
+            import * as Shared from './Shared.js';
+
+            // Initialize WebGPU
+            const canvas = document.getElementById('mainCanvas');
+            if (!navigator.gpu)
+            {
+                alert("WebGPU not supported on this browser.");
+                throw new Error("WebGPU not supported on this browser.");
+            }
+
+            const adapter = await navigator.gpu.requestAdapter();
+            if (!adapter)
+            {
+                alert("No appropriate GPUAdapter found.");
+                throw new Error("No appropriate GPUAdapter found.");
+            }
+
+            const device = await adapter.requestDevice({
+                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
+                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+            });
+
+            const context = canvas.getContext("webgpu");
+            //const canvasFormat = navigator.gpu.getPreferredCanvasFormat();
+            const canvasFormat = "rgba8unorm";
+            context.configure({
+                device: device,
+                format: canvasFormat,
+                usage: GPUTextureUsage.COPY_DST | GPUTextureUsage.STORAGE_BINDING,
+            });
+
+            // Setup canvas events
+            let iMouse = [0, 0, 0, 0];
+            let MouseState = [0, 0, 0, 0];
+            let MouseStateLastFrame = [0, 0, 0, 0];
+            let KeyStates = Array(256).fill(0);
+            let KeyStatesLastFrame = Array(256).fill(0);
+            canvas.addEventListener('click', (event) => { if (event.button == 0) { iMouse[0] = event.offsetX; iMouse[1] = event.offsetY; iMouse[2] = iMouse[0]; iMouse[3] = iMouse[1]; } });
+            canvas.addEventListener('mousemove', (event) => { MouseState[0] = event.offsetX; MouseState[1] = event.offsetY; });
+            canvas.addEventListener('mousedown', (event) => { if (event.button == 0) { MouseState[2] = 1 } else if (event.button == 2) { MouseState[3] = 1 } });
+            canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
+            canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
+            canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_NoiseType').addEventListener('change',(event) => {event.target.value=event.target.value; BlueNoiseAreaLights.variable_NoiseType=event.target.value;});
+            document.getElementById('inputBox_ExposureFStops').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_ExposureFStops=event.target.value;});
+            document.getElementById('inputBox_ToneMapping').addEventListener('change',(event) => {event.target.value=event.target.value; BlueNoiseAreaLights.variable_ToneMapping=event.target.value;});
+            document.getElementById('inputBox_Animate').addEventListener('change',(event) => {BlueNoiseAreaLights.variable_Animate=event.target.checked;});
+            document.getElementById('inputBox_AmbientLight0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_AmbientLight[0]=event.target.value;});
+            document.getElementById('inputBox_AmbientLight1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_AmbientLight[1]=event.target.value;});
+            document.getElementById('inputBox_AmbientLight2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_AmbientLight[2]=event.target.value;});
+            document.getElementById('inputBox_TemporalFilter').addEventListener('change',(event) => {event.target.value=event.target.value; BlueNoiseAreaLights.variable_TemporalFilter=event.target.value;});
+            document.getElementById('inputBox_EMAAlpha').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_EMAAlpha=event.target.value;});
+            document.getElementById('inputBox_DirLightEnabled').addEventListener('change',(event) => {BlueNoiseAreaLights.variable_DirLightEnabled=event.target.checked;});
+            document.getElementById('inputBox_DirLightSampleCount').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); BlueNoiseAreaLights.variable_DirLightSampleCount=event.target.value;});
+            document.getElementById('inputBox_DirLightColor0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightColor[0]=event.target.value;});
+            document.getElementById('inputBox_DirLightColor1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightColor[1]=event.target.value;});
+            document.getElementById('inputBox_DirLightColor2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightColor[2]=event.target.value;});
+            document.getElementById('inputBox_DirLightBrightness').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightBrightness=event.target.value;});
+            document.getElementById('inputBox_DirLightDirection0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightDirection[0]=event.target.value;});
+            document.getElementById('inputBox_DirLightDirection1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightDirection[1]=event.target.value;});
+            document.getElementById('inputBox_DirLightDirection2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightDirection[2]=event.target.value;});
+            document.getElementById('inputBox_DirLightRadius').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_DirLightRadius=event.target.value;});
+            document.getElementById('inputBox_CameraPos0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_CameraPos[0]=event.target.value;});
+            document.getElementById('inputBox_CameraPos1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_CameraPos[1]=event.target.value;});
+            document.getElementById('inputBox_CameraPos2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_CameraPos[2]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[0]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[1]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[2]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[3]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx4').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[4]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx5').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[5]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx6').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[6]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx7').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[7]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx8').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[8]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx9').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[9]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx10').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[10]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx11').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[11]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx12').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[12]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx13').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[13]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx14').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[14]=event.target.value;});
+            document.getElementById('inputBox_InvViewProjMtx15').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_InvViewProjMtx[15]=event.target.value;});
+            document.getElementById('inputBox_FrameIndex').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); BlueNoiseAreaLights.variable_FrameIndex=event.target.value;});
+            document.getElementById('inputBox_PosLightEnabled').addEventListener('change',(event) => {BlueNoiseAreaLights.variable_PosLightEnabled=event.target.checked;});
+            document.getElementById('inputBox_PosLightSampleCount').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); BlueNoiseAreaLights.variable_PosLightSampleCount=event.target.value;});
+            document.getElementById('inputBox_PosLightColor0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightColor[0]=event.target.value;});
+            document.getElementById('inputBox_PosLightColor1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightColor[1]=event.target.value;});
+            document.getElementById('inputBox_PosLightColor2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightColor[2]=event.target.value;});
+            document.getElementById('inputBox_PosLightBrightness').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightBrightness=event.target.value;});
+            document.getElementById('inputBox_PosLightPosition0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightPosition[0]=event.target.value;});
+            document.getElementById('inputBox_PosLightPosition1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightPosition[1]=event.target.value;});
+            document.getElementById('inputBox_PosLightPosition2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightPosition[2]=event.target.value;});
+            document.getElementById('inputBox_PosLightRadius').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightRadius=event.target.value;});
+            document.getElementById('inputBox_PosLightShineDir0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightShineDir[0]=event.target.value;});
+            document.getElementById('inputBox_PosLightShineDir1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightShineDir[1]=event.target.value;});
+            document.getElementById('inputBox_PosLightShineDir2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightShineDir[2]=event.target.value;});
+            document.getElementById('inputBox_PosLightShineCosThetaInner').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightShineCosThetaInner=event.target.value;});
+            document.getElementById('inputBox_PosLightShineCosThetaOuter').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter=event.target.value;});
+            document.getElementById('inputBox_CameraChanged').addEventListener('change',(event) => {BlueNoiseAreaLights.variable_CameraChanged=event.target.checked;});
+            document.getElementById('inputBox_ResetAccum').addEventListener('click',(event) => {BlueNoiseAreaLights.variable_ResetAccum=true;});
+
+            function ResetVariables()
+            {
+                    BlueNoiseAreaLights.variable_NoiseType = BlueNoiseAreaLights.variableDefault_NoiseType;
+                    BlueNoiseAreaLights.variable_ExposureFStops = BlueNoiseAreaLights.variableDefault_ExposureFStops;
+                    BlueNoiseAreaLights.variable_ToneMapping = BlueNoiseAreaLights.variableDefault_ToneMapping;
+                    BlueNoiseAreaLights.variable_Animate = BlueNoiseAreaLights.variableDefault_Animate;
+                    BlueNoiseAreaLights.variable_AmbientLight[0] = BlueNoiseAreaLights.variableDefault_AmbientLight[0];
+                    BlueNoiseAreaLights.variable_AmbientLight[1] = BlueNoiseAreaLights.variableDefault_AmbientLight[1];
+                    BlueNoiseAreaLights.variable_AmbientLight[2] = BlueNoiseAreaLights.variableDefault_AmbientLight[2];
+                    BlueNoiseAreaLights.variable_TemporalFilter = BlueNoiseAreaLights.variableDefault_TemporalFilter;
+                    BlueNoiseAreaLights.variable_EMAAlpha = BlueNoiseAreaLights.variableDefault_EMAAlpha;
+                    BlueNoiseAreaLights.variable_DirLightEnabled = BlueNoiseAreaLights.variableDefault_DirLightEnabled;
+                    BlueNoiseAreaLights.variable_DirLightSampleCount = BlueNoiseAreaLights.variableDefault_DirLightSampleCount;
+                    BlueNoiseAreaLights.variable_DirLightColor[0] = BlueNoiseAreaLights.variableDefault_DirLightColor[0];
+                    BlueNoiseAreaLights.variable_DirLightColor[1] = BlueNoiseAreaLights.variableDefault_DirLightColor[1];
+                    BlueNoiseAreaLights.variable_DirLightColor[2] = BlueNoiseAreaLights.variableDefault_DirLightColor[2];
+                    BlueNoiseAreaLights.variable_DirLightBrightness = BlueNoiseAreaLights.variableDefault_DirLightBrightness;
+                    BlueNoiseAreaLights.variable_DirLightDirection[0] = BlueNoiseAreaLights.variableDefault_DirLightDirection[0];
+                    BlueNoiseAreaLights.variable_DirLightDirection[1] = BlueNoiseAreaLights.variableDefault_DirLightDirection[1];
+                    BlueNoiseAreaLights.variable_DirLightDirection[2] = BlueNoiseAreaLights.variableDefault_DirLightDirection[2];
+                    BlueNoiseAreaLights.variable_DirLightRadius = BlueNoiseAreaLights.variableDefault_DirLightRadius;
+                    BlueNoiseAreaLights.variable_CameraPos[0] = BlueNoiseAreaLights.variableDefault_CameraPos[0];
+                    BlueNoiseAreaLights.variable_CameraPos[1] = BlueNoiseAreaLights.variableDefault_CameraPos[1];
+                    BlueNoiseAreaLights.variable_CameraPos[2] = BlueNoiseAreaLights.variableDefault_CameraPos[2];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[0] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[0];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[1] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[1];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[2] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[2];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[3] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[3];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[4] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[4];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[5] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[5];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[6] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[6];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[7] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[7];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[8] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[8];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[9] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[9];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[10] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[10];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[11] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[11];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[12] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[12];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[13] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[13];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[14] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[14];
+                    BlueNoiseAreaLights.variable_InvViewProjMtx[15] = BlueNoiseAreaLights.variableDefault_InvViewProjMtx[15];
+                    BlueNoiseAreaLights.variable_FrameIndex = BlueNoiseAreaLights.variableDefault_FrameIndex;
+                    BlueNoiseAreaLights.variable_PosLightEnabled = BlueNoiseAreaLights.variableDefault_PosLightEnabled;
+                    BlueNoiseAreaLights.variable_PosLightSampleCount = BlueNoiseAreaLights.variableDefault_PosLightSampleCount;
+                    BlueNoiseAreaLights.variable_PosLightColor[0] = BlueNoiseAreaLights.variableDefault_PosLightColor[0];
+                    BlueNoiseAreaLights.variable_PosLightColor[1] = BlueNoiseAreaLights.variableDefault_PosLightColor[1];
+                    BlueNoiseAreaLights.variable_PosLightColor[2] = BlueNoiseAreaLights.variableDefault_PosLightColor[2];
+                    BlueNoiseAreaLights.variable_PosLightBrightness = BlueNoiseAreaLights.variableDefault_PosLightBrightness;
+                    BlueNoiseAreaLights.variable_PosLightPosition[0] = BlueNoiseAreaLights.variableDefault_PosLightPosition[0];
+                    BlueNoiseAreaLights.variable_PosLightPosition[1] = BlueNoiseAreaLights.variableDefault_PosLightPosition[1];
+                    BlueNoiseAreaLights.variable_PosLightPosition[2] = BlueNoiseAreaLights.variableDefault_PosLightPosition[2];
+                    BlueNoiseAreaLights.variable_PosLightRadius = BlueNoiseAreaLights.variableDefault_PosLightRadius;
+                    BlueNoiseAreaLights.variable_PosLightShineDir[0] = BlueNoiseAreaLights.variableDefault_PosLightShineDir[0];
+                    BlueNoiseAreaLights.variable_PosLightShineDir[1] = BlueNoiseAreaLights.variableDefault_PosLightShineDir[1];
+                    BlueNoiseAreaLights.variable_PosLightShineDir[2] = BlueNoiseAreaLights.variableDefault_PosLightShineDir[2];
+                    BlueNoiseAreaLights.variable_PosLightShineCosThetaInner = BlueNoiseAreaLights.variableDefault_PosLightShineCosThetaInner;
+                    BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter = BlueNoiseAreaLights.variableDefault_PosLightShineCosThetaOuter;
+                    BlueNoiseAreaLights.variable_CameraChanged = BlueNoiseAreaLights.variableDefault_CameraChanged;
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_NoiseType').value = BlueNoiseAreaLights.variable_NoiseType;
+                    document.getElementById('inputBox_ExposureFStops').value = BlueNoiseAreaLights.variable_ExposureFStops;
+                    document.getElementById('inputBox_ToneMapping').value = BlueNoiseAreaLights.variable_ToneMapping;
+                    document.getElementById('inputBox_Animate').checked = Boolean(BlueNoiseAreaLights.variable_Animate);
+                    document.getElementById('inputBox_AmbientLight0').value = BlueNoiseAreaLights.variable_AmbientLight[0];
+                    document.getElementById('inputBox_AmbientLight1').value = BlueNoiseAreaLights.variable_AmbientLight[1];
+                    document.getElementById('inputBox_AmbientLight2').value = BlueNoiseAreaLights.variable_AmbientLight[2];
+                    document.getElementById('inputBox_TemporalFilter').value = BlueNoiseAreaLights.variable_TemporalFilter;
+                    document.getElementById('inputBox_EMAAlpha').value = BlueNoiseAreaLights.variable_EMAAlpha;
+                    document.getElementById('inputBox_DirLightEnabled').checked = Boolean(BlueNoiseAreaLights.variable_DirLightEnabled);
+                    document.getElementById('inputBox_DirLightSampleCount').value = BlueNoiseAreaLights.variable_DirLightSampleCount;
+                    document.getElementById('inputBox_DirLightColor0').value = BlueNoiseAreaLights.variable_DirLightColor[0];
+                    document.getElementById('inputBox_DirLightColor1').value = BlueNoiseAreaLights.variable_DirLightColor[1];
+                    document.getElementById('inputBox_DirLightColor2').value = BlueNoiseAreaLights.variable_DirLightColor[2];
+                    document.getElementById('inputBox_DirLightBrightness').value = BlueNoiseAreaLights.variable_DirLightBrightness;
+                    document.getElementById('inputBox_DirLightDirection0').value = BlueNoiseAreaLights.variable_DirLightDirection[0];
+                    document.getElementById('inputBox_DirLightDirection1').value = BlueNoiseAreaLights.variable_DirLightDirection[1];
+                    document.getElementById('inputBox_DirLightDirection2').value = BlueNoiseAreaLights.variable_DirLightDirection[2];
+                    document.getElementById('inputBox_DirLightRadius').value = BlueNoiseAreaLights.variable_DirLightRadius;
+                    document.getElementById('inputBox_CameraPos0').value = BlueNoiseAreaLights.variable_CameraPos[0];
+                    document.getElementById('inputBox_CameraPos1').value = BlueNoiseAreaLights.variable_CameraPos[1];
+                    document.getElementById('inputBox_CameraPos2').value = BlueNoiseAreaLights.variable_CameraPos[2];
+                    document.getElementById('inputBox_InvViewProjMtx0').value = BlueNoiseAreaLights.variable_InvViewProjMtx[0];
+                    document.getElementById('inputBox_InvViewProjMtx1').value = BlueNoiseAreaLights.variable_InvViewProjMtx[1];
+                    document.getElementById('inputBox_InvViewProjMtx2').value = BlueNoiseAreaLights.variable_InvViewProjMtx[2];
+                    document.getElementById('inputBox_InvViewProjMtx3').value = BlueNoiseAreaLights.variable_InvViewProjMtx[3];
+                    document.getElementById('inputBox_InvViewProjMtx4').value = BlueNoiseAreaLights.variable_InvViewProjMtx[4];
+                    document.getElementById('inputBox_InvViewProjMtx5').value = BlueNoiseAreaLights.variable_InvViewProjMtx[5];
+                    document.getElementById('inputBox_InvViewProjMtx6').value = BlueNoiseAreaLights.variable_InvViewProjMtx[6];
+                    document.getElementById('inputBox_InvViewProjMtx7').value = BlueNoiseAreaLights.variable_InvViewProjMtx[7];
+                    document.getElementById('inputBox_InvViewProjMtx8').value = BlueNoiseAreaLights.variable_InvViewProjMtx[8];
+                    document.getElementById('inputBox_InvViewProjMtx9').value = BlueNoiseAreaLights.variable_InvViewProjMtx[9];
+                    document.getElementById('inputBox_InvViewProjMtx10').value = BlueNoiseAreaLights.variable_InvViewProjMtx[10];
+                    document.getElementById('inputBox_InvViewProjMtx11').value = BlueNoiseAreaLights.variable_InvViewProjMtx[11];
+                    document.getElementById('inputBox_InvViewProjMtx12').value = BlueNoiseAreaLights.variable_InvViewProjMtx[12];
+                    document.getElementById('inputBox_InvViewProjMtx13').value = BlueNoiseAreaLights.variable_InvViewProjMtx[13];
+                    document.getElementById('inputBox_InvViewProjMtx14').value = BlueNoiseAreaLights.variable_InvViewProjMtx[14];
+                    document.getElementById('inputBox_InvViewProjMtx15').value = BlueNoiseAreaLights.variable_InvViewProjMtx[15];
+                    document.getElementById('inputBox_FrameIndex').value = BlueNoiseAreaLights.variable_FrameIndex;
+                    document.getElementById('inputBox_PosLightEnabled').checked = Boolean(BlueNoiseAreaLights.variable_PosLightEnabled);
+                    document.getElementById('inputBox_PosLightSampleCount').value = BlueNoiseAreaLights.variable_PosLightSampleCount;
+                    document.getElementById('inputBox_PosLightColor0').value = BlueNoiseAreaLights.variable_PosLightColor[0];
+                    document.getElementById('inputBox_PosLightColor1').value = BlueNoiseAreaLights.variable_PosLightColor[1];
+                    document.getElementById('inputBox_PosLightColor2').value = BlueNoiseAreaLights.variable_PosLightColor[2];
+                    document.getElementById('inputBox_PosLightBrightness').value = BlueNoiseAreaLights.variable_PosLightBrightness;
+                    document.getElementById('inputBox_PosLightPosition0').value = BlueNoiseAreaLights.variable_PosLightPosition[0];
+                    document.getElementById('inputBox_PosLightPosition1').value = BlueNoiseAreaLights.variable_PosLightPosition[1];
+                    document.getElementById('inputBox_PosLightPosition2').value = BlueNoiseAreaLights.variable_PosLightPosition[2];
+                    document.getElementById('inputBox_PosLightRadius').value = BlueNoiseAreaLights.variable_PosLightRadius;
+                    document.getElementById('inputBox_PosLightShineDir0').value = BlueNoiseAreaLights.variable_PosLightShineDir[0];
+                    document.getElementById('inputBox_PosLightShineDir1').value = BlueNoiseAreaLights.variable_PosLightShineDir[1];
+                    document.getElementById('inputBox_PosLightShineDir2').value = BlueNoiseAreaLights.variable_PosLightShineDir[2];
+                    document.getElementById('inputBox_PosLightShineCosThetaInner').value = BlueNoiseAreaLights.variable_PosLightShineCosThetaInner;
+                    document.getElementById('inputBox_PosLightShineCosThetaOuter').value = BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter;
+                    document.getElementById('inputBox_CameraChanged').checked = Boolean(BlueNoiseAreaLights.variable_CameraChanged);
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
+            /* TODO:
+            provide imported resources or variable values to the technique that only need to be set once:
+                Host Variables:
+                    BlueNoiseAreaLights.variable_FrameIndex = 0; // (Uint)
+                User Variables (These show in the UI):
+                    BlueNoiseAreaLights.variable_NoiseType = this.constructor.Enum_NoiseTypes.FAST_IS; // (Int)
+                    BlueNoiseAreaLights.variable_ExposureFStops = 0.000000; // (Float) Exposure, in FStops. Every +1 is double brightness. Every -1 is half brightness.
+                    BlueNoiseAreaLights.variable_ToneMapping = this.constructor.Enum_ToneMappingOperation.ACES; // (Int)
+                    BlueNoiseAreaLights.variable_Animate = true; // (Bool)
+                    BlueNoiseAreaLights.variable_AmbientLight = 0.050000, 0.050000, 0.050000; // (Float3)
+                    BlueNoiseAreaLights.variable_TemporalFilter = this.constructor.Enum_TemporalFilters.None; // (Int)
+                    BlueNoiseAreaLights.variable_EMAAlpha = 0.100000; // (Float) How much to lerp towards the new from the old, when using EMA temporal filtering
+                    BlueNoiseAreaLights.variable_DirLightEnabled = true; // (Bool)
+                    BlueNoiseAreaLights.variable_DirLightSampleCount = 16; // (Int) How many stochastic samples to take per frame
+                    BlueNoiseAreaLights.variable_DirLightColor = 1.000000, 0.800000, 0.500000; // (Float3)
+                    BlueNoiseAreaLights.variable_DirLightBrightness = 1.000000; // (Float)
+                    BlueNoiseAreaLights.variable_DirLightDirection = 1.000000, -1.000000, -1.000000; // (Float3) What direction the light shines in
+                    BlueNoiseAreaLights.variable_DirLightRadius = 0.100000; // (Float) radius of light disk at 1 unit away
+                    BlueNoiseAreaLights.variable_PosLightEnabled = true; // (Bool)
+                    BlueNoiseAreaLights.variable_PosLightSampleCount = 16; // (Int) How many stochastic samples to take per frame
+                    BlueNoiseAreaLights.variable_PosLightColor = 0.500000, 0.800000, 1.000000; // (Float3)
+                    BlueNoiseAreaLights.variable_PosLightBrightness = 1.000000; // (Float)
+                    BlueNoiseAreaLights.variable_PosLightPosition = 0.000000, 60.000000, 40.000000; // (Float3)
+                    BlueNoiseAreaLights.variable_PosLightRadius = 5.000000; // (Float)
+                    BlueNoiseAreaLights.variable_PosLightShineDir = 0.000000, -1.000000, -1.000000; // (Float3) The direction of the spot light. Cos Theta Inner / Outer control the spot light
+                    BlueNoiseAreaLights.variable_PosLightShineCosThetaInner = 0.800000; // (Float) direction to light, dotted by -c_lightDir. light starts to fade here.
+                    BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter = 0.700000; // (Float) direction to light, dotted by -c_lightDir. light finishes fading here.
+                    BlueNoiseAreaLights.variable_ResetAccum = false; // (Bool)
+            */
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
+
+            // Frame rendering function
+            let startTimeMs;
+            let lastTimeMs;
+            let frameIndex = 0
+            async function RenderFrame(currentTimeMs) {
+
+                // Handle frame timing
+                if (startTimeMs === undefined)
+                {
+                    startTimeMs = currentTimeMs;
+                    lastTimeMs = currentTimeMs;
+                }
+
+                // Show FPS
+                document.getElementById("FPS").innerHTML = "<br><br>FPS: " + (1000.0 / (currentTimeMs - lastTimeMs)).toFixed(2) + "<br>ms: " + (currentTimeMs - lastTimeMs).toFixed(2);
+
+                // Update the camera based on user input
+                UpdateCamera((currentTimeMs - lastTimeMs) / 1000);
+
+                // Run the technique
+                const encoder = device.createCommandEncoder();
+
+                /* TODO:
+            provide imported resources or variable values to the technique that need to change every frame:
+                Host Variables:
+                    BlueNoiseAreaLights.variable_FrameIndex = 0; // (Uint)
+                User Variables (These show in the UI):
+                    BlueNoiseAreaLights.variable_NoiseType = this.constructor.Enum_NoiseTypes.FAST_IS; // (Int)
+                    BlueNoiseAreaLights.variable_ExposureFStops = 0.000000; // (Float) Exposure, in FStops. Every +1 is double brightness. Every -1 is half brightness.
+                    BlueNoiseAreaLights.variable_ToneMapping = this.constructor.Enum_ToneMappingOperation.ACES; // (Int)
+                    BlueNoiseAreaLights.variable_Animate = true; // (Bool)
+                    BlueNoiseAreaLights.variable_AmbientLight = 0.050000, 0.050000, 0.050000; // (Float3)
+                    BlueNoiseAreaLights.variable_TemporalFilter = this.constructor.Enum_TemporalFilters.None; // (Int)
+                    BlueNoiseAreaLights.variable_EMAAlpha = 0.100000; // (Float) How much to lerp towards the new from the old, when using EMA temporal filtering
+                    BlueNoiseAreaLights.variable_DirLightEnabled = true; // (Bool)
+                    BlueNoiseAreaLights.variable_DirLightSampleCount = 16; // (Int) How many stochastic samples to take per frame
+                    BlueNoiseAreaLights.variable_DirLightColor = 1.000000, 0.800000, 0.500000; // (Float3)
+                    BlueNoiseAreaLights.variable_DirLightBrightness = 1.000000; // (Float)
+                    BlueNoiseAreaLights.variable_DirLightDirection = 1.000000, -1.000000, -1.000000; // (Float3) What direction the light shines in
+                    BlueNoiseAreaLights.variable_DirLightRadius = 0.100000; // (Float) radius of light disk at 1 unit away
+                    BlueNoiseAreaLights.variable_PosLightEnabled = true; // (Bool)
+                    BlueNoiseAreaLights.variable_PosLightSampleCount = 16; // (Int) How many stochastic samples to take per frame
+                    BlueNoiseAreaLights.variable_PosLightColor = 0.500000, 0.800000, 1.000000; // (Float3)
+                    BlueNoiseAreaLights.variable_PosLightBrightness = 1.000000; // (Float)
+                    BlueNoiseAreaLights.variable_PosLightPosition = 0.000000, 60.000000, 40.000000; // (Float3)
+                    BlueNoiseAreaLights.variable_PosLightRadius = 5.000000; // (Float)
+                    BlueNoiseAreaLights.variable_PosLightShineDir = 0.000000, -1.000000, -1.000000; // (Float3) The direction of the spot light. Cos Theta Inner / Outer control the spot light
+                    BlueNoiseAreaLights.variable_PosLightShineCosThetaInner = 0.800000; // (Float) direction to light, dotted by -c_lightDir. light starts to fade here.
+                    BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter = 0.700000; // (Float) direction to light, dotted by -c_lightDir. light finishes fading here.
+                    BlueNoiseAreaLights.variable_ResetAccum = false; // (Bool)
+                */
+
+                // Projection matrix resolution texture
+                const projMtxResolution = [ BlueNoiseAreaLights.texture_RenderTarget_size[0], BlueNoiseAreaLights.texture_RenderTarget_size[1] ];
+
+                // Inverse View Proj matrix
+                {
+                    const viewMtx = Shared.GetInvViewMatrix(CameraPos, CameraAltitudeAzimuth);
+                    const projMtx = Shared.GetInvProjMatrix(45, projMtxResolution, 0.1, 1000, true, true, CameraLeftHanded);
+                    BlueNoiseAreaLights.variable_InvViewProjMtx = Shared.MatMul(projMtx, viewMtx);
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx = new Array(16).fill(true);
+                }
+
+                // Camera Position
+                BlueNoiseAreaLights.variable_CameraPos = CameraPos.slice();
+                BlueNoiseAreaLights.variableChanged_CameraPos = new Array(3).fill(true);
+
+                // Camera Changed
+                BlueNoiseAreaLights.variable_CameraChanged = CameraChanged;
+                BlueNoiseAreaLights.variableChanged_CameraChanged = true;
+
+                const executeResult = await BlueNoiseAreaLights.Execute(device, encoder, false);
+                if (!executeResult)
+                {
+                    alert("Could not execute BlueNoiseAreaLights");
+                    throw new Error("Could not execute BlueNoiseAreaLights");
+                }
+
+                if (viewingTextureName.length != 0 && BlueNoiseAreaLights["texture_" + viewingTextureName] !== null)
+                {
+                    // Update size of the canvas
+                    document.getElementById("mainCanvas").width = BlueNoiseAreaLights["texture_" + viewingTextureName].width;
+                    document.getElementById("mainCanvas").height = BlueNoiseAreaLights["texture_" + viewingTextureName].height;
+
+                    if (!Shared.CopyCompatibleFormats(BlueNoiseAreaLights["texture_" + viewingTextureName].format, canvasFormat))
+                    {
+                        Shared.CopyTextureLinearToSRGB(device, encoder, BlueNoiseAreaLights["texture_" + viewingTextureName], context.getCurrentTexture());
+                    }
+                    else
+                    {
+                        encoder.copyTextureToTexture(
+                            { texture: BlueNoiseAreaLights["texture_" + viewingTextureName] },
+                            { texture: context.getCurrentTexture() },
+                            {
+                                width: Math.min(BlueNoiseAreaLights["texture_" + viewingTextureName].width, context.getCurrentTexture().width),
+                                height: Math.min(BlueNoiseAreaLights["texture_" + viewingTextureName].height, context.getCurrentTexture().height),
+                                depthOrArrayLayers: Math.min(BlueNoiseAreaLights["texture_" + viewingTextureName].depthOrArrayLayers, context.getCurrentTexture().depthOrArrayLayers)
+                            }
+                        );
+                    }
+                }
+
+                // If the technique changed the variables, update the UI
+                if (BlueNoiseAreaLights.variableChanged_NoiseType)
+                {
+                    document.getElementById('inputBox_NoiseType').value = BlueNoiseAreaLights.variable_NoiseType;
+                    BlueNoiseAreaLights.variableChanged_NoiseType = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_ExposureFStops)
+                {
+                    document.getElementById('inputBox_ExposureFStops').value = BlueNoiseAreaLights.variable_ExposureFStops;
+                    BlueNoiseAreaLights.variableChanged_ExposureFStops = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_ToneMapping)
+                {
+                    document.getElementById('inputBox_ToneMapping').value = BlueNoiseAreaLights.variable_ToneMapping;
+                    BlueNoiseAreaLights.variableChanged_ToneMapping = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_Animate)
+                {
+                    document.getElementById('inputBox_Animate').checked=Boolean(BlueNoiseAreaLights.variable_Animate);
+                    BlueNoiseAreaLights.variableChanged_Animate = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_AmbientLight[0])
+                {
+                    document.getElementById('inputBox_AmbientLight0').value = BlueNoiseAreaLights.variable_AmbientLight[0];
+                    BlueNoiseAreaLights.variableChanged_AmbientLight[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_AmbientLight[1])
+                {
+                    document.getElementById('inputBox_AmbientLight1').value = BlueNoiseAreaLights.variable_AmbientLight[1];
+                    BlueNoiseAreaLights.variableChanged_AmbientLight[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_AmbientLight[2])
+                {
+                    document.getElementById('inputBox_AmbientLight2').value = BlueNoiseAreaLights.variable_AmbientLight[2];
+                    BlueNoiseAreaLights.variableChanged_AmbientLight[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_TemporalFilter)
+                {
+                    document.getElementById('inputBox_TemporalFilter').value = BlueNoiseAreaLights.variable_TemporalFilter;
+                    BlueNoiseAreaLights.variableChanged_TemporalFilter = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_EMAAlpha)
+                {
+                    document.getElementById('inputBox_EMAAlpha').value = BlueNoiseAreaLights.variable_EMAAlpha;
+                    BlueNoiseAreaLights.variableChanged_EMAAlpha = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightEnabled)
+                {
+                    document.getElementById('inputBox_DirLightEnabled').checked=Boolean(BlueNoiseAreaLights.variable_DirLightEnabled);
+                    BlueNoiseAreaLights.variableChanged_DirLightEnabled = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightSampleCount)
+                {
+                    document.getElementById('inputBox_DirLightSampleCount').value = BlueNoiseAreaLights.variable_DirLightSampleCount;
+                    BlueNoiseAreaLights.variableChanged_DirLightSampleCount = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightColor[0])
+                {
+                    document.getElementById('inputBox_DirLightColor0').value = BlueNoiseAreaLights.variable_DirLightColor[0];
+                    BlueNoiseAreaLights.variableChanged_DirLightColor[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightColor[1])
+                {
+                    document.getElementById('inputBox_DirLightColor1').value = BlueNoiseAreaLights.variable_DirLightColor[1];
+                    BlueNoiseAreaLights.variableChanged_DirLightColor[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightColor[2])
+                {
+                    document.getElementById('inputBox_DirLightColor2').value = BlueNoiseAreaLights.variable_DirLightColor[2];
+                    BlueNoiseAreaLights.variableChanged_DirLightColor[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightBrightness)
+                {
+                    document.getElementById('inputBox_DirLightBrightness').value = BlueNoiseAreaLights.variable_DirLightBrightness;
+                    BlueNoiseAreaLights.variableChanged_DirLightBrightness = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightDirection[0])
+                {
+                    document.getElementById('inputBox_DirLightDirection0').value = BlueNoiseAreaLights.variable_DirLightDirection[0];
+                    BlueNoiseAreaLights.variableChanged_DirLightDirection[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightDirection[1])
+                {
+                    document.getElementById('inputBox_DirLightDirection1').value = BlueNoiseAreaLights.variable_DirLightDirection[1];
+                    BlueNoiseAreaLights.variableChanged_DirLightDirection[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightDirection[2])
+                {
+                    document.getElementById('inputBox_DirLightDirection2').value = BlueNoiseAreaLights.variable_DirLightDirection[2];
+                    BlueNoiseAreaLights.variableChanged_DirLightDirection[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_DirLightRadius)
+                {
+                    document.getElementById('inputBox_DirLightRadius').value = BlueNoiseAreaLights.variable_DirLightRadius;
+                    BlueNoiseAreaLights.variableChanged_DirLightRadius = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_CameraPos[0])
+                {
+                    document.getElementById('inputBox_CameraPos0').value = BlueNoiseAreaLights.variable_CameraPos[0];
+                    BlueNoiseAreaLights.variableChanged_CameraPos[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_CameraPos[1])
+                {
+                    document.getElementById('inputBox_CameraPos1').value = BlueNoiseAreaLights.variable_CameraPos[1];
+                    BlueNoiseAreaLights.variableChanged_CameraPos[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_CameraPos[2])
+                {
+                    document.getElementById('inputBox_CameraPos2').value = BlueNoiseAreaLights.variable_CameraPos[2];
+                    BlueNoiseAreaLights.variableChanged_CameraPos[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[0])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx0').value = BlueNoiseAreaLights.variable_InvViewProjMtx[0];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[1])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx1').value = BlueNoiseAreaLights.variable_InvViewProjMtx[1];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[2])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx2').value = BlueNoiseAreaLights.variable_InvViewProjMtx[2];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[3])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx3').value = BlueNoiseAreaLights.variable_InvViewProjMtx[3];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[3] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[4])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx4').value = BlueNoiseAreaLights.variable_InvViewProjMtx[4];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[4] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[5])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx5').value = BlueNoiseAreaLights.variable_InvViewProjMtx[5];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[5] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[6])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx6').value = BlueNoiseAreaLights.variable_InvViewProjMtx[6];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[6] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[7])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx7').value = BlueNoiseAreaLights.variable_InvViewProjMtx[7];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[7] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[8])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx8').value = BlueNoiseAreaLights.variable_InvViewProjMtx[8];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[8] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[9])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx9').value = BlueNoiseAreaLights.variable_InvViewProjMtx[9];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[9] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[10])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx10').value = BlueNoiseAreaLights.variable_InvViewProjMtx[10];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[10] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[11])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx11').value = BlueNoiseAreaLights.variable_InvViewProjMtx[11];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[11] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[12])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx12').value = BlueNoiseAreaLights.variable_InvViewProjMtx[12];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[12] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[13])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx13').value = BlueNoiseAreaLights.variable_InvViewProjMtx[13];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[13] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[14])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx14').value = BlueNoiseAreaLights.variable_InvViewProjMtx[14];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[14] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_InvViewProjMtx[15])
+                {
+                    document.getElementById('inputBox_InvViewProjMtx15').value = BlueNoiseAreaLights.variable_InvViewProjMtx[15];
+                    BlueNoiseAreaLights.variableChanged_InvViewProjMtx[15] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_FrameIndex)
+                {
+                    document.getElementById('inputBox_FrameIndex').value = BlueNoiseAreaLights.variable_FrameIndex;
+                    BlueNoiseAreaLights.variableChanged_FrameIndex = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightEnabled)
+                {
+                    document.getElementById('inputBox_PosLightEnabled').checked=Boolean(BlueNoiseAreaLights.variable_PosLightEnabled);
+                    BlueNoiseAreaLights.variableChanged_PosLightEnabled = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightSampleCount)
+                {
+                    document.getElementById('inputBox_PosLightSampleCount').value = BlueNoiseAreaLights.variable_PosLightSampleCount;
+                    BlueNoiseAreaLights.variableChanged_PosLightSampleCount = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightColor[0])
+                {
+                    document.getElementById('inputBox_PosLightColor0').value = BlueNoiseAreaLights.variable_PosLightColor[0];
+                    BlueNoiseAreaLights.variableChanged_PosLightColor[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightColor[1])
+                {
+                    document.getElementById('inputBox_PosLightColor1').value = BlueNoiseAreaLights.variable_PosLightColor[1];
+                    BlueNoiseAreaLights.variableChanged_PosLightColor[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightColor[2])
+                {
+                    document.getElementById('inputBox_PosLightColor2').value = BlueNoiseAreaLights.variable_PosLightColor[2];
+                    BlueNoiseAreaLights.variableChanged_PosLightColor[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightBrightness)
+                {
+                    document.getElementById('inputBox_PosLightBrightness').value = BlueNoiseAreaLights.variable_PosLightBrightness;
+                    BlueNoiseAreaLights.variableChanged_PosLightBrightness = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightPosition[0])
+                {
+                    document.getElementById('inputBox_PosLightPosition0').value = BlueNoiseAreaLights.variable_PosLightPosition[0];
+                    BlueNoiseAreaLights.variableChanged_PosLightPosition[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightPosition[1])
+                {
+                    document.getElementById('inputBox_PosLightPosition1').value = BlueNoiseAreaLights.variable_PosLightPosition[1];
+                    BlueNoiseAreaLights.variableChanged_PosLightPosition[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightPosition[2])
+                {
+                    document.getElementById('inputBox_PosLightPosition2').value = BlueNoiseAreaLights.variable_PosLightPosition[2];
+                    BlueNoiseAreaLights.variableChanged_PosLightPosition[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightRadius)
+                {
+                    document.getElementById('inputBox_PosLightRadius').value = BlueNoiseAreaLights.variable_PosLightRadius;
+                    BlueNoiseAreaLights.variableChanged_PosLightRadius = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightShineDir[0])
+                {
+                    document.getElementById('inputBox_PosLightShineDir0').value = BlueNoiseAreaLights.variable_PosLightShineDir[0];
+                    BlueNoiseAreaLights.variableChanged_PosLightShineDir[0] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightShineDir[1])
+                {
+                    document.getElementById('inputBox_PosLightShineDir1').value = BlueNoiseAreaLights.variable_PosLightShineDir[1];
+                    BlueNoiseAreaLights.variableChanged_PosLightShineDir[1] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightShineDir[2])
+                {
+                    document.getElementById('inputBox_PosLightShineDir2').value = BlueNoiseAreaLights.variable_PosLightShineDir[2];
+                    BlueNoiseAreaLights.variableChanged_PosLightShineDir[2] = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightShineCosThetaInner)
+                {
+                    document.getElementById('inputBox_PosLightShineCosThetaInner').value = BlueNoiseAreaLights.variable_PosLightShineCosThetaInner;
+                    BlueNoiseAreaLights.variableChanged_PosLightShineCosThetaInner = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_PosLightShineCosThetaOuter)
+                {
+                    document.getElementById('inputBox_PosLightShineCosThetaOuter').value = BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter;
+                    BlueNoiseAreaLights.variableChanged_PosLightShineCosThetaOuter = false;
+                }
+
+                if (BlueNoiseAreaLights.variableChanged_CameraChanged)
+                {
+                    document.getElementById('inputBox_CameraChanged').checked=Boolean(BlueNoiseAreaLights.variable_CameraChanged);
+                    BlueNoiseAreaLights.variableChanged_CameraChanged = false;
+                }
+
+                BlueNoiseAreaLights.variable_ResetAccum=false;
+
+
+                // Submit the command encoder
+                device.queue.submit([encoder.finish()]);
+
+                // advance to the next frame
+                lastTimeMs = currentTimeMs;
+
+                // Only do end of frame logic if we should.
+                // If we are waiting on promises (shader compiles), Execute()
+                // has frame start logic, but is waiting to do frame end logic, so we should too.
+                if (!BlueNoiseAreaLights.waitingOnPromises)
+                {
+                    frameIndex = frameIndex + 1;
+
+                    // Update mouse states
+                    iMouse[2] = 0;
+                    iMouse[3] = 0;
+                    MouseStateLastFrame = MouseState.slice();
+
+                    // Update keyboard states
+                    KeyStatesLastFrame = KeyStates.slice();
+                }
+
+                // Update the loading list
+                let loadingText = "";
+                if (BlueNoiseAreaLights.loadingPromises.size > 0)
+                    loadingText = "Nodes building shaders:";
+                for (const label of BlueNoiseAreaLights.loadingPromises)
+                    loadingText = loadingText + "<br/>" + label;
+                document.getElementById("LoadingText").innerHTML = loadingText;
+
+                // Render the next frame
+                requestAnimationFrame(RenderFrame);
+            }
+
+            // Render the first frame
+            requestAnimationFrame(RenderFrame);
+        </script>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <td valign="top">
+                    <canvas width="512" height="512" id="mainCanvas" tabindex="0"></canvas>
+                    <br/><br/>
+                    <label for="Viewing">Viewing</label>
+                    <select name="Viewing" id="Viewing">
+                        <option value="RenderTarget">RenderTarget</option><br/>
+                        <option value="">----- Internal Textures -----</option><br/>
+                        <option value="Accum">Accum</option><br/>
+                        <option value="RayTrace_Accum_ReadOnly">RayTrace_Accum_ReadOnly</option><br/>
+                        <option value="RayTrace_Output_ReadOnly">RayTrace_Output_ReadOnly</option><br/>
+                        <option value="RenderTarget">RenderTarget</option><br/>
+                        <option value="_loadedTexture_0">_loadedTexture_0</option><br/>
+                        <option value="_loadedTexture_1">_loadedTexture_1</option><br/>
+                        <option value="_loadedTexture_2">_loadedTexture_2</option><br/>
+                    </select>
+                </td>
+                <td>&nbsp;</td>
+                <td valign="top">
+                    <b>BlueNoiseAreaLights</b><br/>
+                    <button type="button" class="collapsible">User Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td valign="top">NoiseType&nbsp;</td>
+                            <td>
+                                <select id="inputBox_NoiseType">
+                                    <option value="0">White</option>
+                                    <option value="1">FAST</option>
+                                    <option value="2">FAST IS</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">ExposureFStops&nbsp;<span class="tooltiptext">Exposure, in FStops. Every +1 is double brightness. Every -1 is half brightness.</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_ExposureFStops">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">ToneMapping&nbsp;</td>
+                            <td>
+                                <select id="inputBox_ToneMapping">
+                                    <option value="0">None</option>
+                                    <option value="1">Reinhard Simple</option>
+                                    <option value="2">ACES Luminance</option>
+                                    <option value="3">ACES</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">Animate&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_Animate">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">AmbientLight&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_AmbientLight0">
+                                <input type="text" id="inputBox_AmbientLight1">
+                                <input type="text" id="inputBox_AmbientLight2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">TemporalFilter&nbsp;</td>
+                            <td>
+                                <select id="inputBox_TemporalFilter">
+                                    <option value="0">None</option>
+                                    <option value="1">EMA</option>
+                                    <option value="2">MonteCarlo</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">EMAAlpha&nbsp;<span class="tooltiptext">How much to lerp towards the new from the old, when using EMA temporal filtering</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_EMAAlpha">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">DirLightEnabled&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_DirLightEnabled">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">DirLightSampleCount&nbsp;<span class="tooltiptext">How many stochastic samples to take per frame</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_DirLightSampleCount">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">DirLightColor&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_DirLightColor0">
+                                <input type="text" id="inputBox_DirLightColor1">
+                                <input type="text" id="inputBox_DirLightColor2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">DirLightBrightness&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_DirLightBrightness">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">DirLightDirection&nbsp;<span class="tooltiptext">What direction the light shines in</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_DirLightDirection0">
+                                <input type="text" id="inputBox_DirLightDirection1">
+                                <input type="text" id="inputBox_DirLightDirection2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">DirLightRadius&nbsp;<span class="tooltiptext">radius of light disk at 1 unit away</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_DirLightRadius">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">PosLightEnabled&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_PosLightEnabled">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">PosLightSampleCount&nbsp;<span class="tooltiptext">How many stochastic samples to take per frame</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightSampleCount">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">PosLightColor&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightColor0">
+                                <input type="text" id="inputBox_PosLightColor1">
+                                <input type="text" id="inputBox_PosLightColor2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">PosLightBrightness&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightBrightness">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">PosLightPosition&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightPosition0">
+                                <input type="text" id="inputBox_PosLightPosition1">
+                                <input type="text" id="inputBox_PosLightPosition2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">PosLightRadius&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightRadius">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">PosLightShineDir&nbsp;<span class="tooltiptext">The direction of the spot light. Cos Theta Inner / Outer control the spot light</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightShineDir0">
+                                <input type="text" id="inputBox_PosLightShineDir1">
+                                <input type="text" id="inputBox_PosLightShineDir2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">PosLightShineCosThetaInner&nbsp;<span class="tooltiptext">direction to light, dotted by -c_lightDir. light starts to fade here.</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightShineCosThetaInner">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"><div class="tooltip">PosLightShineCosThetaOuter&nbsp;<span class="tooltiptext">direction to light, dotted by -c_lightDir. light finishes fading here.</span></div></td>
+                            <td>
+                                <input type="text" id="inputBox_PosLightShineCosThetaOuter">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top"></td>
+                            <td>
+                                <button type="button" id="inputBox_ResetAccum">ResetAccum</button>
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Host Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">FrameIndex&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_FrameIndex">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">CameraPos&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_CameraPos0">
+                                <input type="text" id="inputBox_CameraPos1">
+                                <input type="text" id="inputBox_CameraPos2">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">InvViewProjMtx&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_InvViewProjMtx0">
+                                <input type="text" id="inputBox_InvViewProjMtx1">
+                                <input type="text" id="inputBox_InvViewProjMtx2">
+                                <input type="text" id="inputBox_InvViewProjMtx3">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx4">
+                                <input type="text" id="inputBox_InvViewProjMtx5">
+                                <input type="text" id="inputBox_InvViewProjMtx6">
+                                <input type="text" id="inputBox_InvViewProjMtx7">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx8">
+                                <input type="text" id="inputBox_InvViewProjMtx9">
+                                <input type="text" id="inputBox_InvViewProjMtx10">
+                                <input type="text" id="inputBox_InvViewProjMtx11">
+                                <br>
+                                <input type="text" id="inputBox_InvViewProjMtx12">
+                                <input type="text" id="inputBox_InvViewProjMtx13">
+                                <input type="text" id="inputBox_InvViewProjMtx14">
+                                <input type="text" id="inputBox_InvViewProjMtx15">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">CameraChanged&nbsp;</td>
+                            <td>
+                                <input type="checkbox" id="inputBox_CameraChanged">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
+
+                    <button type=button class="collapsible">Camera</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td>Camera Pos</td>
+                            <td>
+                                <input type="text" id="CameraPos0" />
+                                <input type="text" id="CameraPos1" />
+                                <input type="text" id="CameraPos2" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>Altitude Azimuth</td>
+                            <td>
+                                <input type="text" id="CameraAltitudeAzimuth0" />
+                                <input type="text" id="CameraAltitudeAzimuth1" />
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>&nbsp;</td>
+                            <td>&nbsp;</td>
+                        </tr>
+                        <tr>
+                            <td>Mouse Sensitivity</td>
+                            <td><input type="text" id="CameraMouseSensitivity" /></td>
+                        </tr>
+                        <tr>
+                            <td>Fly Speed</td>
+                            <td><input type="text" id="CameraFlySpeed" /></td>
+                        </tr>
+                        <tr>
+                            <td colspan="2"><br /><button type="button" id="ResetCamera">Reset Camera</button><br /></td>
+                        </tr>
+                    </table>
+                    <br/><br/>
+                    <button type=button class="collapsible">Loading</button>
+                    <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:block">
+                        <tr>
+                            <td><span id="LoadingText"></span></td>
+                        </tr>
+                    </table>
+                    <span id="FPS"></span>
+                    <br />
+                    <br />
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
