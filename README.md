@@ -4,6 +4,8 @@ Gigi is software designed for rapid prototyping and development of real time ren
 
 The goal is to allow work at the speed of thought, and then easily use what was created in real applications using various APIs or engines.
 
+[See a Gallery of WebGPU Code Generated Gigi Techniques](https://electronicarts.github.io/gigi/)
+
 [See what people say about using Gigi](readme/testimonials.md)
 
 Gigi is made of four components:
