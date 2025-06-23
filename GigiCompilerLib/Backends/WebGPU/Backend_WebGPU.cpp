@@ -468,10 +468,10 @@ struct BackendWebGPU : public BackendBase
             // Features
             {
                 if (renderGraph.settings.webGPU.features.float32Filterable)
-                    stringReplacementMap["/*$(RequiredFeatures)*/"] << ", float32-filterable";
+                    stringReplacementMap["/*$(RequiredFeatures)*/"] << ", \'float32-filterable\'";
 
                 if (renderGraph.settings.webGPU.features.subgroups)
-                    stringReplacementMap["/*$(RequiredFeatures)*/"] << ", subgroups";
+                    stringReplacementMap["/*$(RequiredFeatures)*/"] << ", \'subgroups\'";
 
                 std::string old = stringReplacementMap["/*$(RequiredFeatures)*/"].str();
                 if (!old.empty())
