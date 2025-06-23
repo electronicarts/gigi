@@ -12,8 +12,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [  ],
 });
 device.pushErrorScope("validation");
 

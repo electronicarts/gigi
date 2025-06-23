@@ -229,8 +229,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -254,6 +254,23 @@
             canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for imported resources
+            document.getElementById('importedResourceURL_InputTexture').addEventListener('change', async (event) =>
+                {
+                    if (typeof boxblur.importedResourceURL_InputTexture === 'undefined' || boxblur.importedResourceURL_InputTexture != event.target.value)
+                    {
+                        boxblur.importedResourceURL_InputTexture = event.target.value;
+                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, boxblur.texture_InputTexture_usageFlags);
+                        if (loadedTexture !== null)
+                        {
+                            boxblur.texture_InputTexture = loadedTexture.texture;
+                            boxblur.texture_InputTexture_size = loadedTexture.size;
+                            boxblur.texture_InputTexture_format = loadedTexture.format;
+                        }
+                    }
+                }
+            );
 
             // Hook up the on change events for UI
             document.getElementById('inputBox_enabled').addEventListener('change',(event) => {boxblur.variable_enabled=event.target.checked;});
@@ -352,6 +369,13 @@
             let lastTimeMs;
             let frameIndex = 0
             async function RenderFrame(currentTimeMs) {
+
+                // Don't run the technique if any imported resources are missing
+                if ( boxblur.texture_InputTexture === null )
+                {
+                    requestAnimationFrame(RenderFrame);
+                    return;
+                }
 
                 // Handle frame timing
                 if (startTimeMs === undefined)
@@ -747,6 +771,11 @@
                     <button type="button" id="ResetVariables">Reset Variables</button>
                     <br/>
                     <br/>
+                    <button type="button" class="collapsible">Imported Resources</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr><td>Texture URL: <div class="tooltip">InputTexture<span class="tooltiptext">This is the texture to be blurred</span></div>&nbsp;</td><td><input type="text" id="importedResourceURL_InputTexture"></td></tr>
+                    </table>
+                    <br><br>
 
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
@@ -791,7 +820,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

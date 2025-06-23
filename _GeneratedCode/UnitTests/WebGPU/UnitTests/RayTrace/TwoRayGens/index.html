@@ -229,8 +229,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -254,6 +254,23 @@
             canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for imported resources
+            document.getElementById('importedResourceURL_BlueChannel').addEventListener('change', async (event) =>
+                {
+                    if (typeof TwoRayGens.importedResourceURL_BlueChannel === 'undefined' || TwoRayGens.importedResourceURL_BlueChannel != event.target.value)
+                    {
+                        TwoRayGens.importedResourceURL_BlueChannel = event.target.value;
+                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, TwoRayGens.texture_BlueChannel_usageFlags);
+                        if (loadedTexture !== null)
+                        {
+                            TwoRayGens.texture_BlueChannel = loadedTexture.texture;
+                            TwoRayGens.texture_BlueChannel_size = loadedTexture.size;
+                            TwoRayGens.texture_BlueChannel_format = loadedTexture.format;
+                        }
+                    }
+                }
+            );
 
             // Hook up the on change events for UI
             document.getElementById('inputBox_clipToWorld0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); TwoRayGens.variable_clipToWorld[0]=event.target.value;});
@@ -382,6 +399,13 @@
             let lastTimeMs;
             let frameIndex = 0
             async function RenderFrame(currentTimeMs) {
+
+                // Don't run the technique if any imported resources are missing
+                if ( TwoRayGens.texture_BlueChannel === null )
+                {
+                    requestAnimationFrame(RenderFrame);
+                    return;
+                }
 
                 // Handle frame timing
                 if (startTimeMs === undefined)
@@ -790,6 +814,11 @@
                     <button type="button" id="ResetVariables">Reset Variables</button>
                     <br/>
                     <br/>
+                    <button type="button" class="collapsible">Imported Resources</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr><td>Texture URL: BlueChannel&nbsp;</td><td><input type="text" id="importedResourceURL_BlueChannel"></td></tr>
+                    </table>
+                    <br><br>
 
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
@@ -834,7 +863,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

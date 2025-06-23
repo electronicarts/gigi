@@ -115,6 +115,7 @@ function CreateTextureWithPNG_Node(device, fileName, usageFlags, dimension)
             indexedFileName = fileName.replace("%s", c_cubeMapNames[textureIndex]);
 
         let loaded = true;
+        let errorMsg = "";
         try
         {
             const source = LoadPNG_Node(indexedFileName);
@@ -123,11 +124,12 @@ function CreateTextureWithPNG_Node(device, fileName, usageFlags, dimension)
         catch(error)
         {
             loaded = false;
+            errorMsg = error.message;
         }
 
         if (!loaded) {
             if (textureIndex == 0) {
-                LogError("Could not load " + indexedFileName + ": " + error.message)
+                LogError("Could not load " + indexedFileName + ": " + errorMsg)
                 return null;
             }
             break;

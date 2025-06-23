@@ -229,8 +229,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -255,6 +255,23 @@
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
 
+            // Hook up the on change events for imported resources
+            document.getElementById('importedResourceURL_Test').addEventListener('change', async (event) =>
+                {
+                    if (typeof SubGraphTest.importedResourceURL_Test === 'undefined' || SubGraphTest.importedResourceURL_Test != event.target.value)
+                    {
+                        SubGraphTest.importedResourceURL_Test = event.target.value;
+                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, SubGraphTest.texture_Test_usageFlags);
+                        if (loadedTexture !== null)
+                        {
+                            SubGraphTest.texture_Test = loadedTexture.texture;
+                            SubGraphTest.texture_Test_size = loadedTexture.size;
+                            SubGraphTest.texture_Test_format = loadedTexture.format;
+                        }
+                    }
+                }
+            );
+
             // Initialize the technique from unit test logic
             await test_SubGraph_SubGraphTest.Init(device, SubGraphTest);
 
@@ -263,6 +280,13 @@
             let lastTimeMs;
             let frameIndex = 0
             async function RenderFrame(currentTimeMs) {
+
+                // Don't run the technique if any imported resources are missing
+                if ( SubGraphTest.texture_Test === null )
+                {
+                    requestAnimationFrame(RenderFrame);
+                    return;
+                }
 
                 // Handle frame timing
                 if (startTimeMs === undefined)
@@ -379,6 +403,11 @@
                 <td>&nbsp;</td>
                 <td valign="top">
                     <b>SubGraphTest</b><br/>
+                    <button type="button" class="collapsible">Imported Resources</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr><td>Texture URL: Test&nbsp;</td><td><input type="text" id="importedResourceURL_Test"></td></tr>
+                    </table>
+                    <br><br>
 
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
@@ -423,7 +452,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

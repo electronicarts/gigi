@@ -49,10 +49,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var _S1 : vec2<u32> = DTid_0.xy;
     var _S2 : vec4<f32> = (textureLoad((OutputReadOnly), (vec2<i32>(_S1))));
     var _S3 : vec4<f32> = _S2.yzxw;
-    Output[_S1].x = _S3.x;
-    Output[_S1].y = _S3.y;
-    Output[_S1].z = _S3.z;
-    Output[_S1].w = _S3.w;
+    // Manual fix for slang bug: https://github.com/shader-slang/slang/issues/6551
+    textureStore((Output), (_S1), (_S3));
     return;
 }
 

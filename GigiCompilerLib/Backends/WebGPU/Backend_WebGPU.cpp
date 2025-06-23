@@ -449,14 +449,57 @@ struct BackendWebGPU : public BackendBase
 
     #include "nodes/nodes.inl"
 
+    static inline bool g_processingShaders = false;
+
     static void MakeStringReplacementGlobal(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
     {
         BackendBase::MakeStringReplacementGlobal(stringReplacementMap, renderGraph, ggUserFile);
+
+        if (g_processingShaders)
+            return;
 
         stringReplacementMap["/*$(Description)*/"] << "                    <b>" << renderGraph.name << "</b><br/>\n";
 
         if (!renderGraph.comment.empty())
             stringReplacementMap["/*$(Description)*/"] << "                    <pre>" << renderGraph.comment << "</pre>\n";
+
+        // required features and limits
+        {
+            // Features
+            {
+                if (renderGraph.settings.webGPU.features.float32Filterable)
+                    stringReplacementMap["/*$(RequiredFeatures)*/"] << ", float32-filterable";
+
+                if (renderGraph.settings.webGPU.features.subgroups)
+                    stringReplacementMap["/*$(RequiredFeatures)*/"] << ", subgroups";
+
+                std::string old = stringReplacementMap["/*$(RequiredFeatures)*/"].str();
+                if (!old.empty())
+                {
+                    stringReplacementMap["/*$(RequiredFeatures)*/"] = std::ostringstream();
+                    stringReplacementMap["/*$(RequiredFeatures)*/"] << old.substr(2);
+                }
+            }
+
+            // Limits
+            {
+                if (renderGraph.settings.webGPU.limits.maxStorageTexturesPerShaderStage > 0)
+                    stringReplacementMap["/*$(RequiredLimits)*/"] << ", maxStorageTexturesPerShaderStage: " << renderGraph.settings.webGPU.limits.maxStorageTexturesPerShaderStage;
+
+                if (renderGraph.settings.webGPU.limits.maxStorageBuffersPerShaderStage > 0)
+                    stringReplacementMap["/*$(RequiredLimits)*/"] << ", maxStorageBuffersPerShaderStage: " << renderGraph.settings.webGPU.limits.maxStorageBuffersPerShaderStage;
+
+                if (renderGraph.settings.webGPU.limits.maxComputeWorkgroupStorageSize > 0)
+                    stringReplacementMap["/*$(RequiredLimits)*/"] << ", maxComputeWorkgroupStorageSize: " << renderGraph.settings.webGPU.limits.maxComputeWorkgroupStorageSize;
+
+                std::string old = stringReplacementMap["/*$(RequiredLimits)*/"].str();
+                if (!old.empty())
+                {
+                    stringReplacementMap["/*$(RequiredLimits)*/"] = std::ostringstream();
+                    stringReplacementMap["/*$(RequiredLimits)*/"] << old.substr(2);
+                }
+            }
+        }
 
         // Fill out the command encoder for each node, in flattened node list order. Also let the node fill out storage etc that are not order dependent.
         for (size_t stepIndex = 0; stepIndex < renderGraph.flattenedNodeList.size(); ++stepIndex)
@@ -975,6 +1018,93 @@ struct BackendWebGPU : public BackendBase
                     "            // Make sure the UI shows the correct variable values\n"
                     "            SetUIToVariables();\n"
                     "\n"
+                    ;
+            }
+        }
+
+        // Imported texture input boxes
+        {
+            std::ostringstream importedTextures;
+            std::ostringstream importedTexturesEvents;
+            std::ostringstream importedTexturesCheck;
+
+            for (const RenderGraphNode& nodeBase : renderGraph.nodes)
+            {
+                if (nodeBase._index != RenderGraphNode::c_index_resourceTexture)
+                    continue;
+
+                const RenderGraphNode_Resource_Texture& node = nodeBase.resourceTexture;
+
+                if (node.visibility != ResourceVisibility::Imported)
+                    continue;
+
+                // The UI
+                {
+                    importedTextures << "                        <tr><td>Texture URL: ";
+
+                    if (!node.comment.empty())
+                        importedTextures << "<div class=\"tooltip\">" << node.name << "<span class=\"tooltiptext\">" << node.comment << "</span></div>";
+                    else
+                        importedTextures << node.name;
+
+                    importedTextures << "&nbsp;</td><td><input type=\"text\" id=\"importedResourceURL_" + node.name + "\"></td></tr>\n";
+                }
+
+                // The javascript when it changes
+                {
+                    importedTexturesEvents <<
+                        "            document.getElementById('importedResourceURL_" << node.name << "').addEventListener('change', async (event) =>\n"
+                        "                {\n"
+                        "                    if (typeof " << renderGraph.name << ".importedResourceURL_" << node.name << " === 'undefined' || " << renderGraph.name << ".importedResourceURL_" << node.name << " != event.target.value)\n"
+                        "                    {\n"
+                        "                        " << renderGraph.name << ".importedResourceURL_" << node.name << " = event.target.value;\n"
+                        "                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, " << renderGraph.name << ".texture_" << node.name << "_usageFlags);\n"
+                        "                        if (loadedTexture !== null)\n"
+                        "                        {\n"
+                        "                            " << renderGraph.name << ".texture_" << node.name << " = loadedTexture.texture;\n"
+                        "                            " << renderGraph.name << ".texture_" << node.name << "_size = loadedTexture.size;\n"
+                        "                            " << renderGraph.name << ".texture_" << node.name << "_format = loadedTexture.format;\n"
+                        "                        }\n"
+                        "                    }\n"
+                        "                }\n"
+                        "            );\n"
+                        ;
+                }
+
+                // Gate technique execution on whether we have the imported resources we need or not
+                importedTexturesCheck << " || " << renderGraph.name << ".texture_" << node.name << " === null";
+            }
+
+            if (!importedTextures.str().empty())
+            {
+                std::string style;
+                if (true)
+                    style = " style=\"display:block\"";
+                else
+                    style = " style=\"display:none\"";
+
+                stringReplacementMap["/*$(ImportedResourcesUI)*/"] <<
+                    "                    <button type=\"button\" class=\"collapsible\">Imported Resources</button>\n"
+                    "                    <table cellspacing=\"0\" cellpadding=\"0\" class=\"collapsiblecontent\"" << style << ">\n"
+                    << importedTextures.str() <<
+                    "                    </table>\n"
+                    "                    <br><br>\n"
+                    ;
+
+                stringReplacementMap["/*$(InitOneTimeImportedResources)*/"] <<
+                    "            // Hook up the on change events for imported resources\n"
+                    << importedTexturesEvents.str() <<
+                    "\n"
+                    ;
+
+                stringReplacementMap["/*$(ImportedResourceCheck)*/"] <<
+                    "// Don't run the technique if any imported resources are missing\n"
+                    "                if ( " << importedTexturesCheck.str().substr(4) << " )\n"
+                    "                {\n"
+                    "                    requestAnimationFrame(RenderFrame);\n"
+                    "                    return;\n"
+                    "                }\n"
+                    "\n                "
                     ;
             }
         }
@@ -1552,6 +1682,18 @@ struct BackendWebGPU : public BackendBase
             std::string old = stringReplacementMap["/*$(TODO_NeedUserInput)*/"].str();
             stringReplacementMap["/*$(TODO_NeedUserInput)*/"] = std::ostringstream();
             stringReplacementMap["/*$(TODO_NeedUserInput)*/"] << ":" << old;
+
+            stringReplacementMap["/*$(TODO_NeedUserInput)*/"] <<
+                "\n"
+                "\n"
+                "                An example of how to load a texture:\n"
+                "                    const loadedTexture = await Shared.CreateTextureWithPNG(device, \"cabinsmall.png\", " << renderGraph.name << ".texture_someTexture_usageFlags);\n"
+                "                    " << renderGraph.name << ".texture_someTexture = loadedTexture.texture;\n"
+                "                    " << renderGraph.name << ".texture_someTexture_size = loadedTexture.size;\n"
+                "                    " << renderGraph.name << ".texture_someTexture_format = loadedTexture.format;\n"
+                "\n"
+                "                See _GeneratedCode\\UnitTests\\WebGPU\\UnitTestLogic.js for more examples of loading files of various kinds."
+                ;
         }
 
         if (!stringReplacementMap["/*$(VariablesPrivate)*/"].str().empty())
@@ -2308,6 +2450,11 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
         tempDirectory += "\\";
     }
 
+    // Make string replacement only for things the shaders will want.
+    BackendWebGPU::g_processingShaders = true;
+    std::unordered_map<std::string, std::ostringstream> stringReplacementMap = MakeStringReplacement<BackendWebGPU>(renderGraph, ggUserFile);
+    BackendWebGPU::g_processingShaders = false;
+
     // Copy shader header files into a temp folder and give them treatment.
     for (const FileCopy& fileCopy : renderGraph.fileCopies)
     {
@@ -2336,6 +2483,10 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
         // Process the shader to be ok for slang
         ProcessShader_ReplaceSingleCharacterConstants(fileContents);
 
+        // Do string replacement if we should
+        if (!fileCopy.binary)
+            ProcessStringReplacement(fileContents, stringReplacementMap, renderGraph);
+
         WriteFileIfDifferent(fullFileName, fileContents);
     }
 
@@ -2359,7 +2510,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
     }
 
     // Make the string replacement
-    std::unordered_map<std::string, std::ostringstream> stringReplacementMap = MakeStringReplacement<BackendWebGPU>(renderGraph, ggUserFile);
+    stringReplacementMap = MakeStringReplacement<BackendWebGPU>(renderGraph, ggUserFile);
 
     // Process shaders because they end up in the string replacement map
     for (const RenderGraphNode& nodeBase : renderGraph.nodes)

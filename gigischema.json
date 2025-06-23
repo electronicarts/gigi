@@ -234,15 +234,15 @@
                   "description": "The name of the resource in the shader",
                   "type": "string"
                 },
-                "type": {
-                  "description": "The resource type",
-                  "type": "string",
-                  "enum": ["Texture", "Buffer", "ConstantBuffer", "Count"]
-                },
                 "access": {
                   "description": "How the resource is accessed",
                   "type": "string",
                   "enum": ["UAV", "SRV", "CBV", "CopySource", "CopyDest", "Indirect", "RTScene", "VertexBuffer", "IndexBuffer", "RenderTarget", "DepthTarget", "Barrier", "ShadingRate", "Count"]
+                },
+                "type": {
+                  "description": "The resource type",
+                  "type": "string",
+                  "enum": ["Texture", "Buffer", "ConstantBuffer", "Count"]
                 },
                 "buffer": {
                   "description": "Data specific to buffers",
@@ -363,7 +363,7 @@
             }
           },
           "CSNumThreads": {
-            "description": "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
+            "description": "For compute shaders only, the number of threads each dispatch has. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
             "type": "array",
             "minItems": 3,
             "maxItems": 3,
@@ -777,7 +777,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "The node referenced, if there is one.",
+                    "description": "If a texture is specified, the size will be based on the size of the texture. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -787,7 +787,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -978,7 +978,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -988,7 +988,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1219,7 +1219,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1229,7 +1229,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1626,7 +1626,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1636,7 +1636,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -2601,6 +2601,48 @@
             "AgilitySDKRequired": {
               "description": "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.",
               "type": "boolean"
+            }
+          }
+        },
+        "webGPU": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "features": {
+              "description": "",
+              "type": "object",
+              "properties": {
+                "float32Filterable": {
+                  "description": "float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.",
+                  "type": "boolean"
+                },
+                "subgroups": {
+                  "description": "subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup
+to communicate and execute collective math operations such as calculating a sum of numbers, and offering an efficient method for
+cross-thread data sharing. Note that the subgroupMinSize and subgroupMaxSize properties can be useful to check if, for example, you have a
+hardcoded algorithm that requires a subgroup of a certain size. You can use f16 values with subgroups when you request a GPUDevice with
+both the shader-f16 and subgroups features.",
+                  "type": "boolean"
+                }
+              }
+            },
+            "limits": {
+              "description": "",
+              "type": "object",
+              "properties": {
+                "maxStorageBuffersPerShaderStage": {
+                  "description": "maxStorageBuffersPerShaderStage. 0 for default.",
+                  "type": "integer"
+                },
+                "maxStorageTexturesPerShaderStage": {
+                  "description": "maxStorageTexturesPerShaderStage. 0 for default.",
+                  "type": "integer"
+                },
+                "maxComputeWorkgroupStorageSize": {
+                  "description": "maxComputeWorkgroupStorageSize. 0 for default.",
+                  "type": "integer"
+                }
+              }
             }
           }
         },

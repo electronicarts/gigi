@@ -36,6 +36,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <map>
 
 #include "DX12Utils/Utils.h"
 #include "DX12Utils/sRGB.h"
@@ -608,10 +609,31 @@ void SetFullscreenMode(bool fullscreen)
 
 struct LogEntry
 {
+    //
     LogLevel level;
+    //
+    bool selected = false;
+    // for multi line
+    bool firstLine = true;
+    //
     std::string msg;
 };
 std::vector<LogEntry> g_log;
+
+void AddMultiLineLogEntry(LogLevel level, char* formattedMsg)
+{
+    std::istringstream iss(formattedMsg);
+
+    std::string line;
+
+    bool firstLine = true;
+
+    while (std::getline(iss, line)) 
+    {
+        g_log.push_back({ level, false, firstLine, std::move(line) });
+        firstLine = false;
+    }
+}
 
 void Log(LogLevel level, const char* msg, ...)
 {
@@ -622,7 +644,7 @@ void Log(LogLevel level, const char* msg, ...)
     vsnprintf_s(formattedMsg, _countof(formattedMsg)-1, msg, args);
     va_end(args);
 
-    g_log.push_back({ level, formattedMsg });
+    AddMultiLineLogEntry(level, formattedMsg);
 
     // tell the server about this log message
     if (g_previewClient.IsFullyConnected())
@@ -1348,6 +1370,8 @@ void HandleMainMenu()
     if (g_hideUI)
         return;
 
+    static bool imguiDemoOpen = false;
+
     if (ImGui::BeginMainMenuBar())
     {
         if (ImGui::BeginMenu("File"))
@@ -1388,6 +1412,11 @@ void HandleMainMenu()
             }
 
             ImGuiRecentPythonScripts();
+
+#ifdef _DEBUG
+            ImGui::Separator();
+            ImGui::MenuItem("ImGui Demo", nullptr, &imguiDemoOpen);
+#endif
 
             ImGui::Separator();
             if (ImGui::MenuItem("Exit"))
@@ -1433,8 +1462,6 @@ void HandleMainMenu()
             #ifdef _DEBUG
             ImGui::Separator();
             ImGui::MenuItem("ImGui Demo Window", "", &show_demo_window);
-            //ImGui::MenuItem("ImGui Simple Window", "", &show_simple_window);
-            //ImGui::MenuItem("ImGui Other Window", "", &show_another_window);
             #endif
 
             ImGui::EndMenu();
@@ -1693,6 +1720,12 @@ void HandleMainMenu()
         }
 
         ImGui::EndMainMenuBar();
+    }
+
+    if (imguiDemoOpen)
+    {
+        ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
+        ImGui::ShowDemoWindow(&imguiDemoOpen);
     }
 }
 
@@ -2869,165 +2902,142 @@ void ShowShaders()
 
     const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
 
-    // The list of unprocessed shaders
-    {
-        ImGui::Text("Shaders:");
-        ImGui::PushID("Shaders:");
-        ImGui::Indent();
+	ImGui::Text("Shaders:");
+	ImGui::PushID("Shaders:");
+	ImGui::Indent();
 
-        // get a sorted list of scopes
-        std::unordered_set<std::string> scopes;
-        for (const Shader& shader : renderGraph.shaders)
-            scopes.insert(shader.scope);
-        std::vector<std::string> scopesSorted;
-        for (const std::string& scope : scopes)
-            scopesSorted.push_back(scope);
-        std::sort(scopesSorted.begin(), scopesSorted.end());
+	// get a sorted list of scopes
+	std::vector<std::string> scopesSorted;
+	{
+		// find unique scopes
+		std::unordered_set<std::string> scopes;
+		for (const Shader& shader : renderGraph.shaders)
+			scopes.insert(shader.scope);
 
-        // for each scope
-        for (const std::string& scope: scopesSorted)
-        {
-            // get a sorted list of shaders in this scope
-            std::vector<const Shader*> sortedShaders;
-            for (const Shader& shader : renderGraph.shaders)
-            {
-                if (shader.scope == scope)
-                    sortedShaders.push_back(&shader);
-            }
-            std::sort(sortedShaders.begin(), sortedShaders.end(),
-                [](const Shader* A, const Shader* B)
+		// sort
+		for (const std::string& scope : scopes)
+			scopesSorted.push_back(scope);
+		std::sort(scopesSorted.begin(), scopesSorted.end());
+	}
+
+	// The list of unique shader file copies (shader includes)
+	std::map<std::string, const FileCopy*> uniqueShaderFileCopies;
+	for (const FileCopy& fileCopy : renderGraph.fileCopies)
+	{
+		if (fileCopy.type != FileCopyType::Shader)
+			continue;
+		uniqueShaderFileCopies.insert({ fileCopy.fileName, &fileCopy });
+	}
+
+	for (const std::string& scope : scopesSorted)
+	{
+		// get a sorted list of shaders in this scope
+		std::vector<const Shader*> sortedShaders;
+		for (const Shader& shader : renderGraph.shaders)
+		{
+			if (shader.scope == scope)
+				sortedShaders.push_back(&shader);
+		}
+		std::sort(sortedShaders.begin(), sortedShaders.end(),
+			[](const Shader* A, const Shader* B)
+			{
+				return A->originalName < B->originalName;
+			}
+		);
+		if (sortedShaders.size() == 0)
+			continue;
+
+		if (!scope.empty())
+		{
+			std::string scopeLabel = scope.substr(0, scope.length() - 1);
+			if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
+				continue;
+
+			ImGui::Indent();
+			ImGui::PushID(scope.c_str());
+		}
+
+		if (ImGui::BeginTable("ShadersTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
+		{
+			for (const Shader* shader : sortedShaders)
+			{
+				const char* name = shader->originalName.c_str();
+				ImGui::PushID(name);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+                if (ImGui::SmallButton("Source"))
                 {
-                    return A->originalName < B->originalName;
+                    std::string fileName = shader->fileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
-            );
-            if (sortedShaders.size() == 0)
-                continue;
-
-            if (!scope.empty())
-            {
-                std::string scopeLabel = scope.substr(0, scope.length() - 1);
-                if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
-                    continue;
-
-                ImGui::Indent();
-                ImGui::PushID(scope.c_str());
-            }
-
-            for (const Shader* shader : sortedShaders)
-            {
-                char buffer[1024];
-                sprintf(buffer, "%s: %s (%s)", shader->originalName.c_str(), shader->fileName.c_str(), EnumToString(shader->type));
-                if (ImGui::Button(buffer))
-                    ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(renderGraph.baseDirectory + shader->fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-            }
-
-            if (!scope.empty())
-            {
-                ImGui::PopID();
-                ImGui::Unindent();
-            }
-        }
-
-        // The list of unique shader file copies (shader includes)
-        std::set<std::string> uniqueShaderFileCopies;
-        for (const FileCopy& fileCopy : renderGraph.fileCopies)
-        {
-            if (fileCopy.type != FileCopyType::Shader)
-                continue;
-            uniqueShaderFileCopies.insert(fileCopy.fileName);
-        }
-        for (const std::string& fileName : uniqueShaderFileCopies)
-        {
-            if (ImGui::Button(fileName.c_str()))
-                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-        }
-
-        ImGui::Unindent();
-        ImGui::PopID();
-    }
-
-    // The list of processed shaders
-    {
-        ImGui::Text("Processed Shaders:");
-        ImGui::PushID("Processed Shaders:");
-        ImGui::Indent();
-
-        // get a sorted list of scopes
-        std::unordered_set<std::string> scopes;
-        for (const Shader& shader : renderGraph.shaders)
-            scopes.insert(shader.scope);
-        std::vector<std::string> scopesSorted;
-        for (const std::string& scope : scopes)
-            scopesSorted.push_back(scope);
-        std::sort(scopesSorted.begin(), scopesSorted.end());
-
-        // for each scope
-        for (const std::string& scope: scopesSorted)
-        {
-            // get a sorted list of shaders in this scope
-            std::vector<const Shader*> sortedShaders;
-            for (const Shader& shader : renderGraph.shaders)
-            {
-                if (shader.scope == scope)
-                    sortedShaders.push_back(&shader);
-            }
-            std::sort(sortedShaders.begin(), sortedShaders.end(),
-                [](const Shader* A, const Shader* B)
+				ImGui::TableSetColumnIndex(1);
+                if (ImGui::SmallButton("Post"))
                 {
-                    return A->originalName < B->originalName;
+                    std::string fileName = shader->fileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
-            );
-            if (sortedShaders.size() == 0)
-                continue;
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text(EnumToString(shader->type));
+				ImGui::TableSetColumnIndex(3);
+				ImGui::Text("%s", name);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("fileName: \"%s\"\n\ndestFileName: \"%s\"",
+						shader->fileName.c_str(),
+						shader->destFileName.c_str());
 
-            if (!scope.empty())
-            {
-                std::string scopeLabel = scope.substr(0, scope.length() - 1);
-                if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
-                    continue;
+				ImGui::PopID();
+			}
 
-                ImGui::Indent();
-                ImGui::PushID(scope.c_str());
-            }
+			for (const auto& el : uniqueShaderFileCopies)
+			{
+				const char* name = el.first.c_str();
+				const FileCopy& fileCopy = *el.second;
 
-            for (const Shader* shader : sortedShaders)
-            {
-                char buffer[1024];
-                sprintf(buffer, "%s: %s (%s)##Processed", shader->originalName.c_str(), shader->destFileName.c_str(), EnumToString(shader->type));
-                if (ImGui::Button(buffer))
-                    ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + shader->destFileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-            }
+				ImGui::PushID(name);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+                if (ImGui::SmallButton("Source"))
+                {
+                    std::string fileName = fileCopy.fileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                }
+				ImGui::TableSetColumnIndex(1);
+                if (ImGui::SmallButton("Post"))
+                {
+                    std::string fileName = fileCopy.destFileName.empty() ? fileCopy.fileName : fileCopy.destFileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                }
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("FileCopy");
+				ImGui::TableSetColumnIndex(3);
+				ImGui::Text("%s", name);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("destFileName: \"%s\"", fileCopy.destFileName.empty() ? fileCopy.fileName.c_str() : fileCopy.destFileName.c_str());
 
-            if (!scope.empty())
-            {
-                ImGui::PopID();
-                ImGui::Unindent();
-            }
-        }
+				ImGui::PopID();
+			}
 
-        // The list of unique shader file copies (shader includes)
-        std::set<std::string> uniqueShaderFileCopies;
-        for (const FileCopy& fileCopy : renderGraph.fileCopies)
-        {
-            if (fileCopy.type != FileCopyType::Shader)
-                continue;
-            std::string destFileName = (fileCopy.destFileName.empty()) ? fileCopy.fileName : fileCopy.destFileName;
-            uniqueShaderFileCopies.insert(destFileName);
-        }
-        for (const std::string& fileName : uniqueShaderFileCopies)
-        {
-            char buffer[1024];
-            sprintf(buffer, "%s##Processed", fileName.c_str());
+			ImGui::EndTable();
+		}
+		if (!scope.empty())
+		{
+			ImGui::PopID();
+			ImGui::Unindent();
+		}
+	}
 
-            if (ImGui::Button(buffer))
-                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-        }
+	ImGui::Unindent();
+	ImGui::PopID();
 
-        ImGui::Unindent();
-        ImGui::PopID();
-    }
-
-    ImGui::End();
+	ImGui::End();
 }
 
 void ShowImportedResources()
@@ -3458,9 +3468,6 @@ void ShowImportedResources()
 
 void ShowImGuiWindows()
 {
-    static bool show_simple_window = false;
-    static bool show_another_window = false;
-
     if (g_meshInfoOpenPopup)
     {
         ImGui::OpenPopup("Mesh Info Popup");
@@ -3652,41 +3659,56 @@ void ShowImGuiWindows()
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+}
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    if (show_simple_window)
+// @param index e.g. ImGuiCol_Header
+// @param fade 0..1, 0:fade out completely .. 1:no fade out
+void PushStyleColorFade(uint32_t index, float fade)
+{
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    ImVec4 color = style.Colors[index];
+
+    color.w *= fade;
+
+    ImGui::PushStyleColor(index, color);
+}
+
+void CopyToClipboard(bool copyAll, bool withType)
+{
+    std::ostringstream text;
+    constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
+    for (const auto& msg : g_log)
     {
-        static float f = 0.0f;
-        static int counter = 0;
+        if (!copyAll && !msg.selected)
+            continue;
 
-        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+        if(withType)
+            text << msgType[static_cast<int>(msg.level)];
 
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
+        text << msg.msg.c_str() << "\n";
     }
 
-    // 3. Show another simple window.
-    if (show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
-    }
+    std::string textStr = text.str();
+
+    SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
+}
+
+void PrintMessageType(ImVec4 color, const char* txt, float width)
+{
+    ImVec2 text_pos = ImGui::GetCursorScreenPos();
+
+    // background color fill
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        text_pos,
+        ImVec2(text_pos.x + width, text_pos.y + ImGui::GetFontSize()),
+        ImGui::ColorConvertFloat4ToU32(color)
+    );
+
+    // black text for contrast
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
+    ImGui::TextUnformatted(txt);
+    ImGui::PopStyleColor();
 }
 
 void ShowLog()
@@ -3700,16 +3722,9 @@ void ShowLog()
         return;
     }
 
-    if (ImGui::Button("Copy"))
+    if (ImGui::Button("Copy all"))
     {
-        std::ostringstream text;
-        constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
-        for (const auto& msg : g_log)
-            text << msgType[static_cast<int>(msg.level)] << msg.msg.c_str() << "\n";
-
-        std::string textStr = text.str();
-
-        SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
+        CopyToClipboard(true, true);
     }
 
     ImGui::SameLine();
@@ -3721,20 +3736,114 @@ void ShowLog()
         ShellExecuteA(NULL, "explore", g_interpreter.GetTempDirectory().c_str(), NULL, NULL, SW_SHOWDEFAULT);
 
     ImGui::BeginChild("##LogScrollableRegion", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-    constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
+
+    // minimal Text for nicer visuals
+    constexpr const char* msgType[3] = { "", " W ", " E " };
     const ImVec4 msgColor[3] = { ImGui::GetStyleColorVec4(ImGuiCol_Text), { 0.8f, 0.7f, 0.2f, 1.0f}, { 0.8f, 0.2f, 0.2f, 1.0f } };
-    for (const auto& msg : g_log)
+
+    // find longest item
+    float widthColumn0 = 0;
+    for (int i = 0; i < sizeof(msgType) / sizeof(*msgType); ++i)
+        widthColumn0 = std::max(widthColumn0, ImGui::CalcTextSize(msgType[i]).x);
+
+    const float spaceGap = ImGui::CalcTextSize(" ").x;
+
+    // make selection visually more pleasing
+    const float fade = 0.2f;
+    PushStyleColorFade(ImGuiCol_Header, fade);
+    PushStyleColorFade(ImGuiCol_HeaderHovered, fade);
+    PushStyleColorFade(ImGuiCol_HeaderActive, fade);
+
+    // todo: this can be optimized to only render the visible range
+    for (size_t index = 0, count = g_log.size(); index < count; ++index)
     {
+        auto& msg = g_log[index];
+
+        ImGui::PushID((int)index);
+
         int msgTypeIndex = static_cast<int>(msg.level);
+
+        const float x = ImGui::GetCursorPosX();
+
+        if (msgTypeIndex && msg.firstLine)
+        {
+            PrintMessageType(msgColor[msgTypeIndex], msgType[msgTypeIndex], widthColumn0);
+            ImGui::SameLine();
+        }
+        ImGui::SetCursorPosX(x + widthColumn0 + spaceGap);
+
         ImGui::PushStyleColor(ImGuiCol_Text, msgColor[msgTypeIndex]);
-        ImGui::TextWrapped("%s%s", msgType[msgTypeIndex], msg.msg.c_str());
+
+        bool state = ImGui::Selectable(msg.msg.c_str(), &msg.selected);
+
+        ImGui::PopStyleColor();
+
+        if (state) 
+        {
+            static size_t lastSelectedIndex = -1;
+
+            if (ImGui::GetIO().KeyShift) // Range-select with Shift
+            {
+                // if there was a last selected
+                if ((uint32_t)lastSelectedIndex < g_log.size() )
+                {
+                    size_t minIndex = std::min(lastSelectedIndex, index);
+                    size_t maxIndex = std::max(lastSelectedIndex, index);
+
+                    // select range
+                    for (size_t index2 = 0, count2 = g_log.size(); index2 < count2; ++index2)
+                        g_log[index2].selected = (index2 >= minIndex && index2 <= maxIndex);
+                }
+            }
+            else if (ImGui::GetIO().KeyCtrl) // Multi-select with Ctrl
+            {
+                // already handled by Selectable() function call
+            }
+            else
+            {
+                // Single select
+                for (auto& msg2 : g_log)
+                    msg2.selected = false;
+                msg.selected = true;
+            }
+            lastSelectedIndex = index;
+        }
+        ImGui::PopID();
 
         // Autoscroll
         if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
             ImGui::SetScrollHereY(1.0f);
-
-        ImGui::PopStyleColor();
     }
+
+    ImGui::PopStyleColor(3);
+
+    // Right-click context menu
+    if (ImGui::BeginPopupContextWindow("RightClickAnywhere", ImGuiPopupFlags_MouseButtonRight))
+    {
+        if (ImGui::MenuItem("Copy Selection", "Ctrl+C"))
+            CopyToClipboard(false, false);
+
+        if (ImGui::MenuItem("Copy Selection with message type"))
+            CopyToClipboard(false, true);
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Copy All with message type"))
+            CopyToClipboard(true, true);
+
+        if (ImGui::MenuItem("Clear All"))
+            g_log.clear();
+
+        ImGui::EndPopup();
+    }
+
+
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C))
+            CopyToClipboard(false, false);
+    }
+
     ImGui::EndChild();
 
     ImGui::End();
@@ -6494,7 +6603,7 @@ public:
         vsprintf_s(formattedMsg, msg, args);
         va_end(args);
 
-        g_log.push_back({ level, formattedMsg });
+        AddMultiLineLogEntry(level, formattedMsg);
 
         // tell the server about this log message
         if (g_previewClient.IsFullyConnected())
