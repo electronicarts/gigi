@@ -226,8 +226,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: { /*$(RequiredLimits)*/ },
+                requiredFeatures: [ /*$(RequiredFeatures)*/ ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -252,7 +252,7 @@
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
 
-/*$(InitOneTime)*/            /* TODO:
+/*$(InitOneTimeImportedResources)*//*$(InitOneTime)*/            /* TODO:
             provide imported resources or variable values to the technique that only need to be set once/*$(TODO_NeedUserInput)*/
             */
 
@@ -262,7 +262,7 @@
             let frameIndex = 0
             async function RenderFrame(currentTimeMs) {
 
-                // Handle frame timing
+                /*$(ImportedResourceCheck)*/// Handle frame timing
                 if (startTimeMs === undefined)
                 {
                     startTimeMs = currentTimeMs;
@@ -335,7 +335,7 @@
                 </td>
                 <td>&nbsp;</td>
                 <td valign="top">
-/*$(Description)*//*$(HTMLUI)*/
+/*$(Description)*//*$(HTMLUI)*//*$(ImportedResourcesUI)*/
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
                         <tr>

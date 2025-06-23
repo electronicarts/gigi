@@ -111,6 +111,45 @@ struct DfltFixupVisitor
             }
             dflt = stream.str();
         }
+        else if (typeInfo.componentType2 == DataFieldType::Bool)
+        {
+            if (m_backend == Backend::WebGPU)
+            {
+                std::vector<bool> values;
+                ParseCSV::ForEachValue(dflt.c_str(), false,
+                    [&](int tokenIndex, const char* token)
+                    {
+                            bool value = false;
+                            if (!_stricmp(token, "false"))
+                                value = false;
+                            else if (!_stricmp(token, "true"))
+                                value = true;
+                            else
+                            {
+                                int i;
+                                sscanf_s(token, "%i", &i);
+                                value = (i != 0);
+                            }
+                            values.push_back(value);
+                            return true;
+                    }
+                );
+
+                std::ostringstream stream;
+
+                while (values.size() < typeInfo.componentCount)
+                    values.push_back(false);
+
+                for (int componentIndex = 0; componentIndex < typeInfo.componentCount; ++componentIndex)
+                {
+                    if (componentIndex > 0)
+                        stream << ", ";
+
+                    stream << (values[componentIndex] ? "true" : "false");
+                }
+                dflt = stream.str();
+            }
+        }
 
         return true;
     }
@@ -1784,14 +1823,36 @@ struct SanitizeVisitor
     {
         StringReplaceAll(s, " ", "_");
         StringReplaceAll(s, "+", "plus");
+        StringReplaceAll(s, "-", "_"); // could be minus, but is sometimes a dash
+        StringReplaceAll(s, "*", "_");
+        StringReplaceAll(s, "/", "_");
         StringReplaceAll(s, "=", "equals");
         StringReplaceAll(s, "#", "number");
         StringReplaceAll(s, ":", "_");
+        StringReplaceAll(s, ";", "_");
         StringReplaceAll(s, ".", "_");
+        StringReplaceAll(s, ",", "_");
         StringReplaceAll(s, "(", "_");
         StringReplaceAll(s, ")", "_");
         StringReplaceAll(s, "[", "_");
         StringReplaceAll(s, "]", "_");
+        StringReplaceAll(s, "{", "_");
+        StringReplaceAll(s, "}", "_");
+        StringReplaceAll(s, "<", "_");
+        StringReplaceAll(s, ">", "_");
+        StringReplaceAll(s, "\\", "_");
+        StringReplaceAll(s, "\'", "_");
+        StringReplaceAll(s, "\"", "_");
+        StringReplaceAll(s, "?", "_");
+        StringReplaceAll(s, "!", "_");
+        StringReplaceAll(s, "@", "_");
+        StringReplaceAll(s, "$", "_");
+        StringReplaceAll(s, "%", "_");
+        StringReplaceAll(s, "^", "_");
+        StringReplaceAll(s, "&", "and");
+        StringReplaceAll(s, "|", "_");
+        StringReplaceAll(s, "`", "_");
+        StringReplaceAll(s, "~", "_");
     }
 
     void Sanitize(std::string& s, std::string& originalName)

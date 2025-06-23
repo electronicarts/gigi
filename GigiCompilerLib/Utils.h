@@ -21,7 +21,7 @@
 	inline constexpr bool  operator! (enumType e)             { return !(std::underlying_type_t<enumType>)e; } \
 	inline constexpr enumType  operator~ (enumType e)             { return (enumType)~(std::underlying_type_t<enumType>)e; }
 
-enum class LogLevel
+enum class LogLevel : uint8_t
 {
 	Info,
 	Warn,

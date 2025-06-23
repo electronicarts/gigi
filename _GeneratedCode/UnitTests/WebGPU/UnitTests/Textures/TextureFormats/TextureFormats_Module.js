@@ -44,7 +44,8 @@ static ShaderCode_ComputeShader_csmain = `
 @workgroup_size(8, 8, 1)
 fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
-    textureStore((tex), (DTid_0.xy), (vec4<f32>(0.25f, 0.75f, 1.0f, 4.0f)));
+    // NOTE: I added this to make the unit test be able to do what it needed to do.
+    textureStore((tex), (DTid_0.xy), (/*(write_value)*/));
     return;
 }
 
@@ -160,6 +161,9 @@ async Init(device, encoder, useBlockingAPIs)
             let shaderCode = class_TextureFormats.ShaderCode_ComputeShader_csmain;
             shaderCode = shaderCode.replace("/*(tex_format)*/", Shared.GetNonSRGBFormat(this.texture_Texture_format));
             shaderCode = shaderCode.replace("/*(texReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_ComputeShader_tex_ReadOnly_format));
+
+            // NOTE: I added this to make the unit test be able to do what it needed to do.
+            shaderCode = shaderCode.replace("/*(write_value)*/", this.valueToWrite);
 
             this.ShaderModule_Compute_ComputeShader = device.createShaderModule({ code: shaderCode, label: "Compute Shader ComputeShader"});
             this.BindGroupLayout_Compute_ComputeShader = device.createBindGroupLayout({

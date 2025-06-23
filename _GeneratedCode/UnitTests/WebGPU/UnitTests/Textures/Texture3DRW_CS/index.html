@@ -229,8 +229,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -255,6 +255,38 @@
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
 
+            // Hook up the on change events for imported resources
+            document.getElementById('importedResourceURL_ImportedTexture').addEventListener('change', async (event) =>
+                {
+                    if (typeof Texture3DRW_CS.importedResourceURL_ImportedTexture === 'undefined' || Texture3DRW_CS.importedResourceURL_ImportedTexture != event.target.value)
+                    {
+                        Texture3DRW_CS.importedResourceURL_ImportedTexture = event.target.value;
+                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, Texture3DRW_CS.texture_ImportedTexture_usageFlags);
+                        if (loadedTexture !== null)
+                        {
+                            Texture3DRW_CS.texture_ImportedTexture = loadedTexture.texture;
+                            Texture3DRW_CS.texture_ImportedTexture_size = loadedTexture.size;
+                            Texture3DRW_CS.texture_ImportedTexture_format = loadedTexture.format;
+                        }
+                    }
+                }
+            );
+            document.getElementById('importedResourceURL_ImportedColor').addEventListener('change', async (event) =>
+                {
+                    if (typeof Texture3DRW_CS.importedResourceURL_ImportedColor === 'undefined' || Texture3DRW_CS.importedResourceURL_ImportedColor != event.target.value)
+                    {
+                        Texture3DRW_CS.importedResourceURL_ImportedColor = event.target.value;
+                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, Texture3DRW_CS.texture_ImportedColor_usageFlags);
+                        if (loadedTexture !== null)
+                        {
+                            Texture3DRW_CS.texture_ImportedColor = loadedTexture.texture;
+                            Texture3DRW_CS.texture_ImportedColor_size = loadedTexture.size;
+                            Texture3DRW_CS.texture_ImportedColor_format = loadedTexture.format;
+                        }
+                    }
+                }
+            );
+
             // Initialize the technique from unit test logic
             await test_Textures_Texture3DRW_CS.Init(device, Texture3DRW_CS);
 
@@ -263,6 +295,13 @@
             let lastTimeMs;
             let frameIndex = 0
             async function RenderFrame(currentTimeMs) {
+
+                // Don't run the technique if any imported resources are missing
+                if ( Texture3DRW_CS.texture_ImportedTexture === null || Texture3DRW_CS.texture_ImportedColor === null )
+                {
+                    requestAnimationFrame(RenderFrame);
+                    return;
+                }
 
                 // Handle frame timing
                 if (startTimeMs === undefined)
@@ -382,6 +421,12 @@
                 <td>&nbsp;</td>
                 <td valign="top">
                     <b>Texture3DRW_CS</b><br/>
+                    <button type="button" class="collapsible">Imported Resources</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr><td>Texture URL: ImportedTexture&nbsp;</td><td><input type="text" id="importedResourceURL_ImportedTexture"></td></tr>
+                        <tr><td>Texture URL: ImportedColor&nbsp;</td><td><input type="text" id="importedResourceURL_ImportedColor"></td></tr>
+                    </table>
+                    <br><br>
 
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
@@ -426,7 +471,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

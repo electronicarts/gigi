@@ -55,10 +55,8 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var px_0 : vec2<u32> = DTid_0.xy;
     var _S1 : vec3<i32> = vec3<i32>(vec3<u32>(px_0, u32(0)));
     var _S2 : vec4<f32> = (textureLoad((Input), ((_S1)).xy, ((_S1)).z)).yzxw * _Inner1_Inner2_Inner2CSCB.Inner1_Inner1Mult_0;
-    Output[px_0].x = _S2.x;
-    Output[px_0].y = _S2.y;
-    Output[px_0].z = _S2.z;
-    Output[px_0].w = _S2.w;
+    // Manual fix for slang bug: https://github.com/shader-slang/slang/issues/6551
+    textureStore((Output), (px_0), (_S2));
     return;
 }
 

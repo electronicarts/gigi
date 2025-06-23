@@ -136,11 +136,11 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         ret |= ShowUI(renderGraph, nullptr, nullptr, *(_BASE*)&value, path);
 
 #define STRUCT_FIELD(_TYPE, _NAME, _DEFAULT, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
         { \
             if (_FLAGS & SCHEMA_FLAG_UI_CONST) \
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true); \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME))); \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME))); \
             if (_FLAGS & SCHEMA_FLAG_UI_CONST) \
                 ImGui::PopItemFlag(); \
         }
@@ -148,12 +148,12 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
 #define STRUCT_CONST(_TYPE, _NAME, _DEFAULT, _DESCRIPTION, _FLAGS)
 
 #define STRUCT_DYNAMIC_ARRAY(_TYPE, _NAME, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
 
 #define STRUCT_STATIC_ARRAY(_TYPE, _NAME, _SIZE, _DEFAULT, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
 
 #define STRUCT_END() \
         if (label && label[0]) \
@@ -181,7 +181,7 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         { \
 
 #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
-            case ThisType::c_index_##_NAME: ret |= ShowUI(renderGraph, showLabel ? PrettyLabel(#_NAME).c_str() : nullptr, showLabel ? _DESCRIPTION : nullptr, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME))); return ret;
+            case ThisType::c_index_##_NAME: ret |= ShowUI(renderGraph, showLabel ? PrettyLabel(#_NAME, true).c_str() : nullptr, showLabel ? _DESCRIPTION : nullptr, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME))); return ret;
 
 #define VARIANT_END() \
         } \
@@ -2151,6 +2151,33 @@ struct ShaderTypeCodeGenerator
     const Shader& m_shader;
     FILE* m_file = nullptr;
 };
+
+template<>
+inline UIOverrideResult ShowUIOverride<ShaderResourceBuffer>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceBuffer& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
+
+template<>
+inline UIOverrideResult ShowUIOverride<ShaderResourceTexture>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceTexture& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
+
+template<>
+inline UIOverrideResult ShowUIOverride<ShaderResource>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResource& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    // Hide UI that isn't applicable
+    value.buffer.hideUI = true;
+    value.texture.hideUI = true;
+    switch (value.type)
+    {
+        case ShaderResourceType::Buffer: value.buffer.hideUI = false; break;
+        case ShaderResourceType::Texture: value.texture.hideUI = false; break;
+    }
+
+    return UIOverrideResult::Continue;
+}
 
 template<>
 inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, Shader& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)

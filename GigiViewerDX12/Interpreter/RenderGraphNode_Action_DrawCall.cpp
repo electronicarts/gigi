@@ -1726,15 +1726,24 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				return false;
 			}
 
-			if (node.meshShader.shader->NumThreads[0] == 0 || node.meshShader.shader->NumThreads[1] == 0 || node.meshShader.shader->NumThreads[2] == 0)
+			// Verify numthreads for amplication shader if it exists
+			if (node.amplificationShader.shader && (node.amplificationShader.shader->NumThreads[0] == 0 || node.amplificationShader.shader->NumThreads[1] == 0 || node.amplificationShader.shader->NumThreads[2] == 0))
+			{
+				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run amplification shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.amplificationShader.shader->NumThreads[0], node.amplificationShader.shader->NumThreads[1], node.amplificationShader.shader->NumThreads[2]);
+				return false;
+			}
+
+			// Verify numthreads for mesh shader if it exists
+			if (node.meshShader.shader && (node.meshShader.shader->NumThreads[0] == 0 || node.meshShader.shader->NumThreads[1] == 0 || node.meshShader.shader->NumThreads[2] == 0))
 			{
 				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run mesh shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.meshShader.shader->NumThreads[0], node.meshShader.shader->NumThreads[1], node.meshShader.shader->NumThreads[2]);
 				return false;
 			}
 
 			// do numThreads calculations. Divide by numThreads but round up.
+			const std::array<int, 3>& numThreads = node.amplificationShader.shader ? node.amplificationShader.shader->NumThreads : node.meshShader.shader->NumThreads;
 			for (int i = 0; i < 3; ++i)
-				dispatchSize[i] = (dispatchSize[i] + node.meshShader.shader->NumThreads[i] - 1) / node.meshShader.shader->NumThreads[i];
+				dispatchSize[i] = (dispatchSize[i] + numThreads[i] - 1) / numThreads[i];
 
 			ID3D12GraphicsCommandList6* meshCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&meshCommandList))))
@@ -1748,10 +1757,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			meshCommandList->Release();
 
 			ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
-			if (node.amplificationShader.shader)
-				ss << "\nAmplification NumThreads: (" << node.amplificationShader.shader->NumThreads[0] << ", " << node.amplificationShader.shader->NumThreads[1] << ", " << node.amplificationShader.shader->NumThreads[2] << ")";
-			else
-				ss << "\nMesh NumThreads: (" << node.meshShader.shader->NumThreads[0] << ", " << node.meshShader.shader->NumThreads[1] << ", " << node.meshShader.shader->NumThreads[2] << ")";
+			ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
 		}
 		// else if we have an index buffer, do DrawIndexedInstanced
 		else if (node.indexBuffer.resourceNodeIndex != -1)

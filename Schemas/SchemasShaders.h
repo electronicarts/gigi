@@ -307,12 +307,16 @@ STRUCT_BEGIN(ShaderResourceBuffer, "Data specific to buffers")
     STRUCT_FIELD(bool, raw, false, "If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)", 0)
     STRUCT_FIELD(bool, PODAsStructuredBuffer, true, "Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.", 0)
     STRUCT_FIELD(bool, globallyCoherent, false, "Set this to true if you want the resource to be declared as globallycoherent.", 0)
+
+    STRUCT_FIELD(bool, hideUI, false, "the shader resource will change this flag based on the type of the resource chosen", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderResourceTexture, "Data specific to textures")
     STRUCT_FIELD(TextureDimensionType, dimension, TextureDimensionType::Texture2D, "The dimensionality of the texture", 0)
     STRUCT_FIELD(TextureViewType, viewType, TextureViewType::Float4, "The dimensionality of the texture", 0)
 	STRUCT_FIELD(bool, globallyCoherent, false, "Set this to true if you want the resource to be declared as globallycoherent.", 0)
+
+    STRUCT_FIELD(bool, hideUI, false, "the shader resource will change this flag based on the type of the resource chosen", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderSampler, "Data specific to samplers")
@@ -326,10 +330,10 @@ STRUCT_END()
 
 STRUCT_BEGIN(ShaderResource, "A declaration of a resource that a shader wants")
     STRUCT_FIELD(std::string, name, "", "The name of the resource in the shader", 0)
-    STRUCT_FIELD(ShaderResourceType, type, ShaderResourceType::Count, "The resource type", 0)
     STRUCT_FIELD(ShaderResourceAccessType, access, ShaderResourceAccessType::Count, "How the resource is accessed", 0)
-    STRUCT_FIELD(ShaderResourceBuffer, buffer, {}, "Data specific to buffers", SCHEMA_FLAG_UI_COLLAPSABLE)
-    STRUCT_FIELD(ShaderResourceTexture, texture, {}, "Data specific to textures", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(ShaderResourceType, type, ShaderResourceType::Count, "The resource type", 0)
+    STRUCT_FIELD(ShaderResourceBuffer, buffer, {}, "Data specific to buffers", 0)
+    STRUCT_FIELD(ShaderResourceTexture, texture, {}, "Data specific to textures", 0)
     STRUCT_FIELD(BackendRestriction, backends, {}, "The backends this resource is present for.", SCHEMA_FLAG_UI_COLLAPSABLE)
     STRUCT_FIELD(bool, allowAtomicOps, false, "Nedeed by WebGPU. Check this box to allow atopic operations on this field.", 0)
 
@@ -415,7 +419,7 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
     STRUCT_FIELD(ShaderLanguage, language, ShaderLanguage::HLSL, "What language the shader is written in", 0)
     STRUCT_FIELD(ShaderType, type, ShaderType::Compute, "The type of shader it is", 0)
 
-    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint.", 0)
+    STRUCT_FIELD(std::string, entryPoint, "main", "The shader entrypoint.", 0)
     STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
     STRUCT_DYNAMIC_ARRAY(TokenReplacement, tokenReplacements, "The token replacements specific for the shader.", SCHEMA_FLAG_NO_SERIALIZE)
 
@@ -442,6 +446,6 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 
     // deprecated in 0.95b
     // replaced by NumThreads
-    STRUCT_STATIC_ARRAY(int, CSNumThreads, 3, { 8 COMMA 8 COMMA 1 }, "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.", SCHEMA_FLAG_NO_UI)
+    STRUCT_STATIC_ARRAY(int, CSNumThreads, 3, { 8 COMMA 8 COMMA 1 }, "For compute shaders only, the number of threads each dispatch has. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.", SCHEMA_FLAG_NO_UI)
 
 STRUCT_END()

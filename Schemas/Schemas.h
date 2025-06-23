@@ -64,6 +64,25 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(bool, AgilitySDKRequired, false, "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(BackendSettings_WebGPU_Features, "Required Limits. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedFeatures")
+    STRUCT_FIELD(bool, float32Filterable, false, "float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.", 0)
+    STRUCT_FIELD(bool, subgroups, false, "subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup\n" \
+                                         "to communicate and execute collective math operations such as calculating a sum of numbers, and offering an efficient method for\n" \
+                                         "cross-thread data sharing. Note that the subgroupMinSize and subgroupMaxSize properties can be useful to check if, for example, you have a\n" \
+                                         "hardcoded algorithm that requires a subgroup of a certain size. You can use f16 values with subgroups when you request a GPUDevice with\n" \
+                                         "both the shader-f16 and subgroups features.", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(BackendSettings_WebGPU_Limits, "Required features. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits")
+    STRUCT_FIELD(unsigned int, maxStorageBuffersPerShaderStage, 0, "maxStorageBuffersPerShaderStage. 0 for default.", 0)
+    STRUCT_FIELD(unsigned int, maxStorageTexturesPerShaderStage, 0, "maxStorageTexturesPerShaderStage. 0 for default.", 0)
+    STRUCT_FIELD(unsigned int, maxComputeWorkgroupStorageSize, 0, "maxComputeWorkgroupStorageSize. 0 for default.", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(BackendSettings_WebGPU, "WebGPU Settings. For the capabilities of your browser and machine, see: https://webgpureport.org/")
+    STRUCT_FIELD(BackendSettings_WebGPU_Features, features, {}, "", 0)
+    STRUCT_FIELD(BackendSettings_WebGPU_Limits, limits, {}, "", 0)
+STRUCT_END()
 
 STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
     STRUCT_FIELD(bool, debugNames, true, "If true, sets debug names to GPU objects on available platforms.", 0)
@@ -75,7 +94,8 @@ STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
 STRUCT_END()
 
 STRUCT_BEGIN(BackendSettings, "Backend settings")
-    STRUCT_FIELD(BackendSettings_DX12, dx12, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(BackendSettings_DX12, dx12, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
+    STRUCT_FIELD(BackendSettings_WebGPU, webGPU, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
     STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
 STRUCT_END()
 
