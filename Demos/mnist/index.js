@@ -11,8 +11,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [ 'float32-filterable' ],
 });
 device.pushErrorScope("validation");
 
@@ -40,6 +40,14 @@ provide imported resources or variable values to the technique:
                     mnist.variable_PenSize = 10.000000; // (Float)
                     mnist.variable_UseImportedImage = false; // (Bool)
                     mnist.variable_NormalizeDrawing = true; // (Bool) MNIST normalization: shrink image to 20x20 and put center of mass in the middle of a 28x28 image
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", mnist.texture_someTexture_usageFlags);
+                    mnist.texture_someTexture = loadedTexture.texture;
+                    mnist.texture_someTexture_size = loadedTexture.size;
+                    mnist.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
 */
 
 for (let frameIndex = 0; frameIndex < numExecutions; ++frameIndex)

@@ -2159,7 +2159,8 @@ async Init(device, encoder, useBlockingAPIs)
             },
         ];
 
-        const newHash = JSON.stringify(bindGroupEntries).hashCode();
+        let hashString = JSON.stringify(bindGroupEntries);
+        const newHash = hashString.hashCode();
 
         if (this.ShaderModule_Compute_DoRTCS === null || newHash !== this.Hash_Compute_DoRTCS)
         {

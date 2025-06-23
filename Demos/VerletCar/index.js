@@ -11,8 +11,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [  ],
 });
 device.pushErrorScope("validation");
 
@@ -37,6 +37,14 @@ provide imported resources or variable values to the technique:
                     DemofoxVerletCar.variable_InvViewProjMtx = 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000, 0.000000, 0.000000, 0.000000, 0.000000, 1.000000; // (Float4x4)
                     DemofoxVerletCar.variable_CameraPos = 0.000000, 0.000000, 0.000000; // (Float3)
                     DemofoxVerletCar.variable_CameraChanged = false; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", DemofoxVerletCar.texture_someTexture_usageFlags);
+                    DemofoxVerletCar.texture_someTexture = loadedTexture.texture;
+                    DemofoxVerletCar.texture_someTexture_size = loadedTexture.size;
+                    DemofoxVerletCar.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
 */
 
 for (let frameIndex = 0; frameIndex < numExecutions; ++frameIndex)

@@ -11,8 +11,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [  ],
 });
 device.pushErrorScope("validation");
 
@@ -29,6 +29,14 @@ provide imported resources or variable values to the technique:
                     CasualPathtracing.variable_SkyboxBrightness = 1.000000; // (Float) a multiplier for the skybox brightness
                     CasualPathtracing.variable_Exposure = 0.000000; // (Float) a pixel value multiplier of light before tone mapping and sRGB. In FStops. Every +1 doubles brightness, every -1 halves brightness/
                     CasualPathtracing.variable_RaysPerPixel = 16; // (Int) How many rays per pixel, per frame?
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", CasualPathtracing.texture_someTexture_usageFlags);
+                    CasualPathtracing.texture_someTexture = loadedTexture.texture;
+                    CasualPathtracing.texture_someTexture_size = loadedTexture.size;
+                    CasualPathtracing.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
 */
 
 for (let frameIndex = 0; frameIndex < numExecutions; ++frameIndex)

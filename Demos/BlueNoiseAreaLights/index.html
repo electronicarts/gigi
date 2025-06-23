@@ -227,8 +227,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -462,6 +462,14 @@
                     BlueNoiseAreaLights.variable_PosLightShineCosThetaInner = 0.800000; // (Float) direction to light, dotted by -c_lightDir. light starts to fade here.
                     BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter = 0.700000; // (Float) direction to light, dotted by -c_lightDir. light finishes fading here.
                     BlueNoiseAreaLights.variable_ResetAccum = false; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", BlueNoiseAreaLights.texture_someTexture_usageFlags);
+                    BlueNoiseAreaLights.texture_someTexture = loadedTexture.texture;
+                    BlueNoiseAreaLights.texture_someTexture_size = loadedTexture.size;
+                    BlueNoiseAreaLights.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
             */
 
             // Make sure the UI shows the correct variable values
@@ -517,6 +525,14 @@
                     BlueNoiseAreaLights.variable_PosLightShineCosThetaInner = 0.800000; // (Float) direction to light, dotted by -c_lightDir. light starts to fade here.
                     BlueNoiseAreaLights.variable_PosLightShineCosThetaOuter = 0.700000; // (Float) direction to light, dotted by -c_lightDir. light finishes fading here.
                     BlueNoiseAreaLights.variable_ResetAccum = false; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", BlueNoiseAreaLights.texture_someTexture_usageFlags);
+                    BlueNoiseAreaLights.texture_someTexture = loadedTexture.texture;
+                    BlueNoiseAreaLights.texture_someTexture_size = loadedTexture.size;
+                    BlueNoiseAreaLights.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
                 */
 
                 // Projection matrix resolution texture
@@ -1229,7 +1245,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

@@ -227,8 +227,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -370,6 +370,14 @@
                     CasualPathtracing.variable_SkyboxBrightness = 1.000000; // (Float) a multiplier for the skybox brightness
                     CasualPathtracing.variable_Exposure = 0.000000; // (Float) a pixel value multiplier of light before tone mapping and sRGB. In FStops. Every +1 doubles brightness, every -1 halves brightness/
                     CasualPathtracing.variable_RaysPerPixel = 16; // (Int) How many rays per pixel, per frame?
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", CasualPathtracing.texture_someTexture_usageFlags);
+                    CasualPathtracing.texture_someTexture = loadedTexture.texture;
+                    CasualPathtracing.texture_someTexture_size = loadedTexture.size;
+                    CasualPathtracing.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
             */
 
             // Make sure the UI shows the correct variable values
@@ -408,6 +416,14 @@
                     CasualPathtracing.variable_SkyboxBrightness = 1.000000; // (Float) a multiplier for the skybox brightness
                     CasualPathtracing.variable_Exposure = 0.000000; // (Float) a pixel value multiplier of light before tone mapping and sRGB. In FStops. Every +1 doubles brightness, every -1 halves brightness/
                     CasualPathtracing.variable_RaysPerPixel = 16; // (Int) How many rays per pixel, per frame?
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", CasualPathtracing.texture_someTexture_usageFlags);
+                    CasualPathtracing.texture_someTexture = loadedTexture.texture;
+                    CasualPathtracing.texture_someTexture_size = loadedTexture.size;
+                    CasualPathtracing.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
                 */
 
                 // Projection matrix resolution texture
@@ -871,7 +887,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

@@ -227,8 +227,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -656,6 +656,14 @@
                     DemofoxMinesweeper.variable_CameraChanged = false; // (Bool)
                 User Variables (These show in the UI):
                     DemofoxMinesweeper.variable_Reset = false; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", DemofoxMinesweeper.texture_someTexture_usageFlags);
+                    DemofoxMinesweeper.texture_someTexture = loadedTexture.texture;
+                    DemofoxMinesweeper.texture_someTexture_size = loadedTexture.size;
+                    DemofoxMinesweeper.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
             */
 
             // Make sure the UI shows the correct variable values
@@ -704,6 +712,14 @@
                     DemofoxMinesweeper.variable_CameraChanged = false; // (Bool)
                 User Variables (These show in the UI):
                     DemofoxMinesweeper.variable_Reset = false; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", DemofoxMinesweeper.texture_someTexture_usageFlags);
+                    DemofoxMinesweeper.texture_someTexture = loadedTexture.texture;
+                    DemofoxMinesweeper.texture_someTexture_size = loadedTexture.size;
+                    DemofoxMinesweeper.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
                 */
 
                 // Set the frame index
@@ -1931,7 +1947,7 @@ Random board each play!</pre>
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

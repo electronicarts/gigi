@@ -11,8 +11,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [  ],
 });
 device.pushErrorScope("validation");
 
@@ -48,6 +48,14 @@ provide imported resources or variable values to the technique:
                     tinybvh.variable_SpecularLevel = 0.500000; // (Float)
                     tinybvh.variable_Metalic = 0.000000; // (Float)
                     tinybvh.variable_RayTestAgainst = this.constructor.Enum_RayTestAgainsts.BVHSeparate; // (Int)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", tinybvh.texture_someTexture_usageFlags);
+                    tinybvh.texture_someTexture = loadedTexture.texture;
+                    tinybvh.texture_someTexture_size = loadedTexture.size;
+                    tinybvh.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
 */
 
 for (let frameIndex = 0; frameIndex < numExecutions; ++frameIndex)

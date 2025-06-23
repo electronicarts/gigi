@@ -11,8 +11,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [ 'float32-filterable' ],
 });
 device.pushErrorScope("validation");
 
@@ -48,6 +48,14 @@ provide imported resources or variable values to the technique:
                     DemofoxNeonDesert.variable_minStepDistance = 0.100000; // (Float)
                     DemofoxNeonDesert.variable_ACESToneMapping = true; // (Bool)
                     DemofoxNeonDesert.variable_sRGB = true; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", DemofoxNeonDesert.texture_someTexture_usageFlags);
+                    DemofoxNeonDesert.texture_someTexture = loadedTexture.texture;
+                    DemofoxNeonDesert.texture_someTexture_size = loadedTexture.size;
+                    DemofoxNeonDesert.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
 */
 
 for (let frameIndex = 0; frameIndex < numExecutions; ++frameIndex)

@@ -227,8 +227,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [ 'float32-filterable' ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -252,6 +252,23 @@
             canvas.addEventListener('mouseup', (event) => { if (event.button == 0) { MouseState[2] = 0 } else if (event.button == 2) { MouseState[3] = 0 } });
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
+
+            // Hook up the on change events for imported resources
+            document.getElementById('importedResourceURL_Imported_Image').addEventListener('change', async (event) =>
+                {
+                    if (typeof mnist.importedResourceURL_Imported_Image === 'undefined' || mnist.importedResourceURL_Imported_Image != event.target.value)
+                    {
+                        mnist.importedResourceURL_Imported_Image = event.target.value;
+                        const loadedTexture = await Shared.CreateTextureWithPNG(device, event.target.value, mnist.texture_Imported_Image_usageFlags);
+                        if (loadedTexture !== null)
+                        {
+                            mnist.texture_Imported_Image = loadedTexture.texture;
+                            mnist.texture_Imported_Image_size = loadedTexture.size;
+                            mnist.texture_Imported_Image_format = loadedTexture.format;
+                        }
+                    }
+                }
+            );
 
             // Hook up the on change events for UI
             document.getElementById('inputBox_Clear').addEventListener('click',(event) => {mnist.variable_Clear=true;});
@@ -401,6 +418,13 @@
             let frameIndex = 0
             async function RenderFrame(currentTimeMs) {
 
+                // Don't run the technique if any imported resources are missing
+                if ( mnist.texture_Imported_Image === null )
+                {
+                    requestAnimationFrame(RenderFrame);
+                    return;
+                }
+
                 // Handle frame timing
                 if (startTimeMs === undefined)
                 {
@@ -439,6 +463,14 @@
                     mnist.variable_PenSize = 10.000000; // (Float)
                     mnist.variable_UseImportedImage = false; // (Bool)
                     mnist.variable_NormalizeDrawing = true; // (Bool) MNIST normalization: shrink image to 20x20 and put center of mass in the middle of a 28x28 image
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", mnist.texture_someTexture_usageFlags);
+                    mnist.texture_someTexture = loadedTexture.texture;
+                    mnist.texture_someTexture_size = loadedTexture.size;
+                    mnist.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
                 */
 
                 // Set the resolution
@@ -945,6 +977,11 @@
                     <button type="button" id="ResetVariables">Reset Variables</button>
                     <br/>
                     <br/>
+                    <button type="button" class="collapsible">Imported Resources</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
+                        <tr><td>Texture URL: Imported_Image&nbsp;</td><td><input type="text" id="importedResourceURL_Imported_Image"></td></tr>
+                    </table>
+                    <br><br>
 
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
@@ -989,7 +1026,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0 [Internal]</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

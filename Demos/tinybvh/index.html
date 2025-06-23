@@ -227,8 +227,8 @@
             }
 
             const device = await adapter.requestDevice({
-                requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-                requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+                requiredLimits: {  },
+                requiredFeatures: [  ],
             });
 
             const context = canvas.getContext("webgpu");
@@ -520,6 +520,14 @@
                     tinybvh.variable_SpecularLevel = 0.500000; // (Float)
                     tinybvh.variable_Metalic = 0.000000; // (Float)
                     tinybvh.variable_RayTestAgainst = this.constructor.Enum_RayTestAgainsts.BVHSeparate; // (Int)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", tinybvh.texture_someTexture_usageFlags);
+                    tinybvh.texture_someTexture = loadedTexture.texture;
+                    tinybvh.texture_someTexture_size = loadedTexture.size;
+                    tinybvh.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
             */
 
             // Make sure the UI shows the correct variable values
@@ -610,6 +618,14 @@
                     tinybvh.variable_SpecularLevel = 0.500000; // (Float)
                     tinybvh.variable_Metalic = 0.000000; // (Float)
                     tinybvh.variable_RayTestAgainst = this.constructor.Enum_RayTestAgainsts.BVHSeparate; // (Int)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", tinybvh.texture_someTexture_usageFlags);
+                    tinybvh.texture_someTexture = loadedTexture.texture;
+                    tinybvh.texture_someTexture_size = loadedTexture.size;
+                    tinybvh.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
                 */
 
                 // Projection matrix resolution texture
@@ -1180,7 +1196,7 @@ tinybvh is at: https://github.com/jbikker/tinybvh/</pre>
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.0 [Internal]</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.0.1</a></b>
                 </td>
             </tr>
         </table>

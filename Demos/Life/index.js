@@ -11,8 +11,8 @@ const navigator = { gpu: create(["enable-dawn-features=use_dxc"]) };
 
 const adapter = await navigator.gpu?.requestAdapter();
 const device = await adapter?.requestDevice({
-    requiredLimits: { maxStorageTexturesPerShaderStage: 8, maxComputeWorkgroupStorageSize: 32768 },
-    requiredFeatures: [ 'float32-filterable', 'subgroups' ],
+    requiredLimits: {  },
+    requiredFeatures: [  ],
 });
 device.pushErrorScope("validation");
 
@@ -31,6 +31,14 @@ provide imported resources or variable values to the technique:
                     DemofoxLife.variable_SingleStep = false; // (Bool)
                     DemofoxLife.variable_RandomDensity = 0.500000; // (Float)
                     DemofoxLife.variable_Randomize = false; // (Bool)
+
+                An example of how to load a texture:
+                    const loadedTexture = await Shared.CreateTextureWithPNG(device, "cabinsmall.png", DemofoxLife.texture_someTexture_usageFlags);
+                    DemofoxLife.texture_someTexture = loadedTexture.texture;
+                    DemofoxLife.texture_someTexture_size = loadedTexture.size;
+                    DemofoxLife.texture_someTexture_format = loadedTexture.format;
+
+                See _GeneratedCode\UnitTests\WebGPU\UnitTestLogic.js for more examples of loading files of various kinds.
 */
 
 for (let frameIndex = 0; frameIndex < numExecutions; ++frameIndex)
