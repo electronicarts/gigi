@@ -27,7 +27,7 @@ We are going to need a 3d object to render onto the render target.  We'll call t
 
 This 3d object will come into our technique as a buffer, where each entry of the buffer is the information for a single vertex. Right click in the editor, create a ***Buffer*** node and call it "Scene".
 
-This scene will be set in the viewer, so we need to set the ***Visibility*** to ***Internal*** and we will leave the format and count at the default since those will also be set in the viewer.
+This scene will be set in the viewer, so we need to set the ***Visibility*** to ***Imported*** and we will leave the format and count at the default since those will also be set in the viewer.
 
 ![Creating a buffer node for the 3d object that will be our ray traced scene](CreateScene.png)
 
