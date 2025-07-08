@@ -228,6 +228,8 @@ struct BackendWebGPU : public BackendBase
             case TextureFormat::D32_Float_S8: return "depth32float-stencil8";
             case TextureFormat::D24_Unorm_S8: return "depth24plus-stencil8";
 
+            case TextureFormat::BC1_Unorm: return "bc1-rgb-unorm";
+
             case TextureFormat::BC4_Unorm: return "bc4-r-unorm";
             case TextureFormat::BC4_Snorm: return "bc4-r-snorm";
             case TextureFormat::BC5_Unorm: return "bc5-rg-unorm";

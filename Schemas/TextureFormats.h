@@ -55,6 +55,8 @@ ENUM_BEGIN(TextureFormat, "")
     ENUM_ITEM(D24_Unorm_S8, "24 bit depth, 8 bit stencil")
 
     // Block compressed formats
+    ENUM_ITEM(BC1_Unorm, "RGB 5:6:5 unorm, 1 bit alpha. block compressed.")
+
     ENUM_ITEM(BC4_Unorm, "R 8 bit unorm. block compressed.")
     ENUM_ITEM(BC4_Snorm, "R 8 bit snorm. block compressed.")
     ENUM_ITEM(BC5_Unorm, "RG 8 bit unorm. block compressed.")

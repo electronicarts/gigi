@@ -223,6 +223,9 @@ bool ConvertPixelData(TextureCache::Texture& texture, DXGI_FORMAT newFormat)
 		DXGI_FORMAT fmtA = min(texture.format, newFormat);
 		DXGI_FORMAT fmtB = max(texture.format, newFormat);
 
+        if (fmtA == DXGI_FORMAT_BC1_UNORM && fmtB == DXGI_FORMAT_BC1_UNORM_SRGB)
+            return true;
+
 		if (fmtA == DXGI_FORMAT_BC7_UNORM && fmtB == DXGI_FORMAT_BC7_UNORM_SRGB)
 			return true;
 
@@ -726,8 +729,14 @@ bool GigiInterpreterPreviewWindowDX12::LoadTexture(std::vector<TextureCache::Tex
 	// Do format conversion if needed
 	for (TextureCache::Texture& texture : loadedTextures)
 	{
-		if (!ConvertPixelData(texture, desiredFormat))
-			return false;
+        if (!ConvertPixelData(texture, desiredFormat))
+        {
+            DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(texture.format);
+            DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(desiredFormat);
+            m_logFn(LogLevel::Error, "Could not load convert texture from format \"%s\" to \"%s\"", textureFormatInfo.name, newFormatInfo.name);
+            
+            return false;
+        }
 	}
 
 	// Smoosh all the slices of a 3d texture together if needed.
@@ -989,6 +998,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 					// Convert it to the format we want
 					if (!ConvertPixelData(newTexture, TextureFormatToDXGI_FORMAT(desc.texture.format)))
 					{
+                        DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(newTexture.format);
+                        DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(TextureFormatToDXGI_FORMAT(desc.texture.format));
+                        m_logFn(LogLevel::Error, "Could not load convert texture from format \"%s\" to \"%s\"", textureFormatInfo.name, newFormatInfo.name);
+
 						runtimeData.m_failed = true;
 						desc.state = ImportedResourceState::failed;
 						return true;
@@ -1009,6 +1022,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 					// Convert it to the format we want
 					if (!ConvertPixelData(newTexture, TextureFormatToDXGI_FORMAT(desc.texture.format)))
 					{
+                        DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(newTexture.format);
+                        DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(TextureFormatToDXGI_FORMAT(desc.texture.format));
+                        m_logFn(LogLevel::Error, "Could not load convert texture from format \"%s\" to \"%s\"", textureFormatInfo.name, newFormatInfo.name);
+
 						runtimeData.m_failed = true;
 						desc.state = ImportedResourceState::failed;
 						return true;

@@ -249,6 +249,7 @@ struct BackendDX12 : public BackendBase
             case TextureFormat::D16_Unorm: return "DXGI_FORMAT_D16_UNORM";
             case TextureFormat::D32_Float_S8: return "DXGI_FORMAT_D32_FLOAT_S8X24_UINT";
             case TextureFormat::D24_Unorm_S8: return "DXGI_FORMAT_R24_UNORM_X8_TYPELESS";
+            case TextureFormat::BC1_Unorm: return "DXGI_FORMAT_BC1_UNORM";
             case TextureFormat::BC4_Unorm: return "DXGI_FORMAT_BC4_UNORM";
             case TextureFormat::BC4_Snorm: return "DXGI_FORMAT_BC4_SNORM";
             case TextureFormat::BC5_Unorm: return "DXGI_FORMAT_BC5_UNORM";
