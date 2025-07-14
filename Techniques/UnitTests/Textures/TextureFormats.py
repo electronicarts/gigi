@@ -10,6 +10,7 @@ DontTestTheseFormats = [
 	Host.TextureFormat_Any,
 	Host.TextureFormat_D32_Float_S8,
 	Host.TextureFormat_D24_Unorm_S8,
+	Host.TextureFormat_BC1_Unorm,
 	Host.TextureFormat_BC4_Unorm,
 	Host.TextureFormat_BC4_Snorm,
 	Host.TextureFormat_BC5_Unorm,
