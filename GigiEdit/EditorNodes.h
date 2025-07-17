@@ -442,6 +442,53 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     return ret;
 }
 
+inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_WorkGraph& node)
+{
+    std::vector<NodePinInfo> ret;
+
+    // Get the entry shader
+
+    // TODO: JAN change shadertype
+    __debugbreak();
+    int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute/*, ShaderType::WorkGraph*/, node.entry.name.c_str());
+
+    size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_WorkGraph>(renderGraph, shaderIndex, node, 0, ret);
+    node.connections.resize(numNewConnections);
+
+    // just for mesh nodes, really
+    // 
+    // Shading Rate Image
+    NodePinInfo pin;
+    pin.name = "shadingRateImage";
+    pin.inputNode = &node.shadingRateImage.node;
+    pin.inputNodePin = &node.shadingRateImage.pin;
+    pin.accessLabel = " (R)";
+    ret.push_back(pin);
+
+    // Depth Target
+    pin.name = "depthTarget";
+    pin.inputNode = &node.depthTarget.node;
+    pin.inputNodePin = &node.depthTarget.pin;
+    pin.accessLabel = " (RW)";
+    ret.push_back(pin);
+
+    // Color targets
+    for (int i = 0; i < node.colorTargets.size(); ++i)
+    {
+        char buffer[256];
+        sprintf_s(buffer, "colorTarget%i", i);
+        pin.name = buffer;
+        pin.inputNode = &node.colorTargets[i].node;
+        pin.inputNodePin = &node.colorTargets[i].pin;
+        pin.accessLabel = " (RW)";
+        ret.push_back(pin);
+        if (pin.inputNode->empty())
+            break;
+    }
+
+    return ret;
+}
+
 inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_DrawCall& node)
 {
     std::vector<NodePinInfo> ret;

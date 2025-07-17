@@ -109,6 +109,9 @@
     <ClCompile Include="ImageReadback.cpp" />
     <ClCompile Include="ImageSave.cpp" />
     <ClCompile Include="BVH.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_WorkGraph.cpp">
+      <Filter>Interpreter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">

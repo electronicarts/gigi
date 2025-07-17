@@ -676,6 +676,9 @@
     <None Include="Backends\Interpreter\templates\ggconfig.json">
       <Filter>Backends\Interpreter\templates</Filter>
     </None>
+    <None Include="Backends\DX12\nodes\node_action_workGraph.inl">
+      <Filter>Backends\DX12\nodes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Backends\DX12\templates\Module\readme.txt">
