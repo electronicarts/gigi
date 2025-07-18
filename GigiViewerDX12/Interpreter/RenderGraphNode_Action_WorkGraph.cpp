@@ -20,19 +20,185 @@ void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPrev
     }
 }
 
+bool CompileWorkGraph(const RenderGraphNode_Action_WorkGraph& node, RuntimeTypes::RenderGraphNode_Action_WorkGraph& runtimeData)
+{
+    __debugbreak();
+}
+
+bool GigiInterpreterPreviewWindowDX12::WorkGraph_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_WorkGraph& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions)
+{
+    for (int resourceIndex = 0; resourceIndex < shader.resources.size(); ++resourceIndex)
+    {
+        const ShaderResource& shaderResource = shader.resources[resourceIndex];
+
+        int depIndex = 0;
+        while (depIndex < node.resourceDependencies.size() && node.resourceDependencies[depIndex].pinIndex != (resourceIndex + pinOffset))
+            depIndex++;
+
+        if (depIndex >= node.resourceDependencies.size())
+        {
+            m_logFn(LogLevel::Error, "Could not find resource dependency for shader resource \"%s\" in work graph node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+            return false;
+        }
+        const ResourceDependency& dep = node.resourceDependencies[depIndex];
+
+        DescriptorTableCache::ResourceDescriptor desc;
+
+        const RenderGraphNode& resourceNode = m_renderGraph.nodes[dep.nodeIndex];
+        switch (resourceNode._index)
+        {
+        case RenderGraphNode::c_index_resourceTexture:
+        {
+            const RuntimeTypes::RenderGraphNode_Resource_Texture& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceNode.resourceTexture.name.c_str());
+            desc.m_resource = resourceInfo.m_resource;
+            desc.m_format = resourceInfo.m_format;
+
+            if (dep.pinIndex < node.linkProperties.size())
+            {
+                desc.m_UAVMipIndex = min(node.linkProperties[dep.pinIndex].UAVMipIndex, resourceInfo.m_numMips - 1);
+            }
+
+            switch (resourceNode.resourceTexture.dimension)
+            {
+            case TextureDimensionType::Texture2D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2D; break;
+            case TextureDimensionType::Texture2DArray: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DArray; desc.m_count = resourceInfo.m_size[2]; break;
+            case TextureDimensionType::Texture3D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture3D; desc.m_count = resourceInfo.m_size[2]; break;
+            case TextureDimensionType::TextureCube: desc.m_resourceType = DescriptorTableCache::ResourceType::TextureCube; desc.m_count = 6; break;
+            }
+            break;
+        }
+        case RenderGraphNode::c_index_resourceShaderConstants:
+        {
+            const RuntimeTypes::RenderGraphNode_Resource_ShaderConstants& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_ShaderConstants(resourceNode.resourceShaderConstants.name.c_str());
+            desc.m_resource = resourceInfo.m_buffer->buffer;
+            desc.m_format = DXGI_FORMAT_UNKNOWN;
+            desc.m_stride = (UINT)resourceInfo.m_buffer->size;
+            desc.m_count = 1;
+            break;
+        }
+        case RenderGraphNode::c_index_resourceBuffer:
+        {
+            const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
+
+            if (dep.access == ShaderResourceAccessType::RTScene)
+            {
+                desc.m_resource = resourceInfo.m_tlas;
+                desc.m_format = DXGI_FORMAT_UNKNOWN;
+                desc.m_stride = resourceInfo.m_tlasSize;
+                desc.m_count = 1;
+                desc.m_raw = false;
+            }
+            else
+            {
+                desc.m_resource = resourceInfo.m_resource;
+
+                const ShaderResourceBuffer& shaderResourceBuffer = shader.resources[resourceIndex].buffer;
+                bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
+                if (isStructuredBuffer)
+                {
+                    desc.m_format = DXGI_FORMAT_UNKNOWN;
+                    if (shaderResourceBuffer.typeStruct.structIndex != -1)
+                        desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
+                    else
+                        desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
+                    desc.m_count = resourceInfo.m_size / desc.m_stride;
+                }
+                else
+                {
+                    desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
+                    desc.m_stride = 0;
+                    desc.m_count = resourceInfo.m_count;
+                }
+
+                desc.m_raw = shader.resources[resourceIndex].buffer.raw;
+            }
+            break;
+        }
+        default:
+        {
+            m_logFn(LogLevel::Error, "Unhandled dependency node type for work graph node \"%s\"", node.name.c_str());
+            return false;
+        }
+        }
+
+        // This could be a temporary thing, but we can't run the work graph if we don't have the resources we need.
+        if (!desc.m_resource)
+            return true;
+
+        switch (dep.access)
+        {
+        case ShaderResourceAccessType::UAV:
+        {
+            desc.m_access = DescriptorTableCache::AccessType::UAV;
+            queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, GetNodeName(resourceNode).c_str()) });
+            break;
+        }
+        case ShaderResourceAccessType::RTScene:
+        {
+            desc.m_access = DescriptorTableCache::AccessType::SRV;
+            queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, GetNodeName(resourceNode).c_str()) });
+            break;
+        }
+        case ShaderResourceAccessType::SRV:
+        {
+            desc.m_access = DescriptorTableCache::AccessType::SRV;
+            break;
+        }
+        case ShaderResourceAccessType::CBV:
+        {
+            // constant buffers are upload heap, don't need transitions to be written from CPU or read by shaders
+            desc.m_access = DescriptorTableCache::AccessType::CBV;
+            break;
+        }
+        case ShaderResourceAccessType::Indirect:
+        {
+            // This is handled elsewhere
+            continue;
+        }
+        default:
+        {
+            m_logFn(LogLevel::Error, "Unhandled shader resource access type \"%s\" for work graph node \"%s\"", EnumToString(dep.access), node.name.c_str());
+            return false;
+        }
+        }
+
+        switch (dep.type)
+        {
+        case ShaderResourceType::Texture: break;// Handled above
+        case ShaderResourceType::Buffer:
+        {
+            if (dep.access == ShaderResourceAccessType::RTScene)
+                desc.m_resourceType = DescriptorTableCache::ResourceType::RTScene;
+            else
+                desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer;
+            break;
+        }
+        case ShaderResourceType::ConstantBuffer: desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer; break;
+        default:
+        {
+            m_logFn(LogLevel::Error, "Unhandled shader resource type \"%s\" for work graph node \"%s\"", EnumToString(dep.type), node.name.c_str());
+            return false;
+        }
+        }
+
+        descs.push_back(desc);
+    }
+
+    return true;
+}
+
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_WorkGraph& node, RuntimeTypes::RenderGraphNode_Action_WorkGraph& runtimeData, NodeAction nodeAction)
 {
     if (nodeAction == NodeAction::Init)
     {
-        // compile workgraph?
-        //__debugbreak();
+        CompileWorkGraph(node, runtimeData);
     }
     else if (nodeAction == NodeAction::Execute)
     {
         if (runtimeData.m_failed)
             return false;
 
-        // If we aren't supposed to do the draw call, exit out
+        // If we aren't supposed to do the work graph, exit out
         if (!EvaluateCondition(node.condition))
             return true;
 
@@ -85,7 +251,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                             ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
                             if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
                             {
-                                m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
+                                m_logFn(LogLevel::Error, "Work Graph node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
                                 return false;
                             }
 
@@ -96,7 +262,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         }
                         else
                         {
-                            m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
+                            m_logFn(LogLevel::Error, "Work Graph call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
                         }
                     }
                 }
@@ -323,9 +489,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         int descriptorTablePinOffset = 0;
         if (node.entryShader.shader)
         {
-            __debugbreak();
-        /*    if (!DrawCall_MakeDescriptorTableDesc(descriptorsWorkGraph, node, *node.entryShader.shader, descriptorTablePinOffset, queuedTransitions))
-                return false;*/
+            if (!WorkGraph_MakeDescriptorTableDesc(descriptorsWorkGraph, node, *node.entryShader.shader, descriptorTablePinOffset, queuedTransitions))
+                return false;
             descriptorTablePinOffset += (int)node.entryShader.shader->resources.size();
         }
 
@@ -341,7 +506,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             std::string error;
             if (!m_descriptorTableCache.GetDescriptorTable(m_device, m_SRVHeapAllocationTracker, descriptorsWorkGraph.data(), (int)descriptorsWorkGraph.size(), descriptorTableWorkGraph, error, HEAP_DEBUG_TEXT()))
             {
-                m_logFn(LogLevel::Error, "Draw call Node \"%s\" could not allocate a descriptor table for VS: %s", node.name.c_str(), error.c_str());
+                m_logFn(LogLevel::Error, "Work Graph Node \"%s\" could not allocate a descriptor table for VS: %s", node.name.c_str(), error.c_str());
                 return false;
             }
 
@@ -373,7 +538,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
                 if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
                 {
-                    m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
+                    m_logFn(LogLevel::Error, "Work graph node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
                     return false;
                 }
 
@@ -409,29 +574,27 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         __debugbreak();
 
-        // LAUNCHGraph();
+        D3D12_DISPATCH_GRAPH_DESC dispatchDesc = {};
+        dispatchDesc.Mode = D3D12_DISPATCH_MODE_NODE_CPU_INPUT;
+        dispatchDesc.NodeCPUInput = {};
+        dispatchDesc.NodeCPUInput.EntrypointIndex = runtimeData.m_entrypointIndex;
+        // Launch graph with one record TODO: jan, make flexible
+        dispatchDesc.NodeCPUInput.NumRecords = 1;
+        // Record does not contain any data
+        dispatchDesc.NodeCPUInput.RecordStrideInBytes = 0;
+        dispatchDesc.NodeCPUInput.pRecords = nullptr;
 
-        //D3D12_DISPATCH_GRAPH_DESC dispatchDesc = {};
-        //dispatchDesc.Mode = D3D12_DISPATCH_MODE_NODE_CPU_INPUT;
-        //dispatchDesc.NodeCPUInput = {};
-        //dispatchDesc.NodeCPUInput.EntrypointIndex = entryPointIndex_;
-        //// Launch graph with one record
-        //dispatchDesc.NodeCPUInput.NumRecords = 1;
-        //// Record does not contain any data
-        //dispatchDesc.NodeCPUInput.RecordStrideInBytes = 0;
-        //dispatchDesc.NodeCPUInput.pRecords = nullptr;
-
-        //// Set program and dispatch the work graphs.
-        //// See
-        //// https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#setprogram
-        //// https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#dispatchgraph
+        // Set program and dispatch the work graphs.
+        // See
+        // https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#setprogram
+        // https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#dispatchgraph
 
         //commandList->SetProgram(&programDesc_);
         //commandList->DispatchGraph(&dispatchDesc);
 
-        //// Clear backing memory initialization flag, as the graph has run at least once now
-        //// See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#d3d12_set_work_graph_flags
-        //programDesc_.WorkGraph.Flags &= ~D3D12_SET_WORK_GRAPH_FLAG_INITIALIZE;
+        // Clear backing memory initialization flag, as the graph has run at least once now
+        // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#d3d12_set_work_graph_flags
+        runtimeData.m_programDesc.WorkGraph.Flags &= ~D3D12_SET_WORK_GRAPH_FLAG_INITIALIZE;
 
 #if ALLOW_MESH_NODES
         if (runtimeData.m_usesMeshNodes)
@@ -442,7 +605,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
                 if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
                 {
-                    m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
+                    m_logFn(LogLevel::Error, "Work graph node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
                     return false;
                 }
 
