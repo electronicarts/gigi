@@ -485,6 +485,21 @@ struct ShaderReferenceFixupVisitor
         return false;
     }
 
+    bool Visit(WorkGraphShaderReference& data, const std::string& path)
+    {
+        for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
+        {
+            if (renderGraph.shaders[index].type == ShaderType::WorkGraph && !_stricmp(renderGraph.shaders[index].name.c_str(), data.name.c_str()))
+            {
+                data.shaderIndex = index;
+                data.shader = &renderGraph.shaders[index];
+                return true;
+            }
+        }
+        Assert(false, "Could not find work graph shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        return false;
+    }
+
     bool Visit(RayGenShaderReference& data, const std::string& path)
     {
         for (int index = 0; index < (int)renderGraph.shaders.size(); ++index)
@@ -1938,6 +1953,13 @@ struct SanitizeVisitor
         return true;
     }
 
+    // sanitize WorkGraphShaderReference shader names
+    bool Visit(WorkGraphShaderReference& data, const std::string& path)
+    {
+        Sanitize(data.name);
+        return true;
+    }
+
     // sanitize RayGenShaderReference shader names
     bool Visit(RayGenShaderReference& data, const std::string& path)
     {
@@ -2224,8 +2246,15 @@ struct ShaderAssertsVisitor
             if (!ProcessNodeShader(shaderNode.shader.shader, shadersWithAsserts, path))
                 return false;
         }
+        else if (node._index == RenderGraphNode::c_index_actionWorkGraph)
+        {
+            RenderGraphNode_Action_WorkGraph& shaderNode = node.actionWorkGraph;
+            actionNodeName = shaderNode.name;
 
-        if (node._index == RenderGraphNode::c_index_actionDrawCall)
+            if (!ProcessNodeShader(shaderNode.entryShader.shader, shadersWithAsserts, path))
+                return false;
+        }
+        else if (node._index == RenderGraphNode::c_index_actionDrawCall)
         {
             RenderGraphNode_Action_DrawCall& shaderNode = node.actionDrawCall;
             actionNodeName = shaderNode.name;
@@ -2589,6 +2618,8 @@ struct ShaderAssertsVisitor
             node.actionComputeShader.connections.push_back(std::move(newConnection));
         else if (node._index == RenderGraphNode::c_index_actionDrawCall)
             node.actionDrawCall.connections.push_back(std::move(newConnection));
+        else if (node._index == RenderGraphNode::c_index_actionWorkGraph)
+            node.actionWorkGraph.connections.push_back(std::move(newConnection));
         else
         {
             ShowErrorMessage("Shaders Assert: failed to add node connection: unsupported node type '%d'", node._index);
@@ -2926,6 +2957,19 @@ struct ShaderDataVisitor
                                     shaderNode.connections.push_back(newConnection);
                                     break;
                                 }
+                                case RenderGraphNode::c_index_actionWorkGraph:
+                                {
+                                    RenderGraphNode_Action_WorkGraph& shaderNode = node.actionWorkGraph;
+                                    if (shaderNode.entryShader.name != shader.name)
+                                        continue;
+
+                                    NodePinConnection newConnection;
+                                    newConnection.srcPin = textureLoadNodeName;
+                                    newConnection.dstNode = textureLoadNodeName;
+                                    newConnection.dstPin = "resource";
+                                    shaderNode.connections.push_back(newConnection);
+                                    break;
+                                }
                                 case RenderGraphNode::c_index_actionRayShader:
                                 {
                                     RenderGraphNode_Action_RayShader& shaderNode = node.actionRayShader;
@@ -2942,7 +2986,8 @@ struct ShaderDataVisitor
                                 case RenderGraphNode::c_index_actionDrawCall:
                                 {
                                     RenderGraphNode_Action_DrawCall& shaderNode = node.actionDrawCall;
-                                    if (shaderNode.vertexShader.name != shader.name && shaderNode.pixelShader.name != shader.name)
+                                    if (shaderNode.vertexShader.name != shader.name 
+                                        && shaderNode.pixelShader.name != shader.name)
                                         continue;
 
                                     NodePinConnection newConnection;
@@ -3077,6 +3122,11 @@ struct ShaderDataVisitor
                 if (node.actionComputeShader.shader.name != shader.name)
                     continue;
             }
+            else if (node._index == RenderGraphNode::c_index_actionWorkGraph)
+            {
+                if (node.actionWorkGraph.entryShader.name != shader.name)
+                    continue;
+            }
             // ray shader
             else if (node._index == RenderGraphNode::c_index_actionRayShader)
             {
@@ -3102,6 +3152,7 @@ struct ShaderDataVisitor
             switch (node._index)
             {
                 case RenderGraphNode::c_index_actionComputeShader: node.actionComputeShader.connections.push_back(newConnection); break;
+                case RenderGraphNode::c_index_actionWorkGraph: node.actionWorkGraph.connections.push_back(newConnection); break;
                 case RenderGraphNode::c_index_actionRayShader: node.actionRayShader.connections.push_back(newConnection); break;
                 case RenderGraphNode::c_index_actionDrawCall: node.actionDrawCall.connections.push_back(newConnection); break;
             }

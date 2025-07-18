@@ -199,6 +199,11 @@ void ExecuteOnActionNode(const RenderGraphNode& node, const LAMBDA& lambda)
             lambda(node.actionComputeShader);
             break;
         }
+        case RenderGraphNode::c_index_actionWorkGraph:
+        {
+            lambda(node.actionWorkGraph);
+            break;
+        }
         case RenderGraphNode::c_index_actionRayShader:
         {
             lambda(node.actionRayShader);
@@ -588,6 +593,56 @@ namespace FrontEndNodesNoCaching
                 info.readOnly = true;
                 info.access = ShaderResourceAccessType::Indirect;
                 ret.push_back(info);
+
+                break;
+            }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                RenderGraphNode_Action_WorkGraph& node = nodeBase.actionWorkGraph;
+                for (NodePinConnection& connection : node.connections)
+                {
+                    PinInfo info;
+                    info.srcPin = connection.srcPin;
+                    info.dstNode = &connection.dstNode;
+                    info.dstPin = &connection.dstPin;
+
+                    const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::WorkGraph, node.entryShader.name.c_str(), connection.srcPin.c_str());
+                    Assert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.entryShader.name.c_str());
+                    if (shaderResource)
+                    {
+                        info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);
+                        info.access = shaderResource->access;
+                    }
+
+                    ret.push_back(info);
+                }
+
+                PinInfo info;
+                info.srcPin = "shadingRateImage";
+                info.dstNode = &node.shadingRateImage.node;
+                info.dstPin = &node.shadingRateImage.pin;
+                info.readOnly = true;
+                info.access = ShaderResourceAccessType::ShadingRate;
+                ret.push_back(info);
+
+                info.srcPin = "depthTarget";
+                info.dstNode = &node.depthTarget.node;
+                info.dstPin = &node.depthTarget.pin;
+                info.readOnly = !node.depthWrite;
+                info.access = ShaderResourceAccessType::DepthTarget;
+                ret.push_back(info);
+
+                for (int i = 0; i < node.colorTargets.size(); ++i)
+                {
+                    char pinName[256];
+                    sprintf_s(pinName, "colorTarget%i", i);
+                    info.srcPin = pinName;
+                    info.dstNode = &node.colorTargets[i].node;
+                    info.dstPin = &node.colorTargets[i].pin;
+                    info.readOnly = false;
+                    info.access = ShaderResourceAccessType::RenderTarget;
+                    ret.push_back(info);
+                }
 
                 break;
             }

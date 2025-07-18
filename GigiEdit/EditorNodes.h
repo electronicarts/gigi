@@ -447,10 +447,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     std::vector<NodePinInfo> ret;
 
     // Get the entry shader
-
-    // TODO: JAN change shadertype
-    __debugbreak();
-    int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute/*, ShaderType::WorkGraph*/, node.entry.name.c_str());
+    int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::WorkGraph, node.entryShader.name.c_str());
 
     size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_WorkGraph>(renderGraph, shaderIndex, node, 0, ret);
     node.connections.resize(numNewConnections);

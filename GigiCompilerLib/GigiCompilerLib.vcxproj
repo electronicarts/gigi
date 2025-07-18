@@ -230,6 +230,7 @@
     <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_workGraph.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_buffer.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_shaderConstants.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_texture.inl" />

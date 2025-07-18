@@ -164,6 +164,14 @@ void OnShaderResourceDelete(const Shader& shader, const std::string& resourceNam
                 shaderNodes.push_back(node.actionComputeShader.name);
                 break;
             }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                if (node.actionWorkGraph.entryShader.name != shader.name)
+                    continue;
+
+                shaderNodes.push_back(node.actionWorkGraph.name);
+                break;
+            }
             case RenderGraphNode::c_index_actionRayShader:
             {
                 if (node.actionRayShader.shader.name != shader.name)
@@ -226,6 +234,19 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
                 shaderNodes.push_back(shader.name);
 
                 for (NodePinConnection& connection : node.actionComputeShader.connections)
+                {
+                    if (connection.srcPin == oldName)
+                        connection.srcPin = newName;
+                }
+                break;
+            }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                if (node.actionWorkGraph.entryShader.name != shader.name)
+                    continue;
+                shaderNodes.push_back(shader.name);
+
+                for (NodePinConnection& connection : node.actionWorkGraph.connections)
                 {
                     if (connection.srcPin == oldName)
                         connection.srcPin = newName;
@@ -2060,6 +2081,21 @@ struct Example :
                 for (const Shader& shader : g_renderGraph.shaders)
                 {
                     if (shader.name == node.shader.name)
+                    {
+                        std::filesystem::path fullFileName = (defaultPath / std::filesystem::path(shader.fileName));
+                        ShellExecuteA(NULL, "open", fullFileName.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                        return;
+                    }
+                }
+                break;
+            }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                const RenderGraphNode_Action_WorkGraph& node = nodeBase.actionWorkGraph;
+
+                for (const Shader& shader : g_renderGraph.shaders)
+                {
+                    if (shader.name == node.entryShader.name)
                     {
                         std::filesystem::path fullFileName = (defaultPath / std::filesystem::path(shader.fileName));
                         ShellExecuteA(NULL, "open", fullFileName.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);

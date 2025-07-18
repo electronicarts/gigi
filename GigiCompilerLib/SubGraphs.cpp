@@ -386,6 +386,35 @@ struct RenameReferencesVisitor
 
                 return true;
             }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                RenderGraphNode_Action_WorkGraph& node = nodeBase.actionWorkGraph;
+
+                m_renameData.UpdateShaderName(node.entryShader.name);
+
+                m_renameData.UpdateNodeName(node.dispatchSize.node.name);
+                m_renameData.UpdateVariableName(node.dispatchSize.variable.name);
+
+                m_renameData.UpdateNodePin(node.shadingRateImage.node, node.shadingRateImage.pin);
+                m_renameData.UpdateNodeName(node.shadingRateImage.node);
+
+                for (NodePinReferenceOptional& colorTarget : node.colorTargets)
+                {
+                    m_renameData.UpdateNodePin(colorTarget.node, colorTarget.pin);
+                    m_renameData.UpdateNodeName(colorTarget.node);
+                }
+
+                m_renameData.UpdateNodePin(node.depthTarget.node, node.depthTarget.pin);
+                m_renameData.UpdateNodeName(node.depthTarget.node);
+
+                for (NodePinConnection& connection : node.connections)
+                {
+                    m_renameData.UpdateNodePin(connection.dstNode, connection.dstPin);
+                    m_renameData.UpdateNodeName(connection.dstNode);
+                }
+
+                return true;
+            }
             default:
             {
                 ShowErrorMessage("Unhandled node type in Subgraphs.cpp " __FUNCTION__);

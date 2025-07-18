@@ -368,6 +368,16 @@ inline bool RebuildConnections_PostLoad(RenderGraph& renderGraph)
             dcNode.connections.swap(newConnections);
         }
         break;
+        case RenderGraphNode::c_index_actionWorkGraph:
+        {
+            RenderGraphNode_Action_WorkGraph& wgNode = node.actionWorkGraph;
+            int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::Compute, wgNode.entryShader.name.c_str());
+            BuildConnections(renderGraph, shaderIndex, newConnections, wgNode.connections);
+
+            // get rid of all unnecessary connections (now all at the back of the vector)
+            wgNode.connections.swap(newConnections);
+        }
+        break;
         }
     }
     return true;
