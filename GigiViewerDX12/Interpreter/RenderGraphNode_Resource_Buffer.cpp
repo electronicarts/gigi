@@ -13,6 +13,9 @@
 #include <istream>
 #include <streambuf>
 #include <unordered_set>
+
+#include <DirectXMath.h>
+#include <DirectXMathMatrix.inl>
 // clang-format on
 
 void RuntimeTypes::RenderGraphNode_Resource_Buffer::Release(GigiInterpreterPreviewWindowDX12& interpreter)
@@ -498,6 +501,59 @@ static std::vector<char> LoadStructuredBufferPly(const GigiInterpreterPreviewWin
 
 static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const RenderGraph &renderGraph, const std::vector<FlattenedVertex>& flattenedVertices)
 {
+    // Get the transforms
+    DirectX::XMMATRIX transform, transformInverseTranspose;
+    {
+        memcpy(&transform, desc.buffer.GeometryTransform, sizeof(transform));
+        transformInverseTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, transform));
+    }
+
+    // See if we need to transform geometry
+    bool needsTransformation = false;
+    {
+        const float* gt = desc.buffer.GeometryTransform;
+        needsTransformation =
+            gt[0]  != 1.0f || gt[1]  != 0.0f || gt[2]  != 0.0f || gt[3]  != 0.0f ||
+            gt[4]  != 0.0f || gt[5]  != 1.0f || gt[6]  != 0.0f || gt[7]  != 0.0f ||
+            gt[8]  != 0.0f || gt[9]  != 0.0f || gt[10] != 1.0f || gt[11] != 0.0f ||
+            gt[12] != 0.0f || gt[13] != 0.0f || gt[14] != 0.0f || gt[15] != 1.0f;
+    }
+
+    // Transform position
+    auto transformPosition = [&](float* position)
+    {
+        // Transform by matrix
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(position[0], position[1], position[2], 1.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transform);
+        position[0] = result.m128_f32[0];
+        position[1] = result.m128_f32[1];
+        position[2] = result.m128_f32[2];
+    };
+
+    // Transform tangent
+    auto transformTangent = [&](float* tangent)
+    {
+        // Transform by matrix and normalize
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(tangent[0], tangent[1], tangent[2], 0.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transform);
+        result = DirectX::XMVector3Normalize(result);
+        tangent[0] = result.m128_f32[0];
+        tangent[1] = result.m128_f32[1];
+        tangent[2] = result.m128_f32[2];
+    };
+
+    // Transform normal
+    auto transformNormal = [&](float* normal)
+    {
+        // Transform by matrix inverse transpose and normalize
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(normal[0], normal[1], normal[2], 0.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transformInverseTranspose);
+        result = DirectX::XMVector3Normalize(result);
+        normal[0] = result.m128_f32[0];
+        normal[1] = result.m128_f32[1];
+        normal[2] = result.m128_f32[2];
+    };
+
 	// Allocate space to hold the results
 	const Struct& structDesc = renderGraph.structs[desc.buffer.structIndex];
 	size_t vertexCount = flattenedVertices.size();
@@ -519,11 +575,15 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 			{
 				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 				{
+                    Vec3 position = flattenedVertices[vertexIndex].position;
+                    if (needsTransformation)
+                        transformPosition(position.data());
+
 					int index = 0;
 					while (index < min(3, typeInfo.componentCount))
 					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].position.data());
-						index++;
+                        AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, position.data());
+                        index++;
 					}
 
 					while (index < typeInfo.componentCount)
@@ -557,10 +617,14 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 			{
 				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 				{
+                    Vec3 normal = flattenedVertices[vertexIndex].normal;
+                    if (needsTransformation)
+                        transformNormal(normal.data());
+
 					int index = 0;
 					while (index < min(3, typeInfo.componentCount))
 					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].normal.data());
+						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, normal.data());
 						index++;
 					}
 
@@ -576,10 +640,14 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 			{
 				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 				{
+                    Vec4 tangent = flattenedVertices[vertexIndex].tangent;
+                    if (needsTransformation)
+                        transformTangent(tangent.data());
+
 					int index = 0;
 					while (index < min(4, typeInfo.componentCount))
 					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].tangent.data());
+						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, tangent.data());
 						index++;
 					}
 
@@ -680,6 +748,35 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 
 static std::vector<char> LoadTypedBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const std::vector<FlattenedVertex>& flattenedVertices)
 {
+    // Get the transforms
+    DirectX::XMMATRIX transform, transformInverseTranspose;
+    {
+        memcpy(&transform, desc.buffer.GeometryTransform, sizeof(transform));
+        transformInverseTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, transform));
+    }
+
+    // See if we need to transform geometry
+    bool needsTransformation = false;
+    {
+        const float* gt = desc.buffer.GeometryTransform;
+        needsTransformation =
+            gt[0]  != 1.0f || gt[1]  != 0.0f || gt[2]  != 0.0f || gt[3]  != 0.0f ||
+            gt[4]  != 0.0f || gt[5]  != 1.0f || gt[6]  != 0.0f || gt[7]  != 0.0f ||
+            gt[8]  != 0.0f || gt[9]  != 0.0f || gt[10] != 1.0f || gt[11] != 0.0f ||
+            gt[12] != 0.0f || gt[13] != 0.0f || gt[14] != 0.0f || gt[15] != 1.0f;
+    }
+
+    // Transform position
+    auto transformPosition = [&](float* position)
+    {
+        // Transform by matrix
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(position[0], position[1], position[2], 1.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transform);
+        position[0] = result.m128_f32[0];
+        position[1] = result.m128_f32[1];
+        position[2] = result.m128_f32[2];
+    };
+
 	// Allocate space to hold the results
 	DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(desc.buffer.type);
 	size_t vertexCount = flattenedVertices.size();
@@ -689,10 +786,14 @@ static std::vector<char> LoadTypedBuffer(const GigiInterpreterPreviewWindowDX12:
 	// gather the data
 	for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
+        Vec3 position = flattenedVertices[vertexIndex].position;
+        if (needsTransformation)
+            transformPosition(position.data());
+
 		int index = 0;
 		while (index < min(3, typeInfo.componentCount))
 		{
-			AssignWithCast(&ret[vertexIndex * destVertexSize], index, typeInfo.componentType, flattenedVertices[vertexIndex].position.data());
+			AssignWithCast(&ret[vertexIndex * destVertexSize], index, typeInfo.componentType, position.data());
 			index++;
 		}
 
@@ -1030,6 +1131,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			std::ostringstream ss;
 			ss << "Not enough info to create buffer.";
 			runtimeData.m_renderGraphText = ss.str();
+            runtimeData.m_inErrorState = true;
 		}
 
 		// (Re)Create a buffer, as necessary
@@ -1364,6 +1466,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 			else
 				ss << "Cannot determine format.";
 			runtimeData.m_renderGraphText = ss.str();
+            runtimeData.m_inErrorState = true;
 		}
 	}
 

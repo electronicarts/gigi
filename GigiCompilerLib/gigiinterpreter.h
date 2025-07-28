@@ -359,20 +359,15 @@ public:
 		m_renderGraph = RenderGraph(); // clear out any stuff that may be there in the render graph already.
 
 		// Get a Gigi temporary directory based on the process ID so multiple viewers can run at once
-		m_tempDirectory = std::filesystem::temp_directory_path().string();
-		m_tempDirectory += "Gigi\\";
-		char pid[256];
-		sprintf_s(pid, "%i", _getpid());
-		m_tempDirectory += pid;
-		m_tempDirectory += "\\";
+        std::string tempDirectory = GetTempDirectory();
 
 		// Remove everything aready there, to prevent stale things interfering
 		// Then, make sure the directory is created
 		std::error_code ec;
-		std::filesystem::remove_all(m_tempDirectory.c_str(), ec);
-		std::filesystem::create_directories(m_tempDirectory.c_str(), ec);
+		std::filesystem::remove_all(tempDirectory.c_str(), ec);
+		std::filesystem::create_directories(tempDirectory.c_str(), ec);
 
-		m_compileResult = GigiCompile(GigiBuildFlavor::Interpreter_Interpreter, fileName, m_tempDirectory.c_str(), PostLoad, &m_renderGraph, false);
+		m_compileResult = GigiCompile(GigiBuildFlavor::Interpreter_Interpreter, fileName, tempDirectory.c_str(), PostLoad, &m_renderGraph, false);
 		if (m_compileResult != GigiCompileResult::OK)
 			return m_compileResult;
 
@@ -399,7 +394,9 @@ public:
 #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION)                                                                                            \
 	case RenderGraphNode::c_index_##_NAME:                                                                                                            \
 	{                                                                                                                                                 \
-		if (!OnNodeAction(node.##_NAME, m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name), NodeAction::Init))                                    \
+        auto& runtimeData = m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name);                                                                   \
+        runtimeData.m_inErrorState = false;                                                                                                           \
+		if (!OnNodeAction(node.##_NAME, runtimeData, NodeAction::Init))                                                                               \
 		{                                                                                                                                             \
 			m_logFn(LogLevel::Error, "Error during IGigiInterpreter::Compile OnNodeAction(Init) in node %s (" #_NAME ")", node.##_NAME.name.c_str()); \
 			return GigiCompileResult::InterpreterError;                                                                                               \
@@ -648,26 +645,25 @@ public:
 		}
 	}
 
-	// Returns false if the cast is a no-op, and no work was done
-	bool CastTypedBinaryValues(void* srcBytes, DataFieldType srcType, std::vector<char>& destBytes, DataFieldType destType)
+	// Converts the components of srcBytes to the component type of destType
+	void CastTypedBinaryValues(void* srcBytes, DataFieldType srcType, std::vector<char>& destBytes, DataFieldType destType)
 	{
 		DataFieldTypeInfoStruct srcTypeInfo = DataFieldTypeInfo(srcType);
 		DataFieldTypeInfoStruct destTypeInfo = DataFieldTypeInfo(destType);
 
-		Assert(srcTypeInfo.componentCount == destTypeInfo.componentCount, __FUNCTION__ " failed because they have different component counts!");
-
 		if (srcTypeInfo.componentType == destTypeInfo.componentType)
-			return false;
+			return;
 
-		destBytes.resize(destTypeInfo.typeBytes);
-		for (int componentIndex = 0; componentIndex < destTypeInfo.componentCount; ++componentIndex)
+		destBytes.resize(destTypeInfo.componentBytes * srcTypeInfo.componentCount);
+
+		for (int componentIndex = 0; componentIndex < srcTypeInfo.componentCount; ++componentIndex)
 		{
 			const void* src = &(((const char*)srcBytes)[srcTypeInfo.componentBytes * componentIndex]);
 			void* dest = &destBytes[destTypeInfo.componentBytes * componentIndex];
 			ConvertTypedBinaryValue(src, srcTypeInfo.componentType, dest, destTypeInfo.componentType);
 		}
 
-		return true;
+		return;
 	}
 
 	void ExecuteSetvar(const SetVariable& setVar)
@@ -944,7 +940,9 @@ public:
 #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION)                                                            \
 	case RenderGraphNode::c_index_##_NAME:                                                                            \
 	{                                                                                                                 \
-		if (!OnNodeAction(node.##_NAME, m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name), NodeAction::Execute)) \
+        auto& runtimeData = m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name);                                   \
+        runtimeData.m_inErrorState = false;                                                                           \
+		if (!OnNodeAction(node.##_NAME, runtimeData, NodeAction::Execute))                                            \
 			return false;                                                                                             \
 		break;                                                                                                        \
 	}
@@ -1141,7 +1139,14 @@ public:
 
 	std::string GetTempDirectory() const
 	{
-		return m_tempDirectory;
+        // Get a Gigi temporary directory based on the process ID so multiple viewers can run at once
+        std::string tempDirectory = std::filesystem::temp_directory_path().string();
+        tempDirectory += "Gigi\\";
+        char pid[256];
+        sprintf_s(pid, "%i", _getpid());
+        tempDirectory += pid;
+        tempDirectory += "\\";
+        return tempDirectory;
 	}
 
 protected:
@@ -1197,7 +1202,6 @@ private:
 protected:
 	GigiCompileResult m_compileResult = GigiCompileResult::NotCompiledYet;
 	RenderGraph		  m_renderGraph;
-	std::string		  m_tempDirectory;
 
 	VariableStorage				 m_variableStorage;
 	std::vector<RuntimeVariable> m_runtimeVariables;

@@ -22,8 +22,16 @@ static bool UpdateRepo(const char* path, const char* repoURL, const char* checko
 	// If the repo already exists, we just need to do a pull
 	if (std::filesystem::exists(gitDir / ".git/"))
 	{
-		// Configure sparse checkout
-		RunCommandLine(true, "external/git/cmd/git -C \"%s\" sparse-checkout set%s %s", gitDir.string().c_str(), areDirectories ? "" : " --no-cone", sparseFileList);
+        if (areDirectories && sparseFileList[0] == 0)
+        {
+            // Disable sparse checkout if we are grabbing the full repo
+            RunCommandLine(true, "external/git/cmd/git -C \"%s\" sparse-checkout disable", gitDir.string().c_str());
+        }
+        else
+        {
+            // Configure sparse checkout
+            RunCommandLine(true, "external/git/cmd/git -C \"%s\" sparse-checkout set%s %s", gitDir.string().c_str(), areDirectories ? "" : " --no-cone", sparseFileList);
+        }
 
 		// Pull
 		RunCommandLine(true, "external/git/cmd/git -C \"%s\" pull", gitDir.string().c_str());

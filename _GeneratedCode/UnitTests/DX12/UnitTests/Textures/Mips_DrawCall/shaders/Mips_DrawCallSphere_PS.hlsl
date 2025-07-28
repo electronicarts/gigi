@@ -33,7 +33,7 @@ PSOutput PSMain(PSInput input)
 	float4 texLinear = MipTex.Sample(LinearWrap, float3(input.UV * 2.0f, 0.0f));
 	float4 texPoint = MipTex.Sample(PointWrap, float3(input.UV * 2.0f, 0.0f));
 
-	ret.colorTarget = _PixelShaderSphereCB.UseMips
+	ret.colorTarget = (bool)_PixelShaderSphereCB.UseMips
 		? float4(texLinear.rgb, 1.0f)
 		: float4(texPoint.rgb, 1.0f)
 	;

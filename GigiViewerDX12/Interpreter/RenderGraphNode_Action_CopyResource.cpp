@@ -50,6 +50,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					if (!destExists || !destRT.m_resource)
 						ss << "destination resource not created: \"" << destNodeName << "\"\n";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -127,6 +128,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					if (!destExists || !destRT.m_resource)
 						ss << "destination resource not created: \"" << destNodeName << "\"\n";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -177,6 +179,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					if (!destExists || !destRT.m_resource)
 						ss << "destination resource not created: \"" << destNodeName << "\"\n";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -239,6 +242,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					if (!destExists || !destRT.m_resource)
 						ss << "destination resource not created: \"" << destNodeName << "\"\n";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 

@@ -329,9 +329,7 @@ inline bool LoadFile(const std::string& fileName, std::vector<unsigned char>& da
 inline void WriteFileIfDifferent(const std::string& fileName, const std::string& contents)
 {
     // make sure the directory exists
-    size_t lastindex = fileName.find_last_of("/\\");
-    std::string dirName = fileName.substr(0, lastindex);
-    std::filesystem::create_directories(dirName);
+    std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename());
 
     // If the file already exists and is the same, don't do anything
     FILE* file = nullptr;
@@ -361,16 +359,17 @@ inline void WriteFileIfDifferent(const std::string& fileName, const std::string&
 
     // write the file
     fopen_s(&file, fileName.c_str(), "wb");
-    fwrite(contents.data(), contents.size(), 1, file);
-    fclose(file);
+    if (file)
+    {
+        fwrite(contents.data(), contents.size(), 1, file);
+        fclose(file);
+    }
 }
 
 inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<unsigned char>& contents)
 {
     // make sure the directory exists
-    size_t lastindex = fileName.find_last_of("/\\");
-    std::string dirName = fileName.substr(0, lastindex);
-    std::filesystem::create_directories(dirName);
+    std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename());
 
     // If the file already exists and is the same, don't do anything
     FILE* file = nullptr;
@@ -400,8 +399,11 @@ inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<
 
     // write the file
     fopen_s(&file, fileName.c_str(), "wb");
-    fwrite(contents.data(), contents.size(), 1, file);
-    fclose(file);
+    if (file)
+    {
+        fwrite(contents.data(), contents.size(), 1, file);
+        fclose(file);
+    }
 }
 
 inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph)

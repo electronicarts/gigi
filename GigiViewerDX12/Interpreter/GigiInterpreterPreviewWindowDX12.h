@@ -573,6 +573,14 @@ public:
 		GGUserFile_BLASCullMode BLASCullMode = GGUserFile_BLASCullMode::CullNone;
 		bool IsAABBs = false; // only for ray tracing AABBs which have an intersection shader
 
+        float GeometryTransform[16] =
+        {
+            1.0f, 0.0f, 0.0f, 0.0f,
+            0.0f, 1.0f, 0.0f, 0.0f,
+            0.0f, 0.0f, 1.0f, 0.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+        };
+
 		// Cooperative vectors
 		CooperativeVectorData cvData;
 	};

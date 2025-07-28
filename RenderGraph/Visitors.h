@@ -1698,6 +1698,15 @@ struct ValidationVisitor
             return false;
         }
 
+        if (!variable.onUserChange.name.empty())
+        {
+            int variableIndex = GetVariableIndex(renderGraph, variable.onUserChange.name.c_str());
+            Assert(variableIndex != -1, "Could not find variable \"%s\".\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            const Variable& variable = renderGraph.variables[variableIndex];
+            Assert(!variable.Const, "Variable \"%s\" cannot be const.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            Assert(variable.type == DataFieldType::Bool, "Variable \"%s\" must be a bool.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+        }
+
         return true;
     }
 

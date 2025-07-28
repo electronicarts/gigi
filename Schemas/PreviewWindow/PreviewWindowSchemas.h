@@ -90,6 +90,8 @@ STRUCT_BEGIN(GGUserFile_ImportedBuffer, "The details of an imported buffer")
 	STRUCT_FIELD(GGUserFile_BLASCullMode, BLASCullMode, GGUserFile_BLASCullMode::CullNone, "BLAS triangle culling settings", 0)
 	STRUCT_FIELD(bool, IsAABBs, false, "Set to true if ray tracing AABBs with intersection shaders. Format is Min XYZ, Max XYZ.", 0)
 
+    STRUCT_STATIC_ARRAY(float, GeometryTransform, 16, { 1.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 1.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 1.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 1.0f }, "A 4x4 matrix to transform pos, normal, tangent.", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
+
 	STRUCT_FIELD(CooperativeVectorData, cvData, {}, "Data needed for cooperative vectors support for imported buffer resources", 0)
 STRUCT_END()
 
@@ -207,6 +209,18 @@ STRUCT_END()
 
 STRUCT_BEGIN(GGUserFileVersionOnly, "Only the version of the .gguser file")
 	STRUCT_FIELD(std::string, version, "1.0", "The version of the .gguser file", SCHEMA_FLAG_SERIALIZE_DFLT)
+STRUCT_END()
+
+STRUCT_BEGIN(GGViewerConfig, "The config file for the viewer settings file ViewerConfig.json")
+    STRUCT_FIELD(std::string, version, "1.0", "The version of the file", SCHEMA_FLAG_SERIALIZE_DFLT)
+    STRUCT_FIELD(std::string, keyCameraForward, "W", "Camera forward key", 0)
+    STRUCT_FIELD(std::string, keyCameraLeft, "A", "Camera left key", 0)
+    STRUCT_FIELD(std::string, keyCameraBackward, "S", "Camera back key", 0)
+    STRUCT_FIELD(std::string, keyCameraRight, "D", "Camera right key", 0)
+    STRUCT_FIELD(std::string, keyCameraUp, "E", "Camera right key", 0)
+    STRUCT_FIELD(std::string, keyCameraDown, "Q", "Camera down key", 0)
+    STRUCT_FIELD(std::string, keyCameraFast, "Shift", "Camera fast key", 0)
+    STRUCT_FIELD(std::string, keyCameraSlow, "Control", "Camera slow key", 0)
 STRUCT_END()
 
 #define GGUserFileLatest GGUserFileV2
