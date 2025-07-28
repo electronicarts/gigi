@@ -53,8 +53,6 @@ ENUM_BEGIN(ShaderResourceAccessType, "The type of a shader resource")
     ENUM_ITEM(Count, "")
 ENUM_END()
 
-#include "DataFieldTypes.h"
-
 ENUM_BEGIN(TextureViewType, "The type that a texture is actually viewed as, in a shader. A subset of DataFieldType.")
     ENUM_ITEM(Int, "int")
     ENUM_ITEM(Int4, "int[4]")
@@ -133,24 +131,6 @@ STRUCT_BEGIN(CooperativeVectorData, "Data needed for cooperative vectors support
     STRUCT_FIELD(CooperativeVectorBufferLayout, srcLayout, CooperativeVectorBufferLayout::RowMajor, "The layout of the source data.", 0)
     STRUCT_FIELD(CooperativeVectorDataType, destType, CooperativeVectorDataType::_float16, "The data type you want it to be converted to.", 0)
     STRUCT_FIELD(CooperativeVectorBufferLayout, destLayout, CooperativeVectorBufferLayout::RowMajor, "The layout you want it to be converted to.", 0)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReference, "A reference to a variable")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReferenceNoConst, "A reference to a variable. No const variables allowed.")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReferenceConstOnly, "A reference to a variable. Only const variables allowed.")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(StructReference, "A reference to a struct")

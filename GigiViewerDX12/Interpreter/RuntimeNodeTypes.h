@@ -85,6 +85,7 @@ struct RuntimeTypes
 		std::vector<ViewableResource> m_viewableResources;
 		int m_viewableResourceIndex = 0;
 		std::string m_renderGraphText;
+        bool m_inErrorState = false;
 	};
 
 	struct RenderGraphNode_Resource_Buffer : public RenderGraphNode_Base

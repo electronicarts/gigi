@@ -214,10 +214,15 @@ bool ConvertPixelData(TextureCache::Texture& texture, DXGI_FORMAT newFormat)
 	if (texture.format == newFormat)
 		return true;
 
+    DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(texture.format);
+    DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(newFormat);
+
+    // if either format is unknown, we can't do it
+    if (textureFormatInfo.format == DXGI_FORMAT_UNKNOWN || newFormatInfo.format == DXGI_FORMAT_UNKNOWN)
+        return false;
+
 	// We don't do conversion on compressed image formats
 	// We do allow implicit conversion between compatible compressed types though.
-	DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(texture.format);
-	DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(newFormat);
 	if (textureFormatInfo.isCompressed || newFormatInfo.isCompressed)
 	{
 		DXGI_FORMAT fmtA = min(texture.format, newFormat);
@@ -949,6 +954,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 		if (desc.state == ImportedResourceState::failed)
 		{
 			runtimeData.m_renderGraphText = "\nCreation Failed";
+            runtimeData.m_inErrorState = true;
 			return true;
 		}
 
@@ -1098,7 +1104,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 
 		bool hasSize = desiredSize[0] != 0 && desiredSize[1] != 0 && desiredSize[2] != 0;
 		bool hasFileName = !node.loadFileName.empty() && FileNameSafe(node.loadFileName.c_str());
-		std::string fullLoadFileName = m_tempDirectory + "assets\\" + node.loadFileName;
+		std::string fullLoadFileName = GetTempDirectory() + "assets\\" + node.loadFileName;
 
 		if (!(desiredFormat != DXGI_FORMAT_FORCE_UINT && (hasSize || hasFileName) && !runtimeData.m_failed))
 		{
@@ -1123,6 +1129,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 			}
 
 			runtimeData.m_renderGraphText = ss.str();
+            runtimeData.m_inErrorState = true;
 
 			return true;
 		}

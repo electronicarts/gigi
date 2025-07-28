@@ -1497,7 +1497,15 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     return UIOverrideResult::Finished;
 }
 
-inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+enum ShowUIOverride_ConstRequirement
+{
+    None,
+    Const,
+    NotConst
+};
+
+template <typename TReference>
+inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None, DataFieldType dataFieldRequirement = DataFieldType::Count)
 {
     ImGui::PushID(label);
 
@@ -1506,7 +1514,22 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
         // Sort the list of variables
         std::vector<std::string> vars;
         for (const Variable& var : renderGraph.variables)
+        {
+            bool validVar = true;
+            switch (constRequirement)
+            {
+                case ShowUIOverride_ConstRequirement::Const: validVar &= (var.Const == true); break;
+                case ShowUIOverride_ConstRequirement::NotConst: validVar &= (var.Const != true); break;
+            }
+            if (dataFieldRequirement != DataFieldType::Count)
+                validVar &= (var.type == dataFieldRequirement);
+
+            if (!validVar)
+                continue;
+
             vars.push_back(var.name);
+        }
+
         CaseInsensitiveSort(vars);
 
         // add a blank to the beginning
@@ -1538,100 +1561,34 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     ImGui::PopID();
 
     return UIOverrideResult::Finished;
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None;
+    DataFieldType dataFieldRequirement = DataFieldType::Count;
+
+    switch (path())
+    {
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_variables, TypePaths::Variable::cStruct, TypePaths::Variable::c_onUserChange)():
+        {
+            constRequirement = ShowUIOverride_ConstRequirement::NotConst;
+            dataFieldRequirement = DataFieldType::Bool;
+            break;
+        }
+    }
+
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, constRequirement, dataFieldRequirement);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceNoConst& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        // Sort the list of variables
-        std::vector<std::string> vars;
-        for (const Variable& var : renderGraph.variables)
-        {
-            if (var.Const)
-                continue;
-            vars.push_back(var.name);
-        }
-        CaseInsensitiveSort(vars);
-
-        // add a blank to the beginning
-        vars.insert(vars.begin(), "");
-
-        // Show a drop down
-        for (const std::string& label : vars)
-        {
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
-        OnGoToVariable(value.name.c_str());
-    ShowUIToolTip("Go to Variable");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, ShowUIOverride_ConstRequirement::NotConst);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceConstOnly& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        // Sort the list of variables
-        std::vector<std::string> vars;
-        for (const Variable& var : renderGraph.variables)
-        {
-            if (!var.Const)
-                continue;
-            vars.push_back(var.name);
-        }
-        CaseInsensitiveSort(vars);
-
-        // add a blank to the beginning
-        vars.insert(vars.begin(), "");
-
-        // Show a drop down
-        for (const std::string& label : vars)
-        {
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
-        OnGoToVariable(value.name.c_str());
-    ShowUIToolTip("Go to Variable");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, ShowUIOverride_ConstRequirement::Const);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, StructReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
@@ -1673,6 +1630,7 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
 {
     if (ImGui::Button("Refresh GG File Data"))
         dirtyFlag = RefreshSubGraphNode(node);
+    node.condition.hideUI = true;
     return UIOverrideResult::Continue;
 }
 
@@ -2151,6 +2109,12 @@ struct ShaderTypeCodeGenerator
     const Shader& m_shader;
     FILE* m_file = nullptr;
 };
+
+template<>
+inline UIOverrideResult ShowUIOverride<Condition>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, Condition& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
 
 template<>
 inline UIOverrideResult ShowUIOverride<ShaderResourceBuffer>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceBuffer& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)

@@ -33,7 +33,7 @@ void GigiInterpreterPreviewWindowDX12::OnRootSignature(ID3DBlob *sig, const Shad
 	{
 		const std::string& destFileName = shader->destFileName;
 		const std::filesystem::path directoryPath = "./ShaderDebugInfo";
-		std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / destFileName).stem().string();
+		std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / destFileName).stem().string();
 
 		if (!std::filesystem::exists(directoryPath))
 			std::filesystem::create_directories(directoryPath);
@@ -242,7 +242,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		// Make the PSO
 		{
 			// shader defines
-			std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / node.shader.shader->destFileName).string();
+			std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / node.shader.shader->destFileName).string();
 
 			// Shader compilation depends on which shader compiler they opted to use for this technique
 			ShaderCompilationInfo shaderCompilationInfo;
@@ -312,7 +312,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 			for (const std::string& fileName : allShaderFiles)
 			{
-				std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(m_tempDirectory) / "shaders")).string();
+				std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 				m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 			}
 
@@ -501,6 +501,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					std::ostringstream ss;
 					ss << "Cannot run due to resource not existing:\n" << GetNodeTypeString(resourceNode) << " \"" << GetNodeName(resourceNode) << "\" (\"" << GetNodeOriginalName(resourceNode) << "\")";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 

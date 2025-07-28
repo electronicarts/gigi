@@ -109,7 +109,7 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 
 	// Write the normalized height into the red channel, and the ball into the green channel
 	float color = height / maxHeight;
-	if (_RenderCB.QuantizeDisplay)
+	if ((bool)_RenderCB.QuantizeDisplay)
 		color = floor(color * 64.0f + 0.5f) / 64.0f;
 	Output[px] = float4(LinearToSRGB(float3(color, ball, 0.0f)), 1.0f);
 }

@@ -573,7 +573,7 @@ void Browser::ShowBrowserWindow()
 			ImGui::PopStyleColor();
 
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-				ImGui::SetTooltip("For information about how to share techniques, or how the sharing system works,\nplease see UserDocumentation/GigiBrowser_Documentation.pdf");
+				ImGui::SetTooltip("For information about how to share techniques, or how the sharing system works,\nplease see readme/BrowserSharing.md");
 		}
 
 		if (ImGui::Button("Open Editor"))

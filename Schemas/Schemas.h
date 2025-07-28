@@ -5,8 +5,9 @@
 
 // clang-format off
 #include "SchemasCommon.h"
-#include "SchemasShaders.h"
+#include "DataFieldTypes.h"
 #include "SchemasVariables.h"
+#include "SchemasShaders.h"
 #include "RenderGraphNodes.h"
 #include "PreviewWindow/PreviewWindowSchemas.h"
 #include "Browser/BrowserSchemas.h"
@@ -88,7 +89,7 @@ STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
     STRUCT_FIELD(bool, debugNames, true, "If true, sets debug names to GPU objects on available platforms.", 0)
     STRUCT_FIELD(bool, debugShaders, true, "If true, compiles shaders with debug options turned on, on available platforms.", 0)
     STRUCT_FIELD(bool, shaderWarningAsErrors, false, "If true, compiles shaders with warnings as errors turned on", 0)
-    STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging.", 0)
+    STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging. Also needed for rga.exe to run.", 0)
 	STRUCT_FIELD(std::string, rgaPath, "C:\\Apps\\RadeonDeveloperToolSuite\\rga.exe", "The default path where rga.exe can be found.\nThis is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.\nsee https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute", 0)
 	STRUCT_FIELD(std::string, rgaASIC, "gfx1032", "The hardware generation to target for rga.exe\ngfx1032: AMD Radeon PRO W6600\nSee .bat for more info", 0)
 STRUCT_END()

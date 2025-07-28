@@ -28,8 +28,9 @@ static void ShowToolTip(const char* tooltip)
 		ImGui::SetTooltip("%s", tooltip);
 }
 
-static void ShowUI_Int(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Int(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.enumIndex != -1)
 	{
 		const Enum& e = renderGraph.enums[variable.enumIndex];
@@ -38,7 +39,7 @@ static void ShowUI_Int(const RenderGraph& renderGraph, const bool paused, const 
 		for (const EnumItem& item : e.items)
 			labels.push_back(item.displayLabel.c_str());
 
-		ImGui::Combo(variable.originalName.c_str(), (int*)storage, labels.data(), (int)labels.size());
+		ret = ImGui::Combo(variable.originalName.c_str(), (int*)storage, labels.data(), (int)labels.size());
 	}
 	else
 	{
@@ -57,7 +58,7 @@ static void ShowUI_Int(const RenderGraph& renderGraph, const bool paused, const 
 			if (!variable.UISettings.max.empty())
 				sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-			ImGui::DragInt(variable.originalName.c_str(), (int*)storage, speed, min, max);
+            ret = ImGui::DragInt(variable.originalName.c_str(), (int*)storage, speed, min, max);
 		}
 		else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 		{
@@ -70,15 +71,17 @@ static void ShowUI_Int(const RenderGraph& renderGraph, const bool paused, const 
 			if (!variable.UISettings.max.empty())
 				sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-			ImGui::SliderInt(variable.originalName.c_str(), (int*)storage, min, max);
+            ret = ImGui::SliderInt(variable.originalName.c_str(), (int*)storage, min, max);
 		}
 		else
-			ImGui::InputInt(variable.originalName.c_str(), (int*)storage);
+            ret = ImGui::InputInt(variable.originalName.c_str(), (int*)storage);
 	}
+    return ret;
 }
 
-static void ShowUI_Int2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Int2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
 		float speed = 1.0f;
@@ -94,7 +97,7 @@ static void ShowUI_Int2(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt2(variable.originalName.c_str(), (int*)storage, speed, min, max);
+        ret = ImGui::DragInt2(variable.originalName.c_str(), (int*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -107,14 +110,16 @@ static void ShowUI_Int2(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt2(variable.originalName.c_str(), (int*)storage, min, max);
+        ret = ImGui::SliderInt2(variable.originalName.c_str(), (int*)storage, min, max);
 	}
 	else
-		ImGui::InputInt2(variable.originalName.c_str(), (int*)storage);
+		ret = ImGui::InputInt2(variable.originalName.c_str(), (int*)storage);
+    return ret;
 }
 
-static void ShowUI_Int3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Int3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
 		float speed = 1.0f;
@@ -130,7 +135,7 @@ static void ShowUI_Int3(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt3(variable.originalName.c_str(), (int*)storage, speed, min, max);
+        ret = ImGui::DragInt3(variable.originalName.c_str(), (int*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -143,14 +148,16 @@ static void ShowUI_Int3(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt3(variable.originalName.c_str(), (int*)storage, min, max);
+        ret = ImGui::SliderInt3(variable.originalName.c_str(), (int*)storage, min, max);
 	}
 	else
-		ImGui::InputInt3(variable.originalName.c_str(), (int*)storage);
+		ret = ImGui::InputInt3(variable.originalName.c_str(), (int*)storage);
+    return ret;
 }
 
-static void ShowUI_Int4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Int4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
 		float speed = 1.0f;
@@ -166,7 +173,7 @@ static void ShowUI_Int4(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt4(variable.originalName.c_str(), (int*)storage, speed, min, max);
+        ret = ImGui::DragInt4(variable.originalName.c_str(), (int*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -179,14 +186,16 @@ static void ShowUI_Int4(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt4(variable.originalName.c_str(), (int*)storage, min, max);
+        ret = ImGui::SliderInt4(variable.originalName.c_str(), (int*)storage, min, max);
 	}
 	else
-		ImGui::InputInt4(variable.originalName.c_str(), (int*)storage);
+        ret = ImGui::InputInt4(variable.originalName.c_str(), (int*)storage);
+    return ret;
 }
 
-static void ShowUI_Uint(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Uint(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0] };
 
@@ -205,7 +214,7 @@ static void ShowUI_Uint(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
+		ret = ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -218,16 +227,18 @@ static void ShowUI_Uint(const RenderGraph& renderGraph, const bool paused, const
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt(variable.originalName.c_str(), v);
+        ret = ImGui::InputInt(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
+    return ret;
 }
 
-static void ShowUI_Uint2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Uint2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0], (int)v2[1] };
 
@@ -246,7 +257,7 @@ static void ShowUI_Uint2(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt2(variable.originalName.c_str(), v, speed, min, max);
+        ret = ImGui::DragInt2(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -259,17 +270,19 @@ static void ShowUI_Uint2(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt2(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt2(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt2(variable.originalName.c_str(), v);
+        ret = ImGui::InputInt2(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
 	v2[1] = v[1];
+    return ret;
 }
 
-static void ShowUI_Uint3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Uint3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0], (int)v2[1], (int)v2[2] };
 
@@ -288,7 +301,7 @@ static void ShowUI_Uint3(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt3(variable.originalName.c_str(), v, speed, min, max);
+        ret = ImGui::DragInt3(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -301,18 +314,20 @@ static void ShowUI_Uint3(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt3(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt3(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt3(variable.originalName.c_str(), v);
+        ret = ImGui::InputInt3(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
 	v2[1] = v[1];
 	v2[2] = v[2];
+    return ret;
 }
 
-static void ShowUI_Uint4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Uint4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	unsigned int* v2  = (unsigned int*)storage;
 	int			  v[] = { (int)v2[0], (int)v2[1], (int)v2[2], (int)v2[3] };
 
@@ -331,7 +346,7 @@ static void ShowUI_Uint4(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt4(variable.originalName.c_str(), v, speed, min, max);
+        ret = ImGui::DragInt4(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -344,22 +359,24 @@ static void ShowUI_Uint4(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt4(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt4(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt4(variable.originalName.c_str(), v);
+		ret = ImGui::InputInt4(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
 	v2[1] = v[1];
 	v2[2] = v[2];
 	v2[3] = v[3];
+    return ret;
 }
 
-static void ShowUI_Float(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Float(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Angle)
 	{
-		ImGui::SliderAngle(variable.originalName.c_str(), (float*)storage);
+        ret = ImGui::SliderAngle(variable.originalName.c_str(), (float*)storage);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
@@ -376,7 +393,7 @@ static void ShowUI_Float(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::DragFloat(variable.originalName.c_str(), (float*)storage, speed, min, max);
+        ret = ImGui::DragFloat(variable.originalName.c_str(), (float*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -389,16 +406,18 @@ static void ShowUI_Float(const RenderGraph& renderGraph, const bool paused, cons
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::SliderFloat(variable.originalName.c_str(), (float*)storage, min, max);
+        ret = ImGui::SliderFloat(variable.originalName.c_str(), (float*)storage, min, max);
 	}
 	else
 	{
-		ImGui::InputFloat(variable.originalName.c_str(), (float*)storage);
+        ret = ImGui::InputFloat(variable.originalName.c_str(), (float*)storage);
 	}
+    return ret;
 }
 
-static void ShowUI_Float2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Float2(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
 		float speed = 1.0f;
@@ -414,7 +433,7 @@ static void ShowUI_Float2(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::DragFloat2(variable.originalName.c_str(), (float*)storage, speed, min, max);
+        ret = ImGui::DragFloat2(variable.originalName.c_str(), (float*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -427,18 +446,20 @@ static void ShowUI_Float2(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::SliderFloat2(variable.originalName.c_str(), (float*)storage, min, max);
+        ret = ImGui::SliderFloat2(variable.originalName.c_str(), (float*)storage, min, max);
 	}
 	else
 	{
-		ImGui::InputFloat2(variable.originalName.c_str(), (float*)storage);
+        ret = ImGui::InputFloat2(variable.originalName.c_str(), (float*)storage);
 	}
+    return ret;
 }
 
-static void ShowUI_Float3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Float3(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Color)
-		ImGui::ColorEdit3(variable.originalName.c_str(), (float*)storage);
+        ret = ImGui::ColorEdit3(variable.originalName.c_str(), (float*)storage);
 	else if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
 		float speed = 1.0f;
@@ -454,7 +475,7 @@ static void ShowUI_Float3(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::DragFloat3(variable.originalName.c_str(), (float*)storage, speed, min, max);
+        ret = ImGui::DragFloat3(variable.originalName.c_str(), (float*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -467,18 +488,20 @@ static void ShowUI_Float3(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::SliderFloat3(variable.originalName.c_str(), (float*)storage, min, max);
+        ret = ImGui::SliderFloat3(variable.originalName.c_str(), (float*)storage, min, max);
 	}
 	else
 	{
-		ImGui::InputFloat3(variable.originalName.c_str(), (float*)storage);
+        ret = ImGui::InputFloat3(variable.originalName.c_str(), (float*)storage);
 	}
+    return ret;
 }
 
-static void ShowUI_Float4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Float4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	if (variable.UISettings.UIHint == VariableUIHint::Color)
-		ImGui::ColorEdit4(variable.originalName.c_str(), (float*)storage, ImGuiColorEditFlags_AlphaPreview);
+        ret = ImGui::ColorEdit4(variable.originalName.c_str(), (float*)storage, ImGuiColorEditFlags_AlphaPreview);
 	else if (variable.UISettings.UIHint == VariableUIHint::Drag)
 	{
 		float speed = 1.0f;
@@ -494,7 +517,7 @@ static void ShowUI_Float4(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::DragFloat4(variable.originalName.c_str(), (float*)storage, speed, min, max);
+        ret = ImGui::DragFloat4(variable.originalName.c_str(), (float*)storage, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -507,34 +530,43 @@ static void ShowUI_Float4(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-		ImGui::SliderFloat4(variable.originalName.c_str(), (float*)storage, min, max);
+        ret = ImGui::SliderFloat4(variable.originalName.c_str(), (float*)storage, min, max);
 	}
 	else
 	{
-		ImGui::InputFloat4(variable.originalName.c_str(), (float*)storage);
+        ret = ImGui::InputFloat4(variable.originalName.c_str(), (float*)storage);
 	}
+    return ret;
 }
 
-static void ShowUI_Bool(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Bool(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
-	if (!paused && variable.UISettings.UIHint == VariableUIHint::Button)
-		*(bool*)storage = ImGui::Button(variable.originalName.c_str());
+    bool ret = false;
+    if (!paused && variable.UISettings.UIHint == VariableUIHint::Button)
+    {
+        *(bool*)storage = ImGui::Button(variable.originalName.c_str());
+        ret = *(bool*)storage;
+    }
 	else
-		ImGui_Checkbox(variable.originalName.c_str(), (bool*)storage);
+        ret = ImGui_Checkbox(variable.originalName.c_str(), (bool*)storage);
+    return ret;
 }
 
-static void ShowUI_Float4x4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Float4x4(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	ShowUI_StartGap();
 	ImGui::Text(variable.originalName.c_str());
-	ImGui::InputFloat4("row 0", (float*)storage + 0);
-	ImGui::InputFloat4("row 1", (float*)storage + 4);
-	ImGui::InputFloat4("row 2", (float*)storage + 8);
-	ImGui::InputFloat4("row 3", (float*)storage + 12);
+	ret |= ImGui::InputFloat4("row 0", (float*)storage + 0);
+    ret |= ImGui::InputFloat4("row 1", (float*)storage + 4);
+    ret |= ImGui::InputFloat4("row 2", (float*)storage + 8);
+    ret |= ImGui::InputFloat4("row 3", (float*)storage + 12);
+    return ret;
 }
 
-static void ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	uint16_t* v2  = (uint16_t*)storage;
 	int		  v[] = { (int)v2[0] };
 
@@ -553,7 +585,7 @@ static void ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, co
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
+		ret = ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -566,22 +598,24 @@ static void ShowUI_Uint_16(const RenderGraph& renderGraph, const bool paused, co
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt(variable.originalName.c_str(), v);
+        ret = ImGui::InputInt(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
+    return ret;
 }
 
-static void ShowUI_Float_16(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* rawStorage)
+static bool ShowUI_Float_16(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* rawStorage)
 {
+    bool ret = false;
     half* storageHalf = (half*)rawStorage;
     float value = *storageHalf;
 
     if (variable.UISettings.UIHint == VariableUIHint::Angle)
     {
-        ImGui::SliderAngle(variable.originalName.c_str(), &value);
+        ret = ImGui::SliderAngle(variable.originalName.c_str(), &value);
     }
     else if (variable.UISettings.UIHint == VariableUIHint::Drag)
     {
@@ -598,7 +632,7 @@ static void ShowUI_Float_16(const RenderGraph& renderGraph, const bool paused, c
         if (!variable.UISettings.max.empty())
             sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-        ImGui::DragFloat(variable.originalName.c_str(), &value, speed, min, max);
+        ret = ImGui::DragFloat(variable.originalName.c_str(), &value, speed, min, max);
     }
     else if (variable.UISettings.UIHint == VariableUIHint::Slider)
     {
@@ -611,18 +645,20 @@ static void ShowUI_Float_16(const RenderGraph& renderGraph, const bool paused, c
         if (!variable.UISettings.max.empty())
             sscanf_s(variable.UISettings.max.c_str(), "%f", &max);
 
-        ImGui::SliderFloat(variable.originalName.c_str(), &value, min, max);
+        ret = ImGui::SliderFloat(variable.originalName.c_str(), &value, min, max);
     }
     else
     {
-        ImGui::InputFloat(variable.originalName.c_str(), &value);
+        ret = ImGui::InputFloat(variable.originalName.c_str(), &value);
     }
 
     *storageHalf = value;
+    return ret;
 }
 
-static void ShowUI_Int_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Int_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	int64_t* v2 = (int64_t*)storage;
 	int		  v[] = { (int)v2[0] };
 
@@ -641,7 +677,7 @@ static void ShowUI_Int_64(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
+        ret = ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -654,16 +690,18 @@ static void ShowUI_Int_64(const RenderGraph& renderGraph, const bool paused, con
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt(variable.originalName.c_str(), v);
+		ret = ImGui::InputInt(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
+    return ret;
 }
 
-static void ShowUI_Uint_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Uint_64(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
+    bool ret = false;
 	uint64_t* v2 = (uint64_t*)storage;
 	int		  v[] = { (int)v2[0] };
 
@@ -682,7 +720,7 @@ static void ShowUI_Uint_64(const RenderGraph& renderGraph, const bool paused, co
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
+		ret = ImGui::DragInt(variable.originalName.c_str(), v, speed, min, max);
 	}
 	else if (variable.UISettings.UIHint == VariableUIHint::Slider)
 	{
@@ -695,18 +733,20 @@ static void ShowUI_Uint_64(const RenderGraph& renderGraph, const bool paused, co
 		if (!variable.UISettings.max.empty())
 			sscanf_s(variable.UISettings.max.c_str(), "%i", &max);
 
-		ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
+        ret = ImGui::SliderInt(variable.originalName.c_str(), v, min, max);
 	}
 	else
-		ImGui::InputInt(variable.originalName.c_str(), v);
+        ret = ImGui::InputInt(variable.originalName.c_str(), v);
 
 	v2[0] = v[0];
+    return ret;
 }
 
 
-static void ShowUI_Count(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
+static bool ShowUI_Count(const RenderGraph& renderGraph, const bool paused, const Variable& variable, void* storage)
 {
 	// No-op. Shouldn't ever happen
+    return false;
 }
 
 static std::string VariableUIScope(const Variable& variable)
@@ -1008,16 +1048,21 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 					VariableUIStart(variable);
 //					ImGui::PushStyleColor(ImGuiCol_Text, color);
 
+                    bool modifiedByUser = false;
 					switch (variable.variable->type)
 					{
 #include "external/df_serialize/_common.h"
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
-	case DataFieldType::_NAME: ShowUI_##_NAME(m_renderGraph, paused, *variable.variable, variable.storage.value); break;
+	case DataFieldType::_NAME: modifiedByUser = ShowUI_##_NAME(m_renderGraph, paused, *variable.variable, variable.storage.value); break;
 						// clang-format off
 #include "external/df_serialize/_fillunsetdefines.h"
 #include "Schemas/DataFieldTypes.h"
 						// clang-format on
 					}
+
+                    // If this variable is supposed to set the value of a bool to true when it changes, do that now
+                    if (modifiedByUser && variable.variable->onUserChange.variableIndex != -1)
+                        SetRuntimeVariableFromString(variable.variable->onUserChange.variableIndex, "true");
 
 //					ImGui::PopStyleColor(1);
 

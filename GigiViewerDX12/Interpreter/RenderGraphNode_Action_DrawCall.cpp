@@ -421,6 +421,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				std::ostringstream ss;
 				ss << "vertex buffer not created: \"" << m_renderGraph.nodes[node.vertexBuffer.resourceNodeIndex].resourceBuffer.name << "\"\n";
 				runtimeData.m_renderGraphText = ss.str();
+                runtimeData.m_inErrorState = true;
 				return true;
 			}
 
@@ -1014,21 +1015,21 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		bool compiledOK = true;
 
 		if (node.vertexShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.pixelShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.amplificationShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.meshShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 		for (const std::string& fileName : allShaderFiles)
 		{
-			std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(m_tempDirectory) / "shaders")).string();
+			std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 			m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 		}
 
@@ -1287,6 +1288,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					ss << "color target " << i << " is size (" << textureMipSize[0] << ", " << textureMipSize[1] << ", " << textureMipSize[2] << ")"
 						" which mismatches a previously seen render target size of (" << renderTargetSize[0] << ", " << renderTargetSize[1] << ", " << renderTargetSize[2] << ")";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -1341,6 +1343,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 							ss << "depth target is size (" << textureMipSize[0] << ", " << textureMipSize[1] << ", " << textureMipSize[2] << ")"
 								" which mismatches a previously seen render target size of (" << renderTargetSize[0] << ", " << renderTargetSize[1] << ", " << renderTargetSize[2] << ")";
 							runtimeData.m_renderGraphText = ss.str();
+                            runtimeData.m_inErrorState = true;
 							return true;
 						}
 

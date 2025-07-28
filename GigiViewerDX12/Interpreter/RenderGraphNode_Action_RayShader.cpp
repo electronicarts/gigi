@@ -309,7 +309,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			// Ray tracing shader compilation must use dxc
 			for (const ShaderExport& shaderExport : shaderExports)
 			{
-				std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / shaderExport.fileName).string();
+				std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / shaderExport.fileName).string();
 
 				std::vector<std::string> allShaderFiles;
 
@@ -324,7 +324,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 				for (const std::string& fileName : allShaderFiles)
 				{
-					std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(m_tempDirectory) / "shaders")).string();
+					std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 					m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 				}
 
@@ -751,6 +751,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					std::ostringstream ss;
 					ss << "Cannot execute: resource \"" << GetNodeName(m_renderGraph.nodes[dep.nodeIndex]) << "\" doesn't exist yet";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 

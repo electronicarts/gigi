@@ -49,7 +49,7 @@ void BlurH(uint3 DTid : SV_DispatchThreadID)
     for (int i = -radius; i <= radius; i++)
         result += Input.Load(int3((DTid.xy + int2(i, 0)) % int2(w, h), 0)) / (float(radius) * 2.0f + 1.0f);
 
-    if (_BoxBlurCB.sRGB)
+    if ((bool)_BoxBlurCB.sRGB)
         Output[DTid.xy] = float4(LinearToSRGB(result.rgb), result.a);
     else
         Output[DTid.xy] = result;
@@ -68,7 +68,7 @@ void BlurV(uint3 DTid : SV_DispatchThreadID)
     for (int i = -radius; i <= radius; i++)
         result += Input.Load(int3((DTid.xy + int2(0, i)) % int2(w, h), 0)) / (float(radius) * 2.0f + 1.0f);
 
-    if (_BoxBlurCB.sRGB)
+    if ((bool)_BoxBlurCB.sRGB)
         Output[DTid.xy] = float4(LinearToSRGB(result.rgb), result.a);
     else
         Output[DTid.xy] = result;

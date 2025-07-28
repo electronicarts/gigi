@@ -109,6 +109,44 @@ struct ShowWindowsState
 };
 ShowWindowsState g_showWindows;
 
+// Portions of this software were based on https://devblogs.microsoft.com/oldnewthing/20100125-00/?p=15183
+HANDLE SetClipboardDataEx(UINT uFormat, void *pvData, DWORD cbData)
+{
+    if (OpenClipboard(NULL))
+    {
+        EmptyClipboard();
+        if (uFormat == CF_BITMAP ||
+            uFormat == CF_DSPBITMAP ||
+            uFormat == CF_PALETTE ||
+            uFormat == CF_METAFILEPICT ||
+            uFormat == CF_DSPMETAFILEPICT ||
+            uFormat == CF_ENHMETAFILE ||
+            uFormat == CF_DSPENHMETAFILE ||
+            uFormat == CF_OWNERDISPLAY) {
+            return NULL; // these are not HGLOBAL format
+        }
+        HANDLE hRc = NULL;
+        HGLOBAL hglob = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT,
+            cbData);
+        if (hglob) {
+            void* pvGlob = GlobalLock(hglob);
+            if (pvGlob) {
+                CopyMemory(pvGlob, pvData, cbData);
+                GlobalUnlock(hglob);
+                hRc = SetClipboardData(uFormat, hglob);
+            }
+            if (!hRc) {
+                DWORD blah = GetLastError();
+                GlobalFree(hglob);
+            }
+        }
+        CloseClipboard();
+        return hRc;
+    }
+    else
+        return NULL;
+}
+
 void EditorShowMessageBox(const char* msg, ...)
 {
     char buffer[4096];
@@ -1328,6 +1366,27 @@ struct Example :
             ImGui::End();
             return;
         }
+
+        if (ImGui::Button("Copy"))
+        {
+            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "what's up?");
+            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "bro.");
+
+            constexpr const char* msgType[3] = { "[Info] ", "[Warning] ", "[Error] " };
+
+            std::ostringstream fullText;
+
+            for (const auto& msg : m_BuildOutputBuffer)
+            {
+                int msgTypeIndex = static_cast<int>(msg.Type);
+                fullText << msgType[msgTypeIndex];
+                fullText << msg.Msg << "\n";
+            }
+
+            SetClipboardDataEx(CF_TEXT, (void*)fullText.str().c_str(), (DWORD)fullText.str().length() + 1);
+        }
+
+        ImGui::SameLine();
 
         if (ImGui::Button("Clear"))
             m_BuildOutputBuffer.clear();
