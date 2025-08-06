@@ -121,12 +121,12 @@ namespace Texture2DRW_PS
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_NodeTexture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_NodeTexture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -1098,15 +1098,25 @@ namespace Texture2DRW_PS
             if (c_debugNames)
                 m_internal.drawCall_RW_rootSig->SetName(L"RW");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Texture2DRW_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "vsmain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "RW" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture2DRW_VS.hlsl", "vsmain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Texture2DRW_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "psmain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "RW" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture2DRW_PS.hlsl", "psmain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 

@@ -52,7 +52,7 @@ namespace FrontEndNodes
         return ResourceVisibility::Count;
     }
 
-    inline void AddResourceAccessedAs(RenderGraphNode_ActionBase& node, ShaderResourceAccessType state)
+    inline void AddResourceAccessedAs(RenderGraphNode_ActionBase& node, ShaderResourceAccessType state, ShaderResourceAccessType originalState)
     {
         Assert(false, "Function should not get called for action nodes");
     }

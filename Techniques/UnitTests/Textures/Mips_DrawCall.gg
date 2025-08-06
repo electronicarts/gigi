@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "Mips_DrawCall",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -137,6 +137,9 @@
                     "access": "SRV",
                     "buffer": {
                         "PODAsStructuredBuffer": false
+                    },
+                    "texture": {
+                        "dimension": "Texture2DArray"
                     }
                 }
             ],
@@ -1048,5 +1051,8 @@
                 "visibility": "Imported"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Final Color Buffer"
+    }
 }

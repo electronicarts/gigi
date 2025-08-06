@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
-    "name": "simpleRT",
-    "version": "0.99b",
+    "name": "",
+    "version": "1.0",
     "variables": [
         {
             "name": "enabled",
@@ -65,6 +65,9 @@
                     "type": "Buffer",
                     "access": "RTScene",
                     "buffer": {
+                        "typeStruct": {
+                            "name": "VertexBuffer"
+                        },
                         "PODAsStructuredBuffer": false
                     }
                 }
@@ -294,5 +297,8 @@
         "frostbite": {
             "shaderProgramsProviderVersion": 1340
         }
+    },
+    "PrimaryOutput": {
+        "name": "Texture"
     }
 }

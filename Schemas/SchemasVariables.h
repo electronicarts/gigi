@@ -3,6 +3,24 @@
 //        Copyright (c) 2024 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
+STRUCT_BEGIN(VariableReference, "A reference to a variable")
+    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
+
+    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
+STRUCT_BEGIN(VariableReferenceNoConst, "A reference to a variable. No const variables allowed.")
+    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
+
+    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
+STRUCT_BEGIN(VariableReferenceConstOnly, "A reference to a variable. Only const variables allowed.")
+    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
+
+    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
 ENUM_BEGIN(VariableVisibility, "The visibility of the variable")
     ENUM_ITEM(Internal, "Internal to the technique.")
     ENUM_ITEM(Host, "The host app has access.")
@@ -35,6 +53,7 @@ STRUCT_BEGIN(Variable, "A variable definition")
     STRUCT_FIELD(std::string, dflt, "", "The default value of the variable. The default memory is zero initialized before this is parsed, so if you don't give it enough initializers, it will use zero for the unlisted fields.", 0)
     STRUCT_FIELD(VariableVisibility, visibility, VariableVisibility::Internal, "Who can see and interact with this variable", 0)
     STRUCT_FIELD(std::string, Enum, "", "Integer types can specify an enum, which will then make symbols in both C++ and shader code.", 0)
+    STRUCT_FIELD(VariableReference, onUserChange, {}, "A boolean variable that gets set to true when the user changes this variable.", 0)
     STRUCT_FIELD(BackendRestriction, backends, {}, "This variable can be limited to specific backends", SCHEMA_FLAG_UI_COLLAPSABLE)
     STRUCT_FIELD(bool, transient, false, "If true, the variable should not be saved between runs of this technique. The Gigi viewer uses this to decide if it should save it in the gguser file or not, for example.", 0)
     STRUCT_FIELD(VariableUISettings, UISettings, {}, "UI Settings.", 0)
@@ -44,6 +63,8 @@ STRUCT_BEGIN(Variable, "A variable definition")
 
     STRUCT_FIELD(std::string, originalName, "", "The name before renames and sanitization", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, scope, "", "The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.", SCHEMA_FLAG_NO_SERIALIZE)
+
+	STRUCT_FIELD(bool, system, false, "Is set if the runtime overrides the value", SCHEMA_FLAG_NO_SERIALIZE | SCHEMA_FLAG_NO_UI)
 
     // deprecated in 0.94b
     // replaced by UISettings.UIHint
@@ -70,6 +91,7 @@ STRUCT_BEGIN(Condition, "Specifiy a condition to make something conditional")
     STRUCT_FIELD(int, variable1Index, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(int, variable2Index, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(bool, alwaysFalse, false, "If checked, condition always evaluates to false", 0)
+    STRUCT_FIELD(bool, hideUI, false, "Used by editor to hide this UI when it isn't supported", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(EnumItem, "Specifiy an enum")

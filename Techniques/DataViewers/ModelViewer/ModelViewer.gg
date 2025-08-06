@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "RenderSize",
@@ -331,14 +331,14 @@
                 ],
                 "connections": [
                     {
-                        "srcPin": "Color",
-                        "dstNode": "Rasterize",
-                        "dstPin": "colorTarget0"
-                    },
-                    {
                         "srcPin": "Depth",
                         "dstNode": "Rasterize",
                         "dstPin": "depthTarget"
+                    },
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Rasterize",
+                        "dstPin": "colorTarget1"
                     }
                 ],
                 "shader": {
@@ -394,5 +394,8 @@
                 }
             ]
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "ColorU8sRGB"
+    }
 }

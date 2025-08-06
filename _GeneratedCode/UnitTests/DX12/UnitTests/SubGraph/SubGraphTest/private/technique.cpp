@@ -58,16 +58,19 @@ namespace SubGraphTest
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_Swap_Colors_rootSig, (c_debugNames ? L"Swap_Colors" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SubGraphTest_SwapColors.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Swap_Colors" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/SubGraphTest_SwapColors.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_Swap_Colors_rootSig, &ContextInternal::computeShader_Swap_Colors_pso, c_debugShaders, (c_debugNames ? L"Swap_Colors" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Swap_Colors_rootSig, &ContextInternal::computeShader_Swap_Colors_pso, Context::LogFn))
                 return false;
         }
 
@@ -165,12 +168,12 @@ namespace SubGraphTest
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Inner_Exported_Tex;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Inner_Exported_Tex_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

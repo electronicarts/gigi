@@ -20,6 +20,8 @@
 #define INLINING_DEBUG_NODES() (true && INLINING_DEBUG())
 #define INLINING_DEBUG_VARIABLES() (true && INLINING_DEBUG())
 
+#define SAVE_INLINED_GRAPHS() false
+
 #if INLINING_DEBUG()
     #define INLINE_DEBUG(...) ShowInfoMessage(__VA_ARGS__);
     #if INLINING_DEBUG_NODES()
@@ -231,6 +233,9 @@ struct RenameReferencesVisitor
 
     bool Visit(SetVariable& setVariable, const std::string& path)
     {
+        m_renameData.UpdateNodeName(setVariable.ANode.name);
+        m_renameData.UpdateNodeName(setVariable.BNode.name);
+
         m_renameData.UpdateVariableName(setVariable.destination.name);
         m_renameData.UpdateVariableName(setVariable.AVar.name);
         m_renameData.UpdateVariableName(setVariable.BVar.name);
@@ -534,7 +539,8 @@ struct RenameChildVisitor
         // Need to handle the subgraph possibly being in a parent directory etc.
         if (s.destFileName.empty())
             s.destFileName = s.fileName;
-        s.destFileName = (std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension() / s.destFileName).string();
+        std::string destFolder = std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension().string() + "_" + m_subGraphNode.name;
+        s.destFileName = (std::filesystem::path(destFolder) / s.destFileName).string();
         StringReplaceAll(s.destFileName, "\\", "/");
 
         // Update where the file lives on disk
@@ -610,7 +616,9 @@ struct RenameChildVisitor
         // Need to handle the subgraph possibly being in a parent directory etc.
         if (fileCopy.destFileName.empty())
             fileCopy.destFileName = fileCopy.fileName;
-        fileCopy.destFileName = (std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension() / fileCopy.destFileName).string();
+        std::string destFolder = std::filesystem::path(m_subGraphNode.fileName).filename().replace_extension().string() + "_" + m_subGraphNode.name;
+        fileCopy.destFileName = (std::filesystem::path(destFolder) / fileCopy.destFileName).string();
+        StringReplaceAll(fileCopy.destFileName, "\\", "/");
 
         // make the file path relative to the parent graph, not the child
         std::filesystem::path GGFilePath = std::filesystem::path(m_childGraph.baseDirectory) / std::filesystem::path(fileCopy.fileName);
@@ -1014,6 +1022,56 @@ static bool InlineSubGraph(RenderGraph& parentGraph, RenderGraphNode_Action_SubG
     // Handle the sub graph input pins (imported resources)
     HandleSubgraphInputPins(parentGraph, childGraph, subGraphNode, renameData);
 
+    // Get bounding box of nodes, to put the inlined nodes below them, in case we are saving out the graph for debugging purposes.
+    float parentNodesAABB[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // min xy, max xy.
+    float childNodesAABB[4] = { 0.0f, 0.0f, 0.0f, 0.0f }; // min xy, max xy.
+    {
+        bool firstSample = true;
+        for (const RenderGraphNode& node : parentGraph.nodes)
+        {
+            ExecuteOnNode(node,
+                [&firstSample, &parentNodesAABB](auto& node)
+                {
+                    if (firstSample)
+                    {
+                        parentNodesAABB[0] = parentNodesAABB[2] = node.editorPos[0];
+                        parentNodesAABB[1] = parentNodesAABB[3] = node.editorPos[1];
+                        firstSample = false;
+                    }
+                    else
+                    {
+                        parentNodesAABB[0] = std::min(parentNodesAABB[0], node.editorPos[0]);
+                        parentNodesAABB[1] = std::min(parentNodesAABB[1], node.editorPos[1]);
+                        parentNodesAABB[2] = std::max(parentNodesAABB[2], node.editorPos[0]);
+                        parentNodesAABB[3] = std::max(parentNodesAABB[3], node.editorPos[1]);
+                    }
+                }
+            );
+        }
+        firstSample = true;
+        for (const RenderGraphNode& node : childGraph.nodes)
+        {
+            ExecuteOnNode(node,
+                [&firstSample, &childNodesAABB](auto& node)
+                {
+                    if (firstSample)
+                    {
+                        childNodesAABB[0] = childNodesAABB[2] = node.editorPos[0];
+                        childNodesAABB[1] = childNodesAABB[3] = node.editorPos[1];
+                        firstSample = false;
+                    }
+                    else
+                    {
+                        childNodesAABB[0] = std::min(childNodesAABB[0], node.editorPos[0]);
+                        childNodesAABB[1] = std::min(childNodesAABB[1], node.editorPos[1]);
+                        childNodesAABB[2] = std::max(childNodesAABB[2], node.editorPos[0]);
+                        childNodesAABB[3] = std::max(childNodesAABB[3], node.editorPos[1]);
+                    }
+                }
+            );
+        }
+    }
+
     // Copy objects from the child graph to the parent graph
     {
         // Shaders
@@ -1074,6 +1132,14 @@ static bool InlineSubGraph(RenderGraph& parentGraph, RenderGraphNode_Action_SubG
         {
             parentGraph.nodes.push_back(childObject);
 
+            // Move the inlined nodes to be below the current graph
+            ExecuteOnNode(*parentGraph.nodes.rbegin(),
+                [parentNodesAABB, childNodesAABB](auto& node)
+                {
+                    node.editorPos[1] = node.editorPos[1] + parentNodesAABB[3] + 100.0f - childNodesAABB[1];
+                }
+            );
+
             // If a subgraph is disabled by setting the condition to always false, all the nodes should get that flag too.
             DispatchLambdaAction(*parentGraph.nodes.rbegin(),
                 [subgraphAlwaysFalse](RenderGraphNode_ActionBase& node)
@@ -1086,6 +1152,10 @@ static bool InlineSubGraph(RenderGraph& parentGraph, RenderGraphNode_Action_SubG
 
     // Add this to the list of subgraph file names
     parentGraph.subGGGraphFileNames.push_back(std::filesystem::absolute(childFileName).string().c_str());
+
+    // If the subgraph has a primary output and we don't, propagate it up
+    if (parentGraph.PrimaryOutput.name.empty() && !childGraph.PrimaryOutput.name.empty())
+        parentGraph.PrimaryOutput.name = renameData.m_nodeRenames[childGraph.PrimaryOutput.name];
 
     return true;
 }
@@ -1228,6 +1298,10 @@ bool InlineSubGraphs(RenderGraph& renderGraph)
 	if (!ExpandLoopedSubgraphs(renderGraph))
 		return false;
 
+    #if SAVE_INLINED_GRAPHS()
+    int versionIndex = 0;
+    #endif
+
     // Inline all the sub graph nodes, recursively.
     //
     // We can't go just in any order though.
@@ -1338,6 +1412,13 @@ bool InlineSubGraphs(RenderGraph& renderGraph)
             // Remember that we saw at least one sub graph
             subgraphNodesRemain = true;
 
+            #if SAVE_INLINED_GRAPHS()
+            char fileName[1024];
+            sprintf_s(fileName, "_Inline_v%i.gg", versionIndex);
+            WriteToJSONFile(renderGraph, fileName);
+            versionIndex++;
+            #endif
+
             // inline the sub graph node if we can
             std::string subgraphNodeName = node.actionSubGraph.name;
             if (CanInlineSubgraph(renderGraph, node.actionSubGraph))
@@ -1382,6 +1463,12 @@ bool InlineSubGraphs(RenderGraph& renderGraph)
             }
         }
     }
+
+    #if SAVE_INLINED_GRAPHS()
+    char fileName[1024];
+    sprintf_s(fileName, "_Inline_v%i.gg", versionIndex);
+    WriteToJSONFile(renderGraph, fileName);
+    #endif
 
     // make the loop index variables needed
     for (int loopIndexValueVarIndex = 0; loopIndexValueVarIndex <= maxLoopIndex; ++loopIndexValueVarIndex)

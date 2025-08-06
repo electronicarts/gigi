@@ -4,7 +4,7 @@
 /*$(_compute:main)*/(uint3 DTid : SV_DispatchThreadID)
 {
 	uint2 px = DTid.xy;
-	Output[px].rgba = Input[px].gbra * /*$(Variable:Mult)*/;
+	/*$(RWTextureW:Output)*/[px].rgba = Input[px].gbra * /*$(Variable:Mult)*/;
 }
 
 /*

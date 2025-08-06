@@ -6,8 +6,8 @@
 #include "Schemas/Types.h"
 #include "GigiCompilerLib/Backends/Shared.h"
 #include "GigiCompilerLib/Backends/GraphViz.h"
+#include "GigiCompilerLib/Backends/ProcessShader.h"
 #include "GigiCompilerLib/GigiBuildFlavor.h"
-#include "GigiCompilerLib/ProcessSlang.h"
 
 #include <unordered_set>
 
@@ -35,6 +35,9 @@ struct BackendDX12 : public BackendBase
             case DataFieldType::Float3: return "DXGI_FORMAT_R32G32B32_FLOAT";
             case DataFieldType::Uint: return "DXGI_FORMAT_R32_UINT";
             case DataFieldType::Uint_16: return "DXGI_FORMAT_R16_UINT";
+            case DataFieldType::Int_64: return "DXGI_FORMAT_RG32_INT";
+            case DataFieldType::Uint_64: return "DXGI_FORMAT_RG32_UINT";
+            case DataFieldType::Float_16: return "DXGI_FORMAT_R16_FLOAT";
             default:
             {
                 Assert(false, "Unhandled DataFieldType: %i", (int)type);
@@ -246,6 +249,7 @@ struct BackendDX12 : public BackendBase
             case TextureFormat::D16_Unorm: return "DXGI_FORMAT_D16_UNORM";
             case TextureFormat::D32_Float_S8: return "DXGI_FORMAT_D32_FLOAT_S8X24_UINT";
             case TextureFormat::D24_Unorm_S8: return "DXGI_FORMAT_R24_UNORM_X8_TYPELESS";
+            case TextureFormat::BC1_Unorm: return "DXGI_FORMAT_BC1_UNORM";
             case TextureFormat::BC4_Unorm: return "DXGI_FORMAT_BC4_UNORM";
             case TextureFormat::BC4_Snorm: return "DXGI_FORMAT_BC4_SNORM";
             case TextureFormat::BC5_Unorm: return "DXGI_FORMAT_BC5_UNORM";
@@ -438,6 +442,8 @@ struct BackendDX12 : public BackendBase
             case DataFieldType::Float4: return "float4";
             case DataFieldType::Bool: return "bool";
             case DataFieldType::Float4x4: return "float4x4";
+            case DataFieldType::Int_64: return "int64_t";
+            case DataFieldType::Uint_64: return "uint64_t";
             default:
             {
                 Assert(false, "Unhandled data field type: %s (%i)", EnumToString(type), type);
@@ -526,9 +532,9 @@ struct BackendDX12 : public BackendBase
         ;
     }
 
-    static void MakeStringReplacementGlobal(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph)
+    static void MakeStringReplacementGlobal(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
     {
-        BackendBase::MakeStringReplacementGlobal(stringReplacementMap, renderGraph);
+        BackendBase::MakeStringReplacementGlobal(stringReplacementMap, renderGraph, ggUserFile);
 
         // Simple things
         {
@@ -802,6 +808,9 @@ struct BackendDX12 : public BackendBase
                     case DataFieldType::Bool: varSymbols = "b"; break;
                     case DataFieldType::Float4x4: varSymbols = "ffffffffffffffff"; varRefs = "&value[0], &value[1], &value[2], &value[3], &value[4], &value[5], &value[6], &value[7], &value[8], &value[9], &value[10], &value[11], &value[12], &value[13], &value[14], &value[15]"; break;
                     case DataFieldType::Uint_16: varSymbols = "I"; break;
+                    case DataFieldType::Int_64: varSymbols = "I"; break;
+                    case DataFieldType::Uint_64: varSymbols = "I"; break;
+                    case DataFieldType::Float_16: varSymbols = "f"; break;
                     default: Assert(false, "Unhandled Variable Type: %i", variable.type); break;
                 }
 
@@ -1587,490 +1596,28 @@ struct BackendDX12 : public BackendBase
     }
 };
 
-void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const char* outFolder, const RenderGraph& renderGraph)
+void CopyShaderFileDX12(Shader& shader, const std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const char* outFolder, const RenderGraph& renderGraph)
 {
-    std::unordered_map<std::string, std::ostringstream> shaderSpecificStringReplacementMap;
-
-    // Handle variables
-    for (const Variable& variable: renderGraph.variables)
+    if (shader.language != ShaderLanguage::HLSL && shader.language != ShaderLanguage::Slang)
     {
-        if (variable.scope != shader.scope)
-            continue;
-
-        std::string key = "/*$(Variable:" + variable.originalName + ")*/";
-        shaderSpecificStringReplacementMap[key] = std::ostringstream();
-        if (variable.Const)
-            shaderSpecificStringReplacementMap[key] << "(" + variable.dflt + ")";
-        else
-            shaderSpecificStringReplacementMap[key] << "_" + shader.name + "CB." + variable.name;
-    }
-
-    // Handle replaced variables
-    for (const VariableReplacement& replacement : renderGraph.variableReplacements)
-    {
-        if (replacement.srcScope != shader.scope)
-            continue;
-
-        int variableIndex = GetScopedVariableIndex(renderGraph, replacement.destName.c_str());
-        if (variableIndex == -1)
-        {
-            Assert(false, "Could not find variable %s that replaced variable %s%s", replacement.destName.c_str(), replacement.srcScope.c_str(), replacement.srcName.c_str());
-            return;
-        }
-
-        const Variable& variable = renderGraph.variables[variableIndex];
-
-        std::string key = "/*$(Variable:" + replacement.srcName + ")*/";
-        shaderSpecificStringReplacementMap[key] = std::ostringstream();
-        if (variable.Const)
-            shaderSpecificStringReplacementMap[key] << "(" + variable.dflt + ")";
-        else
-            shaderSpecificStringReplacementMap[key] << "_" + shader.name + "CB." + variable.name;
-    }
-
-    std::string srcFileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
-    std::vector<unsigned char> shaderFile;
-    if (!LoadFile(srcFileName, shaderFile))
-    {
-        Assert(false, "Could not load file %s", srcFileName.c_str());
+        Assert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
         return;
     }
-    shaderFile.push_back(0);
 
-    // write out enums
+    // Pixel shader samplers go into space1
+    if (shader.type == ShaderType::Pixel)
     {
-        for (const auto& e : renderGraph.enums)
-        {
-            if (e.scope != shader.scope)
-                continue;
-
-            shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                "\n"
-                "\nstruct " << e.originalName <<
-                "\n{"
-                ;
-
-            int itemIndex = -1;
-            for (const auto& item : e.items)
-            {
-                itemIndex++;
-                shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                    "\n    static const int " << item.label << " = " << itemIndex << ";"
-                    ;
-
-                if (!item.comment.empty())
-                    shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << " // " << item.comment;
-            }
-
-            shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                "\n};"
-                ;
-        }
+        for (ShaderSampler& sampler : shader.samplers)
+            sampler.registerSpaceString = ", space1";
     }
 
-    // write out any structs needed
-    {
-        std::unordered_set<int> structsWritten;
-        for (size_t resourceIndex = 0; resourceIndex < shader.resources.size(); ++resourceIndex)
-        {
-            const ShaderResource& resource = shader.resources[resourceIndex];
+    std::string outFileName = (std::filesystem::path(outFolder) / "shaders" / shader.destFileName).string();
 
-            int structIndex = -1;
-
-            switch (resource.access)
-            {
-                case ShaderResourceAccessType::CBV: structIndex = resource.constantBufferStructIndex; break;
-                default:
-                {
-                    if (resource.type == ShaderResourceType::Buffer)
-                        structIndex = resource.buffer.typeStruct.structIndex;
-                    break;
-                }
-            }
-
-            // only write structs out once
-            if (structIndex == -1 || structsWritten.count(structIndex) > 0)
-                continue;
-            structsWritten.insert(structIndex);
-
-            const Struct& s = renderGraph.structs[structIndex];
-
-            shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                "\n"
-                "\nstruct Struct_" << s.name <<
-                "\n{"
-                ;
-
-            for (const StructField& field : s.fields)
-            {
-                shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                    "\n    " << DataFieldTypeToShaderType(field.type) << " " << field.name << ";"
-                    ;
-            }
-
-            shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "\n};";
-        }
-        shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "\n";
-    }
-
-    // Write out samplers
-    for (size_t samplerIndex = 0; samplerIndex < shader.samplers.size(); ++samplerIndex)
-    {
-        const ShaderSampler& sampler = shader.samplers[samplerIndex];
-
-        std::string spaceString = "";
-        if (shader.type == ShaderType::Pixel)
-            spaceString = ", space1";
-
-        shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-            "\nSamplerState " << sampler.name << " : register(s" << samplerIndex << spaceString << ");";
-    }
-
-    // write out resource declarations
-    for (const ShaderResource& resource : shader.resources)
-    {
-        switch (resource.access)
-        {
-            case ShaderResourceAccessType::RTScene:
-            {
-                shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "\nRaytracingAccelerationStructure " << resource.name << " : register(t" << resource.registerIndex << ");";
-                break;
-            }
-            case ShaderResourceAccessType::UAV:
-            case ShaderResourceAccessType::SRV:
-            {
-                const char* typePrefix = (resource.access == ShaderResourceAccessType::UAV) ? "RW" : "";
-                const char* registerType = (resource.access == ShaderResourceAccessType::UAV) ? "u" : "t";
-
-                switch (resource.type)
-                {
-                    case ShaderResourceType::Texture:
-                    {
-                        const char* variablePrefix = (resource.access == ShaderResourceAccessType::UAV && resource.texture.globallyCoherent) ? "globallycoherent " : "";
-
-                        const char* textureType = "";
-                        switch (resource.texture.dimension)
-                        {
-                            case TextureDimensionType::Texture2D: textureType = "Texture2D"; break;
-                            case TextureDimensionType::Texture2DArray: textureType = "Texture2DArray"; break;
-                            case TextureDimensionType::Texture3D: textureType = "Texture3D"; break;
-                            case TextureDimensionType::TextureCube:
-                            {
-                                textureType = (resource.access == ShaderResourceAccessType::UAV) ? "Texture2DArray" : "TextureCube";
-                                break;
-                            }
-                            default:
-                            {
-                                Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(resource.texture.dimension), (int)resource.texture.dimension);
-                            }
-                        }
-
-                        DataFieldType viewDataFieldType;
-                        if (!EnumToEnum(resource.texture.viewType, viewDataFieldType))
-                        {
-                            Assert(false, "Could not convert TextureViewType to DataFieldType");
-                        }
-
-                        shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                            "\n" << variablePrefix << typePrefix << textureType << "<" << BackendDX12::DataFieldTypeToCPPType(viewDataFieldType) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
-                        break;
-                    }
-                    case ShaderResourceType::Buffer:
-                    {
-						const char* variablePrefix = (resource.access == ShaderResourceAccessType::UAV && resource.buffer.globallyCoherent) ? "globallycoherent " : "";
-
-                        if (resource.buffer.raw)
-                        {
-                            shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                "\n" << variablePrefix << typePrefix << "ByteAddressBuffer " << resource.name << " : register(" << registerType << resource.registerIndex << ");"
-                                ;
-                        }
-                        else if (resource.buffer.typeStruct.structIndex != -1)
-                        {
-                            shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                "\n" << variablePrefix << typePrefix << "StructuredBuffer<Struct_" << renderGraph.structs[resource.buffer.typeStruct.structIndex].name << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");"
-                                ;
-                        }
-                        else
-                        {
-                            if (DataFieldTypeIsPOD(resource.buffer.type) && !resource.buffer.PODAsStructuredBuffer)
-                            {
-                                shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                    "\n" << variablePrefix << typePrefix << "Buffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
-                            }
-                            else
-                            {
-                                shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                                    "\n" << variablePrefix << typePrefix << "StructuredBuffer<" << DataFieldTypeToShaderType(resource.buffer.type) << "> " << resource.name << " : register(" << registerType << resource.registerIndex << ");";
-                            }
-                        }
-                        break;
-                    }
-                    default:
-                    {
-                        Assert(false, "Unhandled resource type: %i (%s) in shader %s", resource.type, EnumToString(resource.type), shader.originalName.c_str());
-                        break;
-                    }
-                }
-                break;
-            }
-            case ShaderResourceAccessType::CBV:
-            {
-                shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
-                    "\nConstantBuffer<Struct_" << renderGraph.structs[resource.constantBufferStructIndex].name << "> " << resource.name << " : register(b" << resource.registerIndex << ");"
-                ;
-                break;
-            }
-            default:
-            {
-                Assert(false, "Unhandled resource access type: %i", resource.access);
-                break;
-            }
-        }
-    }
-    shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "\n";
-
-    // Handle string replacement for any references to loaded textures
-    for (const LoadedTextureReference& loadedTexture : shader.loadedTextureRefs)
-        shaderSpecificStringReplacementMap[loadedTexture.token] << loadedTexture.resourceName;
-
-    // Handle shader markup
-    shaderSpecificStringReplacementMap["/*$(RayTraceFn)*/"] << "TraceRay";
-    std::string shaderFileContents = (char*)shaderFile.data();
-    ForEachToken(shaderFileContents.c_str(),
-        [&](const std::string& token, const char* stringStart, const char* cursor)
-        {
-            size_t lineNumber = CountLineNumber(stringStart, cursor);
-
-            std::string param;
-            if (token == "/*$(ShaderResources)*/")
-            {
-                std::string old = shaderSpecificStringReplacementMap[token].str();
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    old << "\n" <<
-                    "#line " << lineNumber << "\n"
-                    ;
-            }
-            else if (GetTokenParameter(token.c_str(), "_compute", param))
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << param;
-            }
-            else if (GetTokenParameter(token.c_str(), "_amplification", param))
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << param;
-            }
-            else if (GetTokenParameter(token.c_str(), "_mesh", param))
-            {
-                std::string entryPoint = param;
-                std::string topology = "triangle";
-
-                // Get the optional attribute structure argument if present
-                size_t colonLoc = param.find_first_of(':');
-                if (colonLoc != std::string::npos && colonLoc + 1 < param.length() && colonLoc > 0)
-                {
-                    entryPoint = param.substr(0, colonLoc);
-                    topology = param.substr(colonLoc + 1);
-                }
-
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[numthreads(" << shader.NumThreads[0] << ", " << shader.NumThreads[1] << ", " << shader.NumThreads[2] << ")]\n"
-                    "[OutputTopology(\"" << topology << "\")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << entryPoint;
-            }
-            else if (GetTokenParameter(token.c_str(), "_raygeneration", param))
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"raygeneration\")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << param << "()";
-            }
-            else if (GetTokenParameter(token.c_str(), "_miss", param))
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"miss\")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << param << "(inout Payload payload : SV_RayPayload)";
-            }
-            else if (GetTokenParameter(token.c_str(), "_anyhit", param))
-            {
-                std::string entryPoint = param;
-                std::string attribStruct = "BuiltInTriangleIntersectionAttributes";
-
-                // Get the optional attribute structure argument if present
-                size_t colonLoc = param.find_first_of(':');
-                if (colonLoc != std::string::npos && colonLoc + 1 < param.length() && colonLoc > 0)
-                {
-                    entryPoint = param.substr(0, colonLoc);
-                    attribStruct = param.substr(colonLoc + 1);
-                }
-
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"anyhit\")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << entryPoint << "(inout Payload payload, in " << attribStruct << " attr)";
-            }
-            else if (GetTokenParameter(token.c_str(), "_intersection", param))
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"intersection\")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << param << "()";
-            }
-            else if (GetTokenParameter(token.c_str(), "_closesthit", param))
-            {
-                std::string entryPoint = param;
-                std::string attribStruct = "BuiltInTriangleIntersectionAttributes";
-
-                // Get the optional attribute structure argument if present
-                size_t colonLoc = param.find_first_of(':');
-                if (colonLoc != std::string::npos && colonLoc + 1 < param.length() && colonLoc > 0)
-                {
-                    entryPoint = param.substr(0, colonLoc);
-                    attribStruct = param.substr(colonLoc + 1);
-                }
-
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] <<
-                    "[shader(\"closesthit\")]\n"
-                    "#line " << lineNumber << "\n"
-                    "void " << entryPoint << "(inout Payload payload : SV_RayPayload, in " << attribStruct << " intersection : SV_IntersectionAttributes)";
-            }
-            else if (GetTokenParameter(token.c_str(), "RTHitGroupIndex", param))
-            {
-                int foundIndex = -1;
-                for (int i = 0; i < shader.Used_RTHitGroupIndex.size(); ++i)
-                {
-                    int HGIndex = GetHitGroupIndex(renderGraph, shader.Used_RTHitGroupIndex[i].c_str());
-                    if (HGIndex < 0)
-                        continue;
-
-                    const RTHitGroup& hitGroup = renderGraph.hitGroups[HGIndex];
-                    if (shader.scope == hitGroup.scope && param == hitGroup.originalName)
-                    {
-                        foundIndex = i;
-                        break;
-                    }
-                    if (foundIndex != -1)
-                        break;
-                }
-
-                Assert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
-                if (foundIndex != -1)
-                {
-                    shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                    shaderSpecificStringReplacementMap[token] << foundIndex;
-                }
-            }
-            else if (token == "/*$(RTHitGroupCount)*/")
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << renderGraph.hitGroups.size();
-            }
-            else if (GetTokenParameter(token.c_str(), "RTMissIndex", param))
-            {
-                int foundIndex = -1;
-                for (int i = 0; i < shader.Used_RTMissIndex.size(); ++i)
-                {
-                    int MissIndex = GetShaderIndex(renderGraph, shader.Used_RTMissIndex[i].c_str());
-                    if (MissIndex < 0)
-                        continue;
-
-                    const Shader& missShader = renderGraph.shaders[MissIndex];
-                    if (shader.scope == missShader.scope && param == missShader.originalName)
-                    {
-                        foundIndex = i;
-                        break;
-                    }
-                    if (foundIndex != -1)
-                        break;
-                }
-
-                Assert(foundIndex != -1, "Could not find RTMissIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
-                if (foundIndex != -1)
-                {
-                    shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                    shaderSpecificStringReplacementMap[token] << foundIndex;
-                }
-            }
-            else if (token == "/*$(NumThreads)*/")
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << "uint3(" << shader.NumThreads[0] << "," << shader.NumThreads[1] << "," << shader.NumThreads[2] << ")";
-            }
-            else if (token == "/*$(DispatchMultiply)*/")
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << "__GigiDispatchMultiply";
-            }
-            else if (token == "/*$(DispatchDivide)*/")
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << "__GigiDispatchDivide";
-            }
-            else if (token == "/*$(DispatchPreAdd)*/")
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << "__GigiDispatchPreAdd";
-            }
-            else if (token == "/*$(DispatchPostAdd)*/")
-            {
-                shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << "__GigiDispatchPostAdd";
-            }
-        }
-    );
-
-    for (const TokenReplacement& replacement : shader.tokenReplacements)
-        shaderSpecificStringReplacementMap[replacement.name] << replacement.value;
-
-    // Replace the strings
-    ProcessStringReplacement(shaderFileContents, shaderSpecificStringReplacementMap, stringReplacementMap, renderGraph);
-
-    // Process with slang, if we are supposed to
-    if (shader.slangOptions.process)
-    {
-        const char* shaderModel = nullptr;
-        const char* stage = nullptr;
-        switch (shader.type)
-        {
-            case ShaderType::Compute: shaderModel = renderGraph.settings.dx12.shaderModelCs.c_str(); stage = "compute"; break;
-            case ShaderType::Vertex: shaderModel = renderGraph.settings.dx12.shaderModelVs.c_str(); stage = "vertex"; break;
-            case ShaderType::Pixel: shaderModel = renderGraph.settings.dx12.shaderModelPs.c_str(); stage = "fragment"; break;
-        }
-
-        std::string workingDirectory = (std::filesystem::path(outFolder) / "shaders" / "").string();
-        std::string slangErrorMessage;
-        if (!ProcessWithSlang(shaderFileContents, shader.fileName.c_str(), stage, shader.entryPoint.c_str(), shaderModel, slangErrorMessage, workingDirectory.c_str()))
-        {
-            ShowErrorMessage("Slang:%s\n%s\n", shader.fileName.c_str(), slangErrorMessage.c_str());
-        }
-        else if (!slangErrorMessage.empty())
-        {
-            ShowWarningMessage("Slang:%s\n%s\n", shader.fileName.c_str(), slangErrorMessage.c_str());
-        }
-    }
-
-    // Write the shader file out
-    std::string fullFileName = (std::filesystem::path(outFolder) / "shaders" / shader.destFileName).string();
-    WriteFileIfDifferent(fullFileName, shaderFileContents);
+    ProcessShaderOptions_HLSL options(shader);
+    ProcessShader_HLSL(shader, shader.entryPoint.c_str(), ShaderLanguage::HLSL, stringReplacementMap, renderGraph, options, outFileName.c_str());
 }
 
-void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
+void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
 {
     const char* outFolder = renderGraph.outputDirectory.c_str();
 
@@ -2084,9 +1631,11 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
 
     // gather the templates for the build flavor chosen.
     std::unordered_map<std::string, std::string> files;
+    std::vector<InternalTemplateFile> internalTemplateFiles;
     {
         // Module files are always present
-        ProcessTemplateFolder(renderGraph, files, outFolder, "./GigiCompilerLib/Backends/DX12/templates/Module/");
+        std::vector<InternalTemplateFile> templateFiles = ProcessTemplateFolder(renderGraph, files, outFolder, "./GigiCompilerLib/Backends/DX12/templates/Module/");
+        internalTemplateFiles.insert(internalTemplateFiles.end(), templateFiles.begin(), templateFiles.end());
 
         // Other flavors add application code that calls into the module code
         switch (buildFlavor)
@@ -2094,7 +1643,8 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
             case GigiBuildFlavor::DX12_Module: break;
             case GigiBuildFlavor::DX12_Application:
             {
-                ProcessTemplateFolder(renderGraph, files, outFolder, "./GigiCompilerLib/Backends/DX12/templates/Application/");
+                std::vector<InternalTemplateFile> templateFiles = ProcessTemplateFolder(renderGraph, files, outFolder, "./GigiCompilerLib/Backends/DX12/templates/Application/");
+                internalTemplateFiles.insert(internalTemplateFiles.end(), templateFiles.begin(), templateFiles.end());
                 break;
             }
             default:
@@ -2106,31 +1656,20 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
     }
 
     // Make the files
-    std::unordered_map<std::string, std::ostringstream> stringReplacementMap = MakeFiles<BackendDX12>(files, renderGraph);
+    std::unordered_map<std::string, std::ostringstream> stringReplacementMap = MakeStringReplacement<BackendDX12>(renderGraph, ggUserFile);
+    MakeFiles(files, renderGraph, stringReplacementMap);
 
-    // string replacement to help the custom functions
+    // Make file copies for any InternalShader files from the templates
+    for (const InternalTemplateFile& internalTemplateFile : internalTemplateFiles)
     {
-        // parameters
-        stringReplacementMap["/*$(CustomFunctionParams)*/"] << "Context* context";
-        stringReplacementMap["/*$(CustomFunctionFileHeader)*/"] << "#include \"../public/technique.h\"\n\nnamespace " << renderGraph.name << "\n{";
-        stringReplacementMap["/*$(CustomFunctionFileFooter)*/"] << "}\n";
+        if (internalTemplateFile.type != BackendTemplateFileType::InternalShader)
+            continue;
 
-        // for variable usage
-        for (const Variable& variable : renderGraph.variables)
-        {
-            std::string key = "/*$(Variable:" + variable.name + ")*/";
-            stringReplacementMap[key] << BackendDX12::VariableToString(variable, renderGraph);
-        }
+        FileCopy newFileCopy;
+        newFileCopy.fileName = internalTemplateFile.absoluteFileName;
+        newFileCopy.type = FileCopyType::Shader;
 
-        // size of resources
-        for (const RenderGraphNode& node : renderGraph.nodes)
-        {
-            if (!GetNodeIsResourceNode(node) || node._index == RenderGraphNode::c_index_resourceShaderConstants)
-                continue;
-
-            std::string key = "/*$(ResourceSize:" + GetNodeName(node) + ")*/";
-            stringReplacementMap[key] << BackendDX12::ResourceToString(node) << "_size";
-        }
+        renderGraph.fileCopies.push_back(newFileCopy);
     }
 
     // copy any file copies that should happen
@@ -2193,7 +1732,7 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
     }
 
     // Copy the shader files
-    for (const Shader& shader : renderGraph.shaders)
+    for (Shader& shader : renderGraph.shaders)
     {
         if (shader.copyFile)
             CopyShaderFileDX12(shader, stringReplacementMap, outFolder, renderGraph);

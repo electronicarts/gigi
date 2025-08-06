@@ -79,16 +79,19 @@ namespace Texture3DRW_CS
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 0, &ContextInternal::computeShader_RW_rootSig, (c_debugNames ? L"RW" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Texture3DRW_CS.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "RW" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/Texture3DRW_CS.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_RW_rootSig, &ContextInternal::computeShader_RW_pso, c_debugShaders, (c_debugNames ? L"RW" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_RW_rootSig, &ContextInternal::computeShader_RW_pso, Context::LogFn))
                 return false;
         }
 
@@ -186,12 +189,12 @@ namespace Texture3DRW_CS
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_NodeTexture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_NodeTexture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -840,7 +843,7 @@ namespace Texture3DRW_CS
                 { context->m_output.texture_NodeTexture, context->m_output.texture_NodeTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_output.texture_NodeTexture_size[2], 0 },
                 { context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_input.texture_ImportedTexture_size[2], 0 },
                 { context->m_input.texture_ImportedColor, context->m_input.texture_ImportedColor_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_input.texture_ImportedColor_size[2], 0 },
-                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_internal.texture__loadedTexture_0_size[2], 0 }
+                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_internal.texture__loadedTexture_0_size[2], 0 }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 4, Context::LogFn);
@@ -1000,7 +1003,7 @@ namespace Texture3DRW_CS
                 m_internal.texture__loadedTexture_0_size[2] = size[2];
                 m_internal.texture__loadedTexture_0_numMips = desiredNumMips;
                 m_internal.texture__loadedTexture_0_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                m_internal.texture__loadedTexture_0 = DX12Utils::CreateTexture(device, size, desiredNumMips, DXGI_FORMAT_R8G8B8A8_UNORM, m_internal.texture__loadedTexture_0_flags, D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::Texture2DArray, (c_debugNames ? L"_loadedTexture_0" : nullptr), Context::LogFn);
+                m_internal.texture__loadedTexture_0 = DX12Utils::CreateTexture(device, size, desiredNumMips, DXGI_FORMAT_R8G8B8A8_UNORM, m_internal.texture__loadedTexture_0_flags, D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::Texture3D, (c_debugNames ? L"_loadedTexture_0" : nullptr), Context::LogFn);
 
 
                 std::vector<unsigned char> pixels;

@@ -57,6 +57,8 @@ void RecentFiles::LoadAllEntries()
 	}
 
 	RegCloseKey(hkey);
+
+	EnsureMaxSize();
 }
 
 void RecentFiles::SaveAllEntries()
@@ -90,6 +92,13 @@ void RecentFiles::SaveAllEntries()
 	RegCloseKey(hkey);
 }
 
+void RecentFiles::EnsureMaxSize()
+{
+	// limit size assuming the important data is in the front
+	if (m_Entries.size() > maxSize)
+		m_Entries.resize(maxSize);
+}
+
 void RecentFiles::AddEntry(const char* fileName)
 {
 	assert(fileName);
@@ -101,15 +110,7 @@ void RecentFiles::AddEntry(const char* fileName)
 
 	// and add at front to reshuffle based on last usage
 	m_Entries.insert(m_Entries.begin(), fileName);
+	EnsureMaxSize();
 	// Save right away so if app crashes / gets killed / quits, we have the data stored.
 	SaveAllEntries();
-
-	// this could be exposed
-	const size_t maxSize = 10;
-
-	// limit size assuming the important data is in the front
-	if (m_Entries.size() > maxSize)
-	{
-		m_Entries.resize(maxSize);
-	}
 }

@@ -11,6 +11,7 @@ ENUM_BEGIN(TextureFormat, "")
     ENUM_ITEM(RG8_Unorm, "RG 8 bit unorm")
     ENUM_ITEM(RGBA8_Unorm, "RGBA 8 bit unorm")
     ENUM_ITEM(RGBA8_Unorm_sRGB, "RGBA 8 bit unorm, sRGB")
+    ENUM_ITEM(BGRA8_Unorm, "BGRA 8 bit unorm")
 
     ENUM_ITEM(R8_Snorm, "R 8 bit snorm")
     ENUM_ITEM(RG8_Snorm, "RG 8 bit snorm")
@@ -30,6 +31,7 @@ ENUM_BEGIN(TextureFormat, "")
     ENUM_ITEM(RGBA16_Float, "RGBA 16 bit float")
     ENUM_ITEM(RGBA16_Unorm, "RGBA 16 bit unorm")
     ENUM_ITEM(RGBA16_Snorm, "RGBA 16 bit snorm")
+    ENUM_ITEM(RG16_Uint, "RG 16 bit uint")
 
     // 32 bit float
     ENUM_ITEM(R32_Float, "R 32 bit float")
@@ -38,6 +40,7 @@ ENUM_BEGIN(TextureFormat, "")
 
     // 32 bit uint
     ENUM_ITEM(R32_Uint, "R 32 bit uint")
+    ENUM_ITEM(RG32_Uint, "RG 32 bit uint")
     ENUM_ITEM(RGBA32_Uint, "RGBA 32 bit uint")
 
     // Other
@@ -52,6 +55,8 @@ ENUM_BEGIN(TextureFormat, "")
     ENUM_ITEM(D24_Unorm_S8, "24 bit depth, 8 bit stencil")
 
     // Block compressed formats
+    ENUM_ITEM(BC1_Unorm, "RGB 5:6:5 unorm, 1 bit alpha. block compressed.")
+
     ENUM_ITEM(BC4_Unorm, "R 8 bit unorm. block compressed.")
     ENUM_ITEM(BC4_Snorm, "R 8 bit snorm. block compressed.")
     ENUM_ITEM(BC5_Unorm, "RG 8 bit unorm. block compressed.")

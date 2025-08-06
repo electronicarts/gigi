@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "AnyHit",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "depthNearPlane",
@@ -116,12 +116,21 @@
                 {
                     "name": "output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "scene",
                     "type": "Buffer",
-                    "access": "RTScene"
+                    "access": "RTScene",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexBuffer"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "vertexBuffer",
@@ -130,7 +139,8 @@
                     "buffer": {
                         "typeStruct": {
                             "name": "VertexBuffer"
-                        }
+                        },
+                        "PODAsStructuredBuffer": false
                     }
                 }
             ]
@@ -290,5 +300,8 @@
                 "name": "AnyHit"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

@@ -226,7 +226,7 @@ namespace ImageReadback
 
         // Map the memory
         D3D12_RANGE readRange;
-        readRange.Begin = layout.Offset + y * layout.Footprint.RowPitch + x * formatInfo.bytesPerPixel + z * layout.Footprint.Height * layout.Footprint.RowPitch;
+        readRange.Begin = layout.Offset + y * layout.Footprint.RowPitch + x * formatInfo.bytesPerPixel + (is3D ? z : 0) * layout.Footprint.Height * layout.Footprint.RowPitch;
         readRange.End = readRange.Begin + formatInfo.bytesPerPixel;
         unsigned char* readbackData = nullptr;
         HRESULT hr = readbackResource->Map(0, &readRange, (void**)&readbackData);

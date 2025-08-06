@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "simpleRaster_Lines",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -252,5 +252,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Color Buffer"
+    }
 }

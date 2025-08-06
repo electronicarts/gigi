@@ -31,14 +31,14 @@ float3 SRGBToLinear(in float3 sRGBCol)
 	Input.GetDimensions(dims.x, dims.y, dims.z);
 
 	float3 result = 
-		SRGBToLinear(Input[(px*2 + uint3(0,0,0)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(0,0,1)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(0,1,0)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(0,1,1)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(1,0,0)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(1,0,1)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(1,1,0)) % dims].rgb) +
-		SRGBToLinear(Input[(px*2 + uint3(1,1,1)) % dims].rgb);
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(0,0,0)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(0,0,1)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(0,1,0)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(0,1,1)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(1,0,0)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(1,0,1)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(1,1,0)) % dims].rgb) +
+		SRGBToLinear(/*$(RWTextureR:Input)*/[(px*2 + uint3(1,1,1)) % dims].rgb);
 
 	result /= 8.0f;
 

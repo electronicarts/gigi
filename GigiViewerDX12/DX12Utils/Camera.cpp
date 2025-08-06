@@ -14,7 +14,7 @@
 
 static const float c_pi = 3.14159265359f;
 
-void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], const float mouseStateLastFrame[4], float frameTimeSeconds, float pos[3], float altitudeAzimuth[2], bool& cameraChanged)
+void Camera::Update(const KeyStates& keyStates, const float mouseState[4], const float mouseStateLastFrame[4], float frameTimeSeconds, float pos[3], float altitudeAzimuth[2], bool& cameraChanged)
 {
     // To account for frame time
     float movementMultiplier = frameTimeSeconds * 60.0f;
@@ -35,7 +35,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
         }
 
         altitudeAzimuth[0] += dy * m_mouseSensitivity;
-        altitudeAzimuth[0] = std::max(std::min(altitudeAzimuth[0], c_pi * 0.95f), -c_pi * 0.95f);
+        altitudeAzimuth[0] = std::max(std::min(altitudeAzimuth[0], c_pi * 0.49f), -c_pi * 0.49f);
 
         altitudeAzimuth[1] += dx * m_mouseSensitivity;
         if (altitudeAzimuth[1] < 0.0f)
@@ -55,9 +55,9 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
         float fwd[3] = { viewMatrix.r[0].m128_f32[2], viewMatrix.r[1].m128_f32[2], viewMatrix.r[2].m128_f32[2] };
 
         float flySpeed = m_flySpeed * movementMultiplier;
-        if (g_keyStates[VK_SHIFT])
+        if (keyStates.fast)
             flySpeed *= 10;
-        else if (g_keyStates[VK_CONTROL])
+        else if (keyStates.slow)
             flySpeed /= 10;
 
         if (!m_leftHanded)
@@ -67,7 +67,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
             fwd[2] *= -1.0f;
         }
 
-        if (g_keyStates['W'] || g_keyStates[VK_UP])
+        if (keyStates.forward)
         {
             pos[0] += fwd[0] * flySpeed;
             pos[1] += fwd[1] * flySpeed;
@@ -75,7 +75,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
             cameraChanged = true;
         }
 
-        if (g_keyStates['S'] || g_keyStates[VK_DOWN])
+        if (keyStates.back)
         {
             pos[0] -= fwd[0] * flySpeed;
             pos[1] -= fwd[1] * flySpeed;
@@ -83,7 +83,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
             cameraChanged = true;
         }
 
-        if (g_keyStates['A'] || g_keyStates[VK_LEFT])
+        if (keyStates.left)
         {
             pos[0] -= left[0] * flySpeed;
             pos[1] -= left[1] * flySpeed;
@@ -91,7 +91,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
             cameraChanged = true;
         }
 
-        if (g_keyStates['D'] || g_keyStates[VK_RIGHT])
+        if (keyStates.right)
         {
             pos[0] += left[0] * flySpeed;
             pos[1] += left[1] * flySpeed;
@@ -99,7 +99,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
             cameraChanged = true;
         }
 
-        if (g_keyStates['E'] || g_keyStates[VK_PRIOR])
+        if (keyStates.up)
         {
             pos[0] += up[0] * flySpeed;
             pos[1] += up[1] * flySpeed;
@@ -107,7 +107,7 @@ void Camera::Update(const uint8_t g_keyStates[256], const float mouseState[4], c
             cameraChanged = true;
         }
 
-        if (g_keyStates['Q'] || g_keyStates[VK_NEXT])
+        if (keyStates.down)
         {
             pos[0] -= up[0] * flySpeed;
             pos[1] -= up[1] * flySpeed;

@@ -136,11 +136,11 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         ret |= ShowUI(renderGraph, nullptr, nullptr, *(_BASE*)&value, path);
 
 #define STRUCT_FIELD(_TYPE, _NAME, _DEFAULT, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
         { \
             if (_FLAGS & SCHEMA_FLAG_UI_CONST) \
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true); \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME))); \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME))); \
             if (_FLAGS & SCHEMA_FLAG_UI_CONST) \
                 ImGui::PopItemFlag(); \
         }
@@ -148,12 +148,12 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
 #define STRUCT_CONST(_TYPE, _NAME, _DEFAULT, _DESCRIPTION, _FLAGS)
 
 #define STRUCT_DYNAMIC_ARRAY(_TYPE, _NAME, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
 
 #define STRUCT_STATIC_ARRAY(_TYPE, _NAME, _SIZE, _DEFAULT, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
 
 #define STRUCT_END() \
         if (label && label[0]) \
@@ -181,7 +181,7 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         { \
 
 #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
-            case ThisType::c_index_##_NAME: ret |= ShowUI(renderGraph, showLabel ? PrettyLabel(#_NAME).c_str() : nullptr, showLabel ? _DESCRIPTION : nullptr, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME))); return ret;
+            case ThisType::c_index_##_NAME: ret |= ShowUI(renderGraph, showLabel ? PrettyLabel(#_NAME, true).c_str() : nullptr, showLabel ? _DESCRIPTION : nullptr, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME))); return ret;
 
 #define VARIANT_END() \
         } \
@@ -745,26 +745,69 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TextureNodeReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
+    auto ProcessLabel = [&value, &dirtyFlag](const std::string& label)
+    {
+        bool is_selected = value.name == label;
+        std::string safeLabel = label + "##";
+        if (ImGui::Selectable(safeLabel.c_str(), is_selected))
+        {
+            value.name = (label == " ") ? "" : label;
+            dirtyFlag = true;
+        }
+        if (is_selected)
+            ImGui::SetItemDefaultFocus();
+    };
+
     // Texture nodes drop down
     if (ImGui::BeginCombo(label, value.name.c_str()))
     {
-        for (int index = 0; index < renderGraph.nodes.size() + 1; ++index)
+        std::vector<std::string> labels;
+
+        for (const RenderGraphNode& nodeBase : renderGraph.nodes)
         {
-            if (index > 0 && renderGraph.nodes[index - 1]._index != RenderGraphNode::c_index_resourceTexture)
-                continue;
-
-            std::string label = (index == 0) ? " " : GetNodeName(renderGraph.nodes[index - 1]).c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
+            switch (nodeBase._index)
             {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
+                // Show textures
+                case RenderGraphNode::c_index_resourceTexture:
+                {
+                    const RenderGraphNode_Resource_Texture& node = nodeBase.resourceTexture;
+                    labels.push_back(node.name);
+                    break;
+                }
+                // Show resources exported from subgraph nodes.
+                // We should limit to textures if we can.
+                case RenderGraphNode::c_index_actionSubGraph:
+                {
+                    const RenderGraphNode_Action_SubGraph& node = nodeBase.actionSubGraph;
+
+                    if (node.loopCount > 1)
+                    {
+                        for (int loopIndex = 0; loopIndex < node.loopCount; ++loopIndex)
+                        {
+                            for (const std::string& exportedResource : node.subGraphData.exportedResources)
+                            {
+                                char buffer[1024];
+                                sprintf_s(buffer, "%s_Iteration_%i.%s", node.name.c_str(), loopIndex, exportedResource.c_str());
+                                labels.push_back(buffer);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (const std::string& exportedResource : node.subGraphData.exportedResources)
+                            labels.push_back(node.name + "." + exportedResource);
+                    }
+
+                    break;
+                }
             }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
         }
+
+        std::sort(labels.begin(), labels.end());
+
+        ProcessLabel(" ");
+        for (const std::string& label : labels)
+            ProcessLabel(label);
 
         ImGui::EndCombo();
     }
@@ -1454,7 +1497,15 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     return UIOverrideResult::Finished;
 }
 
-inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+enum ShowUIOverride_ConstRequirement
+{
+    None,
+    Const,
+    NotConst
+};
+
+template <typename TReference>
+inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None, DataFieldType dataFieldRequirement = DataFieldType::Count)
 {
     ImGui::PushID(label);
 
@@ -1463,7 +1514,22 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
         // Sort the list of variables
         std::vector<std::string> vars;
         for (const Variable& var : renderGraph.variables)
+        {
+            bool validVar = true;
+            switch (constRequirement)
+            {
+                case ShowUIOverride_ConstRequirement::Const: validVar &= (var.Const == true); break;
+                case ShowUIOverride_ConstRequirement::NotConst: validVar &= (var.Const != true); break;
+            }
+            if (dataFieldRequirement != DataFieldType::Count)
+                validVar &= (var.type == dataFieldRequirement);
+
+            if (!validVar)
+                continue;
+
             vars.push_back(var.name);
+        }
+
         CaseInsensitiveSort(vars);
 
         // add a blank to the beginning
@@ -1495,100 +1561,34 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     ImGui::PopID();
 
     return UIOverrideResult::Finished;
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None;
+    DataFieldType dataFieldRequirement = DataFieldType::Count;
+
+    switch (path())
+    {
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_variables, TypePaths::Variable::cStruct, TypePaths::Variable::c_onUserChange)():
+        {
+            constRequirement = ShowUIOverride_ConstRequirement::NotConst;
+            dataFieldRequirement = DataFieldType::Bool;
+            break;
+        }
+    }
+
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, constRequirement, dataFieldRequirement);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceNoConst& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        // Sort the list of variables
-        std::vector<std::string> vars;
-        for (const Variable& var : renderGraph.variables)
-        {
-            if (var.Const)
-                continue;
-            vars.push_back(var.name);
-        }
-        CaseInsensitiveSort(vars);
-
-        // add a blank to the beginning
-        vars.insert(vars.begin(), "");
-
-        // Show a drop down
-        for (const std::string& label : vars)
-        {
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
-        OnGoToVariable(value.name.c_str());
-    ShowUIToolTip("Go to Variable");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, ShowUIOverride_ConstRequirement::NotConst);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceConstOnly& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        // Sort the list of variables
-        std::vector<std::string> vars;
-        for (const Variable& var : renderGraph.variables)
-        {
-            if (!var.Const)
-                continue;
-            vars.push_back(var.name);
-        }
-        CaseInsensitiveSort(vars);
-
-        // add a blank to the beginning
-        vars.insert(vars.begin(), "");
-
-        // Show a drop down
-        for (const std::string& label : vars)
-        {
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
-        OnGoToVariable(value.name.c_str());
-    ShowUIToolTip("Go to Variable");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, ShowUIOverride_ConstRequirement::Const);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, StructReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
@@ -1630,7 +1630,56 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
 {
     if (ImGui::Button("Refresh GG File Data"))
         dirtyFlag = RefreshSubGraphNode(node);
+    node.condition.hideUI = true;
     return UIOverrideResult::Continue;
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceAccessType& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    // As of writing this, the only place ShaderResourceAccessType is used, that is displayed to the user (goes through this function) is in Shader.resources[] ShaderResource.Action
+
+    struct AllowedTypes
+    {
+        ShaderResourceAccessType value;
+        const char* label = nullptr;
+    };
+
+    static const AllowedTypes allowedTypes[] =
+    {
+        { ShaderResourceAccessType::Count, " " },
+        { ShaderResourceAccessType::SRV, "Read Only" },
+        { ShaderResourceAccessType::UAV, "Read/Write" },
+        { ShaderResourceAccessType::RTScene, "Ray Tracing Scene" },
+    };
+
+    int allowedTypeIndex = 0;
+    for (int index = 0; index < _countof(allowedTypes); ++index)
+    {
+        if (allowedTypes[index].value == value)
+        {
+            allowedTypeIndex = index;
+            break;
+        }
+    }
+
+    if (ImGui::BeginCombo(label, allowedTypes[allowedTypeIndex].label))
+    {
+        for (int index = 0; index < _countof(allowedTypes); ++index)
+        {
+            bool is_selected = (allowedTypeIndex == index);
+            if (ImGui::Selectable(allowedTypes[index].label, is_selected))
+            {
+                value = allowedTypes[index].value;
+                dirtyFlag = true;
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+        ImGui::EndCombo();
+    }
+    ShowUIToolTip(tooltip);
+
+    return UIOverrideResult::Finished;
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceType& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
@@ -2062,6 +2111,39 @@ struct ShaderTypeCodeGenerator
 };
 
 template<>
+inline UIOverrideResult ShowUIOverride<Condition>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, Condition& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
+
+template<>
+inline UIOverrideResult ShowUIOverride<ShaderResourceBuffer>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceBuffer& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
+
+template<>
+inline UIOverrideResult ShowUIOverride<ShaderResourceTexture>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResourceTexture& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
+
+template<>
+inline UIOverrideResult ShowUIOverride<ShaderResource>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderResource& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    // Hide UI that isn't applicable
+    value.buffer.hideUI = true;
+    value.texture.hideUI = true;
+    switch (value.type)
+    {
+        case ShaderResourceType::Buffer: value.buffer.hideUI = false; break;
+        case ShaderResourceType::Texture: value.texture.hideUI = false; break;
+    }
+
+    return UIOverrideResult::Continue;
+}
+
+template<>
 inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, Shader& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
     // This is kind of an ugly hack to keep from having infinite recursion.
@@ -2164,7 +2246,31 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
         // If a resource was added, let it react
         if (value.resources.size() > oldResources.size())
         {
-            OnShaderResourceAdd(value, value.resources.rbegin()->name);
+            // find which index was added from the oldResources array. Note that it may have been the last one.
+            int index = 0;
+
+            while (index < value.resources.size()
+                && index < oldResources.size()
+                && value.resources[index].name == oldResources[index].name)
+                index++;
+
+            // make sure name is unique
+            bool isUnique = false;
+            while (!isUnique)
+            {
+                isUnique = true;
+                for (const ShaderResource& old : oldResources)
+                {
+                    if (old.name == value.resources[index].name)
+                    {
+                        isUnique = false; // wasn't unique, check the version with the suffix
+                        value.resources[index].name += " Copy";
+                        break;
+                    }
+                }
+            }
+
+            OnShaderResourceAdd(value, value.resources[index].name);
         }
         // If a resource was deleted, we need to unhook everything that was plugged into that pin
         else if (value.resources.size() < oldResources.size())
@@ -2189,8 +2295,20 @@ inline UIOverrideResult ShowUIOverride<Shader>(RenderGraph& renderGraph, uint64_
                     if (index + 1 < value.resources.size() && value.resources[index + 1].name != oldResources[index + 1].name)
                         break;
 
-                    // otherwise it's a rename
-                    OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
+                    // otherwise it's a rename --- don't allow duplicates
+                    // // this doesn't reallydo anything except not call the callback, it
+                    bool isUnique = true;
+                    for (const ShaderResource& old : oldResources)
+                    {
+                        if (old.name == value.resources[index].name)
+                        {
+                            isUnique = false; // wasn't unique, check the version with the suffix
+                            value.resources[index].name = oldResources[index].name;
+                            break;
+                        }
+                    }
+                    if (isUnique)
+                        OnShaderResourceRename(value, oldResources[index].name, value.resources[index].name);
                     break;
                 }
             }

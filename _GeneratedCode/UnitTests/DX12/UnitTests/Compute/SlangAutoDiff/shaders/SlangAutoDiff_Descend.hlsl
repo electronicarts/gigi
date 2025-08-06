@@ -1,8 +1,12 @@
-#pragma pack_matrix(column_major)
-#ifdef SLANG_HLSL_ENABLE_NVAPI
-#include "nvHLSLExtns.h"
-#endif
-#pragma warning(disable: 3557)
+//#pragma pack_matrix(row_major)
+//#ifdef SLANG_HLSL_ENABLE_NVAPI
+//#include "nvHLSLExtns.h"
+//#endif
+//
+//#ifndef __DXC_VERSION_MAJOR
+// warning X3557: loop doesn't seem to do anything, forcing loop to unroll
+//#pragma warning(disable : 3557)
+//#endif
 
 
 #line 12 "SlangAutoDiff_Descend.hlsl"
@@ -24,7 +28,7 @@ cbuffer _DescendCB_0 : register(b0)
     Struct_DescendCB_0 _DescendCB_0;
 }
 
-#line 89 "core"
+#line 7960 "hlsl.meta.slang"
 struct DiffPair_float_0
 {
     float primal_0;
@@ -36,16 +40,17 @@ struct DiffPair_float_0
 void _d_exp_0(inout DiffPair_float_0 dpx_0, float dOut_0)
 {
 
-#line 886 "diff.meta.slang"
+#line 1868 "diff.meta.slang"
     float _S1 = exp(dpx_0.primal_0) * dOut_0;
 
-#line 886
+#line 1868
     dpx_0.primal_0 = dpx_0.primal_0;
 
-#line 886
+#line 1868
     dpx_0.differential_0 = _S1;
 
-#line 860
+
+
     return;
 }
 
@@ -54,32 +59,14 @@ void _d_exp_0(inout DiffPair_float_0 dpx_0, float dOut_0)
 DiffPair_float_0 _d_exp_1(DiffPair_float_0 dpx_1)
 {
 
-#line 1
-    DiffPair_float_0 _S2 = { exp(dpx_1.primal_0), exp(dpx_1.primal_0) * dpx_1.differential_0 };
+#line 1841 "diff.meta.slang"
+    float _S2 = exp(dpx_1.primal_0);
 
-#line 829 "diff.meta.slang"
-    return _S2;
-}
+#line 1841
+    DiffPair_float_0 _S3 = { _S2, _S2 * dpx_1.differential_0 };
 
-
-#line 829
-float s_bwd_exp_0(float _S3)
-{
-
-#line 829
-    return exp(_S3);
-}
-
-
-#line 829
-void s_bwd_exp_1(inout DiffPair_float_0 _S4, float _S5)
-{
-
-#line 829
-    _d_exp_0(_S4, _S5);
-
-#line 829
-    return;
+#line 1841
+    return _S3;
 }
 
 
@@ -87,20 +74,11 @@ void s_bwd_exp_1(inout DiffPair_float_0 _S4, float _S5)
 DiffPair_float_0 _d_sqrt_0(DiffPair_float_0 dpx_2)
 {
 
-#line 1
-    DiffPair_float_0 _S6 = { sqrt(dpx_2.primal_0), 0.5 / sqrt(max(0.00000010000000116861, dpx_2.primal_0)) * dpx_2.differential_0 };
-
-#line 829 "diff.meta.slang"
-    return _S6;
-}
+#line 1838 "diff.meta.slang"
+    DiffPair_float_0 _S4 = { sqrt(dpx_2.primal_0), 0.5f / sqrt(max(1.00000001168609742e-07f, dpx_2.primal_0)) * dpx_2.differential_0 };
 
 
-#line 829
-float s_bwd_sqrt_0(float _S7)
-{
-
-#line 829
-    return sqrt(_S7);
+    return _S4;
 }
 
 
@@ -109,109 +87,136 @@ float GetHeightAtPos_0(float x_0, float y_0, float2 gaussPos_0, float2 gaussSigm
 {
 
 
-    float _S8 = gaussSigma_0.x;
+    float _S5 = gaussSigma_0.x;
 
 #line 11
-    float XOverSigma_0 = x_0 / _S8;
+    float XOverSigma_0 = x_0 / _S5;
+
+    float _S6 = sqrt(6.28318548202514648f);
 
 #line 18
-    float _S9 = gaussSigma_0.y;
+    float _S7 = gaussSigma_0.y;
 
 #line 18
-    float XOverSigma_1 = y_0 / _S9;
+    float XOverSigma_1 = y_0 / _S7;
 
 #line 23
-    return exp(-0.5 * XOverSigma_0 * XOverSigma_0) / (_S8 * sqrt(6.28318548202514648438)) * (exp(-0.5 * XOverSigma_1 * XOverSigma_1) / (_S9 * sqrt(6.28318548202514648438)));
+    return exp(-0.5f * XOverSigma_0 * XOverSigma_0) / (_S5 * _S6) * (exp(-0.5f * XOverSigma_1 * XOverSigma_1) / (_S7 * _S6));
 }
 
 
 #line 57
-void s_bwd_GetHeightAtPos_0(inout DiffPair_float_0 dpx_3, inout DiffPair_float_0 dpy_0, float2 gaussPos_1, float2 gaussSigma_1, float _s_dOut_0)
+float s_primal_ctx_exp_0(float _S8)
 {
 
-#line 7
-    float _S10 = gaussSigma_1.x;
+#line 57
+    return exp(_S8);
+}
+
+
+#line 57
+float s_primal_ctx_sqrt_0(float _S9)
+{
+
+#line 57
+    return sqrt(_S9);
+}
+
+
+#line 57
+void s_bwd_prop_exp_0(inout DiffPair_float_0 _S10, float _S11)
+{
+
+#line 57
+    _d_exp_0(_S10, _S11);
+
+#line 57
+    return;
+}
+
 
 #line 7
-    float _S11 = gaussSigma_1.y;
+void s_bwd_prop_GetHeightAtPos_0(inout DiffPair_float_0 dpx_3, inout DiffPair_float_0 dpy_0, float2 gaussPos_1, float2 gaussSigma_1, float _s_dOut_0)
+{
 
-#line 7
-    float XOverSigma_2 = dpx_3.primal_0 / _S10;
 
-#line 7
-    float _S12 = -0.5 * XOverSigma_2;
+    float _S12 = gaussSigma_1.x;
 
-#line 7
-    float _S13 = _S12 * XOverSigma_2;
+#line 11
+    float XOverSigma_2 = dpx_3.primal_0 / _S12;
+    float _S13 = -0.5f * XOverSigma_2;
 
-#line 7
-    float _S14 = _S10 * s_bwd_sqrt_0(6.28318548202514648438);
+#line 12
+    float _S14 = _S13 * XOverSigma_2;
 
-#line 7
-    float _S15 = _S14 * _S14;
+#line 12
+    float _S15 = s_primal_ctx_sqrt_0(6.28318548202514648f);
+    float _S16 = _S12 * _S15;
 
-#line 7
-    float XOverSigma_3 = dpy_0.primal_0 / _S11;
+#line 13
+    float _S17 = _S16 * _S16;
 
-#line 7
-    float _S16 = -0.5 * XOverSigma_3;
+#line 18
+    float _S18 = gaussSigma_1.y;
 
-#line 7
-    float _S17 = _S16 * XOverSigma_3;
+#line 18
+    float XOverSigma_3 = dpy_0.primal_0 / _S18;
+    float _S19 = -0.5f * XOverSigma_3;
 
-#line 7
-    float _S18 = _S11 * s_bwd_sqrt_0(6.28318548202514648438);
+#line 19
+    float _S20 = _S19 * XOverSigma_3;
+    float _S21 = _S18 * _S15;
 
-#line 7
-    float s_diff_gaussX_T_0 = s_bwd_exp_0(_S17) / _S18 * _s_dOut_0;
 
-#line 7
-    float _S19 = _S18 * (s_bwd_exp_0(_S13) / _S14 * _s_dOut_0 / (_S18 * _S18));
+    float s_diff_gaussX_T_0 = s_primal_ctx_exp_0(_S20) / _S21 * _s_dOut_0;
 
-#line 7
-    DiffPair_float_0 _S20;
+#line 20
+    float _S22 = _S21 * (s_primal_ctx_exp_0(_S14) / _S16 * _s_dOut_0 / (_S21 * _S21));
 
-#line 7
-    _S20.primal_0 = _S17;
-
-#line 7
-    _S20.differential_0 = 0.0;
-
-#line 7
-    s_bwd_exp_1(_S20, _S19);
-
-#line 7
-    float _S21 = (_S16 * _S20.differential_0 + -0.5 * (XOverSigma_3 * _S20.differential_0)) / _S11;
-
-#line 7
-    float _S22 = _S14 * (s_diff_gaussX_T_0 / _S15);
-
-#line 7
+#line 19
     DiffPair_float_0 _S23;
 
-#line 7
-    _S23.primal_0 = _S13;
+#line 19
+    _S23.primal_0 = _S20;
 
-#line 7
-    _S23.differential_0 = 0.0;
+#line 19
+    _S23.differential_0 = 0.0f;
 
-#line 7
-    s_bwd_exp_1(_S23, _S22);
+#line 19
+    s_bwd_prop_exp_0(_S23, _S22);
 
-#line 7
-    float _S24 = (_S12 * _S23.differential_0 + -0.5 * (XOverSigma_2 * _S23.differential_0)) / _S10;
+#line 18
+    float _S24 = (_S19 * _S23.differential_0 + -0.5f * (XOverSigma_3 * _S23.differential_0)) / _S18;
 
-#line 7
+#line 13
+    float _S25 = _S16 * (s_diff_gaussX_T_0 / _S17);
+
+#line 12
+    DiffPair_float_0 _S26;
+
+#line 12
+    _S26.primal_0 = _S14;
+
+#line 12
+    _S26.differential_0 = 0.0f;
+
+#line 12
+    s_bwd_prop_exp_0(_S26, _S25);
+
+#line 11
+    float _S27 = (_S13 * _S26.differential_0 + -0.5f * (XOverSigma_2 * _S26.differential_0)) / _S12;
+
+#line 11
     dpy_0.primal_0 = dpy_0.primal_0;
 
-#line 7
-    dpy_0.differential_0 = _S21;
+#line 11
+    dpy_0.differential_0 = _S24;
 
-#line 7
+#line 11
     dpx_3.primal_0 = dpx_3.primal_0;
 
-#line 7
-    dpx_3.differential_0 = _S24;
+#line 11
+    dpx_3.differential_0 = _S27;
 
 #line 7
     return;
@@ -219,11 +224,11 @@ void s_bwd_GetHeightAtPos_0(inout DiffPair_float_0 dpx_3, inout DiffPair_float_0
 
 
 #line 7
-void s_bwd_GetHeightAtPos_1(inout DiffPair_float_0 _S25, inout DiffPair_float_0 _S26, float2 _S27, float2 _S28, float _S29)
+void s_bwd_GetHeightAtPos_0(inout DiffPair_float_0 _S28, inout DiffPair_float_0 _S29, float2 _S30, float2 _S31, float _S32)
 {
 
 #line 7
-    s_bwd_GetHeightAtPos_0(_S25, _S26, _S27, _S28, _S29);
+    s_bwd_prop_GetHeightAtPos_0(_S28, _S29, _S30, _S31, _S32);
 
 #line 7
     return;
@@ -234,104 +239,85 @@ void s_bwd_GetHeightAtPos_1(inout DiffPair_float_0 _S25, inout DiffPair_float_0 
 DiffPair_float_0 s_fwd_GetHeightAtPos_0(DiffPair_float_0 dpx_4, DiffPair_float_0 dpy_1, float2 gaussPos_2, float2 gaussSigma_2)
 {
 
-#line 7
-    float _S30 = gaussSigma_2.x;
 
-#line 7
-    float XOverSigma_4 = dpx_4.primal_0 / _S30;
+    float _S33 = gaussSigma_2.x;
 
-#line 7
-    float s_diff_XOverSigma_0 = dpx_4.differential_0 / _S30;
+#line 11
+    float XOverSigma_4 = dpx_4.primal_0 / _S33;
 
-#line 7
-    float _S31 = -0.5 * XOverSigma_4;
+#line 11
+    float s_diff_XOverSigma_0 = dpx_4.differential_0 / _S33;
+    float _S34 = -0.5f * XOverSigma_4;
 
-#line 7
-    DiffPair_float_0 _S32 = { _S31 * XOverSigma_4, s_diff_XOverSigma_0 * -0.5 * XOverSigma_4 + s_diff_XOverSigma_0 * _S31 };
+#line 12
+    DiffPair_float_0 _S35 = { _S34 * XOverSigma_4, s_diff_XOverSigma_0 * -0.5f * XOverSigma_4 + s_diff_XOverSigma_0 * _S34 };
 
-#line 7
-    DiffPair_float_0 _S33 = _d_exp_1(_S32);
+#line 12
+    DiffPair_float_0 _S36 = _d_exp_1(_S35);
 
-#line 7
-    DiffPair_float_0 _S34 = { 6.28318548202514648438, 0.0 };
+#line 12
+    DiffPair_float_0 _S37 = { 6.28318548202514648f, 0.0f };
+    DiffPair_float_0 _S38 = _d_sqrt_0(_S37);
 
-#line 7
-    DiffPair_float_0 _S35 = _d_sqrt_0(_S34);
+#line 13
+    float _S39 = _S33 * _S38.primal_0;
 
-#line 7
-    float _S36 = _S30 * _S35.primal_0;
+#line 13
+    float gaussX_0 = _S36.primal_0 / _S39;
 
-#line 7
-    float gaussX_0 = _S33.primal_0 / _S36;
+#line 18
+    float _S40 = gaussSigma_2.y;
 
-#line 7
-    float _S37 = gaussSigma_2.y;
+#line 18
+    float XOverSigma_5 = dpy_1.primal_0 / _S40;
 
-#line 7
-    float XOverSigma_5 = dpy_1.primal_0 / _S37;
+#line 18
+    float s_diff_XOverSigma_1 = dpy_1.differential_0 / _S40;
+    float _S41 = -0.5f * XOverSigma_5;
 
-#line 7
-    float s_diff_XOverSigma_1 = dpy_1.differential_0 / _S37;
+#line 19
+    DiffPair_float_0 _S42 = { _S41 * XOverSigma_5, s_diff_XOverSigma_1 * -0.5f * XOverSigma_5 + s_diff_XOverSigma_1 * _S41 };
 
-#line 7
-    float _S38 = -0.5 * XOverSigma_5;
+#line 19
+    DiffPair_float_0 _S43 = _d_exp_1(_S42);
+    float _S44 = _S40 * _S38.primal_0;
 
-#line 7
-    DiffPair_float_0 _S39 = { _S38 * XOverSigma_5, s_diff_XOverSigma_1 * -0.5 * XOverSigma_5 + s_diff_XOverSigma_1 * _S38 };
+#line 20
+    float gaussY_0 = _S43.primal_0 / _S44;
 
-#line 7
-    DiffPair_float_0 _S40 = _d_exp_1(_S39);
+#line 20
+    DiffPair_float_0 _S45 = { gaussX_0 * gaussY_0, (_S36.differential_0 * _S39 - _S36.primal_0 * (_S38.differential_0 * _S33)) / (_S39 * _S39) * gaussY_0 + (_S43.differential_0 * _S44 - _S43.primal_0 * (_S38.differential_0 * _S40)) / (_S44 * _S44) * gaussX_0 };
 
-#line 7
-    DiffPair_float_0 _S41 = _d_sqrt_0(_S34);
 
-#line 7
-    float _S42 = _S37 * _S41.primal_0;
-
-#line 7
-    float gaussY_0 = _S40.primal_0 / _S42;
-
-#line 7
-    DiffPair_float_0 _S43 = { gaussX_0 * gaussY_0, (_S33.differential_0 * _S36 - _S33.primal_0 * (_S35.differential_0 * _S30)) / (_S36 * _S36) * gaussY_0 + (_S40.differential_0 * _S42 - _S40.primal_0 * (_S41.differential_0 * _S37)) / (_S42 * _S42) * gaussX_0 };
-
-#line 7
-    return _S43;
+    return _S45;
 }
 
 
-#line 27
 [shader("compute")][numthreads(1, 1, 1)]
-void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
+void csmain(uint3 DTid_0 : SV_DispatchThreadID)
 {
 
 #line 29
-    float _S44 = Data_0[0U];
+    float _S46 = Data_0.Load(int(0));
 
 #line 29
-    float _S45 = Data_0[1U];
+    float _S47 = Data_0.Load(int(1));
 
 #line 29
-    float2 ballPos_0 = float2(_S44, _S45);
-    float2 _S46 = float2(0.0, 0.0);
+    float2 ballPos_0 = float2(_S46, _S47);
+    float2 _S48 = float2(0.0f, 0.0f);
 
-#line 100
-    float2 _S47 = float2(0.00100000004749745131, 0.00100000004749745131);
-
-#line 100
-    float2 _S48 = float2(0.99000000953674316406, 0.99000000953674316406);
-
-#line 100
+#line 30
     int i_0 = int(0);
 
-#line 100
-    float2 ballPosGradient_0 = _S46;
+#line 30
+    float2 ballPosGradient_0 = _S48;
 
-#line 100
     for(;;)
     {
 
 #line 32
-        if(i_0 < _DescendCB_0.NumGaussians_0)
+        if(i_0 < (_DescendCB_0.NumGaussians_0))
         {
         }
         else
@@ -341,28 +327,25 @@ void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
             break;
         }
 
-        int _S49 = int(4) + i_0 * int(5);
+        float _S49 = Data_0.Load(int(uint(int(4) + i_0 * int(5))));
 
 #line 35
-        float _S50 = Data_0[uint(_S49)];
+        float _S50 = Data_0.Load(int(uint(int(4) + i_0 * int(5) + int(1))));
 
 #line 35
-        float _S51 = Data_0[uint(_S49 + int(1))];
-
-#line 35
-        float2 gaussPos_3 = float2(_S50, _S51);
-        float gaussAngle_0 = Data_0[uint(_S49 + int(2))];
-        float _S52 = Data_0[uint(_S49 + int(3))];
+        float2 gaussPos_3 = float2(_S49, _S50);
+        float _S51 = Data_0.Load(int(uint(int(4) + i_0 * int(5) + int(2))));
+        float _S52 = Data_0.Load(int(uint(int(4) + i_0 * int(5) + int(3))));
 
 #line 37
-        float _S53 = Data_0[uint(_S49 + int(4))];
+        float _S53 = Data_0.Load(int(uint(int(4) + i_0 * int(5) + int(4))));
 
 #line 37
         float2 gaussSigma_3 = float2(_S52, _S53);
 
 
         float2 relativePos_0 = ballPos_0 - gaussPos_3;
-        float _S54 = - gaussAngle_0;
+        float _S54 = - _S51;
 
 #line 41
         float cosTheta_0 = cos(_S54);
@@ -379,7 +362,7 @@ void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
 
 
 
-        float2 dFLocal_0 = _S46;
+        float2 dFLocal_0 = _S48;
 
 
         if(bool(_DescendCB_0.UseBackwardAD_0))
@@ -393,15 +376,15 @@ void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
             ballPosX_0.primal_0 = _S57;
 
 #line 57
-            ballPosX_0.differential_0 = 0.0;
+            ballPosX_0.differential_0 = 0.0f;
             DiffPair_float_0 ballPosY_0;
 
 #line 58
             ballPosY_0.primal_0 = _S58;
 
 #line 58
-            ballPosY_0.differential_0 = 0.0;
-            s_bwd_GetHeightAtPos_1(ballPosX_0, ballPosY_0, gaussPos_3, gaussSigma_3, height_0);
+            ballPosY_0.differential_0 = 0.0f;
+            s_bwd_GetHeightAtPos_0(ballPosX_0, ballPosY_0, gaussPos_3, gaussSigma_3, height_0);
 
             dFLocal_0 = float2(ballPosX_0.differential_0, ballPosY_0.differential_0);
 
@@ -411,29 +394,29 @@ void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
         {
 
 #line 52
-            DiffPair_float_0 _S59 = { _S57, 1.0 };
+            DiffPair_float_0 _S59 = { _S57, 1.0f };
 
 #line 52
-            DiffPair_float_0 _S60 = { _S58, 0.0 };
+            DiffPair_float_0 _S60 = { _S58, 0.0f };
 
 #line 71
             dFLocal_0[int(0)] = s_fwd_GetHeightAtPos_0(_S59, _S60, gaussPos_3, gaussSigma_3).differential_0;
 
 #line 71
-            DiffPair_float_0 _S61 = { _S57, 0.0 };
+            DiffPair_float_0 _S61 = { _S57, 0.0f };
 
 #line 71
-            DiffPair_float_0 _S62 = { _S58, 1.0 };
+            DiffPair_float_0 _S62 = { _S58, 1.0f };
 
 #line 79
-            dFLocal_0[int(1)] = dFLocal_0.y + s_fwd_GetHeightAtPos_0(_S61, _S62, gaussPos_3, gaussSigma_3).differential_0;
+            dFLocal_0[int(1)] = dFLocal_0[int(1)] + s_fwd_GetHeightAtPos_0(_S61, _S62, gaussPos_3, gaussSigma_3).differential_0;
 
 #line 52
         }
 
 #line 84
-        float cosNegTheta_0 = cos(gaussAngle_0);
-        float sinNegTheta_0 = sin(gaussAngle_0);
+        float cosNegTheta_0 = cos(_S51);
+        float sinNegTheta_0 = sin(_S51);
 
 #line 90
         float2 ballPosGradient_1 = ballPosGradient_0 + float2(dFLocal_0.x * cosNegTheta_0 - dFLocal_0.y * sinNegTheta_0, dFLocal_0.x * sinNegTheta_0 + dFLocal_0.y * cosNegTheta_0);
@@ -452,7 +435,7 @@ void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
 
 #line 94
     float2 adjust_1;
-    if(length(adjust_0) > _DescendCB_0.MaximumStepSize_0)
+    if((length(adjust_0)) > (_DescendCB_0.MaximumStepSize_0))
     {
 
 #line 95
@@ -470,15 +453,15 @@ void csmain(uint3 DTid_0 : SV_DISPATCHTHREADID)
     }
 
 #line 100
-    float2 ballPos_1 = clamp(ballPos_0 + adjust_1, _S47, _S48);
+    float2 ballPos_1 = clamp(ballPos_0 + adjust_1, float2(0.00100000004749745f, 0.00100000004749745f), float2(0.99000000953674316f, 0.99000000953674316f));
 
 
-    Data_0[0U] = ballPos_1.x;
-    Data_0[1U] = ballPos_1.y;
+    ((Data_0))[(0U)] = (ballPos_1.x);
+    ((Data_0))[(1U)] = (ballPos_1.y);
 
 
-    Data_0[2U] = ballPosGradient_0.x;
-    Data_0[3U] = ballPosGradient_0.y;
+    ((Data_0))[(2U)] = (ballPosGradient_0.x);
+    ((Data_0))[(3U)] = (ballPosGradient_0.y);
     return;
 }
 

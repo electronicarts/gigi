@@ -44,6 +44,9 @@ namespace IndirectDispatch
 
         static const D3D12_RESOURCE_FLAGS c_buffer_Indirect_Dispatch_Count_flags =  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS; // Flags the buffer needs to have been created with
 
+        static ID3D12PipelineState* computeShader_Clear_Render_Target_pso;
+        static ID3D12RootSignature* computeShader_Clear_Render_Target_rootSig;
+
         Struct__Fill_Indirect_Dispatch_CountCB constantBuffer__Fill_Indirect_Dispatch_CountCB_cpu;
         ID3D12Resource* constantBuffer__Fill_Indirect_Dispatch_CountCB = nullptr;
 

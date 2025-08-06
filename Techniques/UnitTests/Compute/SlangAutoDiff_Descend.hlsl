@@ -49,7 +49,7 @@ float GetHeightAtPos(float x, float y, no_diff float2 gaussPos, no_diff float2 g
 		float2 dFLocal = float2(0.0f, 0.0f);
 
 		// Backward mode automatic differentiation (AD) - AKA Backpropagation
-		if (/*$(Variable:UseBackwardAD)*/)
+		if ((bool)/*$(Variable:UseBackwardAD)*/)
 		{
 			// get local dFdX and dFdy
 			float height = GetHeightAtPos(pos.x, pos.y, gaussPos, gaussSigma);

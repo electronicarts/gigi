@@ -12,37 +12,8 @@ table, th, td, tr
 <table>
 <tr><th colspan=2>Backend</th></tr>
 <tr><td>DX12</td><td></td></tr>
+<tr><td>WebGPU</td><td></td></tr>
 <tr><td>Interpreter</td><td></td></tr>
-</table>
-<br/>
-
-<b>ShaderResourceType : The type of a shader resource</b><br/><br/>
-<table>
-<tr><th colspan=2>ShaderResourceType</th></tr>
-<tr><td>Texture</td><td>Unordered Access View (Read/Write)</td></tr>
-<tr><td>Buffer</td><td>Shader Resource View</td></tr>
-<tr><td>ConstantBuffer</td><td>Constant Buffer View</td></tr>
-<tr><td>Count</td><td></td></tr>
-</table>
-<br/>
-
-<b>ShaderResourceAccessType : The type of a shader resource</b><br/><br/>
-<table>
-<tr><th colspan=2>ShaderResourceAccessType</th></tr>
-<tr><td>UAV</td><td>Unordered Access View (Read/Write)</td></tr>
-<tr><td>SRV</td><td>Shader Resource View</td></tr>
-<tr><td>CBV</td><td>Constant Buffer View</td></tr>
-<tr><td>CopySource</td><td>SRV copy source</td></tr>
-<tr><td>CopyDest</td><td>SRV copy dest</td></tr>
-<tr><td>Indirect</td><td>Used in Execute Indirect</td></tr>
-<tr><td>RTScene</td><td>The scene for raytracing (acceleration structure)</td></tr>
-<tr><td>VertexBuffer</td><td>Used as a vertex buffer</td></tr>
-<tr><td>IndexBuffer</td><td>Used as an index buffer</td></tr>
-<tr><td>RenderTarget</td><td>Used as a color buffer</td></tr>
-<tr><td>DepthTarget</td><td>Used as a depth buffer</td></tr>
-<tr><td>Barrier</td><td>Used by the barrier node</td></tr>
-<tr><td>ShadingRate</td><td>Used as a shading rate image</td></tr>
-<tr><td>Count</td><td></td></tr>
 </table>
 <br/>
 
@@ -64,81 +35,9 @@ table, th, td, tr
 <tr><td>Bool</td><td>bool</td></tr>
 <tr><td>Float4x4</td><td>float[4][4]</td></tr>
 <tr><td>Uint_16</td><td>a 16 bit uint</td></tr>
-<tr><td>Count</td><td></td></tr>
-</table>
-<br/>
-
-<b>TextureViewType : The type that a texture is actually viewed as, in a shader. A subset of DataFieldType.</b><br/><br/>
-<table>
-<tr><th colspan=2>TextureViewType</th></tr>
-<tr><td>Int</td><td>int</td></tr>
-<tr><td>Int4</td><td>int[4]</td></tr>
-<tr><td>Uint</td><td>uint</td></tr>
-<tr><td>Uint4</td><td>uint[4]</td></tr>
-<tr><td>Float</td><td>float</td></tr>
-<tr><td>Float2</td><td>float[2]</td></tr>
-<tr><td>Float3</td><td>float[3]</td></tr>
-<tr><td>Float4</td><td>float[4]</td></tr>
-</table>
-<br/>
-
-<b>SamplerFilter : The type of filter a sampler uses</b><br/><br/>
-<table>
-<tr><th colspan=2>SamplerFilter</th></tr>
-<tr><td>MinMagMipPoint</td><td>Point</td></tr>
-<tr><td>MinMagLinear_MipPoint</td><td>Bilinear</td></tr>
-<tr><td>MinMagMipLinear</td><td>Trilinear</td></tr>
-<tr><td>Count</td><td></td></tr>
-</table>
-<br/>
-
-<b>SamplerAddressMode : The sampler address mode</b><br/><br/>
-<table>
-<tr><th colspan=2>SamplerAddressMode</th></tr>
-<tr><td>Clamp</td><td>Clamp</td></tr>
-<tr><td>Wrap</td><td>Wrap</td></tr>
-<tr><td>Border</td><td>Border</td></tr>
-<tr><td>Count</td><td></td></tr>
-</table>
-<br/>
-
-<b>TextureDimensionType : The type of a texture</b><br/><br/>
-<table>
-<tr><th colspan=2>TextureDimensionType</th></tr>
-<tr><td>Texture2D</td><td>Texture2D</td></tr>
-<tr><td>Texture2DArray</td><td>Texture2DArray</td></tr>
-<tr><td>Texture3D</td><td>Texture3D</td></tr>
-<tr><td>TextureCube</td><td>TextureCube</td></tr>
-</table>
-<br/>
-
-<b>ShaderType : The type of a shader resource</b><br/><br/>
-<table>
-<tr><th colspan=2>ShaderType</th></tr>
-<tr><td>Compute</td><td>Ray generation shader</td></tr>
-<tr><td>RTRayGen</td><td>Ray generation shader</td></tr>
-<tr><td>RTClosestHit</td><td>Closest hit shader</td></tr>
-<tr><td>RTAnyHit</td><td>Any hit shader</td></tr>
-<tr><td>RTIntersection</td><td>Intersection shader</td></tr>
-<tr><td>RTMiss</td><td>Miss shader</td></tr>
-<tr><td>Vertex</td><td>Vertex shader</td></tr>
-<tr><td>Pixel</td><td>Pixel shader</td></tr>
-<tr><td>Amplification</td><td>Amplification shader</td></tr>
-<tr><td>Mesh</td><td>Mesh shader</td></tr>
-<tr><td>Count</td><td></td></tr>
-</table>
-<br/>
-
-<b>StructFieldSemantic : Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer.</b><br/><br/>
-<table>
-<tr><th colspan=2>StructFieldSemantic</th></tr>
-<tr><td>Position</td><td>float3</td></tr>
-<tr><td>Color</td><td>float4</td></tr>
-<tr><td>Normal</td><td>float3</td></tr>
-<tr><td>Tangent</td><td>float4</td></tr>
-<tr><td>UV</td><td>float2</td></tr>
-<tr><td>MaterialID</td><td>int</td></tr>
-<tr><td>ShapeID</td><td>int</td></tr>
+<tr><td>Int_64</td><td>a 64 bit int</td></tr>
+<tr><td>Uint_64</td><td>a 64 bit uint</td></tr>
+<tr><td>Float_16</td><td>a 16 bit float</td></tr>
 <tr><td>Count</td><td></td></tr>
 </table>
 <br/>
@@ -177,6 +76,170 @@ table, th, td, tr
 <tr><td>GT</td><td>value1 > value2</td></tr>
 <tr><td>GTE</td><td>value1 >= value2</td></tr>
 <tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>CooperativeVectorBufferLayout : Describe the format of a buffer for use in cooperative vectors</b><br/><br/>
+<table>
+<tr><th colspan=2>CooperativeVectorBufferLayout</th></tr>
+<tr><td>RowMajor</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_ROW_MAJOR</td></tr>
+<tr><td>ColMajor</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_COLUMN_MAJOR</td></tr>
+<tr><td>MulOptimal</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_MUL_OPTIMAL</td></tr>
+<tr><td>OuterProductOptimal</td><td>D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_OUTER_PRODUCT_OPTIMAL</td></tr>
+</table>
+<br/>
+
+<b>CooperativeVectorDataType : The data type stored. D3D12_LINEAR_ALGEBRA_DATATYPE</b><br/><br/>
+<table>
+<tr><th colspan=2>CooperativeVectorDataType</th></tr>
+<tr><td>_sint16</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16</td></tr>
+<tr><td>_uint16</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16</td></tr>
+<tr><td>_sint32</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32</td></tr>
+<tr><td>_uint32</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32</td></tr>
+<tr><td>_float16</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16</td></tr>
+<tr><td>_float32</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32</td></tr>
+<tr><td>_sint8x4</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED</td></tr>
+<tr><td>_uint8x4</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED</td></tr>
+<tr><td>_uint8</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8</td></tr>
+<tr><td>_sint8</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8</td></tr>
+<tr><td>_float8_e4m3</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3. 8 bits: 1 sign, 4 exp, 3 mantissa.</td></tr>
+<tr><td>_float8_e5m2</td><td>D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2. 8 bits: 1 sign, 5 exp, 2 mantissa.</td></tr>
+</table>
+<br/>
+
+<b>ShaderResourceType : The type of a shader resource</b><br/><br/>
+<table>
+<tr><th colspan=2>ShaderResourceType</th></tr>
+<tr><td>Texture</td><td>Unordered Access View (Read/Write)</td></tr>
+<tr><td>Buffer</td><td>Shader Resource View</td></tr>
+<tr><td>ConstantBuffer</td><td>Constant Buffer View</td></tr>
+<tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>ShaderResourceAccessType : The type of a shader resource</b><br/><br/>
+<table>
+<tr><th colspan=2>ShaderResourceAccessType</th></tr>
+<tr><td>UAV</td><td>Unordered Access View (Read/Write)</td></tr>
+<tr><td>SRV</td><td>Shader Resource View</td></tr>
+<tr><td>CBV</td><td>Constant Buffer View</td></tr>
+<tr><td>CopySource</td><td>SRV copy source</td></tr>
+<tr><td>CopyDest</td><td>SRV copy dest</td></tr>
+<tr><td>Indirect</td><td>Used in Execute Indirect</td></tr>
+<tr><td>RTScene</td><td>The scene for raytracing (acceleration structure)</td></tr>
+<tr><td>VertexBuffer</td><td>Used as a vertex buffer</td></tr>
+<tr><td>IndexBuffer</td><td>Used as an index buffer</td></tr>
+<tr><td>RenderTarget</td><td>Used as a color buffer</td></tr>
+<tr><td>DepthTarget</td><td>Used as a depth buffer</td></tr>
+<tr><td>Barrier</td><td>Used by the barrier node</td></tr>
+<tr><td>ShadingRate</td><td>Used as a shading rate image</td></tr>
+<tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>TextureViewType : The type that a texture is actually viewed as, in a shader. A subset of DataFieldType.</b><br/><br/>
+<table>
+<tr><th colspan=2>TextureViewType</th></tr>
+<tr><td>Int</td><td>int</td></tr>
+<tr><td>Int4</td><td>int[4]</td></tr>
+<tr><td>Uint</td><td>uint</td></tr>
+<tr><td>Uint2</td><td>uint[2]</td></tr>
+<tr><td>Uint4</td><td>uint[4]</td></tr>
+<tr><td>Float</td><td>float</td></tr>
+<tr><td>Float2</td><td>float[2]</td></tr>
+<tr><td>Float3</td><td>float[3]</td></tr>
+<tr><td>Float4</td><td>float[4]</td></tr>
+<tr><td>Int_64</td><td>int64_t</td></tr>
+<tr><td>Uint_64</td><td>uint64_t</td></tr>
+</table>
+<br/>
+
+<b>SamplerFilter : The type of filter a sampler uses</b><br/><br/>
+<table>
+<tr><th colspan=2>SamplerFilter</th></tr>
+<tr><td>MinMagMipPoint</td><td>Point</td></tr>
+<tr><td>MinMagLinear_MipPoint</td><td>Bilinear</td></tr>
+<tr><td>MinMagMipLinear</td><td>Trilinear</td></tr>
+<tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>SamplerAddressMode : The sampler address mode</b><br/><br/>
+<table>
+<tr><th colspan=2>SamplerAddressMode</th></tr>
+<tr><td>Clamp</td><td>Clamp</td></tr>
+<tr><td>Wrap</td><td>Wrap</td></tr>
+<tr><td>Border</td><td>Border</td></tr>
+<tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>TextureDimensionType : The type of a texture</b><br/><br/>
+<table>
+<tr><th colspan=2>TextureDimensionType</th></tr>
+<tr><td>Texture2D</td><td>Texture2D</td></tr>
+<tr><td>Texture2DArray</td><td>Texture2DArray</td></tr>
+<tr><td>Texture3D</td><td>Texture3D</td></tr>
+<tr><td>TextureCube</td><td>TextureCube</td></tr>
+</table>
+<br/>
+
+<b>ShaderType : The type of a shader resource</b><br/><br/>
+<table>
+<tr><th colspan=2>ShaderType</th></tr>
+<tr><td>Compute</td><td>Compute shader</td></tr>
+<tr><td>RTRayGen</td><td>Ray generation shader</td></tr>
+<tr><td>RTClosestHit</td><td>Closest hit shader</td></tr>
+<tr><td>RTAnyHit</td><td>Any hit shader</td></tr>
+<tr><td>RTIntersection</td><td>Intersection shader</td></tr>
+<tr><td>RTMiss</td><td>Miss shader</td></tr>
+<tr><td>Vertex</td><td>Vertex shader</td></tr>
+<tr><td>Pixel</td><td>Pixel shader</td></tr>
+<tr><td>Amplification</td><td>Amplification shader</td></tr>
+<tr><td>Mesh</td><td>Mesh shader</td></tr>
+<tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>ShaderLanguage : A shader source code language</b><br/><br/>
+<table>
+<tr><th colspan=2>ShaderLanguage</th></tr>
+<tr><td>HLSL</td><td>The directx shader language. https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl</td></tr>
+<tr><td>Slang</td><td>The slang shader language. https://shader-slang.org/</td></tr>
+<tr><td>WGSL</td><td>The WebGPU shader language. https://www.w3.org/TR/WGSL/</td></tr>
+</table>
+<br/>
+
+<b>StructFieldSemantic : Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer.</b><br/><br/>
+<table>
+<tr><th colspan=2>StructFieldSemantic</th></tr>
+<tr><td>Position</td><td>float3</td></tr>
+<tr><td>Color</td><td>float4</td></tr>
+<tr><td>Normal</td><td>float3</td></tr>
+<tr><td>Tangent</td><td>float4</td></tr>
+<tr><td>UV</td><td>float2</td></tr>
+<tr><td>MaterialID</td><td>int</td></tr>
+<tr><td>ShapeID</td><td>int</td></tr>
+<tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>GigiSlangOptimizationLevel : The level of optimizations</b><br/><br/>
+<table>
+<tr><th colspan=2>GigiSlangOptimizationLevel</th></tr>
+<tr><td>None</td><td>Don't optimize at all.</td></tr>
+<tr><td>Default</td><td>Default optimization level: balance code quality and compilation time.</td></tr>
+<tr><td>High</td><td>Optimize aggressively.</td></tr>
+<tr><td>Maximum</td><td>Include optimizations that may take a very long time, or may involve severe space-vs-speed tradeoffs.</td></tr>
+</table>
+<br/>
+
+<b>GigiSlangFloatingPointMode : Floating point mode</b><br/><br/>
+<table>
+<tr><th colspan=2>GigiSlangFloatingPointMode</th></tr>
+<tr><td>Default</td><td></td></tr>
+<tr><td>Fast</td><td></td></tr>
+<tr><td>Precise</td><td></td></tr>
 </table>
 <br/>
 
@@ -284,6 +347,7 @@ table, th, td, tr
 <tr><td>RG8_Unorm</td><td>RG 8 bit unorm</td></tr>
 <tr><td>RGBA8_Unorm</td><td>RGBA 8 bit unorm</td></tr>
 <tr><td>RGBA8_Unorm_sRGB</td><td>RGBA 8 bit unorm, sRGB</td></tr>
+<tr><td>BGRA8_Unorm</td><td>BGRA 8 bit unorm</td></tr>
 <tr><td>R8_Snorm</td><td>R 8 bit snorm</td></tr>
 <tr><td>RG8_Snorm</td><td>RG 8 bit snorm</td></tr>
 <tr><td>RGBA8_Snorm</td><td>RGBA 8 bit snorm</td></tr>
@@ -298,16 +362,19 @@ table, th, td, tr
 <tr><td>RGBA16_Float</td><td>RGBA 16 bit float</td></tr>
 <tr><td>RGBA16_Unorm</td><td>RGBA 16 bit unorm</td></tr>
 <tr><td>RGBA16_Snorm</td><td>RGBA 16 bit snorm</td></tr>
+<tr><td>RG16_Uint</td><td>RG 16 bit uint</td></tr>
 <tr><td>R32_Float</td><td>R 32 bit float</td></tr>
 <tr><td>RG32_Float</td><td>RG 32 bit float</td></tr>
 <tr><td>RGBA32_Float</td><td>RGBA 32 bit float</td></tr>
 <tr><td>R32_Uint</td><td>R 32 bit uint</td></tr>
+<tr><td>RG32_Uint</td><td>RG 32 bit uint</td></tr>
 <tr><td>RGBA32_Uint</td><td>RGBA 32 bit uint</td></tr>
 <tr><td>R11G11B10_Float</td><td>RGB 32 bit (total) float</td></tr>
 <tr><td>D32_Float</td><td>32 bit float depth</td></tr>
 <tr><td>D16_Unorm</td><td>16 bit unorm depth</td></tr>
 <tr><td>D32_Float_S8</td><td>32 bit depth, 8 bit stencil, and 24 more bits unused</td></tr>
 <tr><td>D24_Unorm_S8</td><td>24 bit depth, 8 bit stencil</td></tr>
+<tr><td>BC1_Unorm</td><td>RGB 5:6:5 unorm, 1 bit alpha. block compressed.</td></tr>
 <tr><td>BC4_Unorm</td><td>R 8 bit unorm. block compressed.</td></tr>
 <tr><td>BC4_Snorm</td><td>R 8 bit snorm. block compressed.</td></tr>
 <tr><td>BC5_Unorm</td><td>RG 8 bit unorm. block compressed.</td></tr>
@@ -340,12 +407,29 @@ table, th, td, tr
 </table>
 <br/>
 
+<b>GGUserFile_BLASCullMode : controls D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE and D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE</b><br/><br/>
+<table>
+<tr><th colspan=2>GGUserFile_BLASCullMode</th></tr>
+<tr><td>CullNone</td><td></td></tr>
+<tr><td>FrontIsClockwise</td><td></td></tr>
+<tr><td>FrontIsCounterClockwise</td><td></td></tr>
+</table>
+<br/>
+
 <b>GGUserFile_CameraJitterType : The sequence of the jittered projection matrix</b><br/><br/>
 <table>
 <tr><th colspan=2>GGUserFile_CameraJitterType</th></tr>
 <tr><td>None</td><td>No Jitter</td></tr>
 <tr><td>UniformWhite</td><td>Uniform white noise</td></tr>
 <tr><td>Halton23</td><td>Halton(2,3)</td></tr>
+</table>
+<br/>
+
+<b>BackendTemplateFileType : </b><br/><br/>
+<table>
+<tr><th colspan=2>BackendTemplateFileType</th></tr>
+<tr><td>Output</td><td>This goes into the output package</td></tr>
+<tr><td>InternalShader</td><td>This is a shader used during the code gen process, but should not be part of the output package</td></tr>
 </table>
 <br/>
 
@@ -417,7 +501,7 @@ table, th, td, tr
 <tr><td>BitwiseAnd</td><td>A & B</td></tr>
 <tr><td>BitwiseXor</td><td>A ^ B</td></tr>
 <tr><td>BitwiseNot</td><td>~A</td></tr>
-<tr><td>Noop</td><td>Dont do anything, returns the left value</td></tr>
+<tr><td>Noop</td><td>Dont do anything, returns the left value. Useful for assignment. This does implicit type casting.</td></tr>
 </table>
 <br/>
 
@@ -454,6 +538,87 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>VariableReferenceConstOnly</th></tr>
 <tr><td>std::string name</td><td>""</td><td>The name of the variable.</td></tr>
 <tr><td><i>int variableIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+</table>
+<br/>
+
+<b>VariableUISettings : UI information for variables</b><br/><br/>
+<table>
+<tr><th colspan=3>VariableUISettings</th></tr>
+<tr><td>VariableUIHint UIHint</td><td>VariableUIHint::Count</td><td>Any hints for UI</td></tr>
+<tr><td>std::string min</td><td>""</td><td>The minimum value of the variable. Leave blank for no minimum.</td></tr>
+<tr><td>std::string max</td><td>""</td><td>The maximum value of the variable. Leave blank for no maximum.</td></tr>
+<tr><td>std::string step</td><td>""</td><td>The step size of the variable. Leave blank for default step size.</td></tr>
+</table>
+<br/>
+
+<b>Variable : A variable definition</b><br/><br/>
+<table>
+<tr><th colspan=3>Variable</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The name of the variable.</td></tr>
+<tr><td>std::string comment</td><td>""</td><td>A comment for the variable.</td></tr>
+<tr><td>DataFieldType type</td><td>DataFieldType::Count</td><td>The type of the variable</td></tr>
+<tr><td>bool Const</td><td>false</td><td>If true, the variable is declared const and cannot change at runtime</td></tr>
+<tr><td>bool Static</td><td>false</td><td>If true, the variable has the same value for all instances of the technique</td></tr>
+<tr><td>std::string dflt</td><td>""</td><td>The default value of the variable. The default memory is zero initialized before this is parsed, so if you don't give it enough initializers, it will use zero for the unlisted fields.</td></tr>
+<tr><td>VariableVisibility visibility</td><td>VariableVisibility::Internal</td><td>Who can see and interact with this variable</td></tr>
+<tr><td>std::string Enum</td><td>""</td><td>Integer types can specify an enum, which will then make symbols in both C++ and shader code.</td></tr>
+<tr><td>VariableReference onUserChange</td><td>{}</td><td>A boolean variable that gets set to true when the user changes this variable.</td></tr>
+<tr><td>BackendRestriction backends</td><td>{}</td><td>This variable can be limited to specific backends</td></tr>
+<tr><td>bool transient</td><td>false</td><td>If true, the variable should not be saved between runs of this technique. The Gigi viewer uses this to decide if it should save it in the gguser file or not, for example.</td></tr>
+<tr><td>VariableUISettings UISettings</td><td>{}</td><td>UI Settings.</td></tr>
+<tr><td>std::string UIGroup</td><td>""</td><td>Used to organize variables into folders in the viewer. separate folders with dots.  For instance: settings.controls</td></tr>
+<tr><td><i>int enumIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+<tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
+<tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
+<tr><td><i>bool system</i></td><td>false</td><td>Is set if the runtime overrides the value</td></tr>
+<tr><td>VariableUIHint UIHint</td><td>VariableUIHint::Count</td><td>Any hints for UI</td></tr>
+</table>
+<br/>
+
+<b>Condition : Specifiy a condition to make something conditional</b><br/><br/>
+<table>
+<tr><th colspan=3>Condition</th></tr>
+<tr><td>std::string variable1</td><td>{}</td><td>Value 1</td></tr>
+<tr><td>ConditionComparison comparison</td><td>ConditionComparison::Count</td><td>The comparison operator</td></tr>
+<tr><td>std::string value2</td><td>{}</td><td>Value 2</td></tr>
+<tr><td>std::string variable2</td><td>{}</td><td>Value 2</td></tr>
+<tr><td><i>int variable1Index</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+<tr><td><i>int variable2Index</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+<tr><td>bool alwaysFalse</td><td>false</td><td>If checked, condition always evaluates to false</td></tr>
+<tr><td><i>bool hideUI</i></td><td>false</td><td>Used by editor to hide this UI when it isn't supported</td></tr>
+</table>
+<br/>
+
+<b>EnumItem : Specifiy an enum</b><br/><br/>
+<table>
+<tr><th colspan=3>EnumItem</th></tr>
+<tr><td>std::string label</td><td>""</td><td>The text label of an enum</td></tr>
+<tr><td><i>std::string displayLabel</i></td><td>""</td><td>name before sanitization</td></tr>
+<tr><td>std::string comment</td><td>""</td><td></td></tr>
+</table>
+<br/>
+
+<b>Enum : Specifiy an enum</b><br/><br/>
+<table>
+<tr><th colspan=3>Enum</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The name of the enum</td></tr>
+<tr><td>EnumItem items[]</td><td></td><td>The items in the enum. Values start at 0 and count up from there.</td></tr>
+<tr><td>std::string comment</td><td>""</td><td></td></tr>
+<tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
+<tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
+</table>
+<br/>
+
+<b>CooperativeVectorData : Data needed for cooperative vectors support for imported buffer resources</b><br/><br/>
+<table>
+<tr><th colspan=3>CooperativeVectorData</th></tr>
+<tr><td>bool convert</td><td>false</td><td>If true, does the data conversion described below</td></tr>
+<tr><td>unsigned int width</td><td>1</td><td>How many columns in the matrix or vector.</td></tr>
+<tr><td>unsigned int height</td><td>1</td><td>How many rows in the matrix or vector.</td></tr>
+<tr><td>CooperativeVectorDataType srcType</td><td>CooperativeVectorDataType::_float32</td><td>The data type of the source data.</td></tr>
+<tr><td>CooperativeVectorBufferLayout srcLayout</td><td>CooperativeVectorBufferLayout::RowMajor</td><td>The layout of the source data.</td></tr>
+<tr><td>CooperativeVectorDataType destType</td><td>CooperativeVectorDataType::_float16</td><td>The data type you want it to be converted to.</td></tr>
+<tr><td>CooperativeVectorBufferLayout destLayout</td><td>CooperativeVectorBufferLayout::RowMajor</td><td>The layout you want it to be converted to.</td></tr>
 </table>
 <br/>
 
@@ -619,6 +784,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string Enum</td><td>""</td><td>Integer types can specify an enum, which will then make symbols in both C++ and shader code.</td></tr>
 <tr><td>StructFieldSemantic semantic</td><td>StructFieldSemantic::Count</td><td>Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer. If none is given, it shows up in shaders as an autonumbering text coordinate.</td></tr>
 <tr><td>int semanticIndex</td><td>0</td><td>Some semantics can have multiple channels, like UVs and colors</td></tr>
+<tr><td>bool allowAtomicOps</td><td>false</td><td>Nedeed by WebGPU. Check this box to allow atopic operations on this field.</td></tr>
+<tr><td><i>bool isPadding</i></td><td>false</td><td>true if this field was added to pad the struct for alignment reasons.</td></tr>
 <tr><td><i>int enumIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
 <tr><td><i>size_t sizeInBytes</i></td><td>0</td><td>The size in bytes of this field</td></tr>
 </table>
@@ -635,6 +802,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string definition</td><td>""</td><td>The parsed string definition of the struct.</td></tr>
 <tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
+<tr><td><i>bool isForShaderConstants</i></td><td>false</td><td>If true, this struct is used by shader constants, else it isn't</td></tr>
 </table>
 <br/>
 
@@ -646,6 +814,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool raw</td><td>false</td><td>If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)</td></tr>
 <tr><td>bool PODAsStructuredBuffer</td><td>true</td><td>Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.</td></tr>
 <tr><td>bool globallyCoherent</td><td>false</td><td>Set this to true if you want the resource to be declared as globallycoherent.</td></tr>
+<tr><td><i>bool hideUI</i></td><td>false</td><td>the shader resource will change this flag based on the type of the resource chosen</td></tr>
 </table>
 <br/>
 
@@ -655,6 +824,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>TextureDimensionType dimension</td><td>TextureDimensionType::Texture2D</td><td>The dimensionality of the texture</td></tr>
 <tr><td>TextureViewType viewType</td><td>TextureViewType::Float4</td><td>The dimensionality of the texture</td></tr>
 <tr><td>bool globallyCoherent</td><td>false</td><td>Set this to true if you want the resource to be declared as globallycoherent.</td></tr>
+<tr><td><i>bool hideUI</i></td><td>false</td><td>the shader resource will change this flag based on the type of the resource chosen</td></tr>
 </table>
 <br/>
 
@@ -664,6 +834,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string name</td><td>""</td><td>The name of the resource in the shader</td></tr>
 <tr><td>SamplerFilter filter</td><td>SamplerFilter::MinMagMipLinear</td><td>The type of filtering to do</td></tr>
 <tr><td>SamplerAddressMode addressMode</td><td>SamplerAddressMode::Wrap</td><td>The sampling address mode</td></tr>
+<tr><td><i>int registerIndex</i></td><td>-1</td><td>For root signatures and shader code that wants registers declared. Calculated before backend code is called, for convenience of backends.</td></tr>
+<tr><td><i>std::string registerSpaceString</i></td><td>""</td><td>Displayed after the register in the shader</td></tr>
 </table>
 <br/>
 
@@ -671,13 +843,16 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <table>
 <tr><th colspan=3>ShaderResource</th></tr>
 <tr><td>std::string name</td><td>""</td><td>The name of the resource in the shader</td></tr>
-<tr><td>ShaderResourceType type</td><td>ShaderResourceType::Count</td><td>The resource type</td></tr>
 <tr><td>ShaderResourceAccessType access</td><td>ShaderResourceAccessType::Count</td><td>How the resource is accessed</td></tr>
+<tr><td>ShaderResourceType type</td><td>ShaderResourceType::Count</td><td>The resource type</td></tr>
 <tr><td>ShaderResourceBuffer buffer</td><td>{}</td><td>Data specific to buffers</td></tr>
 <tr><td>ShaderResourceTexture texture</td><td>{}</td><td>Data specific to textures</td></tr>
 <tr><td>BackendRestriction backends</td><td>{}</td><td>The backends this resource is present for.</td></tr>
+<tr><td>bool allowAtomicOps</td><td>false</td><td>Nedeed by WebGPU. Check this box to allow atopic operations on this field.</td></tr>
 <tr><td><i>int registerIndex</i></td><td>-1</td><td>For root signatures and shader code that wants registers declared. Calculated before backend code is called, for convenience of backends.</td></tr>
+<tr><td><i>std::string registerSpaceString</i></td><td>""</td><td>Displayed after the register in the shader</td></tr>
 <tr><td><i>int constantBufferStructIndex</i></td><td>-1</td><td>for CBVs, this is the index in renderGraph.structs that describes the constant buffer</td></tr>
+<tr><td><i>ShaderResourceAccessType originalAccess</i></td><td>ShaderResourceAccessType::Count</td><td>If the access is changed (like in post load), this is what it was originally. If this is Count, it wasn't changed.</td></tr>
 </table>
 <br/>
 
@@ -726,9 +901,15 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
-<b>SlangOptions : A declaration of a shader</b><br/><br/>
+<b>SlangOptions : Slang options</b><br/><br/>
 <table>
 <tr><th colspan=3>SlangOptions</th></tr>
+<tr><td>bool noNameMangling</td><td>false</td><td>Do as little mangling of names as possible, to try to preserve original names.</td></tr>
+<tr><td>bool lineDirectives</td><td>true</td><td>Whether to output line directives in the shader.</td></tr>
+<tr><td>bool warningsAsErrors</td><td>false</td><td>Warnings are errors.</td></tr>
+<tr><td>bool verbosePaths</td><td>false</td><td>Verbose Paths.</td></tr>
+<tr><td>GigiSlangFloatingPointMode floatingPointMode</td><td>GigiSlangFloatingPointMode::Default</td><td>Floating point mode</td></tr>
+<tr><td>GigiSlangOptimizationLevel optimizationLevel</td><td>GigiSlangOptimizationLevel::Default</td><td>Optimization level</td></tr>
 <tr><td>bool process</td><td>false</td><td>if true, this shader will be processed by slang</td></tr>
 </table>
 <br/>
@@ -739,11 +920,11 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string name</td><td>""</td><td>The name of the shader, as it will be referenced by nodes</td></tr>
 <tr><td>std::string fileName</td><td>""</td><td>The file name of the shader file.</td></tr>
 <tr><td><i>std::string destFileName</i></td><td>""</td><td>Filled out by compiler.  Where the shader file is supposed to go after compilation.</td></tr>
+<tr><td>ShaderLanguage language</td><td>ShaderLanguage::HLSL</td><td>What language the shader is written in</td></tr>
 <tr><td>ShaderType type</td><td>ShaderType::Compute</td><td>The type of shader it is</td></tr>
-<tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint.</td></tr>
+<tr><td>std::string entryPoint</td><td>"main"</td><td>The shader entrypoint.</td></tr>
 <tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with.</td></tr>
 <tr><td><i>TokenReplacement tokenReplacements[]</i></td><td></td><td>The token replacements specific for the shader.</td></tr>
-<tr><td>int CSNumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 <tr><td>int NumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 <tr><td>bool copyFile</td><td>true</td><td>if false, will not copy the file over. A hackaround for when you have multiple raytracing shaders in the same file. TODO: resolve this better.</td></tr>
 <tr><td>SlangOptions slangOptions</td><td>{}</td><td>Settings for optionally processing shaders with slang</td></tr>
@@ -757,71 +938,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
 <tr><td><i>std::string Used_RTHitGroupIndex[]</i></td><td></td><td>All RTHitGroupIndex names used in the shader</td></tr>
 <tr><td><i>std::string Used_RTMissIndex[]</i></td><td></td><td>All RTMissIndex names used in the shader</td></tr>
-</table>
-<br/>
-
-<b>VariableUISettings : UI information for variables</b><br/><br/>
-<table>
-<tr><th colspan=3>VariableUISettings</th></tr>
-<tr><td>VariableUIHint UIHint</td><td>VariableUIHint::Count</td><td>Any hints for UI</td></tr>
-<tr><td>std::string min</td><td>""</td><td>The minimum value of the variable. Leave blank for no minimum.</td></tr>
-<tr><td>std::string max</td><td>""</td><td>The maximum value of the variable. Leave blank for no maximum.</td></tr>
-<tr><td>std::string step</td><td>""</td><td>The step size of the variable. Leave blank for default step size.</td></tr>
-</table>
-<br/>
-
-<b>Variable : A variable definition</b><br/><br/>
-<table>
-<tr><th colspan=3>Variable</th></tr>
-<tr><td>std::string name</td><td>""</td><td>The name of the variable.</td></tr>
-<tr><td>std::string comment</td><td>""</td><td>A comment for the variable.</td></tr>
-<tr><td>DataFieldType type</td><td>DataFieldType::Count</td><td>The type of the variable</td></tr>
-<tr><td>bool Const</td><td>false</td><td>If true, the variable is declared const and cannot change at runtime</td></tr>
-<tr><td>bool Static</td><td>false</td><td>If true, the variable has the same value for all instances of the technique</td></tr>
-<tr><td>std::string dflt</td><td>""</td><td>The default value of the variable. The default memory is zero initialized before this is parsed, so if you don't give it enough initializers, it will use zero for the unlisted fields.</td></tr>
-<tr><td>VariableVisibility visibility</td><td>VariableVisibility::Internal</td><td>Who can see and interact with this variable</td></tr>
-<tr><td>std::string Enum</td><td>""</td><td>Integer types can specify an enum, which will then make symbols in both C++ and shader code.</td></tr>
-<tr><td>BackendRestriction backends</td><td>{}</td><td>This variable can be limited to specific backends</td></tr>
-<tr><td>bool transient</td><td>false</td><td>If true, the variable should not be saved between runs of this technique. The Gigi viewer uses this to decide if it should save it in the gguser file or not, for example.</td></tr>
-<tr><td>VariableUISettings UISettings</td><td>{}</td><td>UI Settings.</td></tr>
-<tr><td>std::string UIGroup</td><td>""</td><td>Used to organize variables into folders in the viewer. separate folders with dots.  For instance: settings.controls</td></tr>
-<tr><td><i>int enumIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
-<tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
-<tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
-<tr><td>VariableUIHint UIHint</td><td>VariableUIHint::Count</td><td>Any hints for UI</td></tr>
-</table>
-<br/>
-
-<b>Condition : Specifiy a condition to make something conditional</b><br/><br/>
-<table>
-<tr><th colspan=3>Condition</th></tr>
-<tr><td>std::string variable1</td><td>{}</td><td>Value 1</td></tr>
-<tr><td>ConditionComparison comparison</td><td>ConditionComparison::Count</td><td>The comparison operator</td></tr>
-<tr><td>std::string value2</td><td>{}</td><td>Value 2</td></tr>
-<tr><td>std::string variable2</td><td>{}</td><td>Value 2</td></tr>
-<tr><td><i>int variable1Index</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
-<tr><td><i>int variable2Index</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
-<tr><td>bool alwaysFalse</td><td>false</td><td>If checked, condition always evaluates to false</td></tr>
-</table>
-<br/>
-
-<b>EnumItem : Specifiy an enum</b><br/><br/>
-<table>
-<tr><th colspan=3>EnumItem</th></tr>
-<tr><td>std::string label</td><td>""</td><td>The text label of an enum</td></tr>
-<tr><td><i>std::string displayLabel</i></td><td>""</td><td>name before sanitization</td></tr>
-<tr><td>std::string comment</td><td>""</td><td></td></tr>
-</table>
-<br/>
-
-<b>Enum : Specifiy an enum</b><br/><br/>
-<table>
-<tr><th colspan=3>Enum</th></tr>
-<tr><td>std::string name</td><td>""</td><td>The name of the enum</td></tr>
-<tr><td>EnumItem items[]</td><td></td><td>The items in the enum. Values start at 0 and count up from there.</td></tr>
-<tr><td>std::string comment</td><td>""</td><td></td></tr>
-<tr><td><i>std::string originalName</i></td><td>""</td><td>The name before renames and sanitization</td></tr>
-<tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
+<tr><td>int CSNumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>For compute shaders only, the number of threads each dispatch has. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 </table>
 <br/>
 
@@ -893,8 +1010,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>TextureSizeDesc : size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.</b><br/><br/>
 <table>
 <tr><th colspan=3>TextureSizeDesc</th></tr>
-<tr><td>TextureNodeReference node</td><td>{}</td><td>The node referenced, if there is one.</td></tr>
-<tr><td>VariableReference variable</td><td>{}</td><td>If a variable is given, the size will be based on the value of the variable</td></tr>
+<tr><td>TextureNodeReference node</td><td>{}</td><td>If a texture is specified, the size will be based on the size of the texture. Padded with 1s to make it 3 dimensional.</td></tr>
+<tr><td>VariableReference variable</td><td>{}</td><td>If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.</td></tr>
 <tr><td>int multiply[3]</td><td>{ 1 , 1 , 1 }</td><td></td></tr>
 <tr><td>int divide[3]</td><td>{ 1 , 1 , 1 }</td><td></td></tr>
 <tr><td>int preAdd[3]</td><td>{ 0 , 0 , 0 }</td><td></td></tr>
@@ -905,8 +1022,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>DispatchSizeDesc : The number of threads to dispatch. Not thread groups.  size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.</b><br/><br/>
 <table>
 <tr><th colspan=3>DispatchSizeDesc</th></tr>
-<tr><td>TextureOrBufferNodeReference node</td><td>{}</td><td>If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer</td></tr>
-<tr><td>VariableReference variable</td><td>{}</td><td>If a variable is given, the dispatch size will be based on the value of the variable</td></tr>
+<tr><td>TextureOrBufferNodeReference node</td><td>{}</td><td>If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.</td></tr>
+<tr><td>VariableReference variable</td><td>{}</td><td>If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.</td></tr>
 <tr><td>NodePinReferenceOptional indirectBuffer</td><td>{}</td><td>If given, this buffer will be used as an indirect dispatch buffer</td></tr>
 <tr><td>int multiply[3]</td><td>{ 1 , 1 , 1 }</td><td></td></tr>
 <tr><td>int divide[3]</td><td>{ 1 , 1 , 1 }</td><td></td></tr>
@@ -920,8 +1037,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>RayDispatchSizeDesc : size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.</b><br/><br/>
 <table>
 <tr><th colspan=3>RayDispatchSizeDesc</th></tr>
-<tr><td>TextureOrBufferNodeReference node</td><td>{}</td><td>If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer</td></tr>
-<tr><td>VariableReference variable</td><td>{}</td><td>If a variable is given, the dispatch size will be based on the value of the variable</td></tr>
+<tr><td>TextureOrBufferNodeReference node</td><td>{}</td><td>If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer Padded with 1s to make it 3 dimensional.</td></tr>
+<tr><td>VariableReference variable</td><td>{}</td><td>If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.</td></tr>
 <tr><td>int multiply[3]</td><td>{ 1 , 1 , 1 }</td><td></td></tr>
 <tr><td>int divide[3]</td><td>{ 1 , 1 , 1 }</td><td></td></tr>
 <tr><td>int preAdd[3]</td><td>{ 0 , 0 , 0 }</td><td></td></tr>
@@ -1051,6 +1168,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>ShaderResourceAccessType startingState</i></td><td>ShaderResourceAccessType::Count</td><td>The first state that a reosurce is in. Calculated for convenience.</td></tr>
 <tr><td><i>ShaderResourceAccessType finalState</i></td><td>ShaderResourceAccessType::Count</td><td>The last state that a reosurce is in. Calculated for convenience.</td></tr>
 <tr><td><i>unsigned int accessedAs</i></td><td>0</td><td>A bitfield of all the ways this resource is accessed (ShaderResourceAccessType). Useful for creating resources with the correct usage flags.</td></tr>
+<tr><td><i>unsigned int originallyAccessedAs</i></td><td>0</td><td>Same as accessedAs, but uses original access instead of access, in case access was modified</td></tr>
 </table>
 <br/>
 
@@ -1289,7 +1407,10 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>GGUserFile_TLASBuildFlags RT_BuildFlags</td><td>GGUserFile_TLASBuildFlags::PreferFastTrace</td><td>D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE etc</td></tr>
 <tr><td>bool BLASOpaque</td><td>false</td><td>DXR BLAS Option</td></tr>
 <tr><td>bool BLASNoDuplicateAnyhitInvocations</td><td>false</td><td>DXR BLAS Option</td></tr>
+<tr><td>GGUserFile_BLASCullMode BLASCullMode</td><td>GGUserFile_BLASCullMode::CullNone</td><td>BLAS triangle culling settings</td></tr>
 <tr><td>bool IsAABBs</td><td>false</td><td>Set to true if ray tracing AABBs with intersection shaders. Format is Min XYZ, Max XYZ.</td></tr>
+<tr><td>float GeometryTransform[16]</td><td>{ 1.0f , 0.0f , 0.0f , 0.0f , 0.0f , 1.0f , 0.0f , 0.0f , 0.0f , 0.0f , 1.0f , 0.0f , 0.0f , 0.0f , 0.0f , 1.0f }</td><td>A 4x4 matrix to transform pos, normal, tangent.</td></tr>
+<tr><td>CooperativeVectorData cvData</td><td>{}</td><td>Data needed for cooperative vectors support for imported buffer resources</td></tr>
 </table>
 <br/>
 
@@ -1420,6 +1541,21 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>GGViewerConfig : The config file for the viewer settings file ViewerConfig.json</b><br/><br/>
+<table>
+<tr><th colspan=3>GGViewerConfig</th></tr>
+<tr><td>std::string version</td><td>"1.0"</td><td>The version of the file</td></tr>
+<tr><td>std::string keyCameraForward</td><td>"W"</td><td>Camera forward key</td></tr>
+<tr><td>std::string keyCameraLeft</td><td>"A"</td><td>Camera left key</td></tr>
+<tr><td>std::string keyCameraBackward</td><td>"S"</td><td>Camera back key</td></tr>
+<tr><td>std::string keyCameraRight</td><td>"D"</td><td>Camera right key</td></tr>
+<tr><td>std::string keyCameraUp</td><td>"E"</td><td>Camera right key</td></tr>
+<tr><td>std::string keyCameraDown</td><td>"Q"</td><td>Camera down key</td></tr>
+<tr><td>std::string keyCameraFast</td><td>"Shift"</td><td>Camera fast key</td></tr>
+<tr><td>std::string keyCameraSlow</td><td>"Control"</td><td>Camera slow key</td></tr>
+</table>
+<br/>
+
 <b>BrowserServerInfo : </b><br/><br/>
 <table>
 <tr><th colspan=3>BrowserServerInfo</th></tr>
@@ -1487,6 +1623,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool isDirectory</td><td>false</td><td>If this is a directory, set this to true to make this apply to all files in the directory recursively.</td></tr>
 <tr><td>bool onlyIncludeIfRaytracing</td><td>false</td><td>If a file should only be copied when the render graph uses raytracing, set this to true.</td></tr>
 <tr><td>bool onlyIncludeIfDX12AgilitySDKRequired</td><td>false</td><td>If a file should only be copied when the dx12 agility sdk is required, set this to true</td></tr>
+<tr><td>BackendTemplateFileType type</td><td>BackendTemplateFileType::Output</td><td>The type of the file determines what happens to it during code generation</td></tr>
 </table>
 <br/>
 
@@ -1509,6 +1646,23 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>WebGPU_RWTextureSplit : </b><br/><br/>
+<table>
+<tr><th colspan=3>WebGPU_RWTextureSplit</th></tr>
+<tr><td>std::string nodeName</td><td>""</td><td>The name of the shader affected</td></tr>
+<tr><td>std::string shaderName</td><td>""</td><td>The name of the shader affected</td></tr>
+<tr><td>std::string pinName</td><td>""</td><td>The name of the pin affected. This pin is also write only.</td></tr>
+<tr><td>std::string pinNameR</td><td>""</td><td>The name of the read only version of the pin.</td></tr>
+</table>
+<br/>
+
+<b>BackendData_WebGPU : </b><br/><br/>
+<table>
+<tr><th colspan=3>BackendData_WebGPU</th></tr>
+<tr><td>WebGPU_RWTextureSplit RWTextureSplits[]</td><td></td><td>All RW textures that got split into an R texture and a W texture</td></tr>
+</table>
+<br/>
+
 <b>BackendSettings_DX12 : DX12 Settings</b><br/><br/>
 <table>
 <tr><th colspan=3>BackendSettings_DX12</th></tr>
@@ -1523,7 +1677,37 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string shaderModelAs</td><td>"as_6_5"</td><td>The default shader model to use for amplification shaders</td></tr>
 <tr><td>std::string shaderModelMs</td><td>"ms_6_5"</td><td>The default shader model to use for mesh shaders</td></tr>
 <tr><td>bool DXC_HLSL_2021</td><td>false</td><td>When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021</td></tr>
+<tr><td>bool Allow16BitTypes</td><td>false</td><td>DXC option -enable-16bit-types. Only usable for shader model >= 6.1, and HLSL language >= 2018.</td></tr>
 <tr><td>bool AgilitySDKRequired</td><td>false</td><td>True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.</td></tr>
+</table>
+<br/>
+
+<b>BackendSettings_WebGPU_Features : Required Limits. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedFeatures</b><br/><br/>
+<table>
+<tr><th colspan=3>BackendSettings_WebGPU_Features</th></tr>
+<tr><td>bool float32Filterable</td><td>false</td><td>float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.</td></tr>
+<tr><td>bool subgroups</td><td>false</td><td>subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup
+to communicate and execute collective math operations such as calculating a sum of numbers, and offering an efficient method for
+cross-thread data sharing. Note that the subgroupMinSize and subgroupMaxSize properties can be useful to check if, for example, you have a
+hardcoded algorithm that requires a subgroup of a certain size. You can use f16 values with subgroups when you request a GPUDevice with
+both the shader-f16 and subgroups features.</td></tr>
+</table>
+<br/>
+
+<b>BackendSettings_WebGPU_Limits : Required features. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits</b><br/><br/>
+<table>
+<tr><th colspan=3>BackendSettings_WebGPU_Limits</th></tr>
+<tr><td>unsigned int maxStorageBuffersPerShaderStage</td><td>0</td><td>maxStorageBuffersPerShaderStage. 0 for default.</td></tr>
+<tr><td>unsigned int maxStorageTexturesPerShaderStage</td><td>0</td><td>maxStorageTexturesPerShaderStage. 0 for default.</td></tr>
+<tr><td>unsigned int maxComputeWorkgroupStorageSize</td><td>0</td><td>maxComputeWorkgroupStorageSize. 0 for default.</td></tr>
+</table>
+<br/>
+
+<b>BackendSettings_WebGPU : WebGPU Settings. For the capabilities of your browser and machine, see: https://webgpureport.org/</b><br/><br/>
+<table>
+<tr><th colspan=3>BackendSettings_WebGPU</th></tr>
+<tr><td>BackendSettings_WebGPU_Features features</td><td>{}</td><td></td></tr>
+<tr><td>BackendSettings_WebGPU_Limits limits</td><td>{}</td><td></td></tr>
 </table>
 <br/>
 
@@ -1532,6 +1716,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>BackendSettings_Common</th></tr>
 <tr><td>bool debugNames</td><td>true</td><td>If true, sets debug names to GPU objects on available platforms.</td></tr>
 <tr><td>bool debugShaders</td><td>true</td><td>If true, compiles shaders with debug options turned on, on available platforms.</td></tr>
+<tr><td>bool shaderWarningAsErrors</td><td>false</td><td>If true, compiles shaders with warnings as errors turned on</td></tr>
+<tr><td>bool createPDBsAndBinaries</td><td>false</td><td>If true, will output PDBs and shader binaries, useful for crash debugging. Also needed for rga.exe to run.</td></tr>
+<tr><td>std::string rgaPath</td><td>"C:\\Apps\\RadeonDeveloperToolSuite\\rga.exe"</td><td>The default path where rga.exe can be found.
+This is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.
+see https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute</td></tr>
+<tr><td>std::string rgaASIC</td><td>"gfx1032"</td><td>The hardware generation to target for rga.exe
+gfx1032: AMD Radeon PRO W6600
+See .bat for more info</td></tr>
 </table>
 <br/>
 
@@ -1539,7 +1731,15 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <table>
 <tr><th colspan=3>BackendSettings</th></tr>
 <tr><td>BackendSettings_DX12 dx12</td><td>{}</td><td></td></tr>
+<tr><td>BackendSettings_WebGPU webGPU</td><td>{}</td><td></td></tr>
 <tr><td>BackendSettings_Common common</td><td>{}</td><td></td></tr>
+</table>
+<br/>
+
+<b>BackendData : Backend Data</b><br/><br/>
+<table>
+<tr><th colspan=3>BackendData</th></tr>
+<tr><td>BackendData_WebGPU webGPU</td><td>{}</td><td></td></tr>
 </table>
 <br/>
 
@@ -1548,6 +1748,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>BuildSettings</th></tr>
 <tr><td>GigiCompileWarning disableWarnings[]</td><td></td><td>Warnings listed here will be suppressed</td></tr>
 <tr><td>std::string outDX12</td><td>"out/dx12/"</td><td>The output location for DX12</td></tr>
+<tr><td>std::string outWebGPU</td><td>"out/WebGPU/"</td><td>The output location for WebGPU</td></tr>
 <tr><td><i>std::string outInterpreter</i></td><td>"out/interpreter/"</td><td>The output location for the interpreter backend</td></tr>
 </table>
 <br/>
@@ -1556,6 +1757,15 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <table>
 <tr><th colspan=3>ConfigFromBackend</th></tr>
 <tr><td>bool RTSceneTakesSRVSlot</td><td>true</td><td>If true, RT scenes will take an SRV register slot.</td></tr>
+</table>
+<br/>
+
+<b>StyleSettings : Graph style settings.</b><br/><br/>
+<table>
+<tr><th colspan=3>StyleSettings</th></tr>
+<tr><td>float resourceNodeColor[3]</td><td>{ 128.f / 255.f , 128.f / 255.f , 1.f }</td><td>Color of the resource node types.</td></tr>
+<tr><td>float nonTransientResourceNodeColor[3]</td><td>{ 128.f / 255.f , 128.f / 255.f , 1.f }</td><td>Color of the non transient resource node types.</td></tr>
+<tr><td>float actionNodeColor[3]</td><td>{ 1.f , 128.f / 255.f , 64.f / 255.f }</td><td>Color of the action node types.</td></tr>
 </table>
 <br/>
 
@@ -1651,6 +1861,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>RTHitGroup hitGroups[]</td><td></td><td>Ray tracing hit group definitions</td></tr>
 <tr><td>BackendSettings settings</td><td>{}</td><td>Backend settings</td></tr>
 <tr><td>BuildSettings buildSettings</td><td>{}</td><td>Build settings</td></tr>
+<tr><td>StyleSettings styleSettings</td><td>{}</td><td>Style settings</td></tr>
 <tr><td>CustomGigiToken customTokens[]</td><td></td><td>Allows you to give values for custom gigi tokens, such as /*$(CopyrightHeader)*/. All unknown Gigi tokens are replaced with empty string by default.</td></tr>
 <tr><td>TextureNodeReference PrimaryOutput</td><td>{}</td><td>A hint to anything that might be able to use this information, such as generated code or the viewer.</td></tr>
 <tr><td>EditorGroupNode editorGroupNodes[]</td><td></td><td>Editor group nodes</td></tr>
@@ -1671,6 +1882,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>bool generateGraphVizFlag</i></td><td>false</td><td>Set to true if the generating GraphViz. Should be set to true from a command line parameter</td></tr>
 <tr><td><i>std::vector<std::string> assertsFormatStrings</i></td><td>{}</td><td>The unique formatting strings of the asserts messages</td></tr>
 <tr><td><i>std::unordered_set<std::string> firedAssertsIdentifiers</i></td><td>{}</td><td>The identifiers of the fired asserts to ignore them later on</td></tr>
+<tr><td><i>BackendData backendData</i></td><td>{}</td><td>Backend Data</td></tr>
 </table>
 <br/>
 

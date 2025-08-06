@@ -1,0 +1,16 @@
+{
+    "fileProperties":[
+      {
+        "fileName": "Module.js",
+        "renameTo": "/*$(Name)*/_Module.js"
+      },
+      {
+        "fileName": "GigiRayTracingEmulation.hlsli",
+        "type": "InternalShader"
+      },
+      {
+        "fileName": "BVH.hlsli",
+        "type": "InternalShader"
+      }
+    ]
+}

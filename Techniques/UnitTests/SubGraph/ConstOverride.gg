@@ -1,0 +1,166 @@
+{
+    "$schema": "gigischema.json",
+    "comment": "This tests using a subgraph twice and overriding with different literal values.",
+    "version": "0.99b",
+    "shaders": [
+        {
+            "name": "ClearCS",
+            "fileName": "ConstOverride_Clear.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Output",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -37.0,
+                    2.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Clear",
+                "editorPos": [
+                    85.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ClearCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "Left",
+                "editorPos": [
+                    245.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Clear",
+                        "dstPin": "Output"
+                    }
+                ],
+                "fileName": "ConstOverrideSubgraph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Color"
+                    ],
+                    "variables": [
+                        {
+                            "name": "MinX",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "MaxX",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "MinX",
+                        "visibility": "User",
+                        "replaceWithValue": "50"
+                    },
+                    {
+                        "name": "MaxX",
+                        "visibility": "User",
+                        "replaceWithValue": "100"
+                    }
+                ]
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "Right",
+                "editorPos": [
+                    335.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Left",
+                        "dstPin": "Color"
+                    }
+                ],
+                "fileName": "ConstOverrideSubgraph.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Color"
+                    ],
+                    "variables": [
+                        {
+                            "name": "MinX",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "MaxX",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "MinX",
+                        "visibility": "User",
+                        "replaceWithValue": "150"
+                    },
+                    {
+                        "name": "MaxX",
+                        "visibility": "User",
+                        "replaceWithValue": "200"
+                    }
+                ]
+            }
+        }
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
+}

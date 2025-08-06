@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "IndirectDispatch",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "Dispatch Count 1",
@@ -27,11 +27,6 @@
             "name": "Fill Indirect Dispatch Count",
             "fileName": "IndirectDispatch_Fill.hlsl",
             "entryPoint": "FillIndirectDispatchCount",
-            "CSNumThreads": [
-                1,
-                1,
-                1
-            ],
             "NumThreads": [
                 1,
                 1,
@@ -47,17 +42,17 @@
                         "PODAsStructuredBuffer": false
                     }
                 }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
             ]
         },
         {
             "name": "Do Indirect Dispatch",
             "fileName": "IndirectDispatch_Execute.hlsl",
             "entryPoint": "DoIndirectDispatch",
-            "CSNumThreads": [
-                1,
-                1,
-                1
-            ],
             "NumThreads": [
                 1,
                 1,
@@ -72,6 +67,23 @@
                         "PODAsStructuredBuffer": false
                     }
                 }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "Clear Render Target",
+            "fileName": "IndirectDispatch_Clear.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Render Target",
+                    "type": "Texture",
+                    "access": "UAV"
+                }
             ]
         }
     ],
@@ -80,8 +92,8 @@
             "resourceTexture": {
                 "name": "Render Target",
                 "editorPos": [
-                    755.0,
-                    354.0
+                    419.0,
+                    306.0
                 ],
                 "visibility": "Exported",
                 "format": {
@@ -100,7 +112,7 @@
             "resourceBuffer": {
                 "name": "Indirect Dispatch Count",
                 "editorPos": [
-                    470.0,
+                    314.0,
                     418.0
                 ],
                 "format": {
@@ -115,7 +127,7 @@
             "actionComputeShader": {
                 "name": "Fill Indirect Dispatch Count",
                 "editorPos": [
-                    673.0,
+                    517.0,
                     415.0
                 ],
                 "linkProperties": [
@@ -138,8 +150,8 @@
             "actionComputeShader": {
                 "name": "Do Indirect Dispatch 1",
                 "editorPos": [
-                    896.0,
-                    415.0
+                    789.0,
+                    386.0
                 ],
                 "linkProperties": [
                     {},
@@ -148,8 +160,8 @@
                 "connections": [
                     {
                         "srcPin": "Render Target",
-                        "dstNode": "Render Target",
-                        "dstPin": "resource"
+                        "dstNode": "Clear Render Target",
+                        "dstPin": "Render Target"
                     }
                 ],
                 "shader": {
@@ -168,8 +180,8 @@
             "actionComputeShader": {
                 "name": "Do Indirect Dispatch 2",
                 "editorPos": [
-                    1077.0,
-                    415.0
+                    970.0,
+                    386.0
                 ],
                 "linkProperties": [
                     {},
@@ -195,6 +207,37 @@
                     }
                 }
             }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Clear Render Target",
+                "editorPos": [
+                    565.0,
+                    338.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Render Target",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Clear Render Target"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Render Target"
+                    }
+                }
+            }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Render Target"
+    }
 }

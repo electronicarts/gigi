@@ -13,6 +13,9 @@
 #include <istream>
 #include <streambuf>
 #include <unordered_set>
+
+#include <DirectXMath.h>
+#include <DirectXMathMatrix.inl>
 // clang-format on
 
 void RuntimeTypes::RenderGraphNode_Resource_Buffer::Release(GigiInterpreterPreviewWindowDX12& interpreter)
@@ -251,6 +254,13 @@ bool GigiInterpreterPreviewWindowDX12::MakeAccelerationStructures(const RenderGr
 		instanceDesc.InstanceID = 0;
 		instanceDesc.InstanceMask = 1;
 		instanceDesc.AccelerationStructure = runtimeData.m_blas->GetGPUVirtualAddress();
+
+		switch (resourceDesc.buffer.BLASCullMode)
+		{
+			case GGUserFile_BLASCullMode::CullNone: instanceDesc.Flags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE; break;
+			case GGUserFile_BLASCullMode::FrontIsClockwise: break;
+			case GGUserFile_BLASCullMode::FrontIsCounterClockwise: instanceDesc.Flags |= D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE; break;
+		}
 
 		runtimeData.m_instanceDescs = CreateBuffer(
 			m_device,
@@ -491,6 +501,59 @@ static std::vector<char> LoadStructuredBufferPly(const GigiInterpreterPreviewWin
 
 static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const RenderGraph &renderGraph, const std::vector<FlattenedVertex>& flattenedVertices)
 {
+    // Get the transforms
+    DirectX::XMMATRIX transform, transformInverseTranspose;
+    {
+        memcpy(&transform, desc.buffer.GeometryTransform, sizeof(transform));
+        transformInverseTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, transform));
+    }
+
+    // See if we need to transform geometry
+    bool needsTransformation = false;
+    {
+        const float* gt = desc.buffer.GeometryTransform;
+        needsTransformation =
+            gt[0]  != 1.0f || gt[1]  != 0.0f || gt[2]  != 0.0f || gt[3]  != 0.0f ||
+            gt[4]  != 0.0f || gt[5]  != 1.0f || gt[6]  != 0.0f || gt[7]  != 0.0f ||
+            gt[8]  != 0.0f || gt[9]  != 0.0f || gt[10] != 1.0f || gt[11] != 0.0f ||
+            gt[12] != 0.0f || gt[13] != 0.0f || gt[14] != 0.0f || gt[15] != 1.0f;
+    }
+
+    // Transform position
+    auto transformPosition = [&](float* position)
+    {
+        // Transform by matrix
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(position[0], position[1], position[2], 1.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transform);
+        position[0] = result.m128_f32[0];
+        position[1] = result.m128_f32[1];
+        position[2] = result.m128_f32[2];
+    };
+
+    // Transform tangent
+    auto transformTangent = [&](float* tangent)
+    {
+        // Transform by matrix and normalize
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(tangent[0], tangent[1], tangent[2], 0.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transform);
+        result = DirectX::XMVector3Normalize(result);
+        tangent[0] = result.m128_f32[0];
+        tangent[1] = result.m128_f32[1];
+        tangent[2] = result.m128_f32[2];
+    };
+
+    // Transform normal
+    auto transformNormal = [&](float* normal)
+    {
+        // Transform by matrix inverse transpose and normalize
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(normal[0], normal[1], normal[2], 0.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transformInverseTranspose);
+        result = DirectX::XMVector3Normalize(result);
+        normal[0] = result.m128_f32[0];
+        normal[1] = result.m128_f32[1];
+        normal[2] = result.m128_f32[2];
+    };
+
 	// Allocate space to hold the results
 	const Struct& structDesc = renderGraph.structs[desc.buffer.structIndex];
 	size_t vertexCount = flattenedVertices.size();
@@ -512,11 +575,15 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 			{
 				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 				{
+                    Vec3 position = flattenedVertices[vertexIndex].position;
+                    if (needsTransformation)
+                        transformPosition(position.data());
+
 					int index = 0;
 					while (index < min(3, typeInfo.componentCount))
 					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].position.data());
-						index++;
+                        AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, position.data());
+                        index++;
 					}
 
 					while (index < typeInfo.componentCount)
@@ -550,10 +617,14 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 			{
 				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 				{
+                    Vec3 normal = flattenedVertices[vertexIndex].normal;
+                    if (needsTransformation)
+                        transformNormal(normal.data());
+
 					int index = 0;
 					while (index < min(3, typeInfo.componentCount))
 					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].normal.data());
+						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, normal.data());
 						index++;
 					}
 
@@ -569,10 +640,14 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 			{
 				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 				{
+                    Vec4 tangent = flattenedVertices[vertexIndex].tangent;
+                    if (needsTransformation)
+                        transformTangent(tangent.data());
+
 					int index = 0;
 					while (index < min(4, typeInfo.componentCount))
 					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].tangent.data());
+						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, tangent.data());
 						index++;
 					}
 
@@ -673,6 +748,35 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 
 static std::vector<char> LoadTypedBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const std::vector<FlattenedVertex>& flattenedVertices)
 {
+    // Get the transforms
+    DirectX::XMMATRIX transform, transformInverseTranspose;
+    {
+        memcpy(&transform, desc.buffer.GeometryTransform, sizeof(transform));
+        transformInverseTranspose = XMMatrixTranspose(XMMatrixInverse(nullptr, transform));
+    }
+
+    // See if we need to transform geometry
+    bool needsTransformation = false;
+    {
+        const float* gt = desc.buffer.GeometryTransform;
+        needsTransformation =
+            gt[0]  != 1.0f || gt[1]  != 0.0f || gt[2]  != 0.0f || gt[3]  != 0.0f ||
+            gt[4]  != 0.0f || gt[5]  != 1.0f || gt[6]  != 0.0f || gt[7]  != 0.0f ||
+            gt[8]  != 0.0f || gt[9]  != 0.0f || gt[10] != 1.0f || gt[11] != 0.0f ||
+            gt[12] != 0.0f || gt[13] != 0.0f || gt[14] != 0.0f || gt[15] != 1.0f;
+    }
+
+    // Transform position
+    auto transformPosition = [&](float* position)
+    {
+        // Transform by matrix
+        DirectX::XMVECTOR v = DirectX::XMVectorSet(position[0], position[1], position[2], 1.0f);
+        DirectX::XMVECTOR result = DirectX::XMVector4Transform(v, transform);
+        position[0] = result.m128_f32[0];
+        position[1] = result.m128_f32[1];
+        position[2] = result.m128_f32[2];
+    };
+
 	// Allocate space to hold the results
 	DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(desc.buffer.type);
 	size_t vertexCount = flattenedVertices.size();
@@ -682,10 +786,14 @@ static std::vector<char> LoadTypedBuffer(const GigiInterpreterPreviewWindowDX12:
 	// gather the data
 	for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
 	{
+        Vec3 position = flattenedVertices[vertexIndex].position;
+        if (needsTransformation)
+            transformPosition(position.data());
+
 		int index = 0;
 		while (index < min(3, typeInfo.componentCount))
 		{
-			AssignWithCast(&ret[vertexIndex * destVertexSize], index, typeInfo.componentType, flattenedVertices[vertexIndex].position.data());
+			AssignWithCast(&ret[vertexIndex * destVertexSize], index, typeInfo.componentType, position.data());
 			index++;
 		}
 
@@ -861,6 +969,135 @@ static std::vector<char> LoadCSVTypedBuffer(const GigiInterpreterPreviewWindowDX
 	return ret;
 }
 
+void GigiInterpreterPreviewWindowDX12::CooperativeVectorAdjustBufferSize(const CooperativeVectorData& cvData, int& size)
+{
+    if (!cvData.convert)
+        return;
+
+    if (!m_previewDevice)
+    {
+        m_logFn(LogLevel::Error, "CooperativeVectorConvert() failed cooperative vectors are not enabled.  Please see UserDocumentation/CooperativeVectors.pdf for info on enabling them.");
+        return;
+    }
+
+    // Gather the conversion data
+    D3D12_LINEAR_ALGEBRA_DATATYPE destType;
+    CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(cvData.destType, destType);
+
+    D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT destLayout;
+    CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(cvData.destLayout, destLayout);
+    bool destLayoutOptimized = CooperativeVectorBufferLayoutIsOptimized(cvData.destLayout);
+
+    unsigned int width = cvData.width;
+    unsigned int height = cvData.height;
+
+    size_t destTypeSize = 0;
+    D3D12_LINEAR_ALGEBRA_DATATYPE_Size(destType, destTypeSize);
+
+    // Figure out the size of our destination matrix
+    D3D12_LINEAR_ALGEBRA_MATRIX_CONVERSION_DEST_INFO conversionDestInfo =
+    {
+        destLayoutOptimized ? 0 : (unsigned int)(width * height * destTypeSize),
+        destLayout,
+        destLayoutOptimized ? 0 : (unsigned int)(width * destTypeSize),
+        width,
+        height,
+        destType
+    };
+    m_previewDevice->GetLinearAlgebraMatrixConversionDestinationInfo(&conversionDestInfo);
+
+    size = max(size, (int)conversionDestInfo.DestSize);
+}
+
+void GigiInterpreterPreviewWindowDX12::CooperativeVectorConvert(ID3D12Resource* resource, D3D12_RESOURCE_STATES resourceState, const CooperativeVectorData& cvData)
+{
+	if (!cvData.convert)
+		return;
+
+	if (!m_previewDevice)
+	{
+		m_logFn(LogLevel::Error, "CooperativeVectorConvert() failed cooperative vectors are not enabled.  Please see UserDocumentation/CooperativeVectors.pdf for info on enabling them.");
+		return;
+	}
+
+	// Make a temporary buffer to convert to
+	// Conversion dest buffer must be in D3D12_RESOURCE_STATE_UNORDERED_ACCESS state
+	D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
+	ID3D12Resource* tempResource = CreateBuffer(m_device, (unsigned int)resourceDesc.Width, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, "CooperativeVectorConvert() tempResource");
+	m_transitions.Track(TRANSITION_DEBUG_INFO(tempResource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+
+	// Delay destroy the tempResource since we only need it here, within this function
+	m_delayedRelease.Add(tempResource);
+
+	// Gather the conversion data
+	D3D12_LINEAR_ALGEBRA_DATATYPE srcType;
+	CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(cvData.srcType, srcType);
+
+	D3D12_LINEAR_ALGEBRA_DATATYPE destType;
+	CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(cvData.destType, destType);
+
+	D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT srcLayout;
+	CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(cvData.srcLayout, srcLayout);
+
+	D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT destLayout;
+	CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(cvData.destLayout, destLayout);
+	bool destLayoutOptimized = CooperativeVectorBufferLayoutIsOptimized(cvData.destLayout);
+
+	unsigned int width = cvData.width;
+	unsigned int height = cvData.height;
+
+	size_t srcTypeSize = 0;
+	D3D12_LINEAR_ALGEBRA_DATATYPE_Size(srcType, srcTypeSize);
+
+	size_t destTypeSize = 0;
+	D3D12_LINEAR_ALGEBRA_DATATYPE_Size(destType, destTypeSize);
+
+	// Set up conversion info struct
+	D3D12_LINEAR_ALGEBRA_MATRIX_CONVERSION_INFO infoDesc =
+	{
+		// DestInfo
+		{
+			destLayoutOptimized ? 0 : (unsigned int)(width * height * destTypeSize),
+			destLayout,
+			destLayoutOptimized ? 0 : (unsigned int)(width * destTypeSize),
+			width,
+			height,
+			destType
+		},
+
+		// SrcInfo
+		{
+			(unsigned int)(width * height * srcTypeSize),
+			srcType,
+			srcLayout,
+			(unsigned int)(width * srcTypeSize)
+		},
+
+		// DataDesc
+		{
+			tempResource->GetGPUVirtualAddress(),
+			resource->GetGPUVirtualAddress()
+		}
+	};
+	m_previewDevice->GetLinearAlgebraMatrixConversionDestinationInfo(&infoDesc.DestInfo);
+
+	// make sure the resource is in the correct state
+	// Conversion source buffer must be in D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE state
+	if (!m_transitions.IsTracked(resource))
+		m_transitions.Track(TRANSITION_DEBUG_INFO(resource, resourceState));
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+	m_transitions.Flush(m_commandList);
+
+	// Convert
+	m_previewCommandList->ConvertLinearAlgebraMatrix(&infoDesc, 1);
+
+	// Copy from tempResource to resource
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(tempResource, D3D12_RESOURCE_STATE_COPY_SOURCE));
+	m_transitions.Transition(TRANSITION_DEBUG_INFO(resource, D3D12_RESOURCE_STATE_COPY_DEST));
+	m_transitions.Flush(m_commandList);
+	m_commandList->CopyResource(resource, tempResource);
+}
+
 bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNode_Resource_Buffer& node, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData, NodeAction nodeAction)
 {
 	// If this resource is imported, add it to the list of imported resources.
@@ -894,6 +1131,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			std::ostringstream ss;
 			ss << "Not enough info to create buffer.";
 			runtimeData.m_renderGraphText = ss.str();
+            runtimeData.m_inErrorState = true;
 		}
 
 		// (Re)Create a buffer, as necessary
@@ -1066,6 +1304,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				return false;
 			}
 
+            CooperativeVectorAdjustBufferSize(desc.buffer.cvData, runtimeData.m_size);
+
 			// Make a resource for the "live" texture which may be modified during running, and also for the initial state.
 			D3D12_RESOURCE_FLAGS resourceFlags = ShaderResourceAccessToD3D12_RESOURCE_FLAGs(node.accessedAs);
 			std::string nodeNameInitialState = node.name + " Initial State";
@@ -1122,6 +1362,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST));
 				m_transitions.Flush(m_commandList);
 				m_commandList->CopyResource(runtimeData.m_resourceInitialState, uploadBuffer->buffer);
+
+				// Do conversion for cooperative vectors if we should
+				CooperativeVectorConvert(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST, desc.buffer.cvData);
 			}
 
 			// Note that the resource wants to be reset to the initial state.
@@ -1223,6 +1466,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 			else
 				ss << "Cannot determine format.";
 			runtimeData.m_renderGraphText = ss.str();
+            runtimeData.m_inErrorState = true;
 		}
 	}
 

@@ -12,7 +12,7 @@ namespace StructuredBuffer
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -43,6 +43,10 @@ namespace StructuredBuffer
         // This is the input to the technique that you are expected to fill out
         struct ContextInput
         {
+
+            // Variables
+            int variable_frameIndex = 0;
+            float variable_frameDeltaTime = 0.000000f;
 
             ID3D12Resource* buffer_buff = nullptr;
             DXGI_FORMAT buffer_buff_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
@@ -188,6 +192,6 @@ namespace StructuredBuffer
         int TheEnum = (int)Trinary::True;
         unsigned int TheBool = true;
         uint TheUINT = 0;
-        float2 TheFloat2 = {0.0f, 0.0f};
+        float2 TheFloat2 = {0.000000f, 0.000000f};
     };
 };

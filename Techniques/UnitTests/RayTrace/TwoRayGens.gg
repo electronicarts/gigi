@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "TwoRayGens",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "clipToWorld",
@@ -53,6 +53,7 @@
                     "type": "Buffer",
                     "access": "RTScene",
                     "buffer": {
+                        "type": "Float3",
                         "PODAsStructuredBuffer": false
                     }
                 }
@@ -91,6 +92,7 @@
                     "type": "Buffer",
                     "access": "RTScene",
                     "buffer": {
+                        "type": "Float3",
                         "PODAsStructuredBuffer": false
                     }
                 },
@@ -322,5 +324,8 @@
         "frostbite": {
             "shaderProgramsProviderVersion": 1340
         }
+    },
+    "PrimaryOutput": {
+        "name": "Texture"
     }
 }

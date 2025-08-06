@@ -121,12 +121,12 @@ namespace Mips_DrawCall
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Final_Color_Buffer;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Final_Color_Buffer_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -1792,7 +1792,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_internal.texture_Color_Buffer, context->m_internal.texture_Color_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
+                { context->m_internal.texture_Color_Buffer, context->m_internal.texture_Color_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_internal.texture_Color_Buffer_size[2], 0 },
                 { context->m_internal.constantBuffer__PixelShaderSphereCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 2, Context::LogFn);
@@ -2191,15 +2191,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_0_rootSig->SetName(L"Rasterize_Mip_0");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_0" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_0" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -2412,15 +2422,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_1_rootSig->SetName(L"Rasterize_Mip_1");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_1" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_1" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -2633,15 +2653,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_2_rootSig->SetName(L"Rasterize_Mip_2");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_2" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_2" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -2854,15 +2884,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_3_rootSig->SetName(L"Rasterize_Mip_3");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_3" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_3" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -3075,15 +3115,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_4_rootSig->SetName(L"Rasterize_Mip_4");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_4" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_4" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -3296,15 +3346,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_5_rootSig->SetName(L"Rasterize_Mip_5");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_5" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_5" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -3517,15 +3577,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_6_rootSig->SetName(L"Rasterize_Mip_6");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_6" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_6" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -3738,15 +3808,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_7_rootSig->SetName(L"Rasterize_Mip_7");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_7" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_7" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -3959,15 +4039,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_Mip_8_rootSig->SetName(L"Rasterize_Mip_8");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize_Mip_8" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCall_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize_Mip_8" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCall_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -4232,15 +4322,25 @@ namespace Mips_DrawCall
             if (c_debugNames)
                 m_internal.drawCall_Draw_Sphere_rootSig->SetName(L"Draw_Sphere");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCallSphere_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Draw_Sphere" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCallSphere_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_DrawCallSphere_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Draw_Sphere" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_DrawCallSphere_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 

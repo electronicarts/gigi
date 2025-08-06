@@ -64,16 +64,19 @@ namespace BarrierTest
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_Draw_Left_rootSig, (c_debugNames ? L"Draw_Left" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(2,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "BarrierTestLeft.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Draw_Left" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(2,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/BarrierTestLeft.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_Draw_Left_rootSig, &ContextInternal::computeShader_Draw_Left_pso, c_debugShaders, (c_debugNames ? L"Draw_Left" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Draw_Left_rootSig, &ContextInternal::computeShader_Draw_Left_pso, Context::LogFn))
                 return false;
         }
 
@@ -93,16 +96,19 @@ namespace BarrierTest
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_Draw_Right_rootSig, (c_debugNames ? L"Draw_Right" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(2,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "BarrierTestRight.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "Draw_Right" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(2,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/BarrierTestRight.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_Draw_Right_rootSig, &ContextInternal::computeShader_Draw_Right_pso, c_debugShaders, (c_debugNames ? L"Draw_Right" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_Draw_Right_rootSig, &ContextInternal::computeShader_Draw_Right_pso, Context::LogFn))
                 return false;
         }
 
@@ -122,16 +128,19 @@ namespace BarrierTest
             if(!DX12Utils::MakeRootSig(device, ranges, 1, samplers, 0, &ContextInternal::computeShader_After_rootSig, (c_debugNames ? L"After" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "BarrierTestAfter.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "After" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/BarrierTestAfter.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_After_rootSig, &ContextInternal::computeShader_After_pso, c_debugShaders, (c_debugNames ? L"After" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_After_rootSig, &ContextInternal::computeShader_After_pso, Context::LogFn))
                 return false;
         }
 
@@ -253,12 +262,12 @@ namespace BarrierTest
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Output;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Output_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

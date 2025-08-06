@@ -16,8 +16,8 @@ PSOutput PSMain(PSInput input)
 {
 	PSOutput ret = (PSOutput)0;
 
-	float4 texLinear = MipTex.Sample(LinearWrap, input.UV * 2.0f);
-	float4 texPoint = MipTex.Sample(PointWrap, input.UV * 2.0f);
+	float4 texLinear = MipTex.Sample(LinearWrap, float3(input.UV * 2.0f, 0.0f));
+	float4 texPoint = MipTex.Sample(PointWrap, float3(input.UV * 2.0f, 0.0f));
 
 	ret.colorTarget = /*$(Variable:UseMips)*/
 		? float4(texLinear.rgb, 1.0f)

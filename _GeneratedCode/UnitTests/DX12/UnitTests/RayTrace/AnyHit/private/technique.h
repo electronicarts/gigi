@@ -30,11 +30,11 @@ namespace AnyHit
 
         struct Struct__RayGenCB
         {
-            float3 CameraPos = {0.0f, 0.0f, 0.0f};
+            float3 CameraPos = {0.000000f, 0.000000f, 0.000000f};
             float _padding0 = 0.000000f;  // Padding
-            float4x4 InvViewProjMtx = {1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f};
+            float4x4 InvViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
             float depthNearPlane = 0.000000f;
-            float3 _padding1 = {0.0f,0.0f,0.0f};  // Padding
+            float3 _padding1 = {0.000000f, 0.000000f, 0.000000f};  // Padding
         };
 
         Struct__RayGenCB constantBuffer__RayGenCB_cpu;

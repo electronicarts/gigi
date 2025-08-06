@@ -4,10 +4,19 @@
 	// Do FIR on the typed buffer
 	// Info: https://blog.demofox.org/2020/01/14/fir-audio-data-filters/
 	// Coefficient Calculator: http://demofox.org/DSPFIR/FIR.html
-	float n_minus_2 = (DTid.x >= 2) ? InputTyped[DTid.x-2] : 0.0f;
-	float n_minus_1 = (DTid.x >= 1) ? InputTyped[DTid.x-1] : 0.0f;
-	float n = InputTyped[DTid.x];
-	OutputTyped[DTid.x] = /*$(Variable:gain)*/ * (n + /*$(Variable:alpha1)*/ * n_minus_1 + /*$(Variable:alpha2)*/ * n_minus_2);
+	{
+		float n_minus_2 = (DTid.x >= 2) ? InputTyped[DTid.x-2] : 0.0f;
+		float n_minus_1 = (DTid.x >= 1) ? InputTyped[DTid.x-1] : 0.0f;
+		float n = InputTyped[DTid.x];
+		OutputTyped[DTid.x] = /*$(Variable:gain)*/ * (n + /*$(Variable:alpha1)*/ * n_minus_1 + /*$(Variable:alpha2)*/ * n_minus_2);
+	}
+
+	{
+		float n_minus_2 = (DTid.x >= 2) ? InputTypedStruct[DTid.x - 2] : 0.0f;
+		float n_minus_1 = (DTid.x >= 1) ? InputTypedStruct[DTid.x - 1] : 0.0f;
+		float n = InputTypedStruct[DTid.x];
+		OutputTypedStruct[DTid.x] = /*$(Variable:gain)*/ * (n + /*$(Variable:alpha1)*/ * n_minus_1 + /*$(Variable:alpha2)*/ * n_minus_2);
+	}
 
 	if (DTid.x == 0)
 	{

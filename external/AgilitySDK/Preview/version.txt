@@ -1,0 +1,11 @@
+1.717.0-preview
+downloaded from https://www.nuget.org/packages/Microsoft.Direct3D.D3D12/1.717.0-preview
+I renamed the .nupkg to .zip and unzipped it.
+I copied the contents of build/native/bin/x64 to bin.
+I copied the contents of build/native/include to include.
+In the code, D3D12SDKVersion had to be updated to 717 (find "D3D12SDKVersion" in fies), which matches the middle 3 digits and can also be seen in the header files in the SDK code. like D3D12_PREVIEW_SDK_VERSION in d3d12.h.
+
+Note that the DX12 code generator also needs the Agility SDK updated to the latest retail version:
+GigiCompilerLib\Backends\DX12\templates\Module\AgilitySDK\
+external\AgilitySDK\Retail\
+Those should match

@@ -12,8 +12,9 @@
 #include <dxcapi.h>
 #include <vector>
 #include <filesystem>
+#include <comdef.h>
 
-#pragma comment(lib, "dxcompiler.lib")
+// Note: you can specify include directories by pushing into arguments "-I <path>" which i think would get rid of the need for a custom include handler.
 
 class IncludeHandlerDXC : public IDxcIncludeHandler
 {
@@ -62,12 +63,7 @@ public:
 };
 
 static IDxcBlob* CompileShaderToByteCode_Private(
-    const char* fileName,
-    const char* entryPoint,
-    const char* shaderModel,
-    const D3D_SHADER_MACRO* defines_,
-    bool debugShaders,
-    bool HV2021,
+	const ShaderCompilationInfo& shaderInfo,
     LogFn logFn,
     std::vector<std::string>* allFiles)
 {
@@ -87,17 +83,17 @@ static IDxcBlob* CompileShaderToByteCode_Private(
         return nullptr;
     }
 
-    std::string shaderDir = std::filesystem::path(fileName).parent_path().string();
+    std::string shaderDir = shaderInfo.fileName.parent_path().string();
 
     IncludeHandlerDXC include(shaderDir.c_str());
     uint32_t codePage = CP_UTF8;
     IDxcBlobEncoding* sourceBlob = nullptr;
-    std::wstring fullFileName = ToWideString(fileName);
+    std::wstring fullFileName = shaderInfo.fileName.wstring();
     hr = library->CreateBlobFromFile(fullFileName.c_str(), &codePage, &sourceBlob);
 
     if (FAILED(hr))
     {
-        logFn(LogLevel::Error, "Could not load shader file \"%s\"", fileName);
+        logFn(LogLevel::Error, "Could not load shader file \"%s\"", shaderInfo.fileName.string());
         return nullptr;
     }
 
@@ -105,10 +101,10 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     arguments.push_back(fullFileName.c_str()); // 1st positional argument is the source file name
 
-    std::wstring entryPointW = ToWideString(entryPoint);
-    std::wstring shaderModelW = ToWideString(shaderModel);
+    std::wstring entryPointW = ToWideString(shaderInfo.entryPoint.c_str());
+    std::wstring shaderModelW = ToWideString(shaderInfo.shaderModel.c_str());
 
-    if (entryPoint && entryPoint[0])
+    if (!shaderInfo.entryPoint.empty())
     {
         arguments.push_back(L"-E");
         arguments.push_back(entryPointW.c_str());
@@ -117,7 +113,8 @@ static IDxcBlob* CompileShaderToByteCode_Private(
     arguments.push_back(L"-T");
     arguments.push_back(shaderModelW.c_str());
 
-    if (debugShaders)
+    // PDBs require shader debugging on to work
+    if ((shaderInfo.flags & ShaderCompilationFlags::Debug) != ShaderCompilationFlags::None || (shaderInfo.flags & ShaderCompilationFlags::CreatePDBsAndBinaries) != ShaderCompilationFlags::None)
     {
         arguments.push_back(DXC_ARG_DEBUG);
         arguments.push_back(DXC_ARG_DEBUG_NAME_FOR_SOURCE);
@@ -125,25 +122,28 @@ static IDxcBlob* CompileShaderToByteCode_Private(
         arguments.push_back(L"-Qembed_debug");
     }
 
-    if (HV2021)
+    if ((shaderInfo.flags & ShaderCompilationFlags::WarningsAsErrors) != ShaderCompilationFlags::None)
+    {
+        arguments.push_back(DXC_ARG_WARNINGS_ARE_ERRORS);
+    }
+
+    if ((shaderInfo.flags & ShaderCompilationFlags::HLSL2021) != ShaderCompilationFlags::None)
         arguments.push_back(L"-HV 2021");
 
-    std::vector<std::wstring> defineWStrings;
-    if (defines_)
-    {
-        int i = 0;
-        while (defines_[i].Name)
-        {
-            defineWStrings.push_back(ToWideString(defines_[i].Name) + L"=" + ToWideString(defines_[i].Definition));
-            i++;
-        }
+    if ((shaderInfo.flags & ShaderCompilationFlags::Enable16BitTypes) != ShaderCompilationFlags::None)
+        arguments.push_back(L"-enable-16bit-types");
 
-        i = 0;
-        while (defines_[i].Name)
+    std::vector<std::wstring> shaderDefinitions;
+    shaderDefinitions.reserve(shaderInfo.defines.size());
+    for (const auto& shaderDefine : shaderInfo.defines)
+    {
+        if (!shaderDefine.name.empty() && !shaderDefine.value.empty())
         {
-            arguments.push_back(L"-D");
-            arguments.push_back(defineWStrings[i].c_str());
-            i++;
+			arguments.push_back(L"-D");
+
+            std::wstring& definition = shaderDefinitions.emplace_back();
+            definition = ToWideString(shaderDefine.name.c_str()) + L"=" + ToWideString(shaderDefine.value.c_str());
+            arguments.push_back(definition.c_str());
         }
     }
 
@@ -161,7 +161,7 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     if (allFiles)
     {
-        allFiles->push_back(fileName);
+        allFiles->push_back(shaderInfo.fileName.string());
         for (const std::string& fileName : include.m_includeFiles)
             allFiles->push_back(fileName);
     }
@@ -186,27 +186,69 @@ static IDxcBlob* CompileShaderToByteCode_Private(
     }
 
     IDxcBlob* code = nullptr;
-    result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&code), nullptr);
+    hr = result->GetOutput(DXC_OUT_OBJECT, IID_PPV_ARGS(&code), nullptr);
 
-    /*
-    // Save the PDBs.
-    if (debugShaders)
+    if ((shaderInfo.flags & ShaderCompilationFlags::CreatePDBsAndBinaries) != ShaderCompilationFlags::None)
     {
-        IDxcBlob* pPDB = nullptr;
-        IDxcBlobUtf16* pPDBName = nullptr;
-        result->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(&pPDB), &pPDBName);
+		const std::filesystem::path directoryPath = "./ShaderDebugInfo";
+
+        // PDBs
         {
-            std::wstring fullPDBFileName = std::wstring(L"./ShaderPDBs/") + pPDBName->GetStringPointer();
-            FILE* fp = NULL;
-            _wfopen_s(&fp, fullPDBFileName.c_str(), L"wb");
-            fwrite(pPDB->GetBufferPointer(), pPDB->GetBufferSize(), 1, fp);
-            fclose(fp);
+			IDxcBlob* pPDB = nullptr;
+			IDxcBlobUtf16* pPDBName = nullptr;
+			hr = result->GetOutput(DXC_OUT_PDB, IID_PPV_ARGS(&pPDB), &pPDBName);
+			if (SUCCEEDED(hr))
+			{
+				std::filesystem::path fullPDBFileName = directoryPath / std::filesystem::path(shaderInfo.fileName.stem().string() + ".pdb");
+
+				if (!std::filesystem::exists(directoryPath))
+				{
+					std::filesystem::create_directories(directoryPath);
+				}
+
+				FILE* fp = NULL;
+				if (_wfopen_s(&fp, fullPDBFileName.c_str(), L"wb") == 0)
+				{
+					void* bufferPointer = pPDB->GetBufferPointer();
+					size_t bufferSize = pPDB->GetBufferSize();
+
+					fwrite(bufferPointer, bufferSize, 1, fp);
+					fclose(fp);
+				}
+			}
+            else
+            {
+                _com_error err(hr);
+                logFn(LogLevel::Warn, "Shader %ls requested PDBs and binaries but we were unable to get them: %ls\n", fullFileName.c_str(), err.ErrorMessage());
+            }
+
+            if (pPDBName)
+			    pPDBName->Release();
+
+            if(pPDB)
+			    pPDB->Release();
         }
 
-        pPDBName->Release();
-        pPDB->Release();
+        // Binaries
+        {
+			std::filesystem::path fullBinaryFileName = directoryPath / std::filesystem::path(shaderInfo.fileName.stem().string() + ".cso");
+
+			if (!std::filesystem::exists(directoryPath))
+			{
+				std::filesystem::create_directories(directoryPath);
+			}
+
+			FILE* fp = NULL;
+			if (_wfopen_s(&fp, fullBinaryFileName.c_str(), L"wb") == 0)
+			{
+				void* bufferPointer = code->GetBufferPointer();
+				size_t bufferSize = code->GetBufferSize();
+
+				fwrite(bufferPointer, bufferSize, 1, fp);
+				fclose(fp);
+			}
+        }
     }
-    */
 
     library->Release();
     compiler->Release();
@@ -218,19 +260,13 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
 bool MakeComputePSO_dxc(
     ID3D12Device* device,
-    const char* fileName,
-    const char* entryPoint,
-    const char* shaderModel,
-    const D3D_SHADER_MACRO* defines,
+	const ShaderCompilationInfo& shaderInfo,
     ID3D12RootSignature* rootSig,
     ID3D12PipelineState** pso,
-    bool debugShaders,
-    const char* debugName,
-    bool HV2021,
     LogFn logFn,
     std::vector<std::string>* allFiles)
 {
-    IDxcBlob* code = CompileShaderToByteCode_Private(fileName, entryPoint, shaderModel, defines, debugShaders, HV2021, logFn, allFiles);
+    IDxcBlob* code = CompileShaderToByteCode_Private(shaderInfo, logFn, allFiles);
     if (!code)
         return false;
 
@@ -245,25 +281,20 @@ bool MakeComputePSO_dxc(
 
     code->Release();
 
-    if (debugName)
-        (*pso)->SetName(ToWideString(debugName).c_str());
+    if (!shaderInfo.debugName.empty())
+        (*pso)->SetName(ToWideString(shaderInfo.debugName.c_str()).c_str());
 
     return true;
 }
 
 std::vector<unsigned char> CompileShaderToByteCode_dxc(
-    const char* fileName,
-    const char* entryPoint,
-    const char* shaderModel,
-    const D3D_SHADER_MACRO* defines,
-    bool debugShaders,
-    bool HV2021,
+	const ShaderCompilationInfo& shaderInfo,
     LogFn logFn,
     std::vector<std::string>* allFiles)
 {
     std::vector<unsigned char> ret;
 
-    IDxcBlob* code = CompileShaderToByteCode_Private(fileName, entryPoint, shaderModel, defines, debugShaders, HV2021, logFn, allFiles);
+    IDxcBlob* code = CompileShaderToByteCode_Private(shaderInfo, logFn, allFiles);
     if (!code)
         return ret;
 

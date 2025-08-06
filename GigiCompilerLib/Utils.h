@@ -11,7 +11,17 @@
 #include "gigicompiler.h"
 // clang-format on
 
-enum class LogLevel
+#define SETUP_ENUM_CLASS_OPERATORS(enumType) \
+	inline           enumType& operator|=(enumType& Lhs, enumType Rhs) { return Lhs = (enumType)((std::underlying_type_t<enumType>)Lhs | (std::underlying_type_t<enumType>)Rhs); } \
+	inline           enumType& operator&=(enumType& Lhs, enumType Rhs) { return Lhs = (enumType)((std::underlying_type_t<enumType>)Lhs & (std::underlying_type_t<enumType>)Rhs); } \
+	inline           enumType& operator^=(enumType& Lhs, enumType Rhs) { return Lhs = (enumType)((std::underlying_type_t<enumType>)Lhs ^ (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr enumType  operator| (enumType  Lhs, enumType Rhs) { return (enumType)((std::underlying_type_t<enumType>)Lhs | (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr enumType  operator& (enumType  Lhs, enumType Rhs) { return (enumType)((std::underlying_type_t<enumType>)Lhs & (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr enumType  operator^ (enumType  Lhs, enumType Rhs) { return (enumType)((std::underlying_type_t<enumType>)Lhs ^ (std::underlying_type_t<enumType>)Rhs); } \
+	inline constexpr bool  operator! (enumType e)             { return !(std::underlying_type_t<enumType>)e; } \
+	inline constexpr enumType  operator~ (enumType e)             { return (enumType)~(std::underlying_type_t<enumType>)e; }
+
+enum class LogLevel : uint8_t
 {
 	Info,
 	Warn,
@@ -85,6 +95,9 @@ inline std::string DataFieldTypeToHLSLType(DataFieldType type)
         case DataFieldType::Bool: return "uint";
         case DataFieldType::Float4x4: return "float4x4";
         case DataFieldType::Uint_16: return "uint";
+        case DataFieldType::Int_64: return "uint64_t";
+        case DataFieldType::Uint_64: return "uint64_t";
+        case DataFieldType::Float_16: return "float16_t";
         case DataFieldType::Count:
         {
             Assert(false, "Invalid data field type: Count");

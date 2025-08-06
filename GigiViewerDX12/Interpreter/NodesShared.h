@@ -13,6 +13,75 @@
 
 typedef std::array<int, 3> IVec3;
 
+inline bool D3D12_LINEAR_ALGEBRA_DATATYPE_Size(D3D12_LINEAR_ALGEBRA_DATATYPE type, size_t& size)
+{
+	switch (type)
+	{
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16: size = 2; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16: size = 2; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16: size = 2; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED: size = 4; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8: size = 1; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8: size = 1; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3: size = 1; return true;
+		case D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2: size = 1; return true;
+		default: return false;
+	}
+
+	return false;
+}
+
+inline bool CooperativeVectorDataTypeToD3D12_LINEAR_ALGEBRA_DATATYPE(CooperativeVectorDataType input, D3D12_LINEAR_ALGEBRA_DATATYPE& output)
+{
+	switch (input)
+	{
+		case CooperativeVectorDataType::_sint16: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16; return true;
+		case CooperativeVectorDataType::_uint16: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16; return true;
+		case CooperativeVectorDataType::_sint32: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32; return true;
+		case CooperativeVectorDataType::_uint32: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32; return true;
+		case CooperativeVectorDataType::_float16: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16; return true;
+		case CooperativeVectorDataType::_float32: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32; return true;
+		case CooperativeVectorDataType::_sint8x4: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED; return true;
+		case CooperativeVectorDataType::_uint8x4: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED; return true;
+		case CooperativeVectorDataType::_uint8: output = D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8; return true;
+		case CooperativeVectorDataType::_sint8: output = D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8; return true;
+		case CooperativeVectorDataType::_float8_e4m3: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3; return true;
+		case CooperativeVectorDataType::_float8_e5m2: output = D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2; return true;
+		default: return false;
+	}
+	return false;
+}
+
+inline bool CooperativeVectorBufferLayoutIsOptimized(CooperativeVectorBufferLayout layout)
+{
+	switch (layout)
+	{
+		case CooperativeVectorBufferLayout::RowMajor: return false;
+		case CooperativeVectorBufferLayout::ColMajor: return false;
+		case CooperativeVectorBufferLayout::MulOptimal: return true;
+		case CooperativeVectorBufferLayout::OuterProductOptimal: return true;
+		default: return false;
+	}
+	return false;
+}
+
+inline bool CooperativeVectorBufferLayoutToD3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT(CooperativeVectorBufferLayout layout, D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT& output)
+{
+	switch (layout)
+	{
+		case CooperativeVectorBufferLayout::RowMajor: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_ROW_MAJOR; return true;
+		case CooperativeVectorBufferLayout::ColMajor: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_COLUMN_MAJOR; return true;
+		case CooperativeVectorBufferLayout::MulOptimal: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_MUL_OPTIMAL; return true;
+		case CooperativeVectorBufferLayout::OuterProductOptimal: output = D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_OUTER_PRODUCT_OPTIMAL; return true;
+		default: return false;
+	}
+	return false;
+}
+
 inline bool ShadingRateToD3D12_SHADING_RATE(ShadingRate shadingRate, D3D12_SHADING_RATE& d3d12ShadingRate)
 {
 	switch (shadingRate)
@@ -76,6 +145,7 @@ inline DXGI_FORMAT TextureFormatToDXGI_FORMAT(TextureFormat textureFormat)
 		case TextureFormat::RG8_Unorm: return DXGI_FORMAT_R8G8_UNORM;
 		case TextureFormat::RGBA8_Unorm: return DXGI_FORMAT_R8G8B8A8_UNORM;
 		case TextureFormat::RGBA8_Unorm_sRGB: return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+		case TextureFormat::BGRA8_Unorm: return DXGI_FORMAT_B8G8R8A8_UNORM;
 		case TextureFormat::R8_Snorm: return DXGI_FORMAT_R8_SNORM;
 		case TextureFormat::RG8_Snorm: return DXGI_FORMAT_R8G8_SNORM;
 		case TextureFormat::RGBA8_Snorm: return DXGI_FORMAT_R8G8B8A8_SNORM;
@@ -90,17 +160,20 @@ inline DXGI_FORMAT TextureFormatToDXGI_FORMAT(TextureFormat textureFormat)
 		case TextureFormat::RGBA16_Float: return DXGI_FORMAT_R16G16B16A16_FLOAT;
 		case TextureFormat::RGBA16_Unorm: return DXGI_FORMAT_R16G16B16A16_UNORM;
 		case TextureFormat::RGBA16_Snorm: return DXGI_FORMAT_R16G16B16A16_SNORM;
+		case TextureFormat::RG16_Uint: return DXGI_FORMAT_R16G16_UINT;
 		case TextureFormat::R32_Float: return DXGI_FORMAT_R32_FLOAT;
 		case TextureFormat::RG32_Float: return DXGI_FORMAT_R32G32_FLOAT;
 		case TextureFormat::RGBA32_Float: return DXGI_FORMAT_R32G32B32A32_FLOAT;
 		case TextureFormat::R32_Uint: return DXGI_FORMAT_R32_UINT;
+		case TextureFormat::RG32_Uint: return DXGI_FORMAT_R32G32_UINT;
 		case TextureFormat::RGBA32_Uint: return DXGI_FORMAT_R32G32B32A32_UINT;
 		case TextureFormat::R11G11B10_Float: return DXGI_FORMAT_R11G11B10_FLOAT;
 		case TextureFormat::D32_Float: return DXGI_FORMAT_D32_FLOAT;
 		case TextureFormat::D16_Unorm: return DXGI_FORMAT_D16_UNORM;
 		case TextureFormat::D32_Float_S8: return DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
 		case TextureFormat::D24_Unorm_S8: return DXGI_FORMAT_D24_UNORM_S8_UINT;
-		case TextureFormat::BC4_Unorm: return DXGI_FORMAT_BC4_UNORM;
+        case TextureFormat::BC1_Unorm: return DXGI_FORMAT_BC1_UNORM;
+        case TextureFormat::BC4_Unorm: return DXGI_FORMAT_BC4_UNORM;
 		case TextureFormat::BC4_Snorm: return DXGI_FORMAT_BC4_SNORM;
 		case TextureFormat::BC5_Unorm: return DXGI_FORMAT_BC5_UNORM;
 		case TextureFormat::BC5_Snorm: return DXGI_FORMAT_BC5_SNORM;
@@ -263,6 +336,9 @@ inline DataFieldTypeInfoStructDX12 DataFieldTypeInfoDX12(DataFieldType type)
         case DataFieldType::Bool: return DATA_FIELD_TYPE_INFO_DX12(uint32_t, 1, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32_UINT, 1);
         case DataFieldType::Float4x4: return DATA_FIELD_TYPE_INFO_DX12(float, 16, DXGI_FORMAT_R32_FLOAT, DXGI_FORMAT_R32_FLOAT, 16);
         case DataFieldType::Uint_16: return DATA_FIELD_TYPE_INFO_DX12(uint16_t, 1, DXGI_FORMAT_R16_UINT, DXGI_FORMAT_R16_UINT, 1);
+        case DataFieldType::Int_64: return DATA_FIELD_TYPE_INFO_DX12(int64_t, 1, DXGI_FORMAT_R32_SINT, DXGI_FORMAT_R32_SINT, 1);
+        case DataFieldType::Uint_64: return DATA_FIELD_TYPE_INFO_DX12(uint64_t, 1, DXGI_FORMAT_R32_UINT, DXGI_FORMAT_R32_UINT, 1);
+        case DataFieldType::Float_16: return DATA_FIELD_TYPE_INFO_DX12(uint16_t, 1, DXGI_FORMAT_R16_FLOAT, DXGI_FORMAT_R16_FLOAT, 1);
         default:
         {
             Assert(false, "Unknown data field type: %i", type);

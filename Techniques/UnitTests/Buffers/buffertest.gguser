@@ -1,47 +1,59 @@
 {
-    "resourceViewType": 4,
-    "resourceViewNodeIndex": 6,
-    "resourceViewResourceIndex": 9,
-    "importedResources": [
-        {
-            "nodeName": "InputStructuredBuffer",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "buffertest_structuredbuffer.csv",
-                "structIndex": 0
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewType": 5,
+        "resourceViewNodeIndex": 6,
+        "resourceViewResourceIndex": 12,
+        "importedResources": [
+            {
+                "nodeName": "InputStructuredBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "buffertest_structuredbuffer.csv",
+                    "structIndex": 0
+                }
+            },
+            {
+                "nodeName": "InputTypedBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "buffertest_typedbuffer.csv",
+                    "type": "Float",
+                    "count": 8
+                }
+            },
+            {
+                "nodeName": "InputTypedBufferRaw",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "buffertest_typedbuffer.csv",
+                    "type": "Float",
+                    "count": 8
+                }
+            },
+            {
+                "nodeName": "InputTypedStructBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "buffertest_typedbuffer.csv",
+                    "type": "Float",
+                    "count": 8
+                }
             }
-        },
-        {
-            "nodeName": "InputTypedBuffer",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "buffertest_typedbuffer.csv",
-                "type": "Float",
-                "count": 8
+        ],
+        "savedVariables": [
+            {
+                "name": "gain",
+                "value": "0.500000"
+            },
+            {
+                "name": "alpha1",
+                "value": "1.000000"
+            },
+            {
+                "name": "alpha2",
+                "value": "0.000000"
             }
-        },
-        {
-            "nodeName": "InputTypedBufferRaw",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "buffertest_typedbuffer.csv",
-                "type": "Float",
-                "count": 8
-            }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "gain",
-            "value": "0.500000"
-        },
-        {
-            "name": "alpha1",
-            "value": "1.000000"
-        },
-        {
-            "name": "alpha2",
-            "value": "0.000000"
-        }
-    ]
+        ]
+    }
 }

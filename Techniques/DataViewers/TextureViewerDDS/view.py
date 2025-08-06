@@ -78,4 +78,20 @@ def DoIt():
 		Host.SetViewedResource("Input3D.resource - Initial State")
 		return
 
+	# Try as BC1
+	Host.SetImportedTextureSourceIsSRGB("Input2D", False)
+	Host.SetImportedTextureSourceIsSRGB("Input3D", False)
+	Host.SetImportedTextureFormat("Input2D", Host.TextureFormat_BC1_Unorm)
+	Host.SetImportedTextureFormat("Input3D", Host.TextureFormat_BC1_Unorm)
+	Host.RunTechnique(2)
+	Host.WaitOnGPU()
+
+	if Host.IsResourceCreated("Input2D"):
+		Host.SetViewedResource("Input2D.resource - Initial State")
+		return
+
+	if Host.IsResourceCreated("Input3D"):
+		Host.SetViewedResource("Input3D.resource - Initial State")
+		return
+
 DoIt()

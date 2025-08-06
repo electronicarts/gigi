@@ -7,5 +7,6 @@
 
 ENUM_BEGIN(Backend, "")
     ENUM_ITEM(DX12, "")
+    ENUM_ITEM(WebGPU, "")
     ENUM_ITEM(Interpreter, "")
 ENUM_END()

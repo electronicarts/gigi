@@ -10,6 +10,8 @@ static const uint ImGuiShaderFlag_UINTByteCountBit1 = 1 << 6;
 static const uint ImGuiShaderFlag_UINTByteCountBit2 = 1 << 7;
 static const uint ImGuiShaderFlag_UINTByteCountBit3 = 1 << 8;
 static const uint ImGuiShaderFlag_Signed = 1 << 9;
+static const uint ImGuiShaderFlag_Clamp = 1 << 10;
+static const uint ImGuiShaderFlag_notSRGB = 1 << 11;
 
 static const uint ImGuiShaderFlag_HideBits = ImGuiShaderFlag_HideR | ImGuiShaderFlag_HideG | ImGuiShaderFlag_HideB | ImGuiShaderFlag_HideA;
 
@@ -29,6 +31,28 @@ struct PS_INPUT
 SamplerState sampler0 : register(s0);
 Texture2D texture0 : register(t0);
 
+float3 LinearToSRGB(float3 linearCol)
+{
+    float3 sRGBLo = linearCol * 12.92;
+    float3 sRGBHi = (pow(abs(linearCol), float3(1.0 / 2.4, 1.0 / 2.4, 1.0 / 2.4)) * 1.055) - 0.055;
+    float3 sRGB;
+    sRGB.r = linearCol.r <= 0.0031308 ? sRGBLo.r : sRGBHi.r;
+    sRGB.g = linearCol.g <= 0.0031308 ? sRGBLo.g : sRGBHi.g;
+    sRGB.b = linearCol.b <= 0.0031308 ? sRGBLo.b : sRGBHi.b;
+    return sRGB;
+}
+
+float3 SRGBToLinear(in float3 sRGBCol)
+{
+    float3 linearRGBLo = sRGBCol / 12.92;
+    float3 linearRGBHi = pow((sRGBCol + 0.055) / 1.055, float3(2.4, 2.4, 2.4));
+    float3 linearRGB;
+    linearRGB.r = sRGBCol.r <= 0.04045 ? linearRGBLo.r : linearRGBHi.r;
+    linearRGB.g = sRGBCol.g <= 0.04045 ? linearRGBLo.g : linearRGBHi.g;
+    linearRGB.b = sRGBCol.b <= 0.04045 ? linearRGBLo.b : linearRGBHi.b;
+    return linearRGB;
+}
+
 float4 main(PS_INPUT input) : SV_Target
 {
     uint flagChannelBits = (flags & ImGuiShaderFlag_HideBits) ^ ImGuiShaderFlag_HideBits;
@@ -40,6 +64,14 @@ float4 main(PS_INPUT input) : SV_Target
         (flags & ImGuiShaderFlag_HideB) ? 0.0f : 1.0f,
         (flags & ImGuiShaderFlag_HideA) ? 0.0f : 1.0f);
     float2 uv = input.uv;
+    if (flags & ImGuiShaderFlag_Clamp)
+    {
+        uint w,h;
+        texture0.GetDimensions(w, h);
+        float2 minUV = float2(0.5f, 0.5f) / float2(w, h);
+        float2 maxUV = (float2(w,h) - float2(0.5f, 0.5f)) / float2(w, h);
+        uv = clamp(uv, minUV, maxUV);
+    }
     if (flags & ImGuiShaderFlag_Nearest)
     {
         uint w,h;
@@ -73,6 +105,12 @@ float4 main(PS_INPUT input) : SV_Target
     else if (flags & ImGuiShaderFlag_HideA)
     {
         out_col.a = 1.0f;
+    }
+
+    // Show as not sRGB (linear) if we should
+    if (flags & ImGuiShaderFlag_notSRGB)
+    {
+        out_col.rgb = SRGBToLinear(out_col.rgb);
     }
 
     if (flags & ImGuiShaderFlag_Checker)

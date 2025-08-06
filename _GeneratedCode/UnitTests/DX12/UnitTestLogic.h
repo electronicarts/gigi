@@ -224,10 +224,12 @@ public:
 
                                             // Uncomment to help debugging
                                             /*
-                                            for (size_t i = 0; i < data.size(); ++i)
+                                            for (size_t j = 0; j < data.size(); ++j)
                                             {
-                                                if (texture.pixels[i] != data[i])
+                                                if (texture.pixels[j] != data[j])
                                                 {
+                                                    int pixelX = (j / texture.channels) % texture.width;
+                                                    int pixelY = (j / texture.channels) / texture.width;
                                                     int ijkl = 0;
                                                 }
                                             }
@@ -498,6 +500,42 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.buffer_InputTypedBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_InputTypedBuffer_flags, inputTypedBufferData, context->GetTechniqueNameW());
         }
 
+        // Load, create and set buffer_InputTypedStructBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+                return;
+            }
+
+            std::vector<float> inputTypedBufferData;
+
+            bool result = DX12Utils::ParseCSV::ForEachValue(file.GetBytes(), true,
+                [&inputTypedBufferData](int tokenIndex, const char* token)
+                {
+                    // skip empty tokens, caused by trailing commas
+                    if (token[0] == 0)
+                        return true;
+
+                    float f;
+                    sscanf(token, "%f", &f);
+                    inputTypedBufferData.push_back(f);
+                    return true;
+                }
+            );
+
+            if (!result)
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_InputTypedStructBuffer_format = DXGI_FORMAT_R32_FLOAT;
+            context->m_input.buffer_InputTypedStructBuffer_stride = 0;
+            context->m_input.buffer_InputTypedStructBuffer_count = inputTypedBufferData.size();
+            context->m_input.buffer_InputTypedStructBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_InputTypedStructBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_InputTypedStructBuffer_flags, inputTypedBufferData, context->GetTechniqueNameW());
+        }
+
         // Load, create and set buffer_InputTypedBufferRaw
         {
 
@@ -539,8 +577,9 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     if (testContext.IsFirstPostExecute(event))
     {
         testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\0.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputStructuredBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\1.bin");
-        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBufferRaw, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\2.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedStructBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputStructuredBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\2.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBufferRaw, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest\\3.bin");
     }
 }
 
@@ -557,6 +596,10 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         context->m_input.buffer_buff_count = _countof(data);
         context->m_input.buffer_buff_state = D3D12_RESOURCE_STATE_COPY_DEST;
         context->m_input.buffer_buff = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_buff_flags, data, _countof(data), context->GetTechniqueNameW());
+
+        // Set variables
+        context->m_input.variable_frameIndex = 11;
+        context->m_input.variable_frameDeltaTime = 1.0f / 30.0f;
     }
 
     if (testContext.IsFirstPostExecute(event))
@@ -590,6 +633,22 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     if (testContext.IsFirstPostExecute(event))
     {
         testContext.VerifyReadbackPNG(device, commandList, context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_state, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\boxblur\\0.png");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, BufferAtomics::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_TheBuffer, context->m_output.c_buffer_TheBuffer_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\BufferAtomics\\0.bin");
+    }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, Defines::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\Defines\\0.png");
     }
 }
 
@@ -681,7 +740,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     {
         uint32_t clearValue = (uint32_t)0xFFFFFFFF;
 
-        context->m_input.texture_Output_format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        context->m_input.texture_Output_format = DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
         context->m_input.texture_Output_state = D3D12_RESOURCE_STATE_COPY_DEST;
         context->m_input.texture_Output_size[0] = 512;
         context->m_input.texture_Output_size[1] = 512;
@@ -703,7 +762,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         context->m_input.variable_LearningRate = 0.1f;
         context->m_input.variable_MaximumStepSize = 0.01f;
         context->m_input.variable_UseBackwardAD = true;
-        context->m_input.variable_QuantizeDisplay = true;
+        context->m_input.variable_QuantizeDisplay = false;
         context->m_input.variable_Reset = true;
         context->m_input.variable_initialized = false;
 
@@ -1242,8 +1301,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         uint32_t viewProjMtx[] = {
             0xBFFD3CFB, 0x00000000, 0xBFB118D6, 0xBF7C1BFF,
             0xBDA6AEC6, 0x401A3DFA, 0x3DEE58AD, 0xBFE3F7B9,
-            0x3F1278FA, 0x3D70F849, 0xBF517273, 0x405086AB,
-            0x3F12753A, 0x3D70F21E, 0xBF516D16, 0x4056E7BA
+            0xB86FFB0C, 0xB6C5670B, 0x38AB943C, 0x3DCC21FA,
+            0x3F12753A, 0x3D70F21E, 0xBF516D16, 0x4056E7BA,
         };
         memcpy(&context->m_input.variable_ViewProjMtx, viewProjMtx, sizeof(viewProjMtx));
     }
@@ -1370,7 +1429,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
             context->m_input.buffer_Vertex_Buffer_vertexInputLayout.push_back({ "TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 24, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });
         }
 
-        // Load, create and set Index Buffer
+        // Load, create and set Instance Buffer
         {
             DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Raster\\YesVertexStruct_NoIndex_YesInstanceStruct_InstanceBuffer.bin");
             if (!file.Valid())
@@ -1963,6 +2022,12 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 
     if (testContext.IsFirstPostExecute(event))
         testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Texture, context->m_output.c_texture_Texture_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\RayTrace\\TwoRayGensSubgraph\\0.png");
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, ConstOverride::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Subgraph\\ConstOverride\\0.png");
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, simpleRT::Context* context, UnitTestEvent event)
@@ -2911,7 +2976,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
                 context->m_input.texture_Color_format,
                 context->m_input.texture_Color_size,
                 context->m_input.texture_Color_numMips,
-                DX12Utils::ResourceType::Texture2D,
+                DX12Utils::ResourceType::Texture3D,
                 (void*)clearValue, sizeof(clearValue),
                 context->GetTechniqueNameW()
             );

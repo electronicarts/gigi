@@ -74,22 +74,24 @@ namespace Mips_RGS_2D
             if(!DX12Utils::MakeRootSig(device, ranges, 2, samplers, 0, &ContextInternal::rayShader_RayGen_rootSig, (c_debugNames ? L"RayGen" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "1" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","1");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[2];
 
             // Compile RTMiss : Mips_RGS_2D_RGS.hlsl Miss()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_RGS_2D_RGS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_RGS_2D_RGS.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
             // Compile RTRayGen : Mips_RGS_2D_RGS.hlsl main()
-            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Mips_RGS_2D_RGS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Mips_RGS_2D_RGS.hlsl";
+            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[1].empty())
                 return false;
 
@@ -354,12 +356,12 @@ namespace Mips_RGS_2D
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_MipTex;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_MipTex_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

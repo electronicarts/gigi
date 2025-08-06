@@ -90,27 +90,30 @@ namespace TwoRayGensSubgraph
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::rayShader_A_DoRT1_rootSig, (c_debugNames ? L"A_DoRT1" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "1" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","1");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[3];
 
-            // Compile RTMiss : TwoRayGensSubgraphA/TwoRayGens1.hlsl Miss1()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphA/TwoRayGens1.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTMiss : TwoRayGensSubgraphA_A/TwoRayGens1.hlsl Miss1()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphA_A/TwoRayGens1.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
-            // Compile RTClosestHit : TwoRayGensSubgraphA/TwoRayGens1.hlsl ClosestHit1()
-            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphA/TwoRayGens1.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTClosestHit : TwoRayGensSubgraphA_A/TwoRayGens1.hlsl ClosestHit1()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphA_A/TwoRayGens1.hlsl";
+            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[1].empty())
                 return false;
 
-            // Compile RTRayGen : TwoRayGensSubgraphA/TwoRayGens1.hlsl RayGen1()
-            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphA/TwoRayGens1.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTRayGen : TwoRayGensSubgraphA_A/TwoRayGens1.hlsl RayGen1()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphA_A/TwoRayGens1.hlsl";
+            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[2].empty())
                 return false;
 
@@ -122,7 +125,7 @@ namespace TwoRayGensSubgraph
             soDesc.NumSubobjects = 8;
             soDesc.pSubobjects = subObjects;
 
-            // DXIL Library for RTMiss : TwoRayGensSubgraphA/TwoRayGens1.hlsl Miss1()
+            // DXIL Library for RTMiss : TwoRayGensSubgraphA_A/TwoRayGens1.hlsl Miss1()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"Miss1_0";
@@ -139,7 +142,7 @@ namespace TwoRayGensSubgraph
                 subObjects[0].pDesc = &libDesc;
             }
 
-            // DXIL Library for RTClosestHit : TwoRayGensSubgraphA/TwoRayGens1.hlsl ClosestHit1()
+            // DXIL Library for RTClosestHit : TwoRayGensSubgraphA_A/TwoRayGens1.hlsl ClosestHit1()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"ClosestHit1_1";
@@ -156,7 +159,7 @@ namespace TwoRayGensSubgraph
                 subObjects[1].pDesc = &libDesc;
             }
 
-            // DXIL Library for RTRayGen : TwoRayGensSubgraphA/TwoRayGens1.hlsl RayGen1()
+            // DXIL Library for RTRayGen : TwoRayGensSubgraphA_A/TwoRayGens1.hlsl RayGen1()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"RayGen1_2";
@@ -315,32 +318,36 @@ namespace TwoRayGensSubgraph
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 0, &ContextInternal::rayShader_B_DoRT2_rootSig, (c_debugNames ? L"B_DoRT2" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "1" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","1");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[4];
 
-            // Compile RTMiss : TwoRayGensSubgraphB/TwoRayGens2.hlsl Miss2A()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphB/TwoRayGens2.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTMiss : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl Miss2A()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphB_B/TwoRayGens2.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
-            // Compile RTMiss : TwoRayGensSubgraphB/TwoRayGens2.hlsl Miss2B()
-            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphB/TwoRayGens2.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTMiss : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl Miss2B()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphB_B/TwoRayGens2.hlsl";
+            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[1].empty())
                 return false;
 
-            // Compile RTClosestHit : TwoRayGensSubgraphB/TwoRayGens2.hlsl ClosestHit2()
-            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphB/TwoRayGens2.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTClosestHit : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl ClosestHit2()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphB_B/TwoRayGens2.hlsl";
+            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[2].empty())
                 return false;
 
-            // Compile RTRayGen : TwoRayGensSubgraphB/TwoRayGens2.hlsl RayGen2()
-            shaderCode[3] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TwoRayGensSubgraphB/TwoRayGens2.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            // Compile RTRayGen : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl RayGen2()
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TwoRayGensSubgraphB_B/TwoRayGens2.hlsl";
+            shaderCode[3] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[3].empty())
                 return false;
 
@@ -352,7 +359,7 @@ namespace TwoRayGensSubgraph
             soDesc.NumSubobjects = 9;
             soDesc.pSubobjects = subObjects;
 
-            // DXIL Library for RTMiss : TwoRayGensSubgraphB/TwoRayGens2.hlsl Miss2A()
+            // DXIL Library for RTMiss : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl Miss2A()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"Miss2A_0";
@@ -369,7 +376,7 @@ namespace TwoRayGensSubgraph
                 subObjects[0].pDesc = &libDesc;
             }
 
-            // DXIL Library for RTMiss : TwoRayGensSubgraphB/TwoRayGens2.hlsl Miss2B()
+            // DXIL Library for RTMiss : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl Miss2B()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"Miss2B_1";
@@ -386,7 +393,7 @@ namespace TwoRayGensSubgraph
                 subObjects[1].pDesc = &libDesc;
             }
 
-            // DXIL Library for RTClosestHit : TwoRayGensSubgraphB/TwoRayGens2.hlsl ClosestHit2()
+            // DXIL Library for RTClosestHit : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl ClosestHit2()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"ClosestHit2_2";
@@ -403,7 +410,7 @@ namespace TwoRayGensSubgraph
                 subObjects[2].pDesc = &libDesc;
             }
 
-            // DXIL Library for RTRayGen : TwoRayGensSubgraphB/TwoRayGens2.hlsl RayGen2()
+            // DXIL Library for RTRayGen : TwoRayGensSubgraphB_B/TwoRayGens2.hlsl RayGen2()
             {
                 static D3D12_EXPORT_DESC exportDesc;
                 exportDesc.Name = L"RayGen2_3";
@@ -671,12 +678,12 @@ namespace TwoRayGensSubgraph
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Texture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Texture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

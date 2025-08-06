@@ -32,6 +32,15 @@ public:
 		void* dflt = nullptr;
 
 		size_t size = 0;
+
+		// If true, the variable was changed in the viewer and should not use the default from the editor
+		bool overrideValue = false;
+		bool systemValue = false;
+
+		bool isDefault() const
+		{
+			return memcmp(value, dflt, size) == 0;
+		}
 	};
 
 	void Clear() { m_storage.Clear(); }
@@ -41,10 +50,12 @@ public:
 	static void SetFromString(const char* text, size_t count, float* value);
 	static void SetFromString(const char* text, size_t count, bool* value);
 	static void SetFromString(const char* text, size_t count, uint16_t* value);
+	static void SetFromString(const char* text, size_t count, int64_t* value);
+	static void SetFromString(const char* text, size_t count, uint64_t* value);
 
 private:
 	template<typename T>
-	Storage Get(const Variable& variable, size_t count, T* dummy)
+	Storage Get(const RenderGraph& renderGraph, const Variable& variable, size_t count, T* dummy)
 	{
 		// Get or create variable storage.
 		// Allocate double the memory needed because we need to store both the value and the default value
@@ -57,10 +68,35 @@ private:
 		Storage ret;
 		ret.size  = sizeof(T) * count;
 		ret.value = storage.data();
-		ret.dflt  = &((char*)ret.value)[ret.size];
+		ret.dflt = &((char*)ret.value)[ret.size];
 
 		// parse the dflt and set the value to the dflt if it's new storage
-		SetFromString(variable.dflt.c_str(), count, (T*)ret.dflt);
+		// If it's an enum, find the numerical value and set the default to that
+		if (variable.enumIndex >= 0)
+		{
+			const Enum& e = renderGraph.enums[variable.enumIndex];
+			size_t foundIndex = 0;
+
+			for (size_t itemIndex = 0; itemIndex < e.items.size(); ++itemIndex)
+			{
+				std::string scopedLabel = e.name + "::" + e.items[itemIndex].label;
+
+				if (!strcmp(variable.dflt.c_str(), e.items[itemIndex].label.c_str()) ||
+					!strcmp(variable.dflt.c_str(), scopedLabel.c_str()))
+				{
+					foundIndex = itemIndex;
+					break;
+				}
+			}
+
+			char buffer[64];
+			sprintf_s(buffer, "%i", (int)foundIndex);
+			SetFromString(buffer, count, (T*)ret.dflt);
+		}
+		else
+		{
+			SetFromString(variable.dflt.c_str(), count, (T*)ret.dflt);
+		}
 		if (newStorage)
 			memcpy(ret.value, ret.dflt, ret.size);
 
@@ -73,170 +109,202 @@ private:
 	static std::string GetAsString(size_t count, float* value);
 	static std::string GetAsString(size_t count, bool* value);
 	static std::string GetAsString(size_t count, uint16_t* value);
+	static std::string GetAsString(size_t count, int64_t* value);
+	static std::string GetAsString(size_t count, uint64_t* value);
 
 	template<typename LAMBDA>
-	void CallFor_Int(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Int2(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int2(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 2;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Int3(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int3(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 3;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Int4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Int4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = int;
 		static const size_t TheCount = 4;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint2(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint2(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 2;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint3(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint3(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 3;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = unsigned int;
 		static const size_t TheCount = 4;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float2(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float2(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 2;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float3(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float3(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 3;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 4;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Bool(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Bool(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = bool;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Float4x4(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float4x4(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = float;
 		static const size_t TheCount = 16;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Uint_16(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Uint_16(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		using TheType				 = uint16_t;
 		static const size_t TheCount = 1;
 
-		Storage storage = Get(variable, TheCount, (TheType*)nullptr);
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
 		lambda(TheCount, (TheType*)storage.value);
 	}
 
 	template<typename LAMBDA>
-	void CallFor_Count(const Variable& variable, const LAMBDA& lambda)
+	void CallFor_Float_16(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
+	{
+		using TheType = uint16_t;
+		static const size_t TheCount = 1;
+
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
+		lambda(TheCount, (TheType*)storage.value);
+	}
+
+	template<typename LAMBDA>
+	void CallFor_Int_64(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
+	{
+		using TheType = int64_t;
+		static const size_t TheCount = 1;
+
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
+		lambda(TheCount, (TheType*)storage.value);
+	}
+
+	template<typename LAMBDA>
+	void CallFor_Uint_64(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
+	{
+		using TheType = uint64_t;
+		static const size_t TheCount = 1;
+
+		Storage storage = Get(renderGraph, variable, TheCount, (TheType*)nullptr);
+		lambda(TheCount, (TheType*)storage.value);
+	}
+
+	template<typename LAMBDA>
+	void CallFor_Count(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 	}
 
 	template<typename LAMBDA>
-	void CallForVariable(const Variable& variable, const LAMBDA& lambda)
+	void CallForVariable(const RenderGraph& renderGraph, const Variable& variable, const LAMBDA& lambda)
 	{
 		switch (variable.type)
 		{
 #include "external/df_serialize/_common.h"
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
-	case DataFieldType::_NAME: CallFor_##_NAME(variable, lambda); break;
+	case DataFieldType::_NAME: CallFor_##_NAME(renderGraph, variable, lambda); break;
 // clang-format off
 #include "external/df_serialize/_fillunsetdefines.h"
 #include "Schemas/DataFieldTypes.h"
@@ -245,19 +313,19 @@ private:
 	}
 
 public:
-	void SetValueFromString(const Variable& variable, const char* textValue)
+	void SetValueFromString(const RenderGraph& renderGraph, const Variable& variable, const char* textValue)
 	{
-		CallForVariable(variable,
+		CallForVariable(renderGraph, variable,
 			[&](size_t count, auto* value)
 			{
 				SetFromString(textValue, count, value);
 			});
 	}
 
-	std::string GetValueAsString(const Variable& variable)
+	std::string GetValueAsString(const RenderGraph& renderGraph, const Variable& variable)
 	{
 		std::string ret;
-		CallForVariable(variable,
+		CallForVariable(renderGraph, variable,
 			[&](size_t count, auto* value)
 			{
 				ret = GetAsString(count, value);
@@ -265,13 +333,13 @@ public:
 		return ret;
 	}
 
-	Storage Get(const Variable& variable)
+	Storage Get(const RenderGraph& renderGraph, const Variable& variable)
 	{
 		Storage ret;
-		CallForVariable(variable,
+		CallForVariable(renderGraph, variable,
 			[&](size_t count, auto* value)
 			{
-				ret = Get(variable, count, value);
+				ret = Get(renderGraph, variable, count, value);
 			});
 		return ret;
 	}
@@ -291,19 +359,15 @@ public:
 		m_renderGraph = RenderGraph(); // clear out any stuff that may be there in the render graph already.
 
 		// Get a Gigi temporary directory based on the process ID so multiple viewers can run at once
-		m_tempDirectory = std::filesystem::temp_directory_path().string();
-		m_tempDirectory += "Gigi\\";
-		char pid[256];
-		sprintf_s(pid, "%i", _getpid());
-		m_tempDirectory += pid;
-		m_tempDirectory += "\\";
+        std::string tempDirectory = GetTempDirectory();
 
 		// Remove everything aready there, to prevent stale things interfering
 		// Then, make sure the directory is created
-		std::filesystem::remove_all(m_tempDirectory.c_str());
-		std::filesystem::create_directories(m_tempDirectory.c_str());
+		std::error_code ec;
+		std::filesystem::remove_all(tempDirectory.c_str(), ec);
+		std::filesystem::create_directories(tempDirectory.c_str(), ec);
 
-		m_compileResult = GigiCompile(GigiBuildFlavor::Interpreter_Interpreter, fileName, m_tempDirectory.c_str(), PostLoad, &m_renderGraph, false);
+		m_compileResult = GigiCompile(GigiBuildFlavor::Interpreter_Interpreter, fileName, tempDirectory.c_str(), PostLoad, &m_renderGraph, false);
 		if (m_compileResult != GigiCompileResult::OK)
 			return m_compileResult;
 
@@ -330,7 +394,9 @@ public:
 #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION)                                                                                            \
 	case RenderGraphNode::c_index_##_NAME:                                                                                                            \
 	{                                                                                                                                                 \
-		if (!OnNodeAction(node.##_NAME, m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name), NodeAction::Init))                                    \
+        auto& runtimeData = m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name);                                                                   \
+        runtimeData.m_inErrorState = false;                                                                                                           \
+		if (!OnNodeAction(node.##_NAME, runtimeData, NodeAction::Init))                                                                               \
 		{                                                                                                                                             \
 			m_logFn(LogLevel::Error, "Error during IGigiInterpreter::Compile OnNodeAction(Init) in node %s (" #_NAME ")", node.##_NAME.name.c_str()); \
 			return GigiCompileResult::InterpreterError;                                                                                               \
@@ -536,25 +602,113 @@ public:
 			DoOp(A[i], B[i], dest[i], setVar.op);
 	}
 
+	template <typename T, typename U>
+	void ConvertTypedBinaryValueInternal2(const U* src, T* dest)
+	{
+		dest[0] = static_cast<T>(src[0]);
+	}
+
+	template <typename T>
+	void ConvertTypedBinaryValueInternal(const void* src, DataFieldComponentType srcType, T* dest)
+	{
+		switch (srcType)
+		{
+			case DataFieldComponentType::_int: dest[0] = static_cast<T>(((int*)src)[0]); break;
+			case DataFieldComponentType::_uint16_t: dest[0] = static_cast<T>(((uint16_t*)src)[0]); break;
+			case DataFieldComponentType::_uint32_t: dest[0] = static_cast<T>(((uint32_t*)src)[0]); break;
+			case DataFieldComponentType::_int64_t: dest[0] = static_cast<T>(((int64_t*)src)[0]); break;
+			case DataFieldComponentType::_uint64_t: dest[0] = static_cast<T>(((uint64_t*)src)[0]); break;
+			case DataFieldComponentType::_float: dest[0] = static_cast<T>(((float*)src)[0]); break;
+			default:
+			{
+				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				break;
+			}
+		}
+	}
+
+	void ConvertTypedBinaryValue(const void* src, DataFieldComponentType srcType, void* dest, DataFieldComponentType destType)
+	{
+		switch (destType)
+		{
+			case DataFieldComponentType::_int: ConvertTypedBinaryValueInternal(src, srcType, (int*)dest); break;
+			case DataFieldComponentType::_uint16_t: ConvertTypedBinaryValueInternal(src, srcType, (uint16_t*)dest); break;
+			case DataFieldComponentType::_uint32_t: ConvertTypedBinaryValueInternal(src, srcType, (uint32_t*)dest); break;
+			case DataFieldComponentType::_int64_t: ConvertTypedBinaryValueInternal(src, srcType, (int64_t*)dest); break;
+			case DataFieldComponentType::_uint64_t: ConvertTypedBinaryValueInternal(src, srcType, (uint64_t*)dest); break;
+			case DataFieldComponentType::_float: ConvertTypedBinaryValueInternal(src, srcType, (float*)dest); break;
+			default:
+			{
+				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				break;
+			}
+		}
+	}
+
+	// Converts the components of srcBytes to the component type of destType
+	void CastTypedBinaryValues(void* srcBytes, DataFieldType srcType, std::vector<char>& destBytes, DataFieldType destType)
+	{
+		DataFieldTypeInfoStruct srcTypeInfo = DataFieldTypeInfo(srcType);
+		DataFieldTypeInfoStruct destTypeInfo = DataFieldTypeInfo(destType);
+
+		if (srcTypeInfo.componentType == destTypeInfo.componentType)
+			return;
+
+		destBytes.resize(destTypeInfo.componentBytes * srcTypeInfo.componentCount);
+
+		for (int componentIndex = 0; componentIndex < srcTypeInfo.componentCount; ++componentIndex)
+		{
+			const void* src = &(((const char*)srcBytes)[srcTypeInfo.componentBytes * componentIndex]);
+			void* dest = &destBytes[destTypeInfo.componentBytes * componentIndex];
+			ConvertTypedBinaryValue(src, srcTypeInfo.componentType, dest, destTypeInfo.componentType);
+		}
+
+		return;
+	}
+
 	void ExecuteSetvar(const SetVariable& setVar)
 	{
-		DataFieldType			type	 = m_renderGraph.variables[setVar.destination.variableIndex].type;
+		DataFieldType			type = m_renderGraph.variables[setVar.destination.variableIndex].type;
 		DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(type);
 
 		void* destBytes = GetRuntimeVariable(setVar.destination.variableIndex).storage.value;
-		void* ABytes	= (setVar.AVar.variableIndex != -1) ? GetRuntimeVariable(setVar.AVar.variableIndex).storage.value : nullptr;
-		void* BBytes	= (setVar.BVar.variableIndex != -1) ? GetRuntimeVariable(setVar.BVar.variableIndex).storage.value : nullptr;
+		void* ABytes = (setVar.AVar.variableIndex != -1) ? GetRuntimeVariable(setVar.AVar.variableIndex).storage.value : nullptr;
+		void* BBytes = (setVar.BVar.variableIndex != -1) ? GetRuntimeVariable(setVar.BVar.variableIndex).storage.value : nullptr;
 
 		std::vector<char> ABuffer;
 		std::vector<char> BBuffer;
 
-		if (!ABytes)
+		if (setVar.AVar.variableIndex != -1)
+		{
+			// Cast our variable to the destination variable type if we need to.
+			// We should cast the result of the operation and work in this type, but the only casting we do is for no-op (assign) so that doesn't come up in practice currently.
+			const Variable& var = m_renderGraph.variables[setVar.AVar.variableIndex];
+			DataFieldTypeInfoStruct varTypeInfo = DataFieldTypeInfo(var.type);
+			if (varTypeInfo.componentType != typeInfo.componentType)
+			{
+				CastTypedBinaryValues(ABytes, var.type, ABuffer, type);
+				ABytes = ABuffer.data();
+			}
+		}
+		else
 		{
 			ABuffer.resize(typeInfo.typeBytes);
 			ABytes = ABuffer.data();
 		}
 
-		if (!BBytes)
+		if (setVar.BVar.variableIndex != -1)
+		{
+			// Cast our variable to the destination variable type if we need to.
+			// We should cast the result of the operation and work in this type, but the only casting we do is for no-op (assign) so that doesn't come up in practice currently.
+			const Variable& var = m_renderGraph.variables[setVar.BVar.variableIndex];
+			DataFieldTypeInfoStruct varTypeInfo = DataFieldTypeInfo(var.type);
+			if (varTypeInfo.componentType != typeInfo.componentType)
+			{
+				CastTypedBinaryValues(ABytes, var.type, BBuffer, type);
+				BBytes = ABuffer.data();
+			}
+		}
+		else
 		{
 			BBuffer.resize(typeInfo.typeBytes);
 			BBytes = BBuffer.data();
@@ -577,6 +731,16 @@ public:
 				DoSetVarOperation<uint16_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
 				break;
 			}
+            case DataFieldType::Int_64:
+            {
+                DoSetVarOperation<int64_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
+                break;
+            }
+			case DataFieldType::Uint_64:
+			{
+				DoSetVarOperation<uint64_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
+				break;
+			}
 			case DataFieldType::Uint:
 			{
 				DoSetVarOperation<uint32_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
@@ -585,6 +749,11 @@ public:
 			case DataFieldType::Float:
 			{
 				DoSetVarOperation<float>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
+				break;
+			}
+			case DataFieldType::Float_16:
+			{
+				DoSetVarOperation<uint16_t>(setVar, ABytes, BBytes, destBytes, typeInfo.componentCount);
 				break;
 			}
 		}
@@ -771,7 +940,9 @@ public:
 #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION)                                                            \
 	case RenderGraphNode::c_index_##_NAME:                                                                            \
 	{                                                                                                                 \
-		if (!OnNodeAction(node.##_NAME, m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name), NodeAction::Execute)) \
+        auto& runtimeData = m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name);                                   \
+        runtimeData.m_inErrorState = false;                                                                           \
+		if (!OnNodeAction(node.##_NAME, runtimeData, NodeAction::Execute))                                            \
 			return false;                                                                                             \
 		break;                                                                                                        \
 	}
@@ -815,6 +986,10 @@ public:
 	{
 		return m_runtimeVariables[index];
 	}
+	RuntimeVariable& GetRuntimeVariable(int index)
+	{
+		return m_runtimeVariables[index];
+	}
 
 	int GetRuntimeVariableIndex(const char* name) const
 	{
@@ -836,7 +1011,7 @@ public:
 
 	std::string GetRuntimeVariableValueAsString(int index)
 	{
-		return m_variableStorage.GetValueAsString(*m_runtimeVariables[index].variable);
+		return m_variableStorage.GetValueAsString(m_renderGraph, *m_runtimeVariables[index].variable);
 	}
 
 	void SetRuntimeVariableFromString(int index, const char* textValue)
@@ -851,12 +1026,15 @@ public:
 			{
 				char valueIntString[256];
 				sprintf_s(valueIntString, "%i", valueInt);
-				m_variableStorage.SetValueFromString(*m_runtimeVariables[index].variable, valueIntString);
+				m_variableStorage.SetValueFromString(m_renderGraph, *m_runtimeVariables[index].variable, valueIntString);
 				return;
 			}
 		}
 
-		m_variableStorage.SetValueFromString(*m_runtimeVariables[index].variable, textValue);
+		m_variableStorage.SetValueFromString(m_renderGraph, *m_runtimeVariables[index].variable, textValue);
+
+		// The variable was in the file means the user overrides the setting
+		m_runtimeVariables[index].storage.overrideValue = true;
 	}
 
 	void SetRuntimeVariableToDflt(int index)
@@ -961,7 +1139,14 @@ public:
 
 	std::string GetTempDirectory() const
 	{
-		return m_tempDirectory;
+        // Get a Gigi temporary directory based on the process ID so multiple viewers can run at once
+        std::string tempDirectory = std::filesystem::temp_directory_path().string();
+        tempDirectory += "Gigi\\";
+        char pid[256];
+        sprintf_s(pid, "%i", _getpid());
+        tempDirectory += pid;
+        tempDirectory += "\\";
+        return tempDirectory;
 	}
 
 protected:
@@ -1010,14 +1195,13 @@ private:
 		for (size_t i = 0; i < renderGraph.variables.size(); ++i)
 		{
 			m_runtimeVariables[i].variable = &renderGraph.variables[i];
-			m_runtimeVariables[i].storage  = m_variableStorage.Get(*m_runtimeVariables[i].variable);
+			m_runtimeVariables[i].storage  = m_variableStorage.Get(m_renderGraph, *m_runtimeVariables[i].variable);
 		}
 	}
 
 protected:
 	GigiCompileResult m_compileResult = GigiCompileResult::NotCompiledYet;
 	RenderGraph		  m_renderGraph;
-	std::string		  m_tempDirectory;
 
 	VariableStorage				 m_variableStorage;
 	std::vector<RuntimeVariable> m_runtimeVariables;

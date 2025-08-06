@@ -12,7 +12,7 @@ namespace IndirectDispatch
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -154,7 +154,7 @@ namespace IndirectDispatch
         void EnsureResourcesCreated(ID3D12Device* device, ID3D12GraphicsCommandList* commandList);
         bool EnsureDrawCallPSOsCreated(ID3D12Device* device, bool dirty);
 
-        ProfileEntry m_profileData[3+1]; // One for each action node, and another for the total
+        ProfileEntry m_profileData[4+1]; // One for each action node, and another for the total
     };
 
     struct ScopedPerfEvent

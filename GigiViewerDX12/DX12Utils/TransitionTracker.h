@@ -30,6 +30,11 @@ public:
 		bool isUAVBarrier = false;
 	};
 
+	bool IsTracked(ID3D12Resource* resource)
+	{
+		return m_trackedResources.count(resource) > 0;
+	}
+
 	void Track(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* debugText)
 	{
 		if (!resource)

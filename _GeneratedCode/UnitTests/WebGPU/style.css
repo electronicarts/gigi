@@ -1,0 +1,67 @@
+.collapsible
+{
+    background-color: #ddd;
+    color: #444;
+    cursor: pointer;
+    padding: 18px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.active
+{
+    background-color: #ddd;
+}
+
+.collapsible:hover
+{
+    background-color: #aaa;
+}
+
+.collapsiblecontent
+{
+    padding: 0 18px;
+    overflow: hidden;
+    background-color: #f1f1f1;
+}
+
+table
+{
+    width:auto;
+}
+td
+{
+    white-space:nowrap;
+}
+td:last-child
+{
+    width:100%;
+}
+
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    border-bottom: 1px dotted black;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    //width: 120px;
+    background-color: black;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0;
+    border-radius: 6px;
+
+    position: absolute;
+    z-index: 1;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+}

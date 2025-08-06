@@ -109,6 +109,44 @@ struct ShowWindowsState
 };
 ShowWindowsState g_showWindows;
 
+// Portions of this software were based on https://devblogs.microsoft.com/oldnewthing/20100125-00/?p=15183
+HANDLE SetClipboardDataEx(UINT uFormat, void *pvData, DWORD cbData)
+{
+    if (OpenClipboard(NULL))
+    {
+        EmptyClipboard();
+        if (uFormat == CF_BITMAP ||
+            uFormat == CF_DSPBITMAP ||
+            uFormat == CF_PALETTE ||
+            uFormat == CF_METAFILEPICT ||
+            uFormat == CF_DSPMETAFILEPICT ||
+            uFormat == CF_ENHMETAFILE ||
+            uFormat == CF_DSPENHMETAFILE ||
+            uFormat == CF_OWNERDISPLAY) {
+            return NULL; // these are not HGLOBAL format
+        }
+        HANDLE hRc = NULL;
+        HGLOBAL hglob = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT,
+            cbData);
+        if (hglob) {
+            void* pvGlob = GlobalLock(hglob);
+            if (pvGlob) {
+                CopyMemory(pvGlob, pvData, cbData);
+                GlobalUnlock(hglob);
+                hRc = SetClipboardData(uFormat, hglob);
+            }
+            if (!hRc) {
+                DWORD blah = GetLastError();
+                GlobalFree(hglob);
+            }
+        }
+        CloseClipboard();
+        return hRc;
+    }
+    else
+        return NULL;
+}
+
 void EditorShowMessageBox(const char* msg, ...)
 {
     char buffer[4096];
@@ -161,14 +199,6 @@ void OnShaderResourceDelete(const Shader& shader, const std::string& resourceNam
                 if (node.actionComputeShader.shader.name != shader.name)
                     continue;
 
-                node.actionComputeShader.connections.erase(
-                    std::remove_if(
-                        node.actionComputeShader.connections.begin(),
-                        node.actionComputeShader.connections.end(),
-                        [&](const NodePinConnection& connection) { return connection.srcPin == resourceName; }),
-                    node.actionComputeShader.connections.end()
-                );
-
                 shaderNodes.push_back(node.actionComputeShader.name);
                 break;
             }
@@ -176,16 +206,18 @@ void OnShaderResourceDelete(const Shader& shader, const std::string& resourceNam
             {
                 if (node.actionRayShader.shader.name != shader.name)
                     continue;
-
-                node.actionRayShader.connections.erase(
-                    std::remove_if(
-                        node.actionRayShader.connections.begin(),
-                        node.actionRayShader.connections.end(),
-                        [&](const NodePinConnection& connection) { return connection.srcPin == resourceName; }),
-                    node.actionRayShader.connections.end()
-                );
-
                 shaderNodes.push_back(node.actionRayShader.name);
+                break;
+            }
+            case RenderGraphNode::c_index_actionDrawCall:
+            {
+                if (node.actionDrawCall.pixelShader.name != shader.name
+                    && node.actionDrawCall.vertexShader.name != shader.name
+                    && node.actionDrawCall.amplificationShader.name != shader.name
+                    && node.actionDrawCall.meshShader.name != shader.name)
+                    continue;
+
+                shaderNodes.push_back(node.actionDrawCall.name);
                 break;
             }
         }
@@ -253,7 +285,10 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
             }
             case RenderGraphNode::c_index_actionDrawCall:
             {
-                if (node.actionDrawCall.vertexShader.name != shader.name && node.actionDrawCall.pixelShader.name != shader.name)
+                if (node.actionDrawCall.vertexShader.name != shader.name
+                    && node.actionDrawCall.pixelShader.name != shader.name
+                    && node.actionDrawCall.meshShader.name != shader.name
+                    && node.actionDrawCall.amplificationShader.name != shader.name)
                     continue;
                 shaderNodes.push_back(shader.name);
 
@@ -568,11 +603,13 @@ struct Example :
         RenderGraph renderGraph;
         if (ReadFromJSONFile(renderGraph, fileName))
         {
+            /*
             if (renderGraph.version != std::string(GIGI_VERSION()))
             {
                 EditorShowMessageBox("File %s is version %s, but needs to be %s.", fileName, renderGraph.version.c_str(), GIGI_VERSION());
             }
             else
+                */
             {
                 g_renderGraph = renderGraph;
                 g_renderGraphDirty = renderGraph.versionUpgraded;
@@ -660,8 +697,12 @@ struct Example :
     {
 		if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
 		{
+			// e.g. "C:\\gitlab\\gigi"
+			std::filesystem::path defaultPath = std::filesystem::current_path();
+			std::string exploreLocation = (defaultPath / "Techniques").u8string();
+
 			nfdchar_t* outPath = nullptr;
-			if (NFD_OpenDialog("gg", "Techniques", &outPath) == NFD_OKAY)
+			if (NFD_OpenDialog("gg", exploreLocation.c_str(), &outPath) == NFD_OKAY)
 				LoadJSONFile(outPath);
 		}
     }
@@ -678,8 +719,17 @@ struct Example :
         }
         else
         {
+            // try absolute path of current filename first
+            std::string path = std::filesystem::path(g_renderGraphFileName).remove_filename().string();
+			if (!path.empty() && path.back() == std::filesystem::path::preferred_separator)
+				path.pop_back();  // remove trailing slash
+
+            // fall back to absolute path with techniques folder
+            if(path.empty())
+	            path = (std::filesystem::current_path() / "Techniques").string();
+
 			nfdchar_t* outPath = nullptr;
-            if (NFD_SaveDialog("gg", "Techniques", &outPath) == NFD_OKAY)
+            if (NFD_SaveDialog("gg", (nfdchar_t*)path.c_str(), &outPath) == NFD_OKAY)
 			{
 				g_renderGraphFileName = outPath;
 
@@ -1317,6 +1367,27 @@ struct Example :
             return;
         }
 
+        if (ImGui::Button("Copy"))
+        {
+            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "what's up?");
+            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "bro.");
+
+            constexpr const char* msgType[3] = { "[Info] ", "[Warning] ", "[Error] " };
+
+            std::ostringstream fullText;
+
+            for (const auto& msg : m_BuildOutputBuffer)
+            {
+                int msgTypeIndex = static_cast<int>(msg.Type);
+                fullText << msgType[msgTypeIndex];
+                fullText << msg.Msg << "\n";
+            }
+
+            SetClipboardDataEx(CF_TEXT, (void*)fullText.str().c_str(), (DWORD)fullText.str().length() + 1);
+        }
+
+        ImGui::SameLine();
+
         if (ImGui::Button("Clear"))
             m_BuildOutputBuffer.clear();
 
@@ -1460,6 +1531,10 @@ struct Example :
 				std::string title = GetNodeTypeName(node);
 				title += " Properties";
 
+                char buffer[256];
+                sprintf_s(buffer, " (Node %i)", int(selectedNodeId.Get()) - 1);
+                title += buffer;
+
 				std::string oldNodeName = GetNodeName(node);
 
 				ImGui::TextUnformatted(title.c_str());
@@ -1491,55 +1566,6 @@ struct Example :
 					SetNodeName(node, oldNodeName);
 					OnNodeRename(oldNodeName, newNodeName);
 					SetNodeName(node, newNodeName);
-				}
-
-				// custom UI for node types
-				switch (node._index)
-				{
-					// an edit and explore button for the shader
-				case RenderGraphNode::c_index_actionComputeShader:
-				case RenderGraphNode::c_index_actionRayShader:
-				{
-					int shaderIndex;
-					if (node._index == RenderGraphNode::c_index_actionComputeShader)
-						shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::Compute, node.actionComputeShader.shader.name.c_str());
-					else
-						shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::RTRayGen, node.actionRayShader.shader.name.c_str());
-					if (shaderIndex < 0)
-						break;
-
-					if (g_renderGraph.shaders[shaderIndex].fileName.empty())
-						break;
-
-					ImGui::Text("Shader:");
-					ImGui::SameLine();
-					ImGui::InputText("##ShaderFileName", (char*)g_renderGraph.shaders[shaderIndex].fileName.c_str(), g_renderGraph.shaders[shaderIndex].fileName.length(), ImGuiInputTextFlags_ReadOnly);
-
-					std::filesystem::path defaultPath = std::filesystem::path(g_renderGraphFileName).remove_filename();
-
-					std::string exploreLocation;
-
-					if (g_renderGraph.shaders[shaderIndex].fileName.empty())
-						exploreLocation = defaultPath.u8string();
-					else
-						exploreLocation = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).remove_filename().u8string();
-					exploreLocation = std::filesystem::absolute(std::filesystem::path(exploreLocation)).u8string();
-
-					if (ImGui::Button("Edit"))
-					{
-						std::string fullFileName = (defaultPath / std::filesystem::path(g_renderGraph.shaders[shaderIndex].fileName)).u8string();
-						ShellExecuteA(NULL, "open", fullFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-					}
-
-					ImGui::SameLine();
-
-					if (ImGui::Button("Explore"))
-					{
-						ShellExecuteA(NULL, "explore", exploreLocation.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-					}
-
-					break;
-				}
 				}
 
 				ImGui::Unindent();
@@ -1717,6 +1743,8 @@ struct Example :
 
                 if (isSelected)
                     ImGui::SetItemDefaultFocus();
+
+                ShowUIToolTip(data.name.c_str());
 
                 ImGui::PopID();
             }
@@ -2016,6 +2044,8 @@ struct Example :
             EnsureVariableExists("CameraAltitudeAzimuth", VariableVisibility::Host, DataFieldType::Float2, "0.0f, 0.0f");
             EnsureVariableExists("CameraChanged", VariableVisibility::Host, DataFieldType::Bool, "false");
             EnsureVariableExists("CameraJitter", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
+            EnsureVariableExists("CameraNearPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+            EnsureVariableExists("CameraFarPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
             EnsureVariableExists("ShadingRateImageTileSize", VariableVisibility::Host, DataFieldType::Uint, "16");
             EnsureVariableExists("WindowSize", VariableVisibility::Host, DataFieldType::Float2, "1.0f, 1.0f");
         }
@@ -2975,6 +3005,9 @@ struct Example :
                     g_renderGraph.nodes.push_back(newNode);
                     m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion;
 
+                    // Mark this as the created node, so it will be selected
+                    g_createdNodeIndex = (int)g_renderGraph.nodes.size();
+
                     g_renderGraphDirty = true;
                 }
 
@@ -3124,11 +3157,11 @@ struct Example :
 
 	void ImGuiRecentFiles()
 	{
-		if (!m_recentFiles.m_Entries.empty())
+		if (!m_recentFiles.GetEntries().empty())
 		{
 			if (ImGui::BeginMenu("Recent Files"))
 			{
-				for (const auto& el : m_recentFiles.m_Entries)
+				for (const auto& el : m_recentFiles.GetEntries())
 				{
                     if (el.empty())
                         continue;

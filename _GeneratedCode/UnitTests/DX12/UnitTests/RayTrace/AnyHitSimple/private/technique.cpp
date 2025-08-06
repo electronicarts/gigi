@@ -81,32 +81,36 @@ namespace AnyHitSimple
             if(!DX12Utils::MakeRootSig(device, ranges, 3, samplers, 0, &ContextInternal::rayShader_DoRT_rootSig, (c_debugNames ? L"DoRT" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "1" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","1");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[4];
 
             // Compile RTMiss : AnyHitSimple.hlsl Miss()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/AnyHitSimple.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "AnyHitSimple.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
             // Compile RTClosestHit : AnyHitSimple.hlsl ClosestHit()
-            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/AnyHitSimple.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "AnyHitSimple.hlsl";
+            shaderCode[1] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[1].empty())
                 return false;
 
             // Compile RTAnyHit : AnyHitSimple.hlsl AnyHit()
-            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/AnyHitSimple.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "AnyHitSimple.hlsl";
+            shaderCode[2] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[2].empty())
                 return false;
 
             // Compile RTRayGen : AnyHitSimple.hlsl RayGen()
-            shaderCode[3] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/AnyHitSimple.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "AnyHitSimple.hlsl";
+            shaderCode[3] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[3].empty())
                 return false;
 
@@ -405,12 +409,12 @@ namespace AnyHitSimple
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Output;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Output_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

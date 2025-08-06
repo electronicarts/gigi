@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "Texture3DRW_PS",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RWPS",
@@ -13,6 +13,9 @@
                     "name": "nodeTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture3D"
                     }
@@ -21,6 +24,9 @@
                     "name": "importedTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture3D"
                     }
@@ -29,6 +35,9 @@
                     "name": "importedColor",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture3D"
                     }
@@ -151,8 +160,12 @@
                     237.0,
                     338.0
                 ],
-                "visibility": "Imported"
+                "visibility": "Imported",
+                "dimension": "Texture3D"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "NodeTexture"
+    }
 }

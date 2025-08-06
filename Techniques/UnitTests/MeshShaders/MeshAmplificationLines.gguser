@@ -1,4 +1,5 @@
 {
+    "version": "2.0",
     "systemVars": {
         "camera": {
             "startingCameraPos": [
@@ -12,31 +13,42 @@
             ]
         }
     },
-    "resourceViewNodeIndex": 0,
-    "resourceViewResourceIndex": 6,
-    "importedResources": [
-        {
-            "nodeName": "VertexBuffer",
-            "isATexture": false,
-            "buffer": {
-                "fileName": "..\\OBJAssets\\bunny.obj",
-                "structIndex": 0,
-                "BLASOpaque": true
+    "snapshot": {
+        "resourceViewNodeIndex": 0,
+        "resourceViewResourceIndex": 6,
+        "cameraPos": [
+            -0.4305935204029083,
+            1.8547890186309815,
+            1.0840833187103272
+        ],
+        "cameraAltitudeAzimuth": [
+            -0.12100744247436524,
+            4.271641254425049
+        ],
+        "importedResources": [
+            {
+                "nodeName": "VertexBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\Raster\\simpleRasterVB.bin",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
             }
-        }
-    ],
-    "savedVariables": [
-        {
-            "name": "AmplificationCount",
-            "value": "4"
-        },
-        {
-            "name": "AmplificationSpacing",
-            "value": "2.000000"
-        },
-        {
-            "name": "Offset",
-            "value": "0.000000,1.000000,0.000000"
-        }
-    ]
+        ],
+        "savedVariables": [
+            {
+                "name": "AmplificationCount",
+                "value": "4"
+            },
+            {
+                "name": "AmplificationSpacing",
+                "value": "2.000000"
+            },
+            {
+                "name": "Offset",
+                "value": "0.000000,1.000000,0.000000"
+            }
+        ]
+    }
 }

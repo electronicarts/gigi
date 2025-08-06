@@ -1,17 +1,12 @@
 {
     "$schema": "gigischema.json",
     "name": "Texture2DArrayRW_CS",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RWCS",
             "fileName": "Texture2DArrayRW_CS.hlsl",
             "entryPoint": "csmain",
-            "CSNumThreads": [
-                4,
-                4,
-                4
-            ],
             "NumThreads": [
                 4,
                 4,
@@ -22,6 +17,9 @@
                     "name": "nodeTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture2DArray"
                     }
@@ -30,6 +28,9 @@
                     "name": "importedTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture2DArray"
                     }
@@ -38,10 +39,18 @@
                     "name": "importedColor",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "Texture2DArray"
                     }
                 }
+            ],
+            "CSNumThreads": [
+                4,
+                4,
+                4
             ]
         }
     ],
@@ -129,5 +138,8 @@
                 "dimension": "Texture2DArray"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "NodeTexture"
+    }
 }

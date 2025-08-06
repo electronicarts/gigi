@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "Texture2DRW_RGS",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RWRGS",
@@ -12,29 +12,39 @@
                 {
                     "name": "nodeTexture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "importedTexture",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 },
                 {
                     "name": "importedColor",
                     "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
         {
             "name": "RWCHS",
-            "fileName": "Texture2DRW_CHS_MISS.hlsl",
+            "fileName": "Texture2DRW_RGS.hlsl",
             "type": "RTClosestHit",
-            "entryPoint": "chsmain"
+            "entryPoint": "chsmain",
+            "copyFile": false
         },
         {
             "name": "RWMISS",
-            "fileName": "Texture2DRW_CHS_MISS.hlsl",
+            "fileName": "Texture2DRW_RGS.hlsl",
             "type": "RTMiss",
             "entryPoint": "missmain",
             "copyFile": false
@@ -128,5 +138,8 @@
                 "name": "RWCHS"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "NodeTexture"
+    }
 }

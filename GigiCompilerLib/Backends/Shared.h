@@ -20,7 +20,7 @@
 
 struct BackendBase
 {
-    static void MakeStringReplacementGlobal(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph)
+    static void MakeStringReplacementGlobal(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
     {
         int numActionNodes = 0;
         int numResourceNodes = 0;
@@ -35,6 +35,7 @@ struct BackendBase
         stringReplacementMap["/*$(Platform)*/"] << EnumToString(renderGraph.backend);
 
         stringReplacementMap["/*$(Name)*/"] << renderGraph.name;
+        stringReplacementMap["/*$(VersionBuild)*/"] << (GIGI_VERSION_WITH_BUILD_NUMBER());
         stringReplacementMap["/*$(NumNodes)*/"] << renderGraph.nodes.size();
         stringReplacementMap["/*$(NumActionNodes)*/"] << numActionNodes;
         stringReplacementMap["/*$(NumResourceNodes)*/"] << numResourceNodes;
@@ -299,6 +300,16 @@ inline bool FileExists(const std::string& fileName)
     return true;
 }
 
+inline bool FileExists(const std::wstring& fileName)
+{
+    FILE* file = nullptr;
+    _wfopen_s(&file, fileName.c_str(), L"rb");
+    if (!file)
+        return false;
+    fclose(file);
+    return true;
+}
+
 inline bool LoadFile(const std::string& fileName, std::vector<unsigned char>& data)
 {
     FILE* file = nullptr;
@@ -318,9 +329,7 @@ inline bool LoadFile(const std::string& fileName, std::vector<unsigned char>& da
 inline void WriteFileIfDifferent(const std::string& fileName, const std::string& contents)
 {
     // make sure the directory exists
-    size_t lastindex = fileName.find_last_of("/\\");
-    std::string dirName = fileName.substr(0, lastindex);
-    std::filesystem::create_directories(dirName);
+    std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename());
 
     // If the file already exists and is the same, don't do anything
     FILE* file = nullptr;
@@ -350,16 +359,17 @@ inline void WriteFileIfDifferent(const std::string& fileName, const std::string&
 
     // write the file
     fopen_s(&file, fileName.c_str(), "wb");
-    fwrite(contents.data(), contents.size(), 1, file);
-    fclose(file);
+    if (file)
+    {
+        fwrite(contents.data(), contents.size(), 1, file);
+        fclose(file);
+    }
 }
 
 inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<unsigned char>& contents)
 {
     // make sure the directory exists
-    size_t lastindex = fileName.find_last_of("/\\");
-    std::string dirName = fileName.substr(0, lastindex);
-    std::filesystem::create_directories(dirName);
+    std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename());
 
     // If the file already exists and is the same, don't do anything
     FILE* file = nullptr;
@@ -389,8 +399,11 @@ inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<
 
     // write the file
     fopen_s(&file, fileName.c_str(), "wb");
-    fwrite(contents.data(), contents.size(), 1, file);
-    fclose(file);
+    if (file)
+    {
+        fwrite(contents.data(), contents.size(), 1, file);
+        fclose(file);
+    }
 }
 
 inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph)
@@ -489,15 +502,23 @@ inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::s
 }
 
 template <typename TBACKEND>
-std::unordered_map<std::string, std::ostringstream> MakeFiles(std::unordered_map<std::string, std::string>& files, RenderGraph& renderGraph)
+std::unordered_map<std::string, std::ostringstream> MakeStringReplacement(RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
 {
     // make the string replacement
     std::unordered_map<std::string, std::ostringstream> stringReplacementMap;
     for (const CustomGigiToken& token : renderGraph.customTokens)
         stringReplacementMap[std::string("/*$(") + token.key + std::string(")*/")] << token.value;
     stringReplacementMap["\r\n"] << "\n"; // normalize line endings
-    TBACKEND::MakeStringReplacementGlobal(stringReplacementMap, renderGraph);
 
+    // Make backend specific string replacement
+    TBACKEND::MakeStringReplacementGlobal(stringReplacementMap, renderGraph, ggUserFile);
+
+    // return the string replacement map
+    return stringReplacementMap;
+}
+
+inline void MakeFiles(std::unordered_map<std::string, std::string>& files, RenderGraph& renderGraph, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap)
+{
     // do string replacement
     for (std::pair<const std::string, std::string>& filePair : files)
         ProcessStringReplacement(filePair.second, stringReplacementMap, renderGraph);
@@ -505,8 +526,6 @@ std::unordered_map<std::string, std::ostringstream> MakeFiles(std::unordered_map
     // write the files only if they are different.  This avoids unnecessary code rebuilds and such.
     for (std::pair<const std::string, std::string>& filePair : files)
         WriteFileIfDifferent(filePair.first, filePair.second);
-
-    return stringReplacementMap;
 }
 
 inline int GetResourceNodeForPin(const RenderGraph& renderGraph, const RenderGraphNode& node, int pinIndex)
@@ -543,6 +562,9 @@ inline size_t DataFieldTypeToSize(DataFieldType type)
         case DataFieldType::Bool: return 4;
         case DataFieldType::Float4x4: return 4 * 4 * 4;
         case DataFieldType::Uint_16: return 2;
+        case DataFieldType::Int_64: return 8;
+        case DataFieldType::Uint_64: return 8;
+        case DataFieldType::Float_16: return 2;
         default:
         {
             Assert(false, "Unknown data field type: %i", type);
@@ -570,6 +592,9 @@ inline size_t DataFieldTypeComponentCount(DataFieldType type)
         case DataFieldType::Bool: return 1;
         case DataFieldType::Float4x4: return 16;
         case DataFieldType::Uint_16: return 1;
+        case DataFieldType::Int_64: return 1;
+        case DataFieldType::Uint_64: return 1;
+        case DataFieldType::Float_16: return 1;
         default:
         {
             Assert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
@@ -581,6 +606,13 @@ inline size_t DataFieldTypeComponentCount(DataFieldType type)
 inline bool DataFieldTypeIsPOD(DataFieldType type)
 {
     return DataFieldTypeComponentCount(type) == 1;
+}
+
+inline bool ShaderResourceBufferIsStructuredBuffer(const ShaderResourceBuffer& shaderResourceBuffer)
+{
+    if (shaderResourceBuffer.PODAsStructuredBuffer || !shaderResourceBuffer.typeStruct.name.empty())
+        return true;
+    return !DataFieldTypeIsPOD(shaderResourceBuffer.type);
 }
 
 inline std::string GetNodeTypeString(const RenderGraphNode& node)
@@ -663,7 +695,7 @@ inline bool ResourceNodeIsUsed(RenderGraphNode& resource)
     return GetResourceNodeFinalState(resource) != ShaderResourceAccessType::Count;
 }
 
-static std::string DataFieldTypeToShaderType(DataFieldType type)
+inline const char* DataFieldTypeToShaderType(DataFieldType type)
 {
     switch (type)
     {
@@ -684,7 +716,10 @@ static std::string DataFieldTypeToShaderType(DataFieldType type)
         // for true and false instead of 0xffffffff and 0. better to dodge the problem.
         case DataFieldType::Bool: return "uint";
         case DataFieldType::Float4x4: return "float4x4";
-        case DataFieldType::Uint_16: return "uint";
+        case DataFieldType::Uint_16: return "uint16_t";
+        case DataFieldType::Int_64: return "int64";
+        case DataFieldType::Uint_64: return "uint64";
+        case DataFieldType::Float_16: return "float16_t";
         case DataFieldType::Count:
         {
             Assert(false, "Invalid data field type: Count");
@@ -791,6 +826,8 @@ enum class DataFieldComponentType
 	_int,
 	_uint16_t,
 	_uint32_t,
+    _int64_t,
+    _uint64_t,
 	_float,
 };
 
@@ -835,6 +872,9 @@ inline DataFieldTypeInfoStruct DataFieldTypeInfo(DataFieldType type)
         case DataFieldType::Bool: return DATA_FIELD_TYPE_INFO(uint32_t, 1, DataFieldType::Bool);
         case DataFieldType::Float4x4: return DATA_FIELD_TYPE_INFO(float, 16, DataFieldType::Float);
         case DataFieldType::Uint_16: return DATA_FIELD_TYPE_INFO(uint16_t, 1, DataFieldType::Uint_16);
+        case DataFieldType::Int_64: return DATA_FIELD_TYPE_INFO(int64_t, 1, DataFieldType::Int_64);
+        case DataFieldType::Uint_64: return DATA_FIELD_TYPE_INFO(uint64_t, 1, DataFieldType::Uint_64);
+        case DataFieldType::Float_16: return DATA_FIELD_TYPE_INFO(uint16_t, 1, DataFieldType::Float_16);
         default:
         {
             Assert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
@@ -843,8 +883,18 @@ inline DataFieldTypeInfoStruct DataFieldTypeInfo(DataFieldType type)
     }
 }
 
-inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<std::string, std::string>& files, const char* outFolder, const char* templateDir_)
+struct InternalTemplateFile
 {
+    std::string absoluteFileName;
+    std::string relativeFileName;
+    BackendTemplateFileType type;
+};
+
+// Returns a list of absolute paths to files that were marked as excludeFromOutput
+inline std::vector<InternalTemplateFile> ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<std::string, std::string>& files, const char* outFolder, const char* templateDir_)
+{
+    std::vector<InternalTemplateFile> ret;
+
     // todo: templatedir needs to be relative to exe, not working directory!
     std::filesystem::path templateDir = GetExePath() / templateDir_;
 
@@ -936,14 +986,6 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
                 ;
         }
 
-        // Load the file data up
-        std::vector<unsigned char> fileData;
-        if (!LoadFile(it.path().string().c_str(), fileData))
-        {
-            Assert(false, "Could not load template file %s", it.path().string().c_str());
-            return;
-        }
-
         // Apply file properties from the template config
         bool skipFile = false;
         for (BackendTemplateFileProperties& fileProperties : templateConfig.fileProperties)
@@ -953,6 +995,12 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
 
             if (!fileProperties.renameTo.empty())
                 relativeFileName = fileProperties.renameTo;
+
+            if (fileProperties.type != BackendTemplateFileType::Output)
+            {
+                ret.push_back({ it.path().string(), relativeFileName, fileProperties.type });
+                skipFile = true;
+            }
 
             if (fileProperties.onlyIncludeIfRaytracing && !renderGraph.usesRaytracing)
                 skipFile = true;
@@ -964,6 +1012,14 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
         }
         if (skipFile)
             continue;
+
+        // Load the file data up
+        std::vector<unsigned char> fileData;
+        if (!LoadFile(it.path().string().c_str(), fileData))
+        {
+            Assert(false, "Could not load template file %s", it.path().string().c_str());
+            return ret;
+        }
 
         // Binary files get copied to the outFolder without modification
         if (isBinary)
@@ -990,14 +1046,14 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
         if (doc.Error())
         {
             Assert(false, "Could not load xml file \"%s\" : %s", fullFileName.c_str(), doc.ErrorStr());
-            return;
+            return ret;
         }
 
         auto rootElement = doc.RootElement();
         if (!rootElement)
         {
             Assert(false, "Could not load xml file \"%s\" : no root element", fullFileName.c_str());
-            return;
+            return ret;
         }
 
         while (rootElement)
@@ -1008,7 +1064,7 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
             if (!split)
             {
                 Assert(false, "Could not process xml file \"%s\": xml tag <%s> should be of the format <nodeType:tag>.", fullFileName.c_str(), elementName);
-                return;
+                return ret;
             }
 
             // remove the first newline from the template text if present, for convinience.
@@ -1042,6 +1098,8 @@ inline void ProcessTemplateFolder(RenderGraph& renderGraph, std::unordered_map<s
             rootElement = rootElement->NextSiblingElement();
         }
     }
+
+    return ret;
 }
 
 template <typename LAMBDA>
@@ -1103,3 +1161,5 @@ void DispatchLambdaAction(const RenderGraphNode& node, const LAMBDA& lambda)
         // clang-format on
     }
 }
+
+bool ConvertShaderSourceCode(std::string& source, const char* fileName, const char* shaderModel, const char* stage, const char* entryPoint, const std::vector<std::string>& includeDirectories, ShaderLanguage sourceLanguage, ShaderLanguage destinationLanguage, std::string& errorMessage, const SlangOptions& slangOptions);

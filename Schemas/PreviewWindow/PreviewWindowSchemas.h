@@ -59,6 +59,12 @@ ENUM_BEGIN(GGUserFile_TLASBuildFlags, "D3D12_RAYTRACING_ACCELERATION_STRUCTURE_B
 	ENUM_ITEM(MinimizeMemory, "")
 ENUM_END()
 
+ENUM_BEGIN(GGUserFile_BLASCullMode, "controls D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE and D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE")
+	ENUM_ITEM(CullNone, "")
+	ENUM_ITEM(FrontIsClockwise, "")
+	ENUM_ITEM(FrontIsCounterClockwise, "")
+ENUM_END()
+
 STRUCT_BEGIN(GGUserFile_ImportedTexture, "The details of an imported texture")
 	STRUCT_FIELD(std::string, fileName, "", "The image file loaded", 0)
 	STRUCT_FIELD(bool, fileIsSRGB, true, "Whether the file is an sRGB file or not", 0)
@@ -81,7 +87,12 @@ STRUCT_BEGIN(GGUserFile_ImportedBuffer, "The details of an imported buffer")
 
 	STRUCT_FIELD(bool, BLASOpaque, false, "DXR BLAS Option", 0)
 	STRUCT_FIELD(bool, BLASNoDuplicateAnyhitInvocations, false, "DXR BLAS Option", 0)
+	STRUCT_FIELD(GGUserFile_BLASCullMode, BLASCullMode, GGUserFile_BLASCullMode::CullNone, "BLAS triangle culling settings", 0)
 	STRUCT_FIELD(bool, IsAABBs, false, "Set to true if ray tracing AABBs with intersection shaders. Format is Min XYZ, Max XYZ.", 0)
+
+    STRUCT_STATIC_ARRAY(float, GeometryTransform, 16, { 1.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 1.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 1.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 0.0f COMMA 1.0f }, "A 4x4 matrix to transform pos, normal, tangent.", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
+
+	STRUCT_FIELD(CooperativeVectorData, cvData, {}, "Data needed for cooperative vectors support for imported buffer resources", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(GGUserFile_ImportedResource, "The details of an imported resource")
@@ -199,3 +210,17 @@ STRUCT_END()
 STRUCT_BEGIN(GGUserFileVersionOnly, "Only the version of the .gguser file")
 	STRUCT_FIELD(std::string, version, "1.0", "The version of the .gguser file", SCHEMA_FLAG_SERIALIZE_DFLT)
 STRUCT_END()
+
+STRUCT_BEGIN(GGViewerConfig, "The config file for the viewer settings file ViewerConfig.json")
+    STRUCT_FIELD(std::string, version, "1.0", "The version of the file", SCHEMA_FLAG_SERIALIZE_DFLT)
+    STRUCT_FIELD(std::string, keyCameraForward, "W", "Camera forward key", 0)
+    STRUCT_FIELD(std::string, keyCameraLeft, "A", "Camera left key", 0)
+    STRUCT_FIELD(std::string, keyCameraBackward, "S", "Camera back key", 0)
+    STRUCT_FIELD(std::string, keyCameraRight, "D", "Camera right key", 0)
+    STRUCT_FIELD(std::string, keyCameraUp, "E", "Camera right key", 0)
+    STRUCT_FIELD(std::string, keyCameraDown, "Q", "Camera down key", 0)
+    STRUCT_FIELD(std::string, keyCameraFast, "Shift", "Camera fast key", 0)
+    STRUCT_FIELD(std::string, keyCameraSlow, "Control", "Camera slow key", 0)
+STRUCT_END()
+
+#define GGUserFileLatest GGUserFileV2

@@ -22,8 +22,16 @@ static bool UpdateRepo(const char* path, const char* repoURL, const char* checko
 	// If the repo already exists, we just need to do a pull
 	if (std::filesystem::exists(gitDir / ".git/"))
 	{
-		// Configure sparse checkout
-		RunCommandLine(true, "external/git/cmd/git -C \"%s\" sparse-checkout set%s %s", gitDir.string().c_str(), areDirectories ? "" : " --no-cone", sparseFileList);
+        if (areDirectories && sparseFileList[0] == 0)
+        {
+            // Disable sparse checkout if we are grabbing the full repo
+            RunCommandLine(true, "external/git/cmd/git -C \"%s\" sparse-checkout disable", gitDir.string().c_str());
+        }
+        else
+        {
+            // Configure sparse checkout
+            RunCommandLine(true, "external/git/cmd/git -C \"%s\" sparse-checkout set%s %s", gitDir.string().c_str(), areDirectories ? "" : " --no-cone", sparseFileList);
+        }
 
 		// Pull
 		RunCommandLine(true, "external/git/cmd/git -C \"%s\" pull", gitDir.string().c_str());
@@ -58,6 +66,9 @@ static bool CleanRepo(const char* path)
 	// Clean
 	RunCommandLine(true, "external/git/cmd/git -C \"%s\" clean -xfd", gitDir.string().c_str());
 
+	// Grab latest
+	RunCommandLine(true, "external/git/cmd/git -C \"%s\" pull", gitDir.string().c_str());
+
 	return ret;
 }
 
@@ -65,6 +76,43 @@ void Job_CleanTechnique::ExecuteWorkerThread(WorkerThreads& workerThreads)
 {
 	std::filesystem::path techniquePath = s_cacheDir / std::filesystem::path("Techniques") / GetSummaryHashString(m_techniqueInfo.Summary);
 	CleanRepo(techniquePath.string().c_str());
+
+	// Read the details file in case it changed from the fetch
+	BrowserCachedTechnique newTechnique = m_techniqueInfo;
+	std::filesystem::path detailsFilePath = techniquePath / m_techniqueInfo.Summary.DetailsFile;
+	if (!ReadFromJSONFile(newTechnique.Details, detailsFilePath.string().c_str()))
+	{
+		m_errors << "Error reading json file for technique \"" << m_techniqueInfo.Summary.DetailsFile << "\" from server \"" << m_techniqueInfo.Origin.Name << "\"";
+		return;
+	}
+
+	// Make sure the database is up to date with the details file
+	std::vector<std::string> params;
+	params.push_back(newTechnique.Details.Title);
+	params.push_back(newTechnique.Details.Description);
+	params.push_back(newTechnique.Details.Author);
+	params.push_back(newTechnique.Details.Tags);
+	params.push_back(newTechnique.Details.Technique);
+	params.push_back(newTechnique.Details.Website);
+	params.push_back(newTechnique.Details.Screenshot);
+	params.push_back(newTechnique.Details.License);
+	params.push_back(newTechnique.Details.GigiVersion);
+	params.push_back(GetSummaryHashString(newTechnique.Summary));
+
+	if (!Database::ExecuteSQL("update Techniques set "
+		"Details_Title = ?, "
+		"Details_Description = ?, "
+		"Details_Author = ?, "
+		"Details_Tags = ?, "
+		"Details_Technique = ?, "
+		"Details_Website = ?, "
+		"Details_Screenshot = ?, "
+		"Details_License = ?, "
+		"Details_GigiVersion = ? "
+		"where SummaryHash = ?", params))
+	{
+		m_errors << "Could not update database for technique \"" << m_techniqueInfo.Summary.DetailsFile << "\"";
+	}
 }
 
 void Job_DownloadTechnique::ExecuteWorkerThread(WorkerThreads& workerThreads)
@@ -73,14 +121,14 @@ void Job_DownloadTechnique::ExecuteWorkerThread(WorkerThreads& workerThreads)
 	std::filesystem::path relativeRoot = std::filesystem::path(m_techniqueInfo.Summary.DetailsFile).replace_filename("");
 	if (!UpdateRepo(techniquePath.string().c_str(), m_techniqueInfo.Summary.Repo.c_str(), m_techniqueInfo.Summary.Commit.c_str(), relativeRoot.string().c_str(), true))
 	{
-		m_errors << "Error downloading technique \"" << m_techniqueInfo.Summary.Commit << "\"";
+		m_errors << "Error downloading technique \"" << m_techniqueInfo.Summary.DetailsFile << "\"";
 		return;
 	}
 
 	std::vector<std::string> params;
 	params.push_back(GetSummaryHashString(m_techniqueInfo.Summary));
 	if (!Database::ExecuteSQL("update Techniques set Downloaded = 1 where SummaryHash = ?", params))
-		m_errors << "Could not update database for technique \"" << m_techniqueInfo.Summary.Commit << "\"";
+		m_errors << "Could not update database for technique \"" << m_techniqueInfo.Summary.DetailsFile << "\"";
 }
 
 void Job_AddTechniqueMainThread::ExecuteWorkerThread(WorkerThreads& workerThreads)

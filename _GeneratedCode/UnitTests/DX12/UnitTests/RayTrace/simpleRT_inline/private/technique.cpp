@@ -79,16 +79,19 @@ namespace simpleRT_inline
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 0, &ContextInternal::computeShader_DoRT_rootSig, (c_debugNames ? L"DoRT" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRT_inline.hlsl";
+            shaderCompilationInfo.entryPoint = "SimpleRTCS";
+            shaderCompilationInfo.shaderModel = "cs_6_5";
+            shaderCompilationInfo.debugName = (c_debugNames ? "DoRT" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/simpleRT_inline.hlsl", "SimpleRTCS", "cs_6_5", defines,
-               ContextInternal::computeShader_DoRT_rootSig, &ContextInternal::computeShader_DoRT_pso, c_debugShaders, (c_debugNames ? L"DoRT" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_DoRT_rootSig, &ContextInternal::computeShader_DoRT_pso, Context::LogFn))
                 return false;
         }
 
@@ -186,12 +189,12 @@ namespace simpleRT_inline
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Texture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Texture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

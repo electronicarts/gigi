@@ -79,16 +79,19 @@ namespace Texture2DArrayRW_CS
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 0, &ContextInternal::computeShader_RW_rootSig, (c_debugNames ? L"RW" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Texture2DArrayRW_CS.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "RW" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/Texture2DArrayRW_CS.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_RW_rootSig, &ContextInternal::computeShader_RW_pso, c_debugShaders, (c_debugNames ? L"RW" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_RW_rootSig, &ContextInternal::computeShader_RW_pso, Context::LogFn))
                 return false;
         }
 
@@ -186,12 +189,12 @@ namespace Texture2DArrayRW_CS
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_NodeTexture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_NodeTexture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)

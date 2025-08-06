@@ -4,6 +4,8 @@ Gigi is software designed for rapid prototyping and development of real time ren
 
 The goal is to allow work at the speed of thought, and then easily use what was created in real applications using various APIs or engines.
 
+[See a Gallery of WebGPU Code Generated Gigi Techniques](https://electronicarts.github.io/gigi/)
+
 [See what people say about using Gigi](readme/testimonials.md)
 
 Gigi is made of four components:
@@ -42,9 +44,7 @@ There will be four executables in the root folder:
 
 # Learning & Support
 
-Introductory Gigi Tutorial: Make a box blur post processing effect.
-* [Text Version](readme/tutorial/tutorial.md)
-* [25 minute Video](https://www.youtube.com/watch?v=qknK-tahICE)
+[Text and Video Tutorials](readme/tutorials/readme.md)
 
 [Discord: Gigi Rapid Graphics Development](https://discord.gg/HPzqAw2H3k)
 
@@ -84,6 +84,10 @@ Berk Emre Saribas
 
 Chris Lewin
 
+Christian Deiss
+
+Gabriel Kannenberg
+
 Ivar Jönsson
 
 Jan Werbrouck
@@ -99,6 +103,10 @@ Richard Raquepo
 Stephane Levesque
 
 Tristan Calderbank
+
+William Donnelly
+
+Kyle Bostelmann
 
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)
 

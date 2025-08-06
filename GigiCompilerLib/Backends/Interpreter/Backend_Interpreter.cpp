@@ -18,9 +18,9 @@ struct BackendInterpreter : public BackendBase
 {
 };
 
-extern void CopyShaderFileDX12(const Shader& shader, const std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const char* outFolder, const RenderGraph& renderGraph);
+extern void CopyShaderFileDX12(Shader& shader, const std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const char* outFolder, const RenderGraph& renderGraph);
 
-void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph)
+void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
 {
     const char* outFolder = renderGraph.outputDirectory.c_str();
 
@@ -32,8 +32,27 @@ void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGrap
         MakeSummaryRenderGraphGraphViz(renderGraph, fullOutFolder.c_str());
     }
 
+    // gather the templates for the build flavor chosen.
     std::unordered_map<std::string, std::string> files;
-    std::unordered_map<std::string, std::ostringstream> stringReplacementMap = MakeFiles<BackendInterpreter>(files, renderGraph);
+    std::vector<InternalTemplateFile> internalTemplateFiles = ProcessTemplateFolder(renderGraph, files, outFolder, "./GigiCompilerLib/Backends/Interpreter/templates/");
+
+    // Make the files
+    std::unordered_map<std::string, std::ostringstream> stringReplacementMap = MakeStringReplacement<BackendInterpreter>(renderGraph, ggUserFile);
+    MakeFiles(files, renderGraph, stringReplacementMap);
+
+    // Make file copies for any InternalShader files from the templates
+    for (const InternalTemplateFile& internalTemplateFile : internalTemplateFiles)
+    {
+        if (internalTemplateFile.type != BackendTemplateFileType::InternalShader)
+            continue;
+
+        FileCopy newFileCopy;
+        newFileCopy.fileName = std::filesystem::weakly_canonical(internalTemplateFile.absoluteFileName).string();
+        newFileCopy.type = FileCopyType::Shader;
+        newFileCopy.destFileName = std::filesystem::weakly_canonical(internalTemplateFile.relativeFileName).string();
+
+        renderGraph.fileCopies.push_back(newFileCopy);
+    }
 
     // copy any file copies that should happen (assets, and shader file headers)
     for (const FileCopy& fileCopy : renderGraph.fileCopies)
@@ -95,7 +114,7 @@ void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGrap
     }
 
     // Copy the shader files
-    for (const Shader& shader : renderGraph.shaders)
+    for (Shader& shader : renderGraph.shaders)
     {
         if (shader.copyFile)
             CopyShaderFileDX12(shader, stringReplacementMap, outFolder, renderGraph);

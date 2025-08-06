@@ -1,10 +1,10 @@
-// Texture2DArrayRW technique, shader RWCS
+// Texture3DRW technique, shader RWCS
 
 
 RWTexture3D<float4> nodeTexture : register(u0);
 RWTexture3D<float4> importedTexture : register(u1);
 Texture3D<float4> importedColor : register(t0);
-Texture2DArray<float4> _loadedTexture_0 : register(t1);
+Texture3D<float4> _loadedTexture_0 : register(t1);
 
 #line 2
 

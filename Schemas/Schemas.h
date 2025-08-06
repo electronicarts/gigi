@@ -5,12 +5,14 @@
 
 // clang-format off
 #include "SchemasCommon.h"
-#include "SchemasShaders.h"
+#include "DataFieldTypes.h"
 #include "SchemasVariables.h"
+#include "SchemasShaders.h"
 #include "RenderGraphNodes.h"
 #include "PreviewWindow/PreviewWindowSchemas.h"
 #include "Browser/BrowserSchemas.h"
 #include "Misc/BackendTemplateSchemas.h"
+#include "WebGPU/WebGPUSchemas.h"
 // clang-format on
 
 ENUM_BEGIN(GigiCompileResult, "")
@@ -59,18 +61,47 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(std::string, shaderModelAs, "as_6_5", "The default shader model to use for amplification shaders", 0)
     STRUCT_FIELD(std::string, shaderModelMs, "ms_6_5", "The default shader model to use for mesh shaders", 0)
     STRUCT_FIELD(bool, DXC_HLSL_2021, false, "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021", 0)
+    STRUCT_FIELD(bool, Allow16BitTypes, false, "DXC option -enable-16bit-types. Only usable for shader model >= 6.1, and HLSL language >= 2018.", 0)
     STRUCT_FIELD(bool, AgilitySDKRequired, false, "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(BackendSettings_WebGPU_Features, "Required Limits. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedFeatures")
+    STRUCT_FIELD(bool, float32Filterable, false, "float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.", 0)
+    STRUCT_FIELD(bool, subgroups, false, "subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup\n" \
+                                         "to communicate and execute collective math operations such as calculating a sum of numbers, and offering an efficient method for\n" \
+                                         "cross-thread data sharing. Note that the subgroupMinSize and subgroupMaxSize properties can be useful to check if, for example, you have a\n" \
+                                         "hardcoded algorithm that requires a subgroup of a certain size. You can use f16 values with subgroups when you request a GPUDevice with\n" \
+                                         "both the shader-f16 and subgroups features.", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(BackendSettings_WebGPU_Limits, "Required features. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedLimits")
+    STRUCT_FIELD(unsigned int, maxStorageBuffersPerShaderStage, 0, "maxStorageBuffersPerShaderStage. 0 for default.", 0)
+    STRUCT_FIELD(unsigned int, maxStorageTexturesPerShaderStage, 0, "maxStorageTexturesPerShaderStage. 0 for default.", 0)
+    STRUCT_FIELD(unsigned int, maxComputeWorkgroupStorageSize, 0, "maxComputeWorkgroupStorageSize. 0 for default.", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(BackendSettings_WebGPU, "WebGPU Settings. For the capabilities of your browser and machine, see: https://webgpureport.org/")
+    STRUCT_FIELD(BackendSettings_WebGPU_Features, features, {}, "", 0)
+    STRUCT_FIELD(BackendSettings_WebGPU_Limits, limits, {}, "", 0)
+STRUCT_END()
 
 STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
     STRUCT_FIELD(bool, debugNames, true, "If true, sets debug names to GPU objects on available platforms.", 0)
     STRUCT_FIELD(bool, debugShaders, true, "If true, compiles shaders with debug options turned on, on available platforms.", 0)
+    STRUCT_FIELD(bool, shaderWarningAsErrors, false, "If true, compiles shaders with warnings as errors turned on", 0)
+    STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging. Also needed for rga.exe to run.", 0)
+	STRUCT_FIELD(std::string, rgaPath, "C:\\Apps\\RadeonDeveloperToolSuite\\rga.exe", "The default path where rga.exe can be found.\nThis is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.\nsee https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute", 0)
+	STRUCT_FIELD(std::string, rgaASIC, "gfx1032", "The hardware generation to target for rga.exe\ngfx1032: AMD Radeon PRO W6600\nSee .bat for more info", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(BackendSettings, "Backend settings")
-    STRUCT_FIELD(BackendSettings_DX12, dx12, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(BackendSettings_DX12, dx12, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
+    STRUCT_FIELD(BackendSettings_WebGPU, webGPU, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
     STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
+STRUCT_END()
+
+STRUCT_BEGIN(BackendData, "Backend Data")
+    STRUCT_FIELD(BackendData_WebGPU, webGPU, {}, "", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(BuildSettings, "Backend settings")
@@ -78,7 +109,7 @@ STRUCT_BEGIN(BuildSettings, "Backend settings")
 
     // Only used by editor
     STRUCT_FIELD(std::string, outDX12, "out/dx12/", "The output location for DX12", 0)
-
+    STRUCT_FIELD(std::string, outWebGPU, "out/WebGPU/", "The output location for WebGPU", 0)
     STRUCT_FIELD(std::string, outInterpreter, "out/interpreter/", "The output location for the interpreter backend", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
@@ -135,7 +166,7 @@ ENUM_BEGIN(SetVariableOperator, "")
     ENUM_ITEM(BitwiseXor, "A ^ B")
     ENUM_ITEM(BitwiseNot, "~A")
 
-    ENUM_ITEM(Noop, "Dont do anything, returns the left value")
+    ENUM_ITEM(Noop, "Dont do anything, returns the left value. Useful for assignment. This does implicit type casting.")
 ENUM_END()
 
 STRUCT_BEGIN(SetVariable, "A variable modification")
@@ -233,4 +264,6 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
 
     STRUCT_FIELD(std::vector<std::string>, assertsFormatStrings, {}, "The unique formatting strings of the asserts messages", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::unordered_set<std::string>, firedAssertsIdentifiers, {}, "The identifiers of the fired asserts to ignore them later on", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(BackendData, backendData, {}, "Backend Data", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()

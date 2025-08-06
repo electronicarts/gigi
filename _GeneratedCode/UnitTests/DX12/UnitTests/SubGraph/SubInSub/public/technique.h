@@ -12,7 +12,7 @@ namespace SubInSub
     static const int c_numSRVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numRTVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
     static const int c_numDSVDescriptors = 256;  // If 0, no heap will be created. One heap shared by all contexts of this technique.
-    static const bool c_debugShaders = true; // If true, will compile shaders with debug info enabled.
+    static const bool c_debugShaders = false; // If true, will compile shaders with debug info enabled.
     static const bool c_debugNames = true; // If true, will set debug names on objects. If false, debug names should be deadstripped from the executable.
 
     // Information about the technique
@@ -45,7 +45,7 @@ namespace SubInSub
         {
 
             // Variables
-            float4 variable_Inner1_Inner1Mult = {1.0f, 0.5f, 2.0f, 1.0f};
+            float4 variable_Inner1_Inner1Mult = {1.000000f, 0.500000f, 2.000000f, 1.000000f};
 
             ID3D12Resource* texture_Input = nullptr;
             unsigned int texture_Input_size[3] = { 0, 0, 0 };

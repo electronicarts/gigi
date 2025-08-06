@@ -26,6 +26,98 @@ void RuntimeTypes::RenderGraphNode_Action_ComputeShader::Release(GigiInterpreter
 	}
 }
 
+void GigiInterpreterPreviewWindowDX12::OnRootSignature(ID3DBlob *sig, const Shader* shader)
+{
+	if (sig && shader)
+	if(m_renderGraph.settings.common.createPDBsAndBinaries)
+	{
+		const std::string& destFileName = shader->destFileName;
+		const std::filesystem::path directoryPath = "./ShaderDebugInfo";
+		std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / destFileName).stem().string();
+
+		if (!std::filesystem::exists(directoryPath))
+			std::filesystem::create_directories(directoryPath);
+
+		{
+			std::filesystem::path rootSigFilePath = directoryPath / std::filesystem::path(fullFileName + ".rs.fxo");
+
+			FILE* fp = NULL;
+			if (_wfopen_s(&fp, rootSigFilePath.c_str(), L"wb") == 0)
+			{
+				fwrite(sig->GetBufferPointer(), sig->GetBufferSize(), 1, fp);
+				fclose(fp);
+			}
+		}
+		{
+			std::filesystem::path shaderBinaryFileName = std::filesystem::path(fullFileName + ".cso");
+			std::filesystem::path rootSigFileName = std::filesystem::path(fullFileName + ".rs.fxo");
+			std::filesystem::path disassemblyFileName = std::filesystem::path(fullFileName + ".dis.txt");
+			std::filesystem::path statsFileName = std::filesystem::path(fullFileName + ".stats.txt");
+
+			std::filesystem::path batFilePath = directoryPath / std::filesystem::path(fullFileName + ".bat");
+
+			FILE* fp = NULL;
+			if (_wfopen_s(&fp, batFilePath.c_str(), L"w") == 0)
+			{
+				fprintf(fp, "rem Make sure rga.exe is installed in the referenced location.\n");
+				fprintf(fp, "rem use \"rgb.exe -l\" to find the right ASIC to target.\n");
+				fprintf(fp, "rem Run this from command line.\n\n");
+
+				// e.g "E:\\Apps\\RadeonDeveloperToolSuite\\rga.exe"
+				fprintf(fp, "%s ", m_renderGraph.settings.common.rgaPath.c_str());
+				fprintf(fp, "-s dx12 ");
+
+				const char* shortShaderType = nullptr;
+
+				if (shader->type == ShaderType::Compute)
+				{
+					shortShaderType = "cs";
+					fprintf(fp, "--%s-model \"%s\" ", shortShaderType, m_renderGraph.settings.dx12.shaderModelCs.c_str());
+				}
+				else if (shader->type == ShaderType::Vertex)
+				{
+					shortShaderType = "vs";
+					fprintf(fp, "--%s-model \"%s\" ", shortShaderType, m_renderGraph.settings.dx12.shaderModelVs.c_str());
+				}
+				else if (shader->type == ShaderType::Pixel)
+				{
+					shortShaderType = "ps";
+					fprintf(fp, "--%s-model \"%s\" ", shortShaderType, m_renderGraph.settings.dx12.shaderModelPs.c_str());
+				}
+				else if (shader->type == ShaderType::Amplification)
+				{
+					shortShaderType = "as";
+					fprintf(fp, "--%s-model \"%s\" ", shortShaderType, m_renderGraph.settings.dx12.shaderModelAs.c_str());
+				}
+				else if (shader->type == ShaderType::Mesh)
+				{
+					shortShaderType = "ms";
+					fprintf(fp, "--%s-model \"%s\" ", shortShaderType, m_renderGraph.settings.dx12.shaderModelMs.c_str());
+				}
+				// internal error
+				assert(shortShaderType);
+
+				fprintf(fp, "--%s-blob %s ", shortShaderType, shaderBinaryFileName.string().c_str());
+				fprintf(fp, "--%s-entry %s ", shortShaderType, shader->entryPoint.c_str());
+
+				// target ASIC hardware
+				fprintf(fp, "-c %s ", m_renderGraph.settings.common.rgaASIC.c_str());
+				// output disassembly, specific to AMD ISA
+				fprintf(fp, "--isa %s ", disassemblyFileName.string().c_str());
+				// output stats e.g. numUsedVgprs, numUsedSgprs, ldsUsageSizeInBytes, ...
+				fprintf(fp, "-a %s ", statsFileName.string().c_str());
+				// don't require installed AMD hardware, might require installed driver?
+				fprintf(fp, "--offline ");
+				// root signature
+				fprintf(fp, "--rs-bin %s\n", rootSigFileName.string().c_str());
+				fprintf(fp, "\n");
+				fclose(fp);
+			}
+		}
+
+	}
+}
+
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_ComputeShader& node, RuntimeTypes::RenderGraphNode_Action_ComputeShader& runtimeData, NodeAction nodeAction)
 {
 	ScopeProfiler _p(m_profiler, (node.c_shorterTypeName + ": " + node.name).c_str(), nullptr, nodeAction == NodeAction::Execute, false);
@@ -62,7 +154,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				desc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 				desc.MinLOD = 0.0f;
 				desc.MaxLOD = D3D12_FLOAT32_MAX;
-				desc.ShaderRegister = (UINT)samplers.size();
+				desc.ShaderRegister = sampler.registerIndex;
 				desc.RegisterSpace = 0;
 				desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
 
@@ -124,6 +216,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				return false;
 			}
 
+			OnRootSignature(sig, node.shader.shader);
+
 			hr = m_device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&runtimeData.m_rootSignature));
 			if (FAILED(hr))
 			{
@@ -148,17 +242,44 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		// Make the PSO
 		{
 			// shader defines
-			std::vector<D3D_SHADER_MACRO> defines;
-			for (const ShaderDefine& define : node.shader.shader->defines)
-				defines.push_back({ define.name.c_str(), define.value.c_str() });
-			for (const ShaderDefine& define : node.defines)
-				defines.push_back({ define.name.c_str(), define.value.c_str() });
-			if (defines.size() > 0)
-				defines.push_back({ nullptr, nullptr });
-
-			std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / node.shader.shader->destFileName).string();
+			std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / node.shader.shader->destFileName).string();
 
 			// Shader compilation depends on which shader compiler they opted to use for this technique
+			ShaderCompilationInfo shaderCompilationInfo;
+			shaderCompilationInfo.fileName = fullFileName;
+			shaderCompilationInfo.entryPoint = node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint;
+			shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelCs;
+			shaderCompilationInfo.debugName = node.name;
+			shaderCompilationInfo.defines = node.shader.shader->defines;
+
+			if (!node.defines.empty())
+			{
+				shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), node.defines.begin(), node.defines.end());
+			}
+
+			if (m_compileShadersForDebug)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+			}
+
+			if (m_renderGraph.settings.dx12.Allow16BitTypes && m_dx12_options4.Native16BitShaderOpsSupported)
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::Enable16BitTypes;
+
+			if (m_renderGraph.settings.dx12.DXC_HLSL_2021)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;
+			}
+
+			if (m_renderGraph.settings.common.shaderWarningAsErrors)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+			}
+
+			if (m_renderGraph.settings.common.createPDBsAndBinaries)
+			{
+				shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+			}
+
 			std::vector<std::string> allShaderFiles;
 			switch (m_renderGraph.settings.dx12.shaderCompiler)
 			{
@@ -166,14 +287,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				{
 					MakeComputePSO_fxc(
 						m_device,
-						fullFileName.c_str(),
-						node.entryPoint.empty() ? node.shader.shader->entryPoint.c_str() : node.entryPoint.c_str(),
-						m_renderGraph.settings.dx12.shaderModelCs.c_str(),
-						defines.size() > 0 ? defines.data() : nullptr,
+						shaderCompilationInfo,
 						runtimeData.m_rootSignature,
 						&runtimeData.m_pso,
-						m_compileShadersForDebug,
-						node.name.c_str(),
 						m_logFn,
 						&allShaderFiles
 					);
@@ -183,15 +299,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				{
 					MakeComputePSO_dxc(
 						m_device,
-						fullFileName.c_str(),
-						node.entryPoint.empty() ? node.shader.shader->entryPoint.c_str() : node.entryPoint.c_str(),
-						m_renderGraph.settings.dx12.shaderModelCs.c_str(),
-						defines.size() > 0 ? defines.data() : nullptr,
+						shaderCompilationInfo,
 						runtimeData.m_rootSignature,
 						& runtimeData.m_pso,
-						m_compileShadersForDebug,
-						node.name.c_str(),
-						m_renderGraph.settings.dx12.DXC_HLSL_2021,
 						m_logFn,
 						&allShaderFiles
 					);
@@ -202,7 +312,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 			for (const std::string& fileName : allShaderFiles)
 			{
-				std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(m_tempDirectory) / "shaders")).string();
+				std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 				m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 			}
 
@@ -213,7 +323,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			}
 
 			// name the PSO for debuggers
-			runtimeData.m_pso->SetName(ToWideString(node.entryPoint.empty() ? node.shader.shader->entryPoint.c_str() : node.entryPoint.c_str()).c_str());
+			runtimeData.m_pso->SetName(ToWideString(node.shader.shader->entryPoint.c_str()).c_str());
 		}
 		return true;
 	}
@@ -355,9 +465,25 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 						else
 						{
 							desc.m_resource = resourceInfo.m_resource;
-							desc.m_format = resourceInfo.m_format;
-							desc.m_stride = (desc.m_format == DXGI_FORMAT_UNKNOWN) ? resourceInfo.m_size / resourceInfo.m_count : 0;
-							desc.m_count = resourceInfo.m_count;
+
+							const ShaderResourceBuffer& shaderResourceBuffer = node.shader.shader->resources[depIndex].buffer;
+							bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
+							if (isStructuredBuffer)
+							{
+								desc.m_format = DXGI_FORMAT_UNKNOWN;
+								if (shaderResourceBuffer.typeStruct.structIndex != -1)
+									desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
+								else
+									desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
+								desc.m_count = resourceInfo.m_size / desc.m_stride;
+							}
+							else
+							{
+								desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
+								desc.m_stride = 0;
+								desc.m_count = resourceInfo.m_count;
+							}
+
 							desc.m_raw = node.shader.shader->resources[depIndex].buffer.raw;
 						}
 						break;
@@ -375,6 +501,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					std::ostringstream ss;
 					ss << "Cannot run due to resource not existing:\n" << GetNodeTypeString(resourceNode) << " \"" << GetNodeName(resourceNode) << "\" (\"" << GetNodeOriginalName(resourceNode) << "\")";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -507,6 +634,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		if (dispatchSize[0] == 0 || dispatchSize[1] == 0 || dispatchSize[2] == 0)
 		{
 			m_logFn(LogLevel::Error, "compute shader node \"%s\" wanted to do a dispatch of size 0.  dispatchSize = (%u, %u, %u)", node.name.c_str(), dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+			return false;
+		}
+
+		if (node.shader.shader->NumThreads[0] == 0 || node.shader.shader->NumThreads[1] == 0 || node.shader.shader->NumThreads[2] == 0)
+		{
+			m_logFn(LogLevel::Error, "compute shader node \"%s\" wanted to run with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.shader.shader->NumThreads[0], node.shader.shader->NumThreads[1], node.shader.shader->NumThreads[2]);
 			return false;
 		}
 

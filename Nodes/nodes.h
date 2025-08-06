@@ -13,7 +13,8 @@
 
 struct InputNodeInfo
 {
-    ShaderResourceAccessType access;
+    ShaderResourceAccessType access = ShaderResourceAccessType::Count;
+    ShaderResourceAccessType originalAccess = ShaderResourceAccessType::Count;
     int nodeIndex;
     int pinIndex;
     bool required = true;
@@ -72,7 +73,7 @@ namespace FrontEndNodes
         Assert(false, "Should not be called");
         return ResourceVisibility::Count;
     }
-    inline void AddResourceAccessedAs(RenderGraphNode_Base& node, ShaderResourceAccessType state)
+    inline void AddResourceAccessedAs(RenderGraphNode_Base& node, ShaderResourceAccessType state, ShaderResourceAccessType originalState)
     {
         Assert(false, "Should not be called");
     }
@@ -270,6 +271,26 @@ inline std::string GetNodePinName(const RenderGraphNode& node, int pinIndex)
     return ret;
 }
 
+inline int GetNodePinIndex(const RenderGraphNode& node, const std::string& name)
+{
+    int ret = -1;
+    ExecuteOnNode(node,
+        [&ret, &name](auto& node)
+        {
+            int pinCount = FrontEndNodes::GetPinCount(node);
+            for (int pinIndex = 0; pinIndex < pinCount; ++pinIndex)
+            {
+                if (FrontEndNodes::GetPinName(node, pinIndex) == name)
+                {
+                    ret = pinIndex;
+                    return;
+                }
+            }
+        }
+    );
+    return ret;
+}
+
 inline InputNodeInfo GetNodePinInputNodeInfo(const RenderGraphNode& node, int pinIndex)
 {
     InputNodeInfo ret;
@@ -280,6 +301,15 @@ inline InputNodeInfo GetNodePinInputNodeInfo(const RenderGraphNode& node, int pi
         }
     );
     return ret;
+}
+
+inline InputNodeInfo GetNodePinInputNodeInfo(const RenderGraphNode& node, const std::string& name)
+{
+    int pinIndex = GetNodePinIndex(node, name);
+    if (pinIndex == -1)
+        return InputNodeInfo();
+
+    return GetNodePinInputNodeInfo(node, pinIndex);
 }
 
 inline ShaderResourceAccessType GetResourceNodeStartingState(const RenderGraphNode& node)
@@ -391,15 +421,16 @@ inline std::string GetNodeOriginalName(const RenderGraphNode& node)
     return ret;
 }
 
-inline void AddResourceNodeAccessedAs(RenderGraphNode& node, ShaderResourceAccessType access)
+inline void AddResourceNodeAccessedAs(RenderGraphNode& node, ShaderResourceAccessType access, ShaderResourceAccessType originalAccess)
 {
     ExecuteOnNode(node,
-        [access](auto& node)
+        [access, originalAccess](auto& node)
         {
-            FrontEndNodes::AddResourceAccessedAs(node, access);
+            FrontEndNodes::AddResourceAccessedAs(node, access, originalAccess);
         }
     );
 }
+
 
 inline void AddResourceDependency(RenderGraphNode& node, int pinIndex, int resourceNodeIndex, ShaderResourceType type, ShaderResourceAccessType access)
 {
@@ -460,6 +491,8 @@ namespace FrontEndNodesNoCaching
 
         bool outputOnly = false;
         bool readOnly = true;
+
+        ShaderResourceAccessType access = ShaderResourceAccessType::Count;
     };
 
     // Returns -1 if it couldn't find it
@@ -524,6 +557,7 @@ namespace FrontEndNodesNoCaching
                 info.srcPin = "resource";
                 info.outputOnly = true;
                 info.readOnly = true;
+                info.access = ShaderResourceAccessType::Count;
                 ret.push_back(info);
                 break;
             }
@@ -540,10 +574,22 @@ namespace FrontEndNodesNoCaching
                     const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::Compute, node.shader.name.c_str(), connection.srcPin.c_str());
                     Assert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.shader.name.c_str());
                     if (shaderResource)
+                    {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);
+                        info.access = shaderResource->access;
+                    }
 
                     ret.push_back(info);
                 }
+
+                PinInfo info;
+                info.srcPin = "indirectBuffer";
+                info.dstNode = &node.dispatchSize.indirectBuffer.node;
+                info.dstPin = &node.dispatchSize.indirectBuffer.pin;
+                info.readOnly = true;
+                info.access = ShaderResourceAccessType::Indirect;
+                ret.push_back(info);
+
                 break;
             }
             case RenderGraphNode::c_index_actionRayShader:
@@ -559,7 +605,10 @@ namespace FrontEndNodesNoCaching
                     const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::RTRayGen, node.shader.name.c_str(), connection.srcPin.c_str());
                     Assert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.shader.name.c_str());
                     if (shaderResource)
+                    {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);
+                        info.access = shaderResource->access;
+                    }
 
                     ret.push_back(info);
                 }
@@ -574,12 +623,14 @@ namespace FrontEndNodesNoCaching
                 info.dstNode = &node.source.node;
                 info.dstPin = &node.source.pin;
                 info.readOnly = true;
+                info.access = ShaderResourceAccessType::CopySource;
                 ret.push_back(info);
 
                 info.srcPin = "dest";
                 info.dstNode = &node.dest.node;
                 info.dstPin = &node.dest.pin;
                 info.readOnly = false;
+                info.access = ShaderResourceAccessType::CopyDest;
                 ret.push_back(info);
 
                 break;
@@ -589,6 +640,9 @@ namespace FrontEndNodesNoCaching
                 RenderGraphNode_Action_DrawCall& node = nodeBase.actionDrawCall;
                 for (NodePinConnection& connection : node.connections)
                 {
+                    if (connection.dstNode.empty() || connection.dstPin.empty())
+                        continue;
+
                     PinInfo info;
                     info.srcPin = connection.srcPin;
                     info.dstNode = &connection.dstNode;
@@ -602,13 +656,25 @@ namespace FrontEndNodesNoCaching
                     Assert(shaderResourceAS != nullptr || shaderResourceMS != nullptr || shaderResourceVS != nullptr || shaderResourcePS != nullptr, "Could not find shader resource \"%s\" for draw call node \"%s\" " __FUNCTION__, connection.srcPin.c_str(), node.name.c_str());
 
                     if (shaderResourceAS)
+                    {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResourceAS->access);
+                        info.access = shaderResourceAS->access;
+                    }
                     else if (shaderResourceMS)
+                    {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResourceMS->access);
+                        info.access = shaderResourceMS->access;
+                    }
                     else if (shaderResourceVS)
+                    {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResourceVS->access);
+                        info.access = shaderResourceVS->access;
+                    }
                     else if (shaderResourcePS)
+                    {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResourcePS->access);
+                        info.access = shaderResourcePS->access;
+                    }
 
                     ret.push_back(info);
                 }
@@ -618,30 +684,35 @@ namespace FrontEndNodesNoCaching
                 info.dstNode = &node.shadingRateImage.node;
                 info.dstPin = &node.shadingRateImage.pin;
                 info.readOnly = true;
+                info.access = ShaderResourceAccessType::ShadingRate;
                 ret.push_back(info);
 
                 info.srcPin = "vertexBuffer";
                 info.dstNode = &node.vertexBuffer.node;
                 info.dstPin = &node.vertexBuffer.pin;
                 info.readOnly = true;
+                info.access = ShaderResourceAccessType::VertexBuffer;
                 ret.push_back(info);
 
                 info.srcPin = "indexBuffer";
                 info.dstNode = &node.indexBuffer.node;
                 info.dstPin = &node.indexBuffer.pin;
                 info.readOnly = true;
+                info.access = ShaderResourceAccessType::IndexBuffer;
                 ret.push_back(info);
 
                 info.srcPin = "instanceBuffer";
                 info.dstNode = &node.instanceBuffer.node;
                 info.dstPin = &node.instanceBuffer.pin;
                 info.readOnly = true;
+                info.access = ShaderResourceAccessType::VertexBuffer;
                 ret.push_back(info);
 
                 info.srcPin = "depthTarget";
                 info.dstNode = &node.depthTarget.node;
                 info.dstPin = &node.depthTarget.pin;
                 info.readOnly = !node.depthWrite;
+                info.access = ShaderResourceAccessType::DepthTarget;
                 ret.push_back(info);
 
                 for (int i = 0; i < node.colorTargets.size(); ++i)
@@ -652,6 +723,7 @@ namespace FrontEndNodesNoCaching
                     info.dstNode = &node.colorTargets[i].node;
                     info.dstPin = &node.colorTargets[i].pin;
                     info.readOnly = false;
+                    info.access = ShaderResourceAccessType::RenderTarget;
                     ret.push_back(info);
                 }
                 break;
@@ -667,6 +739,7 @@ namespace FrontEndNodesNoCaching
                     info.dstPin = &connection.dstPin;
                     // Assume it could be written. This won't come up if doing work after inlining subgraphs, which happens early in compilation.
                     info.readOnly = false;
+                    info.access = ShaderResourceAccessType::Count;
                     ret.push_back(info);
                 }
                 break;
@@ -681,6 +754,7 @@ namespace FrontEndNodesNoCaching
                     info.dstNode = &connection.dstNode;
                     info.dstPin = &connection.dstPin;
                     info.readOnly = true;
+                    info.access = ShaderResourceAccessType::Barrier;
                     ret.push_back(info);
                 }
                 break;
@@ -827,5 +901,85 @@ namespace FrontEndNodesNoCaching
         }
 
         return ret;
+    }
+
+    // This function will return the base name if that name is not already taken.
+    // Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+    inline std::string GetUniqueNodeName(const RenderGraph& renderGraph, const char* baseName)
+    {
+        if (GetNodeIndexByName(renderGraph, baseName) == -1)
+            return baseName;
+
+        int resourceNameIndex = -1;
+        char resourceName[1024];
+        do
+        {
+            resourceNameIndex++;
+            sprintf_s(resourceName, "%s_%i", baseName, resourceNameIndex);
+        }
+        while (GetNodeIndexByName(renderGraph, resourceName) != -1);
+
+        return resourceName;
+    }
+
+    // returns -1 if not found
+    inline int GetResourceIndexByName(const std::vector<ShaderResource>& resources, const char* name)
+    {
+        for (size_t i = 0; i < resources.size(); ++i)
+        {
+            if (resources[i].name == name)
+                return (int)i;
+        }
+        return -1;
+    }
+
+    // This function will return the base name if that name is not already taken.
+    // Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+    inline std::string GetUniqueShaderResourceName(const std::vector<ShaderResource>& resources, const char* baseName)
+    {
+        if (GetResourceIndexByName(resources, baseName) == -1)
+            return baseName;
+
+        int nameIndex = -1;
+        char name[1024];
+        do
+        {
+            nameIndex++;
+            sprintf_s(name, "%s_%i", baseName, nameIndex);
+        }
+        while (GetResourceIndexByName(resources, name) != -1);
+
+        return name;
+    }
+
+    inline TextureFormat GetCompileTimeTextureFormat(const RenderGraph& renderGraph, const RenderGraphNode& textureNode_)
+    {
+        const RenderGraphNode* nodePtr = &textureNode_;
+        while (1)
+        {
+            Assert(nodePtr->_index == RenderGraphNode::c_index_resourceTexture, "Reached a node that wasn't a texture!");
+            const RenderGraphNode_Resource_Texture& textureNode = nodePtr->resourceTexture;
+
+            // We can't know the format of imported textures
+            if (textureNode.visibility == ResourceVisibility::Imported)
+                return TextureFormat::Any;
+
+            // We can't know the format of textures using a variable for a format
+            if (!textureNode.format.variable.name.empty())
+                return TextureFormat::Any;
+
+            // If we have the same format as another node, we should return the format of that other node
+            else if (!textureNode.format.node.name.empty())
+            {
+                int nodeIndex = GetNodeIndexByName(renderGraph, textureNode.format.node.name.c_str());
+                Assert(nodeIndex >= 0, "Could not find node");
+                nodePtr = &renderGraph.nodes[nodeIndex];
+            }
+            // Otherwise, return the format set on this node
+            else
+            {
+                return textureNode.format.format;
+            }
+        }
     }
 };

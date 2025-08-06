@@ -32,7 +32,7 @@
           "type": {
             "description": "The type of the variable",
             "type": "string",
-            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+            "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
           },
           "Const": {
             "description": "If true, the variable is declared const and cannot change at runtime",
@@ -55,6 +55,16 @@
             "description": "Integer types can specify an enum, which will then make symbols in both C++ and shader code.",
             "type": "string"
           },
+          "onUserChange": {
+            "description": "A boolean variable that gets set to true when the user changes this variable.",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the variable.",
+                "type": "string"
+              }
+            }
+          },
           "backends": {
             "description": "This variable can be limited to specific backends",
             "type": "object",
@@ -64,7 +74,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Interpreter"]
+                "enum": ["DX12", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -126,6 +136,11 @@
             "description": "The file name of the shader file.",
             "type": "string"
           },
+          "language": {
+            "description": "What language the shader is written in",
+            "type": "string",
+            "enum": ["HLSL", "Slang", "WGSL"]
+          },
           "type": {
             "description": "The type of shader it is",
             "type": "string",
@@ -152,15 +167,6 @@
               }
             }
           },
-          "CSNumThreads": {
-            "description": "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
-            "type": "array",
-            "minItems": 3,
-            "maxItems": 3,
-            "items": {
-              "type": "integer"
-            }
-          },
           "NumThreads": {
             "description": "The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
             "type": "array",
@@ -178,6 +184,32 @@
             "description": "Settings for optionally processing shaders with slang",
             "type": "object",
             "properties": {
+              "noNameMangling": {
+                "description": "Do as little mangling of names as possible, to try to preserve original names.",
+                "type": "boolean"
+              },
+              "lineDirectives": {
+                "description": "Whether to output line directives in the shader.",
+                "type": "boolean"
+              },
+              "warningsAsErrors": {
+                "description": "Warnings are errors.",
+                "type": "boolean"
+              },
+              "verbosePaths": {
+                "description": "Verbose Paths.",
+                "type": "boolean"
+              },
+              "floatingPointMode": {
+                "description": "Floating point mode",
+                "type": "string",
+                "enum": ["Default", "Fast", "Precise"]
+              },
+              "optimizationLevel": {
+                "description": "Optimization level",
+                "type": "string",
+                "enum": ["None", "Default", "High", "Maximum"]
+              },
               "process": {
                 "description": "if true, this shader will be processed by slang",
                 "type": "boolean"
@@ -193,7 +225,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Interpreter"]
+                "enum": ["DX12", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -212,15 +244,15 @@
                   "description": "The name of the resource in the shader",
                   "type": "string"
                 },
-                "type": {
-                  "description": "The resource type",
-                  "type": "string",
-                  "enum": ["Texture", "Buffer", "ConstantBuffer", "Count"]
-                },
                 "access": {
                   "description": "How the resource is accessed",
                   "type": "string",
                   "enum": ["UAV", "SRV", "CBV", "CopySource", "CopyDest", "Indirect", "RTScene", "VertexBuffer", "IndexBuffer", "RenderTarget", "DepthTarget", "Barrier", "ShadingRate", "Count"]
+                },
+                "type": {
+                  "description": "The resource type",
+                  "type": "string",
+                  "enum": ["Texture", "Buffer", "ConstantBuffer", "Count"]
                 },
                 "buffer": {
                   "description": "Data specific to buffers",
@@ -229,7 +261,7 @@
                     "type": {
                       "description": "The data type of the buffer if a simple type",
                       "type": "string",
-                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                      "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
                     },
                     "typeStruct": {
                       "description": "The data type of the buffer if a struct type",
@@ -267,7 +299,7 @@
                     "viewType": {
                       "description": "The dimensionality of the texture",
                       "type": "string",
-                      "enum": ["Int", "Int4", "Uint", "Uint4", "Float", "Float2", "Float3", "Float4"]
+                      "enum": ["Int", "Int4", "Uint", "Uint2", "Uint4", "Float", "Float2", "Float3", "Float4", "Int_64", "Uint_64"]
                     },
                     "globallyCoherent": {
                       "description": "Set this to true if you want the resource to be declared as globallycoherent.",
@@ -284,7 +316,7 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                      "enum": ["DX12", "Interpreter"]
+                      "enum": ["DX12", "WebGPU", "Interpreter"]
                       }
                     },
                     "isWhiteList": {
@@ -292,6 +324,10 @@
                       "type": "boolean"
                     }
                   }
+                },
+                "allowAtomicOps": {
+                  "description": "Nedeed by WebGPU. Check this box to allow atopic operations on this field.",
+                  "type": "boolean"
                 }
               }
             }
@@ -335,6 +371,15 @@
                 }
               }
             }
+          },
+          "CSNumThreads": {
+            "description": "For compute shaders only, the number of threads each dispatch has. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.",
+            "type": "array",
+            "minItems": 3,
+            "maxItems": 3,
+            "items": {
+              "type": "integer"
+            }
           }
         }
       }
@@ -366,7 +411,7 @@
                 "type": {
                   "description": "The type of the field",
                   "type": "string",
-                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
                 },
                 "dflt": {
                   "description": "The default value",
@@ -388,6 +433,10 @@
                 "semanticIndex": {
                   "description": "Some semantics can have multiple channels, like UVs and colors",
                   "type": "integer"
+                },
+                "allowAtomicOps": {
+                  "description": "Nedeed by WebGPU. Check this box to allow atopic operations on this field.",
+                  "type": "boolean"
                 }
               }
             }
@@ -427,7 +476,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "Interpreter"]
+                "enum": ["DX12", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -470,7 +519,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -528,7 +577,7 @@
                   "type": {
                     "description": "The buffer type. May become a typed or structured buffer, depending on the type chosen.",
                     "type": "string",
-                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Count"]
+                    "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
                   }
                 }
               },
@@ -593,7 +642,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -671,7 +720,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -719,7 +768,7 @@
                   "format": {
                     "description": "A specific format can be specified",
                     "type": "string",
-                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC4_Unorm", "BC4_Snorm", "BC5_Unorm", "BC5_Snorm", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
+                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "BGRA8_Unorm", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "RG16_Uint", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RG32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC1_Unorm", "BC4_Unorm", "BC4_Snorm", "BC5_Unorm", "BC5_Snorm", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
                   },
                   "variable": {
                     "description": "The variable that holds the texture format. Assumed to be a uint32.",
@@ -738,7 +787,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "The node referenced, if there is one.",
+                    "description": "If a texture is specified, the size will be based on the size of the texture. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -748,7 +797,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -823,7 +872,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -912,7 +961,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -939,7 +988,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -949,7 +998,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1064,7 +1113,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1153,7 +1202,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1180,7 +1229,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1190,7 +1239,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1285,7 +1334,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1374,7 +1423,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1433,7 +1482,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1522,7 +1571,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1587,7 +1636,7 @@
                 "type": "object",
                 "properties": {
                   "node": {
-                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer",
+                    "description": "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1597,7 +1646,7 @@
                     }
                   },
                   "variable": {
-                    "description": "If a variable is given, the dispatch size will be based on the value of the variable",
+                    "description": "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.",
                     "type": "object",
                     "properties": {
                       "name": {
@@ -1988,7 +2037,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2077,7 +2126,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2204,7 +2253,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "Interpreter"]
+                    "enum": ["DX12", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2293,7 +2342,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "Interpreter"]
+                          "enum": ["DX12", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2555,9 +2604,55 @@
               "description": "When using DXC, use HLSL 2021.  https://github.com/microsoft/DirectXShaderCompiler/wiki/HLSL-2021",
               "type": "boolean"
             },
+            "Allow16BitTypes": {
+              "description": "DXC option -enable-16bit-types. Only usable for shader model >= 6.1, and HLSL language >= 2018.",
+              "type": "boolean"
+            },
             "AgilitySDKRequired": {
               "description": "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.",
               "type": "boolean"
+            }
+          }
+        },
+        "webGPU": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "features": {
+              "description": "",
+              "type": "object",
+              "properties": {
+                "float32Filterable": {
+                  "description": "float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.",
+                  "type": "boolean"
+                },
+                "subgroups": {
+                  "description": "subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup
+to communicate and execute collective math operations such as calculating a sum of numbers, and offering an efficient method for
+cross-thread data sharing. Note that the subgroupMinSize and subgroupMaxSize properties can be useful to check if, for example, you have a
+hardcoded algorithm that requires a subgroup of a certain size. You can use f16 values with subgroups when you request a GPUDevice with
+both the shader-f16 and subgroups features.",
+                  "type": "boolean"
+                }
+              }
+            },
+            "limits": {
+              "description": "",
+              "type": "object",
+              "properties": {
+                "maxStorageBuffersPerShaderStage": {
+                  "description": "maxStorageBuffersPerShaderStage. 0 for default.",
+                  "type": "integer"
+                },
+                "maxStorageTexturesPerShaderStage": {
+                  "description": "maxStorageTexturesPerShaderStage. 0 for default.",
+                  "type": "integer"
+                },
+                "maxComputeWorkgroupStorageSize": {
+                  "description": "maxComputeWorkgroupStorageSize. 0 for default.",
+                  "type": "integer"
+                }
+              }
             }
           }
         },
@@ -2572,6 +2667,26 @@
             "debugShaders": {
               "description": "If true, compiles shaders with debug options turned on, on available platforms.",
               "type": "boolean"
+            },
+            "shaderWarningAsErrors": {
+              "description": "If true, compiles shaders with warnings as errors turned on",
+              "type": "boolean"
+            },
+            "createPDBsAndBinaries": {
+              "description": "If true, will output PDBs and shader binaries, useful for crash debugging. Also needed for rga.exe to run.",
+              "type": "boolean"
+            },
+            "rgaPath": {
+              "description": "The default path where rga.exe can be found.
+This is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.
+see https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute",
+              "type": "string"
+            },
+            "rgaASIC": {
+              "description": "The hardware generation to target for rga.exe
+gfx1032: AMD Radeon PRO W6600
+See .bat for more info",
+              "type": "string"
             }
           }
         }
@@ -2592,6 +2707,43 @@
         "outDX12": {
           "description": "The output location for DX12",
           "type": "string"
+        },
+        "outWebGPU": {
+          "description": "The output location for WebGPU",
+          "type": "string"
+        }
+      }
+    },
+    "styleSettings": {
+      "description": "Style settings",
+      "type": "object",
+      "properties": {
+        "resourceNodeColor": {
+          "description": "Color of the resource node types.",
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "nonTransientResourceNodeColor": {
+          "description": "Color of the non transient resource node types.",
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
+        },
+        "actionNodeColor": {
+          "description": "Color of the action node types.",
+          "type": "array",
+          "minItems": 3,
+          "maxItems": 3,
+          "items": {
+            "type": "number"
+          }
         }
       }
     },

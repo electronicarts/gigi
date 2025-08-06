@@ -36,6 +36,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <set>
+#include <map>
 
 #include "DX12Utils/Utils.h"
 #include "DX12Utils/sRGB.h"
@@ -53,12 +54,11 @@
 
 #include "ImageReadback.h"
 #include "ImageSave.h"
+#include "BVH.h"
 #include <comdef.h>
 // clang-format on
 
 #include <thread>
-
-#define USE_AGILITY_SDK() true
 
 #ifdef _DEBUG
 #define BUILD_FLAVOR "Debug"
@@ -77,6 +77,18 @@
 
 #define BREAK_ON_GIGI_ASSERTS() false
 
+static const UINT D3D12SDKVersion_Preview = 717;
+static const UINT D3D12SDKVersion_Retail = 616;
+
+extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12SDKVersion_Retail; }
+extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\Retail\\bin\\"; }
+
+static const UUID ExperimentalFeaturesEnabled[] =
+{
+    D3D12ExperimentalShaderModels,
+    D3D12CooperativeVectorExperiment
+};
+
 #include "Interpreter/GigiInterpreterPreviewWindowDX12.h"
 #include "Interpreter/NodesShared.h"
 #include "GigiEdit/StableSample.h"
@@ -85,11 +97,6 @@
 #pragma comment(lib, "dxguid.lib")
 
 #include "renderdoc_app.h"
-
-#if USE_AGILITY_SDK()
-extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = 614; }
-extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\bin\\"; }
-#endif
 
 #define ImDrawCallback_SetShaderFlags (ImDrawCallback)(-2)
 #define ImDrawCallback_SetHistogramMin (ImDrawCallback)(-3)
@@ -104,6 +111,8 @@ static const uint64_t ImGuiShaderFlag_UINTByteCountBit1 = 1 << 6;
 static const uint64_t ImGuiShaderFlag_UINTByteCountBit2 = 1 << 7;
 static const uint64_t ImGuiShaderFlag_UINTByteCountBit3 = 1 << 8;
 static const uint64_t ImGuiShaderFlag_Signed = 1 << 9;
+static const uint64_t ImGuiShaderFlag_Clamp = 1 << 10;
+static const uint64_t ImGuiShaderFlag_notSRGB = 1 << 11; // show it as linear space, not sRGB
 
 struct FrameContext
 {
@@ -116,9 +125,11 @@ static int const                    NUM_FRAMES_IN_FLIGHT = 3;
 static FrameContext                 g_frameContext[NUM_FRAMES_IN_FLIGHT] = {};
 static UINT                         g_frameIndex = 0;
 
+static bool g_useWarpAdapter = false;
+
 HWND g_hwnd = NULL;
 static int const                    NUM_BACK_BUFFERS = 3;
-static ID3D12Device2* g_pd3dDevice = NULL;
+static ID3D12Device14* g_pd3dDevice = NULL;
 static ID3D12InfoQueue* g_pd3dInfoQueue = NULL;
 static ID3D12DescriptorHeap* g_pd3dRtvDescHeap = NULL;
 static ID3D12DescriptorHeap* g_pd3dSrvDescHeap = NULL;
@@ -145,6 +156,14 @@ static float g_histogramMinMax[2] = { 0.0f, 1.0f };
 static float g_imageZoom = 1.0f;
 static bool g_imageLinearFilter = true;
 
+enum class SRGBSettings : int
+{
+    Auto = 0,
+    On = 1,
+    Off = 2
+};
+static SRGBSettings g_sRGB = SRGBSettings::Auto;
+
 static bool g_hideUI = false;
 static bool g_hideResourceNodes = true;  // in profiler, and render graph window. To reduce clutter of things that we don't care about.
 static bool g_onlyShowWrites = true;     // Hide SRV, UAV before, etc. Only show the result of writes.
@@ -153,6 +172,8 @@ static bool g_fullscreen = false;
 
 static std::string g_adapterName;
 static std::string g_driverVersion;
+
+static std::string g_commandLine;
 
 static double g_startTime = 0.0f;
 static int g_techniqueFrameIndex = 0;
@@ -164,8 +185,18 @@ static bool g_forceEnableProfiling = false;
 static bool g_meshInfoOpenPopup = false;
 static std::string g_meshInfoName = "";
 
+static GGViewerConfig g_viewerConfig;
+
 RecentFiles g_recentFiles("Software\\GigiViewer");
 RecentFiles g_recentPythonScripts("Software\\GigiViewerPy");
+
+// We always compile against external/AgilitySDK/Preview/include as a superset of all choices.
+// The DLL's we choose at runtime can come from different places though.
+enum class AgilitySDKChoice
+{
+    Retail,  // external/AgilitySDK/Retail/bin/
+    Preview, // external/AgilitySDK/Preview/bin/
+};
 
 // RenderDoc
 static HMODULE g_renderDocModule = NULL;
@@ -173,9 +204,10 @@ static RENDERDOC_API_1_6_0* g_renderDocAPI = nullptr;
 static bool g_renderDocCaptureNextFrame = false;
 static bool g_renderDocIsCapturing = false;
 static bool g_renderDocLaunchUI = false;
-static bool g_renderDocEnabled = false;
+static bool g_renderDocEnabled = true;
 static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
+static AgilitySDKChoice g_agilitySDKChoice = AgilitySDKChoice::Retail;
 
 void RenderFrame(bool forceExecute);
 
@@ -212,6 +244,22 @@ void* PackFloatIntoPointer(float f)
     uint32_t p;
     memcpy(&p, &f, sizeof(float));
     return (void*)uint64_t(p);
+}
+
+static std::filesystem::path GetLocalAppDataPath()
+{
+    std::filesystem::path ret;
+    wchar_t* path = nullptr;
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &path)))
+    {
+        CoTaskMemFree(path);
+        MessageBoxA(nullptr, "Could not get app data local folder", "Error", MB_OK);
+        return ret;
+    }
+    ret = std::filesystem::path(path) / "GigiViewer";
+    CoTaskMemFree(path);
+
+    return ret;
 }
 
 static void GetDefaultHistogramRange(DXGI_FORMAT format, float& typeMin, float& typeMax, bool& isIntegral, bool& enforceMinMax)
@@ -320,6 +368,32 @@ static void ShowToolTip(const char* tooltip, bool delay = false)
 	//ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.0f, 1.0f), "[?]");
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("%s", tooltip);
+}
+
+template <typename T>
+static bool ShowGigiEnumDropDown(T& value, const char* label, const char* tooltip = nullptr)
+{
+    bool ret = false;
+
+    std::vector<const char*> options;
+    float comboWidth = 0.0f;
+    for (int i = 0; i < EnumCount<T>(); ++i)
+    {
+        const char* label = EnumToString((T)i);
+        options.push_back(label);
+        comboWidth = std::max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+    }
+    ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+
+    int valueInt = (int)value;
+    if (ImGui::Combo(label, &valueInt, options.data(), (int)options.size()))
+    {
+        value = (T)valueInt;
+        ret = true;
+    }
+    if (tooltip && tooltip[0])
+        ShowToolTip(tooltip);
+    return ret;
 }
 
 std::string GetCPUName()
@@ -447,6 +521,7 @@ bool g_techniquePaused = false;
 
 bool g_logCollectedShaderAsserts = true;
 
+uint32_t g_GPUDeviceIndex = 0;
 std::string g_commandLineLoadGGFileName;
 std::string g_runPyFileName;
 std::vector<std::wstring> g_runPyArgs;
@@ -479,6 +554,7 @@ ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 ImVec2 g_contentRegionSize = ImVec2(1.0f, 1.0f);
 
 bool g_showCapsWindow = false;
+bool g_showViewerSettings = false;
 
 // first half are this frame, second half are last frame
 uint8_t g_keyStates[512] = {};
@@ -554,10 +630,31 @@ void SetFullscreenMode(bool fullscreen)
 
 struct LogEntry
 {
+    //
     LogLevel level;
+    //
+    bool selected = false;
+    // for multi line
+    bool firstLine = true;
+    //
     std::string msg;
 };
 std::vector<LogEntry> g_log;
+
+void AddMultiLineLogEntry(LogLevel level, char* formattedMsg)
+{
+    std::istringstream iss(formattedMsg);
+
+    std::string line;
+
+    bool firstLine = true;
+
+    while (std::getline(iss, line)) 
+    {
+        g_log.push_back({ level, false, firstLine, std::move(line) });
+        firstLine = false;
+    }
+}
 
 void Log(LogLevel level, const char* msg, ...)
 {
@@ -568,7 +665,7 @@ void Log(LogLevel level, const char* msg, ...)
     vsnprintf_s(formattedMsg, _countof(formattedMsg)-1, msg, args);
     va_end(args);
 
-    g_log.push_back({ level, formattedMsg });
+    AddMultiLineLogEntry(level, formattedMsg);
 
     // tell the server about this log message
     if (g_previewClient.IsFullyConnected())
@@ -603,9 +700,11 @@ void TryLoadRenderDocAPI()
 		}
         else
         {
-            std::string filepathTemplate = (std::filesystem::current_path() / "gigi").string();
+            std::string filepathTemplate = g_interpreter.GetTempDirectory();
             g_renderDocAPI->SetCaptureFilePathTemplate(filepathTemplate.c_str());
             g_renderDocAPI->MaskOverlayBits(RENDERDOC_OverlayBits::eRENDERDOC_Overlay_None, 0);
+
+            Log(LogLevel::Info, "Renderdoc loaded and capturing to \"%s\"", filepathTemplate.c_str());
         }
 	}
     else
@@ -624,6 +723,7 @@ void TryBeginRenderDocCapture()
 	if (g_renderDocCaptureNextFrame)
 	{
 		g_renderDocIsCapturing = true;
+
 		g_renderDocAPI->StartFrameCapture(nullptr, nullptr);
 		g_renderDocFrameCaptureCount--;
 
@@ -696,7 +796,10 @@ GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResour
         outDesc.buffer.RT_BuildFlags = inDesc.buffer.RT_BuildFlags;
         outDesc.buffer.BLASOpaque = inDesc.buffer.BLASOpaque;
         outDesc.buffer.BLASNoDuplicateAnyhitInvocations = inDesc.buffer.BLASNoDuplicateAnyhitInvocations;
+        outDesc.buffer.BLASCullMode = inDesc.buffer.BLASCullMode;
         outDesc.buffer.IsAABBs = inDesc.buffer.IsAABBs;
+        outDesc.buffer.cvData = inDesc.buffer.cvData;
+        memcpy(outDesc.buffer.GeometryTransform, inDesc.buffer.GeometryTransform.data(), sizeof(float) * 16);
     }
 
     return outDesc;
@@ -747,7 +850,10 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
         outDesc.buffer.RT_BuildFlags = inDesc.buffer.RT_BuildFlags;
         outDesc.buffer.BLASOpaque = inDesc.buffer.BLASOpaque;
         outDesc.buffer.BLASNoDuplicateAnyhitInvocations = inDesc.buffer.BLASNoDuplicateAnyhitInvocations;
+        outDesc.buffer.BLASCullMode = inDesc.buffer.BLASCullMode;
         outDesc.buffer.IsAABBs = inDesc.buffer.IsAABBs;
+        outDesc.buffer.cvData = inDesc.buffer.cvData;
+        memcpy(outDesc.buffer.GeometryTransform.data(), inDesc.buffer.GeometryTransform, sizeof(float) * 16);
     }
 
     return outDesc;
@@ -836,6 +942,9 @@ void GatherSnapshotData(GGUserFileV2Snapshot& snapshot)
 
         // don't save transient vars
         if (rtVar.variable->transient)
+            continue;
+
+        if (!rtVar.storage.overrideValue)
             continue;
 
         // don't save system variables
@@ -1232,11 +1341,11 @@ void UpdateWindowTitle()
 
 void ImGuiRecentFiles()
 {
-    if (!g_recentFiles.m_Entries.empty())
+    if (!g_recentFiles.GetEntries().empty())
     {
         if (ImGui::BeginMenu("Recent Files"))
         {
-            for (const auto& el : g_recentFiles.m_Entries)
+            for (const auto& el : g_recentFiles.GetEntries())
             {
                 if (el.empty())
                     continue;
@@ -1256,11 +1365,11 @@ void ImGuiRecentFiles()
 
 void ImGuiRecentPythonScripts()
 {
-    if (!g_recentPythonScripts.m_Entries.empty())
+    if (!g_recentPythonScripts.GetEntries().empty())
     {
         if (ImGui::BeginMenu("Recent Python Scripts"))
         {
-            for (const auto& el : g_recentPythonScripts.m_Entries)
+            for (const auto& el : g_recentPythonScripts.GetEntries())
             {
                 if (el.empty())
                     continue;
@@ -1283,6 +1392,8 @@ void HandleMainMenu()
 {
     if (g_hideUI)
         return;
+
+    static bool imguiDemoOpen = false;
 
     if (ImGui::BeginMainMenuBar())
     {
@@ -1324,6 +1435,11 @@ void HandleMainMenu()
             }
 
             ImGuiRecentPythonScripts();
+
+#ifdef _DEBUG
+            ImGui::Separator();
+            ImGui::MenuItem("ImGui Demo", nullptr, &imguiDemoOpen);
+#endif
 
             ImGui::Separator();
             if (ImGui::MenuItem("Exit"))
@@ -1369,8 +1485,6 @@ void HandleMainMenu()
             #ifdef _DEBUG
             ImGui::Separator();
             ImGui::MenuItem("ImGui Demo Window", "", &show_demo_window);
-            //ImGui::MenuItem("ImGui Simple Window", "", &show_simple_window);
-            //ImGui::MenuItem("ImGui Other Window", "", &show_another_window);
             #endif
 
             ImGui::EndMenu();
@@ -1437,6 +1551,8 @@ void HandleMainMenu()
                     ReloadGGFile(false);
             }
 
+            ImGui::MenuItem("Viewer Settings", "", &g_showViewerSettings);
+
             ImGui::EndMenu();
         }
 
@@ -1477,48 +1593,51 @@ void HandleMainMenu()
         {
             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
             static int captureFrames = 1;
-            static std::string waitingToOpenFileName = "";
+            static std::wstring waitingToOpenFileName = L"";
             static bool openCapture = true;
-            if (g_pixCaptureEnabled && ImGui::Button("Pix Capture"))
+
+            if (g_pixCaptureEnabled && ImGui::Button("Pix"))
             {
-                wchar_t fileName[1024];
+                std::filesystem::path tempDir = g_interpreter.GetTempDirectory();
+                std::wstring fullFileName;
                 int i = 0;
                 while (1)
                 {
-                    swprintf_s(fileName, L"capture%i.wpix", i);
-                    FILE* file = nullptr;
-                    _wfopen_s(&file, fileName, L"rb");
-                    if (!file)
+                    char fileName[1024];
+                    sprintf_s(fileName, "capture%i.wpix", i);
+
+                    fullFileName = std::filesystem::weakly_canonical(tempDir / fileName).wstring();
+
+                    if (!FileExists(fullFileName))
                         break;
-                    fclose(file);
+
                     i++;
                 }
 
-                char currentDirectory[4096];
-                GetCurrentDirectoryA(4096, currentDirectory);
-
-                HRESULT hr = PIXGpuCaptureNextFrames(fileName, captureFrames);
+                HRESULT hr = PIXGpuCaptureNextFrames(fullFileName.c_str(), captureFrames);
                 if (FAILED(hr))
                 {
                     _com_error err(hr);
-                    Log(LogLevel::Error, "Could not save pix capture to %s:\n%s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str(), FromWideString(err.ErrorMessage()).c_str());
+                    Log(LogLevel::Error, "Could not save pix capture to %ls:\n%s", fullFileName.c_str(), FromWideString(err.ErrorMessage()).c_str());
                 }
                 else
                 {
-                    Log(LogLevel::Info, "Pix capture saved to %s", std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string().c_str());
+                    Log(LogLevel::Info, "Pix capture saved to %ls", fullFileName.c_str());
 
                     if (openCapture)
-                        waitingToOpenFileName = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / fileName).string();
+                        waitingToOpenFileName = fullFileName;
                     else
-                        waitingToOpenFileName = "";
+                        waitingToOpenFileName = L"";
                 }
             }
 
-			if (g_renderDocEnabled && ImGui::Button("RenderDoc Capture"))
+			if (g_renderDocEnabled && ImGui::Button("RenderDoc"))
 			{
 				g_renderDocCaptureNextFrame = true;
                 g_renderDocFrameCaptureCount = captureFrames;
                 g_renderDocLaunchUI = openCapture;
+
+                Log(LogLevel::Info, "Renderdoc capture is being saved to %s", g_interpreter.GetTempDirectory().c_str());
 			}
 
             ImGui::SetNextItemWidth(50);
@@ -1527,8 +1646,8 @@ void HandleMainMenu()
 
             if (!waitingToOpenFileName.empty() && FileExists(waitingToOpenFileName))
             {
-                ShellExecuteA(NULL, "open", waitingToOpenFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-                waitingToOpenFileName = "";
+                ShellExecuteW(NULL, L"open", waitingToOpenFileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                waitingToOpenFileName = L"";
             }
         }
 
@@ -1627,6 +1746,12 @@ void HandleMainMenu()
 
         ImGui::EndMainMenuBar();
     }
+
+    if (imguiDemoOpen)
+    {
+        ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
+        ImGui::ShowDemoWindow(&imguiDemoOpen);
+    }
 }
 
 void MakeInitialLayout(ImGuiID dockspace_id)
@@ -1669,7 +1794,17 @@ void MakeInitialLayout(ImGuiID dockspace_id)
 
 uint64_t GetImGuiImageShaderFlags(DXGI_FORMAT format, bool mainView)
 {
-    uint64_t flags = ImGuiShaderFlag_Checker;
+    uint64_t flags = ImGuiShaderFlag_Checker | ImGuiShaderFlag_Clamp;
+
+    if (!mainView || g_sRGB == SRGBSettings::Auto)
+    {
+        if (!Get_DXGI_FORMAT_Info(format).sRGB)
+            flags |= ImGuiShaderFlag_notSRGB;
+    }
+    else if (g_sRGB == SRGBSettings::Off)
+    {
+        flags |= ImGuiShaderFlag_notSRGB;
+    }
 
     // Depth stencil buffer formats, specifically wanting to see the stencil bits
     if (format == DXGI_FORMAT_X24_TYPELESS_G8_UINT || format == DXGI_FORMAT_X32_TYPELESS_G8X24_UINT)
@@ -1968,13 +2103,54 @@ bool AssignVariable(const char* name, DataFieldType type, T value)
 
         if (variable.name == name && variable.type == type)
         {
-            auto rtVar = g_interpreter.GetRuntimeVariable(varIndex);
+            auto& rtVar = g_interpreter.GetRuntimeVariable(varIndex);
+
+//            Variable& nonConstVar = (Variable&)(rtVar.variable);
+//            nonConstVar.system = true;
+            rtVar.storage.systemValue = true;
+
             memcpy(rtVar.storage.value, &value, rtVar.storage.size);
             return true;
         }
     }
 
     return false;
+}
+
+// fill out the key states using the keys defined in the viewer config
+static Camera::KeyStates MakeCameraKeyStates()
+{
+    Camera::KeyStates ret;
+
+    auto IsLetter = [](const std::string& s) -> bool
+    {
+        return (s.length() == 1 && s[0] >= 'A' && s[0] <= 'Z');
+    };
+
+    auto KeyIsPressed = [&](const std::string& key) -> bool
+    {
+        if (IsLetter(key))
+            return g_keyStates[key[0]];
+
+        if (key == "Shift")
+            return g_keyStates[VK_SHIFT];
+
+        if (key == "Control")
+            return g_keyStates[VK_CONTROL];
+
+        return false;
+    };
+
+    ret.forward = KeyIsPressed(g_viewerConfig.keyCameraForward) || (g_keyStates[VK_UP] != 0);
+    ret.back = KeyIsPressed(g_viewerConfig.keyCameraBackward) || (g_keyStates[VK_DOWN] != 0);
+    ret.left = KeyIsPressed(g_viewerConfig.keyCameraLeft) || (g_keyStates[VK_LEFT] != 0);
+    ret.right = KeyIsPressed(g_viewerConfig.keyCameraRight) || (g_keyStates[VK_RIGHT] != 0);
+    ret.up = KeyIsPressed(g_viewerConfig.keyCameraUp) || (g_keyStates[VK_PRIOR] != 0);
+    ret.down = KeyIsPressed(g_viewerConfig.keyCameraDown) || (g_keyStates[VK_NEXT] != 0);
+    ret.fast = KeyIsPressed(g_viewerConfig.keyCameraFast);
+    ret.slow = KeyIsPressed(g_viewerConfig.keyCameraSlow);
+
+    return ret;
 }
 
 void SynchronizeSystemVariables()
@@ -2067,7 +2243,7 @@ void SynchronizeSystemVariables()
         g_resourceView.camera.m_flySpeed = g_systemVariables.camera.flySpeed;
         g_resourceView.camera.m_leftHanded = g_systemVariables.camera.leftHanded;
         g_resourceView.camera.m_mouseSensitivity = g_systemVariables.camera.mouseSensitivity;
-        g_resourceView.camera.Update(g_keyStates, g_resourceView.systemVarMouseState, g_resourceView.systemVarMouseStateLastFrame, ImGui::GetIO().DeltaTime, g_systemVariables.camera.cameraPos.data(), g_systemVariables.camera.cameraAltitudeAzimuth.data(), g_systemVariables.camera.cameraChanged);
+        g_resourceView.camera.Update(MakeCameraKeyStates(), g_resourceView.systemVarMouseState, g_resourceView.systemVarMouseStateLastFrame, ImGui::GetIO().DeltaTime, g_systemVariables.camera.cameraPos.data(), g_systemVariables.camera.cameraAltitudeAzimuth.data(), g_systemVariables.camera.cameraChanged);
 
         AssignVariable(g_systemVariables.CameraChanged_varName.c_str(), DataFieldType::Bool, g_systemVariables.camera.cameraChanged);
         g_systemVariables.camera.cameraChanged = false;
@@ -2183,6 +2359,16 @@ void SynchronizeSystemVariables()
             // Shading rate image tile size
             AssignVariable(g_systemVariables.ShadingRateImageTileSize_varName.c_str(), DataFieldType::Uint, g_interpreter.GetOptions6().ShadingRateImageTileSize);
         }
+    }
+
+    // Clear all onUserChanged variables
+    const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
+    for (const Variable& variable : renderGraph.variables)
+    {
+        if (variable.onUserChange.variableIndex == -1)
+            continue;
+
+        AssignVariable(variable.onUserChange.name.c_str(), DataFieldType::Bool, false);
     }
 }
 
@@ -2720,8 +2906,8 @@ void ShowSystemVariables()
         ShowVariableDropDown("Jittered Projection Matrix", DataFieldType::Float4x4, g_systemVariables.JitteredProjMtx_varName);
         ShowVariableDropDown("Inverse Jittered Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvJitteredProjMtx_varName);
 
-        ShowVariableDropDown("Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.ViewProjMtx_varName);
-        ShowVariableDropDown("Inverse Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvViewProjMtx_varName);
+        ShowVariableDropDown("Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.JitteredViewProjMtx_varName);
+        ShowVariableDropDown("Inverse Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvJitteredViewProjMtx_varName);
 
         ShowVariableDropDown("Camera Jitter", DataFieldType::Float2, g_systemVariables.CameraJitter_varName);
         ShowVariableDropDown("Camera FOV", DataFieldType::Float, g_systemVariables.CameraFOV_varName);
@@ -2787,165 +2973,142 @@ void ShowShaders()
 
     const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
 
-    // The list of unprocessed shaders
-    {
-        ImGui::Text("Shaders:");
-        ImGui::PushID("Shaders:");
-        ImGui::Indent();
+	ImGui::Text("Shaders:");
+	ImGui::PushID("Shaders:");
+	ImGui::Indent();
 
-        // get a sorted list of scopes
-        std::unordered_set<std::string> scopes;
-        for (const Shader& shader : renderGraph.shaders)
-            scopes.insert(shader.scope);
-        std::vector<std::string> scopesSorted;
-        for (const std::string& scope : scopes)
-            scopesSorted.push_back(scope);
-        std::sort(scopesSorted.begin(), scopesSorted.end());
+	// get a sorted list of scopes
+	std::vector<std::string> scopesSorted;
+	{
+		// find unique scopes
+		std::unordered_set<std::string> scopes;
+		for (const Shader& shader : renderGraph.shaders)
+			scopes.insert(shader.scope);
 
-        // for each scope
-        for (const std::string& scope: scopesSorted)
-        {
-            // get a sorted list of shaders in this scope
-            std::vector<const Shader*> sortedShaders;
-            for (const Shader& shader : renderGraph.shaders)
-            {
-                if (shader.scope == scope)
-                    sortedShaders.push_back(&shader);
-            }
-            std::sort(sortedShaders.begin(), sortedShaders.end(),
-                [](const Shader* A, const Shader* B)
+		// sort
+		for (const std::string& scope : scopes)
+			scopesSorted.push_back(scope);
+		std::sort(scopesSorted.begin(), scopesSorted.end());
+	}
+
+	// The list of unique shader file copies (shader includes)
+	std::map<std::string, const FileCopy*> uniqueShaderFileCopies;
+	for (const FileCopy& fileCopy : renderGraph.fileCopies)
+	{
+		if (fileCopy.type != FileCopyType::Shader)
+			continue;
+		uniqueShaderFileCopies.insert({ fileCopy.fileName, &fileCopy });
+	}
+
+	for (const std::string& scope : scopesSorted)
+	{
+		// get a sorted list of shaders in this scope
+		std::vector<const Shader*> sortedShaders;
+		for (const Shader& shader : renderGraph.shaders)
+		{
+			if (shader.scope == scope)
+				sortedShaders.push_back(&shader);
+		}
+		std::sort(sortedShaders.begin(), sortedShaders.end(),
+			[](const Shader* A, const Shader* B)
+			{
+				return A->originalName < B->originalName;
+			}
+		);
+		if (sortedShaders.size() == 0)
+			continue;
+
+		if (!scope.empty())
+		{
+			std::string scopeLabel = scope.substr(0, scope.length() - 1);
+			if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
+				continue;
+
+			ImGui::Indent();
+			ImGui::PushID(scope.c_str());
+		}
+
+		if (ImGui::BeginTable("ShadersTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
+		{
+			for (const Shader* shader : sortedShaders)
+			{
+				const char* name = shader->originalName.c_str();
+				ImGui::PushID(name);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+                if (ImGui::SmallButton("Source"))
                 {
-                    return A->originalName < B->originalName;
+                    std::string fileName = shader->fileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
-            );
-            if (sortedShaders.size() == 0)
-                continue;
-
-            if (!scope.empty())
-            {
-                std::string scopeLabel = scope.substr(0, scope.length() - 1);
-                if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
-                    continue;
-
-                ImGui::Indent();
-                ImGui::PushID(scope.c_str());
-            }
-
-            for (const Shader* shader : sortedShaders)
-            {
-                char buffer[1024];
-                sprintf(buffer, "%s: %s (%s)", shader->originalName.c_str(), shader->fileName.c_str(), EnumToString(shader->type));
-                if (ImGui::Button(buffer))
-                    ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(renderGraph.baseDirectory + shader->fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-            }
-
-            if (!scope.empty())
-            {
-                ImGui::PopID();
-                ImGui::Unindent();
-            }
-        }
-
-        // The list of unique shader file copies (shader includes)
-        std::set<std::string> uniqueShaderFileCopies;
-        for (const FileCopy& fileCopy : renderGraph.fileCopies)
-        {
-            if (fileCopy.type != FileCopyType::Shader)
-                continue;
-            uniqueShaderFileCopies.insert(fileCopy.fileName);
-        }
-        for (const std::string& fileName : uniqueShaderFileCopies)
-        {
-            if (ImGui::Button(fileName.c_str()))
-                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-        }
-
-        ImGui::Unindent();
-        ImGui::PopID();
-    }
-
-    // The list of processed shaders
-    {
-        ImGui::Text("Processed Shaders:");
-        ImGui::PushID("Processed Shaders:");
-        ImGui::Indent();
-
-        // get a sorted list of scopes
-        std::unordered_set<std::string> scopes;
-        for (const Shader& shader : renderGraph.shaders)
-            scopes.insert(shader.scope);
-        std::vector<std::string> scopesSorted;
-        for (const std::string& scope : scopes)
-            scopesSorted.push_back(scope);
-        std::sort(scopesSorted.begin(), scopesSorted.end());
-
-        // for each scope
-        for (const std::string& scope: scopesSorted)
-        {
-            // get a sorted list of shaders in this scope
-            std::vector<const Shader*> sortedShaders;
-            for (const Shader& shader : renderGraph.shaders)
-            {
-                if (shader.scope == scope)
-                    sortedShaders.push_back(&shader);
-            }
-            std::sort(sortedShaders.begin(), sortedShaders.end(),
-                [](const Shader* A, const Shader* B)
+				ImGui::TableSetColumnIndex(1);
+                if (ImGui::SmallButton("Post"))
                 {
-                    return A->originalName < B->originalName;
+                    std::string fileName = shader->fileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
-            );
-            if (sortedShaders.size() == 0)
-                continue;
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text(EnumToString(shader->type));
+				ImGui::TableSetColumnIndex(3);
+				ImGui::Text("%s", name);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("fileName: \"%s\"\n\ndestFileName: \"%s\"",
+						shader->fileName.c_str(),
+						shader->destFileName.c_str());
 
-            if (!scope.empty())
-            {
-                std::string scopeLabel = scope.substr(0, scope.length() - 1);
-                if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
-                    continue;
+				ImGui::PopID();
+			}
 
-                ImGui::Indent();
-                ImGui::PushID(scope.c_str());
-            }
+			for (const auto& el : uniqueShaderFileCopies)
+			{
+				const char* name = el.first.c_str();
+				const FileCopy& fileCopy = *el.second;
 
-            for (const Shader* shader : sortedShaders)
-            {
-                char buffer[1024];
-                sprintf(buffer, "%s: %s (%s)##Processed", shader->originalName.c_str(), shader->destFileName.c_str(), EnumToString(shader->type));
-                if (ImGui::Button(buffer))
-                    ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + shader->destFileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-            }
+				ImGui::PushID(name);
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+                if (ImGui::SmallButton("Source"))
+                {
+                    std::string fileName = fileCopy.fileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                }
+				ImGui::TableSetColumnIndex(1);
+                if (ImGui::SmallButton("Post"))
+                {
+                    std::string fileName = fileCopy.destFileName.empty() ? fileCopy.fileName : fileCopy.destFileName;
+                    if (std::filesystem::path(fileName).is_relative())
+                        fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
+                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                }
+				ImGui::TableSetColumnIndex(2);
+				ImGui::Text("FileCopy");
+				ImGui::TableSetColumnIndex(3);
+				ImGui::Text("%s", name);
+				if (ImGui::IsItemHovered())
+					ImGui::SetTooltip("destFileName: \"%s\"", fileCopy.destFileName.empty() ? fileCopy.fileName.c_str() : fileCopy.destFileName.c_str());
 
-            if (!scope.empty())
-            {
-                ImGui::PopID();
-                ImGui::Unindent();
-            }
-        }
+				ImGui::PopID();
+			}
 
-        // The list of unique shader file copies (shader includes)
-        std::set<std::string> uniqueShaderFileCopies;
-        for (const FileCopy& fileCopy : renderGraph.fileCopies)
-        {
-            if (fileCopy.type != FileCopyType::Shader)
-                continue;
-            std::string destFileName = (fileCopy.destFileName.empty()) ? fileCopy.fileName : fileCopy.destFileName;
-            uniqueShaderFileCopies.insert(destFileName);
-        }
-        for (const std::string& fileName : uniqueShaderFileCopies)
-        {
-            char buffer[1024];
-            sprintf(buffer, "%s##Processed", fileName.c_str());
+			ImGui::EndTable();
+		}
+		if (!scope.empty())
+		{
+			ImGui::PopID();
+			ImGui::Unindent();
+		}
+	}
 
-            if (ImGui::Button(buffer))
-                ShellExecuteA(NULL, "open", std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
-        }
+	ImGui::Unindent();
+	ImGui::PopID();
 
-        ImGui::Unindent();
-        ImGui::PopID();
-    }
-
-    ImGui::End();
+	ImGui::End();
 }
 
 void ShowImportedResources()
@@ -3138,6 +3301,7 @@ void ShowImportedResources()
             if (ImGui::Button(importedResourceInfo.originalName.c_str()))
                 g_resourceView.Buffer(desc.nodeIndex, desc.resourceIndex);
         }
+        // Else this is a buffer, not a texture
         else
         {
             // File
@@ -3185,6 +3349,27 @@ void ShowImportedResources()
                 if (ImGui::Checkbox("No Duplicate AnyHit Invocation", &desc.buffer.BLASNoDuplicateAnyhitInvocations))
                     desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
                 ShowToolTip("By default, ray tracing APIs may call an any hit shader more than once for the same geometry, as a BVH traversal optimization. Turn this on to disable that.");
+
+                // cull mode
+                {
+                    std::vector<const char*> options;
+                    float comboWidth = 0.0f;
+                    for (int i = 0; i < EnumCount<GGUserFile_BLASCullMode>(); ++i)
+                    {
+                        const char* label = EnumToString((GGUserFile_BLASCullMode)i);
+                        options.push_back(label);
+                        comboWidth = std::max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+                    }
+                    ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+
+                    int value = (int)desc.buffer.BLASCullMode;
+                    if (ImGui::Combo("BLAS Cull Mode", &value, options.data(), (int)options.size()))
+                    {
+                        desc.buffer.BLASCullMode = (GGUserFile_BLASCullMode)value;
+                        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                    }
+                    ShowToolTip("Controls D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE and D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE");
+                }
 
                 if (ImGui::Checkbox("Is AABBs", &desc.buffer.IsAABBs))
                     desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
@@ -3280,6 +3465,64 @@ void ShowImportedResources()
                     ImGui::EndDisabled();
             }
 
+            // Geometry Transform Matrix
+            {
+                if (ImGui::CollapsingHeader("Geometry Transform"))
+                {
+                    if (ImGui::InputFloat4("row0", &desc.buffer.GeometryTransform[0]) ||
+                        ImGui::InputFloat4("row1", &desc.buffer.GeometryTransform[4]) ||
+                        ImGui::InputFloat4("row2", &desc.buffer.GeometryTransform[8]) ||
+                        ImGui::InputFloat4("row3", &desc.buffer.GeometryTransform[12]))
+                    {
+                        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                    }
+                }
+            }
+
+            // Cooperative Vector
+            if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
+            {
+                ImGui::Indent();
+                ImGui::Text("Cooperative Vectors");
+                ImGui::PushID("Cooperative Vectors");
+
+                // enabled
+                if (ImGui::Checkbox("Convert", &desc.buffer.cvData.convert))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                ShowToolTip("If true, will do the data conversion described below");
+
+                // width / height
+                {
+                    int wh[2] = { (int)desc.buffer.cvData.width, (int)desc.buffer.cvData.height };
+                    if (ImGui::InputInt2("Width Height", wh))
+                    {
+                        desc.buffer.cvData.width = (unsigned int)std::max(wh[0], 0);
+                        desc.buffer.cvData.height = (unsigned int)std::max(wh[1], 0);
+                        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                    }
+                    ShowToolTip("How many columns and rows in the matrix or vector");
+                }
+
+                // source type
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.srcType, "Source Type", "The data type of the source data."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                // source layout
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.srcLayout, "Source Layout", "The layout of the source data."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                // dest type
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.destType, "Dest Type", "The data type you want it to be converted to before use in the shader."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                // dest layout
+                if (ShowGigiEnumDropDown(desc.buffer.cvData.destLayout, "Dest Layout", "The layout you want it to be converted to before use in the shader."))
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+                ImGui::PopID();
+                ImGui::Unindent();
+            }
+
             // Mesh Details
             {
                 bool exists = false;
@@ -3311,9 +3554,6 @@ void ShowImportedResources()
 
 void ShowImGuiWindows()
 {
-    static bool show_simple_window = false;
-    static bool show_another_window = false;
-
     if (g_meshInfoOpenPopup)
     {
         ImGui::OpenPopup("Mesh Info Popup");
@@ -3368,6 +3608,77 @@ void ShowImGuiWindows()
             //ImGui::CloseCurrentPopup();
 
         ImGui::EndPopup();
+    }
+
+    if (g_showViewerSettings)
+    {
+        if (ImGui::Begin("Viewer Settings", &g_showViewerSettings, 0))
+        {
+            bool changed = false;
+
+            if (ImGui::Button("Reset To Defaults"))
+            {
+                g_viewerConfig = GGViewerConfig();
+                changed = true;
+            }
+
+            ImGui::SeparatorText("Camera Key Bindings");
+
+            auto KeyBindingDropDown = [](const char* label, std::string& selectedValue, const char* tooltip = nullptr) -> bool
+            {
+                bool ret = false;
+                if (ImGui::BeginCombo(label, selectedValue.c_str(), ImGuiComboFlags_None))
+                {
+                    for (int index = 0; index < 28; ++index)
+                    {
+                        std::string shownLabel;
+                        if (index < 26)
+                        {
+                            shownLabel = 'A' + index;
+                        }
+                        switch (index)
+                        {
+                            case 26: shownLabel = "Shift"; break;
+                            case 27: shownLabel = "Control"; break;
+                        }
+
+                        const bool is_selected = (selectedValue == shownLabel);
+                        if (ImGui::Selectable(shownLabel.c_str(), is_selected))
+                        {
+                            selectedValue = shownLabel;
+                            ret = true;
+                        }
+
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ShowToolTip(tooltip);
+
+                return ret;
+            };
+
+            changed |= KeyBindingDropDown("Forward", g_viewerConfig.keyCameraForward, "Up arrow also works");
+            changed |= KeyBindingDropDown("Left", g_viewerConfig.keyCameraLeft, "Left arrow also works");
+            changed |= KeyBindingDropDown("Backward", g_viewerConfig.keyCameraBackward, "Down arrow also works");
+            changed |= KeyBindingDropDown("Right", g_viewerConfig.keyCameraRight, "Right arrow also works");
+            changed |= KeyBindingDropDown("Up", g_viewerConfig.keyCameraUp, "Page up also works");
+            changed |= KeyBindingDropDown("Down", g_viewerConfig.keyCameraDown, "Page down also works");
+            changed |= KeyBindingDropDown("Fast", g_viewerConfig.keyCameraFast);
+            changed |= KeyBindingDropDown("Slow", g_viewerConfig.keyCameraSlow);
+
+            if (changed)
+            {
+                std::filesystem::path dir = GetLocalAppDataPath();
+                std::filesystem::create_directories(dir);
+                WriteToJSONFile(g_viewerConfig, (dir / "ViewerConfig.json").string().c_str());
+            }
+        }
+
+        ImGui::End();
     }
 
     if (g_showCapsWindow)
@@ -3480,6 +3791,22 @@ void ShowImGuiWindows()
                 ImGui::Text("AtomicInt64OnDescriptorHeapResourceSupported: %s", options.AtomicInt64OnDescriptorHeapResourceSupported ? "True" : "False");
             }
 
+            // Options Experimental
+            ImGui::SeparatorText("Options Experimental");
+            {
+                const D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL& options = g_interpreter.GetOptionsExperimental();
+
+                const char* CVTier = "Unknown";
+                switch (options.CooperativeVectorTier)
+                {
+                    case D3D12_COOPERATIVE_VECTOR_TIER_NOT_SUPPORTED: CVTier = "None"; break;
+                    case D3D12_COOPERATIVE_VECTOR_TIER_1_0: CVTier = "1.0"; break;
+                    case D3D12_COOPERATIVE_VECTOR_TIER_1_1: CVTier = "1.1"; break;
+                }
+
+                ImGui::Text("Cooperative Vector Tier: %s", CVTier);
+            }
+
             // TODO: do the rest at some point!
         }
 
@@ -3489,41 +3816,56 @@ void ShowImGuiWindows()
     // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
     if (show_demo_window)
         ImGui::ShowDemoWindow(&show_demo_window);
+}
 
-    // 2. Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
-    if (show_simple_window)
+// @param index e.g. ImGuiCol_Header
+// @param fade 0..1, 0:fade out completely .. 1:no fade out
+void PushStyleColorFade(uint32_t index, float fade)
+{
+    ImGuiStyle& style = ImGui::GetStyle();
+
+    ImVec4 color = style.Colors[index];
+
+    color.w *= fade;
+
+    ImGui::PushStyleColor(index, color);
+}
+
+void CopyToClipboard(bool copyAll, bool withType)
+{
+    std::ostringstream text;
+    constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
+    for (const auto& msg : g_log)
     {
-        static float f = 0.0f;
-        static int counter = 0;
+        if (!copyAll && !msg.selected)
+            continue;
 
-        ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+        if(withType)
+            text << msgType[static_cast<int>(msg.level)];
 
-        ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-        ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
-        ImGui::Checkbox("Another Window", &show_another_window);
-
-        ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-        ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-        if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-            counter++;
-        ImGui::SameLine();
-        ImGui::Text("counter = %d", counter);
-
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-        ImGui::End();
+        text << msg.msg.c_str() << "\n";
     }
 
-    // 3. Show another simple window.
-    if (show_another_window)
-    {
-        ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
-        ImGui::Text("Hello from another window!");
-        if (ImGui::Button("Close Me"))
-            show_another_window = false;
-        ImGui::End();
-    }
+    std::string textStr = text.str();
+
+    SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
+}
+
+void PrintMessageType(ImVec4 color, const char* txt, float width)
+{
+    ImVec2 text_pos = ImGui::GetCursorScreenPos();
+
+    // background color fill
+    ImGui::GetWindowDrawList()->AddRectFilled(
+        text_pos,
+        ImVec2(text_pos.x + width, text_pos.y + ImGui::GetFontSize()),
+        ImGui::ColorConvertFloat4ToU32(color)
+    );
+
+    // black text for contrast
+    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 0, 0, 1));
+    ImGui::TextUnformatted(txt);
+    ImGui::PopStyleColor();
 }
 
 void ShowLog()
@@ -3537,16 +3879,9 @@ void ShowLog()
         return;
     }
 
-    if (ImGui::Button("Copy"))
+    if (ImGui::Button("Copy all"))
     {
-        std::ostringstream text;
-        constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
-        for (const auto& msg : g_log)
-            text << msgType[static_cast<int>(msg.level)] << msg.msg.c_str() << "\n";
-
-        std::string textStr = text.str();
-
-        SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
+        CopyToClipboard(true, true);
     }
 
     ImGui::SameLine();
@@ -3558,20 +3893,114 @@ void ShowLog()
         ShellExecuteA(NULL, "explore", g_interpreter.GetTempDirectory().c_str(), NULL, NULL, SW_SHOWDEFAULT);
 
     ImGui::BeginChild("##LogScrollableRegion", ImVec2(0, 0), true, ImGuiWindowFlags_AlwaysVerticalScrollbar);
-    constexpr const char* msgType[3] = { "", "[Warning] ", "[Error] " };
+
+    // minimal Text for nicer visuals
+    constexpr const char* msgType[3] = { "", " W ", " E " };
     const ImVec4 msgColor[3] = { ImGui::GetStyleColorVec4(ImGuiCol_Text), { 0.8f, 0.7f, 0.2f, 1.0f}, { 0.8f, 0.2f, 0.2f, 1.0f } };
-    for (const auto& msg : g_log)
+
+    // find longest item
+    float widthColumn0 = 0;
+    for (int i = 0; i < sizeof(msgType) / sizeof(*msgType); ++i)
+        widthColumn0 = std::max(widthColumn0, ImGui::CalcTextSize(msgType[i]).x);
+
+    const float spaceGap = ImGui::CalcTextSize(" ").x;
+
+    // make selection visually more pleasing
+    const float fade = 0.2f;
+    PushStyleColorFade(ImGuiCol_Header, fade);
+    PushStyleColorFade(ImGuiCol_HeaderHovered, fade);
+    PushStyleColorFade(ImGuiCol_HeaderActive, fade);
+
+    // todo: this can be optimized to only render the visible range
+    for (size_t index = 0, count = g_log.size(); index < count; ++index)
     {
+        auto& msg = g_log[index];
+
+        ImGui::PushID((int)index);
+
         int msgTypeIndex = static_cast<int>(msg.level);
+
+        const float x = ImGui::GetCursorPosX();
+
+        if (msgTypeIndex && msg.firstLine)
+        {
+            PrintMessageType(msgColor[msgTypeIndex], msgType[msgTypeIndex], widthColumn0);
+            ImGui::SameLine();
+        }
+        ImGui::SetCursorPosX(x + widthColumn0 + spaceGap);
+
         ImGui::PushStyleColor(ImGuiCol_Text, msgColor[msgTypeIndex]);
-        ImGui::TextWrapped("%s%s", msgType[msgTypeIndex], msg.msg.c_str());
+
+        bool state = ImGui::Selectable(msg.msg.c_str(), &msg.selected);
+
+        ImGui::PopStyleColor();
+
+        if (state) 
+        {
+            static size_t lastSelectedIndex = -1;
+
+            if (ImGui::GetIO().KeyShift) // Range-select with Shift
+            {
+                // if there was a last selected
+                if ((uint32_t)lastSelectedIndex < g_log.size() )
+                {
+                    size_t minIndex = std::min(lastSelectedIndex, index);
+                    size_t maxIndex = std::max(lastSelectedIndex, index);
+
+                    // select range
+                    for (size_t index2 = 0, count2 = g_log.size(); index2 < count2; ++index2)
+                        g_log[index2].selected = (index2 >= minIndex && index2 <= maxIndex);
+                }
+            }
+            else if (ImGui::GetIO().KeyCtrl) // Multi-select with Ctrl
+            {
+                // already handled by Selectable() function call
+            }
+            else
+            {
+                // Single select
+                for (auto& msg2 : g_log)
+                    msg2.selected = false;
+                msg.selected = true;
+            }
+            lastSelectedIndex = index;
+        }
+        ImGui::PopID();
 
         // Autoscroll
         if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
             ImGui::SetScrollHereY(1.0f);
-
-        ImGui::PopStyleColor();
     }
+
+    ImGui::PopStyleColor(3);
+
+    // Right-click context menu
+    if (ImGui::BeginPopupContextWindow("RightClickAnywhere", ImGuiPopupFlags_MouseButtonRight))
+    {
+        if (ImGui::MenuItem("Copy Selection", "Ctrl+C"))
+            CopyToClipboard(false, false);
+
+        if (ImGui::MenuItem("Copy Selection with message type"))
+            CopyToClipboard(false, true);
+
+        ImGui::Separator();
+
+        if (ImGui::MenuItem("Copy All with message type"))
+            CopyToClipboard(true, true);
+
+        if (ImGui::MenuItem("Clear All"))
+            g_log.clear();
+
+        ImGui::EndPopup();
+    }
+
+
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows))
+    {
+        if (ImGui::GetIO().KeyCtrl && ImGui::IsKeyPressed(ImGuiKey_C))
+            CopyToClipboard(false, false);
+    }
+
     ImGui::EndChild();
 
     ImGui::End();
@@ -4108,6 +4537,15 @@ void SaveAsCSV(const char* fileName, const unsigned char* bytes, DXGI_FORMAT for
                 }
                 break;
             }
+            case DXGI_FORMAT_Info::ChannelType::_half:
+            {
+                for (int c = 0; c < actualChannelCount; ++c)
+                {
+                    fprintf(file, "%s\"%f\"", (c > 0 ? "," : ""), (float)*((half*)&bytes[offset]));
+                    offset += sizeof(float);
+                }
+                break;
+            }
         }
 
         fprintf(file, "\n");
@@ -4315,6 +4753,7 @@ void ShowTypedBuffer(unsigned char* bytes, DXGI_FORMAT format, int formatCount, 
             case DXGI_FORMAT_Info::ChannelType::_int16_t: rowBytes = sizeof(int16_t) * actualChannelCount; break;
             case DXGI_FORMAT_Info::ChannelType::_int32_t: rowBytes = sizeof(int32_t) * actualChannelCount; break;
             case DXGI_FORMAT_Info::ChannelType::_float: rowBytes = sizeof(float) * actualChannelCount; break;
+            case DXGI_FORMAT_Info::ChannelType::_half: rowBytes = sizeof(half) * actualChannelCount; break;
         }
 
         for (int index = indexStart; index < indexEnd; ++index)
@@ -4394,6 +4833,18 @@ void ShowTypedBuffer(unsigned char* bytes, DXGI_FORMAT format, int formatCount, 
                             ImGui::Text("%.8X", ((unsigned int*)rowBegin)[c]);
                         else
                             ImGui::Text("%f", ((float*)rowBegin)[c]);
+                    }
+                    break;
+                }
+                case DXGI_FORMAT_Info::ChannelType::_half:
+                {
+                    for (int c = 0; c < actualChannelCount; ++c)
+                    {
+                        ImGui::TableNextColumn();
+                        if (showAsHex)
+                            ImGui::Text("%.8X", (float)((half*)rowBegin)[c]);
+                        else
+                            ImGui::Text("%f", (float)((half*)rowBegin)[c]);
                     }
                     break;
                 }
@@ -4825,7 +5276,7 @@ void CopyImageToClipBoard(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC 
 
             for (int y = 0; y < decodedHeight; ++y)
             {
-                const unsigned char* src = &decodedPixels[(zIndex * decodedHeight + y) * decodedWidth * decodedFormatInfo.bytesPerPixel];
+                const unsigned char* src = &decodedPixels[y * decodedWidth * decodedFormatInfo.bytesPerPixel];
                 unsigned char* dest = (unsigned char*)buffer + sizeof(header) + (decodedHeight - 1 - y) * decodedWidth * 4;
 
                 for (int x = 0; x < decodedWidth; ++x)
@@ -5177,6 +5628,8 @@ void ShowResourceView()
                                 static bool s_bc6_signed = false;
                                 static bool s_bc7_srgb = true;
 
+                                ImGui::SameLine();
+
                                 ImGuiStyle& style = ImGui::GetStyle();
                                 ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0.0f, 0.0f));
 
@@ -5439,6 +5892,38 @@ void ShowResourceView()
                             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
                             ImGui::SameLine();
                             ImGui::Checkbox("Linear Filter", &g_imageLinearFilter);
+
+                            // sRGB
+                            {
+                                static const char* sRGBLabels[] =
+                                {
+                                    "Auto",
+                                    "sRGB",
+                                    "Linear"
+                                };
+
+                                // Get the longest text width of the server names
+                                float comboWidth = 0.0f;
+                                for (const char* label : sRGBLabels)
+                                    comboWidth = std::max(comboWidth, ImGui::CalcTextSize(label).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+
+                                ImGui::SameLine();
+                                ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+                                const char* selectedLabel = sRGBLabels[(int)g_sRGB];
+                                if (ImGui::BeginCombo("sRGB", selectedLabel, ImGuiComboFlags_None))
+                                {
+                                    for (int n = 0; n < _countof(sRGBLabels); n++)
+                                    {
+                                        const bool is_selected = ((int)g_sRGB == n);
+                                        if (ImGui::Selectable(sRGBLabels[n], is_selected))
+                                            g_sRGB = (SRGBSettings)n;
+
+                                        if (is_selected)
+                                            ImGui::SetItemDefaultFocus();
+                                    }
+                                    ImGui::EndCombo();
+                                }
+                            }
                         }
 
                         g_contentRegionSize = ImGui::GetContentRegionAvail();
@@ -5622,6 +6107,11 @@ void ShowResourceView()
                                 g_resourceView.mouseWasDownLastFrame = io.MouseDown[0];
                             }
                         }
+                        else
+                        {
+							g_resourceView.systemVarMouseState[2] = 0.0f;
+							g_resourceView.systemVarMouseState[3] = 0.0f;
+                        }
 						ImGui::EndChild();
 
                         
@@ -5759,6 +6249,52 @@ void ShowResourceView()
                             viewInfo.showAsHex = showAsHex;
                         }
 
+                        // See if we can save this as a BVH for WebGPU
+                        const unsigned char* BVHFirstPos = nullptr;
+                        size_t BVHPosStride = 0;
+                        size_t BVHPosCount = 0;
+                        {
+                            DXGI_FORMAT BVHVertexFormat = DXGI_FORMAT_FORCE_UINT;
+                            size_t BVHVertexOffset = 0;
+
+                            // Get the information about the position data
+                            if (viewInfo.structIndex != -1)
+                            {
+                                for (const StructField& field : renderGraph.structs[viewInfo.structIndex].fields)
+                                {
+                                    if (field.semantic == StructFieldSemantic::Position)
+                                    {
+                                        BVHVertexFormat = DataFieldTypeInfoDX12(field.type).typeFormat;
+                                        break;
+                                    }
+                                    BVHVertexOffset += field.sizeInBytes;
+                                }
+
+                                BVHPosStride = renderGraph.structs[viewInfo.structIndex].sizeInBytes;
+                            }
+                            else
+                            {
+                                BVHVertexFormat = viewInfo.format;
+                                BVHPosStride = Get_DXGI_FORMAT_Info(BVHVertexFormat).bytesPerPixel;
+                            }
+
+                            // Only allow float and float3 format
+                            switch (BVHVertexFormat)
+                            {
+                                case DXGI_FORMAT_R32G32B32_FLOAT:
+                                case DXGI_FORMAT_R32_FLOAT:
+                                {
+                                    BVHFirstPos = &bytes[BVHVertexOffset];
+                                    BVHPosCount = bytes.size() / BVHPosStride;
+                                    break;
+                                }
+                                default:
+                                {
+                                    BVHVertexFormat = DXGI_FORMAT_FORCE_UINT;
+                                }
+                            }
+                        }
+
                         // Typed buffer
                         if (viewInfo.structIndex == -1)
                         {
@@ -5774,6 +6310,14 @@ void ShowResourceView()
                             ImGui::SameLine();
                             if (ImGui::Button("Save as .hex") && NFD_SaveDialog("hex", "", &outPath) == NFD_OKAY)
                                 SaveAsHex(outPath, bytes.data(), (int)bytes.size());
+
+                            // Save as BVH, for WebGPU
+                            if (BVHFirstPos != nullptr)
+                            {
+                                ImGui::SameLine();
+                                if (ImGui::Button("Save as .bvh") && NFD_SaveDialog("bvh", "", &outPath) == NFD_OKAY)
+                                    SaveAsBVH(outPath, BVHFirstPos, BVHPosStride, BVHPosCount);
+                            }
 
                             // Show it
                             ShowTypedBuffer(bytes.data(), viewInfo.format, viewInfo.formatCount, viewInfo.count, viewInfo.showAsHex);
@@ -5800,6 +6344,14 @@ void ShowResourceView()
                             ImGui::SameLine();
                             if (ImGui::Button("Save as .hex") && NFD_SaveDialog("hex", "", &outPath) == NFD_OKAY)
                                 SaveAsHex(outPath, bytes.data(), (int)bytes.size());
+
+                            // Save as BVH, for WebGPU
+                            if (BVHFirstPos != nullptr)
+                            {
+                                ImGui::SameLine();
+                                if (ImGui::Button("Save as .bvh") && NFD_SaveDialog("bvh", "", &outPath) == NFD_OKAY)
+                                    SaveAsBVH(outPath, BVHFirstPos, BVHPosStride, BVHPosCount);
+                            }
 
                             // Show it
                             ShowStructuredBuffer(renderGraph, bytes.data(), structDesc, viewInfo.count, viewInfo.showAsHex, viewInfo.showStructuredBuffersVertically);
@@ -5840,13 +6392,28 @@ void ShowProfilerWindow()
 
     static std::vector<StableSample> stableSamples;
     static bool stableProfiling = true;
-    if (ImGui::BeginTable("profiling", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+    static int accumFrames = 0;
+    static bool pauseAccum = false;
+    static int accumLimit = 0;
+
+    if (!pauseAccum)
+        accumFrames++;
+
+    static std::unordered_map<std::string, float> accumCPU;
+    static std::unordered_map<std::string, float> accumGPU;
+    static std::unordered_map<std::string, bool> sumCheckBoxes;
+    bool wantsSum = false;
+    float sums[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+    if (ImGui::BeginTable("profiling", 6, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
     {
         ImGuiIO& io = ImGui::GetIO();
 
         ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthStretch);
         ImGui::TableSetupColumn("CPU ms", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableSetupColumn("GPU ms", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("A. CPU", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("A. GPU", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableSetupColumn("Sum", ImGuiTableColumnFlags_WidthFixed);
         ImGui::TableHeadersRow();
 
         int entryIndex = -1;
@@ -5873,10 +6440,95 @@ void ShowProfilerWindow()
             ImGui::Text("%0.3f", stableProfiling ? stableSampleCPU.getStableAverage() : stableSampleCPU.getCurrentValue());
             ImGui::TableNextColumn();
             ImGui::Text("%0.3f", stableProfiling ? stableSampleGPU.getStableAverage() : stableSampleGPU.getCurrentValue());
+
+            // Accumulated CPU
+            {
+                ImGui::TableNextColumn();
+                float value = accumCPU[entry.label];
+                if (!pauseAccum)
+                {
+                    value = Lerp(value, entry.CPUDurationSeconds * 1000.0f, 1.0f / float(accumFrames));
+                    accumCPU[entry.label] = value;
+                }
+                ImGui::Text("%0.3f", value);
+            }
+
+            // Accumulated GPU
+            {
+                ImGui::TableNextColumn();
+                float value = accumGPU[entry.label];
+                if (!pauseAccum)
+                {
+                    value = Lerp(value, entry.GPUDurationSeconds * 1000.0f, 1.0f / float(accumFrames));
+                    accumGPU[entry.label] = value;
+                }
+                ImGui::Text("%0.3f", value);
+            }
+
+            // Sum checkbox
+            {
+                ImGui::TableNextColumn();
+
+                if (entry.label != "Total")
+                {
+                    ImGui::PushID(entry.label.c_str());
+                    ImGui::PushID("sumcb");
+                    bool includeInSum = sumCheckBoxes[entry.label];
+                    ImGui::Checkbox("", &includeInSum);
+                    sumCheckBoxes[entry.label] = includeInSum;
+                    ImGui::PopID();
+                    ImGui::PopID();
+
+                    if (includeInSum)
+                    {
+                        wantsSum = true;
+                        sums[0] += stableProfiling ? stableSampleCPU.getStableAverage() : stableSampleCPU.getCurrentValue();
+                        sums[1] += stableProfiling ? stableSampleGPU.getStableAverage() : stableSampleGPU.getCurrentValue();
+                        sums[2] += accumCPU[entry.label];
+                        sums[3] += accumGPU[entry.label];
+                    }
+                }
+            }
+        }
+        // sum row
+        if (wantsSum)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted("Selection Sum");
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[0]);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[1]);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[2]);
+
+            ImGui::TableNextColumn();
+            ImGui::Text("%0.3f", sums[3]);
+
+            ImGui::TableNextColumn();
         }
         ImGui::EndTable();
 
         ImGui::Checkbox("Stabilize", &stableProfiling);
+
+        if (ImGui::Button((pauseAccum ? "Unpause Accum" : "Pause Accum")))
+            pauseAccum = !pauseAccum;
+        ImGui::SameLine();
+        char buttonText[1024];
+        sprintf_s(buttonText, "Reset Accum (%i frames)###ResetAccum", accumFrames);
+        if (ImGui::Button(buttonText) || g_techniqueFrameIndex < accumFrames)
+        {
+            pauseAccum = false;
+            accumFrames = 0;
+        }
+        if (ImGui::InputInt("Accum Limit", &accumLimit))
+            pauseAccum = false;
+        if (accumLimit > 0 && accumFrames >= accumLimit)
+            pauseAccum = true;
 
         ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
         ImGui::TextWrapped(
@@ -5937,6 +6589,7 @@ void ShowRenderGraphWindow()
         std::string nodeName;
         std::vector<RuntimeTypes::ViewableResource>* viewableResources_ = nullptr;
         std::string renderGraphText;
+        bool nodeIsInErrorState = false;
         g_interpreter.RuntimeNodeDataLambda(
             renderGraph.nodes[nodeIndex],
             [&] (auto node, auto* runtimeData)
@@ -5947,14 +6600,26 @@ void ShowRenderGraphWindow()
                 {
                     viewableResources_ = &(runtimeData->m_viewableResources);
                     renderGraphText = runtimeData->m_renderGraphText;
+                    nodeIsInErrorState = runtimeData->m_inErrorState;
                 }
             }
         );
 
-        char nodeLabel[512];
-        sprintf_s(nodeLabel, "%s: %s", nodeTypeName.c_str(), nodeName.c_str());
-        if (!ImGui::CollapsingHeader(nodeLabel))
-            continue;
+        // collapsing header
+        {
+            if (nodeIsInErrorState)
+                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));
+
+            char nodeLabel[512];
+            sprintf_s(nodeLabel, "%s: %s", nodeTypeName.c_str(), nodeName.c_str());
+            bool collapsingHeaderOpen = ImGui::CollapsingHeader(nodeLabel);
+
+            if (nodeIsInErrorState)
+                ImGui::PopStyleColor();
+
+            if (!collapsingHeaderOpen)
+                continue;
+        }
 
         if (!renderGraphText.empty())
         {
@@ -6108,7 +6773,7 @@ public:
         vsprintf_s(formattedMsg, msg, args);
         va_end(args);
 
-        g_log.push_back({ level, formattedMsg });
+        AddMultiLineLogEntry(level, formattedMsg);
 
         // tell the server about this log message
         if (g_previewClient.IsFullyConnected())
@@ -6243,6 +6908,7 @@ public:
                     case DXGI_FORMAT_Info::ChannelType::_int16_t: data.formatString = "h"; break;
                     case DXGI_FORMAT_Info::ChannelType::_int32_t: data.formatString = "i"; break;
                     case DXGI_FORMAT_Info::ChannelType::_float: data.formatString = "f"; break;
+                    case DXGI_FORMAT_Info::ChannelType::_half: data.formatString = "e"; break;
                 }
                 data.itemSize = formatInfo.bytesPerChannel;
 
@@ -6297,6 +6963,7 @@ public:
                             case DXGI_FORMAT_Info::ChannelType::_int16_t: data.formatString += "h"; break;
                             case DXGI_FORMAT_Info::ChannelType::_int32_t: data.formatString += "i"; break;
                             case DXGI_FORMAT_Info::ChannelType::_float: data.formatString += "f"; break;
+                            case DXGI_FORMAT_Info::ChannelType::_half: data.formatString += "e"; break;
                         }
                     }
                 }
@@ -6839,6 +7506,11 @@ public:
         g_systemVariables.camera.cameraPos[2] = Z;
     }
 
+    void SetCameraFOV(float fov) override final
+    {
+        g_systemVariables.camera.FOV = fov;
+    }
+
     void SetCameraAltitudeAzimuth(float altitude, float azimuth) override final
     {
         g_systemVariables.camera.cameraAltitudeAzimuth[0] = altitude;
@@ -7046,6 +7718,11 @@ public:
         return buffer;
     }
 
+    std::string GetAppCommandLine() override final
+    {
+        return g_commandLine;
+    }
+
     std::string GetScriptLocation() override final
     {
         return m_scriptLocation;
@@ -7208,8 +7885,26 @@ int main(int argc, char** argv)
     g_recentFiles.LoadAllEntries();
     g_recentPythonScripts.LoadAllEntries();
 
+    // Load the viewer settings
+    ReadFromJSONFile(g_viewerConfig, (GetLocalAppDataPath() / "ViewerConfig.json").string().c_str(), false);
+
     SetGigiHeadlessMode(!BREAK_ON_GIGI_ASSERTS());
 
+    // build g_commandLine
+    {
+        // start from 1, to exclude the executable name
+        for (int i = 1; i < argc; ++i)
+        {
+            std::string el = argv[i];
+            if (!g_commandLine.empty())
+                g_commandLine += " ";
+
+            if (el.find(' ') != std::string::npos)
+                g_commandLine += "\"" + el + "\"";
+            else
+                g_commandLine += el;
+        }
+    }
 
     // Parse command line parameters
     int argIndex = 0;
@@ -7249,6 +7944,16 @@ int main(int argc, char** argv)
             g_commandLineLoadGGFileName = argv[argIndex + 1];
             argIndex += 2;
         }
+        else if (!_stricmp(argv[argIndex], "-device"))
+        {
+            if (argc <= argIndex + 1)
+            {
+                printf("Not enough arguments given. Expected: -device <index>\n");
+                return 1;
+            }
+            g_GPUDeviceIndex = atoi(argv[argIndex + 1]);
+            argIndex += 2;
+        }
         else if (!_stricmp(argv[argIndex], "-run"))
         {
             if (argc <= argIndex + 1)
@@ -7266,6 +7971,11 @@ int main(int argc, char** argv)
 
             break;
         }
+        else if (!_stricmp(argv[argIndex], "-logdebuglayer"))
+        {
+            g_debugLayerShown = true;
+            argIndex++;
+        }
         else if (!_stricmp(argv[argIndex], "-nodebuglayer"))
         {
             g_debugLayerOn = false;
@@ -7276,9 +7986,9 @@ int main(int argc, char** argv)
             g_GPUValidation = true;
             argIndex++;
         }
-        else if (!_stricmp(argv[argIndex], "-renderdoc"))
+        else if (!_stricmp(argv[argIndex], "-norenderdoc"))
         {
-            g_renderDocEnabled = true;
+            g_renderDocEnabled = false;
             argIndex++;
         }
         else if (!_stricmp(argv[argIndex], "-nopixcapture"))
@@ -7289,6 +7999,16 @@ int main(int argc, char** argv)
         else if (!_stricmp(argv[argIndex], "-compileshadersfordebug"))
         {
             g_interpreter.m_compileShadersForDebug = true;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-warpadapter"))
+        {
+            g_useWarpAdapter = true;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-AgilitySDKPreview"))
+        {
+            g_agilitySDKChoice = AgilitySDKChoice::Preview;
             argIndex++;
         }
         else
@@ -7348,6 +8068,8 @@ int main(int argc, char** argv)
     g_hwnd = ::CreateWindowW(wc.lpszClassName, L"Gigi Viewer - DX12 (Gigi v" GIGI_VERSION() ")", WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
     DragAcceptFiles(g_hwnd, true);
 
+	Log(LogLevel::Info, "Gigi Viewer " GIGI_VERSION_WITH_BUILD_NUMBER() " DX12 " BUILD_FLAVOR);
+
     // Initialize Direct3D
     if (!CreateDeviceD3D(g_hwnd))
     {
@@ -7374,7 +8096,7 @@ int main(int argc, char** argv)
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
-    // adjustment to make log scroll regision more recognizable
+    // adjustment to make log scroll revision more recognizable
     {
         ImGuiStyle* style = &ImGui::GetStyle();
         ImVec4* colors = style->Colors;
@@ -7390,6 +8112,8 @@ int main(int argc, char** argv)
         style.WindowRounding = 0.0f;
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
+    // Menus and Popups partial see through is cool but can be distracting.
+    style.Colors[ImGuiCol_PopupBg].w = 1.0f;
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(g_hwnd);
@@ -7435,10 +8159,12 @@ int main(int argc, char** argv)
     //IM_ASSERT(font != NULL);
 
     // just to have something in the log making it clear where the content is located
-    Log(LogLevel::Info, "GiGi Viewer " GIGI_VERSION() " DX12 " BUILD_FLAVOR);
-    Log(LogLevel::Info, "GPU: %s (driver %s)", g_adapterName.c_str(), g_driverVersion.c_str());
-    Log(LogLevel::Info, "CPU: %s", GetCPUName().c_str());
-    Log(LogLevel::Info, "Ray tracing support: %s", g_interpreter.SupportsRaytracing() ? "Yes" : "No");
+    Log(LogLevel::Info, "GPU: '%s' (driver %s) RayTracing:%s",
+        g_adapterName.c_str(),
+        g_driverVersion.c_str(),
+        g_interpreter.SupportsRaytracing() ? "Yes" : "No"
+    );
+    Log(LogLevel::Info, "CPU: '%s'", GetCPUName().c_str());
 
     // Main loop
     int mainRet = 0;
@@ -7626,6 +8352,35 @@ int main(int argc, char** argv)
 // Helper functions
 bool CreateDeviceD3D(HWND hWnd)
 {
+    // Handle Agility SDK Choice
+    if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
+    {
+        // SDK version
+        {
+            ID3D12SDKConfiguration1* sdkConfig1 = nullptr;
+            D3D12GetInterface(CLSID_D3D12SDKConfiguration, IID_PPV_ARGS(&sdkConfig1));
+
+            HRESULT hr = sdkConfig1->SetSDKVersion(D3D12SDKVersion_Preview, ".\\external\\AgilitySDK\\Preview\\bin\\");
+            Log(LogLevel::Info, "D3D12SDKVersion: %u%s", D3D12SDKVersion_Preview, (D3D12SDKVersion_Retail != D3D12SDKVersion_Preview ? " (Preview)" : ""));
+
+            if (FAILED(hr))
+                return false;
+
+            sdkConfig1->Release();
+        }
+
+        // Enable experimental features
+        {
+            HRESULT hr = D3D12EnableExperimentalFeatures(_countof(ExperimentalFeaturesEnabled), ExperimentalFeaturesEnabled, nullptr, nullptr);
+            if (FAILED(hr))
+                return false;
+        }
+    }
+    else
+    {
+        Log(LogLevel::Info, "D3D12SDKVersion: %u", D3D12SDKVersion_Retail);
+    }
+
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC1 sd;
     {
@@ -7669,12 +8424,24 @@ bool CreateDeviceD3D(HWND hWnd)
         return false;
     }
 
+    {
+        Log(LogLevel::Info, "GPU devices (command line -device <index>):");
+        IDXGIAdapter1* adapter = nullptr;
+        uint32_t index = 0;
+        while (SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(index, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter))))
+        {
+            DXGI_ADAPTER_DESC1 desc;
+            adapter->GetDesc1(&desc);
+            std::string adapterName = FromWideString(desc.Description);
+            Log(LogLevel::Info, "  %d. '%s'", index, adapterName.c_str());
+            ++index;
+        }
+    }
+
     // Gather the adapters
-    IDXGIAdapter1* adapter = nullptr; 
-    if (SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(
-        0,
-        DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE,
-        IID_PPV_ARGS(&adapter))))
+    IDXGIAdapter1* adapter = nullptr;
+    if ((g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumWarpAdapter(IID_PPV_ARGS(&adapter)))) ||
+        (!g_useWarpAdapter && SUCCEEDED(dxgiFactory->EnumAdapterByGpuPreference(g_GPUDeviceIndex, DXGI_GPU_PREFERENCE_HIGH_PERFORMANCE, IID_PPV_ARGS(&adapter)))))
     {
         DXGI_ADAPTER_DESC1 desc;
         adapter->GetDesc1(&desc);
@@ -7786,9 +8553,20 @@ bool CreateDeviceD3D(HWND hWnd)
         if (g_pd3dDevice->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&g_frameContext[i].CommandAllocator)) != S_OK)
             return false;
 
-    if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
-        g_pd3dCommandList->Close() != S_OK)
-        return false;
+    if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
+    {
+        ID3D12GraphicsCommandListPreview* commandList = nullptr;
+        if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&commandList)) != S_OK ||
+            commandList->Close() != S_OK)
+            return false;
+        g_pd3dCommandList = commandList;
+    }
+    else
+    {
+        if (g_pd3dDevice->CreateCommandList(0, D3D12_COMMAND_LIST_TYPE_DIRECT, g_frameContext[0].CommandAllocator, NULL, IID_PPV_ARGS(&g_pd3dCommandList)) != S_OK ||
+            g_pd3dCommandList->Close() != S_OK)
+            return false;
+    }
 
     if (g_pd3dDevice->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&g_fence)) != S_OK)
         return false;

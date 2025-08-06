@@ -7,8 +7,11 @@
 
 #include <string>
 
-inline std::string PrettyLabel(const char* label)
+inline std::string PrettyLabel(const char* label, bool makePretty)
 {
+    if (!makePretty)
+        return label;
+
 	// Handle null and empty string
 	std::string ret;
 	if (!label || !label[0])

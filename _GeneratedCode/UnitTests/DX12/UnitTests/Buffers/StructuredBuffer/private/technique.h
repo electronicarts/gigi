@@ -50,12 +50,8 @@ namespace StructuredBuffer
         {
             float frameDeltaTime = 0.000000f;
             int frameIndex = 0;
-            float2 _padding0 = {0.0f,0.0f};  // Padding
+            float2 _padding0 = {0.000000f, 0.000000f};  // Padding
         };
-
-        // Variables
-        int variable_frameIndex = 0;
-        float variable_frameDeltaTime = 0.000000f;
 
         Struct__csmainCB constantBuffer__csmainCB_cpu;
         ID3D12Resource* constantBuffer__csmainCB = nullptr;

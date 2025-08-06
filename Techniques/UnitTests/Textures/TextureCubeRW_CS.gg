@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "TextureCubeRW_CS",
-    "version": "0.98b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RWCS",
@@ -12,6 +12,9 @@
                     "name": "nodeTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "TextureCube"
                     }
@@ -20,6 +23,9 @@
                     "name": "importedTexture",
                     "type": "Texture",
                     "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "TextureCube"
                     }
@@ -28,6 +34,9 @@
                     "name": "importedColor",
                     "type": "Texture",
                     "access": "SRV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    },
                     "texture": {
                         "dimension": "TextureCube"
                     }
@@ -134,5 +143,8 @@
                 "dimension": "TextureCube"
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "NodeTexture"
+    }
 }

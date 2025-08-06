@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "RenderSize",
@@ -113,12 +113,12 @@
                 ],
                 "connections": [
                     {
-                        "srcPin": "Output",
+                        "srcPin": "Input",
                         "dstNode": "Mip0",
                         "dstPin": "Output"
                     },
                     {
-                        "srcPin": "Input",
+                        "srcPin": "Output",
                         "dstNode": "Mip0",
                         "dstPin": "Output"
                     }
@@ -156,14 +156,14 @@
                 ],
                 "connections": [
                     {
-                        "srcPin": "Output",
-                        "dstNode": "Mip1",
-                        "dstPin": "Output"
-                    },
-                    {
                         "srcPin": "Input",
                         "dstNode": "Mip1",
                         "dstPin": "Input"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Mip1",
+                        "dstPin": "Output"
                     }
                 ],
                 "shader": {
@@ -199,14 +199,14 @@
                 ],
                 "connections": [
                     {
-                        "srcPin": "Output",
-                        "dstNode": "Mip2",
-                        "dstPin": "Output"
-                    },
-                    {
                         "srcPin": "Input",
                         "dstNode": "Mip2",
                         "dstPin": "Input"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Mip2",
+                        "dstPin": "Output"
                     }
                 ],
                 "shader": {
@@ -224,5 +224,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

@@ -51,7 +51,7 @@ static void CalculateResourceTransitions(RenderGraph& renderGraph)
                 }
 
                 states[resourceNodeIndex] = pinInfo.access;
-                AddResourceNodeAccessedAs(renderGraph.nodes[resourceNodeIndex], pinInfo.access);
+                AddResourceNodeAccessedAs(renderGraph.nodes[resourceNodeIndex], pinInfo.access, pinInfo.originalAccess);
                 AddResourceDependency(node, pinIndex, resourceNodeIndex, resourceType, pinInfo.access);
             }
         }

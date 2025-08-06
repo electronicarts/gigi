@@ -146,6 +146,9 @@ namespace ImageSave
                 FILE* file = nullptr;
                 fopen_s(&file, fileName, "wb");
 
+                if (!file)
+                    return false;
+
                 static const char c_channelNames[] = { 'R', 'G', 'B', 'A' };
                 for (int i = 0; i < decodedFormatInfo.channelCount; ++i)
                     fprintf(file, "%s\"%c\"", (i > 0 ? "," : ""), c_channelNames[i]);

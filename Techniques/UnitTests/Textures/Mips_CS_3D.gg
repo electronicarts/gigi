@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.99b",
+    "version": "1.0",
     "variables": [
         {
             "name": "RenderSize",
@@ -244,5 +244,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

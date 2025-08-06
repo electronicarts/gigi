@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "0.99b",
+    "version": "1.0",
     "shaders": [
         {
             "name": "RayGen",
@@ -21,6 +21,7 @@
                     "type": "Buffer",
                     "access": "RTScene",
                     "buffer": {
+                        "type": "Float3",
                         "PODAsStructuredBuffer": false
                     }
                 }
@@ -109,5 +110,8 @@
         {
             "name": "EmptyHG"
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "MipTex"
+    }
 }

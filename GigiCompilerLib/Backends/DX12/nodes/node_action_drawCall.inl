@@ -441,38 +441,37 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     // Vertex Shader
     if (node.vertexShader.shader)
     {
-        if (node.defines.empty() && node.vertexShader.shader->defines.empty())
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO* definesVS = nullptr;";
-        }
-        else
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO definesVS[] = {";
+		// Shader compilation info
+		stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+			"\n"
+			"\n            ShaderCompilationInfo shaderCompilationInfoVS;"
+			"\n            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << node.vertexShader.shader->destFileName << "\";"
+			"\n            shaderCompilationInfoVS.entryPoint = \"" << node.vertexShader.shader->entryPoint << "\";"
+			"\n            shaderCompilationInfoVS.shaderModel = \"" << renderGraph.settings.dx12.shaderModelVs << "\";"
+			"\n            shaderCompilationInfoVS.debugName = (c_debugNames ? \"" << (node.name) << "\" : \"\");"
+			"\n            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;";
 
-            for (const ShaderDefine& define : node.vertexShader.shader->defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		if (renderGraph.settings.dx12.DXC_HLSL_2021)
+		{
+			stringReplacementMap["/*$(CreateShared)*/"] <<
+				"\n            shaderCompilationInfoVS.flags |= ShaderCompilationFlags::HLSL2021;";
+		}
 
-            for (const ShaderDefine& define : node.defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		for (const ShaderDefine& define : node.vertexShader.shader->defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoVS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
+		}
 
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { nullptr, nullptr }"
-                "\n            };";
-        }
+		for (const ShaderDefine& define : node.defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoVS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
+		}
 
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
             "\n"
-            "\n            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.vertexShader.shader->destFileName << "\", \"" << node.vertexShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelVs << "\", definesVS, c_debugShaders, Context::LogFn);"
+            "\n            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfoVS, Context::LogFn);"
             "\n            if (byteCodeVS.size() == 0)"
             "\n                return false;"
             ;
@@ -481,38 +480,36 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     // Pixel Shader
     if (node.pixelShader.shader)
     {
-        if (node.defines.empty() && node.pixelShader.shader->defines.empty())
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO* definesPS = nullptr;";
-        }
-        else
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO definesPS[] = {";
+		stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+			"\n"
+			"\n            ShaderCompilationInfo shaderCompilationInfoPS;"
+			"\n            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << node.pixelShader.shader->destFileName << "\";"
+			"\n            shaderCompilationInfoPS.entryPoint = \"" << node.pixelShader.shader->entryPoint << "\";"
+			"\n            shaderCompilationInfoPS.shaderModel = \"" << renderGraph.settings.dx12.shaderModelPs << "\";"
+			"\n            shaderCompilationInfoPS.debugName = (c_debugNames ? \"" << (node.name) << "\" : \"\");"
+			"\n            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;";
 
-            for (const ShaderDefine& define : node.pixelShader.shader->defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		if (renderGraph.settings.dx12.DXC_HLSL_2021)
+		{
+			stringReplacementMap["/*$(CreateShared)*/"] <<
+				"\n            shaderCompilationInfoPS.flags |= ShaderCompilationFlags::HLSL2021;";
+		}
 
-            for (const ShaderDefine& define : node.defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		for (const ShaderDefine& define : node.pixelShader.shader->defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoPS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
+		}
 
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { nullptr, nullptr }"
-                "\n            };";
-        }
+		for (const ShaderDefine& define : node.defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoPS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
+		}
 
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
             "\n"
-            "\n            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.pixelShader.shader->destFileName << "\", \"" << node.pixelShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelPs << "\", definesPS, c_debugShaders, Context::LogFn);"
+            "\n            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfoPS, Context::LogFn);"
             "\n            if (byteCodePS.size() == 0)"
             "\n                return false;"
             ;
@@ -521,38 +518,36 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     // Amplification Shader
     if (node.amplificationShader.shader)
     {
-        if (node.defines.empty() && node.amplificationShader.shader->defines.empty())
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO* definesAS = nullptr;";
-        }
-        else
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO definesAS[] = {";
+		stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+			"\n"
+			"\n            ShaderCompilationInfo shaderCompilationInfoAS;"
+			"\n            shaderCompilationInfoAS.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << node.amplificationShader.shader->destFileName << "\";"
+			"\n            shaderCompilationInfoAS.entryPoint = \"" << node.amplificationShader.shader->entryPoint << "\";"
+			"\n            shaderCompilationInfoAS.shaderModel = \"" << renderGraph.settings.dx12.shaderModelAs << "\";"
+			"\n            shaderCompilationInfoAS.debugName = (c_debugNames ? \"" << (node.name) << "\" : \"\");"
+			"\n            if (c_debugShaders) shaderCompilationInfoAS.flags |= ShaderCompilationFlags::Debug;";
 
-            for (const ShaderDefine& define : node.amplificationShader.shader->defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		if (renderGraph.settings.dx12.DXC_HLSL_2021)
+		{
+			stringReplacementMap["/*$(CreateShared)*/"] <<
+				"\n            shaderCompilationInfoAS.flags |= ShaderCompilationFlags::HLSL2021;";
+		}
 
-            for (const ShaderDefine& define : node.defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		for (const ShaderDefine& define : node.pixelShader.shader->defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoAS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
+		}
 
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { nullptr, nullptr }"
-                "\n            };";
-        }
+		for (const ShaderDefine& define : node.defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoAS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
+		}
 
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
             "\n"
-            "\n            std::vector<unsigned char> byteCodeAS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.amplificationShader.shader->destFileName << "\", \"" << node.amplificationShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelAs << "\", definesAS, c_debugShaders, Context::LogFn);"
+            "\n            std::vector<unsigned char> byteCodeAS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfoAS, Context::LogFn);"
             "\n            if (byteCodeAS.size() == 0)"
             "\n                return false;"
             ;
@@ -561,38 +556,36 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     // Mesg Shader
     if (node.meshShader.shader)
     {
-        if (node.defines.empty() && node.meshShader.shader->defines.empty())
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO* definesMS = nullptr;";
-        }
-        else
-        {
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n"
-                "\n            D3D_SHADER_MACRO definesMS[] = {";
+		stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+			"\n"
+			"\n            ShaderCompilationInfo shaderCompilationInfoMS;"
+			"\n            shaderCompilationInfoMS.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << node.meshShader.shader->destFileName << "\";"
+			"\n            shaderCompilationInfoMS.entryPoint = \"" << node.meshShader.shader->entryPoint << "\";"
+			"\n            shaderCompilationInfoMS.shaderModel = \"" << renderGraph.settings.dx12.shaderModelMs << "\";"
+			"\n            shaderCompilationInfoMS.debugName = (c_debugNames ? \"" << (node.name) << "\" : \"\");"
+			"\n            if (c_debugShaders) shaderCompilationInfoMS.flags |= ShaderCompilationFlags::Debug;";
 
-            for (const ShaderDefine& define : node.meshShader.shader->defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		if (renderGraph.settings.dx12.DXC_HLSL_2021)
+		{
+			stringReplacementMap["/*$(CreateShared)*/"] <<
+				"\n            shaderCompilationInfoMS.flags |= ShaderCompilationFlags::HLSL2021;";
+		}
 
-            for (const ShaderDefine& define : node.defines)
-            {
-                stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                { \"" << define.name << "\", \"" << define.value << "\" },";
-            }
+		for (const ShaderDefine& define : node.pixelShader.shader->defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoMS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
+		}
 
-            stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                "\n                { nullptr, nullptr }"
-                "\n            };";
-        }
+		for (const ShaderDefine& define : node.defines)
+		{
+			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
+				"\n            shaderCompilationInfoMS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
+		}
 
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
             "\n"
-            "\n            std::vector<unsigned char> byteCodeMS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(Context::s_techniqueLocation.c_str(), L\"shaders/" << node.meshShader.shader->destFileName << "\", \"" << node.meshShader.shader->entryPoint << "\", \"" << renderGraph.settings.dx12.shaderModelMs << "\", definesMS, c_debugShaders, Context::LogFn);"
+            "\n            std::vector<unsigned char> byteCodeMS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfoMS, Context::LogFn);"
             "\n            if (byteCodeMS.size() == 0)"
             "\n                return false;"
             ;
@@ -685,7 +678,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         }
 
                         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                            "\n                vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 0, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
+                            "\n            vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 0, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
                             ;
                         fieldCount++;
                     }
@@ -697,7 +690,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             else
             {
                 stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
+                    "\n            vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 });"
                     ;
             }
         }
@@ -747,7 +740,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         }
 
                         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                            "\n                vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 1, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
+                            "\n            vertexInputLayout.push_back({ \"" << semanticString << "\", " << semanticIndex << ", " << DataFieldTypeToDXGIFormat(field.type) << ", 1, " << offset << ", D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
                             ;
                         fieldCount++;
                     }
@@ -759,7 +752,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             else
             {
                 stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-                    "\n                vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
+                    "\n            vertexInputLayout.push_back({ \"POSITION\", 0, " << GetResourceNodePathInContext(GetNodeResourceVisibility(nodeBase)) << "buffer_" << GetNodeName(nodeBase) << "_format, 1, 0, D3D12_INPUT_CLASSIFICATION_PER_INSTANCE_DATA, 0 });"
                     ;
             }
         }

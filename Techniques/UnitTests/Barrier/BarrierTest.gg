@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "BarrierTest",
-    "version": "0.98b",
+    "version": "0.99b",
     "shaders": [
         {
             "name": "Left",
@@ -11,7 +11,10 @@
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
@@ -23,7 +26,10 @@
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         },
@@ -35,7 +41,10 @@
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -184,5 +193,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

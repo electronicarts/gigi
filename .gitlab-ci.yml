@@ -10,6 +10,8 @@ win64_build_release:
     - .\\buildscripts\\Build_Release.bat
   artifacts:
     paths:
+      - VC_redist.x64.exe
+      - GigiBrowser.ico
       - GigiBrowser.exe
       - GigiBrowser.pdb
       - browserservers.txt
@@ -24,6 +26,7 @@ win64_build_release:
       - GigiCompiler.exe
       - GigiCompiler.pdb
       - python310.dll
+      - renderdoc.dll
       - libcurl-x64.dll
       - WinPixEventRuntime.dll
       - dxcompiler.dll
@@ -39,16 +42,21 @@ win64_build_release:
       - MakeCode_UnitTests_FB.py
       - MakeCode_UnitTests_UE_5_3.bat
       - MakeCode_UnitTests_UE_5_3.py
+      - MakeCode_UnitTests_WebGPU.bat
+      - MakeCode_UnitTests_WebGPU.py
       - GigiViewerDX12/python/*
       - _GeneratedCode/*
       - Techniques/*
       - UserDocumentation/*
-      - external/AgilitySDK/bin/*
+      - external/AgilitySDK/*
+      - external/DXC/*
       - external/fonts/OpenSans-Regular.ttf
       - external/git/*
       - GigiCompilerLib/Backends/DX12/templates/*
       - GigiCompilerLib/Backends/Frostbite/templates/*
       - GigiCompilerLib/Backends/UE_5_3/templates/*
+      - GigiCompilerLib/Backends/Interpreter/templates/*
+      - GigiCompilerLib/Backends/WebGPU/templates/*
     expire_in: 1 week
   tags:
     - seed

@@ -18,7 +18,7 @@
 // Backend Run prototype functions
 // clang-format off
 #include "external/df_serialize/_common.h"
-#define ENUM_ITEM(x, y) void RunBackend_##x(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph);
+#define ENUM_ITEM(x, y) void RunBackend_##x(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile);
 #include "external/df_serialize/_fillunsetdefines.h"
 #include "Schemas/BackendList.h"
 // clang-format on
@@ -82,7 +82,7 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
             RenderGraphNode& dstNode = renderGraph.nodes[outputConnection.nodeIndex];
             outputConnection.pinIndex = FrontEndNodesNoCaching::GetPinIndexByName(renderGraph, dstNode, pinInfo.dstPin->c_str());
 
-            Assert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
+            Assert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstPin->c_str(), pinInfo.dstNode->c_str());
 
             inputConnection.pinIndex = pinIndex;
             inputConnection.subtreeIsReadOnly = !FrontEndNodesNoCaching::DoesSubtreeWriteResource(renderGraph, node, pinIndex);
@@ -443,11 +443,13 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
         ShowInfoMessage("File Upgraded from %s to %s%s%s", renderGraph.versionUpgradedFrom.c_str(), renderGraph.version.c_str(), renderGraph.versionUpgradedMessage.empty() ? "" : ":\n", renderGraph.versionUpgradedMessage.c_str());
 
     // verify the version number
+    /*
     if (renderGraph.version != GIGI_VERSION())
     {
         Assert(false, "%s is using version %s but this exe is version %s", jsonFile.c_str(), renderGraph.version.c_str(), GIGI_VERSION());
         return GigiCompileResult::WrongVersion;
     }
+    */
 
     // get the base directory of the render graph
     {
@@ -480,6 +482,10 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
             return GigiCompileResult::BackendData;
     }
 
+    // Do a post load
+    if (PostLoad)
+        PostLoad(renderGraph);
+
     // Use temporary resources and copy nodes to make it so 1 output goes to only 1 input.
     // A make shift step towards static single assignment.
     {
@@ -501,10 +507,6 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
             return GigiCompileResult::ShaderFileDuplication;
     }
 
-    // Do a post load
-    if (PostLoad)
-        PostLoad(renderGraph);
-
     // Shader references need to be resolved first
     {
         ShaderReferenceFixupVisitor visitor(renderGraph);
@@ -522,7 +524,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
 
     // Get data from shaders
     {
-        ShaderDataVisitor visitor(renderGraph);
+        ShaderDataVisitor visitor(renderGraph, backend);
         if (!Visit(renderGraph, visitor, "renderGraph"))
             return GigiCompileResult::ShaderReflection;
     }
@@ -564,14 +566,14 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
 
     // Dflt fixup to make sure variable dflts are correctly formatted (like that floats have an f on the end)
     {
-        DfltFixupVisitor visitor;
+        DfltFixupVisitor visitor(backend);
         if (!Visit(renderGraph, visitor, "renderGraph"))
             return GigiCompileResult::DfltFixup;
     }
 
     // Data fixup to simplify backend handling of data cases.
     {
-        DataFixupVisitor visitor;
+        DataFixupVisitor visitor(renderGraph, backend);
         if (!Visit(renderGraph, visitor, "renderGraph"))
             return GigiCompileResult::DataFixup;
     }
@@ -582,13 +584,24 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     // Save out the final render graph file
     //WriteToJSONFile(renderGraph, "Optimized.gg");
 
+    // Load the .gguser file if present
+    GGUserFileLatest ggUserFile;
+    {
+        std::filesystem::path p(jsonFile);
+        p.replace_extension(".gguser");
+        if (ReadFromJSONFile(ggUserFile, p.string().c_str(), false))
+            ShowInfoMessage("Loaded gg user file: %s", p.string().c_str());
+        else
+            ShowInfoMessage("Could not load gg user file, used default gguser data: %s", p.string().c_str());
+    }
+
     // Run the backend code
     renderGraph.outputDirectory = absoluteOutputDir.string();
     switch (renderGraph.backend)
     {
         // clang-format off
         #include "external/df_serialize/_common.h"
-        #define ENUM_ITEM(x, y) case Backend::x: RunBackend_##x(buildFlavor, renderGraph); break;
+        #define ENUM_ITEM(x, y) case Backend::x: RunBackend_##x(buildFlavor, renderGraph, ggUserFile); break;
         #include "external/df_serialize/_fillunsetdefines.h"
         #include "Schemas/BackendList.h"
         #undef ENUM_ITEM

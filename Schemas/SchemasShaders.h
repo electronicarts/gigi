@@ -7,6 +7,28 @@
 // Enums
 //========================================================
 
+ENUM_BEGIN(CooperativeVectorBufferLayout, "Describe the format of a buffer for use in cooperative vectors")
+    ENUM_ITEM(RowMajor, "D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_ROW_MAJOR")
+    ENUM_ITEM(ColMajor, "D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_COLUMN_MAJOR")
+    ENUM_ITEM(MulOptimal, "D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_MUL_OPTIMAL")
+    ENUM_ITEM(OuterProductOptimal, "D3D12_LINEAR_ALGEBRA_MATRIX_LAYOUT_OUTER_PRODUCT_OPTIMAL")
+ENUM_END()
+
+ENUM_BEGIN(CooperativeVectorDataType, "The data type stored. D3D12_LINEAR_ALGEBRA_DATATYPE")
+    ENUM_ITEM(_sint16, "D3D12_LINEAR_ALGEBRA_DATATYPE_SINT16")
+    ENUM_ITEM(_uint16, "D3D12_LINEAR_ALGEBRA_DATATYPE_UINT16")
+    ENUM_ITEM(_sint32, "D3D12_LINEAR_ALGEBRA_DATATYPE_SINT32")
+    ENUM_ITEM(_uint32, "D3D12_LINEAR_ALGEBRA_DATATYPE_UINT32")
+    ENUM_ITEM(_float16, "D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT16")
+    ENUM_ITEM(_float32, "D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT32")
+    ENUM_ITEM(_sint8x4, "D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8_T4_PACKED")
+    ENUM_ITEM(_uint8x4, "D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8_T4_PACKED")
+    ENUM_ITEM(_uint8, "D3D12_LINEAR_ALGEBRA_DATATYPE_UINT8")
+    ENUM_ITEM(_sint8, "D3D12_LINEAR_ALGEBRA_DATATYPE_SINT8")
+    ENUM_ITEM(_float8_e4m3, "D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E4M3. 8 bits: 1 sign, 4 exp, 3 mantissa.")
+    ENUM_ITEM(_float8_e5m2, "D3D12_LINEAR_ALGEBRA_DATATYPE_FLOAT_E5M2. 8 bits: 1 sign, 5 exp, 2 mantissa.")
+ENUM_END()
+
 ENUM_BEGIN(ShaderResourceType, "The type of a shader resource")
     ENUM_ITEM(Texture, "Unordered Access View (Read/Write)")
     ENUM_ITEM(Buffer, "Shader Resource View")
@@ -32,17 +54,18 @@ ENUM_BEGIN(ShaderResourceAccessType, "The type of a shader resource")
     ENUM_ITEM(Count, "")
 ENUM_END()
 
-#include "DataFieldTypes.h"
-
 ENUM_BEGIN(TextureViewType, "The type that a texture is actually viewed as, in a shader. A subset of DataFieldType.")
     ENUM_ITEM(Int, "int")
     ENUM_ITEM(Int4, "int[4]")
     ENUM_ITEM(Uint, "uint")
+    ENUM_ITEM(Uint2, "uint[2]")
     ENUM_ITEM(Uint4, "uint[4]")
     ENUM_ITEM(Float, "float")
     ENUM_ITEM(Float2, "float[2]")
     ENUM_ITEM(Float3, "float[3]")
     ENUM_ITEM(Float4, "float[4]")
+	ENUM_ITEM(Int_64, "int64_t")
+	ENUM_ITEM(Uint_64, "uint64_t")
 ENUM_END()
 
 ENUM_BEGIN(SamplerFilter, "The type of filter a sampler uses")
@@ -67,7 +90,7 @@ ENUM_BEGIN(TextureDimensionType, "The type of a texture")
 ENUM_END()
 
 ENUM_BEGIN(ShaderType, "The type of a shader resource")
-    ENUM_ITEM(Compute, "Ray generation shader")
+    ENUM_ITEM(Compute, "Compute shader")
     ENUM_ITEM(RTRayGen, "Ray generation shader")
     ENUM_ITEM(RTClosestHit, "Closest hit shader")
     ENUM_ITEM(RTAnyHit, "Any hit shader")
@@ -78,6 +101,12 @@ ENUM_BEGIN(ShaderType, "The type of a shader resource")
     ENUM_ITEM(Amplification, "Amplification shader")
     ENUM_ITEM(Mesh, "Mesh shader")
     ENUM_ITEM(Count, "")
+ENUM_END()
+
+ENUM_BEGIN(ShaderLanguage, "A shader source code language")
+    ENUM_ITEM(HLSL, "The directx shader language. https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl")
+    ENUM_ITEM(Slang, "The slang shader language. https://shader-slang.org/")
+    ENUM_ITEM(WGSL, "The WebGPU shader language. https://www.w3.org/TR/WGSL/")
 ENUM_END()
 
 ENUM_BEGIN(StructFieldSemantic, "Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer.")
@@ -95,22 +124,14 @@ ENUM_END()
 // Helper Structures
 //========================================================
 
-STRUCT_BEGIN(VariableReference, "A reference to a variable")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReferenceNoConst, "A reference to a variable. No const variables allowed.")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReferenceConstOnly, "A reference to a variable. Only const variables allowed.")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_BEGIN(CooperativeVectorData, "Data needed for cooperative vectors support for imported buffer resources")
+    STRUCT_FIELD(bool, convert, false, "If true, does the data conversion described below", 0)
+    STRUCT_FIELD(unsigned int, width, 1, "How many columns in the matrix or vector.", 0)
+    STRUCT_FIELD(unsigned int, height, 1, "How many rows in the matrix or vector.", 0)
+    STRUCT_FIELD(CooperativeVectorDataType, srcType, CooperativeVectorDataType::_float32, "The data type of the source data.", 0)
+    STRUCT_FIELD(CooperativeVectorBufferLayout, srcLayout, CooperativeVectorBufferLayout::RowMajor, "The layout of the source data.", 0)
+    STRUCT_FIELD(CooperativeVectorDataType, destType, CooperativeVectorDataType::_float16, "The data type you want it to be converted to.", 0)
+    STRUCT_FIELD(CooperativeVectorBufferLayout, destLayout, CooperativeVectorBufferLayout::RowMajor, "The layout you want it to be converted to.", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(StructReference, "A reference to a struct")
@@ -239,7 +260,9 @@ STRUCT_BEGIN(StructField, "A field in a struct")
     STRUCT_FIELD(std::string, Enum, "", "Integer types can specify an enum, which will then make symbols in both C++ and shader code.", 0)
     STRUCT_FIELD(StructFieldSemantic, semantic, StructFieldSemantic::Count, "Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer. If none is given, it shows up in shaders as an autonumbering text coordinate.", 0)
     STRUCT_FIELD(int, semanticIndex, 0, "Some semantics can have multiple channels, like UVs and colors", 0)
+    STRUCT_FIELD(bool, allowAtomicOps, false, "Nedeed by WebGPU. Check this box to allow atopic operations on this field.", 0)
 
+    STRUCT_FIELD(bool, isPadding, false, "true if this field was added to pad the struct for alignment reasons.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(int, enumIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(size_t, sizeInBytes, 0, "The size in bytes of this field", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
@@ -255,6 +278,8 @@ STRUCT_BEGIN(Struct, "A description of a struct")
 
     STRUCT_FIELD(std::string, originalName, "", "The name before renames and sanitization", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, scope, "", "The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(bool, isForShaderConstants, false, "If true, this struct is used by shader constants, else it isn't", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderResourceBuffer, "Data specific to buffers")
@@ -263,30 +288,40 @@ STRUCT_BEGIN(ShaderResourceBuffer, "Data specific to buffers")
     STRUCT_FIELD(bool, raw, false, "If true, will be viewed raw in the shader (E.g. DX12 ByteAddressBuffer)", 0)
     STRUCT_FIELD(bool, PODAsStructuredBuffer, true, "Set this to true if you want it to be StructuredBuffer instead of a Buffer, for non structure typed buffers.", 0)
     STRUCT_FIELD(bool, globallyCoherent, false, "Set this to true if you want the resource to be declared as globallycoherent.", 0)
+
+    STRUCT_FIELD(bool, hideUI, false, "the shader resource will change this flag based on the type of the resource chosen", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderResourceTexture, "Data specific to textures")
     STRUCT_FIELD(TextureDimensionType, dimension, TextureDimensionType::Texture2D, "The dimensionality of the texture", 0)
     STRUCT_FIELD(TextureViewType, viewType, TextureViewType::Float4, "The dimensionality of the texture", 0)
 	STRUCT_FIELD(bool, globallyCoherent, false, "Set this to true if you want the resource to be declared as globallycoherent.", 0)
+
+    STRUCT_FIELD(bool, hideUI, false, "the shader resource will change this flag based on the type of the resource chosen", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderSampler, "Data specific to samplers")
     STRUCT_FIELD(std::string, name, "", "The name of the resource in the shader", 0)
     STRUCT_FIELD(SamplerFilter, filter, SamplerFilter::MinMagMipLinear, "The type of filtering to do", 0)
     STRUCT_FIELD(SamplerAddressMode, addressMode, SamplerAddressMode::Wrap, "The sampling address mode", 0)
+
+    STRUCT_FIELD(int, registerIndex, -1, "For root signatures and shader code that wants registers declared. Calculated before backend code is called, for convenience of backends.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(std::string, registerSpaceString, "", "Displayed after the register in the shader", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderResource, "A declaration of a resource that a shader wants")
     STRUCT_FIELD(std::string, name, "", "The name of the resource in the shader", 0)
-    STRUCT_FIELD(ShaderResourceType, type, ShaderResourceType::Count, "The resource type", 0)
     STRUCT_FIELD(ShaderResourceAccessType, access, ShaderResourceAccessType::Count, "How the resource is accessed", 0)
-    STRUCT_FIELD(ShaderResourceBuffer, buffer, {}, "Data specific to buffers", SCHEMA_FLAG_UI_COLLAPSABLE)
-    STRUCT_FIELD(ShaderResourceTexture, texture, {}, "Data specific to textures", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(ShaderResourceType, type, ShaderResourceType::Count, "The resource type", 0)
+    STRUCT_FIELD(ShaderResourceBuffer, buffer, {}, "Data specific to buffers", 0)
+    STRUCT_FIELD(ShaderResourceTexture, texture, {}, "Data specific to textures", 0)
     STRUCT_FIELD(BackendRestriction, backends, {}, "The backends this resource is present for.", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(bool, allowAtomicOps, false, "Nedeed by WebGPU. Check this box to allow atopic operations on this field.", 0)
 
     STRUCT_FIELD(int, registerIndex, -1, "For root signatures and shader code that wants registers declared. Calculated before backend code is called, for convenience of backends.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(std::string, registerSpaceString, "", "Displayed after the register in the shader", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(int, constantBufferStructIndex, -1, "for CBVs, this is the index in renderGraph.structs that describes the constant buffer", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(ShaderResourceAccessType, originalAccess, ShaderResourceAccessType::Count, "If the access is changed (like in post load), this is what it was originally. If this is Count, it wasn't changed.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(ShaderConstantBuffer, "A reference to a struct")
@@ -329,8 +364,29 @@ STRUCT_END()
 // Slang settings
 //========================================================
 
-STRUCT_BEGIN(SlangOptions, "A declaration of a shader")
-    STRUCT_FIELD(bool, process, false, "if true, this shader will be processed by slang", 0)
+ENUM_BEGIN(GigiSlangOptimizationLevel, "The level of optimizations")
+    ENUM_ITEM(None, "Don't optimize at all.")
+    ENUM_ITEM(Default, "Default optimization level: balance code quality and compilation time.")
+    ENUM_ITEM(High, "Optimize aggressively.")
+    ENUM_ITEM(Maximum, "Include optimizations that may take a very long time, or may involve severe space-vs-speed tradeoffs.")
+ENUM_END()
+
+ENUM_BEGIN(GigiSlangFloatingPointMode, "Floating point mode")
+    ENUM_ITEM(Default, "")
+    ENUM_ITEM(Fast, "")
+    ENUM_ITEM(Precise, "")
+ENUM_END()
+
+STRUCT_BEGIN(SlangOptions, "Slang options")
+    STRUCT_FIELD(bool, noNameMangling, false, "Do as little mangling of names as possible, to try to preserve original names.", 0)
+    STRUCT_FIELD(bool, lineDirectives, true, "Whether to output line directives in the shader.", 0)
+    STRUCT_FIELD(bool, warningsAsErrors, false, "Warnings are errors.", 0)
+    STRUCT_FIELD(bool, verbosePaths, false, "Verbose Paths.", 0)
+    STRUCT_FIELD(GigiSlangFloatingPointMode, floatingPointMode, GigiSlangFloatingPointMode::Default, "Floating point mode", 0)
+    STRUCT_FIELD(GigiSlangOptimizationLevel, optimizationLevel, GigiSlangOptimizationLevel::Default, "Optimization level", 0)
+
+    // Deprecated in 1.0. Shaders now have a language to say what source language they are, with slang being an option.
+    STRUCT_FIELD(bool, process, false, "if true, this shader will be processed by slang", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
 //========================================================
@@ -341,20 +397,17 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
     STRUCT_FIELD(std::string, name, "", "The name of the shader, as it will be referenced by nodes", 0)
     STRUCT_FIELD(std::string, fileName, "", "The file name of the shader file.", 0)
     STRUCT_FIELD(std::string, destFileName, "", "Filled out by compiler.  Where the shader file is supposed to go after compilation.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(ShaderLanguage, language, ShaderLanguage::HLSL, "What language the shader is written in", 0)
     STRUCT_FIELD(ShaderType, type, ShaderType::Compute, "The type of shader it is", 0)
 
-    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint.", 0)
+    STRUCT_FIELD(std::string, entryPoint, "main", "The shader entrypoint.", 0)
     STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
     STRUCT_DYNAMIC_ARRAY(TokenReplacement, tokenReplacements, "The token replacements specific for the shader.", SCHEMA_FLAG_NO_SERIALIZE)
-
-    // deprecated in 0.95b
-    // replaced by NumThreads
-    STRUCT_STATIC_ARRAY(int, CSNumThreads, 3, { 8 COMMA 8 COMMA 1 }, "For compute shaders only, the number of threads each dispatch has. 61,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.", SCHEMA_FLAG_NO_UI)
 
     STRUCT_STATIC_ARRAY(int, NumThreads, 3, { 8 COMMA 8 COMMA 1 }, "The number of threads each dispatch has, for applicable shader types. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
 
     STRUCT_FIELD(bool, copyFile, true, "if false, will not copy the file over. A hackaround for when you have multiple raytracing shaders in the same file. TODO: resolve this better.", 0)
-    STRUCT_FIELD(SlangOptions, slangOptions, {}, "Settings for optionally processing shaders with slang", 0)
+    STRUCT_FIELD(SlangOptions, slangOptions, {}, "Settings for optionally processing shaders with slang", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(BackendRestriction, backends, {}, "The backends this file copy happens for.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
@@ -371,4 +424,9 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 
     STRUCT_DYNAMIC_ARRAY(std::string, Used_RTHitGroupIndex, "All RTHitGroupIndex names used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_DYNAMIC_ARRAY(std::string, Used_RTMissIndex, "All RTMissIndex names used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
+
+    // deprecated in 0.95b
+    // replaced by NumThreads
+    STRUCT_STATIC_ARRAY(int, CSNumThreads, 3, { 8 COMMA 8 COMMA 1 }, "For compute shaders only, the number of threads each dispatch has. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.", SCHEMA_FLAG_NO_UI)
+
 STRUCT_END()

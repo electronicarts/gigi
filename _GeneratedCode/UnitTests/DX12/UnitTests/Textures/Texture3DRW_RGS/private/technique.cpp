@@ -88,17 +88,18 @@ namespace Texture3DRW_RGS
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 0, &ContextInternal::rayShader_RW_rootSig, (c_debugNames ? L"RW" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "0" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","0");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[1];
 
             // Compile RTRayGen : Texture3DRW_RGS.hlsl rgsmain()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/Texture3DRW_RGS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "Texture3DRW_RGS.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 
@@ -301,12 +302,12 @@ namespace Texture3DRW_RGS
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_NodeTexture;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_NodeTexture_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -963,7 +964,7 @@ namespace Texture3DRW_RGS
                 { context->m_output.texture_NodeTexture, context->m_output.texture_NodeTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_output.texture_NodeTexture_size[2], 0 },
                 { context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_input.texture_ImportedTexture_size[2], 0 },
                 { context->m_input.texture_ImportedColor, context->m_input.texture_ImportedColor_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_input.texture_ImportedColor_size[2], 0 },
-                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_internal.texture__loadedTexture_0_size[2], 0 }
+                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture3D, false, 0, context->m_internal.texture__loadedTexture_0_size[2], 0 }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 4, Context::LogFn);
@@ -1135,7 +1136,7 @@ namespace Texture3DRW_RGS
                 m_internal.texture__loadedTexture_0_size[2] = size[2];
                 m_internal.texture__loadedTexture_0_numMips = desiredNumMips;
                 m_internal.texture__loadedTexture_0_format = DXGI_FORMAT_R8G8B8A8_UNORM;
-                m_internal.texture__loadedTexture_0 = DX12Utils::CreateTexture(device, size, desiredNumMips, DXGI_FORMAT_R8G8B8A8_UNORM, m_internal.texture__loadedTexture_0_flags, D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::Texture2DArray, (c_debugNames ? L"_loadedTexture_0" : nullptr), Context::LogFn);
+                m_internal.texture__loadedTexture_0 = DX12Utils::CreateTexture(device, size, desiredNumMips, DXGI_FORMAT_R8G8B8A8_UNORM, m_internal.texture__loadedTexture_0_flags, D3D12_RESOURCE_STATE_COPY_DEST, DX12Utils::ResourceType::Texture3D, (c_debugNames ? L"_loadedTexture_0" : nullptr), Context::LogFn);
 
 
                 std::vector<unsigned char> pixels;

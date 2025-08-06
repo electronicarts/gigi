@@ -160,7 +160,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				desc.BorderColor = D3D12_STATIC_BORDER_COLOR_TRANSPARENT_BLACK;
 				desc.MinLOD = 0.0f;
 				desc.MaxLOD = D3D12_FLOAT32_MAX;
-				desc.ShaderRegister = (UINT)samplerIndex;
+				desc.ShaderRegister = sampler.registerIndex;
 				desc.RegisterSpace = 1;
 				desc.ShaderVisibility = D3D12_SHADER_VISIBILITY_MESH;
 
@@ -336,6 +336,11 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			return false;
 		}
 
+		OnRootSignature(sig, node.amplificationShader.shader);
+		OnRootSignature(sig, node.meshShader.shader);
+		OnRootSignature(sig, node.vertexShader.shader);
+		OnRootSignature(sig, node.pixelShader.shader);
+
 		char* sigptr = (char*)sig->GetBufferPointer();
 		auto sigsize = sig->GetBufferSize();
 
@@ -416,6 +421,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				std::ostringstream ss;
 				ss << "vertex buffer not created: \"" << m_renderGraph.nodes[node.vertexBuffer.resourceNodeIndex].resourceBuffer.name << "\"\n";
 				runtimeData.m_renderGraphText = ss.str();
+                runtimeData.m_inErrorState = true;
 				return true;
 			}
 
@@ -834,9 +840,25 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				else
 				{
 					desc.m_resource = resourceInfo.m_resource;
-					desc.m_format = resourceInfo.m_format;
-					desc.m_stride = (desc.m_format == DXGI_FORMAT_UNKNOWN) ? resourceInfo.m_size / resourceInfo.m_count : 0;
-					desc.m_count = resourceInfo.m_count;
+
+					const ShaderResourceBuffer& shaderResourceBuffer = shader.resources[resourceIndex].buffer;
+					bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
+					if (isStructuredBuffer)
+					{
+						desc.m_format = DXGI_FORMAT_UNKNOWN;
+						if (shaderResourceBuffer.typeStruct.structIndex != -1)
+							desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
+						else
+							desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
+						desc.m_count = resourceInfo.m_size / desc.m_stride;
+					}
+					else
+					{
+						desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
+						desc.m_stride = 0;
+						desc.m_count = resourceInfo.m_count;
+					}
+
 					desc.m_raw = shader.resources[resourceIndex].buffer.raw;
 				}
 				break;
@@ -918,31 +940,50 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 	return true;
 }
 
-static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::vector<ShaderDefine>& nodeDefines, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, LogFn& logFn)
+static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::vector<ShaderDefine>& nodeDefines, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn)
 {
-	// make the shader defines
-	std::vector<D3D_SHADER_MACRO> defines;
+	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
+
+	ShaderCompilationInfo shaderCompilationInfo;
+	shaderCompilationInfo.fileName = fullFileName;
+	shaderCompilationInfo.entryPoint = shader.entryPoint;
+	shaderCompilationInfo.shaderModel = shaderModel;
+	shaderCompilationInfo.defines = shader.defines;
+
+	if (!nodeDefines.empty())
 	{
-		for (const ShaderDefine& define : shader.defines)
-			defines.push_back({ define.name.c_str(), define.value.c_str() });
-		for (const ShaderDefine& define : nodeDefines)
-			defines.push_back({ define.name.c_str(), define.value.c_str() });
-		if (defines.size() > 0)
-			defines.push_back({ nullptr, nullptr });
+		shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), nodeDefines.begin(), nodeDefines.end());
 	}
 
-	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
+	if (compileShadersForDebug)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+	}
+
+	if (renderGraph.settings.dx12.Allow16BitTypes && native16BitShaderOpsSupported)
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::Enable16BitTypes;
+
+	if (renderGraph.settings.dx12.DXC_HLSL_2021)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::HLSL2021;
+	}
+
+	if (renderGraph.settings.common.shaderWarningAsErrors)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+	}
+
+	if (renderGraph.settings.common.createPDBsAndBinaries)
+	{
+		shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+	}
 
 	switch (renderGraph.settings.dx12.shaderCompiler)
 	{
 		case DXShaderCompiler::FXC:
 		{
 			shaderBytes = CompileShaderToByteCode_fxc(
-				fullFileName.c_str(),
-				shader.entryPoint.c_str(),
-				shaderModel,
-				defines.size() > 0 ? defines.data() : nullptr,
-				compileShadersForDebug,
+				shaderCompilationInfo,
 				logFn,
 				&allShaderFiles
 			);
@@ -951,12 +992,7 @@ static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader&
 		case DXShaderCompiler::DXC:
 		{
 			shaderBytes = CompileShaderToByteCode_dxc(
-				fullFileName.c_str(),
-				shader.entryPoint.c_str(),
-				shaderModel,
-				defines.size() > 0 ? defines.data() : nullptr,
-				compileShadersForDebug,
-				renderGraph.settings.dx12.DXC_HLSL_2021,
+				shaderCompilationInfo,
 				logFn,
 				&allShaderFiles
 			);
@@ -979,21 +1015,21 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		bool compiledOK = true;
 
 		if (node.vertexShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.pixelShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.amplificationShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.meshShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, m_tempDirectory, allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 		for (const std::string& fileName : allShaderFiles)
 		{
-			std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(m_tempDirectory) / "shaders")).string();
+			std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 			m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 		}
 
@@ -1043,17 +1079,24 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					// transition
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE, GetNodeName(resourceNode).c_str()) });
 
-					ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
-					if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
+					if (VRSSupportLevel() == D3D12_VARIABLE_SHADING_RATE_TIER_2)
 					{
-						m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
-						return false;
+						ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
+						if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
+						{
+							m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
+							return false;
+						}
+
+						// Set the shading rate image
+						VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
+
+						VRSCommandList->Release();
 					}
-
-					// Set the shading rate image
-					VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
-
-					VRSCommandList->Release();
+					else
+					{
+						m_logFn(LogLevel::Error, "Draw call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
+					}
 				}
 			}
 		}
@@ -1245,6 +1288,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					ss << "color target " << i << " is size (" << textureMipSize[0] << ", " << textureMipSize[1] << ", " << textureMipSize[2] << ")"
 						" which mismatches a previously seen render target size of (" << renderTargetSize[0] << ", " << renderTargetSize[1] << ", " << renderTargetSize[2] << ")";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -1299,6 +1343,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 							ss << "depth target is size (" << textureMipSize[0] << ", " << textureMipSize[1] << ", " << textureMipSize[2] << ")"
 								" which mismatches a previously seen render target size of (" << renderTargetSize[0] << ", " << renderTargetSize[1] << ", " << renderTargetSize[2] << ")";
 							runtimeData.m_renderGraphText = ss.str();
+                            runtimeData.m_inErrorState = true;
 							return true;
 						}
 
@@ -1574,6 +1619,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		m_commandList->OMSetStencilRef(node.stencilRef);
 
 		// variable rate shading - set sparse sampling
+		if (VRSSupportLevel() > D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED)
 		{
 			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
@@ -1683,9 +1729,24 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				return false;
 			}
 
+			// Verify numthreads for amplication shader if it exists
+			if (node.amplificationShader.shader && (node.amplificationShader.shader->NumThreads[0] == 0 || node.amplificationShader.shader->NumThreads[1] == 0 || node.amplificationShader.shader->NumThreads[2] == 0))
+			{
+				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run amplification shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.amplificationShader.shader->NumThreads[0], node.amplificationShader.shader->NumThreads[1], node.amplificationShader.shader->NumThreads[2]);
+				return false;
+			}
+
+			// Verify numthreads for mesh shader if it exists
+			if (node.meshShader.shader && (node.meshShader.shader->NumThreads[0] == 0 || node.meshShader.shader->NumThreads[1] == 0 || node.meshShader.shader->NumThreads[2] == 0))
+			{
+				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run mesh shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.meshShader.shader->NumThreads[0], node.meshShader.shader->NumThreads[1], node.meshShader.shader->NumThreads[2]);
+				return false;
+			}
+
 			// do numThreads calculations. Divide by numThreads but round up.
+			const std::array<int, 3>& numThreads = node.amplificationShader.shader ? node.amplificationShader.shader->NumThreads : node.meshShader.shader->NumThreads;
 			for (int i = 0; i < 3; ++i)
-				dispatchSize[i] = (dispatchSize[i] + node.meshShader.shader->NumThreads[i] - 1) / node.meshShader.shader->NumThreads[i];
+				dispatchSize[i] = (dispatchSize[i] + numThreads[i] - 1) / numThreads[i];
 
 			ID3D12GraphicsCommandList6* meshCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&meshCommandList))))
@@ -1699,10 +1760,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			meshCommandList->Release();
 
 			ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
-			if (node.amplificationShader.shader)
-				ss << "\nAmplification NumThreads: (" << node.amplificationShader.shader->NumThreads[0] << ", " << node.amplificationShader.shader->NumThreads[1] << ", " << node.amplificationShader.shader->NumThreads[2] << ")";
-			else
-				ss << "\nMesh NumThreads: (" << node.meshShader.shader->NumThreads[0] << ", " << node.meshShader.shader->NumThreads[1] << ", " << node.meshShader.shader->NumThreads[2] << ")";
+			ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
 		}
 		// else if we have an index buffer, do DrawIndexedInstanced
 		else if (node.indexBuffer.resourceNodeIndex != -1)
@@ -1718,6 +1776,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		}
 
 		// variable rate shading - set it back to dense sampling
+		if (VRSSupportLevel() > D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED)
 		{
 			ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
 			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
@@ -1727,7 +1786,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			}
 
 			VRSCommandList->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
-			VRSCommandList->RSSetShadingRateImage(nullptr);
+
+			if (VRSSupportLevel() == D3D12_VARIABLE_SHADING_RATE_TIER_2)
+				VRSCommandList->RSSetShadingRateImage(nullptr);
 
 			VRSCommandList->Release();
 		}

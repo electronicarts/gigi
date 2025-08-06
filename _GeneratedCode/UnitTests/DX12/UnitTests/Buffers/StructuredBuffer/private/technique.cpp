@@ -65,16 +65,19 @@ namespace StructuredBuffer
             if(!DX12Utils::MakeRootSig(device, ranges, 2, samplers, 0, &ContextInternal::computeShader_csmain_rootSig, (c_debugNames ? L"csmain" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "__GigiDispatchMultiply", "uint3(1,1,1)" },
-                { "__GigiDispatchDivide", "uint3(1,1,1)" },
-                { "__GigiDispatchPreAdd", "uint3(0,0,0)" },
-                { "__GigiDispatchPostAdd", "uint3(0,0,0)" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "StructuredBuffer.hlsl";
+            shaderCompilationInfo.entryPoint = "csmain";
+            shaderCompilationInfo.shaderModel = "cs_6_1";
+            shaderCompilationInfo.debugName = (c_debugNames ? "csmain" : "");
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
-            if(!DX12Utils::MakeComputePSO_DXC(device, Context::s_techniqueLocation.c_str(), L"shaders/StructuredBuffer.hlsl", "csmain", "cs_6_1", defines,
-               ContextInternal::computeShader_csmain_rootSig, &ContextInternal::computeShader_csmain_pso, c_debugShaders, (c_debugNames ? L"csmain" : nullptr), Context::LogFn))
+            if(!DX12Utils::MakeComputePSO_DXC(device, shaderCompilationInfo,
+               ContextInternal::computeShader_csmain_rootSig, &ContextInternal::computeShader_csmain_pso, Context::LogFn))
                 return false;
         }
 
@@ -778,8 +781,8 @@ namespace StructuredBuffer
 
         // Shader Constants: _csmainCB
         {
-            context->m_internal.constantBuffer__csmainCB_cpu.frameDeltaTime = context->m_internal.variable_frameDeltaTime;
-            context->m_internal.constantBuffer__csmainCB_cpu.frameIndex = context->m_internal.variable_frameIndex;
+            context->m_internal.constantBuffer__csmainCB_cpu.frameDeltaTime = context->m_input.variable_frameDeltaTime;
+            context->m_internal.constantBuffer__csmainCB_cpu.frameIndex = context->m_input.variable_frameIndex;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__csmainCB, context->m_internal.constantBuffer__csmainCB_cpu, Context::LogFn);
         }
 

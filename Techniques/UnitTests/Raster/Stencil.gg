@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "Stencil",
-    "version": "0.98b",
+    "version": "1.0",
     "variables": [
         {
             "name": "MouseState",
@@ -315,5 +315,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Color"
+    }
 }

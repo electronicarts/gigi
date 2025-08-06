@@ -121,12 +121,12 @@ namespace simpleRaster2
 
     ID3D12Resource* Context::GetPrimaryOutputTexture()
     {
-        return nullptr;
+        return m_output.texture_Color_Buffer;
     }
 
     D3D12_RESOURCE_STATES Context::GetPrimaryOutputTextureState()
     {
-        return D3D12_RESOURCE_STATE_COMMON;
+        return m_output.c_texture_Color_Buffer_endingState;
     }
 
     void OnNewFrame(int framesInFlight)
@@ -807,7 +807,7 @@ namespace simpleRaster2
                  int dsvIndex = context->GetDSV(device, context->m_output.texture_Depth_Buffer, context->m_output.texture_Depth_Buffer_format, D3D12_DSV_DIMENSION_TEXTURE2D, 0, 0, "simpleRaster2.Depth_Buffer");
                  if (dsvIndex == -1)
                      Context::LogFn(LogLevel::Error, "Could not get DSV for simpleRaster2.Depth_Buffer");
-                commandList->ClearDepthStencilView(s_heapAllocationTrackerDSV.GetCPUHandle(dsvIndex), clearFlags, 1.000000f, 0, 0, nullptr);
+                commandList->ClearDepthStencilView(s_heapAllocationTrackerDSV.GetCPUHandle(dsvIndex), clearFlags, 0.000000f, 0, 0, nullptr);
             }
 
             int renderWidth = context->m_output.texture_Color_Buffer_size[0];
@@ -1040,15 +1040,25 @@ namespace simpleRaster2
             if (c_debugNames)
                 m_internal.drawCall_Rasterize_rootSig->SetName(L"Rasterize");
 
-            D3D_SHADER_MACRO* definesVS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoVS;
+            shaderCompilationInfoVS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRaster_VS.hlsl";
+            shaderCompilationInfoVS.entryPoint = "VSMain";
+            shaderCompilationInfoVS.shaderModel = "vs_6_1";
+            shaderCompilationInfoVS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoVS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/simpleRaster_VS.hlsl", "VSMain", "vs_6_1", definesVS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoVS, Context::LogFn);
             if (byteCodeVS.size() == 0)
                 return false;
 
-            D3D_SHADER_MACRO* definesPS = nullptr;
+            ShaderCompilationInfo shaderCompilationInfoPS;
+            shaderCompilationInfoPS.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simpleRaster_PS.hlsl";
+            shaderCompilationInfoPS.entryPoint = "PSMain";
+            shaderCompilationInfoPS.shaderModel = "ps_6_1";
+            shaderCompilationInfoPS.debugName = (c_debugNames ? "Rasterize" : "");
+            if (c_debugShaders) shaderCompilationInfoPS.flags |= ShaderCompilationFlags::Debug;
 
-            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/simpleRaster_PS.hlsl", "PSMain", "ps_6_1", definesPS, c_debugShaders, Context::LogFn);
+            std::vector<unsigned char> byteCodePS = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfoPS, Context::LogFn);
             if (byteCodePS.size() == 0)
                 return false;
 
@@ -1145,7 +1155,7 @@ namespace simpleRaster2
             };
 
             psoDesc.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
-            psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
+            psoDesc.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_GREATER;
             psoDesc.SampleMask = UINT_MAX;
             psoDesc.PrimitiveTopologyType = D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 

@@ -703,6 +703,18 @@ static PyObject* Python_SetCameraPos(PyObject* self, PyObject* args)
     return Py_None;
 }
 
+static PyObject* Python_SetCameraFOV(PyObject* self, PyObject* args)
+{
+    float fov = 0.0f;
+    if (!PyArg_ParseTuple(args, "f:Python_SetCameraFOV", &fov))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraFOV(fov);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject* Python_SetCameraAltitudeAzimuth(PyObject* self, PyObject* args)
 {
     float altitude = 0.0f;
@@ -955,6 +967,11 @@ static PyObject* Python_GetShaderAssertMsg(PyObject* self, PyObject* args)
     return Py_BuildValue("s", msg.c_str());
 }
 
+static PyObject* Python_GetAppCommandLine(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("s", g_interface->GetAppCommandLine().c_str());
+}
+
 // Enum FromString
 #include "external/df_serialize/_common.h"
 #define ENUM_BEGIN(_NAME, _DESCRIPTION) \
@@ -1088,6 +1105,7 @@ void PythonInit(PythonInterface* interface)
         {"SetImportedTextureBinaryFormat", Python_SetImportedTextureBinaryFormat, METH_VARARGS, "Sets the format of the binary file."},
         {"SetFrameDeltaTime", Python_SetFrameDeltaTime, METH_VARARGS, "Set the frame delta time, in seconds. Useful for recording videos by setting a fixed frame rate. Clear by setting to 0."},
         {"SetCameraPos", Python_SetCameraPos, METH_VARARGS, "Set the camera position"},
+        {"SetCameraFOV", Python_SetCameraFOV, METH_VARARGS, "Set the camera field of view"},
         {"SetCameraAltitudeAzimuth", Python_SetCameraAltitudeAzimuth, METH_VARARGS, "Set the camera altitude azimuth"},
         {"SetCameraNearFarZ", Python_SetCameraNearFarZ, METH_VARARGS, "Set the near and far plane"},
         {"SetCameraFlySpeed", Python_SetCameraFlySpeed, METH_VARARGS, "Set the fly speed of the camera"},
@@ -1108,6 +1126,7 @@ void PythonInit(PythonInterface* interface)
         {"GetShaderAssertFormatString", Python_GetShaderAssertFormatString, METH_VARARGS, "Returns the format string of the specified shader assert."},
         {"GetShaderAssertDisplayName", Python_GetShaderAssertDisplayName, METH_VARARGS, "Returns the display name of the specified shader assert."},
         {"GetShaderAssertMsg", Python_GetShaderAssertMsg, METH_VARARGS, "Returns the message of the specified assert."},
+        {"GetAppCommandLine", Python_GetAppCommandLine, METH_VARARGS, "Returns the command line arguments without the executable name."},
         // Enum FromString and ToString functions
         #include "external/df_serialize/_common.h"
         #define ENUM_BEGIN(_NAME, _DESCRIPTION) \

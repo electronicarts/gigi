@@ -103,17 +103,18 @@ namespace TextureCubeRW_RGS
             if(!DX12Utils::MakeRootSig(device, ranges, 4, samplers, 1, &ContextInternal::rayShader_RW_rootSig, (c_debugNames ? L"RW" : nullptr), Context::LogFn))
                 return false;
 
-            D3D_SHADER_MACRO defines[] = {
-                { "MAX_RECURSION_DEPTH", "3" },
-                { "RT_HIT_GROUP_COUNT", "0" },
-                { nullptr, nullptr }
-            };
+            ShaderCompilationInfo shaderCompilationInfo;
+            shaderCompilationInfo.shaderModel = "lib_6_3";
+            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+                shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH","3");
+                shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT","0");
 
             // Compile shaders
             std::vector<unsigned char> shaderCode[1];
 
             // Compile RTRayGen : TextureCubeRW_RGS.hlsl rgsmain()
-            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(Context::s_techniqueLocation.c_str(), L"shaders/TextureCubeRW_RGS.hlsl", "", "lib_6_3", defines, c_debugShaders, Context::LogFn);
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "TextureCubeRW_RGS.hlsl";
+            shaderCode[0] = DX12Utils::CompileShaderToByteCode_DXC(shaderCompilationInfo, Context::LogFn);
             if (shaderCode[0].empty())
                 return false;
 

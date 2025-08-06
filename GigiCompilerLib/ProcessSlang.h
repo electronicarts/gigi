@@ -5,6 +5,10 @@
 
 #pragma once
 
+#include <vector>
 #include <string>
 
-bool ProcessWithSlang(std::string& source, const char* fileName, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const char* workingDirectory);
+enum class ShaderLanguage;
+struct SlangOptions;
+
+bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage destinationLanguage, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const std::vector<std::string>& includeDirectories, const SlangOptions& options);

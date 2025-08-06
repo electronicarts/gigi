@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "HelloWorld",
-    "version": "0.98b",
+    "version": "0.99b",
     "variables": [
         {
             "name": "MouseState",
@@ -109,7 +109,10 @@
                 {
                     "name": "Output",
                     "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
                 }
             ]
         }
@@ -162,5 +165,8 @@
                 }
             }
         }
-    ]
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
 }

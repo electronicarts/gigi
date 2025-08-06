@@ -113,4 +113,7 @@
   <ItemGroup>
     <Image Include="..\GigiBrowser.ico" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\.editorconfig" />
+  </ItemGroup>
 </Project>
