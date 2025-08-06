@@ -676,6 +676,12 @@
     <None Include="Backends\Interpreter\templates\ggconfig.json">
       <Filter>Backends\Interpreter\templates</Filter>
     </None>
+    <None Include="Backends\DX12\nodes\node_reroute.inl">
+      <Filter>Backends\DX12\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_reroute.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Backends\DX12\templates\Module\readme.txt">
