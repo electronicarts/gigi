@@ -13,3 +13,4 @@
 #include "node_action_drawCall.inl"
 #include "node_action_subGraph.inl"
 #include "node_action_barrier.inl"
+#include "node_reroute.inl"

@@ -1191,6 +1191,37 @@ struct ReferenceFixupVisitor
         return true;
     }
 
+	bool Visit(RenderGraphNode_Reroute& data, const std::string& path)
+	{
+		if (visitedNode[data.nodeIndex])
+			return true;
+		visitedNode[data.nodeIndex] = true;
+
+		for (int connectionIndex = 0; connectionIndex < (int)data.connections.size(); ++connectionIndex)
+		{
+			// set the source pin
+			NodePinConnection& connection = data.connections[connectionIndex];
+			connection.srcNodePinIndex = connectionIndex;
+
+			// get the dest node
+			connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+			if (connection.dstNodeIndex == -1)
+			{
+				Assert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+				return false;
+			}
+
+			// get the dest node pin
+			connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+			if (connection.dstNodePinIndex == -1)
+			{
+				Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+				return false;
+			}
+		}
+		return true;
+	}
+
     bool Visit(RenderGraphNode_Action_CopyResource& data, const std::string& path)
     {
         if (visitedNode[data.nodeIndex])
@@ -2193,6 +2224,20 @@ struct SanitizeVisitor
         );
         return true;
     }
+	bool Visit(RenderGraphNode_Reroute& data, const std::string& path)
+	{
+		data.connections.erase(
+			std::remove_if(
+				data.connections.begin(), data.connections.end(),
+				[](const NodePinConnection& connection)
+				{
+					return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+				}
+			),
+			data.connections.end()
+		);
+		return true;
+	}
 
     bool Visit(WebGPU_RWTextureSplit& data, const std::string& path)
     {

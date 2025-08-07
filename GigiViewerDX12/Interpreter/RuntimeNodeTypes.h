@@ -245,6 +245,9 @@ struct RuntimeTypes
 	struct RenderGraphNode_Action_Barrier : public RenderGraphNode_Base
 	{
 	};
+
+	struct RenderGraphNode_Reroute : public RenderGraphNode_Base
+	{};
 };
 
 inline RuntimeTypes::ViewableResource::Type TextureDimensionTypeToViewableResourceType(TextureDimensionType dimensionType)

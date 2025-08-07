@@ -278,7 +278,7 @@ void OptimizeAndFlattenRenderGraph(RenderGraph& renderGraph)
                     std::remove_if(candidate.flattenedNodeList.begin(), candidate.flattenedNodeList.end(),
                         [&candidate] (int nodeIndex)
                         {
-                            return candidate.nodes[nodeIndex]._index == RenderGraphNode::c_index_actionBarrier;
+                            return candidate.nodes[nodeIndex]._index == RenderGraphNode::c_index_actionBarrier || candidate.nodes[nodeIndex]._index == RenderGraphNode::c_index_reroute;
                         }
                     ),
                     candidate.flattenedNodeList.end()

@@ -182,6 +182,7 @@
     <ClCompile Include="Backends\ProcessShader_HLSL.cpp" />
     <ClCompile Include="Backends\Shared.cpp" />
     <None Include="..\.editorconfig" />
+    <None Include="Backends\DX12\nodes\node_reroute.inl" />
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -229,6 +230,7 @@
     <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl" />
+    <None Include="Backends\WebGPU\nodes\node_reroute.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_buffer.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_shaderConstants.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_texture.inl" />
