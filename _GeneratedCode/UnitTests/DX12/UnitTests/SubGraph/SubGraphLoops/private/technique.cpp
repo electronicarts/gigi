@@ -1125,9 +1125,9 @@ namespace SubGraphLoops
             commandList->SetPipelineState(ContextInternal::computeShader_FilterSub_Iteration_0_DoBlur_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_output.texture_FilterSub_Iteration_0_Output, context->m_output.texture_FilterSub_Iteration_0_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_output.texture_FilterSub_Iteration_0_Output, context->m_output.texture_FilterSub_Iteration_0_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1186,13 +1186,8 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_0_Output->GetDesc().Width;
-            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_0_Output);
-            else
-                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_0_Output, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_0_Output);
 
             if(context->m_profile)
             {
@@ -1244,9 +1239,9 @@ namespace SubGraphLoops
             commandList->SetPipelineState(ContextInternal::computeShader_FilterSub_Iteration_1_DoBlur_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_output.texture_FilterSub_Iteration_1_Output, context->m_output.texture_FilterSub_Iteration_1_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_output.texture_FilterSub_Iteration_1_Output, context->m_output.texture_FilterSub_Iteration_1_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1305,13 +1300,8 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_1_Output->GetDesc().Width;
-            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_1_Output);
-            else
-                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_1_Output, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_1_Output);
 
             if(context->m_profile)
             {
@@ -1363,9 +1353,9 @@ namespace SubGraphLoops
             commandList->SetPipelineState(ContextInternal::computeShader_FilterSub_Iteration_2_DoBlur_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_output.texture_FilterSub_Iteration_2_Output, context->m_output.texture_FilterSub_Iteration_2_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_output.texture_FilterSub_Iteration_2_Output, context->m_output.texture_FilterSub_Iteration_2_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1424,13 +1414,8 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_2_Output->GetDesc().Width;
-            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_2_Output);
-            else
-                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_2_Output, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_2_Output);
 
             if(context->m_profile)
             {
@@ -1482,9 +1467,9 @@ namespace SubGraphLoops
             commandList->SetPipelineState(ContextInternal::computeShader_FilterSub_Iteration_3_DoBlur_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_output.texture_FilterSub_Iteration_3_Output, context->m_output.texture_FilterSub_Iteration_3_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_output.texture_FilterSub_Iteration_3_Output, context->m_output.texture_FilterSub_Iteration_3_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1543,13 +1528,8 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_3_Output->GetDesc().Width;
-            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_3_Output);
-            else
-                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_3_Output, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_3_Output);
 
             if(context->m_profile)
             {
@@ -1601,9 +1581,9 @@ namespace SubGraphLoops
             commandList->SetPipelineState(ContextInternal::computeShader_FilterSub_Iteration_4_DoBlur_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_output.texture_FilterSub_Iteration_4_Output, context->m_output.texture_FilterSub_Iteration_4_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_output.texture_FilterSub_Iteration_4_Output, context->m_output.texture_FilterSub_Iteration_4_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1662,13 +1642,8 @@ namespace SubGraphLoops
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_output.texture_FilterSub_Iteration_4_Output->GetDesc().Width;
-            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_4_Output);
-            else
-                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_FilterSub_Iteration_4_Output, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_FilterSub_Iteration_4_Output);
 
             if(context->m_profile)
             {

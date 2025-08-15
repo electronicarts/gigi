@@ -76,19 +76,20 @@
         {
             "name": "BoxBlur",
             "fileName": "boxblur.hlsl",
+            "language": "Slang",
             "resources": [
                 {
                     "name": "Input",
-                    "type": "Texture",
                     "access": "SRV",
+                    "type": "Texture",
                     "buffer": {
                         "PODAsStructuredBuffer": false
                     }
                 },
                 {
                     "name": "Output",
-                    "type": "Texture",
                     "access": "UAV",
+                    "type": "Texture",
                     "buffer": {
                         "PODAsStructuredBuffer": false
                     }

@@ -47,7 +47,7 @@ namespace SlangAutoDiff
             float2 _padding0 = {0.000000f, 0.000000f};  // Padding
         };
 
-        struct Struct__DescendCB
+        struct Struct__Descend_0CB
         {
             float LearningRate = 0.100000f;
             float MaximumStepSize = 0.010000f;
@@ -73,8 +73,8 @@ namespace SlangAutoDiff
         Struct__RenderCB constantBuffer__RenderCB_cpu;
         ID3D12Resource* constantBuffer__RenderCB = nullptr;
 
-        Struct__DescendCB constantBuffer__DescendCB_cpu;
-        ID3D12Resource* constantBuffer__DescendCB = nullptr;
+        Struct__Descend_0CB constantBuffer__Descend_0CB_cpu;
+        ID3D12Resource* constantBuffer__Descend_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_GradientDescend_pso;
         static ID3D12RootSignature* computeShader_GradientDescend_rootSig;

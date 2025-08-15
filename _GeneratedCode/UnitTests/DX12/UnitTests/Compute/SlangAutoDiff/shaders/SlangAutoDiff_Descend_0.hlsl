@@ -14,7 +14,7 @@ RWBuffer<float > Data_0 : register(u0);
 
 
 #line 4
-struct Struct_DescendCB_0
+struct Struct_Descend_0CB_0
 {
     float LearningRate_0;
     float MaximumStepSize_0;
@@ -23,9 +23,9 @@ struct Struct_DescendCB_0
 };
 
 
-cbuffer _DescendCB_0 : register(b0)
+cbuffer _Descend_0CB_0 : register(b0)
 {
-    Struct_DescendCB_0 _DescendCB_0;
+    Struct_Descend_0CB_0 _Descend_0CB_0;
 }
 
 #line 7960 "hlsl.meta.slang"
@@ -317,7 +317,7 @@ void csmain(uint3 DTid_0 : SV_DispatchThreadID)
     {
 
 #line 32
-        if(i_0 < (_DescendCB_0.NumGaussians_0))
+        if(i_0 < (_Descend_0CB_0.NumGaussians_0))
         {
         }
         else
@@ -365,7 +365,7 @@ void csmain(uint3 DTid_0 : SV_DispatchThreadID)
         float2 dFLocal_0 = _S48;
 
 
-        if(bool(_DescendCB_0.UseBackwardAD_0))
+        if(bool(_Descend_0CB_0.UseBackwardAD_0))
         {
 
             float height_0 = GetHeightAtPos_0(_S57, _S58, gaussPos_3, gaussSigma_3);
@@ -431,15 +431,15 @@ void csmain(uint3 DTid_0 : SV_DispatchThreadID)
     }
 
 #line 94
-    float2 adjust_0 = - ballPosGradient_0 * _DescendCB_0.LearningRate_0;
+    float2 adjust_0 = - ballPosGradient_0 * _Descend_0CB_0.LearningRate_0;
 
 #line 94
     float2 adjust_1;
-    if((length(adjust_0)) > (_DescendCB_0.MaximumStepSize_0))
+    if((length(adjust_0)) > (_Descend_0CB_0.MaximumStepSize_0))
     {
 
 #line 95
-        adjust_1 = normalize(adjust_0) * _DescendCB_0.MaximumStepSize_0;
+        adjust_1 = normalize(adjust_0) * _Descend_0CB_0.MaximumStepSize_0;
 
 #line 95
     }
@@ -452,7 +452,7 @@ void csmain(uint3 DTid_0 : SV_DispatchThreadID)
 #line 95
     }
 
-#line 100
+#line 101
     float2 ballPos_1 = clamp(ballPos_0 + adjust_1, float2(0.00100000004749745f, 0.00100000004749745f), float2(0.99000000953674316f, 0.99000000953674316f));
 
 

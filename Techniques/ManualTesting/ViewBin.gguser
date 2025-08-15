@@ -1,0 +1,19 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewType": 5,
+        "resourceViewNodeIndex": 0,
+        "resourceViewResourceIndex": 0,
+        "importedResources": [
+            {
+                "nodeName": "TheBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\UnitTests\\_GoldImages\\Buffers\\bufferViewDescriptorTable\\0.bin",
+                    "type": "Float",
+                    "BLASOpaque": true
+                }
+            }
+        ]
+    }
+}

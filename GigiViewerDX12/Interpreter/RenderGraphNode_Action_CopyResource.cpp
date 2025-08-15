@@ -18,6 +18,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		runtimeData.m_renderGraphText = ss.str();
 
 		bool executionConditionMet = EvaluateCondition(node.condition);
+        runtimeData.m_conditionIsTrue = executionConditionMet;
 		if (!executionConditionMet)
 			return true;
 
@@ -54,15 +55,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					return true;
 				}
 
-				// Compare sizes using count * stride. We don't use m_size because that may be padded for alignment reasons.
-				int srcCopySize = srcRT.m_count * srcRT.m_stride;
-				int destCopySize = destRT.m_count * destRT.m_stride;
-				if (srcCopySize != destCopySize)
-				{
-					m_logFn(LogLevel::Error, "Could not copy buffer \"%s\" to buffer \"%s\" because they are different sizes.\n", srcNodeName.c_str(), destNodeName.c_str());
-					return false;
-				}
-
 				// Allow copies if the structs are compatible (same number of fields, and same type of fields, in same order)
 				bool structsCompatible = true;
 				if (srcRT.m_structIndex != destRT.m_structIndex)
@@ -92,22 +84,28 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					return false;
 				}
 
-				runtimeData.HandleViewableBuffer(*this, (node.name + ".Source").c_str(), srcRT.m_resource, srcRT.m_format, srcRT.m_formatCount, srcRT.m_structIndex, srcRT.m_size, srcRT.m_stride, srcRT.m_count, false, false);
-				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (Before)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, false);
+				runtimeData.HandleViewableBuffer(*this, (node.name + ".Source").c_str(), srcRT.m_resource, srcRT.m_format, srcRT.m_formatCount, srcRT.m_structIndex, srcRT.m_size, srcRT.m_stride, srcRT.m_count, false, false, 0, 0, false);
+				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (Before)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, false, 0, 0, false);
 
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(srcRT.m_resource, D3D12_RESOURCE_STATE_COPY_SOURCE));
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(destRT.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
 				m_transitions.Flush(m_commandList);
 
-				// If they are the same size, there is no padding difference, and they can be coppied in full.
-				if (srcRT.m_size == destRT.m_size)
-					m_commandList->CopyResource(destRT.m_resource, srcRT.m_resource);
-				// Else, they would be the same size if not for the padding, so we need to specify the unpadded amount to actually copy over.
-				else
-					m_commandList->CopyBufferRegion(destRT.m_resource, 0, srcRT.m_resource, 0, srcCopySize);
+                // Do the copy. Copy as much as we can, within the specified parameters.
+                {
+                    int srcCopyableBytes = srcRT.m_size - (int)node.bufferToBuffer.srcBegin;
+                    int destCopyableBytes = destRT.m_size - (int)node.bufferToBuffer.destBegin;
 
-				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (After)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, true);
-			}
+                    int copySize = min(srcCopyableBytes, destCopyableBytes);
+
+                    if (node.bufferToBuffer.size > 0)
+                        copySize = min(copySize, (int)node.bufferToBuffer.size);
+
+                    m_commandList->CopyBufferRegion(destRT.m_resource, node.bufferToBuffer.destBegin, srcRT.m_resource, node.bufferToBuffer.srcBegin, copySize);
+                }
+
+                runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (After)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, true, 0, 0, false);
+            }
 			// copy texture to texture
 			else
 			{
@@ -195,7 +193,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					return false;
 				}
 
-				runtimeData.HandleViewableBuffer(*this, (node.name + ".Source").c_str(), srcRT.m_resource, srcRT.m_format, srcRT.m_formatCount, srcRT.m_structIndex, srcRT.m_size, srcRT.m_stride, srcRT.m_count, false, false);
+				runtimeData.HandleViewableBuffer(*this, (node.name + ".Source").c_str(), srcRT.m_resource, srcRT.m_format, srcRT.m_formatCount, srcRT.m_structIndex, srcRT.m_size, srcRT.m_stride, srcRT.m_count, false, false, 0, 0, false);
 				runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(dest.resourceTexture.dimension), (node.name + ".Dest (Before)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_size, destRT.m_numMips, false, false);
 
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(srcRT.m_resource, D3D12_RESOURCE_STATE_COPY_SOURCE));
@@ -259,7 +257,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				}
 
 				runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(src.resourceTexture.dimension), (node.name + ".Source").c_str(), srcRT.m_resource, srcRT.m_format, srcRT.m_size, srcRT.m_numMips, false, false);
-				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (Before)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, false);
+				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (Before)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, false, 0, 0, false);
 
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(srcRT.m_resource, D3D12_RESOURCE_STATE_COPY_SOURCE));
 				m_transitions.Transition(TRANSITION_DEBUG_INFO(destRT.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
@@ -282,7 +280,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 				m_commandList->CopyTextureRegion(&destLoc, 0, 0, 0, &srcLoc, nullptr);
 
-				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (After)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, true);
+				runtimeData.HandleViewableBuffer(*this, (node.name + ".Dest (After)").c_str(), destRT.m_resource, destRT.m_format, destRT.m_formatCount, destRT.m_structIndex, destRT.m_size, destRT.m_stride, destRT.m_count, false, true, 0, 0, false);
 			}
 		}
 	}

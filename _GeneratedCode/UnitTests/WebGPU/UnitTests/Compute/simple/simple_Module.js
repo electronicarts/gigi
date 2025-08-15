@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Simple", node "DoSimpleCS"
-static ShaderCode_DoSimpleCS_Simple = `
+// Shader code for Compute shader "Simple_0", node "DoSimpleCS"
+static ShaderCode_DoSimpleCS_Simple_0 = `
 @binding(1) @group(0) var InputReadOnly : texture_storage_2d</*(InputReadOnly_format)*/, read>;
 
 @binding(0) @group(0) var Input : texture_storage_2d</*(Input_format)*/, write>;
@@ -162,7 +162,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_DoSimpleCS = newHash;
 
-            let shaderCode = class_simple.ShaderCode_DoSimpleCS_Simple;
+            let shaderCode = class_simple.ShaderCode_DoSimpleCS_Simple_0;
             shaderCode = shaderCode.replace("/*(Input_format)*/", Shared.GetNonSRGBFormat(this.texture_Input_format));
             shaderCode = shaderCode.replace("/*(InputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_DoSimpleCS_Input_ReadOnly_format));
 

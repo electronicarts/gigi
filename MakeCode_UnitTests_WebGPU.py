@@ -69,9 +69,16 @@ unsupportedTests = [
     "Textures\\Save",
     "Compute\\OutputToMultipleInputs",
     "SubGraph\\SetVarNode",
+    "Buffers\\bufferViewDescriptorTable",
 
     # Frostbite only
     "CopyResource\\CopyResourceTest_FB",
+
+    # Need to implement buffer view begin / size
+    "Buffers\\buffertest_viewOffsetCS",
+
+    # Just need to make it work
+    "CopyResource\\CopyPartialBuffer",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

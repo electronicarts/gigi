@@ -49,6 +49,10 @@ struct RuntimeTypes
 		bool m_isResultOfWrite = false;
 		int m_structIndex = -1; // can be used by buffers
 
+        // For views of buffers. In item count / indices of data type.
+        unsigned int m_bufferViewBegin = 0;
+        unsigned int m_bufferViewCount = 0;
+
 		// If true, this will be updated. else, it will not.
 		// The creator of this struct will set this to false every execution, and it is up to the consumer to set this to true as long as it is wanted.
 		bool m_wantsToBeViewed = false;
@@ -66,26 +70,51 @@ struct RuntimeTypes
 			m_viewableResourceIndex = 0;
 			m_renderGraphText = ""; // clear the text every frame
 		}
-		void HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite);
+		void HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite, unsigned int bufferViewBegin, unsigned int bufferViewCount);
 		void HandleViewableTexture(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, const int resourceSize[3], int numMips, bool hideFromUI, bool isResultOfWrite)
 		{
-			HandleViewableResource(interpreter, type, displayName, resource, resourceFormat, 1, -1, resourceSize, numMips, 0, 0, hideFromUI, isResultOfWrite);
+			HandleViewableResource(interpreter, type, displayName, resource, resourceFormat, 1, -1, resourceSize, numMips, 0, 0, hideFromUI, isResultOfWrite, 0, 0);
 		}
 		void HandleViewableConstantBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, int resourceSize, int structIndex, bool hideFromUI, bool isResultOfWrite)
 		{
 			int size[3] = { resourceSize, 1, 1 };
-			HandleViewableResource(interpreter, ViewableResource::Type::ConstantBuffer, displayName, resource, DXGI_FORMAT_UNKNOWN, 1, structIndex, size, 1, 0, 0, hideFromUI, isResultOfWrite);
+			HandleViewableResource(interpreter, ViewableResource::Type::ConstantBuffer, displayName, resource, DXGI_FORMAT_UNKNOWN, 1, structIndex, size, 1, 0, 0, hideFromUI, isResultOfWrite, 0, 0);
 		}
-		void HandleViewableBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, int resourceSize, int stride, int count, bool hideFromUI, bool isResultOfWrite)
-		{
+        void HandleViewableBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, int resourceSize, int stride, int count, bool hideFromUI, bool isResultOfWrite, unsigned int bufferViewBegin, unsigned int bufferViewSize, bool bufferViewInBytes)
+        {
+            // Calculate the view as item count
+            unsigned int bufferViewCount = 0;
+            {
+                unsigned int unitsDivider = 1;
+                if (bufferViewInBytes)
+                {
+                    unitsDivider = (stride > 0)
+                        ? stride
+                        : Get_DXGI_FORMAT_Info(resourceFormat).bytesPerPixel;
+                    unitsDivider = (unitsDivider > 0) ? unitsDivider : 1;
+                }
+                bufferViewBegin = bufferViewBegin / unitsDivider;
+                bufferViewCount = count;
+
+                if (bufferViewCount >= bufferViewBegin)
+                    bufferViewCount -= bufferViewBegin;
+                else
+                    bufferViewCount = 0;
+
+                unsigned int bufferViewNumElements = bufferViewSize / unitsDivider;
+                if (bufferViewNumElements > 0 && bufferViewNumElements < bufferViewCount)
+                    bufferViewCount = bufferViewNumElements;
+            }
+
 			int size[3] = { resourceSize, 1, 1 };
-			HandleViewableResource(interpreter, ViewableResource::Type::Buffer, displayName, resource, resourceFormat, resourceFormatCount, structIndex, size, 1, stride, count, hideFromUI, isResultOfWrite);
+			HandleViewableResource(interpreter, ViewableResource::Type::Buffer, displayName, resource, resourceFormat, resourceFormatCount, structIndex, size, 1, stride, count, hideFromUI, isResultOfWrite, bufferViewBegin, bufferViewCount);
 		}
 
 		std::vector<ViewableResource> m_viewableResources;
 		int m_viewableResourceIndex = 0;
 		std::string m_renderGraphText;
         bool m_inErrorState = false;
+        bool m_conditionIsTrue = true;
 	};
 
 	struct RenderGraphNode_Resource_Buffer : public RenderGraphNode_Base

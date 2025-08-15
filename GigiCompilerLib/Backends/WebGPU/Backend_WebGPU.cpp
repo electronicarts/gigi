@@ -1816,7 +1816,7 @@ static void FixupShaderUAVDeclarations(const RenderGraph& renderGraph, const Sha
     }
 }
 
-static void ProcessShaderFile(const RenderGraphNode& node, const Shader& shader, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const char* outFolder, const RenderGraph& renderGraph)
+static void ProcessShaderFile(const std::string& nodeName, const Shader& shader, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const char* outFolder, const RenderGraph& renderGraph)
 {
     if (shader.language == ShaderLanguage::WGSL)
     {
@@ -1846,7 +1846,7 @@ static void ProcessShaderFile(const RenderGraphNode& node, const Shader& shader,
         bool isBVHShader = (shaderTypeIndex == 1);
         bool isNonBVHShader = (usesRT && shaderTypeIndex == 0);
 
-        ProcessShaderOptions_HLSL options(shader, &node);
+        ProcessShaderOptions_HLSL options(shader);
 
         options.m_writeSamplerDefinition =
             [](const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderSampler& sampler)
@@ -1964,57 +1964,11 @@ static void ProcessShaderFile(const RenderGraphNode& node, const Shader& shader,
         options.m_handleGeneralStringReplacement =
             [isBVHShader](std::string& shaderCode, std::unordered_map<std::string, std::ostringstream>& shaderSpecificStringReplacementMap, const ProcessShaderOptions_HLSL& options, const RenderGraph& renderGraph)
             {
-                // Append the shader and node defines as #defines
+                // Append the shader defines as #defines
                 {
                     std::ostringstream defines;
                     for (const ShaderDefine& define : options.m_shader.defines)
                         defines << "#define " << define.name << " " << define.value << "\n";
-
-                    switch (options.m_node->_index)
-                    {
-                        case RenderGraphNode::c_index_actionComputeShader:
-                        {
-                            for (const ShaderDefine& define : options.m_node->actionComputeShader.defines)
-                                defines << "#define " << define.name << " " << define.value << "\n";
-                            break;
-                        }
-
-                        case RenderGraphNode::c_index_actionRayShader:
-                        {
-                            for (const ShaderDefine& define : options.m_node->actionRayShader.defines)
-                                defines << "#define " << define.name << " " << define.value << "\n";
-                            break;
-                        }
-
-                        case RenderGraphNode::c_index_actionDrawCall:
-                        {
-                            for (const ShaderDefine& define : options.m_node->actionDrawCall.defines)
-                                defines << "#define " << define.name << " " << define.value << "\n";
-                            break;
-                        }
-
-                        // Nothing to do for nodes that don't use shaders
-                        case RenderGraphNode::c_index_actionCopyResource:
-                        case RenderGraphNode::c_index_actionSubGraph:
-                        case RenderGraphNode::c_index_actionBarrier:
-                        {
-                            break;
-                        }
-
-                        // Nothing to do for resource nodes
-                        case RenderGraphNode::c_index_resourceBuffer:
-                        case RenderGraphNode::c_index_resourceShaderConstants:
-                        case RenderGraphNode::c_index_resourceTexture:
-                        {
-                            break;
-                        }
-
-                        default:
-                        {
-                            Assert(false, "Unhandled node type");
-                            break;
-                        }
-                    }
 
                     // GIGI_SCENE_IS_BVH define
                     defines << "#define GIGI_SCENE_IS_BVH " << (isBVHShader ? 1 : 0) << "\n";
@@ -2305,25 +2259,11 @@ static void ProcessShaderFile(const RenderGraphNode& node, const Shader& shader,
             }
         }
 
-        // Prefer to use the node entry point, over the shader entry point, if specified.
-        std::string nodeEntryPoint;
-        switch (node._index)
-        {
-            case RenderGraphNode::c_index_actionComputeShader: nodeEntryPoint = node.actionComputeShader.entryPoint; break;
-            case RenderGraphNode::c_index_actionRayShader: nodeEntryPoint = node.actionRayShader.entryPoint; break;
-            case RenderGraphNode::c_index_actionDrawCall: break;
-            default:
-            {
-                ShowErrorMessage("Unhandled node type in " __FUNCTION__);
-                break;
-            }
-        }
-
         options.m_shader = shaderCopy;
         std::vector<std::string> includeDirectories;
         includeDirectories.push_back(includeDirectory);
         includeDirectories.push_back(includeDirectoryRoot);
-        ProcessShaderToMemory_HLSL(shaderCopy, (nodeEntryPoint.empty() ? shaderCopy.entryPoint.c_str() : nodeEntryPoint.c_str()), ShaderLanguage::WGSL, stringReplacementMap, renderGraph, options, includeDirectories, shaderCode);
+        ProcessShaderToMemory_HLSL(shaderCopy, shaderCopy.entryPoint.c_str(), ShaderLanguage::WGSL, stringReplacementMap, renderGraph, options, includeDirectories, shaderCode);
 
         // Fix up UAV declarations
         FixupShaderUAVDeclarations(renderGraph, shader, shaderCode);
@@ -2337,8 +2277,8 @@ static void ProcessShaderFile(const RenderGraphNode& node, const Shader& shader,
         }
 
         stringReplacementMap["/*$(Shaders)*/"]
-            << "// Shader code for " << shaderTypeDescription << EnumToString(shader.type) << " shader \"" << shader.name << "\", node \"" << GetNodeName(node) << "\"\n"
-            << "static ShaderCode_" << GetNodeName(node) << "_" << shader.name << shaderType << " = `\n" << shaderCode << "`;\n\n";
+            << "// Shader code for " << shaderTypeDescription << EnumToString(shader.type) << " shader \"" << shader.name << "\", node \"" << nodeName << "\"\n"
+            << "static ShaderCode_" << nodeName << "_" << shader.name << shaderType << " = `\n" << shaderCode << "`;\n\n";
     }
 }
 
@@ -2523,30 +2463,30 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             {
                 const RenderGraphNode_Action_ComputeShader& node = nodeBase.actionComputeShader;
                 if (node.shader.shader->copyFile)
-                    ProcessShaderFile(nodeBase, *node.shader.shader, stringReplacementMap, outFolder, renderGraph);
+                    ProcessShaderFile(node.name, *node.shader.shader, stringReplacementMap, outFolder, renderGraph);
                 break;
             }
             case RenderGraphNode::c_index_actionRayShader:
             {
                 const RenderGraphNode_Action_RayShader& node = nodeBase.actionRayShader;
-                ProcessShaderFile(nodeBase, *node.shader.shader, stringReplacementMap, outFolder, renderGraph);
+                ProcessShaderFile(node.name, *node.shader.shader, stringReplacementMap, outFolder, renderGraph);
 
                 for (const RTHitGroup& hitGroup : renderGraph.hitGroups)
                 {
                     if (hitGroup.closestHit.shader && hitGroup.closestHit.shader->copyFile)
-                        ProcessShaderFile(nodeBase, *hitGroup.closestHit.shader, stringReplacementMap, outFolder, renderGraph);
+                        ProcessShaderFile(node.name, *hitGroup.closestHit.shader, stringReplacementMap, outFolder, renderGraph);
 
                     if (hitGroup.anyHit.shader && hitGroup.anyHit.shader->copyFile)
-                        ProcessShaderFile(nodeBase, *hitGroup.anyHit.shader, stringReplacementMap, outFolder, renderGraph);
+                        ProcessShaderFile(node.name, *hitGroup.anyHit.shader, stringReplacementMap, outFolder, renderGraph);
 
                     if (hitGroup.intersection.shader && hitGroup.intersection.shader->copyFile)
-                        ProcessShaderFile(nodeBase, *hitGroup.intersection.shader, stringReplacementMap, outFolder, renderGraph);
+                        ProcessShaderFile(node.name, *hitGroup.intersection.shader, stringReplacementMap, outFolder, renderGraph);
                 }
 
                 for (const Shader& shader : renderGraph.shaders)
                 {
                     if (shader.type == ShaderType::RTMiss && shader.copyFile)
-                        ProcessShaderFile(nodeBase, shader, stringReplacementMap, outFolder, renderGraph);
+                        ProcessShaderFile(node.name, shader, stringReplacementMap, outFolder, renderGraph);
                 }
 
                 break;
@@ -2556,16 +2496,16 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
                 const RenderGraphNode_Action_DrawCall& node = nodeBase.actionDrawCall;
 
                 if(node.amplificationShader.shader && node.amplificationShader.shader->copyFile)
-                    ProcessShaderFile(nodeBase, *node.amplificationShader.shader, stringReplacementMap, outFolder, renderGraph);
+                    ProcessShaderFile(node.name, *node.amplificationShader.shader, stringReplacementMap, outFolder, renderGraph);
 
                 if (node.meshShader.shader && node.meshShader.shader->copyFile)
-                    ProcessShaderFile(nodeBase, *node.meshShader.shader, stringReplacementMap, outFolder, renderGraph);
+                    ProcessShaderFile(node.name, *node.meshShader.shader, stringReplacementMap, outFolder, renderGraph);
 
                 if (node.vertexShader.shader && node.vertexShader.shader->copyFile)
-                    ProcessShaderFile(nodeBase, *node.vertexShader.shader, stringReplacementMap, outFolder, renderGraph);
+                    ProcessShaderFile(node.name, *node.vertexShader.shader, stringReplacementMap, outFolder, renderGraph);
 
                 if (node.pixelShader.shader && node.pixelShader.shader->copyFile)
-                    ProcessShaderFile(nodeBase, *node.pixelShader.shader, stringReplacementMap, outFolder, renderGraph);
+                    ProcessShaderFile(node.name, *node.pixelShader.shader, stringReplacementMap, outFolder, renderGraph);
 
                 break;
             }

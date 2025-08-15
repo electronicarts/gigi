@@ -28,7 +28,7 @@ void RuntimeTypes::RenderGraphNode_Base::OnCompileOK(GigiInterpreterPreviewWindo
 	m_viewableResources.clear();
 }
 
-void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int _resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite)
+void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int _resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite, unsigned int bufferViewBegin, unsigned int bufferViewCount)
 {
 	// View depth stencil format textures as two resources
 	if (resourceFormat == DXGI_FORMAT_D24_UNORM_S8_UINT || resourceFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
@@ -37,10 +37,10 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 		DXGI_FORMAT format2 = (resourceFormat == DXGI_FORMAT_D24_UNORM_S8_UINT) ? DXGI_FORMAT_X24_TYPELESS_G8_UINT : DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
 
 		std::string longerDisplayName = std::string(displayName) + " (Depth)";
-		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format1, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite);
+		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format1, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite, bufferViewBegin, bufferViewCount);
 
 		longerDisplayName = std::string(displayName) + " (Stencil)";
-		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format2, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite);
+		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format2, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite, bufferViewBegin, bufferViewCount);
 
 		return;
 	}
@@ -55,6 +55,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 	res.m_displayName = displayName;
 	res.m_hideFromUI = hideFromUI;
 	res.m_isResultOfWrite = isResultOfWrite;
+    res.m_bufferViewBegin = bufferViewBegin;
+    res.m_bufferViewCount = bufferViewCount;
 
 	// downsize the resource based on mip index
 	int resourceSize[3] = { _resourceSize[0], _resourceSize[1], _resourceSize[2] };

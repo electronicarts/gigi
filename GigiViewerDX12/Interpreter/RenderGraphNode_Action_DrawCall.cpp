@@ -859,6 +859,31 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 						desc.m_count = resourceInfo.m_count;
 					}
 
+                    if (dep.pinIndex < node.linkProperties.size())
+                    {
+                        const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+
+                        unsigned int unitsDivider = 1;
+                        if (linkProperties.bufferViewUnits != MemoryUnitOfMeasurement::Items)
+                        {
+                            unitsDivider = (shaderResourceBuffer.typeStruct.structIndex != -1)
+                                ? (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes
+                                : DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeBytes;
+                            unitsDivider = max(unitsDivider, 1);
+                        }
+
+                        desc.m_firstElement = linkProperties.bufferViewBegin / unitsDivider;
+
+                        if (desc.m_count >= desc.m_firstElement)
+                            desc.m_count -= desc.m_firstElement;
+                        else
+                            desc.m_count = 0;
+
+                        unsigned int bufferViewNumElements = linkProperties.bufferViewSize / unitsDivider;
+                        if (bufferViewNumElements > 0)
+                            desc.m_count = min(desc.m_count, bufferViewNumElements);
+                    }
+
 					desc.m_raw = shader.resources[resourceIndex].buffer.raw;
 				}
 				break;
@@ -940,7 +965,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 	return true;
 }
 
-static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::vector<ShaderDefine>& nodeDefines, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn)
+static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn)
 {
 	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
 
@@ -949,11 +974,6 @@ static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader&
 	shaderCompilationInfo.entryPoint = shader.entryPoint;
 	shaderCompilationInfo.shaderModel = shaderModel;
 	shaderCompilationInfo.defines = shader.defines;
-
-	if (!nodeDefines.empty())
-	{
-		shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), nodeDefines.begin(), nodeDefines.end());
-	}
 
 	if (compileShadersForDebug)
 	{
@@ -1015,16 +1035,16 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		bool compiledOK = true;
 
 		if (node.vertexShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.pixelShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.amplificationShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		if (node.meshShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), node.defines, GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
 
 		// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 		for (const std::string& fileName : allShaderFiles)
@@ -1053,8 +1073,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		}
 
 		// If we aren't supposed to do the draw call, exit out
-		if (!EvaluateCondition(node.condition))
-			return true;
+        if (!EvaluateCondition(node.condition))
+        {
+            runtimeData.m_conditionIsTrue = false;
+            return true;
+        }
+        runtimeData.m_conditionIsTrue = true;
 
 		// Queue up transitions, so we only do them if we actually execute the node
 		std::vector<TransitionTracker::Item> queuedTransitions;
@@ -1119,7 +1143,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 						vertexCountPerInstance = min(vertexCountPerInstance, bufferInfo.m_count);
 
 					// publish vertex buffer as a viewable resource
-					runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".vertexBuffer")).c_str(), bufferInfo.m_resource, bufferInfo.m_format, bufferInfo.m_formatCount, bufferInfo.m_structIndex, bufferInfo.m_size, bufferInfo.m_stride, bufferInfo.m_count, false, false);
+					runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".vertexBuffer")).c_str(), bufferInfo.m_resource, bufferInfo.m_format, bufferInfo.m_formatCount, bufferInfo.m_structIndex, bufferInfo.m_size, bufferInfo.m_stride, bufferInfo.m_count, false, false, 0, 0, false);
 
 					// transition to vertex buffer
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(bufferInfo.m_resource, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, vbNode.resourceBuffer.name.c_str()) });
@@ -1151,7 +1175,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 						indexCountPerInstance = min(indexCountPerInstance, bufferInfo.m_count);
 
 					// publish index buffer as a viewable resource
-					runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".indexBuffer")).c_str(), bufferInfo.m_resource, bufferInfo.m_format, bufferInfo.m_formatCount, bufferInfo.m_structIndex, bufferInfo.m_size, bufferInfo.m_stride, bufferInfo.m_count, false, false);
+					runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".indexBuffer")).c_str(), bufferInfo.m_resource, bufferInfo.m_format, bufferInfo.m_formatCount, bufferInfo.m_structIndex, bufferInfo.m_size, bufferInfo.m_stride, bufferInfo.m_count, false, false, 0, 0, false);
 
 					// transition to index buffer
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(bufferInfo.m_resource, D3D12_RESOURCE_STATE_INDEX_BUFFER, ibNode.resourceBuffer.name.c_str()) });
@@ -1183,7 +1207,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 						instanceCount = min(instanceCount, bufferInfo.m_count);
 
 					// publish instance buffer as a viewable resource
-					runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".instanceBuffer")).c_str(), bufferInfo.m_resource, bufferInfo.m_format, bufferInfo.m_formatCount, bufferInfo.m_structIndex, bufferInfo.m_size, bufferInfo.m_stride, bufferInfo.m_count, false, false);
+					runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".instanceBuffer")).c_str(), bufferInfo.m_resource, bufferInfo.m_format, bufferInfo.m_formatCount, bufferInfo.m_structIndex, bufferInfo.m_size, bufferInfo.m_stride, bufferInfo.m_count, false, false, 0, 0, false);
 
 					// transition to vertex buffer
 					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(bufferInfo.m_resource, D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER, ibNode.resourceBuffer.name.c_str()) });
@@ -1493,8 +1517,19 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					else
 						label = label + " (SRV)";
 
+                    unsigned int bufferViewBegin = 0;
+                    unsigned int bufferViewSize = 0;
+                    bool bufferViewInBytes = false;
+                    if (dep.pinIndex < node.linkProperties.size())
+                    {
+                        const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                        bufferViewBegin = linkProperties.bufferViewBegin;
+                        bufferViewSize = linkProperties.bufferViewSize;
+                        bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                    }
+
 					const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false);
+					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
 					break;
 				}
 			}
@@ -1938,8 +1973,19 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					else
 						continue;
 
+                    unsigned int bufferViewBegin = 0;
+                    unsigned int bufferViewSize = 0;
+                    bool bufferViewInBytes = false;
+                    if (dep.pinIndex < node.linkProperties.size())
+                    {
+                        const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                        bufferViewBegin = linkProperties.bufferViewBegin;
+                        bufferViewSize = linkProperties.bufferViewSize;
+                        bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                    }
+
 					const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, true);
+					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, true, bufferViewBegin, bufferViewSize, bufferViewInBytes);
 					break;
 				}
 			}

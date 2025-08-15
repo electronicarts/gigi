@@ -463,12 +463,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				"\n            shaderCompilationInfoVS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
 		}
 
-		for (const ShaderDefine& define : node.defines)
-		{
-			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-				"\n            shaderCompilationInfoVS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
-		}
-
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
             "\n"
             "\n            std::vector<unsigned char> byteCodeVS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfoVS, Context::LogFn);"
@@ -496,12 +490,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 		}
 
 		for (const ShaderDefine& define : node.pixelShader.shader->defines)
-		{
-			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-				"\n            shaderCompilationInfoPS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
-		}
-
-		for (const ShaderDefine& define : node.defines)
 		{
 			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
 				"\n            shaderCompilationInfoPS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
@@ -539,12 +527,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				"\n            shaderCompilationInfoAS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
 		}
 
-		for (const ShaderDefine& define : node.defines)
-		{
-			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-				"\n            shaderCompilationInfoAS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
-		}
-
         stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
             "\n"
             "\n            std::vector<unsigned char> byteCodeAS = DX12Utils::CompileShaderToByteCode" << shaderCompiler << "(shaderCompilationInfoAS, Context::LogFn);"
@@ -572,12 +554,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 		}
 
 		for (const ShaderDefine& define : node.pixelShader.shader->defines)
-		{
-			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
-				"\n            shaderCompilationInfoMS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
-		}
-
-		for (const ShaderDefine& define : node.defines)
 		{
 			stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] <<
 				"\n            shaderCompilationInfoMS.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\")";
@@ -1055,9 +1031,18 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
+            unsigned int bufferViewBegin = 0;
+            unsigned int bufferViewSize = 0;
+            bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
-                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+            {
+                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                UAVMipIndex = linkProperties.UAVMipIndex;
+                bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
+            }
 
             const char* resourceTypeString = "";
             std::ostringstream rawAndStrideAndCount;
@@ -1145,7 +1130,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
             descriptorCount++;
         }
 
@@ -1189,9 +1174,18 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
+            unsigned int bufferViewBegin = 0;
+            unsigned int bufferViewSize = 0;
+            bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
-                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+            {
+                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                UAVMipIndex = linkProperties.UAVMipIndex;
+                bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
+            }
 
             const char* resourceTypeString = "";
             std::ostringstream rawAndStrideAndCount;
@@ -1279,7 +1273,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
             descriptorCount++;
         }
 
@@ -1326,9 +1320,18 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
+            unsigned int bufferViewBegin = 0;
+            unsigned int bufferViewSize = 0;
+            bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
-                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+            {
+                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                UAVMipIndex = linkProperties.UAVMipIndex;
+                bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
+            }
 
             const char* resourceTypeString = "";
             std::ostringstream rawAndStrideAndCount;
@@ -1416,7 +1419,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
             descriptorCount++;
         }
 
@@ -1464,9 +1467,18 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
+            unsigned int bufferViewBegin = 0;
+            unsigned int bufferViewSize = 0;
+            bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
-                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+            {
+                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                UAVMipIndex = linkProperties.UAVMipIndex;
+                bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
+            }
 
             const char* resourceTypeString = "";
             std::ostringstream rawAndStrideAndCount;
@@ -1554,7 +1566,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
             descriptorCount++;
         }
 

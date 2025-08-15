@@ -774,13 +774,11 @@ namespace simpleRasterInSubgraph
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_input.buffer_VB->GetDesc().Width;
-            unsigned int destSize = context->m_internal.buffer_DoSimpleRaster_VBCopy->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_internal.buffer_DoSimpleRaster_VBCopy, context->m_input.buffer_VB);
-            else
-                commandList->CopyBufferRegion(context->m_internal.buffer_DoSimpleRaster_VBCopy, 0, context->m_input.buffer_VB, 0, min(srcSize, destSize));
+            // Copy buffer to buffer. Copy as much as we can, within the specified parameters.
+            int srcCopyableBytes = context->m_input.buffer_VB->GetDesc().Width - 0;
+            int destCopyableBytes = context->m_internal.buffer_DoSimpleRaster_VBCopy->GetDesc().Width - 0;
+            int copySize = min(srcCopyableBytes, destCopyableBytes);
+            commandList->CopyBufferRegion(context->m_internal.buffer_DoSimpleRaster_VBCopy, 0, context->m_input.buffer_VB, 0, copySize);
 
             if(context->m_profile)
             {
@@ -825,7 +823,7 @@ namespace simpleRasterInSubgraph
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__DoSimpleRaster_VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__DoSimpleRaster_VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);

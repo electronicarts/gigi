@@ -112,10 +112,23 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
         // Count how many read only, and how many read/write connections we have
         int readOnlyCount = 0;
         int readWriteCount = 0;
+        int readOnlyCountCanDuplicate = 0;
         for (const InputConnection& inputConnection : inputConnections)
         {
             if (inputConnection.subtreeIsReadOnly)
+            {
+                const RenderGraphNode& outputNode = renderGraph.nodes[inputConnection.nodeIndex];
+                bool disallowDuplication = false;
+                ExecuteOnActionNode(outputNode, [&inputConnection, &disallowDuplication](auto& node)
+                    {
+                        disallowDuplication = node.linkProperties[inputConnection.pinIndex].disallowDuplication;
+                    }
+                );
+                if (!disallowDuplication)
+                    readOnlyCountCanDuplicate++;
+
                 readOnlyCount++;
+            }
             else
                 readWriteCount++;
         }
@@ -153,6 +166,10 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
 
         // If we only have write connections, leave everything as is
         if (readOnlyCount == 0)
+            continue;
+
+        // If we don't have any connections that we can duplicate, that we want to duplicate, leave everything as is
+        if (readOnlyCountCanDuplicate == 0)
             continue;
 
         // If we got here, we need to copy the resource to a temporary resource for the read access connections.
@@ -243,6 +260,125 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
     std::string raceConditionsStr = raceConditions.str();
     if (!raceConditionsStr.empty())
         ShowWarningMessage("These node output pins lead to parallel writes. If the writes overlap, or a read in one path can be affected by a write in another path, this is a race condition since Gigi may execute the output pins in any order. It's possible this was done intentionally and that there is no race condition.\n%s", raceConditionsStr.c_str());
+
+    return true;
+}
+
+bool DuplicateNodeShaders(RenderGraph& renderGraph)
+{
+    std::unordered_set<std::string> usedShaders;
+
+    auto HandleNodeShader = [&renderGraph, &usedShaders](std::string& shaderName, std::vector<ShaderDefine>& nodeDefines, std::string& nodeEntryPoint)
+    {
+        if (nodeDefines.empty() && nodeEntryPoint.empty())
+        {
+            usedShaders.insert(shaderName);
+            return;
+        }
+
+        int shaderIndex = GetShaderIndex(renderGraph, shaderName.c_str());
+        if (shaderIndex == -1)
+            return;
+
+        int uniqueShaderIndex = 0;
+        Shader newShader = renderGraph.shaders[shaderIndex];
+        newShader.name = FrontEndNodesNoCaching::GetUniqueShaderName(renderGraph, newShader.name.c_str(), &uniqueShaderIndex);
+
+        if (!nodeEntryPoint.empty())
+        {
+            newShader.entryPoint = nodeEntryPoint;
+            nodeEntryPoint = "";
+        }
+
+        if (!nodeDefines.empty())
+        {
+            newShader.defines.insert(newShader.defines.end(), nodeDefines.begin(), nodeDefines.end());
+            nodeDefines.clear();
+        }
+
+        // Make the output file name include the unique index used in the shader data record name, so the filename is unique too.
+        {
+            std::filesystem::path fileName = std::filesystem::path((newShader.destFileName.empty()) ? newShader.fileName : newShader.destFileName);
+
+            std::ostringstream s;
+            s << fileName.stem().string() << "_" << uniqueShaderIndex << fileName.extension().string();
+
+            newShader.destFileName = std::filesystem::path(fileName).replace_filename(s.str()).string();
+        }
+
+        renderGraph.shaders.push_back(newShader);
+        shaderName = newShader.name;
+        usedShaders.insert(newShader.name);
+    };
+
+    // Node defines are per node, not per shader, even though the shader may be shared by multiple nodes.
+    // A solution to copy the shader records and turn the node defines into shader defines.
+    // Same with entry point.
+    for (RenderGraphNode& nodeBase : renderGraph.nodes)
+    {
+        switch (nodeBase._index)
+        {
+            case RenderGraphNode::c_index_actionComputeShader:
+            {
+                RenderGraphNode_Action_ComputeShader& node = nodeBase.actionComputeShader;
+                HandleNodeShader(node.shader.name, node.defines, node.entryPoint);
+                break;
+            }
+            case RenderGraphNode::c_index_actionRayShader:
+            {
+                RenderGraphNode_Action_RayShader& node = nodeBase.actionRayShader;
+                HandleNodeShader(node.shader.name, node.defines, node.entryPoint);
+                break;
+            }
+            case RenderGraphNode::c_index_actionDrawCall:
+            {
+                RenderGraphNode_Action_DrawCall& node = nodeBase.actionDrawCall;
+
+                std::string dummyEntryPoint;
+
+                std::vector<ShaderDefine> nodeDefines = node.defines;
+                node.defines.clear();
+
+                HandleNodeShader(node.amplificationShader.name, nodeDefines, dummyEntryPoint);
+                HandleNodeShader(node.meshShader.name, nodeDefines, dummyEntryPoint);
+                HandleNodeShader(node.vertexShader.name, nodeDefines, dummyEntryPoint);
+                HandleNodeShader(node.pixelShader.name, nodeDefines, dummyEntryPoint);
+
+                break;
+            }
+        }
+    }
+
+    // Remove any shader data record that is no longer used, or was not used.
+    // We only looked at compute, ray gen, and rasterize, so limit to those types.
+    {
+        renderGraph.shaders.erase(
+            std::remove_if(
+                renderGraph.shaders.begin(),
+                renderGraph.shaders.end(),
+                [&](const Shader& shader) -> bool
+                {
+
+                    switch (shader.type)
+                    {
+                        case ShaderType::Compute:
+                        case ShaderType::RTRayGen:
+                        case ShaderType::Amplification:
+                        case ShaderType::Mesh:
+                        case ShaderType::Vertex:
+                        case ShaderType::Pixel:
+                        {
+                            break;
+                        }
+                        default: return false;
+                    }
+
+                    return usedShaders.count(shader.name) == 0;
+                }
+            ),
+            renderGraph.shaders.end()
+        );
+    }
 
     return true;
 }
@@ -482,6 +618,21 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
             return GigiCompileResult::BackendData;
     }
 
+    // Duplicate shaders as needed.
+    // Node defines are per node, not per shader, even though the shader may be shared by multiple nodes.
+    // A solution to copy the shader records and turn the node defines into shader defines.
+    {
+        if (!DuplicateNodeShaders(renderGraph))
+            return GigiCompileResult::DuplicateNodeShaders;
+    }
+
+    // Add node info to shaders as defines
+    {
+        AddNodeInfoToShadersVisitor visitor(renderGraph);
+        if (!Visit(renderGraph, visitor, "renderGraph"))
+            return GigiCompileResult::AddNodeInfoToShaders;
+    }
+
     // Do a post load
     if (PostLoad)
         PostLoad(renderGraph);
@@ -555,13 +706,6 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
         ErrorCheckVisitor visitor;
         if (!Visit(renderGraph, visitor, "renderGraph"))
             return GigiCompileResult::ErrorCheck;
-    }
-
-    // Add node info to shaders as defines
-    {
-        AddNodeInfoToShadersVisitor visitor;
-        if (!Visit(renderGraph, visitor, "renderGraph"))
-            return GigiCompileResult::AddNodeInfoToShaders;
     }
 
     // Dflt fixup to make sure variable dflts are correctly formatted (like that floats have an f on the end)

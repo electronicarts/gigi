@@ -47,10 +47,11 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     // If the source and dest are the same type of resource
     if (sourceNode._index == destNode._index)
     {
+        bool isTexture = false;
         const char* prefix = "";
         switch (sourceNode._index)
         {
-            case RenderGraphNode::c_index_resourceTexture: prefix = "texture_"; break;
+            case RenderGraphNode::c_index_resourceTexture: prefix = "texture_"; isTexture = true; break;
             case RenderGraphNode::c_index_resourceBuffer: prefix = "buffer_";  break;
             default:
             {
@@ -59,20 +60,38 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             }
         }
 
-        stringReplacementMap["/*$(Execute)*/"] <<
-            "\n            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use"
-            "\n            unsigned int srcSize = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) << "->GetDesc().Width;"
-            "\n            unsigned int destSize = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << "->GetDesc().Width;"
-            "\n            if (srcSize == destSize)"
-            "\n                commandList->CopyResource("
-            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << ", "
-            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) <<
-            ");"
-            "\n            else"
-            "\n                commandList->CopyBufferRegion("
-            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << ", 0, "
-            "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) << ", 0, min(srcSize, destSize));"
-            ;
+        if (isTexture)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n            // Copy the texture."
+                "\n            commandList->CopyResource("
+                "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << ", "
+                "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) <<
+                ");"
+                ;
+        }
+        else
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n            // Copy buffer to buffer. Copy as much as we can, within the specified parameters."
+                "\n            int srcCopyableBytes = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) << "->GetDesc().Width" << " - " << node.bufferToBuffer.srcBegin << ";"
+                "\n            int destCopyableBytes = context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << "->GetDesc().Width" << " - " << node.bufferToBuffer.destBegin << ";"
+                "\n            int copySize = min(srcCopyableBytes, destCopyableBytes);"
+                ;
+
+            if (node.bufferToBuffer.size > 0)
+            {
+                stringReplacementMap["/*$(Execute)*/"] <<
+                    "\n            copySize = min(copySize, " << node.bufferToBuffer.size << ");"
+                    ;
+            }
+
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n            commandList->CopyBufferRegion("
+                "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(destNode)) << prefix << GetNodeName(destNode) << ", " << node.bufferToBuffer.destBegin << ", "
+                "context->" << GetResourceNodePathInContext(GetNodeResourceVisibility(sourceNode)) << prefix << GetNodeName(sourceNode) << ", " << node.bufferToBuffer.srcBegin << ", copySize);"
+                ;
+        }
     }
     else
     {

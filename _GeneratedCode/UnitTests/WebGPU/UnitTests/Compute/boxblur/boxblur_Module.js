@@ -36,9 +36,9 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "BoxBlur", node "BlurH"
-static ShaderCode_BlurH_BoxBlur = `
-struct Struct_BoxBlurCB_std140_0
+// Shader code for Compute shader "BoxBlur_0", node "BlurH"
+static ShaderCode_BlurH_BoxBlur_0 = `
+struct Struct_BoxBlur_0CB_std140_0
 {
     @align(16) radius_0 : i32,
     @align(4) sRGB_0 : u32,
@@ -46,7 +46,7 @@ struct Struct_BoxBlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _BoxBlurCB : Struct_BoxBlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _BoxBlur_0CB : Struct_BoxBlur_0CB_std140_0;
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
@@ -91,7 +91,7 @@ fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
 @workgroup_size(8, 8, 1)
 fn BlurH(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
-    var radius_1 : i32 = _BoxBlurCB.radius_0;
+    var radius_1 : i32 = _BoxBlur_0CB.radius_0;
     var w_0 : u32;
     var h_0 : u32;
     {var dim = textureDimensions((Input));((w_0)) = dim.x;((h_0)) = dim.y;};
@@ -113,7 +113,7 @@ fn BlurH(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         i_0 = i_0 + i32(1);
         result_0 = result_1;
     }
-    if(bool(_BoxBlurCB.sRGB_0))
+    if(bool(_BoxBlur_0CB.sRGB_0))
     {
         textureStore((Output), (DTid_0.xy), (vec4<f32>(LinearToSRGB_0(result_0.xyz), result_0.w)));
     }
@@ -126,9 +126,9 @@ fn BlurH(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "BoxBlur", node "BlurV"
-static ShaderCode_BlurV_BoxBlur = `
-struct Struct_BoxBlurCB_std140_0
+// Shader code for Compute shader "BoxBlur_1", node "BlurV"
+static ShaderCode_BlurV_BoxBlur_1 = `
+struct Struct_BoxBlur_1CB_std140_0
 {
     @align(16) radius_0 : i32,
     @align(4) sRGB_0 : u32,
@@ -136,7 +136,7 @@ struct Struct_BoxBlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _BoxBlurCB : Struct_BoxBlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _BoxBlur_1CB : Struct_BoxBlur_1CB_std140_0;
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
@@ -181,7 +181,7 @@ fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
 @workgroup_size(8, 8, 1)
 fn BlurV(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
-    var radius_1 : i32 = _BoxBlurCB.radius_0;
+    var radius_1 : i32 = _BoxBlur_1CB.radius_0;
     var w_0 : u32;
     var h_0 : u32;
     {var dim = textureDimensions((Input));((w_0)) = dim.x;((h_0)) = dim.y;};
@@ -203,7 +203,7 @@ fn BlurV(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         i_0 = i_0 + i32(1);
         result_0 = result_1;
     }
-    if(bool(_BoxBlurCB.sRGB_0))
+    if(bool(_BoxBlur_1CB.sRGB_0))
     {
         textureStore((Output), (DTid_0.xy), (vec4<f32>(LinearToSRGB_0(result_0.xyz), result_0.w)));
     }
@@ -236,10 +236,10 @@ texture_BlurV_Output_ReadOnly_size = [0, 0, 0];
 texture_BlurV_Output_ReadOnly_format = "";
 texture_BlurV_Output_ReadOnly_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
-// Constant buffer _BoxBlurCB
-constantBuffer__BoxBlurCB = null;
-constantBuffer__BoxBlurCB_size = 16;
-constantBuffer__BoxBlurCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _BoxBlur_0CB
+constantBuffer__BoxBlur_0CB = null;
+constantBuffer__BoxBlur_0CB_size = 16;
+constantBuffer__BoxBlur_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader BlurH
 Hash_Compute_BlurH = 0;
@@ -247,6 +247,11 @@ ShaderModule_Compute_BlurH = null;
 BindGroupLayout_Compute_BlurH = null;
 PipelineLayout_Compute_BlurH = null;
 Pipeline_Compute_BlurH = null;
+
+// Constant buffer _BoxBlur_1CB
+constantBuffer__BoxBlur_1CB = null;
+constantBuffer__BoxBlur_1CB_size = 16;
+constantBuffer__BoxBlur_1CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader BlurV
 Hash_Compute_BlurV = 0;
@@ -301,7 +306,16 @@ variableChanged_MouseStateLastFrame = [ false, false, false, false ];
 
 // -------------------- Structs
 
-static StructOffsets__BoxBlurCB =
+static StructOffsets__BoxBlur_0CB =
+{
+    radius: 0,
+    sRGB: 4,
+    _padding0: 8,
+    _padding1: 12,
+    _size: 16,
+}
+
+static StructOffsets__BoxBlur_1CB =
 {
     radius: 0,
     sRGB: 4,
@@ -460,7 +474,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_BlurH_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _BoxBlurCB
+                // _BoxBlur_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -474,7 +488,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_BlurH = newHash;
 
-            let shaderCode = class_boxblur.ShaderCode_BlurH_BoxBlur;
+            let shaderCode = class_boxblur.ShaderCode_BlurH_BoxBlur_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_PingPongTexture_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_BlurH_Output_ReadOnly_format));
 
@@ -539,7 +553,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_BlurV_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _BoxBlurCB
+                // _BoxBlur_1CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -553,7 +567,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_BlurV = newHash;
 
-            let shaderCode = class_boxblur.ShaderCode_BlurV_BoxBlur;
+            let shaderCode = class_boxblur.ShaderCode_BlurV_BoxBlur_1;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_InputTexture_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_BlurV_Output_ReadOnly_format));
 
@@ -644,28 +658,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "boxblur.BlurV_Output_ReadOnly"
 
-    encoder.pushDebugGroup("boxblur._BoxBlurCB");
+    encoder.pushDebugGroup("boxblur._BoxBlur_0CB");
 
-    // Create constant buffer _BoxBlurCB
-    if (this.constantBuffer__BoxBlurCB === null)
+    // Create constant buffer _BoxBlur_0CB
+    if (this.constantBuffer__BoxBlur_0CB === null)
     {
-        this.constantBuffer__BoxBlurCB = device.createBuffer({
-            label: "boxblur._BoxBlurCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__BoxBlurCB._size),
-            usage: this.constantBuffer__BoxBlurCB_usageFlags,
+        this.constantBuffer__BoxBlur_0CB = device.createBuffer({
+            label: "boxblur._BoxBlur_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__BoxBlur_0CB._size),
+            usage: this.constantBuffer__BoxBlur_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _BoxBlurCB
+    // Upload values to constant buffer _BoxBlur_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__BoxBlurCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__BoxBlur_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setInt32(this.constructor.StructOffsets__BoxBlurCB.radius, this.variable_radius, true);
-        view.setUint32(this.constructor.StructOffsets__BoxBlurCB.sRGB, (this.variable_sRGB === true ? 1 : 0), true);
-        device.queue.writeBuffer(this.constantBuffer__BoxBlurCB, 0, bufferCPU);
+        view.setInt32(this.constructor.StructOffsets__BoxBlur_0CB.radius, this.variable_radius, true);
+        view.setUint32(this.constructor.StructOffsets__BoxBlur_0CB.sRGB, (this.variable_sRGB === true ? 1 : 0), true);
+        device.queue.writeBuffer(this.constantBuffer__BoxBlur_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "boxblur._BoxBlurCB"
+    encoder.popDebugGroup(); // "boxblur._BoxBlur_0CB"
 
     encoder.pushDebugGroup("boxblur.BlurH");
 
@@ -693,9 +707,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_BlurH_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _BoxBlurCB
+                    // _BoxBlur_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__BoxBlurCB }
+                    resource: { buffer: this.constantBuffer__BoxBlur_0CB }
                 },
             ]
         });
@@ -749,6 +763,29 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "boxblur.Copy_BlurV_Output"
 
+    encoder.pushDebugGroup("boxblur._BoxBlur_1CB");
+
+    // Create constant buffer _BoxBlur_1CB
+    if (this.constantBuffer__BoxBlur_1CB === null)
+    {
+        this.constantBuffer__BoxBlur_1CB = device.createBuffer({
+            label: "boxblur._BoxBlur_1CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__BoxBlur_1CB._size),
+            usage: this.constantBuffer__BoxBlur_1CB_usageFlags,
+        });
+    }
+
+    // Upload values to constant buffer _BoxBlur_1CB
+    {
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__BoxBlur_1CB._size));
+        const view = new DataView(bufferCPU);
+        view.setInt32(this.constructor.StructOffsets__BoxBlur_1CB.radius, this.variable_radius, true);
+        view.setUint32(this.constructor.StructOffsets__BoxBlur_1CB.sRGB, (this.variable_sRGB === true ? 1 : 0), true);
+        device.queue.writeBuffer(this.constantBuffer__BoxBlur_1CB, 0, bufferCPU);
+    }
+
+    encoder.popDebugGroup(); // "boxblur._BoxBlur_1CB"
+
     encoder.pushDebugGroup("boxblur.BlurV");
 
     // Run compute shader BlurV
@@ -775,9 +812,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_BlurV_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _BoxBlurCB
+                    // _BoxBlur_1CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__BoxBlurCB }
+                    resource: { buffer: this.constantBuffer__BoxBlur_1CB }
                 },
             ]
         });

@@ -61,7 +61,7 @@ namespace simple
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simple.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "simple_0.hlsl";
             shaderCompilationInfo.entryPoint = "Main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "DoSimpleCS" : "");
@@ -783,7 +783,7 @@ namespace simple
             commandList->SetPipelineState(ContextInternal::computeShader_DoSimpleCS_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);

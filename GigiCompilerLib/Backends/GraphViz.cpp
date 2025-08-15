@@ -192,7 +192,7 @@ static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& var
     WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out);
 
     out <<
-        "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << (node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint) << "()</td></tr>"
+        "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << node.shader.shader->entryPoint << "()</td></tr>"
         "\n            <tr><td bgcolor=\"thistle\">Dispatch: ";
 
     if (node.dispatchSize.indirectBuffer.nodeIndex != -1)
@@ -232,7 +232,7 @@ static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& var
     WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out);
 
     out <<
-        "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << (node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint) << "()</td></tr>"
+        "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << node.shader.shader->entryPoint << "()</td></tr>"
         "\n            <tr><td bgcolor=\"thistle\">Dispatch: ";
 
     if (node.dispatchSize.preAdd[0] != 0 || node.dispatchSize.preAdd[1] != 0 || node.dispatchSize.preAdd[2] != 0)

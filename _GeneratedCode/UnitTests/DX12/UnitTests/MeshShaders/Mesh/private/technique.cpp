@@ -764,8 +764,8 @@ namespace Mesh
 
             DX12Utils::ResourceDescriptor descriptorsMS[] =
             {
-                { context->m_input.buffer_VertexBuffer, context->m_input.buffer_VertexBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_VertexBuffer_stride, context->m_input.buffer_VertexBuffer_count, 0 },
-                { context->m_internal.constantBuffer__MeshShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_input.buffer_VertexBuffer, context->m_input.buffer_VertexBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_VertexBuffer_stride, context->m_input.buffer_VertexBuffer_count, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__MeshShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableMS = GetDescriptorTable(device, s_srvHeap, descriptorsMS, 2, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableMS);

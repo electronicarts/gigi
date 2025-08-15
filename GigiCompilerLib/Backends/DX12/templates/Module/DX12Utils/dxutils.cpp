@@ -323,6 +323,9 @@ namespace DX12Utils
         size_t hash6 = std::hash<size_t>()(static_cast<size_t>(v.m_resourceType));
         size_t hash7 = std::hash<size_t>()(static_cast<size_t>(v.m_raw));
         size_t hash8 = std::hash<size_t>()(static_cast<size_t>(v.m_UAVMipIndex));
+        size_t hash9 = std::hash<size_t>()(static_cast<size_t>(v.m_bufferViewBegin));
+        size_t hash10 = std::hash<size_t>()(static_cast<size_t>(v.m_bufferViewSize));
+        size_t hash11 = std::hash<size_t>()(static_cast<size_t>(v.m_bufferViewInBytes));
 
         size_t hash12 = HashCombine(hash1, hash2);
         size_t hash34 = HashCombine(hash3, hash4);
@@ -332,7 +335,9 @@ namespace DX12Utils
         size_t hash1234 = HashCombine(hash12, hash34);
         size_t hash5678 = HashCombine(hash56, hash78);
 
-        return HashCombine(hash1234, hash5678);
+        size_t hash91011 = HashCombine(HashCombine(hash9, hash10), hash11);
+
+        return HashCombine(HashCombine(hash1234, hash5678), hash91011);
     }
 
     inline void MakeDescriptorTable(ID3D12Device* device, Heap& srvHeap, const ResourceDescriptor* descriptors, size_t count, TLogFn logFn)
@@ -369,9 +374,29 @@ namespace DX12Utils
                     {
                         case ResourceType::Buffer:
                         {
+                            unsigned int unitsDivider = 1;
+                            if (descriptor.m_bufferViewInBytes)
+                            {
+                                unitsDivider = descriptor.m_stride > 0
+                                    ? descriptor.m_stride
+                                    : DX12Utils::Get_DXGI_FORMAT_Info(descriptor.m_format, logFn).bytesPerPixel;
+                                unitsDivider = max(unitsDivider, 1);
+                            }
+                            unsigned int firstElement = descriptor.m_bufferViewBegin / unitsDivider;
+                            unsigned int elementCount = descriptor.m_count;
+
+                            if (elementCount >= firstElement)
+                                elementCount -= firstElement;
+                            else
+                                elementCount = 0;
+
+                            unsigned int bufferViewElements = descriptor.m_bufferViewSize / unitsDivider;
+                            if (bufferViewElements > 0)
+                                elementCount = min(elementCount, bufferViewElements);
+
                             srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-                            srvDesc.Buffer.FirstElement = 0;
-                            srvDesc.Buffer.NumElements = descriptor.m_count;
+                            srvDesc.Buffer.FirstElement = firstElement;
+                            srvDesc.Buffer.NumElements = elementCount;
                             srvDesc.Buffer.StructureByteStride = descriptor.m_stride;
                             srvDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
                             srvDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
@@ -437,9 +462,29 @@ namespace DX12Utils
                 {
                     case ResourceType::Buffer:
                     {
+                        unsigned int unitsDivider = 1;
+                        if (descriptor.m_bufferViewInBytes)
+                        {
+                            unitsDivider = descriptor.m_stride > 0
+                                ? descriptor.m_stride
+                                : DX12Utils::Get_DXGI_FORMAT_Info(descriptor.m_format, logFn).bytesPerPixel;
+                            unitsDivider = max(unitsDivider, 1);
+                        }
+                        unsigned int firstElement = descriptor.m_bufferViewBegin / unitsDivider;
+                        unsigned int elementCount = descriptor.m_count;
+
+                        if (elementCount >= firstElement)
+                            elementCount -= firstElement;
+                        else
+                            elementCount = 0;
+
+                        unsigned int bufferViewElements = descriptor.m_bufferViewSize / unitsDivider;
+                        if (bufferViewElements > 0)
+                            elementCount = min(elementCount, bufferViewElements);
+
                         uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-                        uavDesc.Buffer.FirstElement = 0;
-                        uavDesc.Buffer.NumElements = descriptor.m_count;
+                        uavDesc.Buffer.FirstElement = firstElement;
+                        uavDesc.Buffer.NumElements = elementCount;
                         uavDesc.Buffer.StructureByteStride = descriptor.m_stride;
                         uavDesc.Buffer.CounterOffsetInBytes = 0;
                         uavDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;

@@ -222,6 +222,10 @@ struct DataFixupVisitor
 
 struct AddNodeInfoToShadersVisitor
 {
+    AddNodeInfoToShadersVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
     template <typename TDATA>
     bool Visit(TDATA& data, const std::string& path)
     {
@@ -233,32 +237,45 @@ struct AddNodeInfoToShadersVisitor
         ShaderDefine newDefine;
         std::ostringstream stream;
 
+        int shaderIndex = GetShaderIndex(renderGraph, node.shader.name.c_str());
+        if (shaderIndex == -1)
+            return false;
+
+        if (visitedShaders.count(shaderIndex) > 0)
+            return true;
+        visitedShaders.insert(shaderIndex);
+
+        Shader& shader = renderGraph.shaders[shaderIndex];
+
         newDefine.name = "__GigiDispatchMultiply";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.multiply[0] << "," << node.dispatchSize.multiply[1] << "," << node.dispatchSize.multiply[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchDivide";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.divide[0] << "," << node.dispatchSize.divide[1] << "," << node.dispatchSize.divide[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchPreAdd";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.preAdd[0] << "," << node.dispatchSize.preAdd[1] << "," << node.dispatchSize.preAdd[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchPostAdd";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.postAdd[0] << "," << node.dispatchSize.postAdd[1] << "," << node.dispatchSize.postAdd[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         return true;
     }
+
+    RenderGraph& renderGraph;
+    std::unordered_set<int> visitedShaders;
 };
 
 struct ErrorCheckVisitor
