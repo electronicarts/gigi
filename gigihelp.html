@@ -133,6 +133,7 @@ table, th, td, tr
 <tr><td>DepthTarget</td><td>Used as a depth buffer</td></tr>
 <tr><td>Barrier</td><td>Used by the barrier node</td></tr>
 <tr><td>ShadingRate</td><td>Used as a shading rate image</td></tr>
+<tr><td>Noop</td><td>Used by the reroute node</td></tr>
 <tr><td>Count</td><td></td></tr>
 </table>
 <br/>
@@ -339,6 +340,14 @@ table, th, td, tr
 </table>
 <br/>
 
+<b>MemoryUnitOfMeasurement : </b><br/><br/>
+<table>
+<tr><th colspan=2>MemoryUnitOfMeasurement</th></tr>
+<tr><td>Items</td><td></td></tr>
+<tr><td>Bytes</td><td></td></tr>
+</table>
+<br/>
+
 <b>TextureFormat : </b><br/><br/>
 <table>
 <tr><th colspan=2>TextureFormat</th></tr>
@@ -457,6 +466,7 @@ table, th, td, tr
 <tr><td>DataFixup</td><td></td></tr>
 <tr><td>DfltFixup</td><td></td></tr>
 <tr><td>HandleOutputsToMultiInput</td><td></td></tr>
+<tr><td>DuplicateNodeShaders</td><td></td></tr>
 </table>
 <br/>
 
@@ -1031,6 +1041,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>int postAdd[3]</td><td>{ 0 , 0 , 0 }</td><td></td></tr>
 <tr><td>VariableReference indirectOffsetVariable</td><td>{}</td><td>If a variable is given, it will be used as the offset into the indirect dispatch buffer. 0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.</td></tr>
 <tr><td>int indirectOffsetValue</td><td>0</td><td>The offset into the indirect dispatch buffer if no variable given.  0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.</td></tr>
+<tr><td><i>int shaderNumThreads[3]</i></td><td>{ 0 , 0 , 0 }</td><td></td></tr>
 </table>
 <br/>
 
@@ -1143,6 +1154,20 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <table>
 <tr><th colspan=3>LinkProperties</th></tr>
 <tr><td>int UAVMipIndex</td><td>0</td><td>The mip index to use, if this is a UAV connection.</td></tr>
+<tr><td>bool disallowDuplication</td><td>false</td><td>If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.</td></tr>
+<tr><td>MemoryUnitOfMeasurement bufferViewUnits</td><td>MemoryUnitOfMeasurement::Items</td><td>How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.</td></tr>
+<tr><td>unsigned int bufferViewBegin</td><td>0</td><td>Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.</td></tr>
+<tr><td>unsigned int bufferViewSize</td><td>0</td><td>How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.</td></tr>
+</table>
+<br/>
+
+<b>CopyResource_BufferToBuffer : Settings for when copying from a buffer to a buffer</b><br/><br/>
+<table>
+<tr><th colspan=3>CopyResource_BufferToBuffer</th></tr>
+<tr><td>unsigned int srcBegin</td><td>0</td><td>Where the copy source begins in the source buffer. In Bytes.</td></tr>
+<tr><td>unsigned int destBegin</td><td>0</td><td>Where the copy destination begins in the destination buffer. In Bytes.</td></tr>
+<tr><td>unsigned int size</td><td>0</td><td>How much to copy. 0 to copy everything. In Bytes.</td></tr>
+<tr><td><i>bool hideUI</i></td><td>false</td><td>Used by UI system to know whether to show this or not</td></tr>
 </table>
 <br/>
 
@@ -1234,8 +1259,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
 <tr><td>ComputeShaderReference shader</td><td>{}</td><td>The shader.</td></tr>
 <tr><td>DispatchSizeDesc dispatchSize</td><td>{}</td><td>The dispatch size.</td></tr>
-<tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint.</td></tr>
-<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with, on top of whatever defines the shader has already</td></tr>
+<tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint. Handled by front end during Gigi compilation and becomes shader entry point during code gen.</td></tr>
+<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.</td></tr>
 </table>
 <br/>
 
@@ -1248,8 +1273,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
 <tr><td>RayGenShaderReference shader</td><td>{}</td><td>The ray gen shader.</td></tr>
 <tr><td>RayDispatchSizeDesc dispatchSize</td><td>{}</td><td>The dispatch size.</td></tr>
-<tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint.</td></tr>
-<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with, on top of whatever defines the shader has already</td></tr>
+<tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint.  Handled by front end during Gigi compilation and becomes shader entry point during code gen.</td></tr>
+<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.</td></tr>
 <tr><td>int maxRecursionDepth</td><td>3</td><td>The maximum recursion depth of the ray.</td></tr>
 <tr><td>unsigned int rayPayloadSize</td><td>64</td><td>The size of the ray payload, in bytes. 64 bytes is four float4s.</td></tr>
 </table>
@@ -1262,6 +1287,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Copy"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Copy"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
+<tr><td>CopyResource_BufferToBuffer bufferToBuffer</td><td>{}</td><td>Settings when copying from a buffer to another buffer.</td></tr>
 <tr><td>NodePinReference source</td><td>{}</td><td>The resource being copied from.</td></tr>
 <tr><td>NodePinReference dest</td><td>{}</td><td>The resource being copied to.</td></tr>
 </table>
@@ -1304,7 +1330,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool alphaAsCoverage</td><td>false</td><td>Turns on alpha as coverage</td></tr>
 <tr><td>bool independentAlpha</td><td>false</td><td>If false, colorTargetSettings[0] defines blend mode for all color targets</td></tr>
 <tr><td>ColorTargetSettings colorTargetSettings[8]</td><td>{}</td><td>Settings for the color targets</td></tr>
-<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shaders ares compiled with, on top of whatever defines the shaders have already</td></tr>
+<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shaders ares compiled with, on top of whatever defines the shaders have already. Handled by front end during Gigi compilation and becomes shader defines during code gen.</td></tr>
 <tr><td>DrawCullMode cullMode</td><td>DrawCullMode::None</td><td></td></tr>
 <tr><td>bool frontIsCounterClockwise</td><td>true</td><td></td></tr>
 <tr><td>ShadingRate shadingRate</td><td>ShadingRate::_1x1</td><td>For variable rate shading</td></tr>
@@ -1343,6 +1369,16 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Barrier"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Bar"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
+</table>
+<br/>
+
+<b>RenderGraphNode_Reroute : Used in editor only to reroute links</b><br/><br/>
+<table>
+<tr><th colspan=3>RenderGraphNode_Reroute - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Reroute"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Reroute"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Rr"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const bool c_showInEditor</b></td><td>false</td><td>Used by the editor.</td></tr>
 </table>
 <br/>
 
@@ -1894,6 +1930,7 @@ See .bat for more info</td></tr>
 <tr><td>RenderGraphNode_Resource_Buffer resourceBuffer</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Resource_ShaderConstants resourceShaderConstants</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Resource_Texture resourceTexture</td><td>{}</td><td></td></tr>
+<tr><td>RenderGraphNode_Reroute reroute</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_ComputeShader actionComputeShader</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_RayShader actionRayShader</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_CopyResource actionCopyResource</td><td>{}</td><td></td></tr>

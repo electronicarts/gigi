@@ -799,8 +799,8 @@ namespace ReadbackSequence
             commandList->SetPipelineState(ContextInternal::computeShader_Node_1_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Output, context->m_input.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__ReadbackSequenceCSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Output, context->m_input.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__ReadbackSequenceCSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);

@@ -7,7 +7,7 @@ struct Struct_TestStruct
     uint TheBool;
 };
 
-struct Struct__BufferTestCB
+struct Struct__BufferTest_0CB
 {
     float alpha1;
     float alpha2;
@@ -23,7 +23,7 @@ StructuredBuffer<Struct_TestStruct> InputStructured : register(t2);
 RWStructuredBuffer<Struct_TestStruct> OutputStructured : register(u2);
 ByteAddressBuffer InputTypedRaw : register(t3);
 RWByteAddressBuffer OutputTypedRaw : register(u3);
-ConstantBuffer<Struct__BufferTestCB> _BufferTestCB : register(b0);
+ConstantBuffer<Struct__BufferTest_0CB> _BufferTest_0CB : register(b0);
 
 #line 1
 
@@ -38,14 +38,14 @@ void Main(uint3 DTid : SV_DispatchThreadID)
 		float n_minus_2 = (DTid.x >= 2) ? InputTyped[DTid.x-2] : 0.0f;
 		float n_minus_1 = (DTid.x >= 1) ? InputTyped[DTid.x-1] : 0.0f;
 		float n = InputTyped[DTid.x];
-		OutputTyped[DTid.x] = _BufferTestCB.gain * (n + _BufferTestCB.alpha1 * n_minus_1 + _BufferTestCB.alpha2 * n_minus_2);
+		OutputTyped[DTid.x] = _BufferTest_0CB.gain * (n + _BufferTest_0CB.alpha1 * n_minus_1 + _BufferTest_0CB.alpha2 * n_minus_2);
 	}
 
 	{
 		float n_minus_2 = (DTid.x >= 2) ? InputTypedStruct[DTid.x - 2] : 0.0f;
 		float n_minus_1 = (DTid.x >= 1) ? InputTypedStruct[DTid.x - 1] : 0.0f;
 		float n = InputTypedStruct[DTid.x];
-		OutputTypedStruct[DTid.x] = _BufferTestCB.gain * (n + _BufferTestCB.alpha1 * n_minus_1 + _BufferTestCB.alpha2 * n_minus_2);
+		OutputTypedStruct[DTid.x] = _BufferTest_0CB.gain * (n + _BufferTest_0CB.alpha1 * n_minus_1 + _BufferTest_0CB.alpha2 * n_minus_2);
 	}
 
 	if (DTid.x == 0)

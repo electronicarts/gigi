@@ -106,7 +106,7 @@ namespace buffertest
             ranges[7].RegisterSpace = 0;
             ranges[7].OffsetInDescriptorsFromTableStart = 7;
 
-            // _BufferTestCB
+            // _BufferTest_0CB
             ranges[8].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[8].NumDescriptors = 1;
             ranges[8].BaseShaderRegister = 0;
@@ -117,7 +117,7 @@ namespace buffertest
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "BufferTest.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "BufferTest_0.hlsl";
             shaderCompilationInfo.entryPoint = "Main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "BufferTest" : "");
@@ -781,11 +781,11 @@ namespace buffertest
             m_output.buffer_OutputTypedStructBuffer = nullptr;
         }
 
-        // _BufferTestCB
-        if (m_internal.constantBuffer__BufferTestCB)
+        // _BufferTest_0CB
+        if (m_internal.constantBuffer__BufferTest_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__BufferTestCB);
-            m_internal.constantBuffer__BufferTestCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__BufferTest_0CB);
+            m_internal.constantBuffer__BufferTest_0CB = nullptr;
         }
     }
 
@@ -902,12 +902,12 @@ namespace buffertest
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _BufferTestCB
+        // Shader Constants: _BufferTest_0CB
         {
-            context->m_internal.constantBuffer__BufferTestCB_cpu.alpha1 = context->m_input.variable_alpha1;
-            context->m_internal.constantBuffer__BufferTestCB_cpu.alpha2 = context->m_input.variable_alpha2;
-            context->m_internal.constantBuffer__BufferTestCB_cpu.gain = context->m_input.variable_gain;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__BufferTestCB, context->m_internal.constantBuffer__BufferTestCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__BufferTest_0CB_cpu.alpha1 = context->m_input.variable_alpha1;
+            context->m_internal.constantBuffer__BufferTest_0CB_cpu.alpha2 = context->m_input.variable_alpha2;
+            context->m_internal.constantBuffer__BufferTest_0CB_cpu.gain = context->m_input.variable_gain;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__BufferTest_0CB, context->m_internal.constantBuffer__BufferTest_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -948,15 +948,15 @@ namespace buffertest
             commandList->SetPipelineState(ContextInternal::computeShader_BufferTest_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.buffer_InputTypedBuffer, context->m_input.buffer_InputTypedBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputTypedBuffer_stride, context->m_input.buffer_InputTypedBuffer_count, 0 },
-                { context->m_output.buffer_OutputTypedBuffer, context->m_output.buffer_OutputTypedBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputTypedBuffer_stride, context->m_output.buffer_OutputTypedBuffer_count, 0 },
-                { context->m_input.buffer_InputTypedStructBuffer, context->m_input.buffer_InputTypedStructBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputTypedStructBuffer_stride, context->m_input.buffer_InputTypedStructBuffer_count, 0 },
-                { context->m_output.buffer_OutputTypedStructBuffer, context->m_output.buffer_OutputTypedStructBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputTypedStructBuffer_stride, context->m_output.buffer_OutputTypedStructBuffer_count, 0 },
-                { context->m_input.buffer_InputStructuredBuffer, context->m_input.buffer_InputStructuredBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputStructuredBuffer_stride, context->m_input.buffer_InputStructuredBuffer_count, 0 },
-                { context->m_output.buffer_OutputStructuredBuffer, context->m_output.buffer_OutputStructuredBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputStructuredBuffer_stride, context->m_output.buffer_OutputStructuredBuffer_count, 0 },
-                { context->m_input.buffer_InputTypedBufferRaw, context->m_input.buffer_InputTypedBufferRaw_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, true, context->m_input.buffer_InputTypedBufferRaw_stride, context->m_input.buffer_InputTypedBufferRaw_count, 0 },
-                { context->m_output.buffer_OutputTypedBufferRaw, context->m_output.buffer_OutputTypedBufferRaw_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, true, context->m_output.buffer_OutputTypedBufferRaw_stride, context->m_output.buffer_OutputTypedBufferRaw_count, 0 },
-                { context->m_internal.constantBuffer__BufferTestCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.buffer_InputTypedBuffer, context->m_input.buffer_InputTypedBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputTypedBuffer_stride, context->m_input.buffer_InputTypedBuffer_count, 0, 0, 0, false },
+                { context->m_output.buffer_OutputTypedBuffer, context->m_output.buffer_OutputTypedBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputTypedBuffer_stride, context->m_output.buffer_OutputTypedBuffer_count, 0, 0, 0, false },
+                { context->m_input.buffer_InputTypedStructBuffer, context->m_input.buffer_InputTypedStructBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputTypedStructBuffer_stride, context->m_input.buffer_InputTypedStructBuffer_count, 0, 0, 0, false },
+                { context->m_output.buffer_OutputTypedStructBuffer, context->m_output.buffer_OutputTypedStructBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputTypedStructBuffer_stride, context->m_output.buffer_OutputTypedStructBuffer_count, 0, 0, 0, false },
+                { context->m_input.buffer_InputStructuredBuffer, context->m_input.buffer_InputStructuredBuffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_InputStructuredBuffer_stride, context->m_input.buffer_InputStructuredBuffer_count, 0, 0, 0, false },
+                { context->m_output.buffer_OutputStructuredBuffer, context->m_output.buffer_OutputStructuredBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_OutputStructuredBuffer_stride, context->m_output.buffer_OutputStructuredBuffer_count, 0, 0, 0, false },
+                { context->m_input.buffer_InputTypedBufferRaw, context->m_input.buffer_InputTypedBufferRaw_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, true, context->m_input.buffer_InputTypedBufferRaw_stride, context->m_input.buffer_InputTypedBufferRaw_count, 0, 0, 0, false },
+                { context->m_output.buffer_OutputTypedBufferRaw, context->m_output.buffer_OutputTypedBufferRaw_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, true, context->m_output.buffer_OutputTypedBufferRaw_stride, context->m_output.buffer_OutputTypedBufferRaw_count, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__BufferTest_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 9, Context::LogFn);
@@ -1149,11 +1149,11 @@ namespace buffertest
             }
         }
 
-        // _BufferTestCB
-        if (m_internal.constantBuffer__BufferTestCB == nullptr)
+        // _BufferTest_0CB
+        if (m_internal.constantBuffer__BufferTest_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__BufferTestCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_BufferTestCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__BufferTest_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_BufferTest_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

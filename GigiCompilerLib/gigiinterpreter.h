@@ -396,6 +396,7 @@ public:
 	{                                                                                                                                                 \
         auto& runtimeData = m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name);                                                                   \
         runtimeData.m_inErrorState = false;                                                                                                           \
+        runtimeData.m_conditionIsTrue = true;                                                                                                         \
 		if (!OnNodeAction(node.##_NAME, runtimeData, NodeAction::Init))                                                                               \
 		{                                                                                                                                             \
 			m_logFn(LogLevel::Error, "Error during IGigiInterpreter::Compile OnNodeAction(Init) in node %s (" #_NAME ")", node.##_NAME.name.c_str()); \
@@ -942,6 +943,7 @@ public:
 	{                                                                                                                 \
         auto& runtimeData = m_##_TYPE##_RuntimeData.GetOrCreate(node.##_NAME.name);                                   \
         runtimeData.m_inErrorState = false;                                                                           \
+        runtimeData.m_conditionIsTrue = true;                                                                         \
 		if (!OnNodeAction(node.##_NAME, runtimeData, NodeAction::Execute))                                            \
 			return false;                                                                                             \
 		break;                                                                                                        \

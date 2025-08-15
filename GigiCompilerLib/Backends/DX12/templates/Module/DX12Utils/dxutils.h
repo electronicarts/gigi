@@ -151,11 +151,16 @@ namespace DX12Utils
         // used by buffers, constant buffers, texture2darrays and texture3ds
         UINT m_stride = 0;
 
-        // used by buffers
+        // used by buffers and the z for textures
         UINT m_count = 0;
 
         // Used by textures
         UINT m_UAVMipIndex = 0;
+
+        // Used by buffers
+        UINT m_bufferViewBegin = 0;
+        UINT m_bufferViewSize = 0;
+        bool m_bufferViewInBytes = false;
     };
 
     inline constexpr UINT D3D12CalcSubresource(UINT MipSlice, UINT ArraySlice, UINT PlaneSlice, UINT MipLevels, UINT ArraySize) noexcept

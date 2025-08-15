@@ -779,7 +779,7 @@ namespace TextureFormats
             commandList->SetPipelineState(ContextInternal::computeShader_ComputeShader_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Texture, context->m_input.texture_Texture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_input.texture_Texture, context->m_input.texture_Texture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);

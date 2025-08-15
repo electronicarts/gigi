@@ -735,14 +735,14 @@ namespace Mips_VSPS_2D
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_output.texture_MipTex, context->m_output.texture_MipTex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 2 },
+                { context->m_output.texture_MipTex, context->m_output.texture_MipTex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 2, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_output.texture_MipTex, context->m_output.texture_MipTex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 1 },
+                { context->m_output.texture_MipTex, context->m_output.texture_MipTex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 1, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(1, descriptorTablePS);

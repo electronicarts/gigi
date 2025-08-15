@@ -82,6 +82,11 @@ ENUM_BEGIN(GeometryType, "")
     ENUM_ITEM(PointList, "")
 ENUM_END()
 
+ENUM_BEGIN(MemoryUnitOfMeasurement, "")
+    ENUM_ITEM(Items, "")
+    ENUM_ITEM(Bytes, "")
+ENUM_END()
+
 #include "TextureFormats.h"
 
 //========================================================
@@ -157,6 +162,7 @@ STRUCT_BEGIN(DispatchSizeDesc, "The number of threads to dispatch. Not thread gr
     STRUCT_STATIC_ARRAY(int, postAdd, 3, { 0 COMMA 0 COMMA 0 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
     STRUCT_FIELD(VariableReference, indirectOffsetVariable, {}, "If a variable is given, it will be used as the offset into the indirect dispatch buffer. 0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.", 0)
     STRUCT_FIELD(int, indirectOffsetValue, 0, "The offset into the indirect dispatch buffer if no variable given.  0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.", 0)
+    STRUCT_STATIC_ARRAY(int, shaderNumThreads, 3, { 0 COMMA 0 COMMA 0 }, "", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(RayDispatchSizeDesc, "size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.")
@@ -241,6 +247,18 @@ STRUCT_END()
 
 STRUCT_BEGIN(LinkProperties, "Properties of links between nodes.")
     STRUCT_FIELD(int, UAVMipIndex, 0, "The mip index to use, if this is a UAV connection.", 0)
+    STRUCT_FIELD(bool, disallowDuplication, false, "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.", 0)
+
+    STRUCT_FIELD(MemoryUnitOfMeasurement, bufferViewUnits, MemoryUnitOfMeasurement::Items, "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.", 0)
+    STRUCT_FIELD(unsigned int, bufferViewBegin, 0, "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.", 0)
+    STRUCT_FIELD(unsigned int, bufferViewSize, 0, "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(CopyResource_BufferToBuffer, "Settings for when copying from a buffer to a buffer")
+    STRUCT_FIELD(unsigned int, srcBegin, 0, "Where the copy source begins in the source buffer. In Bytes.", 0)
+    STRUCT_FIELD(unsigned int, destBegin, 0, "Where the copy destination begins in the destination buffer. In Bytes.", 0)
+    STRUCT_FIELD(unsigned int, size, 0, "How much to copy. 0 to copy everything. In Bytes.", 0)
+    STRUCT_FIELD(bool, hideUI, false, "Used by UI system to know whether to show this or not", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 //========================================================
@@ -338,8 +356,8 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_ComputeShader, RenderGraphNode_Actio
     STRUCT_FIELD(ComputeShaderReference, shader, {}, "The shader.", 0)
     STRUCT_FIELD(DispatchSizeDesc, dispatchSize, {}, "The dispatch size.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
-    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
-    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with, on top of whatever defines the shader has already", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
+    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint. Handled by front end during Gigi compilation and becomes shader entry point during code gen.", 0)
+    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_RayShader, RenderGraphNode_ActionBase, "Executes a dispatch rays shader")
@@ -351,8 +369,8 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_RayShader, RenderGraphNode_ActionBas
     STRUCT_FIELD(RayGenShaderReference, shader, {}, "The ray gen shader.", 0)
     STRUCT_FIELD(RayDispatchSizeDesc, dispatchSize, {}, "The dispatch size.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
-    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
-    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with, on top of whatever defines the shader has already", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.  Handled by front end during Gigi compilation and becomes shader entry point during code gen.", 0)
+    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(int, maxRecursionDepth, 3, "The maximum recursion depth of the ray.", 0)
     STRUCT_FIELD(unsigned int, rayPayloadSize, 64, "The size of the ray payload, in bytes. 64 bytes is four float4s.", 0)
@@ -363,6 +381,8 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_Action
     STRUCT_CONST(std::string, c_shortTypeName, "Copy", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Copy", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(CopyResource_BufferToBuffer, bufferToBuffer, {}, "Settings when copying from a buffer to another buffer.", 0)
 
     STRUCT_FIELD(NodePinReference, source, {}, "The resource being copied from.", SCHEMA_FLAG_NO_UI)
     STRUCT_FIELD(NodePinReference, dest, {}, "The resource being copied to.", SCHEMA_FLAG_NO_UI)
@@ -416,7 +436,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase
 
     STRUCT_STATIC_ARRAY(ColorTargetSettings, colorTargetSettings, 8, {}, "Settings for the color targets", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
 
-    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already. Handled by front end during Gigi compilation and becomes shader defines during code gen.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(DrawCullMode, cullMode, DrawCullMode::None, "", 0)
     STRUCT_FIELD(bool, frontIsCounterClockwise, true, "", 0)

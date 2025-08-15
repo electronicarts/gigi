@@ -789,13 +789,8 @@ namespace SubGraphTest
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_input.texture_Test->GetDesc().Width;
-            unsigned int destSize = context->m_output.texture_Inner_Exported_Tex->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_output.texture_Inner_Exported_Tex, context->m_input.texture_Test);
-            else
-                commandList->CopyBufferRegion(context->m_output.texture_Inner_Exported_Tex, 0, context->m_input.texture_Test, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_output.texture_Inner_Exported_Tex, context->m_input.texture_Test);
 
             if(context->m_profile)
             {
@@ -833,7 +828,7 @@ namespace SubGraphTest
             commandList->SetPipelineState(ContextInternal::computeShader_Swap_Colors_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Inner_Exported_Tex, context->m_output.texture_Inner_Exported_Tex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Inner_Exported_Tex, context->m_output.texture_Inner_Exported_Tex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);

@@ -976,10 +976,10 @@ namespace TextureCubeRW_RGS
             dxrCommandList->SetPipelineState1(ContextInternal::rayShader_RW_rtso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_NodeTexture, context->m_output.texture_NodeTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0 },
-                { context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0 },
-                { context->m_input.texture_ImportedColor, context->m_input.texture_ImportedColor_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0 },
-                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0 }
+                { context->m_output.texture_NodeTexture, context->m_output.texture_NodeTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0, 0, 0, false },
+                { context->m_input.texture_ImportedTexture, context->m_input.texture_ImportedTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0, 0, 0, false },
+                { context->m_input.texture_ImportedColor, context->m_input.texture_ImportedColor_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0, 0, 0, false },
+                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::TextureCube, false, 0, 6, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 4, Context::LogFn);

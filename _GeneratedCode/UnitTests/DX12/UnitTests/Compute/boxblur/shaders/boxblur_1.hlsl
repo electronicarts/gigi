@@ -1,0 +1,177 @@
+//#pragma pack_matrix(row_major)
+//#ifdef SLANG_HLSL_ENABLE_NVAPI
+//#include "nvHLSLExtns.h"
+//#endif
+//
+//#ifndef __DXC_VERSION_MAJOR
+// warning X3557: loop doesn't seem to do anything, forcing loop to unroll
+//#pragma warning(disable : 3557)
+//#endif
+
+
+#line 3 "boxblur.hlsl"
+struct Struct_BoxBlur_1CB_0
+{
+    int radius_0;
+    uint sRGB_0;
+    float2 _padding0_0;
+};
+
+
+
+cbuffer _BoxBlur_1CB_0 : register(b0)
+{
+    Struct_BoxBlur_1CB_0 _BoxBlur_1CB_0;
+}
+
+#line 10
+Texture2D<float4 > Input_0 : register(t0);
+
+
+#line 11
+RWTexture2D<float4 > Output_0 : register(u0);
+
+
+#line 3
+float3 LinearToSRGB_0(float3 linearCol_0)
+{
+    float3 sRGBLo_0 = linearCol_0 * 12.92000007629394531f;
+    float3 sRGBHi_0 = pow(abs(linearCol_0), float3(0.4166666567325592f, 0.4166666567325592f, 0.4166666567325592f)) * 1.0549999475479126f - 0.05499999970197678f;
+    float3 sRGB_1;
+
+#line 7
+    float _S1;
+    if((linearCol_0.x) <= 0.00313080009073019f)
+    {
+
+#line 8
+        _S1 = sRGBLo_0.x;
+
+#line 8
+    }
+    else
+    {
+
+#line 8
+        _S1 = sRGBHi_0.x;
+
+#line 8
+    }
+
+#line 8
+    sRGB_1[int(0)] = _S1;
+    if((linearCol_0.y) <= 0.00313080009073019f)
+    {
+
+#line 9
+        _S1 = sRGBLo_0.y;
+
+#line 9
+    }
+    else
+    {
+
+#line 9
+        _S1 = sRGBHi_0.y;
+
+#line 9
+    }
+
+#line 9
+    sRGB_1[int(1)] = _S1;
+    if((linearCol_0.z) <= 0.00313080009073019f)
+    {
+
+#line 10
+        _S1 = sRGBLo_0.z;
+
+#line 10
+    }
+    else
+    {
+
+#line 10
+        _S1 = sRGBHi_0.z;
+
+#line 10
+    }
+
+#line 10
+    sRGB_1[int(2)] = _S1;
+    return sRGB_1;
+}
+
+
+#line 42
+[shader("compute")][numthreads(8, 8, 1)]
+void BlurV(uint3 DTid_0 : SV_DispatchThreadID)
+{
+
+#line 42
+    uint3 _S2 = DTid_0;
+
+    int radius_1 = _BoxBlur_1CB_0.radius_0;
+    uint w_0;
+
+#line 45
+    uint h_0;
+    Input_0.GetDimensions(w_0, h_0);
+
+    float4 _S3 = float4(0.0f, 0.0f, 0.0f, 0.0f);
+
+#line 48
+    int i_0 = - radius_1;
+
+#line 48
+    float4 result_0 = _S3;
+
+    for(;;)
+    {
+
+#line 50
+        if(i_0 <= radius_1)
+        {
+        }
+        else
+        {
+
+#line 50
+            break;
+        }
+
+#line 51
+        uint2 _S4 = (_S2.xy + uint2(int2(int(0), i_0))) % uint2(int2(int(w_0), int(h_0)));
+
+#line 51
+        float4 result_1 = result_0 + Input_0.Load(int3(int2(_S4), int(0))) / (float(radius_1) * 2.0f + 1.0f);
+
+#line 50
+        i_0 = i_0 + int(1);
+
+#line 50
+        result_0 = result_1;
+
+#line 50
+    }
+
+
+    if(bool(_BoxBlur_1CB_0.sRGB_0))
+    {
+
+#line 54
+        Output_0[_S2.xy] = float4(LinearToSRGB_0(result_0.xyz), result_0.w);
+
+#line 53
+    }
+    else
+    {
+        Output_0[_S2.xy] = result_0;
+
+#line 53
+    }
+
+
+
+    return;
+}
+

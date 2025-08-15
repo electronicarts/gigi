@@ -859,7 +859,7 @@ namespace BarrierTest
             commandList->SetPipelineState(ContextInternal::computeShader_Draw_Left_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
@@ -912,7 +912,7 @@ namespace BarrierTest
             commandList->SetPipelineState(ContextInternal::computeShader_Draw_Right_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
@@ -965,7 +965,7 @@ namespace BarrierTest
             commandList->SetPipelineState(ContextInternal::computeShader_After_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);

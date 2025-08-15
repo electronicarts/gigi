@@ -927,7 +927,7 @@ namespace IndirectDispatch
             commandList->SetPipelineState(ContextInternal::computeShader_Clear_Render_Target_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
@@ -990,8 +990,8 @@ namespace IndirectDispatch
             commandList->SetPipelineState(ContextInternal::computeShader_Fill_Indirect_Dispatch_Count_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_internal.buffer_Indirect_Dispatch_Count, context->m_internal.buffer_Indirect_Dispatch_Count_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Indirect_Dispatch_Count_stride, context->m_internal.buffer_Indirect_Dispatch_Count_count, 0 },
-                { context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_internal.buffer_Indirect_Dispatch_Count, context->m_internal.buffer_Indirect_Dispatch_Count_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Indirect_Dispatch_Count_stride, context->m_internal.buffer_Indirect_Dispatch_Count_count, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -1047,7 +1047,7 @@ namespace IndirectDispatch
             commandList->SetPipelineState(ContextInternal::computeShader_Do_Indirect_Dispatch_1_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
@@ -1096,7 +1096,7 @@ namespace IndirectDispatch
             commandList->SetPipelineState(ContextInternal::computeShader_Do_Indirect_Dispatch_2_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Render_Target, context->m_output.texture_Render_Target_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);

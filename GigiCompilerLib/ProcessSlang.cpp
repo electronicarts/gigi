@@ -157,7 +157,7 @@ public:
 #endif
 
 // https://github.com/shader-slang/slang/tree/master/docs#readme
-bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage destinationLanguage, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const std::vector<std::string>& includeDirectories, const SlangOptions& options)
+bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage destinationLanguage, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const std::vector<std::string>& includeDirectories, const std::vector<ShaderDefine>& shaderDefines, const SlangOptions& options)
 {
     SlangCompileTarget targetLanguage = SlangCompileTarget::SLANG_HLSL;
     switch (destinationLanguage)
@@ -235,6 +235,10 @@ bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage 
         translationUnitIndex,
         entryPoint,
         stageEnum);
+
+    // handle shader defines
+    for (const ShaderDefine& define : shaderDefines)
+        spAddPreprocessorDefine(request, define.name.c_str(), define.value.c_str());
 
     int anyErrors = spCompile(request);
 

@@ -1538,8 +1538,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Resour
 		}
 
 		// publish the initial and current state as viewable buffers
-		runtimeData.HandleViewableBuffer(*this, (node.name + ".resource" + " - Initial State").c_str(), runtimeData.m_resourceInitialState, runtimeData.m_format, runtimeData.m_formatCount, runtimeData.m_structIndex, runtimeData.m_size, runtimeData.m_stride, runtimeData.m_count, true, false);
-		runtimeData.HandleViewableBuffer(*this, (node.name + ".resource").c_str(), runtimeData.m_resource, runtimeData.m_format, runtimeData.m_formatCount, runtimeData.m_structIndex, runtimeData.m_size, runtimeData.m_stride, runtimeData.m_count, false, resourceWantsReset);
+		runtimeData.HandleViewableBuffer(*this, (node.name + ".resource" + " - Initial State").c_str(), runtimeData.m_resourceInitialState, runtimeData.m_format, runtimeData.m_formatCount, runtimeData.m_structIndex, runtimeData.m_size, runtimeData.m_stride, runtimeData.m_count, true, false, 0, 0, false);
+		runtimeData.HandleViewableBuffer(*this, (node.name + ".resource").c_str(), runtimeData.m_resource, runtimeData.m_format, runtimeData.m_formatCount, runtimeData.m_structIndex, runtimeData.m_size, runtimeData.m_stride, runtimeData.m_count, false, resourceWantsReset, 0, 0, false);
 
 		//if (runtimeData.m_instanceDescs)
 			//runtimeData.HandleViewableBuffer(*this, (node.name + ".instanceDesc").c_str(), runtimeData.m_instanceDescs, DXGI_FORMAT_R32G32B32A32_FLOAT, 1, -1, sizeof(D3D12_RAYTRACING_INSTANCE_DESC), sizeof(D3D12_RAYTRACING_INSTANCE_DESC), sizeof(D3D12_RAYTRACING_INSTANCE_DESC) / 16);

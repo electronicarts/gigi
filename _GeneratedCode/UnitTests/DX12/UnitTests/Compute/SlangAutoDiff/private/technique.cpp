@@ -100,7 +100,7 @@ namespace SlangAutoDiff
             ranges[0].RegisterSpace = 0;
             ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
-            // _DescendCB
+            // _Descend_0CB
             ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[1].NumDescriptors = 1;
             ranges[1].BaseShaderRegister = 0;
@@ -111,11 +111,13 @@ namespace SlangAutoDiff
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SlangAutoDiff_Descend.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "SlangAutoDiff_Descend_0.hlsl";
             shaderCompilationInfo.entryPoint = "csmain";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "GradientDescend" : "");
             if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.defines.emplace_back("SCREEN_MIN","0.001f");
+            shaderCompilationInfo.defines.emplace_back("SCREEN_MAX","0.99f");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(1,1,1)");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
@@ -840,11 +842,11 @@ namespace SlangAutoDiff
             m_internal.constantBuffer__RenderCB = nullptr;
         }
 
-        // _DescendCB
-        if (m_internal.constantBuffer__DescendCB)
+        // _Descend_0CB
+        if (m_internal.constantBuffer__Descend_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__DescendCB);
-            m_internal.constantBuffer__DescendCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__Descend_0CB);
+            m_internal.constantBuffer__Descend_0CB = nullptr;
         }
     }
 
@@ -956,8 +958,8 @@ namespace SlangAutoDiff
             commandList->SetPipelineState(ContextInternal::computeShader_Initialize_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0 },
-                { context->m_internal.constantBuffer__InitCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__InitCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -988,13 +990,13 @@ namespace SlangAutoDiff
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__RenderCB, context->m_internal.constantBuffer__RenderCB_cpu, Context::LogFn);
         }
 
-        // Shader Constants: _DescendCB
+        // Shader Constants: _Descend_0CB
         {
-            context->m_internal.constantBuffer__DescendCB_cpu.LearningRate = context->m_input.variable_LearningRate;
-            context->m_internal.constantBuffer__DescendCB_cpu.MaximumStepSize = context->m_input.variable_MaximumStepSize;
-            context->m_internal.constantBuffer__DescendCB_cpu.NumGaussians = context->m_input.variable_NumGaussians;
-            context->m_internal.constantBuffer__DescendCB_cpu.UseBackwardAD = context->m_input.variable_UseBackwardAD;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__DescendCB, context->m_internal.constantBuffer__DescendCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__Descend_0CB_cpu.LearningRate = context->m_input.variable_LearningRate;
+            context->m_internal.constantBuffer__Descend_0CB_cpu.MaximumStepSize = context->m_input.variable_MaximumStepSize;
+            context->m_internal.constantBuffer__Descend_0CB_cpu.NumGaussians = context->m_input.variable_NumGaussians;
+            context->m_internal.constantBuffer__Descend_0CB_cpu.UseBackwardAD = context->m_input.variable_UseBackwardAD;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Descend_0CB, context->m_internal.constantBuffer__Descend_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -1022,8 +1024,8 @@ namespace SlangAutoDiff
             commandList->SetPipelineState(ContextInternal::computeShader_GradientDescend_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0 },
-                { context->m_internal.constantBuffer__DescendCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__Descend_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -1075,9 +1077,9 @@ namespace SlangAutoDiff
             commandList->SetPipelineState(ContextInternal::computeShader_Render_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0 },
-                { context->m_input.texture_Output, context->m_input.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__RenderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0, 0, 0, false },
+                { context->m_input.texture_Output, context->m_input.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__RenderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1191,11 +1193,11 @@ namespace SlangAutoDiff
             m_internal.constantBuffer__RenderCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_RenderCB" : nullptr), Context::LogFn);
         }
 
-        // _DescendCB
-        if (m_internal.constantBuffer__DescendCB == nullptr)
+        // _Descend_0CB
+        if (m_internal.constantBuffer__Descend_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__DescendCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_DescendCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__Descend_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Descend_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

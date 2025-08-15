@@ -19,7 +19,7 @@ std::filesystem::path GetExePath()
 	return ret;
 }
 
-bool ConvertShaderSourceCode(std::string& source, const char* fileName, const char* shaderModel, const char* stage, const char* entryPoint, const std::vector<std::string>& includeDirectories, ShaderLanguage sourceLanguage, ShaderLanguage destinationLanguage, std::string& errorMessage, const SlangOptions& slangOptions)
+bool ConvertShaderSourceCode(std::string& source, const char* fileName, const char* shaderModel, const char* stage, const char* entryPoint, const std::vector<std::string>& includeDirectories, ShaderLanguage sourceLanguage, ShaderLanguage destinationLanguage, std::string& errorMessage, const std::vector<ShaderDefine>& shaderDefines, const SlangOptions& slangOptions)
 {
 	// If no conversion needed, we are done
 	if (sourceLanguage == destinationLanguage)
@@ -27,11 +27,11 @@ bool ConvertShaderSourceCode(std::string& source, const char* fileName, const ch
 
 	// If the source language is slang, slang can output the language specified
 	if (sourceLanguage == ShaderLanguage::Slang)
-		return ProcessWithSlang(source, fileName, destinationLanguage, stage, entryPoint, shaderModel, errorMessage, includeDirectories, slangOptions);
+		return ProcessWithSlang(source, fileName, destinationLanguage, stage, entryPoint, shaderModel, errorMessage, includeDirectories, shaderDefines, slangOptions);
 
 	// If the source language is HLSL btu we want WGSL, have slang convert for us
 	if (sourceLanguage == ShaderLanguage::HLSL && destinationLanguage == ShaderLanguage::WGSL)
-		return ProcessWithSlang(source, fileName, destinationLanguage, stage, entryPoint, shaderModel, errorMessage, includeDirectories, slangOptions);
+		return ProcessWithSlang(source, fileName, destinationLanguage, stage, entryPoint, shaderModel, errorMessage, includeDirectories, shaderDefines, slangOptions);
 
 	// Otherwise, conversion not currently implemented
 	return false;

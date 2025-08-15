@@ -3046,7 +3046,7 @@ void ShowShaders()
 				ImGui::TableSetColumnIndex(1);
                 if (ImGui::SmallButton("Post"))
                 {
-                    std::string fileName = shader->fileName;
+                    std::string fileName = shader->destFileName.empty() ? shader->fileName : shader->destFileName;
                     if (std::filesystem::path(fileName).is_relative())
                         fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
                     ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
@@ -3076,6 +3076,8 @@ void ShowShaders()
                     std::string fileName = fileCopy.fileName;
                     if (std::filesystem::path(fileName).is_relative())
                         fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    else
+                        fileName = std::filesystem::weakly_canonical(fileName).string();
                     ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
 				ImGui::TableSetColumnIndex(1);
@@ -5532,6 +5534,7 @@ void ShowResourceView()
             }
 
             static bool showAsHex = false;
+            static bool showBufferView = true;
 
             if (res.m_resource)
             {
@@ -6154,30 +6157,54 @@ void ShowResourceView()
                     }
                     case RuntimeTypes::ViewableResource::Type::Buffer:
                     {
-                        // Read back the data
-                        std::vector<unsigned char> bytes(res.m_size[0]);
-                        unsigned char* data = nullptr;
-                        res.m_resourceReadback->Map(0, nullptr, reinterpret_cast<void**>(&data));
-                        memcpy(bytes.data(), data, res.m_size[0]);
-                        res.m_resourceReadback->Unmap(0, nullptr);
+                        // Calculate the view range
+                        unsigned int bufferViewBegin = 0;
+                        unsigned int bufferViewCount = res.m_count;
+                        unsigned int bufferViewItemSize = (res.m_structIndex != -1)
+                            ? (unsigned int)renderGraph.structs[res.m_structIndex].sizeInBytes
+                            : (unsigned int)Get_DXGI_FORMAT_Info(res.m_format).bytesPerPixel;
 
-                        // Gather the view info
+                        if (showBufferView && (res.m_bufferViewBegin > 0 || res.m_bufferViewCount > 0))
+                        {
+                            bufferViewBegin = res.m_bufferViewBegin;
+                            bufferViewCount = res.m_bufferViewCount;
+                        }
+
+                        // Gather the view info struct data
                         struct ViewInfo
                         {
                             int structIndex = -1;
                             DXGI_FORMAT format = DXGI_FORMAT_FORCE_UINT;
                             int formatCount = 1;
-                            int count;
-                            int size;
+                            int count = 0;
+                            int size = 0;
                             bool showAsHex = false;
                             bool showStructuredBuffersVertically = true;
+
                         };
                         ViewInfo viewInfo;
                         viewInfo.structIndex = res.m_structIndex;
                         viewInfo.format = res.m_format;
                         viewInfo.formatCount = res.m_formatCount;
-                        viewInfo.count = res.m_count;
-                        viewInfo.size = res.m_size[0];
+                        viewInfo.count = bufferViewCount;
+                        viewInfo.size = bufferViewCount * bufferViewItemSize;
+
+                        // Read back the data
+                        std::vector<unsigned char> bytes(viewInfo.size);
+                        {
+                            D3D12_RANGE readRange;
+                            readRange.Begin = bufferViewBegin * bufferViewItemSize;
+                            readRange.End = (bufferViewBegin + bufferViewCount) * bufferViewItemSize;
+
+                            D3D12_RANGE writeRange;
+                            writeRange.Begin = 1;
+                            writeRange.End = 0;
+
+                            unsigned char* data = nullptr;
+                            res.m_resourceReadback->Map(0, &readRange, reinterpret_cast<void**>(&data));
+                            memcpy(bytes.data(), &data[readRange.Begin], readRange.End - readRange.Begin);
+                            res.m_resourceReadback->Unmap(0, &writeRange);
+                        }
 
                         // handle choosing to view the data differently
                         {
@@ -6247,12 +6274,17 @@ void ShowResourceView()
                             ImGui::SameLine();
                             ImGui::Checkbox("Hex", &showAsHex);
                             viewInfo.showAsHex = showAsHex;
+
+                            ImGui::SameLine();
+                            ImGui::Checkbox("View", &showBufferView);
+                            ShowToolTip("If true, only shows what was in the buffer view. If false, shows the entire resource.");
                         }
 
                         // See if we can save this as a BVH for WebGPU
                         const unsigned char* BVHFirstPos = nullptr;
                         size_t BVHPosStride = 0;
                         size_t BVHPosCount = 0;
+                        if (bytes.size() > 0)
                         {
                             DXGI_FORMAT BVHVertexFormat = DXGI_FORMAT_FORCE_UINT;
                             size_t BVHVertexOffset = 0;
@@ -6590,6 +6622,7 @@ void ShowRenderGraphWindow()
         std::vector<RuntimeTypes::ViewableResource>* viewableResources_ = nullptr;
         std::string renderGraphText;
         bool nodeIsInErrorState = false;
+        bool nodeConditionIsFalse = false;
         g_interpreter.RuntimeNodeDataLambda(
             renderGraph.nodes[nodeIndex],
             [&] (auto node, auto* runtimeData)
@@ -6601,6 +6634,7 @@ void ShowRenderGraphWindow()
                     viewableResources_ = &(runtimeData->m_viewableResources);
                     renderGraphText = runtimeData->m_renderGraphText;
                     nodeIsInErrorState = runtimeData->m_inErrorState;
+                    nodeConditionIsFalse = !runtimeData->m_conditionIsTrue;
                 }
             }
         );
@@ -6609,12 +6643,14 @@ void ShowRenderGraphWindow()
         {
             if (nodeIsInErrorState)
                 ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));
+            else if (nodeConditionIsFalse)
+                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
 
             char nodeLabel[512];
             sprintf_s(nodeLabel, "%s: %s", nodeTypeName.c_str(), nodeName.c_str());
             bool collapsingHeaderOpen = ImGui::CollapsingHeader(nodeLabel);
 
-            if (nodeIsInErrorState)
+            if (nodeIsInErrorState || nodeConditionIsFalse)
                 ImGui::PopStyleColor();
 
             if (!collapsingHeaderOpen)

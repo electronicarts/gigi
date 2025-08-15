@@ -410,6 +410,10 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
     for (const LoadedTextureReference& loadedTexture : shader.loadedTextureRefs)
         shaderSpecificStringReplacementMap[loadedTexture.token] << loadedTexture.resourceName;
 
+    // Put custom tokens in, else they will get filled in with an empty string by logic lower down
+    for (const CustomGigiToken& token : renderGraph.customTokens)
+        shaderSpecificStringReplacementMap[std::string("/*$(") + token.key + std::string(")*/")] << token.value;
+
     // Handle shader markup
     shaderSpecificStringReplacementMap["/*$(RayTraceFn)*/"] << options.m_rayTraceFnName;
     shaderCode = (char*)shaderFile.data();
@@ -664,7 +668,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
             if (stage)
             {
                 std::string errorMessage;
-                if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.slangOptions))
+                if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.defines, shader.slangOptions))
                     ShowErrorMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
                 else if (!errorMessage.empty())
                     ShowWarningMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
@@ -724,7 +728,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
             if (stage)
             {
                 std::string errorMessage;
-                if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.slangOptions))
+                if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.defines, shader.slangOptions))
                     ShowErrorMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
                 else if (!errorMessage.empty())
                     ShowWarningMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());

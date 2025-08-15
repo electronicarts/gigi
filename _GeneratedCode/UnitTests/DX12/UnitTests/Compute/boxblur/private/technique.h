@@ -28,7 +28,14 @@ namespace boxblur
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__BoxBlurCB
+        struct Struct__BoxBlur_0CB
+        {
+            int radius = 2;  // The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2
+            unsigned int sRGB = true;
+            float2 _padding0 = {0.000000f, 0.000000f};  // Padding
+        };
+
+        struct Struct__BoxBlur_1CB
         {
             int radius = 2;  // The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2
             unsigned int sRGB = true;
@@ -43,12 +50,15 @@ namespace boxblur
         static const D3D12_RESOURCE_FLAGS texture_PingPongTexture_flags =  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
         const D3D12_RESOURCE_STATES c_texture_PingPongTexture_endingState = D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
 
-        Struct__BoxBlurCB constantBuffer__BoxBlurCB_cpu;
-        ID3D12Resource* constantBuffer__BoxBlurCB = nullptr;
+        Struct__BoxBlur_0CB constantBuffer__BoxBlur_0CB_cpu;
+        ID3D12Resource* constantBuffer__BoxBlur_0CB = nullptr;
 
         // Horizontal blur pass
         static ID3D12PipelineState* computeShader_BlurH_pso;
         static ID3D12RootSignature* computeShader_BlurH_rootSig;
+
+        Struct__BoxBlur_1CB constantBuffer__BoxBlur_1CB_cpu;
+        ID3D12Resource* constantBuffer__BoxBlur_1CB = nullptr;
 
         // Vertical blur pass
         static ID3D12PipelineState* computeShader_BlurV_pso;

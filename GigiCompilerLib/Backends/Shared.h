@@ -1162,4 +1162,4 @@ void DispatchLambdaAction(const RenderGraphNode& node, const LAMBDA& lambda)
     }
 }
 
-bool ConvertShaderSourceCode(std::string& source, const char* fileName, const char* shaderModel, const char* stage, const char* entryPoint, const std::vector<std::string>& includeDirectories, ShaderLanguage sourceLanguage, ShaderLanguage destinationLanguage, std::string& errorMessage, const SlangOptions& slangOptions);
+bool ConvertShaderSourceCode(std::string& source, const char* fileName, const char* shaderModel, const char* stage, const char* entryPoint, const std::vector<std::string>& includeDirectories, ShaderLanguage sourceLanguage, ShaderLanguage destinationLanguage, std::string& errorMessage, const std::vector<ShaderDefine>& shaderDefines, const SlangOptions& slangOptions);

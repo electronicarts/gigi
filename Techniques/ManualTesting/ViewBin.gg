@@ -1,0 +1,16 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "TheBuffer",
+                "editorPos": [
+                    -35.0,
+                    -17.0
+                ],
+                "visibility": "Imported"
+            }
+        }
+    ]
+}

@@ -949,7 +949,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1039,7 +1039,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1129,7 +1129,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1219,7 +1219,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1309,7 +1309,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1399,7 +1399,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1489,7 +1489,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1579,7 +1579,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1669,7 +1669,7 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1785,15 +1785,15 @@ namespace Mips_DrawCall
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderSphereCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderSphereCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_internal.texture_Color_Buffer, context->m_internal.texture_Color_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_internal.texture_Color_Buffer_size[2], 0 },
-                { context->m_internal.constantBuffer__PixelShaderSphereCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.texture_Color_Buffer, context->m_internal.texture_Color_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_internal.texture_Color_Buffer_size[2], 0, 0, 0, false },
+                { context->m_internal.constantBuffer__PixelShaderSphereCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 2, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(1, descriptorTablePS);

@@ -1537,6 +1537,21 @@ struct Example :
 
 				std::string oldNodeName = GetNodeName(node);
 
+                switch (node._index)
+                {
+                    case RenderGraphNode::c_index_actionComputeShader:
+                    {
+                        RenderGraphNode_Action_ComputeShader& nodeComputeShader = node.actionComputeShader;
+                        int shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::Compute, nodeComputeShader.shader.name.c_str());
+                        if (shaderIndex != -1)
+                        {
+                            const Shader& shader = g_renderGraph.shaders[shaderIndex];
+                            nodeComputeShader.dispatchSize.shaderNumThreads = shader.NumThreads;
+                        }
+                        break;
+                    }
+                }
+
 				ImGui::TextUnformatted(title.c_str());
 				ImGui::Indent();
 				g_renderGraphDirty |= ShowUI(g_renderGraph, nullptr, nullptr, node, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes));
@@ -2082,11 +2097,11 @@ struct Example :
     void HandleDoubleClick(int linkId)
     {
 		LinkInfo& linkInfo = m_links[linkId];
-		
+
         // Create reroute node
 		char newNodeName[64];
 		int nextNodeIndex = 0;
-		while (true) 
+		while (true)
 		{
 			nextNodeIndex++;
 			sprintf_s(newNodeName, "Node %i", nextNodeIndex);
@@ -2567,8 +2582,8 @@ struct Example :
             std::vector<NodePinInfo> pinInfo = GetNodePins(g_renderGraph, node);
 
             // Calculate the maximum width of each pin, and the nodeHeader
-            float maxRowSize = 0.f; 
-            
+            float maxRowSize = 0.f;
+
             if (node._index != RenderGraphNode::c_index_reroute)
             {
                 maxRowSize = ImGui::CalcTextSize(nodeHeader.c_str()).x;

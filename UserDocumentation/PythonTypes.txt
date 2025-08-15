@@ -78,6 +78,9 @@
   GeometryTypeFromString()
   GeometryTypeToString()
 
+  MemoryUnitOfMeasurementFromString()
+  MemoryUnitOfMeasurementToString()
+
   TextureFormatFromString()
   TextureFormatToString()
 
@@ -229,9 +232,10 @@
     Host.ShaderResourceAccessType_DepthTarget = 10
     Host.ShaderResourceAccessType_Barrier = 11
     Host.ShaderResourceAccessType_ShadingRate = 12
-    Host.ShaderResourceAccessType_Count = 13
-    Host.ShaderResourceAccessType_LAST = 13
-    Host.ShaderResourceAccessType_COUNT = 14
+    Host.ShaderResourceAccessType_Noop = 13
+    Host.ShaderResourceAccessType_Count = 14
+    Host.ShaderResourceAccessType_LAST = 14
+    Host.ShaderResourceAccessType_COUNT = 15
 
   TextureViewType:
     Host.TextureViewType_FIRST = 0
@@ -418,6 +422,13 @@
     Host.GeometryType_LAST = 2
     Host.GeometryType_COUNT = 3
 
+  MemoryUnitOfMeasurement:
+    Host.MemoryUnitOfMeasurement_FIRST = 0
+    Host.MemoryUnitOfMeasurement_Items = 0
+    Host.MemoryUnitOfMeasurement_Bytes = 1
+    Host.MemoryUnitOfMeasurement_LAST = 1
+    Host.MemoryUnitOfMeasurement_COUNT = 2
+
   TextureFormat:
     Host.TextureFormat_FIRST = 0
     Host.TextureFormat_Any = 0
@@ -529,8 +540,9 @@
     Host.GigiCompileResult_DataFixup = 18
     Host.GigiCompileResult_DfltFixup = 19
     Host.GigiCompileResult_HandleOutputsToMultiInput = 20
-    Host.GigiCompileResult_LAST = 20
-    Host.GigiCompileResult_COUNT = 21
+    Host.GigiCompileResult_DuplicateNodeShaders = 21
+    Host.GigiCompileResult_LAST = 21
+    Host.GigiCompileResult_COUNT = 22
 
   GigiCompileWarning:
     Host.GigiCompileWarning_FIRST = 0

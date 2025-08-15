@@ -97,7 +97,8 @@ float GetHeightAtPos(float x, float y, no_diff float2 gaussPos, no_diff float2 g
 	ballPos += adjust;
 
 	// make sure the ball doesn't go out of bounds
-	ballPos = clamp(ballPos, float2(0.001f, 0.001f), float2(0.99f, 0.99f));
+	// SCREEN_MIN and SCREEN_MAX are defines just to exercise node / shader defines.
+	ballPos = clamp(ballPos, float2(SCREEN_MIN, SCREEN_MIN), float2(SCREEN_MAX, SCREEN_MAX));
 
 	// set the ball pos
 	Data[0] = ballPos.x;

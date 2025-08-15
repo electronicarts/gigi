@@ -905,6 +905,27 @@ namespace FrontEndNodesNoCaching
 
     // This function will return the base name if that name is not already taken.
     // Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+    inline std::string GetUniqueShaderName(const RenderGraph& renderGraph, const char* baseName, int* indexUsed = nullptr)
+    {
+        if (GetShaderIndex(renderGraph, baseName) == -1)
+            return baseName;
+
+        int nameIndex = -1;
+        char name[1024];
+        do
+        {
+            nameIndex++;
+            sprintf_s(name, "%s_%i", baseName, nameIndex);
+        } while (GetShaderIndex(renderGraph, name) != -1);
+
+        if (indexUsed)
+            *indexUsed = nameIndex;
+
+        return name;
+    }
+
+    // This function will return the base name if that name is not already taken.
+    // Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
     inline std::string GetUniqueNodeName(const RenderGraph& renderGraph, const char* baseName)
     {
         if (GetNodeIndexByName(renderGraph, baseName) == -1)

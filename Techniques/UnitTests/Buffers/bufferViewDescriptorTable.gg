@@ -1,0 +1,154 @@
+{
+    "$schema": "gigischema.json",
+    "name": "bufferViewDescriptorTable",
+    "version": "1.0",
+    "shaders": [
+        {
+            "name": "WriteValue",
+            "fileName": "bufferViewDescriptorTable_WriteValue.hlsl",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "TheBuffer",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Init",
+            "fileName": "bufferViewDescriptorTable_Init.hlsl",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "TheBuffer",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "TheBuffer",
+                "editorPos": [
+                    -21.0,
+                    34.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "multiply": 8
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Write1",
+                "editorPos": [
+                    267.0,
+                    31.0
+                ],
+                "linkProperties": [
+                    {
+                        "bufferViewBegin": 4,
+                        "bufferViewSize": 4
+                    },
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "TheBuffer",
+                        "dstNode": "Init",
+                        "dstPin": "TheBuffer"
+                    }
+                ],
+                "shader": {
+                    "name": "WriteValue"
+                },
+                "defines": [
+                    {
+                        "name": "WRITE_VALUE",
+                        "value": "1.0f"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Init",
+                "editorPos": [
+                    101.0,
+                    31.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "TheBuffer",
+                        "dstNode": "TheBuffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Init"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "TheBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Write2",
+                "editorPos": [
+                    437.0,
+                    31.0
+                ],
+                "linkProperties": [
+                    {
+                        "bufferViewSize": 4
+                    },
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "TheBuffer",
+                        "dstNode": "Write1",
+                        "dstPin": "TheBuffer"
+                    }
+                ],
+                "shader": {
+                    "name": "WriteValue"
+                },
+                "defines": [
+                    {
+                        "name": "WRITE_VALUE",
+                        "value": "2.0f"
+                    }
+                ]
+            }
+        }
+    ]
+}
