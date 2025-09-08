@@ -1,0 +1,42 @@
+{
+    "version": "2.0",
+    "systemVars": {
+        "iResolution_textureName": "Color_Buffer",
+        "camera": {
+            "startingCameraPos": [
+                -2.280210018157959,
+                0.5389089584350586,
+                2.548781633377075
+            ],
+            "startingCameraAltitudeAzimuth": [
+                0.05885862931609154,
+                3.751868724822998
+            ]
+        },
+        "ProjMtx_textureName": "Color_Buffer"
+    },
+    "snapshot": {
+        "resourceViewNodeIndex": 0,
+        "resourceViewResourceIndex": 4,
+        "cameraPos": [
+            -2.280210018157959,
+            0.5389089584350586,
+            2.548781633377075
+        ],
+        "cameraAltitudeAzimuth": [
+            0.05885862931609154,
+            3.751868724822998
+        ],
+        "importedResources": [
+            {
+                "nodeName": "VertexBuffer",
+                "resetEveryFrame": false,
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "simpleRasterVB.bin",
+                    "structIndex": 0
+                }
+            }
+        ]
+    }
+}

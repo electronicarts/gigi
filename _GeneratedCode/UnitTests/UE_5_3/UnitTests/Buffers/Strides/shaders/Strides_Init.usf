@@ -1,0 +1,23 @@
+#include "/Engine/Public/Platform.ush"
+
+#define float16_t half
+
+// Strides technique, shader Init
+
+
+RWByteAddressBuffer buff;
+RWByteAddressBuffer buff2;
+
+
+[numthreads(64, 1, 1)]
+void main(uint3 DTid : SV_DispatchThreadID)
+{
+	buff.Store(DTid.x * 4, asuint(float(DTid.x)));
+	buff2.Store(DTid.x * 4, asuint(0.0f));
+}
+
+/*
+Shader Resources:
+	Buffer buff (as UAV)
+	Buffer buff2 (as UAV)
+*/

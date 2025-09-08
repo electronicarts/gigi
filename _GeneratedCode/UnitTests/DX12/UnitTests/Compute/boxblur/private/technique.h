@@ -32,14 +32,14 @@ namespace boxblur
         {
             int radius = 2;  // The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2
             unsigned int sRGB = true;
-            float2 _padding0 = {0.000000f, 0.000000f};  // Padding
+            float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
         struct Struct__BoxBlur_1CB
         {
             int radius = 2;  // The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2
             unsigned int sRGB = true;
-            float2 _padding0 = {0.000000f, 0.000000f};  // Padding
+            float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
         // An internal texture used during the blurring process

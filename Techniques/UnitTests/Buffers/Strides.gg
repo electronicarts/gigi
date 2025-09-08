@@ -1,0 +1,248 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Strides",
+    "version": "1.0",
+    "shaders": [
+        {
+            "name": "Init",
+            "fileName": "Strides_Init.hlsl",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "buff",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float",
+                        "raw": true
+                    }
+                },
+                {
+                    "name": "buff2",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float",
+                        "raw": true
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Float4RW",
+            "fileName": "Strides_Float4RW.hlsl",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "buff",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                },
+                {
+                    "name": "buff2",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float4"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Float16RW",
+            "fileName": "Strides_Float16RW.hlsl",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "buff",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float_16"
+                    }
+                },
+                {
+                    "name": "buff2",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float_16"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "TheBuffer",
+                "editorPos": [
+                    -21.0,
+                    -14.0
+                ],
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "multiply": 32
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Initialize",
+                "editorPos": [
+                    107.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "TheBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "buff2",
+                        "dstNode": "TheBuffer2",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Init"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "TheBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Float4RW",
+                "editorPos": [
+                    267.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "Initialize",
+                        "dstPin": "buff"
+                    },
+                    {
+                        "srcPin": "buff2",
+                        "dstNode": "Initialize",
+                        "dstPin": "buff2"
+                    }
+                ],
+                "shader": {
+                    "name": "Float4RW"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "TheBuffer"
+                    },
+                    "divide": [
+                        4,
+                        1,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "TheBuffer2",
+                "editorPos": [
+                    -21.0,
+                    34.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "TheBuffer"
+                    }
+                },
+                "count": {
+                    "node": {
+                        "name": "TheBuffer"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Float16RW",
+                "editorPos": [
+                    427.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "buff",
+                        "dstNode": "Float4RW",
+                        "dstPin": "buff"
+                    },
+                    {
+                        "srcPin": "buff2",
+                        "dstNode": "Float4RW",
+                        "dstPin": "buff2"
+                    }
+                ],
+                "shader": {
+                    "name": "Float16RW"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "TheBuffer"
+                    },
+                    "multiply": [
+                        2,
+                        1,
+                        1
+                    ]
+                }
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_5",
+            "DXC_HLSL_2021": true,
+            "Allow16BitTypes": true
+        },
+        "UE_5_3": {
+            "AllowRealTypes": true
+        }
+    }
+}

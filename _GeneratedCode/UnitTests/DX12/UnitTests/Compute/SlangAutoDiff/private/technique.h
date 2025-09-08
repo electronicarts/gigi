@@ -31,26 +31,26 @@ namespace SlangAutoDiff
         struct Struct__InitCB
         {
             int FrameIndex = 0;
-            float3 _padding0 = {0.000000f, 0.000000f, 0.000000f};  // Padding
-            float4 MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4 MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
+            float4 MouseState = {0.f, 0.f, 0.f, 0.f};
+            float4 MouseStateLastFrame = {0.f, 0.f, 0.f, 0.f};
             int NumGaussians = 10;
-            float3 iResolution = {0.000000f, 0.000000f, 0.000000f};
+            float3 iResolution = {0.f, 0.f, 0.f};
             unsigned int initialized = false;
-            float3 _padding1 = {0.000000f, 0.000000f, 0.000000f};  // Padding
+            float3 _padding1 = {0.f, 0.f, 0.f};  // Padding
         };
 
         struct Struct__RenderCB
         {
             int NumGaussians = 10;
             unsigned int QuantizeDisplay = false;
-            float2 _padding0 = {0.000000f, 0.000000f};  // Padding
+            float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
         struct Struct__Descend_0CB
         {
-            float LearningRate = 0.100000f;
-            float MaximumStepSize = 0.010000f;
+            float LearningRate = 0.100000001f;
+            float MaximumStepSize = 0.00999999978f;
             int NumGaussians = 10;
             unsigned int UseBackwardAD = true;
         };

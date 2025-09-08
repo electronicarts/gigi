@@ -12,6 +12,7 @@ table, th, td, tr
 <table>
 <tr><th colspan=2>Backend</th></tr>
 <tr><td>DX12</td><td></td></tr>
+<tr><td>UE_5_3</td><td></td></tr>
 <tr><td>WebGPU</td><td></td></tr>
 <tr><td>Interpreter</td><td></td></tr>
 </table>
@@ -182,6 +183,7 @@ table, th, td, tr
 <tr><td>Texture2DArray</td><td>Texture2DArray</td></tr>
 <tr><td>Texture3D</td><td>Texture3D</td></tr>
 <tr><td>TextureCube</td><td>TextureCube</td></tr>
+<tr><td>Texture2DMS</td><td>Texture2DMS</td></tr>
 </table>
 <br/>
 
@@ -1233,6 +1235,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>Resource_Texture_MSAA : Sttings only used for Texture2DMS</b><br/><br/>
+<table>
+<tr><th colspan=3>Resource_Texture_MSAA</th></tr>
+<tr><td>unsigned int sampleCount</td><td>2</td><td>MSAA sample count, usually 2 or 4, most hardware also has 8 and some even 16 or more.</td></tr>
+<tr><td><i>bool hideUI</i></td><td>false</td><td>Used by UI system to know whether to show this or not</td></tr>
+</table>
+<br/>
+
 <b>RenderGraphNode_Resource_Texture : Declares a texture</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Resource_Texture - Inherits from RenderGraphNode_ResourceBase</th></tr>
@@ -1247,6 +1257,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>TextureDimensionType dimension</td><td>TextureDimensionType::Texture2D</td><td>The dimensionality of the texture</td></tr>
 <tr><td><i>std::string loadFileName</i></td><td>""</td><td>If not empty, it load it as an image. This is currently not exposed to users, and is created when shaders use an image token</td></tr>
 <tr><td><i>bool loadFileNameAsSRGB</i></td><td>true</td><td>If true, the source file is treated as sRGB</td></tr>
+<tr><td>Resource_Texture_MSAA msaaSettings</td><td>{}</td><td>MSAA Settings for Texture2DMS, multiple samples are stored per pixel for antialiasing</td></tr>
 </table>
 <br/>
 
@@ -1718,6 +1729,13 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>BackendSettings_UE_5_3 : UE_5_3 Settings</b><br/><br/>
+<table>
+<tr><th colspan=3>BackendSettings_UE_5_3</th></tr>
+<tr><td>bool AllowRealTypes</td><td>false</td><td>CFLAG_AllowRealTypes. For 16 bit shader types.</td></tr>
+</table>
+<br/>
+
 <b>BackendSettings_WebGPU_Features : Required Limits. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedFeatures</b><br/><br/>
 <table>
 <tr><th colspan=3>BackendSettings_WebGPU_Features</th></tr>
@@ -1768,6 +1786,7 @@ See .bat for more info</td></tr>
 <tr><th colspan=3>BackendSettings</th></tr>
 <tr><td>BackendSettings_DX12 dx12</td><td>{}</td><td></td></tr>
 <tr><td>BackendSettings_WebGPU webGPU</td><td>{}</td><td></td></tr>
+<tr><td>BackendSettings_UE_5_3 UE_5_3</td><td>{}</td><td></td></tr>
 <tr><td>BackendSettings_Common common</td><td>{}</td><td></td></tr>
 </table>
 <br/>
@@ -1783,7 +1802,9 @@ See .bat for more info</td></tr>
 <table>
 <tr><th colspan=3>BuildSettings</th></tr>
 <tr><td>GigiCompileWarning disableWarnings[]</td><td></td><td>Warnings listed here will be suppressed</td></tr>
+<tr><td>bool makeGraphViz</td><td>false</td><td>If true, will generate graphviz when building this technique</td></tr>
 <tr><td>std::string outDX12</td><td>"out/dx12/"</td><td>The output location for DX12</td></tr>
+<tr><td>std::string outUE_5_3</td><td>"out/UE_5_3/"</td><td>The output location for UE 5.3</td></tr>
 <tr><td>std::string outWebGPU</td><td>"out/WebGPU/"</td><td>The output location for WebGPU</td></tr>
 <tr><td><i>std::string outInterpreter</i></td><td>"out/interpreter/"</td><td>The output location for the interpreter backend</td></tr>
 </table>

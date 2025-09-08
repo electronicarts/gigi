@@ -31,7 +31,7 @@ namespace ReadbackSequence
         struct Struct__ReadbackSequenceCSCB
         {
             int frameIndex = 0;
-            float3 _padding0 = {0.000000f, 0.000000f, 0.000000f};  // Padding
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
         Struct__ReadbackSequenceCSCB constantBuffer__ReadbackSequenceCSCB_cpu;

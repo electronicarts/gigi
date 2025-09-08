@@ -227,14 +227,14 @@ buffer_OutputStructuredBuffer_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUs
 
 // -------------------- Public Variables
 
-variable_gain = 0.500000;  // Overall Volume Adjustment
-variableDefault_gain = 0.500000;  // Overall Volume Adjustment
+variable_gain = 0.5;  // Overall Volume Adjustment
+variableDefault_gain = 0.5;  // Overall Volume Adjustment
 variableChanged_gain = false;
-variable_alpha1 = 1.000000;  // Adjusts the contribution of sample n-1
-variableDefault_alpha1 = 1.000000;  // Adjusts the contribution of sample n-1
+variable_alpha1 = 1.;  // Adjusts the contribution of sample n-1
+variableDefault_alpha1 = 1.;  // Adjusts the contribution of sample n-1
 variableChanged_alpha1 = false;
-variable_alpha2 = 0.000000;  // Adjusts the contribution of sample n-2
-variableDefault_alpha2 = 0.000000;  // Adjusts the contribution of sample n-2
+variable_alpha2 = 0.;  // Adjusts the contribution of sample n-2
+variableDefault_alpha2 = 0.;  // Adjusts the contribution of sample n-2
 variableChanged_alpha2 = false;
 
 // -------------------- Structs

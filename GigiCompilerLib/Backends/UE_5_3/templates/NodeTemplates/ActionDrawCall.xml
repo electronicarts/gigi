@@ -1,0 +1,87 @@
+<ActionDrawCall:TechniqueCPP_Shaders>
+// Draw Call "/*$(Node:Name)*/" Vertex Shader/*$(Node:CommentInComment)*/
+class F/*$(Node:Name)*/VS : public FGlobalShader
+{
+public:
+    DECLARE_GLOBAL_SHADER(F/*$(Node:Name)*/VS);
+    SHADER_USE_PARAMETER_STRUCT(F/*$(Node:Name)*/VS, FGlobalShader);
+
+    BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+/*$(Node:ShaderParamsVS)*/    END_SHADER_PARAMETER_STRUCT()
+
+    static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters&amp; Parameters)
+    {
+        return true;
+    }
+
+    static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters&amp; Parameters, FShaderCompilerEnvironment&amp; OutEnvironment)
+    {
+        FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);/*$(ModifyCompilationEnvironment)*//*$(Node:ShaderDefinesVS)*/
+    }
+};
+
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/VS, "/*$(Node:FileNameVS)*/", "/*$(Node:EntryPointVS)*/", SF_Vertex);
+
+// Draw Call "/*$(Node:Name)*/" Pixel Shader/*$(Node:CommentInComment)*/
+class F/*$(Node:Name)*/PS : public FGlobalShader
+{
+public:
+    DECLARE_GLOBAL_SHADER(F/*$(Node:Name)*/PS);
+    SHADER_USE_PARAMETER_STRUCT(F/*$(Node:Name)*/PS, FGlobalShader);
+
+    BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+/*$(Node:ShaderParamsPS)*/    END_SHADER_PARAMETER_STRUCT()
+
+    static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters&amp; Parameters)
+    {
+        return true;
+    }
+
+    static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters&amp; Parameters, FShaderCompilerEnvironment&amp; OutEnvironment)
+    {
+        FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);/*$(ModifyCompilationEnvironment)*//*$(Node:ShaderDefinesPS)*/
+    }
+};
+
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/PS, "/*$(Node:FileNamePS)*/", "/*$(Node:EntryPointPS)*/", SF_Pixel);
+
+BEGIN_SHADER_PARAMETER_STRUCT(F/*$(Node:Name)*/Parameters, )
+    SHADER_PARAMETER_STRUCT_INCLUDE(F/*$(Node:Name)*/VS::FParameters, VSParameters)
+    SHADER_PARAMETER_STRUCT_INCLUDE(F/*$(Node:Name)*/PS::FParameters, PSParameters)
+    RENDER_TARGET_BINDING_SLOTS()
+/*$(Node:PassParameters)*/END_SHADER_PARAMETER_STRUCT()
+
+</ActionDrawCall:TechniqueCPP_Shaders>
+
+<ActionDrawCall:AddTechnique>
+    // Run Draw Call "/*$(Node:Name)*/"/*$(Node:CommentInComment)*/
+/*$(Node:Condition)*/    {
+        F/*$(Node:Name)*/Parameters* PassParameters = GraphBuilder.AllocParameters&lt;F/*$(Node:Name)*/Parameters&gt;();
+
+/*$(Node:SetParameters)*/        const FGlobalShaderMap* ShaderMap = GetGlobalShaderMap(View.GetFeatureLevel());
+        TShaderMapRef&lt;F/*$(Node:Name)*/VS&gt; VertexShader(ShaderMap);
+        TShaderMapRef&lt;F/*$(Node:Name)*/PS&gt; PixelShader(ShaderMap);
+
+/*$(Node:PassSetup)*//*$(Node:ViewportMax)*/        GraphBuilder.AddPass(
+            RDG_EVENT_NAME("/*$(Name)*/./*$(Node:Name)*/"),
+            PassParameters,
+            ERDGPassFlags::Raster,
+            [VertexShader, PixelShader, PassParameters, viewportMax, depthStencilIsStencil, params](FRHICommandListImmediate&amp; RHICmdList)
+            {
+                FGraphicsPipelineStateInitializer psoDesc;
+                psoDesc.PrimitiveType = PT_TriangleList;
+                psoDesc.NumSamples = 1;
+
+                psoDesc.SubpassHint = ESubpassHint::None;
+                psoDesc.SubpassIndex = 0;
+                psoDesc.MultiViewCount = 1;
+                psoDesc.bHasFragmentDensityAttachment = false;
+
+                psoDesc.BoundShaderState.VertexShaderRHI = VertexShader.GetVertexShader();
+                psoDesc.BoundShaderState.PixelShaderRHI = PixelShader.GetPixelShader();
+
+/*$(Node:Execute)*/            }
+        );
+    }
+
+</ActionDrawCall:AddTechnique>

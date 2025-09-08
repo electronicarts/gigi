@@ -19,6 +19,7 @@ struct RuntimeTypes
 			Texture3D,
 			TextureCube,
 			ConstantBuffer,
+			Texture2DMS,
 			Buffer,
 		};
 
@@ -30,6 +31,7 @@ struct RuntimeTypes
 				case Type::Texture2DArray: return ResourceType::Texture2DArray;
 				case Type::Texture3D: return ResourceType::Texture3D;
 				case Type::TextureCube: return ResourceType::TextureCube;
+				case Type::Texture2DMS: return ResourceType::Texture2DMS;
 			}
 			return ResourceType::Texture2D;
 		}
@@ -186,6 +188,7 @@ struct RuntimeTypes
 		DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;
 		int m_size[3] = {0, 0, 0};
 		int m_numMips = 1;
+        unsigned int sampleCount = 1;
 
 		struct SubResourceKey
 		{
@@ -210,8 +213,8 @@ struct RuntimeTypes
 			}
 		};
 
-		bool GetDSV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& DSVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, const char* resourceName);
-		bool GetRTV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& RTVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, const char* resourceName);
+		bool GetDSV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& DSVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, int sampleCount, const char* resourceName);
+		bool GetRTV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& RTVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, int sampleCount, const char* resourceName);
 
 		std::unordered_map<SubResourceKey, int, SubResourceKey> m_dsvIndices;
 		std::unordered_map<SubResourceKey, int, SubResourceKey> m_rtvIndices;
@@ -287,6 +290,7 @@ inline RuntimeTypes::ViewableResource::Type TextureDimensionTypeToViewableResour
 		case TextureDimensionType::Texture2DArray: return RuntimeTypes::ViewableResource::Type::Texture2DArray;
 		case TextureDimensionType::Texture3D: return RuntimeTypes::ViewableResource::Type::Texture3D;
 		case TextureDimensionType::TextureCube: return RuntimeTypes::ViewableResource::Type::TextureCube;
+		case TextureDimensionType::Texture2DMS: return RuntimeTypes::ViewableResource::Type::Texture2DMS;
 	}
 	return RuntimeTypes::ViewableResource::Type::Texture2D;
 }

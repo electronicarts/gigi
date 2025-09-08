@@ -30,15 +30,15 @@ namespace MeshAmplification
 
         struct Struct__MeshShaderCB
         {
-            float AmplificationSpacing = 2.000000f;
-            float3 _padding0 = {0.000000f, 0.000000f, 0.000000f};  // Padding
-            float4x4 ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
+            float AmplificationSpacing = 2.f;
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
+            float4x4 ViewProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
         };
 
         struct Struct__AmplificationShaderCB
         {
             uint AmplificationCount = 4;
-            float3 Offset = {0.000000f, 1.000000f, 0.000000f};
+            float3 Offset = {0.f, 1.f, 0.f};
         };
 
         Struct__MeshShaderCB constantBuffer__MeshShaderCB_cpu;

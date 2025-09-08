@@ -2314,6 +2314,19 @@ static void DoSlangDataFixups(RenderGraph& renderGraph)
 
 void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
 {
+    // Error out if MSAA is used in this graph, because it isn't yet supported
+    for (const RenderGraphNode& node : renderGraph.nodes)
+    {
+        if (node._index != RenderGraphNode::c_index_resourceTexture)
+            continue;
+
+        if (node.resourceTexture.dimension == TextureDimensionType::Texture2DMS)
+        {
+            Assert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
+            return;
+        }
+    }
+
     for (const Shader& shader : renderGraph.shaders)
     {
         if (shader.type == ShaderType::Amplification)

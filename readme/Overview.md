@@ -104,7 +104,7 @@ The systems variables also allows you to receive mouse and keyboard data to make
 
 ## Compiler
 
-The compiler generates code for your technique, towards whatever platform and language you've chosen. At the time of this writing, the public Gigi repo only supports generating code for C++ / DX12 and WebGPU, but we intend to add more as time goes on.
+The compiler generates code for your technique, towards whatever platform and language you've chosen. The public Gigi repo supports generating code for C++ / DX12, WebGPU, and the Unreal engine., We intend to add more code generation targets as time goes on.
 
 It's very important to us that the compiler generates good code, like a human would write, and that it should pass a reasonable code review.  If not, we consider that a bug.
 

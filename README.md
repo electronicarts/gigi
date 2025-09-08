@@ -2,7 +2,7 @@
 
 Gigi is software designed for rapid prototyping and development of real time rendering techniques. It is meant for use by professionals, researchers, students, and hobbyists.
 
-The goal is to allow work at the speed of thought, and then easily use what was created in real applications using various APIs or engines.
+Gigi allows you to work at the speed of thought in the Editor, then debug, profile and iterate in the Viewer, and finally use the Compiler to generate code for C++ DX12, WebGPU, or the Unreal Engine.
 
 [See a Gallery of WebGPU Code Generated Gigi Techniques](https://electronicarts.github.io/gigi/)
 
@@ -27,7 +27,11 @@ Gigi Compiler Generated Code (DX12) | Gigi Browser
 
 Gigi is being actively used and developed, but is young software. You may hit bugs or missing features. Please report these so we can improve Gigi and push forward in the most useful directions. Pull requests are also appreciated! Please see the "Contributing" section below.
 
-Currently, only dx12 code generation is available in this public version of Gigi, but we are hoping to support other APIs, and engines as well, in the future.
+# Platform Support
+
+Different platforms have different levels of feature support both due to platform limitations, as well as functionality needing to be implemented.  Please see this for details about what is supported on what platforms.
+
+[Platform Support](readme/platformSupport.md)
 
 # Building or Getting, and Running
 

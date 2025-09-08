@@ -31,9 +31,9 @@ namespace IndirectDispatch
         struct Struct__Fill_Indirect_Dispatch_CountCB
         {
             uint3 Dispatch_Count_1 = {50, 50, 1};
-            float _padding0 = 0.000000f;  // Padding
+            float _padding0 = 0.f;  // Padding
             uint3 Dispatch_Count_2 = {100, 100, 1};
-            float _padding1 = 0.000000f;  // Padding
+            float _padding1 = 0.f;  // Padding
         };
 
         ID3D12Resource* buffer_Indirect_Dispatch_Count = nullptr;

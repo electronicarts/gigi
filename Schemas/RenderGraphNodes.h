@@ -327,6 +327,11 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_ShaderConstants, RenderGraphNode_R
     STRUCT_DYNAMIC_ARRAY(SetCBFromVar, setFromVar, "Set constant buffer (left) to the value of variable (right) every execution", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
 STRUCT_END()
 
+STRUCT_BEGIN(Resource_Texture_MSAA, "Sttings only used for Texture2DMS")
+    STRUCT_FIELD(unsigned int, sampleCount, 2, "MSAA sample count, usually 2 or 4, most hardware also has 8 and some even 16 or more.", 0)
+    STRUCT_FIELD(bool, hideUI, false, "Used by UI system to know whether to show this or not", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_Texture, RenderGraphNode_ResourceBase, "Declares a texture")
     STRUCT_CONST(std::string, c_editorName, "Texture", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Texture", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -341,6 +346,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Resource_Texture, RenderGraphNode_ResourceB
 
     STRUCT_FIELD(std::string, loadFileName, "", "If not empty, it load it as an image. This is currently not exposed to users, and is created when shaders use an image token", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(bool, loadFileNameAsSRGB, true, "If true, the source file is treated as sRGB", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(Resource_Texture_MSAA, msaaSettings, {}, "MSAA Settings for Texture2DMS, multiple samples are stored per pixel for antialiasing", 0)
 STRUCT_END()
 
 //========================================================

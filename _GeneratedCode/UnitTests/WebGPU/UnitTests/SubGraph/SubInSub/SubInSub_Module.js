@@ -100,8 +100,8 @@ texture_Inner1_Inner2_Output_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureU
 
 // -------------------- Public Variables
 
-variable_Inner1_Inner1Mult = [ 1.000000, 0.500000, 2.000000, 1.000000 ];
-variableDefault_Inner1_Inner1Mult = [ 1.000000, 0.500000, 2.000000, 1.000000 ];
+variable_Inner1_Inner1Mult = [ 1., 0.5, 2., 1. ];
+variableDefault_Inner1_Inner1Mult = [ 1., 0.5, 2., 1. ];
 variableChanged_Inner1_Inner1Mult = [ false, false, false, false ];
 
 // -------------------- Structs

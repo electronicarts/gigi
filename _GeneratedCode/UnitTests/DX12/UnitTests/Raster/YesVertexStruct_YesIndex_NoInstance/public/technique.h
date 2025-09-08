@@ -45,21 +45,21 @@ namespace YesVertexStruct_YesIndex_NoInstance
         {
 
             // Variables
-            float4 variable_MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4 variable_MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float3 variable_iResolution = {0.000000f, 0.000000f, 0.000000f};
-            float variable_iTime = 0.000000f;
-            float variable_iTimeDelta = 0.000000f;
-            float variable_iFrameRate = 0.000000f;
+            float4 variable_MouseState = {0.f, 0.f, 0.f, 0.f};
+            float4 variable_MouseStateLastFrame = {0.f, 0.f, 0.f, 0.f};
+            float3 variable_iResolution = {0.f, 0.f, 0.f};
+            float variable_iTime = 0.f;
+            float variable_iTimeDelta = 0.f;
+            float variable_iFrameRate = 0.f;
             int variable_iFrame = 0;
-            float4 variable_iMouse = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4x4 variable_ViewMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_InvViewMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_ProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_InvProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_InvViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float3 variable_CameraPos = {0.000000f, 0.000000f, 0.000000f};
+            float4 variable_iMouse = {0.f, 0.f, 0.f, 0.f};
+            float4x4 variable_ViewMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_InvViewMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_ProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_InvProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_ViewProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_InvViewProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float3 variable_CameraPos = {0.f, 0.f, 0.f};
             ViewMode variable_viewMode = ViewMode::UV;
 
             ID3D12Resource* buffer_Vertex_Buffer = nullptr;
@@ -224,7 +224,7 @@ namespace YesVertexStruct_YesIndex_NoInstance
 
     struct Struct_VertexFormat
     {
-        float3 Position = {0.000000f, 0.000000f, 0.000000f};
-        float2 UV = {0.000000f, 0.000000f};
+        float3 Position = {0.f, 0.f, 0.f};
+        float2 UV = {0.f, 0.f};
     };
 };

@@ -48,9 +48,9 @@ namespace StructuredBuffer
 
         struct Struct__csmainCB
         {
-            float frameDeltaTime = 0.000000f;
+            float frameDeltaTime = 0.f;
             int frameIndex = 0;
-            float2 _padding0 = {0.000000f, 0.000000f};  // Padding
+            float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
         Struct__csmainCB constantBuffer__csmainCB_cpu;

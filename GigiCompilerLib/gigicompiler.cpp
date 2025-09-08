@@ -296,7 +296,12 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
             nodeDefines.clear();
         }
 
+        bool makeOutputFile = false;
+        if (newShader.language == ShaderLanguage::Slang)
+            makeOutputFile = true;
+        // If we need a unique processed shader file...
         // Make the output file name include the unique index used in the shader data record name, so the filename is unique too.
+        if (makeOutputFile)
         {
             std::filesystem::path fileName = std::filesystem::path((newShader.destFileName.empty()) ? newShader.fileName : newShader.destFileName);
 
@@ -304,6 +309,11 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
             s << fileName.stem().string() << "_" << uniqueShaderIndex << fileName.extension().string();
 
             newShader.destFileName = std::filesystem::path(fileName).replace_filename(s.str()).string();
+        }
+        // Else, don't copy the shader file, use the same source
+        else
+        {
+            newShader.copyFile = false;
         }
 
         renderGraph.shaders.push_back(newShader);
@@ -378,6 +388,20 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
             ),
             renderGraph.shaders.end()
         );
+    }
+
+    // Make sure at least one of each file name is marked as copyFile.
+    {
+        std::unordered_set<std::string> copiedShaderFiles;
+
+        for (Shader& shader : renderGraph.shaders)
+        {
+            if (copiedShaderFiles.count(shader.fileName) > 0)
+                continue;
+
+            shader.copyFile = true;
+            copiedShaderFiles.insert(shader.fileName);
+        }
     }
 
     return true;
@@ -600,7 +624,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
             renderGraph.baseDirectory = "./";
     }
 
-    renderGraph.generateGraphVizFlag = GENERATE_GRAPHVIZ_FLAG;
+    renderGraph.generateGraphVizFlag = GENERATE_GRAPHVIZ_FLAG || renderGraph.buildSettings.makeGraphViz;
 
     // Set the technique name to the file name if it's empty
     if (renderGraph.name.empty() || renderGraph.name == "Unnamed")

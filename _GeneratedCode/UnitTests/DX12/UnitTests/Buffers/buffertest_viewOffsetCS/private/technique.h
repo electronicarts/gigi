@@ -30,10 +30,10 @@ namespace buffertest_viewOffsetCS
 
         struct Struct__BufferTest_0CB
         {
-            float alpha1 = 1.000000f;  // Adjusts the contribution of sample n-1
-            float alpha2 = 0.000000f;  // Adjusts the contribution of sample n-2
-            float gain = 0.500000f;  // Overall Volume Adjustment
-            float _padding0 = 0.000000f;  // Padding
+            float alpha1 = 1.f;  // Adjusts the contribution of sample n-1
+            float alpha2 = 0.f;  // Adjusts the contribution of sample n-2
+            float gain = 0.5f;  // Overall Volume Adjustment
+            float _padding0 = 0.f;  // Padding
         };
 
         Struct__BufferTest_0CB constantBuffer__BufferTest_0CB_cpu;

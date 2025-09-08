@@ -74,7 +74,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "WebGPU", "Interpreter"]
+                "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -225,7 +225,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "WebGPU", "Interpreter"]
+                "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -294,7 +294,7 @@
                     "dimension": {
                       "description": "The dimensionality of the texture",
                       "type": "string",
-                      "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube"]
+                      "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube", "Texture2DMS"]
                     },
                     "viewType": {
                       "description": "The dimensionality of the texture",
@@ -316,7 +316,7 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                      "enum": ["DX12", "WebGPU", "Interpreter"]
+                      "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                       }
                     },
                     "isWhiteList": {
@@ -476,7 +476,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "WebGPU", "Interpreter"]
+                "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -519,7 +519,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -642,7 +642,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -720,7 +720,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -851,7 +851,17 @@
               "dimension": {
                 "description": "The dimensionality of the texture",
                 "type": "string",
-                "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube"]
+                "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube", "Texture2DMS"]
+              },
+              "msaaSettings": {
+                "description": "MSAA Settings for Texture2DMS, multiple samples are stored per pixel for antialiasing",
+                "type": "object",
+                "properties": {
+                  "sampleCount": {
+                    "description": "MSAA sample count, usually 2 or 4, most hardware also has 8 and some even 16 or more.",
+                    "type": "integer"
+                  }
+                }
               }
             }
           },
@@ -872,7 +882,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -978,7 +988,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1009,7 +1019,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1115,7 +1125,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1267,7 +1277,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1373,7 +1383,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1505,7 +1515,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1611,7 +1621,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1688,7 +1698,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1794,7 +1804,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2260,7 +2270,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2366,7 +2376,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2493,7 +2503,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2599,7 +2609,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2913,6 +2923,16 @@ both the shader-f16 and subgroups features.",
             }
           }
         },
+        "UE_5_3": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "AllowRealTypes": {
+              "description": "CFLAG_AllowRealTypes. For 16 bit shader types.",
+              "type": "boolean"
+            }
+          }
+        },
         "common": {
           "description": "",
           "type": "object",
@@ -2961,8 +2981,16 @@ See .bat for more info",
           "enum": ["ShaderUnusedResource", "Count"]
           }
         },
+        "makeGraphViz": {
+          "description": "If true, will generate graphviz when building this technique",
+          "type": "boolean"
+        },
         "outDX12": {
           "description": "The output location for DX12",
+          "type": "string"
+        },
+        "outUE_5_3": {
+          "description": "The output location for UE 5.3",
           "type": "string"
         },
         "outWebGPU": {

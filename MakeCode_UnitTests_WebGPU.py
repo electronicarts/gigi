@@ -79,6 +79,8 @@ unsupportedTests = [
 
     # Just need to make it work
     "CopyResource\\CopyPartialBuffer",
+    "Raster\\simpleRasterMSAA",
+    "Buffers\\Strides",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

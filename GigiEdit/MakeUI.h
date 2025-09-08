@@ -2562,6 +2562,19 @@ inline UIOverrideResult ShowUIOverride<RayDispatchSizeDesc>(RenderGraph& renderG
     return UIOverrideResult::Continue;
 }
 
+// only show sampleCount when Texture2DMS is used
+template <>
+inline UIOverrideResult ShowUIOverride<Resource_Texture_MSAA>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, Resource_Texture_MSAA& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return value.hideUI ? UIOverrideResult::Finished : UIOverrideResult::Continue;
+}
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Resource_Texture>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Resource_Texture& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.msaaSettings.hideUI = value.dimension != TextureDimensionType::Texture2DMS;
+    return UIOverrideResult::Continue;
+}
+
 template <>
 inline UIOverrideResult ShowUIOverride<CopyResource_BufferToBuffer>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, CopyResource_BufferToBuffer& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {

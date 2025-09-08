@@ -45,9 +45,9 @@ namespace buffertest
         {
 
             // Variables
-            float variable_gain = 0.500000f;  // Overall Volume Adjustment
-            float variable_alpha1 = 1.000000f;  // Adjusts the contribution of sample n-1
-            float variable_alpha2 = 0.000000f;  // Adjusts the contribution of sample n-2
+            float variable_gain = 0.5f;  // Overall Volume Adjustment
+            float variable_alpha1 = 1.f;  // Adjusts the contribution of sample n-1
+            float variable_alpha2 = 0.f;  // Adjusts the contribution of sample n-2
 
             // This is the buffer to be filtered.
             ID3D12Resource* buffer_InputTypedBuffer = nullptr;
@@ -250,7 +250,7 @@ namespace buffertest
 
     struct Struct_TestStruct
     {
-        float4 TheFloat4 = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+        float4 TheFloat4 = {0.f, 0.f, 0.f, 0.f};
         int4 TheInt4 = {0, 0, 0, 0};
         unsigned int TheBool = false;
     };

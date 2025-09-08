@@ -45,11 +45,11 @@ namespace TwoRayGens
         {
 
             // Variables
-            float4x4 variable_clipToWorld = {0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float3 variable_cameraPos = {0.000000f, 0.000000f, 0.000000f};
-            float variable_depthNearPlane = 0.000000f;  // The depth value for the near plane.
-            float3 variable_hitColor = {0.000000f, 1.000000f, 0.000000f};
-            float3 variable_missColor = {1.000000f, 0.000000f, 0.000000f};
+            float4x4 variable_clipToWorld = {0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f, 0.f};
+            float3 variable_cameraPos = {0.f, 0.f, 0.f};
+            float variable_depthNearPlane = 0.f;  // The depth value for the near plane.
+            float3 variable_hitColor = {0.f, 1.f, 0.f};
+            float3 variable_missColor = {1.f, 0.f, 0.f};
 
             // The raytracing scene
             ID3D12Resource* buffer_Scene = nullptr;

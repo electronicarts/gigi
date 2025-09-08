@@ -1,0 +1,6 @@
+<ActionCopyResource:AddTechnique>
+    // Run Copy Resource "/*$(Node:Name)*/"/*$(Node:CommentInComment)*/
+/*$(Node:Condition)*/    {
+/*$(Node:DoCopy)*/    }
+
+</ActionCopyResource:AddTechnique>

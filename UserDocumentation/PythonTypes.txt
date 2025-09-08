@@ -119,10 +119,11 @@
   Backend:
     Host.Backend_FIRST = 0
     Host.Backend_DX12 = 0
-    Host.Backend_WebGPU = 1
-    Host.Backend_Interpreter = 2
-    Host.Backend_LAST = 2
-    Host.Backend_COUNT = 3
+    Host.Backend_UE_5_3 = 1
+    Host.Backend_WebGPU = 2
+    Host.Backend_Interpreter = 3
+    Host.Backend_LAST = 3
+    Host.Backend_COUNT = 4
 
   DataFieldType:
     Host.DataFieldType_FIRST = 0
@@ -277,8 +278,9 @@
     Host.TextureDimensionType_Texture2DArray = 1
     Host.TextureDimensionType_Texture3D = 2
     Host.TextureDimensionType_TextureCube = 3
-    Host.TextureDimensionType_LAST = 3
-    Host.TextureDimensionType_COUNT = 4
+    Host.TextureDimensionType_Texture2DMS = 4
+    Host.TextureDimensionType_LAST = 4
+    Host.TextureDimensionType_COUNT = 5
 
   ShaderType:
     Host.ShaderType_FIRST = 0

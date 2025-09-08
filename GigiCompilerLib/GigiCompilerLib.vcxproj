@@ -181,6 +181,7 @@
     <ClCompile Include="Backends\Interpreter\Backend_Interpreter.cpp" />
     <ClCompile Include="Backends\ProcessShader_HLSL.cpp" />
     <ClCompile Include="Backends\Shared.cpp" />
+    <ClCompile Include="Backends\UE_5_3\Backend_UE_5_3.cpp" />
     <None Include="..\.editorconfig" />
     <None Include="Backends\DX12\nodes\node_reroute.inl" />
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
@@ -212,6 +213,15 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
     <None Include="Backends\Interpreter\templates\ggconfig.json">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\UE_5_3\nodes\node_reroute.inl" />
+    <None Include="Backends\UE_5_3\templates\install.bat">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+    <None Include="Backends\UE_5_3\templates\private\Technique.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
@@ -500,6 +510,20 @@
     </ClInclude>
     <ClInclude Include="Backends\ProcessShader.h" />
     <ClInclude Include="Backends\Shared.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\allNodes.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_barrier.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_computeShader.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_copyResource.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_drawCall.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_rayShader.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_subGraph.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_buffer.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_shaderConstants.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_texture.h" />
+    <None Include="Backends\UE_5_3\templates\public\Technique.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
     <ClInclude Include="GigiBuildFlavor.h" />
     <ClInclude Include="GigiBuildFlavorList.h" />
     <ClInclude Include="gigiinterpreter.h" />
@@ -587,6 +611,10 @@
     <ClInclude Include="..\Schemas\Visitor.h" />
     <ClInclude Include="..\Version.h" />
     <ClInclude Include="gigicompiler.h" />
+    <None Include="Backends\UE_5_3\templates\ggconfig.json">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="Backends\DX12\templates\Application\CMakeLists.txt">
@@ -605,10 +633,50 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </Text>
+    <None Include="Backends\UE_5_3\templates\Readme.txt">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
     <Text Include="Backends\WebGPU\templates\Application\Readme.txt">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ResourceTexture.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionComputeShader.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ResourceBuffer.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionCopyResource.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionDrawCall.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionRayShader.xml">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.idl">

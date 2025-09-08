@@ -1,0 +1,39 @@
+<ActionRayShader:TechniqueCPP_Shaders>
+// Ray Shader "/*$(Node:Name)*/" Ray Gen/*$(Node:CommentInComment)*/
+class F/*$(Node:Name)*/RG : public FGlobalShader
+{
+public:
+    DECLARE_GLOBAL_SHADER(F/*$(Node:Name)*/RG);
+    SHADER_USE_ROOT_PARAMETER_STRUCT(F/*$(Node:Name)*/RG, FGlobalShader);
+
+    BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
+/*$(Node:ShaderParams)*/    END_SHADER_PARAMETER_STRUCT()
+
+    static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters&amp; Parameters)
+    {
+        return ShouldCompileRayTracingShadersForProject(Parameters.Platform);
+    }
+
+    static ERayTracingPayloadType GetRayTracingPayloadType(const int32 PermutationId)
+    {
+        return ERayTracingPayloadType::Default;
+    }
+
+    static void ModifyCompilationEnvironment(const FGlobalShaderPermutationParameters&amp; Parameters, FShaderCompilerEnvironment&amp; OutEnvironment)
+    {
+        FGlobalShader::ModifyCompilationEnvironment(Parameters, OutEnvironment);/*$(ModifyCompilationEnvironment)*//*$(Node:ShaderDefines)*/
+    }
+};
+
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/RG, "/*$(Node:FileName)*/", "/*$(Node:EntryPoint)*/", SF_RayGen);
+
+</ActionRayShader:TechniqueCPP_Shaders>
+
+<ActionRayShader:AddTechnique>
+    // Run Ray Shader "/*$(Node:Name)*/"/*$(Node:CommentInComment)*/
+/*$(Node:Condition)*/    {
+        // Set shader parameters
+        F/*$(Node:Name)*/RG::FParameters* PassParameters = GraphBuilder.AllocParameters&lt;F/*$(Node:Name)*/RG::FParameters&gt;();
+/*$(Node:SetParameters)*//*$(Node:Dispatch)*/    }
+
+</ActionRayShader:AddTechnique>
