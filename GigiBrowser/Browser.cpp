@@ -426,7 +426,8 @@ void Browser::ProcessPendingTextureLoads(ID3D12GraphicsCommandList* commandList)
 
 		// Create a resource
 		unsigned int size[3] = { (unsigned int)tex.width, (unsigned int)tex.height, 1 };
-		ID3D12Resource* resource = CreateTexture(m_device, size, 1, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, ResourceType::Texture2D, tex.fileName.c_str());
+		unsigned int sampleCount = 1;
+		ID3D12Resource* resource = CreateTexture(m_device, size, 1, DXGI_FORMAT_R8G8B8A8_UNORM_SRGB, sampleCount, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, ResourceType::Texture2D, tex.fileName.c_str());
 		m_textureResources[tex.fileName] = resource;
 
 		// get info about layout of texture memory

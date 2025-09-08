@@ -97,7 +97,7 @@ namespace bufferViewDescriptorTable
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "bufferViewDescriptorTable_WriteValue_0.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "bufferViewDescriptorTable_WriteValue.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "Write1" : "");
@@ -130,7 +130,7 @@ namespace bufferViewDescriptorTable
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "bufferViewDescriptorTable_WriteValue_1.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "bufferViewDescriptorTable_WriteValue.hlsl";
             shaderCompilationInfo.entryPoint = "main";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "Write2" : "");

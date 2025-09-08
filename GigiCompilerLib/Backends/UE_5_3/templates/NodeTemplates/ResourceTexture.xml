@@ -1,0 +1,58 @@
+<ResourceTexture:FTechniqueState-NotImported-Persistent>
+    FTextureRHIRef Texture_/*$(Node:Name)*/ = nullptr;/*$(Node:CommentAsComment)*/
+</ResourceTexture:FTechniqueState-NotImported-Persistent>
+
+<ResourceTexture:AddTechnique-Loaded>
+    // Loaded texture /*$(Node:Name)*//*$(Node:CommentInComment)*/
+    FRDGTextureRef Texture_/*$(Node:Name)*/ = RegisterExternalTexture(GraphBuilder, LoadedTexture_/*$(Node:Name)*/, TEXT("/*$(Name)*/./*$(Node:Name)*/"));
+
+</ResourceTexture:AddTechnique-Loaded>
+
+<ResourceTexture:AddTechnique-NotImported-Persistent>
+    // Persistent texture /*$(Node:Name)*//*$(Node:CommentInComment)*/
+    if (!View.ViewState-&gt;TechniqueState_/*$(Name)*/.Texture_/*$(Node:Name)*/.IsValid())
+    {
+/*$(Node:CreateTexture)*/    }
+    FRDGTextureRef Texture_/*$(Node:Name)*/ = RegisterExternalTexture(GraphBuilder, View.ViewState-&gt;TechniqueState_/*$(Name)*/.Texture_/*$(Node:Name)*/, TEXT("/*$(Name)*/./*$(Node:Name)*/"));
+
+</ResourceTexture:AddTechnique-NotImported-Persistent>
+
+<ResourceTexture:AddTechnique-NotImported-Transient>
+    // Transient texture /*$(Node:Name)*//*$(Node:CommentInComment)*/
+    FRDGTextureRef Texture_/*$(Node:Name)*/;
+    {
+/*$(Node:MakeDesc)*/
+        // Create Texture
+        Texture_/*$(Node:Name)*/ = GraphBuilder.CreateTexture(desc, TEXT("/*$(Name)*/./*$(Node:Name)*/"));
+    }
+
+</ResourceTexture:AddTechnique-NotImported-Transient>
+
+
+
+
+<ResourceTexture:FTechniqueParamsInputs-Imported>
+        FRDGTextureRef Texture_/*$(Node:Name)*/ = nullptr;/*$(Node:CommentAsComment)*/
+</ResourceTexture:FTechniqueParamsInputs-Imported>
+
+<ResourceTexture:FInitParams-Loaded/>
+<ResourceTexture:InitializeFnCPP-Loaded/>
+<ResourceTexture:TechniqueCPPNamespace-Loaded/>
+
+<ResourceTexture:AddTechnique-Imported>
+    FRDGTextureRef Texture_/*$(Node:Name)*/ = params.inputs.Texture_/*$(Node:Name)*/;
+
+</ResourceTexture:AddTechnique-Imported>
+
+
+
+
+
+<ResourceTexture:FTechniqueParamsOutputs-Exported>
+        FRDGTextureRef Texture_/*$(Node:Name)*/ = nullptr;/*$(Node:CommentAsComment)*/
+</ResourceTexture:FTechniqueParamsOutputs-Exported>
+
+<ResourceTexture:AddTechniqueSetExports-Exported>
+    params.outputs.Texture_/*$(Node:Name)*/ = Texture_/*$(Node:Name)*/;
+
+</ResourceTexture:AddTechniqueSetExports-Exported>

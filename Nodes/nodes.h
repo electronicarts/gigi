@@ -18,6 +18,7 @@ struct InputNodeInfo
     int nodeIndex;
     int pinIndex;
     bool required = true;
+    const ShaderResource* shaderResource = nullptr;
 };
 
 namespace FrontEndNodes

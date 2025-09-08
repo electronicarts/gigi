@@ -38,6 +38,7 @@ public:
 		Texture2DArray,
 		Texture3D,
 		TextureCube,
+		Texture2DMS,
 		RTScene
 	};
 
@@ -212,6 +213,11 @@ public:
 							srvDesc.TextureCube.MipLevels = -1;
 							srvDesc.TextureCube.MostDetailedMip = 0;
 							srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+							break;
+						}
+						case ResourceType::Texture2DMS:
+						{
+							srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
 							break;
 						}
 					}

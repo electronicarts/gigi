@@ -87,6 +87,7 @@ ENUM_BEGIN(TextureDimensionType, "The type of a texture")
     ENUM_ITEM(Texture2DArray, "Texture2DArray")
     ENUM_ITEM(Texture3D, "Texture3D")
     ENUM_ITEM(TextureCube, "TextureCube")
+    ENUM_ITEM(Texture2DMS, "Texture2DMS")
 ENUM_END()
 
 ENUM_BEGIN(ShaderType, "The type of a shader resource")

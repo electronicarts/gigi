@@ -1,0 +1,27 @@
+#include "/Engine/Public/Platform.ush"
+
+#define float16_t half
+
+// Strides technique, shader Float4RW
+
+
+StructuredBuffer<float4> buff;
+RWStructuredBuffer<float4> buff2;
+
+
+[numthreads(64, 1, 1)]
+void main(uint3 DTid : SV_DispatchThreadID)
+{
+	if (DTid.x >= 4)
+		return;
+
+	float4 value = buff[DTid.x];
+	value *= 2.0f;
+	buff2[DTid.x] = value;
+}
+
+/*
+Shader Resources:
+	Buffer buff (as SRV)
+	Buffer buff (as UAV)
+*/

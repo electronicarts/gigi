@@ -30,7 +30,7 @@ namespace SubInSub
 
         struct Struct__Inner1_Inner2_Inner2CSCB
         {
-            float4 Inner1_Inner1Mult = {1.000000f, 0.500000f, 2.000000f, 1.000000f};
+            float4 Inner1_Inner1Mult = {1.f, 0.5f, 2.f, 1.f};
         };
 
         Struct__Inner1_Inner2_Inner2CSCB constantBuffer__Inner1_Inner2_Inner2CSCB_cpu;

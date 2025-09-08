@@ -132,21 +132,42 @@ static void LaunchExe(const char* applicationName, const char* commandLine)
 
 // This generic function can be overridden for specific node types
 template <typename T>
-static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T& node, std::ostringstream& out)
+static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T& node, std::ostringstream& out, bool showResourceState)
 {
 }
 
-static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Resource_Texture& node, std::ostringstream& out)
+static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Resource_Texture& node, std::ostringstream& out, bool showResourceState)
 {
+    if (showResourceState)
+    {
+        out << "\\n" << EnumToString(node.visibility);
+        if (node.transient)
+            out << ", transient";
+        out << "\\nstarting: " << EnumToString(node.startingState);
+        out << "\\nending: " << EnumToString(node.finalState);
+    }
+
     if (node.loadFileName.empty())
         return;
 
     out << "\\n" << node.loadFileName;
 }
 
-static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_ActionBase& node, std::ostringstream& out)
+static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Resource_Buffer& node, std::ostringstream& out, bool showResourceState)
 {
-    WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out);
+    if (showResourceState)
+    {
+        out << "\\n" << EnumToString(node.visibility);
+        if (node.transient)
+            out << ", transient";
+        out << "\\nstarting: " << EnumToString(node.startingState);
+        out << "\\nending: " << EnumToString(node.finalState);
+    }
+}
+
+static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_ActionBase& node, std::ostringstream& out, bool showResourceState)
+{
+    WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out, showResourceState);
 
     if (node.condition.comparison == ConditionComparison::Count)
         return;
@@ -187,9 +208,9 @@ static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& var
     out << "</td></tr>";
 }
 
-static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Action_ComputeShader& node, std::ostringstream& out)
+static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Action_ComputeShader& node, std::ostringstream& out, bool showResourceState)
 {
-    WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out);
+    WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out, showResourceState);
 
     out <<
         "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << node.shader.shader->entryPoint << "()</td></tr>"
@@ -227,9 +248,9 @@ static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& var
     out << "</td></tr>";
 }
 
-static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Action_RayShader& node, std::ostringstream& out)
+static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, RenderGraphNode_Action_RayShader& node, std::ostringstream& out, bool showResourceState)
 {
-    WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out);
+    WriteSpecificNodeInfo(renderGraph, variant, node.GetBaseType(), out, showResourceState);
 
     out <<
         "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << node.shader.shader->entryPoint << "()</td></tr>"
@@ -261,7 +282,7 @@ static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& var
 }
 
 template <typename T>
-static void WriteNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T& node_, std::ostringstream& out, bool resourcesInline, const char* nodeIndexSuffix)
+static void WriteNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T& node_, std::ostringstream& out, bool resourcesInline, const char* nodeIndexSuffix, bool showResourceState)
 {
     RenderGraphNode_Base& node = node_; // this just helps auto complete
 
@@ -277,7 +298,7 @@ static void WriteNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T&
 
         out << "\n    Node" << node.nodeIndex << nodeIndexSuffix << " [label=\"" << node.name << "(" << GetNodeTypeString(variant) << ")";
 
-        WriteSpecificNodeInfo(renderGraph, variant, node_, out);
+        WriteSpecificNodeInfo(renderGraph, variant, node_, out, showResourceState);
 
         out << "\", shape=ellipse" << color << "];";
         return;
@@ -289,7 +310,7 @@ static void WriteNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T&
         "\n            <tr><td bgcolor=\"lightyellow\" port=\"-1\">" << node.name << " (" << GetNodeTypeString(variant) << ")</td></tr>"
         ;
 
-    WriteSpecificNodeInfo(renderGraph, variant, node_, out);
+    WriteSpecificNodeInfo(renderGraph, variant, node_, out, showResourceState);
 
     int pinCount = GetNodePinCount(variant);
     for (int pinIndex = 0; pinIndex < pinCount; ++pinIndex)
@@ -317,7 +338,7 @@ static void WriteNodeInfo(RenderGraph& renderGraph, RenderGraphNode& variant, T&
 }
 
 // returns true if it found any variables to write
-bool WriteVariableInfo(const RenderGraph& renderGraph, std::ostringstream& out, bool includeInternal)
+bool WriteVariableInfo(const RenderGraph& renderGraph, std::ostringstream& out, bool includeInternal, bool alwaysWrite = false)
 {
     std::ostringstream varsOut[(int)VariableVisibility::Count];
 
@@ -353,10 +374,16 @@ bool WriteVariableInfo(const RenderGraph& renderGraph, std::ostringstream& out, 
             "</td></tr>";
     }
 
+    if (!printedAVariable && !alwaysWrite)
+        return false;
+
+    if (alwaysWrite && !printedAVariable)
+        out << "\n            <tr><td bgcolor=\"lightyellow\" port=\"-1\">No Variables</td></tr>";
+
     for (int i = 0; i < (int)VariableVisibility::Count; ++i)
         out << varsOut[i].str();
 
-    return printedAVariable;
+    return true;
 }
 
 void MakeRenderGraphGraphViz(RenderGraph& renderGraph, const char* outFolder)
@@ -372,7 +399,7 @@ void MakeRenderGraphGraphViz(RenderGraph& renderGraph, const char* outFolder)
 
     // write out info for each node
     for (RenderGraphNode& node : renderGraph.nodes)
-        ExecuteOnNode(node, [&](auto& node_) { WriteNodeInfo(renderGraph, node, node_, out, false, ""); });
+        ExecuteOnNode(node, [&](auto& node_) { WriteNodeInfo(renderGraph, node, node_, out, false, "", false); });
 
     struct Link
     {
@@ -476,15 +503,51 @@ void MakeFlattenedRenderGraphGraphViz(RenderGraph& renderGraph, const char* outF
     // write out info for each node
     for (RenderGraphNode& node : renderGraph.nodes)
     {
-        if (GetNodeIsResourceNode(node))
+        if (node._index == RenderGraphNode::c_index_reroute)
             continue;
-        ExecuteOnNode(node, [&](auto& node_) { WriteNodeInfo(renderGraph, node, node_, out, true, ""); });
+        //if (GetNodeIsResourceNode(node))
+            //continue;
+        ExecuteOnNode(node, [&](auto& node_) { WriteNodeInfo(renderGraph, node, node_, out, true, "", true); });
+    }
+
+    // write out the transitions
+    for (size_t stepIndex = 0; stepIndex < renderGraph.flattenedNodeList.size(); ++stepIndex)
+    {
+        if (renderGraph.transitions[stepIndex].transitions.empty())
+            continue;
+
+        out <<
+            "\n    Transitions" << stepIndex << "[shape = none, margin = 0, label = <"
+            "\n        <table border=\"0\" cellborder=\"1\" cellspacing=\"0\" cellpadding=\"4\">"
+            ;
+
+        out << "\n            <tr><td bgcolor=\"lightyellow\" port=\"-1\">" << (renderGraph.transitions[stepIndex].transitions.empty() ? "No " : "") << "Transitions</td></tr>";
+
+        for (const ResourceTransition& transition : renderGraph.transitions[stepIndex].transitions)
+        {
+            out <<
+                "\n            <tr><td bgcolor=\"lightslategray\" port=\"-1\">"
+                << GetNodeName(renderGraph, transition.nodeIndex) << ": "
+                ;
+
+            if (transition.oldState == transition.newState && transition.newState == ShaderResourceAccessType::UAV)
+                out << "UAV Barrier";
+            else
+                out << EnumToString(transition.oldState) << " to " << EnumToString(transition.newState);
+
+            out <<
+                "</td></tr>"
+                ;
+        }
+
+        out <<
+            "\n        </table>>];";
     }
 
     // write out the variables and constants
     {
         std::ostringstream varsOut;
-        if (WriteVariableInfo(renderGraph, varsOut, true))
+        if (WriteVariableInfo(renderGraph, varsOut, true, true))
         {
             out <<
                 "\n    VariableNode [shape=none, margin=0, label=<"
@@ -496,12 +559,11 @@ void MakeFlattenedRenderGraphGraphViz(RenderGraph& renderGraph, const char* outF
 
     // write the links between nodes
     out << "\n";
-    int lastNodeIndex = -1;
-    for (int nodeIndex :renderGraph.flattenedNodeList)
+    std::string lastNode = "VariableNode";
+    for (size_t stepIndex = 0; stepIndex < renderGraph.flattenedNodeList.size(); ++stepIndex)
     {
+        int nodeIndex = renderGraph.flattenedNodeList[stepIndex];
         RenderGraphNode& node = renderGraph.nodes[nodeIndex];
-        if (GetNodeIsResourceNode(node))
-            continue;     
 
         /*
         int pinCount = GetNodePinCount(node);
@@ -518,12 +580,22 @@ void MakeFlattenedRenderGraphGraphViz(RenderGraph& renderGraph, const char* outF
         }
         */
 
-        if (lastNodeIndex != -1)
-            out << "\n    Node" << lastNodeIndex << ":-1 -> Node" << nodeIndex << ":-1";
-        else
-            out << "\n    VariableNode:-1 -> Node" << nodeIndex << ":-1";
+        // Transitions come before the node
+        char buffer[256];
+        if (!renderGraph.transitions[stepIndex].transitions.empty())
+        {
+            out << "\n    " << lastNode << ":-1 -> Transitions" << stepIndex << ":-1";
+            sprintf_s(buffer, "Transitions%i", (int)stepIndex);
+            lastNode = buffer;
+        }
 
-        lastNodeIndex = nodeIndex;
+        // Then comes the node
+        //if (!GetNodeIsResourceNode(node))
+        {
+            out << "\n    " << lastNode << ":-1 -> Node" << nodeIndex << ":-1";
+            sprintf_s(buffer, "Node%i", nodeIndex);
+            lastNode = buffer;
+        }
     }
 
     // write the footer
@@ -607,7 +679,7 @@ void MakeSummaryRenderGraphGraphViz(RenderGraph& renderGraph, const char* outFol
         ExecuteOnNode(node,
             [&](auto& node_)
             {
-                WriteNodeInfo(renderGraph, node, node_, out, false, "");
+                WriteNodeInfo(renderGraph, node, node_, out, false, "", false);
             }
         );
 

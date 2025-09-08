@@ -66,6 +66,10 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(bool, AgilitySDKRequired, false, "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(BackendSettings_UE_5_3, "UE_5_3 Settings")
+    STRUCT_FIELD(bool, AllowRealTypes, false, "CFLAG_AllowRealTypes. For 16 bit shader types.", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(BackendSettings_WebGPU_Features, "Required Limits. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedFeatures")
     STRUCT_FIELD(bool, float32Filterable, false, "float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.", 0)
     STRUCT_FIELD(bool, subgroups, false, "subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup\n" \
@@ -98,7 +102,8 @@ STRUCT_END()
 STRUCT_BEGIN(BackendSettings, "Backend settings")
     STRUCT_FIELD(BackendSettings_DX12, dx12, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
     STRUCT_FIELD(BackendSettings_WebGPU, webGPU, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
-    STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(BackendSettings_UE_5_3, UE_5_3, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
+    STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL)
 STRUCT_END()
 
 STRUCT_BEGIN(BackendData, "Backend Data")
@@ -108,9 +113,13 @@ STRUCT_END()
 STRUCT_BEGIN(BuildSettings, "Backend settings")
     STRUCT_DYNAMIC_ARRAY(GigiCompileWarning, disableWarnings, "Warnings listed here will be suppressed", 0)
 
+    STRUCT_FIELD(bool, makeGraphViz, false, "If true, will generate graphviz when building this technique", 0)
+
     // Only used by editor
     STRUCT_FIELD(std::string, outDX12, "out/dx12/", "The output location for DX12", 0)
+    STRUCT_FIELD(std::string, outUE_5_3, "out/UE_5_3/", "The output location for UE 5.3", 0)
     STRUCT_FIELD(std::string, outWebGPU, "out/WebGPU/", "The output location for WebGPU", 0)
+
     STRUCT_FIELD(std::string, outInterpreter, "out/interpreter/", "The output location for the interpreter backend", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 

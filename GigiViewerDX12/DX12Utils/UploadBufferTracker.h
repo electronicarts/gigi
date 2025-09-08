@@ -55,13 +55,13 @@ struct UploadBufferTracker
     Buffer* GetBuffer(ID3D12Device* device, size_t size, bool forConstantBuffer);
 
     template <typename T>
-    Buffer* GetBuffer(ID3D12Device* device, bool forConstantBuffer, const T& srcData)
+    Buffer* GetBufferT(ID3D12Device* device, bool forConstantBuffer, const T& srcData)
     {
-        return GetBuffer(device, forConstantBuffer, &srcData, 1);
+        return GetBufferT(device, forConstantBuffer, &srcData, 1);
     }
 
     template <typename T>
-    Buffer* GetBuffer(ID3D12Device* device, bool forConstantBuffer, const T* srcData, size_t count)
+    Buffer* GetBufferT(ID3D12Device* device, bool forConstantBuffer, const T* srcData, size_t count)
     {
         Buffer* ret = GetBuffer(device, sizeof(T) * count, forConstantBuffer);
         T* data = nullptr;

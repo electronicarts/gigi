@@ -45,6 +45,7 @@ UploadBufferTracker::Buffer* UploadBufferTracker::GetBuffer(ID3D12Device* device
         resourceDesc.Format = DXGI_FORMAT_UNKNOWN;
         resourceDesc.SampleDesc.Count = 1;
         resourceDesc.SampleDesc.Quality = 0;
+        // D3D12_TEXTURE_LAYOUT_ROW_MAJOR means the sample count must be 1
         resourceDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
         resourceDesc.Width = size;
         resourceDesc.Flags = D3D12_RESOURCE_FLAG_NONE;

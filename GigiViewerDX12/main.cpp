@@ -1970,6 +1970,7 @@ void ShowImageThumbnail(ID3D12Resource* resource, DXGI_FORMAT format, const int 
                 case RuntimeTypes::ViewableResource::Type::Texture2DArray: typeLabel = "Texture2DArray"; break;
                 case RuntimeTypes::ViewableResource::Type::Texture3D: typeLabel = "Texture3D"; break;
                 case RuntimeTypes::ViewableResource::Type::TextureCube: typeLabel = "TextureCube"; break;
+                case RuntimeTypes::ViewableResource::Type::Texture2DMS: typeLabel = "Texture2DMS"; break;
             }
 
             if (textureType == RuntimeTypes::ViewableResource::Type::Texture2D)
@@ -5521,6 +5522,7 @@ void ShowResourceView()
                 {
                     case RuntimeTypes::ViewableResource::Type::Texture2D: typeLabel = "Texture2D"; break;
                     case RuntimeTypes::ViewableResource::Type::Texture2DArray: typeLabel = "Texture2DArray"; break;
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS: typeLabel = "Texture2DMS"; break;
                     case RuntimeTypes::ViewableResource::Type::Texture3D: typeLabel = "Texture3D"; break;
                     case RuntimeTypes::ViewableResource::Type::TextureCube: typeLabel = "TextureCube"; break;
                     case RuntimeTypes::ViewableResource::Type::ConstantBuffer: typeLabel = "ConstantBuffer"; break;
@@ -5531,6 +5533,13 @@ void ShowResourceView()
 //                ImGui::SameLine();
                 if (ImGui::Button("Copy Name"))
                     SetClipboardDataEx(CF_TEXT, (void*)res.m_displayName.c_str(), (DWORD)res.m_displayName.length() + 1);
+            }
+
+            if(res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "\n  MSAA preview is not implemented yet.\n  You can implement a custom resolve shader.");
+                ImGui::End();
+                return;
             }
 
             static bool showAsHex = false;
@@ -5544,6 +5553,7 @@ void ShowResourceView()
                     case RuntimeTypes::ViewableResource::Type::Texture2DArray:
                     case RuntimeTypes::ViewableResource::Type::Texture3D:
                     case RuntimeTypes::ViewableResource::Type::TextureCube:
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS:
                     {
                         if (!g_hideUI)
                         {
@@ -5759,6 +5769,7 @@ void ShowResourceView()
                                     case RuntimeTypes::ViewableResource::Type::Texture2DArray: label = "Index"; break;
                                     case RuntimeTypes::ViewableResource::Type::Texture3D: label = "Slice"; break;
                                     case RuntimeTypes::ViewableResource::Type::TextureCube: label = "Face"; break;
+                                    case RuntimeTypes::ViewableResource::Type::Texture2DMS: label = "MSAA Sample"; break;
                                 }
 
                                 float comboWidth = 0.0f;
@@ -5775,13 +5786,16 @@ void ShowResourceView()
                                 }
                                 else
                                 {
+                                    int count = (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS) ?
+                                        res.m_origResourceDesc.SampleDesc.Count : res.m_size[2];
+
                                     char buffer[32];
-                                    for (int i = 0; i < res.m_size[2]; ++i)
+                                    for (int i = 0; i < count; ++i)
                                     {
                                         sprintf_s(buffer, "%i", i);
                                         optionsStr.push_back(buffer);
                                     }
-                                    for (int i = 0; i < res.m_size[2]; ++i)
+                                    for (int i = 0; i < count; ++i)
                                         options.push_back(optionsStr[i].c_str());
                                 }
 
@@ -6668,6 +6682,8 @@ void ShowRenderGraphWindow()
         {
             std::vector<RuntimeTypes::ViewableResource>& viewableResources = *viewableResources_;
 
+            bool msaaErrorShown = false;
+
             int textureIndex = -1;
             for (RuntimeTypes::ViewableResource& viewableResource : viewableResources)
             {
@@ -6679,7 +6695,7 @@ void ShowRenderGraphWindow()
                 if (viewableResource.m_hideFromUI || viewableResource.m_displayName.empty())
                     continue;
 
-                if (!g_profileMode && (viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture3D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::TextureCube))
+                if (!g_profileMode && (viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture3D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::TextureCube || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS))
                     viewableResource.m_wantsToBeViewed = true;
 
                 switch (viewableResource.m_type)
@@ -6712,6 +6728,13 @@ void ShowRenderGraphWindow()
                     {
                         if (ImGui::Button(viewableResource.m_displayName.c_str()))
                             g_resourceView.Buffer(nodeIndex, textureIndex);
+                        break;
+                    }
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS:
+                    {
+                        if(!msaaErrorShown)
+                            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "MSAA preview is not implemented yet.");
+                        msaaErrorShown = true;
                         break;
                     }
                 }
@@ -7661,6 +7684,7 @@ public:
                                     case TextureDimensionType::Texture2DArray: type = RuntimeTypes::ViewableResource::Type::Texture2DArray; break;
                                     case TextureDimensionType::Texture3D: type = RuntimeTypes::ViewableResource::Type::Texture3D; break;
                                     case TextureDimensionType::TextureCube: type = RuntimeTypes::ViewableResource::Type::TextureCube; break;
+                                    case TextureDimensionType::Texture2DMS: type = RuntimeTypes::ViewableResource::Type::Texture2DMS; break;
                                 }
                                 g_resourceView.Texture(nodeIndex, viewableResourceIndex, type);
                                 break;
@@ -8566,6 +8590,12 @@ bool CreateDeviceD3D(HWND hWnd)
             rtvHandle.ptr += rtvDescriptorSize;
         }
     }
+
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaa;
+    ZeroMemory(&msaa, sizeof(msaa));
+    msaa.SampleCount = 4;
+    if (g_pd3dDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaa, sizeof(msaa)) != S_OK)
+        return false;
 
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};

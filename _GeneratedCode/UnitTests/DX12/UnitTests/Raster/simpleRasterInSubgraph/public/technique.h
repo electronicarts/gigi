@@ -45,21 +45,21 @@ namespace simpleRasterInSubgraph
         {
 
             // Variables
-            float4 variable_DoSimpleRaster_MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4 variable_DoSimpleRaster_MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float3 variable_DoSimpleRaster_iResolution = {0.000000f, 0.000000f, 0.000000f};
-            float variable_DoSimpleRaster_iTime = 0.000000f;
-            float variable_DoSimpleRaster_iTimeDelta = 0.000000f;
-            float variable_DoSimpleRaster_iFrameRate = 0.000000f;
+            float4 variable_DoSimpleRaster_MouseState = {0.f, 0.f, 0.f, 0.f};
+            float4 variable_DoSimpleRaster_MouseStateLastFrame = {0.f, 0.f, 0.f, 0.f};
+            float3 variable_DoSimpleRaster_iResolution = {0.f, 0.f, 0.f};
+            float variable_DoSimpleRaster_iTime = 0.f;
+            float variable_DoSimpleRaster_iTimeDelta = 0.f;
+            float variable_DoSimpleRaster_iFrameRate = 0.f;
             int variable_DoSimpleRaster_iFrame = 0;
-            float4 variable_DoSimpleRaster_iMouse = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4x4 variable_DoSimpleRaster_ViewMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_DoSimpleRaster_InvViewMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_DoSimpleRaster_ProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_DoSimpleRaster_InvProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_DoSimpleRaster_ViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float4x4 variable_DoSimpleRaster_InvViewProjMtx = {1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f, 0.000000f, 0.000000f, 0.000000f, 0.000000f, 1.000000f};
-            float3 variable_DoSimpleRaster_CameraPos = {0.000000f, 0.000000f, 0.000000f};
+            float4 variable_DoSimpleRaster_iMouse = {0.f, 0.f, 0.f, 0.f};
+            float4x4 variable_DoSimpleRaster_ViewMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_DoSimpleRaster_InvViewMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_DoSimpleRaster_ProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_DoSimpleRaster_InvProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_DoSimpleRaster_ViewProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float4x4 variable_DoSimpleRaster_InvViewProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
+            float3 variable_DoSimpleRaster_CameraPos = {0.f, 0.f, 0.f};
 
             ID3D12Resource* buffer_VB = nullptr;
             DXGI_FORMAT buffer_VB_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
@@ -214,7 +214,7 @@ namespace simpleRasterInSubgraph
 
     struct Struct_DoSimpleRaster_VertexFormat
     {
-        float3 Position = {0.000000f, 0.000000f, 0.000000f};
-        float3 Normal = {0.000000f, 0.000000f, 0.000000f};
+        float3 Position = {0.f, 0.f, 0.f};
+        float3 Normal = {0.f, 0.f, 0.f};
     };
 };

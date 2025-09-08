@@ -48,14 +48,14 @@ namespace boxblur
             bool variable_enabled = true;  // Enables or disables the blurring effect.
             int variable_radius = 2;  // The radius of the blur.  Actual size in pixles of the blur is (radius*2+1)^2
             bool variable_sRGB = true;
-            float3 variable_iResolution = {0.000000f, 0.000000f, 0.000000f};
-            float variable_iTime = 0.000000f;
-            float variable_iTimeDelta = 0.000000f;
-            float variable_iFrameRate = 0.000000f;
+            float3 variable_iResolution = {0.f, 0.f, 0.f};
+            float variable_iTime = 0.f;
+            float variable_iTimeDelta = 0.f;
+            float variable_iFrameRate = 0.f;
             int variable_iFrame = 0;
-            float4 variable_iMouse = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4 variable_MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4 variable_MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
+            float4 variable_iMouse = {0.f, 0.f, 0.f, 0.f};
+            float4 variable_MouseState = {0.f, 0.f, 0.f, 0.f};
+            float4 variable_MouseStateLastFrame = {0.f, 0.f, 0.f, 0.f};
 
             // This is the texture to be blurred
             ID3D12Resource* texture_InputTexture = nullptr;

@@ -46,7 +46,7 @@ namespace StructuredBuffer
 
             // Variables
             int variable_frameIndex = 0;
-            float variable_frameDeltaTime = 0.000000f;
+            float variable_frameDeltaTime = 0.f;
 
             ID3D12Resource* buffer_buff = nullptr;
             DXGI_FORMAT buffer_buff_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer
@@ -188,10 +188,10 @@ namespace StructuredBuffer
     struct Struct_TheStructure
     {
         int TheInt = 0;
-        float TheFloat = 0.000000f;
+        float TheFloat = 0.f;
         int TheEnum = (int)Trinary::True;
         unsigned int TheBool = true;
         uint TheUINT = 0;
-        float2 TheFloat2 = {0.000000f, 0.000000f};
+        float2 TheFloat2 = {0.f, 0.f};
     };
 };

@@ -93,6 +93,7 @@ void ProcessShaderOptions_HLSL::WriteResourceDefinition(const ProcessShaderOptio
                             textureType = (resource.access == ShaderResourceAccessType::UAV) ? "Texture2DArray" : "TextureCube";
                             break;
                         }
+                        case TextureDimensionType::Texture2DMS: textureType = "Texture2DMS"; break;
                         default:
                         {
                             Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(resource.texture.dimension), (int)resource.texture.dimension);

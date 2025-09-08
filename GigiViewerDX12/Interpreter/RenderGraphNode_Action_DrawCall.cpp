@@ -341,6 +341,8 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 		OnRootSignature(sig, node.vertexShader.shader);
 		OnRootSignature(sig, node.pixelShader.shader);
 
+
+
 		char* sigptr = (char*)sig->GetBufferPointer();
 		auto sigsize = sig->GetBufferSize();
 
@@ -603,6 +605,9 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			psoDesc.SampleMask = UINT_MAX;
 			psoDesc.PrimitiveTopologyType = GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(node.geometryType);
 
+			// -1 is not found yet
+			int sampleCount = -1;
+
 			// Set the render targets
 			psoDesc.NumRenderTargets = 0;
 			for (int i = 0; i < node.colorTargets.size(); ++i)
@@ -621,6 +626,17 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 
 				psoDesc.RTVFormats[psoDesc.NumRenderTargets] = textureInfo.m_format;
 				psoDesc.NumRenderTargets++;
+
+                if (sampleCount != -1)
+                {
+                    if(sampleCount != textureInfo.sampleCount)
+//todo                    static bool erroredHere = false;
+//                   if (!erroredHere)
+//                        m_logFn(LogLevel::Error, "Depth texture \"%s\" is not a valid depth format: %s", resourceNode.resourceTexture.name.c_str(), textureInfoFormatInfo.name);
+//                    erroredHere = true;
+                    return SetupPSODescRet::False;
+                }
+                else sampleCount = textureInfo.sampleCount;
 			}
 
 			// Set the depth target
@@ -664,10 +680,23 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 						erroredHere = true;
 						return SetupPSODescRet::False;
 					}
+
+                    if (sampleCount != -1)
+                    {
+                        if (sampleCount != textureInfo.sampleCount)
+                            //todo                    static bool erroredHere = false;
+                            //                   if (!erroredHere)
+                            //                        m_logFn(LogLevel::Error, "Depth texture \"%s\" is not a valid depth format: %s", resourceNode.resourceTexture.name.c_str(), textureInfoFormatInfo.name);
+                            //                    erroredHere = true;
+                            return SetupPSODescRet::False;
+                    }
+                    else sampleCount = textureInfo.sampleCount;
+
 				}
 			}
 
-			psoDesc.SampleDesc.Count = 1;
+            assert(sampleCount > 0);
+			psoDesc.SampleDesc.Count = sampleCount;
 
 			return SetupPSODescRet::None;
 		};
@@ -813,6 +842,9 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 					case TextureDimensionType::Texture2DArray: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DArray; desc.m_count = resourceInfo.m_size[2]; break;
 					case TextureDimensionType::Texture3D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture3D; desc.m_count = resourceInfo.m_size[2]; break;
 					case TextureDimensionType::TextureCube: desc.m_resourceType = DescriptorTableCache::ResourceType::TextureCube; desc.m_count = 6; break;
+					case TextureDimensionType::Texture2DMS: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DMS; break;
+					default:
+						assert(0);
 				}
 				break;
 			}
@@ -1324,7 +1356,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_RENDER_TARGET, colorTargetNode.resourceTexture.name.c_str()) });
 
 				D3D12_CPU_DESCRIPTOR_HANDLE colorTargetHandle;
-				if (!textureInfo.GetRTV(m_device, colorTargetHandle, m_RTVHeapAllocationTracker, colorTargetNode.resourceTexture.dimension, ctSettings.arrayIndex, ctSettings.mipLevel, colorTargetNode.resourceTexture.name.c_str()))
+				if (!textureInfo.GetRTV(m_device, colorTargetHandle, m_RTVHeapAllocationTracker, colorTargetNode.resourceTexture.dimension, ctSettings.arrayIndex, ctSettings.mipLevel, textureInfo.sampleCount, colorTargetNode.resourceTexture.name.c_str()))
 				{
 					m_logFn(LogLevel::Error, "node \"%s\": cannot make RTV for \"%s\" (%i,%i).\n", node.name.c_str(), colorTargetNode.resourceTexture.name.c_str(), ctSettings.arrayIndex, ctSettings.mipLevel);
 					return false;
@@ -1379,7 +1411,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 						queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthTargetNode.resourceTexture.name.c_str()) });
 
-						if (!textureInfo.GetDSV(m_device, depthTargetHandle, m_DSVHeapAllocationTracker, depthTargetNode.resourceTexture.dimension, node.depthArrayIndex, node.depthMipLevel, depthTargetNode.resourceTexture.name.c_str()))
+						if (!textureInfo.GetDSV(m_device, depthTargetHandle, m_DSVHeapAllocationTracker, depthTargetNode.resourceTexture.dimension, node.depthArrayIndex, node.depthMipLevel, textureInfo.sampleCount, depthTargetNode.resourceTexture.name.c_str()))
 						{
 							m_logFn(LogLevel::Error, "node \"%s\": cannot make DSV for \"%s\" (%i,%i).\n", node.name.c_str(), depthTargetNode.resourceTexture.name.c_str(), node.depthArrayIndex, node.depthMipLevel);
 							return false;

@@ -104,7 +104,12 @@ struct DfltFixupVisitor
                 if (componentIndex > 0)
                     stream << ", ";
 
-                stream << std::fixed << std::setprecision(std::numeric_limits<float>::digits10) << values[componentIndex];
+                std::ostringstream singleValueStream;
+                singleValueStream << std::setprecision(std::numeric_limits<float>::max_digits10) << values[componentIndex];
+                std::string singleValueString = singleValueStream.str();
+                stream << singleValueString;
+                if (singleValueString.find('.') == std::string::npos)
+                    stream << ".";
 
                 if (m_backend != Backend::WebGPU)
                     stream << "f";
@@ -2743,8 +2748,15 @@ struct ShaderDataVisitor
 
     bool HookupVariables(Shader& shader, const std::string& path)
     {
-        if (!shader.copyFile)
-            return true;
+        // Don't scan these type of shaders for variables
+        switch (shader.type)
+        {
+            case ShaderType::RTClosestHit:
+            case ShaderType::RTAnyHit:
+            case ShaderType::RTIntersection:
+            case ShaderType::RTMiss:
+                return true;
+        }
 
         // Gather the variables referenced in this shader
         std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();

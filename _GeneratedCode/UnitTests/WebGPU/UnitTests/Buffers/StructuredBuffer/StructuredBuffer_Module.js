@@ -202,8 +202,8 @@ buffer_buff_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.STORAGE;
 variable_frameIndex = 0;
 variableDefault_frameIndex = 0;
 variableChanged_frameIndex = false;
-variable_frameDeltaTime = 0.000000;
-variableDefault_frameDeltaTime = 0.000000;
+variable_frameDeltaTime = 0.;
+variableDefault_frameDeltaTime = 0.;
 variableChanged_frameDeltaTime = false;
 
 // -------------------- Structs

@@ -51,6 +51,7 @@ namespace FrontEndNodes
                     ret.originalAccess = node.shader.shader->resources[index].originalAccess;
                     ret.nodeIndex = connection.dstNodeIndex;
                     ret.pinIndex = connection.dstNodePinIndex;
+                    ret.shaderResource = &node.shader.shader->resources[index];
                     return ret;
                 }
             }

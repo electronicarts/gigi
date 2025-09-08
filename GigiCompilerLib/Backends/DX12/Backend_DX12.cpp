@@ -106,6 +106,7 @@ struct BackendDX12 : public BackendBase
             case TextureDimensionType::Texture2DArray: return "D3D12_RTV_DIMENSION_TEXTURE2DARRAY";
             case TextureDimensionType::Texture3D: return "D3D12_RTV_DIMENSION_TEXTURE3D";
             case TextureDimensionType::TextureCube: return "D3D12_RTV_DIMENSION_TEXTURE2DARRAY";
+            case TextureDimensionType::Texture2DMS: return "D3D12_RTV_DIMENSION_TEXTURE2DMS";
             default:
             {
                 Assert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
@@ -121,6 +122,7 @@ struct BackendDX12 : public BackendBase
             case TextureDimensionType::Texture2D: return "D3D12_DSV_DIMENSION_TEXTURE2D";
             case TextureDimensionType::Texture2DArray: return "D3D12_DSV_DIMENSION_TEXTURE2DARRAY";
             case TextureDimensionType::TextureCube: return "D3D12_DSV_DIMENSION_TEXTURE2DARRAY";
+            case TextureDimensionType::Texture2DMS: return "D3D12_DSV_DIMENSION_TEXTURE2DMS";
             default:
             {
                 Assert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
@@ -1619,6 +1621,19 @@ void CopyShaderFileDX12(Shader& shader, const std::unordered_map<std::string, st
 
 void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
 {
+    // Error out if MSAA is used in this graph, because it isn't yet supported
+    for (const RenderGraphNode& node : renderGraph.nodes)
+    {
+        if (node._index != RenderGraphNode::c_index_resourceTexture)
+            continue;
+
+        if (node.resourceTexture.dimension == TextureDimensionType::Texture2DMS)
+        {
+            Assert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
+            return;
+        }
+    }
+
     const char* outFolder = renderGraph.outputDirectory.c_str();
 
     if(renderGraph.generateGraphVizFlag){

@@ -49,11 +49,11 @@ namespace SlangAutoDiff
             bool variable_Reset = false;
             bool variable_initialized = false;
             int variable_FrameIndex = 0;
-            float variable_LearningRate = 0.100000f;
-            float variable_MaximumStepSize = 0.010000f;
-            float4 variable_MouseState = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float4 variable_MouseStateLastFrame = {0.000000f, 0.000000f, 0.000000f, 0.000000f};
-            float3 variable_iResolution = {0.000000f, 0.000000f, 0.000000f};
+            float variable_LearningRate = 0.100000001f;
+            float variable_MaximumStepSize = 0.00999999978f;
+            float4 variable_MouseState = {0.f, 0.f, 0.f, 0.f};
+            float4 variable_MouseStateLastFrame = {0.f, 0.f, 0.f, 0.f};
+            float3 variable_iResolution = {0.f, 0.f, 0.f};
             bool variable_UseBackwardAD = true;
             bool variable_QuantizeDisplay = false;
 

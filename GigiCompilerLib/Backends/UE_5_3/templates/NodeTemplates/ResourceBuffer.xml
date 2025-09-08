@@ -1,0 +1,61 @@
+<ResourceBuffer:FTechniqueState-NotImported-Persistent>
+    TRefCountPtr&lt;FRDGPooledBuffer&gt; Buffer_/*$(Node:Name)*/;/*$(Node:CommentAsComment)*/
+</ResourceBuffer:FTechniqueState-NotImported-Persistent>
+
+<ResourceBuffer:AddTechnique-NotImported-Persistent>
+    // Buffer /*$(Node:Name)*//*$(Node:CommentInComment)*/
+    if (!View.ViewState-&gt;TechniqueState_/*$(Name)*/.Buffer_/*$(Node:Name)*/)
+    {
+/*$(Node:MakeDesc)*/
+        // Create Buffer
+        FRDGBufferRef buffer = GraphBuilder.CreateBuffer(desc, TEXT("/*$(Name)*/./*$(Node:Name)*/"));
+        View.ViewState-&gt;TechniqueState_/*$(Name)*/.Buffer_/*$(Node:Name)*/ = GraphBuilder.ConvertToExternalBuffer(buffer);
+    }
+    FRDGBufferRef Buffer_/*$(Node:Name)*/ = GraphBuilder.RegisterExternalBuffer(View.ViewState-&gt;TechniqueState_/*$(Name)*/.Buffer_/*$(Node:Name)*/, TEXT("/*$(Name)*/./*$(Node:Name)*/"));
+
+</ResourceBuffer:AddTechnique-NotImported-Persistent>
+
+<ResourceBuffer:AddTechnique-NotImported-Transient>
+    // Buffer /*$(Node:Name)*//*$(Node:CommentInComment)*/
+    FRDGBufferRef Buffer_/*$(Node:Name)*/;
+    {
+/*$(Node:MakeDesc)*/
+        // Create Buffer
+        Buffer_/*$(Node:Name)*/ = GraphBuilder.CreateBuffer(desc, TEXT("/*$(Name)*/./*$(Node:Name)*/"));
+    }
+
+</ResourceBuffer:AddTechnique-NotImported-Transient>
+
+
+
+
+<ResourceBuffer:FTechniqueParamsInputs-Imported-NonRT>
+
+        // Buffer /*$(Node:Name)*//*$(Node:CommentInComment)*/
+        FRDGBufferRef Buffer_/*$(Node:Name)*/ = nullptr;
+        EPixelFormat BufferFormat_/*$(Node:Name)*/ = PF_Unknown;
+/*$(Node:VertexFormat)*/</ResourceBuffer:FTechniqueParamsInputs-Imported-NonRT>
+
+<ResourceBuffer:FTechniqueParamsInputs-Imported-RT>
+
+        // Buffer /*$(Node:Name)*//*$(Node:CommentInComment)*/
+        FRHIRayTracingScene* Buffer_/*$(Node:Name)*/ = nullptr;
+</ResourceBuffer:FTechniqueParamsInputs-Imported-RT>
+
+<ResourceBuffer:AddTechnique-Imported>
+    FRDGBufferRef Buffer_/*$(Node:Name)*/ = params.inputs.Buffer_/*$(Node:Name)*/;
+
+</ResourceBuffer:AddTechnique-Imported>
+
+
+
+
+
+<ResourceBuffer:FTechniqueParamsOutputs-Exported>
+        FRDGBufferRef Buffer_/*$(Node:Name)*/ = nullptr;/*$(Node:CommentAsComment)*/
+</ResourceBuffer:FTechniqueParamsOutputs-Exported>
+
+<ResourceBuffer:AddTechniqueSetExports-Exported>
+    params.outputs.Buffer_/*$(Node:Name)*/ = Buffer_/*$(Node:Name)*/;
+
+</ResourceBuffer:AddTechniqueSetExports-Exported>

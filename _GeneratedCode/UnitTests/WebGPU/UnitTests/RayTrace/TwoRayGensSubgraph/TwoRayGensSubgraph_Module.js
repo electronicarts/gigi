@@ -2252,20 +2252,20 @@ texture_Texture_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC
 
 // -------------------- Public Variables
 
-variable_clipToWorld = [ 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000 ];
-variableDefault_clipToWorld = [ 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000, 0.000000 ];
+variable_clipToWorld = [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. ];
+variableDefault_clipToWorld = [ 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0., 0. ];
 variableChanged_clipToWorld = [ false, false, false, false, false, false, false, false, false, false, false, false, false, false, false, false ];
-variable_cameraPos = [ 0.000000, 0.000000, 0.000000 ];
-variableDefault_cameraPos = [ 0.000000, 0.000000, 0.000000 ];
+variable_cameraPos = [ 0., 0., 0. ];
+variableDefault_cameraPos = [ 0., 0., 0. ];
 variableChanged_cameraPos = [ false, false, false ];
-variable_depthNearPlane = 0.000000;  // The depth value for the near plane.
-variableDefault_depthNearPlane = 0.000000;  // The depth value for the near plane.
+variable_depthNearPlane = 0.;  // The depth value for the near plane.
+variableDefault_depthNearPlane = 0.;  // The depth value for the near plane.
 variableChanged_depthNearPlane = false;
-variable_hitColor = [ 0.000000, 1.000000, 0.000000 ];
-variableDefault_hitColor = [ 0.000000, 1.000000, 0.000000 ];
+variable_hitColor = [ 0., 1., 0. ];
+variableDefault_hitColor = [ 0., 1., 0. ];
 variableChanged_hitColor = [ false, false, false ];
-variable_missColor = [ 1.000000, 0.000000, 0.000000 ];
-variableDefault_missColor = [ 1.000000, 0.000000, 0.000000 ];
+variable_missColor = [ 1., 0., 0. ];
+variableDefault_missColor = [ 1., 0., 0. ];
 variableChanged_missColor = [ false, false, false ];
 
 // -------------------- Private Variables
