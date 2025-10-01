@@ -407,6 +407,13 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                         ;
                 }
             }
+            else if (GetTokenParameter(token.c_str(), "_workgraph", param))
+            {
+                shaderSpecificStringReplacementMap[token] = std::ostringstream();
+                shaderSpecificStringReplacementMap[token] <<
+                    declareLineNumber <<
+                    "void " << param;
+            }
             else if (GetTokenParameter(token.c_str(), "_compute", param))
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();

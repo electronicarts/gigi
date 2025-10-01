@@ -1206,6 +1206,69 @@ struct ReferenceFixupVisitor
         return true;
     }
 
+    // TODO: jan
+    bool Visit(RenderGraphNode_Action_WorkGraph& data, const std::string& path) 
+    {
+        if (visitedNode[data.nodeIndex])
+            return true;
+        visitedNode[data.nodeIndex] = true;
+
+        // Get pin counts
+        int connectionIndex = -1;
+        Shader* shader = data.entryShader.shader;
+        int pinCount = shader ? (int)shader->resources.size() : 0;
+        for (NodePinConnection& connection : data.connections)
+        {
+            connectionIndex++;
+            // get the source pin
+            for (int i = 0; i < pinCount; ++i)
+            {
+                if (!_stricmp(connection.srcPin.c_str(), shader->resources[i].name.c_str()))
+                {
+                    connection.srcNodePinIndex = i;
+                    break;
+                }
+            }
+
+            if (connection.srcNodePinIndex == -1)
+            {
+                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node
+            connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+            if (connection.dstNodeIndex == -1)
+            {
+                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+
+            // get the dest node pin
+            connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+            if (connection.dstNodePinIndex == -1)
+            {
+                Assert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                return false;
+            }
+        }
+
+        // sort the connections to be in the same order as the shader resources are
+        std::sort(data.connections.begin(), data.connections.end(), [](const NodePinConnection& a, const NodePinConnection& b) { return a.srcNodePinIndex < b.srcNodePinIndex; });
+
+        Visit(data.shadingRateImage, path + ".shadingRateImage");
+
+        Visit(data.depthTarget, path + ".depthTarget");
+        for (int i = 0; i < data.colorTargets.size(); ++i)
+        {
+            char pathBuffer[64];
+            sprintf_s(pathBuffer, ".colorTargets[%i]", i);
+            Visit(data.colorTargets[i], path + pathBuffer);
+        }
+
+        return true;
+    }
+
     bool Visit(RenderGraphNode_Action_CopyResource& data, const std::string& path)
     {
         if (visitedNode[data.nodeIndex])
@@ -2164,6 +2227,22 @@ struct SanitizeVisitor
                     );
         return true;
     }
+
+    bool Visit(RenderGraphNode_Action_WorkGraph& data, const std::string& path)
+    {
+        data.connections.erase(
+            std::remove_if(
+                data.connections.begin(), data.connections.end(),
+                [](const NodePinConnection& connection)
+                {
+                    return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+                }
+            ),
+            data.connections.end()
+        );
+        return true;
+    }
+
     bool Visit(RenderGraphNode_Action_DrawCall& data, const std::string& path)
     {
         data.connections.erase(

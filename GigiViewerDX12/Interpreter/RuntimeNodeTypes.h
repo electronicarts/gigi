@@ -243,7 +243,8 @@ struct RuntimeTypes
 
         bool m_usesMeshNodes = false;
         ID3D12StateObject* m_stateObject = nullptr; // contains shader data, root sig, ...
-
+        ID3D12RootSignature* m_rootSignature = nullptr;
+        ID3D12Resource* m_backingMemory = nullptr;
         D3D12_SET_PROGRAM_DESC m_programDesc;
         uint32_t m_entrypointIndex = 0;
         bool m_failed = false;

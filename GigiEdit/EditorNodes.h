@@ -452,7 +452,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_WorkGraph>(renderGraph, shaderIndex, node, 0, ret);
     node.connections.resize(numNewConnections);
 
-    // just for mesh nodes, really
+    // these are just for mesh nodes, really, don't i also need vb, ib, instancebuffer then?
     // 
     // Shading Rate Image
     NodePinInfo pin;
