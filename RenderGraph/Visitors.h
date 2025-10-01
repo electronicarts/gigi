@@ -1228,9 +1228,11 @@ struct ReferenceFixupVisitor
         return true;
     }
 
-    // TODO: jan
     bool Visit(RenderGraphNode_Action_WorkGraph& data, const std::string& path) 
     {
+        // agilitysdk required for work graphs.
+        renderGraph.settings.dx12.AgilitySDKRequired = true;
+
         if (visitedNode[data.nodeIndex])
             return true;
         visitedNode[data.nodeIndex] = true;

@@ -10,7 +10,7 @@
 #include <d3dx12/d3dx12_state_object.h>
 
 #define ALLOW_MESH_NODES 0
-
+       
 void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPreviewWindowDX12& interpreter)
 {
     RenderGraphNode_Base::Release(interpreter);
@@ -21,7 +21,17 @@ void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPrev
         m_stateObject = nullptr;
     }
 
-    // TODO: Jan
+    if (m_rootSignature)
+    {
+        m_rootSignature->Release();
+        m_rootSignature = nullptr;
+    }
+
+    if (m_backingMemory)
+    {
+        m_backingMemory->Release();
+        m_backingMemory = nullptr;
+    }
 }
 
 bool GigiInterpreterPreviewWindowDX12::WorkGraph_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_WorkGraph& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions)
@@ -765,7 +775,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 return false;
             }
 
-            // todo: will need to be graphics when mesh nodes
+            // todo jan: will need to be graphics when mesh nodes
             m_commandList->SetComputeRootDescriptorTable(rootSigParamIndex, descriptorTableWorkGraph);
             rootSigParamIndex++;
         }
@@ -828,13 +838,19 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         std::ostringstream ss;
         ss << "DispatchGraph:\n  " << node.name << '\n';
 
+        // TODO: jan needs to be more flexible:
+
+        // number of records variable, i guess that can be part of the buffer, but then if you have empty records, there's no buffer.
+        // so should be min(numRecords, buffer.size()); i think
+        // // keep separate.
+        // stride will be part of the buffer.
+        // records buffer resource node input, i guess the buffer would be gpu node inputs.
+
         D3D12_DISPATCH_GRAPH_DESC dispatchDesc = {};
         dispatchDesc.Mode = D3D12_DISPATCH_MODE_NODE_CPU_INPUT;
         dispatchDesc.NodeCPUInput = {};
         dispatchDesc.NodeCPUInput.EntrypointIndex = runtimeData.m_entrypointIndex;
-        // Launch graph with one record TODO: jan, make flexible
         dispatchDesc.NodeCPUInput.NumRecords = 1;
-        // Record does not contain any data
         dispatchDesc.NodeCPUInput.RecordStrideInBytes = 0;
         dispatchDesc.NodeCPUInput.pRecords = nullptr;
 

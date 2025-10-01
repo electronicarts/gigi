@@ -308,6 +308,7 @@
     <ClInclude Include="..\Nodes\action_drawcall.h" />
     <ClInclude Include="..\Nodes\action_barrier.h" />
     <ClInclude Include="..\Nodes\action_subgraph.h" />
+    <ClInclude Include="..\Nodes\action_workgraph.h" />
     <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h" />
     <ClInclude Include="..\Schemas\DataFieldTypes.h" />
     <ClInclude Include="..\Schemas\Misc\BackendTemplateSchemas.h" />

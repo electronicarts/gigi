@@ -165,6 +165,7 @@
     <ClInclude Include="..\Version.h" />
     <ClInclude Include="gigicompiler.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_workGraph.h" />
+    <ClInclude Include="..\Nodes\action_workgraph.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="Backends\WebGPU\templates\Application\favicon.ico" />

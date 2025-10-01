@@ -401,7 +401,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(WorkGraphShaderReference, entryShader, {}, "The work graph entry shader.", 0)
-    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0) // TODO: Jan
+    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
     STRUCT_FIELD(DispatchSizeDesc, dispatchSize, {}, "The dispatch size for the entry shader, if broadcasting", SCHEMA_FLAG_UI_COLLAPSABLE) // only used for broadcast entry points?
 
     // Depth Settings

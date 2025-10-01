@@ -91,6 +91,7 @@ namespace FrontEndNodes
 #include "action_copyresource.h"
 #include "action_rayshader.h"
 #include "action_drawcall.h"
+#include "action_workGraph.h"
 #include "action_subgraph.h"
 #include "action_barrier.h"
 #include "reroute.h"
