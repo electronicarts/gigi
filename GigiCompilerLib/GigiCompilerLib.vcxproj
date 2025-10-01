@@ -519,6 +519,7 @@
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_drawCall.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_rayShader.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_subGraph.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_workGraph.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_resource_buffer.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_resource_shaderConstants.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_resource_texture.h" />

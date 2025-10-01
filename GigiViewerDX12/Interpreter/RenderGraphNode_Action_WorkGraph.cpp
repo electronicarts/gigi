@@ -321,7 +321,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         workgraphSubobject->SetProgramName(programName.c_str());
 
         // shader defines
-        std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / node.entryShader.shader->destFileName).string();
+        std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / node.entryShader.shader->destFileName).string();
         std::string entrypoint = node.entryPoint.empty() ? node.entryShader.shader->entryPoint : node.entryPoint;
 
         // Shader compilation depends on which shader compiler they opted to use for this technique
@@ -716,8 +716,21 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 else
                     label = label + " (SRV)";
 
+                unsigned int bufferViewBegin = 0;
+                unsigned int bufferViewSize = 0;
+                bool bufferViewInBytes = false;
+                if (dep.pinIndex < node.linkProperties.size())
+                {
+                    const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                    bufferViewBegin = linkProperties.bufferViewBegin;
+                    bufferViewSize = linkProperties.bufferViewSize;
+                    bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                }
+
                 const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-                runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false);
+                runtimeData.HandleViewableBuffer(*this, label.c_str()
+                    , resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count
+                    , false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
                 break;
             }
             }
@@ -962,8 +975,21 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 else
                     continue;
 
+                unsigned int bufferViewBegin = 0;
+                unsigned int bufferViewSize = 0;
+                bool bufferViewInBytes = false;
+                if (dep.pinIndex < node.linkProperties.size())
+                {
+                    const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                    bufferViewBegin = linkProperties.bufferViewBegin;
+                    bufferViewSize = linkProperties.bufferViewSize;
+                    bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                }
+
                 const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-                runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, true);
+                runtimeData.HandleViewableBuffer(*this, label.c_str()
+                    , resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count
+                    , false, true, bufferViewBegin, bufferViewSize, bufferViewInBytes);
                 break;
             }
             }
