@@ -112,7 +112,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n"
         "\n            ShaderCompilationInfo shaderCompilationInfo;"
         "\n            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / \"shaders\" / \"" << node.shader.shader->destFileName << "\";"
-        "\n            shaderCompilationInfo.entryPoint = \"" << (node.entryPoint.empty() ? node.shader.shader->entryPoint : node.entryPoint) << "\";"
+        "\n            shaderCompilationInfo.entryPoint = \"" << node.shader.shader->entryPoint << "\";"
         "\n            shaderCompilationInfo.shaderModel = \"" << renderGraph.settings.dx12.shaderModelCs << "\";"
         "\n            shaderCompilationInfo.debugName = (c_debugNames ? \"" << (node.name) << "\" : \"\");"
         "\n            if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;";
@@ -128,12 +128,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 		stringReplacementMap["/*$(CreateShared)*/"] <<
         "\n            shaderCompilationInfo.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
     }
-
-	for (const ShaderDefine& define : node.defines)
-	{
-		stringReplacementMap["/*$(CreateShared)*/"] <<
-			"\n            shaderCompilationInfo.defines.emplace_back(\"" << define.name << "\",\"" << define.value << "\");";
-	}
 
     // PSO
     const char* shaderCompiler = (renderGraph.settings.dx12.shaderCompiler == DXShaderCompiler::DXC) ? "_DXC" : "_FXC";
@@ -216,9 +210,18 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             if (dep.access == ShaderResourceAccessType::Indirect)
                 continue;
 
+            unsigned int bufferViewBegin = 0;
+            unsigned int bufferViewSize = 0;
+            bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
-                UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+            {
+                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                UAVMipIndex = linkProperties.UAVMipIndex;
+                bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
+            }
 
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
@@ -312,7 +315,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << " }";
+            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " }";
         }
 
         stringReplacementMap["/*$(Execute)*/"] <<

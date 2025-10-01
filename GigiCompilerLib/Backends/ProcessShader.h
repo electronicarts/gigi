@@ -25,14 +25,12 @@ enum class ShaderLanguage;
 
 struct ProcessShaderOptions_HLSL
 {
-	ProcessShaderOptions_HLSL(const Shader& shader, const RenderGraphNode* node = nullptr)
+	ProcessShaderOptions_HLSL(const Shader& shader)
 		: m_shader(shader)
-		, m_node(node)
 	{
 
 	}
 	Shader m_shader;
-	const RenderGraphNode* m_node = nullptr;
 
 	std::string m_rayTraceFnName = "TraceRay";
 

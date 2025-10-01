@@ -855,10 +855,10 @@ namespace simpleRT_inline
             commandList->SetPipelineState(ContextInternal::computeShader_DoRT_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Texture, context->m_output.texture_Texture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_input.buffer_Scene, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::RTScene, false, context->m_input.buffer_Scene_tlasSize, 1, 0 },
-                { context->m_input.buffer_Scene_VB, context->m_input.buffer_Scene_VB_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_Scene_VB_stride, context->m_input.buffer_Scene_VB_count, 0 },
-                { context->m_internal.constantBuffer__SimpleRTCSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_output.texture_Texture, context->m_output.texture_Texture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_input.buffer_Scene, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::RTScene, false, context->m_input.buffer_Scene_tlasSize, 1, 0, 0, 0, false },
+                { context->m_input.buffer_Scene_VB, context->m_input.buffer_Scene_VB_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_Scene_VB_stride, context->m_input.buffer_Scene_VB_count, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__SimpleRTCSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 4, Context::LogFn);

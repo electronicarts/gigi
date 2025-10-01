@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "WriteOutputCS", node "WriteOutput"
-static ShaderCode_WriteOutput_WriteOutputCS = `
+// Shader code for Compute shader "WriteOutputCS_0", node "WriteOutput"
+static ShaderCode_WriteOutput_WriteOutputCS_0 = `
 @binding(0) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 @compute
@@ -184,7 +184,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_WriteOutput = newHash;
 
-            let shaderCode = class_Defines.ShaderCode_WriteOutput_WriteOutputCS;
+            let shaderCode = class_Defines.ShaderCode_WriteOutput_WriteOutputCS_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_WriteOutput_Output_ReadOnly_format));
 

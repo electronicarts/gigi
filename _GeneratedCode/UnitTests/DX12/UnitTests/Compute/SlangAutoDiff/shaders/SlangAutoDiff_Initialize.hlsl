@@ -55,7 +55,7 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 		Data[1] = uv.y;
 	}
 
-	if(_InitCB.initialized)
+	if((bool)_InitCB.initialized)
 	{
 		return;
 	}

@@ -93,6 +93,7 @@ void ProcessShaderOptions_HLSL::WriteResourceDefinition(const ProcessShaderOptio
                             textureType = (resource.access == ShaderResourceAccessType::UAV) ? "Texture2DArray" : "TextureCube";
                             break;
                         }
+                        case TextureDimensionType::Texture2DMS: textureType = "Texture2DMS"; break;
                         default:
                         {
                             Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(resource.texture.dimension), (int)resource.texture.dimension);
@@ -230,7 +231,13 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
         if (variable.Const)
             shaderSpecificStringReplacementMap[key] << "(" + variable.dflt + ")";
         else
+        {
+            // cast to bool to avoid the warning about casting from uint to bool
+            if (variable.type == DataFieldType::Bool)
+                shaderSpecificStringReplacementMap[key] << "(bool)";
+
             options.m_writeVariableReference(options, shaderSpecificStringReplacementMap[key], variable);
+        }
     }
 
     // Handle replaced variables
@@ -253,7 +260,13 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
         if (variable.Const)
             shaderSpecificStringReplacementMap[key] << "(" + variable.dflt + ")";
         else
+        {
+            // cast to bool to avoid the warning about casting from uint to bool
+            if (variable.type == DataFieldType::Bool)
+                shaderSpecificStringReplacementMap[key] << "(bool)";
+
             options.m_writeVariableReference(options, shaderSpecificStringReplacementMap[key], variable);
+        }
     }
 
     std::string srcFileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
@@ -270,6 +283,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
     {
         // Map https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/interlockedadd
         // To https://github.com/shader-slang/spec/blob/main/proposals/003-atomic-t.md
+        // Slang atomics: https://docs.shader-slang.org/en/latest/external/core-module-reference/types/atomic-0/index.html
         shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
             "#define InterlockedAdd(value, param, oldValue) oldValue = value.add(param)\n"
             "#define InterlockedAnd(value, param, oldValue) oldValue = value.and(param)\n"
@@ -277,9 +291,32 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
             "#define InterlockedMin(value, param, oldValue) oldValue = value.min(param)\n"
             "#define InterlockedOr(value, param, oldValue) oldValue = value.or(param)\n"
             "#define InterlockedXor(value, param, oldValue) oldValue = value.xor(param)\n"
-
             // Doesn't exist in slang
             //"#define InterlockedCompareStore(value, param_compare, param_value)"
+
+            // I tried to make 2 parameter versions that don't care about the oldValue.
+            // To be able to have overloading based on parameter count, i needed to make them functions instead of macros.
+            // It complains about the webgpu generated code when i do the below, saying that atomic variables must have storage or workgroup address space
+            /*
+            "void InterlockedAdd<T:IArithmeticAtomicable>(inout Atomic<T> value, in T param, inout T oldValue) { oldValue = value.add(param); }\n"
+            "void InterlockedAdd<T:IArithmeticAtomicable>(inout Atomic<T> value, in T param) { value.add(param); }\n"
+            "\n"
+            "void InterlockedMax<T:IArithmeticAtomicable>(inout Atomic<T> value, in T param, inout T oldValue) { oldValue = value.max(param); }\n"
+            "void InterlockedMax<T:IArithmeticAtomicable>(inout Atomic<T> value, in T param) { value.max(param); }\n"
+            "\n"
+            "void InterlockedMin<T:IArithmeticAtomicable>(inout Atomic<T> value, in T param, inout T oldValue) { oldValue = value.min(param); }\n"
+            "void InterlockedMin<T:IArithmeticAtomicable>(inout Atomic<T> value, in T param) { value.min(param); }\n"
+            "\n"
+            "void InterlockedAnd<T:IBitAtomicable>(inout Atomic<T> value, in T param, inout T oldValue) { oldValue = value.and(param); }\n"
+            "void InterlockedAnd<T:IBitAtomicable>(inout Atomic<T> value, in T param) { value.and(param); }\n"
+            "\n"
+            "void InterlockedOr<T:IBitAtomicable>(inout Atomic<T> value, in T param, inout T oldValue) { oldValue = value.or(param); }\n"
+            "void InterlockedOr<T:IBitAtomicable>(inout Atomic<T> value, in T param) { value.or(param); }\n"
+            "\n"
+            "void InterlockedXor<T:IBitAtomicable>(inout Atomic<T> value, in T param, inout T oldValue) { oldValue = value.xor(param); }\n"
+            "void InterlockedXor<T:IBitAtomicable>(inout Atomic<T> value, in T param) { value.xor(param); }\n"
+            "\n"
+            */
             ;
     }
 
@@ -373,6 +410,10 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
     // Handle string replacement for any references to loaded textures
     for (const LoadedTextureReference& loadedTexture : shader.loadedTextureRefs)
         shaderSpecificStringReplacementMap[loadedTexture.token] << loadedTexture.resourceName;
+
+    // Put custom tokens in, else they will get filled in with an empty string by logic lower down
+    for (const CustomGigiToken& token : renderGraph.customTokens)
+        shaderSpecificStringReplacementMap[std::string("/*$(") + token.key + std::string(")*/")] << token.value;
 
     // Handle shader markup
     shaderSpecificStringReplacementMap["/*$(RayTraceFn)*/"] << options.m_rayTraceFnName;
@@ -625,13 +666,21 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                 case ShaderType::Compute: shaderModel = renderGraph.settings.dx12.shaderModelCs.c_str(); stage = "compute"; break;
                 case ShaderType::Vertex: shaderModel = renderGraph.settings.dx12.shaderModelVs.c_str(); stage = "vertex"; break;
                 case ShaderType::Pixel: shaderModel = renderGraph.settings.dx12.shaderModelPs.c_str(); stage = "fragment"; break;
+                default:
+                {
+                    Assert(false, "Unhandled shader type (%s) in " __FUNCTION__, EnumToString(shader.type));
+                    break;
+                }
             }
 
-            std::string errorMessage;
-            if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.slangOptions))
-                ShowErrorMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
-            else if (!errorMessage.empty())
-                ShowWarningMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
+            if (stage)
+            {
+                std::string errorMessage;
+                if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.defines, shader.slangOptions))
+                    ShowErrorMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
+                else if (!errorMessage.empty())
+                    ShowWarningMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
+            }
 
             // Comment out the code that slang puts in
             // Don't delete it, in case it ever turns out to be useful.
@@ -684,11 +733,14 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                 }
             }
 
-            std::string errorMessage;
-            if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.slangOptions))
-                ShowErrorMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
-            else if (!errorMessage.empty())
-                ShowWarningMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
+            if (stage)
+            {
+                std::string errorMessage;
+                if (!ConvertShaderSourceCode(shaderCode, shader.fileName.c_str(), shaderModel, stage, entryPoint, includeDirectories, shader.language, targetShaderLanguage, errorMessage, shader.defines, shader.slangOptions))
+                    ShowErrorMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
+                else if (!errorMessage.empty())
+                    ShowWarningMessage("\"%s\" converting from \"%s\" to \"%s\"\n%s\n", shader.fileName.c_str(), EnumToString(shader.language), EnumToString(targetShaderLanguage), errorMessage.c_str());
+            }
         }
         else
         {

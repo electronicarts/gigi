@@ -5,8 +5,9 @@
 
 // clang-format off
 #include "SchemasCommon.h"
-#include "SchemasShaders.h"
+#include "DataFieldTypes.h"
 #include "SchemasVariables.h"
+#include "SchemasShaders.h"
 #include "RenderGraphNodes.h"
 #include "PreviewWindow/PreviewWindowSchemas.h"
 #include "Browser/BrowserSchemas.h"
@@ -36,6 +37,7 @@ ENUM_BEGIN(GigiCompileResult, "")
     ENUM_ITEM(DataFixup, "")
     ENUM_ITEM(DfltFixup, "")
     ENUM_ITEM(HandleOutputsToMultiInput, "")
+    ENUM_ITEM(DuplicateNodeShaders, "")
 ENUM_END()
 
 ENUM_BEGIN(GigiCompileWarning, "Gigi compilation warnings")
@@ -65,6 +67,10 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(bool, AgilitySDKRequired, false, "True if the agility SDK is required in DX12. Can be set to true in the editor, but can also be set to true by the compiler.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(BackendSettings_UE_5_3, "UE_5_3 Settings")
+    STRUCT_FIELD(bool, AllowRealTypes, false, "CFLAG_AllowRealTypes. For 16 bit shader types.", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(BackendSettings_WebGPU_Features, "Required Limits. For more info, see: https://developer.mozilla.org/en-US/docs/Web/API/GPUSupportedFeatures")
     STRUCT_FIELD(bool, float32Filterable, false, "float32-filterable. When enabled, allows filtering of r32float-, rg32float-, and rgba32float-format GPUTextures.", 0)
     STRUCT_FIELD(bool, subgroups, false, "subgroups. When enabled, allows the use of subgroups in WGSL. Subgroups enable SIMD-level parallelism, allowing threads in a workgroup\n" \
@@ -89,7 +95,7 @@ STRUCT_BEGIN(BackendSettings_Common, "Common Settings")
     STRUCT_FIELD(bool, debugNames, true, "If true, sets debug names to GPU objects on available platforms.", 0)
     STRUCT_FIELD(bool, debugShaders, true, "If true, compiles shaders with debug options turned on, on available platforms.", 0)
     STRUCT_FIELD(bool, shaderWarningAsErrors, false, "If true, compiles shaders with warnings as errors turned on", 0)
-    STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging.", 0)
+    STRUCT_FIELD(bool, createPDBsAndBinaries, false, "If true, will output PDBs and shader binaries, useful for crash debugging. Also needed for rga.exe to run.", 0)
 	STRUCT_FIELD(std::string, rgaPath, "C:\\Apps\\RadeonDeveloperToolSuite\\rga.exe", "The default path where rga.exe can be found.\nThis is rarly needed, onlky works with DX12 and only used to generate a .bat as part of pbd export for AMD disassembly and shader stats.\nsee https://gpuopen.com/radeon-gpu-analyzer-2-2-direct3d12-compute", 0)
 	STRUCT_FIELD(std::string, rgaASIC, "gfx1032", "The hardware generation to target for rga.exe\ngfx1032: AMD Radeon PRO W6600\nSee .bat for more info", 0)
 STRUCT_END()
@@ -97,7 +103,8 @@ STRUCT_END()
 STRUCT_BEGIN(BackendSettings, "Backend settings")
     STRUCT_FIELD(BackendSettings_DX12, dx12, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
     STRUCT_FIELD(BackendSettings_WebGPU, webGPU, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
-    STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE)
+    STRUCT_FIELD(BackendSettings_UE_5_3, UE_5_3, {}, "", (SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL))
+    STRUCT_FIELD(BackendSettings_Common, common, {}, "", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_NO_PRETTY_LABEL)
 STRUCT_END()
 
 STRUCT_BEGIN(BackendData, "Backend Data")
@@ -107,9 +114,13 @@ STRUCT_END()
 STRUCT_BEGIN(BuildSettings, "Backend settings")
     STRUCT_DYNAMIC_ARRAY(GigiCompileWarning, disableWarnings, "Warnings listed here will be suppressed", 0)
 
+    STRUCT_FIELD(bool, makeGraphViz, false, "If true, will generate graphviz when building this technique", 0)
+
     // Only used by editor
     STRUCT_FIELD(std::string, outDX12, "out/dx12/", "The output location for DX12", 0)
+    STRUCT_FIELD(std::string, outUE_5_3, "out/UE_5_3/", "The output location for UE 5.3", 0)
     STRUCT_FIELD(std::string, outWebGPU, "out/WebGPU/", "The output location for WebGPU", 0)
+
     STRUCT_FIELD(std::string, outInterpreter, "out/interpreter/", "The output location for the interpreter backend", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 

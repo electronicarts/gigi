@@ -18,6 +18,7 @@ struct InputNodeInfo
     int nodeIndex;
     int pinIndex;
     bool required = true;
+    const ShaderResource* shaderResource = nullptr;
 };
 
 namespace FrontEndNodes
@@ -92,6 +93,7 @@ namespace FrontEndNodes
 #include "action_drawcall.h"
 #include "action_subgraph.h"
 #include "action_barrier.h"
+#include "reroute.h"
 
 #include "resource.h"
 #include "resource_buffer.h"
@@ -813,6 +815,19 @@ namespace FrontEndNodesNoCaching
                 }
                 break;
             }
+			case RenderGraphNode::c_index_reroute:
+			{
+				RenderGraphNode_Reroute& node = nodeBase.reroute;
+				for (NodePinConnection& connection : node.connections)
+				{
+					PinInfo info;
+					info.srcPin = connection.srcPin;
+					info.dstNode = &connection.dstNode;
+					info.dstPin = &connection.dstPin;
+					ret.push_back(info);
+				}
+				break;
+			}
             default:
             {
                 Assert(false, "Unhandled node type in " __FUNCTION__);
@@ -942,6 +957,27 @@ namespace FrontEndNodesNoCaching
         }
 
         return ret;
+    }
+
+    // This function will return the base name if that name is not already taken.
+    // Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+    inline std::string GetUniqueShaderName(const RenderGraph& renderGraph, const char* baseName, int* indexUsed = nullptr)
+    {
+        if (GetShaderIndex(renderGraph, baseName) == -1)
+            return baseName;
+
+        int nameIndex = -1;
+        char name[1024];
+        do
+        {
+            nameIndex++;
+            sprintf_s(name, "%s_%i", baseName, nameIndex);
+        } while (GetShaderIndex(renderGraph, name) != -1);
+
+        if (indexUsed)
+            *indexUsed = nameIndex;
+
+        return name;
     }
 
     // This function will return the base name if that name is not already taken.

@@ -10,5 +10,6 @@
 
 enum class ShaderLanguage;
 struct SlangOptions;
+struct ShaderDefine;
 
-bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage destinationLanguage, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const std::vector<std::string>& includeDirectories, const SlangOptions& options);
+bool ProcessWithSlang(std::string& source, const char* fileName, ShaderLanguage destinationLanguage, const char* stage, const char* entryPoint, const char* profile, std::string& errorMessage, const std::vector<std::string>& includeDirectories, const std::vector<ShaderDefine>& shaderDefines, const SlangOptions& options);

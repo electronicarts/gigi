@@ -14,9 +14,10 @@ enum class ResourceType
     Texture2DArray,
     Texture3D,
     TextureCube,
+    Texture2DMS,
     RTScene
 };
 
-ID3D12Resource* CreateTexture(ID3D12Device* device, unsigned int size[3], unsigned int numMips, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, const char* debugName);
+ID3D12Resource* CreateTexture(ID3D12Device* device, unsigned int size[3], unsigned int numMips, DXGI_FORMAT format, unsigned int sampleCount, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, const char* debugName);
 
 ID3D12Resource* CreateBuffer(ID3D12Device* device, unsigned int size, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, D3D12_HEAP_TYPE heapType, const char* debugName);

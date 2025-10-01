@@ -3,6 +3,18 @@
   BackendFromString()
   BackendToString()
 
+  DataFieldTypeFromString()
+  DataFieldTypeToString()
+
+  VariableVisibilityFromString()
+  VariableVisibilityToString()
+
+  VariableUIHintFromString()
+  VariableUIHintToString()
+
+  ConditionComparisonFromString()
+  ConditionComparisonToString()
+
   CooperativeVectorBufferLayoutFromString()
   CooperativeVectorBufferLayoutToString()
 
@@ -14,9 +26,6 @@
 
   ShaderResourceAccessTypeFromString()
   ShaderResourceAccessTypeToString()
-
-  DataFieldTypeFromString()
-  DataFieldTypeToString()
 
   TextureViewTypeFromString()
   TextureViewTypeToString()
@@ -45,15 +54,6 @@
   GigiSlangFloatingPointModeFromString()
   GigiSlangFloatingPointModeToString()
 
-  VariableVisibilityFromString()
-  VariableVisibilityToString()
-
-  VariableUIHintFromString()
-  VariableUIHintToString()
-
-  ConditionComparisonFromString()
-  ConditionComparisonToString()
-
   ResourceVisibilityFromString()
   ResourceVisibilityToString()
 
@@ -77,6 +77,9 @@
 
   GeometryTypeFromString()
   GeometryTypeToString()
+
+  MemoryUnitOfMeasurementFromString()
+  MemoryUnitOfMeasurementToString()
 
   TextureFormatFromString()
   TextureFormatToString()
@@ -116,10 +119,69 @@
   Backend:
     Host.Backend_FIRST = 0
     Host.Backend_DX12 = 0
-    Host.Backend_WebGPU = 1
-    Host.Backend_Interpreter = 2
-    Host.Backend_LAST = 2
-    Host.Backend_COUNT = 3
+    Host.Backend_UE_5_3 = 1
+    Host.Backend_WebGPU = 2
+    Host.Backend_Interpreter = 3
+    Host.Backend_LAST = 3
+    Host.Backend_COUNT = 4
+
+  DataFieldType:
+    Host.DataFieldType_FIRST = 0
+    Host.DataFieldType_Int = 0
+    Host.DataFieldType_Int2 = 1
+    Host.DataFieldType_Int3 = 2
+    Host.DataFieldType_Int4 = 3
+    Host.DataFieldType_Uint = 4
+    Host.DataFieldType_Uint2 = 5
+    Host.DataFieldType_Uint3 = 6
+    Host.DataFieldType_Uint4 = 7
+    Host.DataFieldType_Float = 8
+    Host.DataFieldType_Float2 = 9
+    Host.DataFieldType_Float3 = 10
+    Host.DataFieldType_Float4 = 11
+    Host.DataFieldType_Bool = 12
+    Host.DataFieldType_Float4x4 = 13
+    Host.DataFieldType_Uint_16 = 14
+    Host.DataFieldType_Int_64 = 15
+    Host.DataFieldType_Uint_64 = 16
+    Host.DataFieldType_Float_16 = 17
+    Host.DataFieldType_Count = 18
+    Host.DataFieldType_LAST = 18
+    Host.DataFieldType_COUNT = 19
+
+  VariableVisibility:
+    Host.VariableVisibility_FIRST = 0
+    Host.VariableVisibility_Internal = 0
+    Host.VariableVisibility_Host = 1
+    Host.VariableVisibility_User = 2
+    Host.VariableVisibility_Count = 3
+    Host.VariableVisibility_LAST = 3
+    Host.VariableVisibility_COUNT = 4
+
+  VariableUIHint:
+    Host.VariableUIHint_FIRST = 0
+    Host.VariableUIHint_Button = 0
+    Host.VariableUIHint_Color = 1
+    Host.VariableUIHint_Drag = 2
+    Host.VariableUIHint_Slider = 3
+    Host.VariableUIHint_Angle = 4
+    Host.VariableUIHint_Count = 5
+    Host.VariableUIHint_LAST = 5
+    Host.VariableUIHint_COUNT = 6
+
+  ConditionComparison:
+    Host.ConditionComparison_FIRST = 0
+    Host.ConditionComparison_IsFalse = 0
+    Host.ConditionComparison_IsTrue = 1
+    Host.ConditionComparison_Equals = 2
+    Host.ConditionComparison_NotEquals = 3
+    Host.ConditionComparison_LT = 4
+    Host.ConditionComparison_LTE = 5
+    Host.ConditionComparison_GT = 6
+    Host.ConditionComparison_GTE = 7
+    Host.ConditionComparison_Count = 8
+    Host.ConditionComparison_LAST = 8
+    Host.ConditionComparison_COUNT = 9
 
   CooperativeVectorBufferLayout:
     Host.CooperativeVectorBufferLayout_FIRST = 0
@@ -171,33 +233,10 @@
     Host.ShaderResourceAccessType_DepthTarget = 10
     Host.ShaderResourceAccessType_Barrier = 11
     Host.ShaderResourceAccessType_ShadingRate = 12
-    Host.ShaderResourceAccessType_Count = 13
-    Host.ShaderResourceAccessType_LAST = 13
-    Host.ShaderResourceAccessType_COUNT = 14
-
-  DataFieldType:
-    Host.DataFieldType_FIRST = 0
-    Host.DataFieldType_Int = 0
-    Host.DataFieldType_Int2 = 1
-    Host.DataFieldType_Int3 = 2
-    Host.DataFieldType_Int4 = 3
-    Host.DataFieldType_Uint = 4
-    Host.DataFieldType_Uint2 = 5
-    Host.DataFieldType_Uint3 = 6
-    Host.DataFieldType_Uint4 = 7
-    Host.DataFieldType_Float = 8
-    Host.DataFieldType_Float2 = 9
-    Host.DataFieldType_Float3 = 10
-    Host.DataFieldType_Float4 = 11
-    Host.DataFieldType_Bool = 12
-    Host.DataFieldType_Float4x4 = 13
-    Host.DataFieldType_Uint_16 = 14
-    Host.DataFieldType_Int_64 = 15
-    Host.DataFieldType_Uint_64 = 16
-    Host.DataFieldType_Float_16 = 17
-    Host.DataFieldType_Count = 18
-    Host.DataFieldType_LAST = 18
-    Host.DataFieldType_COUNT = 19
+    Host.ShaderResourceAccessType_Noop = 13
+    Host.ShaderResourceAccessType_Count = 14
+    Host.ShaderResourceAccessType_LAST = 14
+    Host.ShaderResourceAccessType_COUNT = 15
 
   TextureViewType:
     Host.TextureViewType_FIRST = 0
@@ -239,8 +278,9 @@
     Host.TextureDimensionType_Texture2DArray = 1
     Host.TextureDimensionType_Texture3D = 2
     Host.TextureDimensionType_TextureCube = 3
-    Host.TextureDimensionType_LAST = 3
-    Host.TextureDimensionType_COUNT = 4
+    Host.TextureDimensionType_Texture2DMS = 4
+    Host.TextureDimensionType_LAST = 4
+    Host.TextureDimensionType_COUNT = 5
 
   ShaderType:
     Host.ShaderType_FIRST = 0
@@ -295,40 +335,6 @@
     Host.GigiSlangFloatingPointMode_Precise = 2
     Host.GigiSlangFloatingPointMode_LAST = 2
     Host.GigiSlangFloatingPointMode_COUNT = 3
-
-  VariableVisibility:
-    Host.VariableVisibility_FIRST = 0
-    Host.VariableVisibility_Internal = 0
-    Host.VariableVisibility_Host = 1
-    Host.VariableVisibility_User = 2
-    Host.VariableVisibility_Count = 3
-    Host.VariableVisibility_LAST = 3
-    Host.VariableVisibility_COUNT = 4
-
-  VariableUIHint:
-    Host.VariableUIHint_FIRST = 0
-    Host.VariableUIHint_Button = 0
-    Host.VariableUIHint_Color = 1
-    Host.VariableUIHint_Drag = 2
-    Host.VariableUIHint_Slider = 3
-    Host.VariableUIHint_Angle = 4
-    Host.VariableUIHint_Count = 5
-    Host.VariableUIHint_LAST = 5
-    Host.VariableUIHint_COUNT = 6
-
-  ConditionComparison:
-    Host.ConditionComparison_FIRST = 0
-    Host.ConditionComparison_IsFalse = 0
-    Host.ConditionComparison_IsTrue = 1
-    Host.ConditionComparison_Equals = 2
-    Host.ConditionComparison_NotEquals = 3
-    Host.ConditionComparison_LT = 4
-    Host.ConditionComparison_LTE = 5
-    Host.ConditionComparison_GT = 6
-    Host.ConditionComparison_GTE = 7
-    Host.ConditionComparison_Count = 8
-    Host.ConditionComparison_LAST = 8
-    Host.ConditionComparison_COUNT = 9
 
   ResourceVisibility:
     Host.ResourceVisibility_FIRST = 0
@@ -418,6 +424,13 @@
     Host.GeometryType_LAST = 2
     Host.GeometryType_COUNT = 3
 
+  MemoryUnitOfMeasurement:
+    Host.MemoryUnitOfMeasurement_FIRST = 0
+    Host.MemoryUnitOfMeasurement_Items = 0
+    Host.MemoryUnitOfMeasurement_Bytes = 1
+    Host.MemoryUnitOfMeasurement_LAST = 1
+    Host.MemoryUnitOfMeasurement_COUNT = 2
+
   TextureFormat:
     Host.TextureFormat_FIRST = 0
     Host.TextureFormat_Any = 0
@@ -452,16 +465,17 @@
     Host.TextureFormat_D16_Unorm = 29
     Host.TextureFormat_D32_Float_S8 = 30
     Host.TextureFormat_D24_Unorm_S8 = 31
-    Host.TextureFormat_BC4_Unorm = 32
-    Host.TextureFormat_BC4_Snorm = 33
-    Host.TextureFormat_BC5_Unorm = 34
-    Host.TextureFormat_BC5_Snorm = 35
-    Host.TextureFormat_BC7_Unorm = 36
-    Host.TextureFormat_BC7_Unorm_sRGB = 37
-    Host.TextureFormat_BC6_UF16 = 38
-    Host.TextureFormat_BC6_SF16 = 39
-    Host.TextureFormat_LAST = 39
-    Host.TextureFormat_COUNT = 40
+    Host.TextureFormat_BC1_Unorm = 32
+    Host.TextureFormat_BC4_Unorm = 33
+    Host.TextureFormat_BC4_Snorm = 34
+    Host.TextureFormat_BC5_Unorm = 35
+    Host.TextureFormat_BC5_Snorm = 36
+    Host.TextureFormat_BC7_Unorm = 37
+    Host.TextureFormat_BC7_Unorm_sRGB = 38
+    Host.TextureFormat_BC6_UF16 = 39
+    Host.TextureFormat_BC6_SF16 = 40
+    Host.TextureFormat_LAST = 40
+    Host.TextureFormat_COUNT = 41
 
   PreviewMsgCS_Log_Level:
     Host.PreviewMsgCS_Log_Level_FIRST = 0
@@ -528,8 +542,9 @@
     Host.GigiCompileResult_DataFixup = 18
     Host.GigiCompileResult_DfltFixup = 19
     Host.GigiCompileResult_HandleOutputsToMultiInput = 20
-    Host.GigiCompileResult_LAST = 20
-    Host.GigiCompileResult_COUNT = 21
+    Host.GigiCompileResult_DuplicateNodeShaders = 21
+    Host.GigiCompileResult_LAST = 21
+    Host.GigiCompileResult_COUNT = 22
 
   GigiCompileWarning:
     Host.GigiCompileWarning_FIRST = 0

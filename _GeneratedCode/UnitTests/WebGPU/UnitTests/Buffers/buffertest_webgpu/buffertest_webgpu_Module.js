@@ -36,13 +36,13 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "BufferTest", node "BufferTest"
-static ShaderCode_BufferTest_BufferTest = `
+// Shader code for Compute shader "BufferTest_0", node "BufferTest"
+static ShaderCode_BufferTest_BufferTest_0 = `
 @binding(0) @group(0) var<storage, read> InputTyped : array<f32>;
 
 @binding(1) @group(0) var<storage, read_write> OutputTyped : array<f32>;
 
-struct Struct_BufferTestCB_std140_0
+struct Struct_BufferTest_0CB_std140_0
 {
     @align(16) alpha1_0 : f32,
     @align(4) alpha2_0 : f32,
@@ -50,7 +50,7 @@ struct Struct_BufferTestCB_std140_0
     @align(4) _padding0_0 : f32,
 };
 
-@binding(4) @group(0) var<uniform> _BufferTestCB : Struct_BufferTestCB_std140_0;
+@binding(4) @group(0) var<uniform> _BufferTest_0CB : Struct_BufferTest_0CB_std140_0;
 struct Struct_TestStruct_std430_0
 {
     @align(16) TheFloat4_0 : vec4<f32>,
@@ -98,7 +98,7 @@ fn Main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {
         n_minus_1_0 = 0.0f;
     }
-    OutputTyped[_S1] = _BufferTestCB.gain_0 * (InputTyped[_S1] + _BufferTestCB.alpha1_0 * n_minus_1_0 + _BufferTestCB.alpha2_0 * n_minus_2_0);
+    OutputTyped[_S1] = _BufferTest_0CB.gain_0 * (InputTyped[_S1] + _BufferTest_0CB.alpha1_0 * n_minus_1_0 + _BufferTest_0CB.alpha2_0 * n_minus_2_0);
     if(_S1 == u32(0))
     {
         var _S2 : vec4<i32> = InputStructured[i32(0)].TheInt4_0;
@@ -185,10 +185,10 @@ static StructVertexBufferAttributes_TestStruct_Unpadded =
 
 // -------------------- Private Members
 
-// Constant buffer _BufferTestCB
-constantBuffer__BufferTestCB = null;
-constantBuffer__BufferTestCB_size = 16;
-constantBuffer__BufferTestCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _BufferTest_0CB
+constantBuffer__BufferTest_0CB = null;
+constantBuffer__BufferTest_0CB_size = 16;
+constantBuffer__BufferTest_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader BufferTest
 Hash_Compute_BufferTest = 0;
@@ -227,14 +227,14 @@ buffer_OutputStructuredBuffer_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUs
 
 // -------------------- Public Variables
 
-variable_gain = 0.500000;  // Overall Volume Adjustment
-variableDefault_gain = 0.500000;  // Overall Volume Adjustment
+variable_gain = 0.5;  // Overall Volume Adjustment
+variableDefault_gain = 0.5;  // Overall Volume Adjustment
 variableChanged_gain = false;
-variable_alpha1 = 1.000000;  // Adjusts the contribution of sample n-1
-variableDefault_alpha1 = 1.000000;  // Adjusts the contribution of sample n-1
+variable_alpha1 = 1.;  // Adjusts the contribution of sample n-1
+variableDefault_alpha1 = 1.;  // Adjusts the contribution of sample n-1
 variableChanged_alpha1 = false;
-variable_alpha2 = 0.000000;  // Adjusts the contribution of sample n-2
-variableDefault_alpha2 = 0.000000;  // Adjusts the contribution of sample n-2
+variable_alpha2 = 0.;  // Adjusts the contribution of sample n-2
+variableDefault_alpha2 = 0.;  // Adjusts the contribution of sample n-2
 variableChanged_alpha2 = false;
 
 // -------------------- Structs
@@ -256,7 +256,7 @@ static StructOffsets_TestStruct =
     _size: 48,
 }
 
-static StructOffsets__BufferTestCB =
+static StructOffsets__BufferTest_0CB =
 {
     alpha1: 0,
     alpha2: 4,
@@ -386,7 +386,7 @@ async Init(device, encoder, useBlockingAPIs)
                 buffer: { type: "storage" }
             },
             {
-                // _BufferTestCB
+                // _BufferTest_0CB
                 binding: 4,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -400,7 +400,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_BufferTest = newHash;
 
-            let shaderCode = class_buffertest_webgpu.ShaderCode_BufferTest_BufferTest;
+            let shaderCode = class_buffertest_webgpu.ShaderCode_BufferTest_BufferTest_0;
 
             this.ShaderModule_Compute_BufferTest = device.createShaderModule({ code: shaderCode, label: "Compute Shader BufferTest"});
             this.BindGroupLayout_Compute_BufferTest = device.createBindGroupLayout({
@@ -460,29 +460,29 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "buffertest_webgpu.OutputStructuredBuffer"
 
-    encoder.pushDebugGroup("buffertest_webgpu._BufferTestCB");
+    encoder.pushDebugGroup("buffertest_webgpu._BufferTest_0CB");
 
-    // Create constant buffer _BufferTestCB
-    if (this.constantBuffer__BufferTestCB === null)
+    // Create constant buffer _BufferTest_0CB
+    if (this.constantBuffer__BufferTest_0CB === null)
     {
-        this.constantBuffer__BufferTestCB = device.createBuffer({
-            label: "buffertest_webgpu._BufferTestCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__BufferTestCB._size),
-            usage: this.constantBuffer__BufferTestCB_usageFlags,
+        this.constantBuffer__BufferTest_0CB = device.createBuffer({
+            label: "buffertest_webgpu._BufferTest_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__BufferTest_0CB._size),
+            usage: this.constantBuffer__BufferTest_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _BufferTestCB
+    // Upload values to constant buffer _BufferTest_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__BufferTestCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__BufferTest_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setFloat32(this.constructor.StructOffsets__BufferTestCB.alpha1, this.variable_alpha1, true);
-        view.setFloat32(this.constructor.StructOffsets__BufferTestCB.alpha2, this.variable_alpha2, true);
-        view.setFloat32(this.constructor.StructOffsets__BufferTestCB.gain, this.variable_gain, true);
-        device.queue.writeBuffer(this.constantBuffer__BufferTestCB, 0, bufferCPU);
+        view.setFloat32(this.constructor.StructOffsets__BufferTest_0CB.alpha1, this.variable_alpha1, true);
+        view.setFloat32(this.constructor.StructOffsets__BufferTest_0CB.alpha2, this.variable_alpha2, true);
+        view.setFloat32(this.constructor.StructOffsets__BufferTest_0CB.gain, this.variable_gain, true);
+        device.queue.writeBuffer(this.constantBuffer__BufferTest_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "buffertest_webgpu._BufferTestCB"
+    encoder.popDebugGroup(); // "buffertest_webgpu._BufferTest_0CB"
 
     encoder.pushDebugGroup("buffertest_webgpu.BufferTest");
 
@@ -514,9 +514,9 @@ async FillEncoder(device, encoder)
                     resource: { buffer: this.buffer_OutputStructuredBuffer }
                 },
                 {
-                    // _BufferTestCB
+                    // _BufferTest_0CB
                     binding: 4,
-                    resource: { buffer: this.constantBuffer__BufferTestCB }
+                    resource: { buffer: this.constantBuffer__BufferTest_0CB }
                 },
             ]
         });

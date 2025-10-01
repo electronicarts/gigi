@@ -173,6 +173,8 @@ static bool g_fullscreen = false;
 static std::string g_adapterName;
 static std::string g_driverVersion;
 
+static std::string g_commandLine;
+
 static double g_startTime = 0.0f;
 static int g_techniqueFrameIndex = 0;
 
@@ -182,6 +184,8 @@ static bool g_forceEnableProfiling = false;
 
 static bool g_meshInfoOpenPopup = false;
 static std::string g_meshInfoName = "";
+
+static GGViewerConfig g_viewerConfig;
 
 RecentFiles g_recentFiles("Software\\GigiViewer");
 RecentFiles g_recentPythonScripts("Software\\GigiViewerPy");
@@ -240,6 +244,22 @@ void* PackFloatIntoPointer(float f)
     uint32_t p;
     memcpy(&p, &f, sizeof(float));
     return (void*)uint64_t(p);
+}
+
+static std::filesystem::path GetLocalAppDataPath()
+{
+    std::filesystem::path ret;
+    wchar_t* path = nullptr;
+    if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, nullptr, &path)))
+    {
+        CoTaskMemFree(path);
+        MessageBoxA(nullptr, "Could not get app data local folder", "Error", MB_OK);
+        return ret;
+    }
+    ret = std::filesystem::path(path) / "GigiViewer";
+    CoTaskMemFree(path);
+
+    return ret;
 }
 
 static void GetDefaultHistogramRange(DXGI_FORMAT format, float& typeMin, float& typeMax, bool& isIntegral, bool& enforceMinMax)
@@ -534,6 +554,7 @@ ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 ImVec2 g_contentRegionSize = ImVec2(1.0f, 1.0f);
 
 bool g_showCapsWindow = false;
+bool g_showViewerSettings = false;
 
 // first half are this frame, second half are last frame
 uint8_t g_keyStates[512] = {};
@@ -679,9 +700,11 @@ void TryLoadRenderDocAPI()
 		}
         else
         {
-            std::string filepathTemplate = (std::filesystem::current_path() / "gigi").string();
+            std::string filepathTemplate = g_interpreter.GetTempDirectory();
             g_renderDocAPI->SetCaptureFilePathTemplate(filepathTemplate.c_str());
             g_renderDocAPI->MaskOverlayBits(RENDERDOC_OverlayBits::eRENDERDOC_Overlay_None, 0);
+
+            Log(LogLevel::Info, "Renderdoc loaded and capturing to \"%s\"", filepathTemplate.c_str());
         }
 	}
     else
@@ -700,8 +723,6 @@ void TryBeginRenderDocCapture()
 	if (g_renderDocCaptureNextFrame)
 	{
 		g_renderDocIsCapturing = true;
-
-		g_renderDocAPI->SetCaptureFilePathTemplate(g_interpreter.GetTempDirectory().c_str());
 
 		g_renderDocAPI->StartFrameCapture(nullptr, nullptr);
 		g_renderDocFrameCaptureCount--;
@@ -778,6 +799,7 @@ GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResour
         outDesc.buffer.BLASCullMode = inDesc.buffer.BLASCullMode;
         outDesc.buffer.IsAABBs = inDesc.buffer.IsAABBs;
         outDesc.buffer.cvData = inDesc.buffer.cvData;
+        memcpy(outDesc.buffer.GeometryTransform, inDesc.buffer.GeometryTransform.data(), sizeof(float) * 16);
     }
 
     return outDesc;
@@ -831,6 +853,7 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
         outDesc.buffer.BLASCullMode = inDesc.buffer.BLASCullMode;
         outDesc.buffer.IsAABBs = inDesc.buffer.IsAABBs;
         outDesc.buffer.cvData = inDesc.buffer.cvData;
+        memcpy(outDesc.buffer.GeometryTransform.data(), inDesc.buffer.GeometryTransform, sizeof(float) * 16);
     }
 
     return outDesc;
@@ -1528,6 +1551,8 @@ void HandleMainMenu()
                     ReloadGGFile(false);
             }
 
+            ImGui::MenuItem("Viewer Settings", "", &g_showViewerSettings);
+
             ImGui::EndMenu();
         }
 
@@ -1945,6 +1970,7 @@ void ShowImageThumbnail(ID3D12Resource* resource, DXGI_FORMAT format, const int 
                 case RuntimeTypes::ViewableResource::Type::Texture2DArray: typeLabel = "Texture2DArray"; break;
                 case RuntimeTypes::ViewableResource::Type::Texture3D: typeLabel = "Texture3D"; break;
                 case RuntimeTypes::ViewableResource::Type::TextureCube: typeLabel = "TextureCube"; break;
+                case RuntimeTypes::ViewableResource::Type::Texture2DMS: typeLabel = "Texture2DMS"; break;
             }
 
             if (textureType == RuntimeTypes::ViewableResource::Type::Texture2D)
@@ -2092,6 +2118,42 @@ bool AssignVariable(const char* name, DataFieldType type, T value)
     return false;
 }
 
+// fill out the key states using the keys defined in the viewer config
+static Camera::KeyStates MakeCameraKeyStates()
+{
+    Camera::KeyStates ret;
+
+    auto IsLetter = [](const std::string& s) -> bool
+    {
+        return (s.length() == 1 && s[0] >= 'A' && s[0] <= 'Z');
+    };
+
+    auto KeyIsPressed = [&](const std::string& key) -> bool
+    {
+        if (IsLetter(key))
+            return g_keyStates[key[0]];
+
+        if (key == "Shift")
+            return g_keyStates[VK_SHIFT];
+
+        if (key == "Control")
+            return g_keyStates[VK_CONTROL];
+
+        return false;
+    };
+
+    ret.forward = KeyIsPressed(g_viewerConfig.keyCameraForward) || (g_keyStates[VK_UP] != 0);
+    ret.back = KeyIsPressed(g_viewerConfig.keyCameraBackward) || (g_keyStates[VK_DOWN] != 0);
+    ret.left = KeyIsPressed(g_viewerConfig.keyCameraLeft) || (g_keyStates[VK_LEFT] != 0);
+    ret.right = KeyIsPressed(g_viewerConfig.keyCameraRight) || (g_keyStates[VK_RIGHT] != 0);
+    ret.up = KeyIsPressed(g_viewerConfig.keyCameraUp) || (g_keyStates[VK_PRIOR] != 0);
+    ret.down = KeyIsPressed(g_viewerConfig.keyCameraDown) || (g_keyStates[VK_NEXT] != 0);
+    ret.fast = KeyIsPressed(g_viewerConfig.keyCameraFast);
+    ret.slow = KeyIsPressed(g_viewerConfig.keyCameraSlow);
+
+    return ret;
+}
+
 void SynchronizeSystemVariables()
 {
     auto context = ImGui::GetCurrentContext();
@@ -2182,7 +2244,7 @@ void SynchronizeSystemVariables()
         g_resourceView.camera.m_flySpeed = g_systemVariables.camera.flySpeed;
         g_resourceView.camera.m_leftHanded = g_systemVariables.camera.leftHanded;
         g_resourceView.camera.m_mouseSensitivity = g_systemVariables.camera.mouseSensitivity;
-        g_resourceView.camera.Update(g_keyStates, g_resourceView.systemVarMouseState, g_resourceView.systemVarMouseStateLastFrame, ImGui::GetIO().DeltaTime, g_systemVariables.camera.cameraPos.data(), g_systemVariables.camera.cameraAltitudeAzimuth.data(), g_systemVariables.camera.cameraChanged);
+        g_resourceView.camera.Update(MakeCameraKeyStates(), g_resourceView.systemVarMouseState, g_resourceView.systemVarMouseStateLastFrame, ImGui::GetIO().DeltaTime, g_systemVariables.camera.cameraPos.data(), g_systemVariables.camera.cameraAltitudeAzimuth.data(), g_systemVariables.camera.cameraChanged);
 
         AssignVariable(g_systemVariables.CameraChanged_varName.c_str(), DataFieldType::Bool, g_systemVariables.camera.cameraChanged);
         g_systemVariables.camera.cameraChanged = false;
@@ -2298,6 +2360,16 @@ void SynchronizeSystemVariables()
             // Shading rate image tile size
             AssignVariable(g_systemVariables.ShadingRateImageTileSize_varName.c_str(), DataFieldType::Uint, g_interpreter.GetOptions6().ShadingRateImageTileSize);
         }
+    }
+
+    // Clear all onUserChanged variables
+    const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
+    for (const Variable& variable : renderGraph.variables)
+    {
+        if (variable.onUserChange.variableIndex == -1)
+            continue;
+
+        AssignVariable(variable.onUserChange.name.c_str(), DataFieldType::Bool, false);
     }
 }
 
@@ -2975,7 +3047,7 @@ void ShowShaders()
 				ImGui::TableSetColumnIndex(1);
                 if (ImGui::SmallButton("Post"))
                 {
-                    std::string fileName = shader->fileName;
+                    std::string fileName = shader->destFileName.empty() ? shader->fileName : shader->destFileName;
                     if (std::filesystem::path(fileName).is_relative())
                         fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
                     ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
@@ -3005,6 +3077,8 @@ void ShowShaders()
                     std::string fileName = fileCopy.fileName;
                     if (std::filesystem::path(fileName).is_relative())
                         fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    else
+                        fileName = std::filesystem::weakly_canonical(fileName).string();
                     ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
                 }
 				ImGui::TableSetColumnIndex(1);
@@ -3230,6 +3304,7 @@ void ShowImportedResources()
             if (ImGui::Button(importedResourceInfo.originalName.c_str()))
                 g_resourceView.Buffer(desc.nodeIndex, desc.resourceIndex);
         }
+        // Else this is a buffer, not a texture
         else
         {
             // File
@@ -3393,6 +3468,20 @@ void ShowImportedResources()
                     ImGui::EndDisabled();
             }
 
+            // Geometry Transform Matrix
+            {
+                if (ImGui::CollapsingHeader("Geometry Transform"))
+                {
+                    if (ImGui::InputFloat4("row0", &desc.buffer.GeometryTransform[0]) ||
+                        ImGui::InputFloat4("row1", &desc.buffer.GeometryTransform[4]) ||
+                        ImGui::InputFloat4("row2", &desc.buffer.GeometryTransform[8]) ||
+                        ImGui::InputFloat4("row3", &desc.buffer.GeometryTransform[12]))
+                    {
+                        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                    }
+                }
+            }
+
             // Cooperative Vector
             if (g_agilitySDKChoice == AgilitySDKChoice::Preview)
             {
@@ -3522,6 +3611,77 @@ void ShowImGuiWindows()
             //ImGui::CloseCurrentPopup();
 
         ImGui::EndPopup();
+    }
+
+    if (g_showViewerSettings)
+    {
+        if (ImGui::Begin("Viewer Settings", &g_showViewerSettings, 0))
+        {
+            bool changed = false;
+
+            if (ImGui::Button("Reset To Defaults"))
+            {
+                g_viewerConfig = GGViewerConfig();
+                changed = true;
+            }
+
+            ImGui::SeparatorText("Camera Key Bindings");
+
+            auto KeyBindingDropDown = [](const char* label, std::string& selectedValue, const char* tooltip = nullptr) -> bool
+            {
+                bool ret = false;
+                if (ImGui::BeginCombo(label, selectedValue.c_str(), ImGuiComboFlags_None))
+                {
+                    for (int index = 0; index < 28; ++index)
+                    {
+                        std::string shownLabel;
+                        if (index < 26)
+                        {
+                            shownLabel = 'A' + index;
+                        }
+                        switch (index)
+                        {
+                            case 26: shownLabel = "Shift"; break;
+                            case 27: shownLabel = "Control"; break;
+                        }
+
+                        const bool is_selected = (selectedValue == shownLabel);
+                        if (ImGui::Selectable(shownLabel.c_str(), is_selected))
+                        {
+                            selectedValue = shownLabel;
+                            ret = true;
+                        }
+
+                        if (is_selected)
+                            ImGui::SetItemDefaultFocus();
+                    }
+
+                    ImGui::EndCombo();
+                }
+
+                ShowToolTip(tooltip);
+
+                return ret;
+            };
+
+            changed |= KeyBindingDropDown("Forward", g_viewerConfig.keyCameraForward, "Up arrow also works");
+            changed |= KeyBindingDropDown("Left", g_viewerConfig.keyCameraLeft, "Left arrow also works");
+            changed |= KeyBindingDropDown("Backward", g_viewerConfig.keyCameraBackward, "Down arrow also works");
+            changed |= KeyBindingDropDown("Right", g_viewerConfig.keyCameraRight, "Right arrow also works");
+            changed |= KeyBindingDropDown("Up", g_viewerConfig.keyCameraUp, "Page up also works");
+            changed |= KeyBindingDropDown("Down", g_viewerConfig.keyCameraDown, "Page down also works");
+            changed |= KeyBindingDropDown("Fast", g_viewerConfig.keyCameraFast);
+            changed |= KeyBindingDropDown("Slow", g_viewerConfig.keyCameraSlow);
+
+            if (changed)
+            {
+                std::filesystem::path dir = GetLocalAppDataPath();
+                std::filesystem::create_directories(dir);
+                WriteToJSONFile(g_viewerConfig, (dir / "ViewerConfig.json").string().c_str());
+            }
+        }
+
+        ImGui::End();
     }
 
     if (g_showCapsWindow)
@@ -5362,6 +5522,7 @@ void ShowResourceView()
                 {
                     case RuntimeTypes::ViewableResource::Type::Texture2D: typeLabel = "Texture2D"; break;
                     case RuntimeTypes::ViewableResource::Type::Texture2DArray: typeLabel = "Texture2DArray"; break;
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS: typeLabel = "Texture2DMS"; break;
                     case RuntimeTypes::ViewableResource::Type::Texture3D: typeLabel = "Texture3D"; break;
                     case RuntimeTypes::ViewableResource::Type::TextureCube: typeLabel = "TextureCube"; break;
                     case RuntimeTypes::ViewableResource::Type::ConstantBuffer: typeLabel = "ConstantBuffer"; break;
@@ -5374,7 +5535,15 @@ void ShowResourceView()
                     SetClipboardDataEx(CF_TEXT, (void*)res.m_displayName.c_str(), (DWORD)res.m_displayName.length() + 1);
             }
 
+            if(res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS)
+            {
+                ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "\n  MSAA preview is not implemented yet.\n  You can implement a custom resolve shader.");
+                ImGui::End();
+                return;
+            }
+
             static bool showAsHex = false;
+            static bool showBufferView = true;
 
             if (res.m_resource)
             {
@@ -5384,6 +5553,7 @@ void ShowResourceView()
                     case RuntimeTypes::ViewableResource::Type::Texture2DArray:
                     case RuntimeTypes::ViewableResource::Type::Texture3D:
                     case RuntimeTypes::ViewableResource::Type::TextureCube:
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS:
                     {
                         if (!g_hideUI)
                         {
@@ -5599,6 +5769,7 @@ void ShowResourceView()
                                     case RuntimeTypes::ViewableResource::Type::Texture2DArray: label = "Index"; break;
                                     case RuntimeTypes::ViewableResource::Type::Texture3D: label = "Slice"; break;
                                     case RuntimeTypes::ViewableResource::Type::TextureCube: label = "Face"; break;
+                                    case RuntimeTypes::ViewableResource::Type::Texture2DMS: label = "MSAA Sample"; break;
                                 }
 
                                 float comboWidth = 0.0f;
@@ -5615,13 +5786,16 @@ void ShowResourceView()
                                 }
                                 else
                                 {
+                                    int count = (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS) ?
+                                        res.m_origResourceDesc.SampleDesc.Count : res.m_size[2];
+
                                     char buffer[32];
-                                    for (int i = 0; i < res.m_size[2]; ++i)
+                                    for (int i = 0; i < count; ++i)
                                     {
                                         sprintf_s(buffer, "%i", i);
                                         optionsStr.push_back(buffer);
                                     }
-                                    for (int i = 0; i < res.m_size[2]; ++i)
+                                    for (int i = 0; i < count; ++i)
                                         options.push_back(optionsStr[i].c_str());
                                 }
 
@@ -5997,30 +6171,54 @@ void ShowResourceView()
                     }
                     case RuntimeTypes::ViewableResource::Type::Buffer:
                     {
-                        // Read back the data
-                        std::vector<unsigned char> bytes(res.m_size[0]);
-                        unsigned char* data = nullptr;
-                        res.m_resourceReadback->Map(0, nullptr, reinterpret_cast<void**>(&data));
-                        memcpy(bytes.data(), data, res.m_size[0]);
-                        res.m_resourceReadback->Unmap(0, nullptr);
+                        // Calculate the view range
+                        unsigned int bufferViewBegin = 0;
+                        unsigned int bufferViewCount = res.m_count;
+                        unsigned int bufferViewItemSize = (res.m_structIndex != -1)
+                            ? (unsigned int)renderGraph.structs[res.m_structIndex].sizeInBytes
+                            : (unsigned int)Get_DXGI_FORMAT_Info(res.m_format).bytesPerPixel;
 
-                        // Gather the view info
+                        if (showBufferView && (res.m_bufferViewBegin > 0 || res.m_bufferViewCount > 0))
+                        {
+                            bufferViewBegin = res.m_bufferViewBegin;
+                            bufferViewCount = res.m_bufferViewCount;
+                        }
+
+                        // Gather the view info struct data
                         struct ViewInfo
                         {
                             int structIndex = -1;
                             DXGI_FORMAT format = DXGI_FORMAT_FORCE_UINT;
                             int formatCount = 1;
-                            int count;
-                            int size;
+                            int count = 0;
+                            int size = 0;
                             bool showAsHex = false;
                             bool showStructuredBuffersVertically = true;
+
                         };
                         ViewInfo viewInfo;
                         viewInfo.structIndex = res.m_structIndex;
                         viewInfo.format = res.m_format;
                         viewInfo.formatCount = res.m_formatCount;
-                        viewInfo.count = res.m_count;
-                        viewInfo.size = res.m_size[0];
+                        viewInfo.count = bufferViewCount;
+                        viewInfo.size = bufferViewCount * bufferViewItemSize;
+
+                        // Read back the data
+                        std::vector<unsigned char> bytes(viewInfo.size);
+                        {
+                            D3D12_RANGE readRange;
+                            readRange.Begin = bufferViewBegin * bufferViewItemSize;
+                            readRange.End = (bufferViewBegin + bufferViewCount) * bufferViewItemSize;
+
+                            D3D12_RANGE writeRange;
+                            writeRange.Begin = 1;
+                            writeRange.End = 0;
+
+                            unsigned char* data = nullptr;
+                            res.m_resourceReadback->Map(0, &readRange, reinterpret_cast<void**>(&data));
+                            memcpy(bytes.data(), &data[readRange.Begin], readRange.End - readRange.Begin);
+                            res.m_resourceReadback->Unmap(0, &writeRange);
+                        }
 
                         // handle choosing to view the data differently
                         {
@@ -6090,12 +6288,17 @@ void ShowResourceView()
                             ImGui::SameLine();
                             ImGui::Checkbox("Hex", &showAsHex);
                             viewInfo.showAsHex = showAsHex;
+
+                            ImGui::SameLine();
+                            ImGui::Checkbox("View", &showBufferView);
+                            ShowToolTip("If true, only shows what was in the buffer view. If false, shows the entire resource.");
                         }
 
                         // See if we can save this as a BVH for WebGPU
                         const unsigned char* BVHFirstPos = nullptr;
                         size_t BVHPosStride = 0;
                         size_t BVHPosCount = 0;
+                        if (bytes.size() > 0)
                         {
                             DXGI_FORMAT BVHVertexFormat = DXGI_FORMAT_FORCE_UINT;
                             size_t BVHVertexOffset = 0;
@@ -6432,6 +6635,8 @@ void ShowRenderGraphWindow()
         std::string nodeName;
         std::vector<RuntimeTypes::ViewableResource>* viewableResources_ = nullptr;
         std::string renderGraphText;
+        bool nodeIsInErrorState = false;
+        bool nodeConditionIsFalse = false;
         g_interpreter.RuntimeNodeDataLambda(
             renderGraph.nodes[nodeIndex],
             [&] (auto node, auto* runtimeData)
@@ -6442,14 +6647,29 @@ void ShowRenderGraphWindow()
                 {
                     viewableResources_ = &(runtimeData->m_viewableResources);
                     renderGraphText = runtimeData->m_renderGraphText;
+                    nodeIsInErrorState = runtimeData->m_inErrorState;
+                    nodeConditionIsFalse = !runtimeData->m_conditionIsTrue;
                 }
             }
         );
 
-        char nodeLabel[512];
-        sprintf_s(nodeLabel, "%s: %s", nodeTypeName.c_str(), nodeName.c_str());
-        if (!ImGui::CollapsingHeader(nodeLabel))
-            continue;
+        // collapsing header
+        {
+            if (nodeIsInErrorState)
+                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.6f, 0.0f, 0.0f, 1.0f));
+            else if (nodeConditionIsFalse)
+                ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
+
+            char nodeLabel[512];
+            sprintf_s(nodeLabel, "%s: %s", nodeTypeName.c_str(), nodeName.c_str());
+            bool collapsingHeaderOpen = ImGui::CollapsingHeader(nodeLabel);
+
+            if (nodeIsInErrorState || nodeConditionIsFalse)
+                ImGui::PopStyleColor();
+
+            if (!collapsingHeaderOpen)
+                continue;
+        }
 
         if (!renderGraphText.empty())
         {
@@ -6462,6 +6682,8 @@ void ShowRenderGraphWindow()
         {
             std::vector<RuntimeTypes::ViewableResource>& viewableResources = *viewableResources_;
 
+            bool msaaErrorShown = false;
+
             int textureIndex = -1;
             for (RuntimeTypes::ViewableResource& viewableResource : viewableResources)
             {
@@ -6473,7 +6695,7 @@ void ShowRenderGraphWindow()
                 if (viewableResource.m_hideFromUI || viewableResource.m_displayName.empty())
                     continue;
 
-                if (!g_profileMode && (viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture3D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::TextureCube))
+                if (!g_profileMode && (viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture3D || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::TextureCube || viewableResource.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS))
                     viewableResource.m_wantsToBeViewed = true;
 
                 switch (viewableResource.m_type)
@@ -6506,6 +6728,13 @@ void ShowRenderGraphWindow()
                     {
                         if (ImGui::Button(viewableResource.m_displayName.c_str()))
                             g_resourceView.Buffer(nodeIndex, textureIndex);
+                        break;
+                    }
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS:
+                    {
+                        if(!msaaErrorShown)
+                            ImGui::TextColored(ImVec4(1.0f, 0.3f, 0.3f, 1.0f), "MSAA preview is not implemented yet.");
+                        msaaErrorShown = true;
                         break;
                     }
                 }
@@ -7455,6 +7684,7 @@ public:
                                     case TextureDimensionType::Texture2DArray: type = RuntimeTypes::ViewableResource::Type::Texture2DArray; break;
                                     case TextureDimensionType::Texture3D: type = RuntimeTypes::ViewableResource::Type::Texture3D; break;
                                     case TextureDimensionType::TextureCube: type = RuntimeTypes::ViewableResource::Type::TextureCube; break;
+                                    case TextureDimensionType::Texture2DMS: type = RuntimeTypes::ViewableResource::Type::Texture2DMS; break;
                                 }
                                 g_resourceView.Texture(nodeIndex, viewableResourceIndex, type);
                                 break;
@@ -7546,6 +7776,11 @@ public:
         char buffer[2048];
         sprintf_s(buffer, "%s (driver %s)", g_adapterName.c_str(), g_driverVersion.c_str());
         return buffer;
+    }
+
+    std::string GetAppCommandLine() override final
+    {
+        return g_commandLine;
     }
 
     std::string GetScriptLocation() override final
@@ -7710,7 +7945,26 @@ int main(int argc, char** argv)
     g_recentFiles.LoadAllEntries();
     g_recentPythonScripts.LoadAllEntries();
 
+    // Load the viewer settings
+    ReadFromJSONFile(g_viewerConfig, (GetLocalAppDataPath() / "ViewerConfig.json").string().c_str(), false);
+
     SetGigiHeadlessMode(!BREAK_ON_GIGI_ASSERTS());
+
+    // build g_commandLine
+    {
+        // start from 1, to exclude the executable name
+        for (int i = 1; i < argc; ++i)
+        {
+            std::string el = argv[i];
+            if (!g_commandLine.empty())
+                g_commandLine += " ";
+
+            if (el.find(' ') != std::string::npos)
+                g_commandLine += "\"" + el + "\"";
+            else
+                g_commandLine += el;
+        }
+    }
 
     // Parse command line parameters
     int argIndex = 0;
@@ -7874,7 +8128,7 @@ int main(int argc, char** argv)
     g_hwnd = ::CreateWindowW(wc.lpszClassName, L"Gigi Viewer - DX12 (Gigi v" GIGI_VERSION() ")", WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
     DragAcceptFiles(g_hwnd, true);
 
-	Log(LogLevel::Info, "GiGi Viewer " GIGI_VERSION() " DX12 " BUILD_FLAVOR);
+	Log(LogLevel::Info, "Gigi Viewer " GIGI_VERSION_WITH_BUILD_NUMBER() " DX12 " BUILD_FLAVOR);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(g_hwnd))
@@ -8336,6 +8590,12 @@ bool CreateDeviceD3D(HWND hWnd)
             rtvHandle.ptr += rtvDescriptorSize;
         }
     }
+
+    D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaa;
+    ZeroMemory(&msaa, sizeof(msaa));
+    msaa.SampleCount = 4;
+    if (g_pd3dDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaa, sizeof(msaa)) != S_OK)
+        return false;
 
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};

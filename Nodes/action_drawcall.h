@@ -204,6 +204,7 @@ namespace FrontEndNodes
                         ret.originalAccess = node.vertexShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
+                        ret.shaderResource = &node.vertexShader.shader->resources[index - shaderPinCountSoFar];
                         return ret;
                     }
                 }
@@ -226,6 +227,7 @@ namespace FrontEndNodes
                         ret.originalAccess = node.pixelShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
+                        ret.shaderResource = &node.pixelShader.shader->resources[index - shaderPinCountSoFar];
                         return ret;
                     }
                 }
@@ -248,6 +250,7 @@ namespace FrontEndNodes
                         ret.originalAccess = node.amplificationShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
+                        ret.shaderResource = &node.amplificationShader.shader->resources[index - shaderPinCountSoFar];
                         return ret;
                     }
                 }
@@ -270,6 +273,7 @@ namespace FrontEndNodes
                         ret.originalAccess = node.meshShader.shader->resources[index - shaderPinCountSoFar].originalAccess;
                         ret.nodeIndex = connection.dstNodeIndex;
                         ret.pinIndex = connection.dstNodePinIndex;
+                        ret.shaderResource = &node.meshShader.shader->resources[index - shaderPinCountSoFar];
                         return ret;
                     }
                 }

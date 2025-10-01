@@ -28,16 +28,16 @@ namespace buffertest
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__BufferTestCB
+        struct Struct__BufferTest_0CB
         {
-            float alpha1 = 1.000000f;  // Adjusts the contribution of sample n-1
-            float alpha2 = 0.000000f;  // Adjusts the contribution of sample n-2
-            float gain = 0.500000f;  // Overall Volume Adjustment
-            float _padding0 = 0.000000f;  // Padding
+            float alpha1 = 1.f;  // Adjusts the contribution of sample n-1
+            float alpha2 = 0.f;  // Adjusts the contribution of sample n-2
+            float gain = 0.5f;  // Overall Volume Adjustment
+            float _padding0 = 0.f;  // Padding
         };
 
-        Struct__BufferTestCB constantBuffer__BufferTestCB_cpu;
-        ID3D12Resource* constantBuffer__BufferTestCB = nullptr;
+        Struct__BufferTest_0CB constantBuffer__BufferTest_0CB_cpu;
+        ID3D12Resource* constantBuffer__BufferTest_0CB = nullptr;
 
         // BufferTest compute shader
         static ID3D12PipelineState* computeShader_BufferTest_pso;

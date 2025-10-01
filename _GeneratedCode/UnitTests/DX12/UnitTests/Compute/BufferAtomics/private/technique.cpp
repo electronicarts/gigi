@@ -811,7 +811,7 @@ namespace BufferAtomics
             commandList->SetPipelineState(ContextInternal::computeShader_ClearBuffer_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.buffer_TheBuffer, context->m_output.buffer_TheBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_TheBuffer_stride, context->m_output.buffer_TheBuffer_count, 0 }
+                { context->m_output.buffer_TheBuffer, context->m_output.buffer_TheBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_TheBuffer_stride, context->m_output.buffer_TheBuffer_count, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
@@ -860,7 +860,7 @@ namespace BufferAtomics
             commandList->SetPipelineState(ContextInternal::computeShader_RunShader_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.buffer_TheBuffer, context->m_output.buffer_TheBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_TheBuffer_stride, context->m_output.buffer_TheBuffer_count, 0 }
+                { context->m_output.buffer_TheBuffer, context->m_output.buffer_TheBuffer_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_output.buffer_TheBuffer_stride, context->m_output.buffer_TheBuffer_count, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);

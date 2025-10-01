@@ -252,11 +252,11 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Descend", node "GradientDescend"
-static ShaderCode_GradientDescend_Descend = `
+// Shader code for Compute shader "Descend_0", node "GradientDescend"
+static ShaderCode_GradientDescend_Descend_0 = `
 @binding(0) @group(0) var<storage, read_write> Data : array<f32>;
 
-struct Struct_DescendCB_std140_0
+struct Struct_Descend_0CB_std140_0
 {
     @align(16) LearningRate_0 : f32,
     @align(4) MaximumStepSize_0 : f32,
@@ -264,7 +264,7 @@ struct Struct_DescendCB_std140_0
     @align(4) UseBackwardAD_0 : u32,
 };
 
-@binding(1) @group(0) var<uniform> _DescendCB : Struct_DescendCB_std140_0;
+@binding(1) @group(0) var<uniform> _Descend_0CB : Struct_Descend_0CB_std140_0;
 struct DiffPair_float_0
 {
      primal_0 : f32,
@@ -392,7 +392,7 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var ballPosGradient_0 : vec2<f32> = _S46;
     for(;;)
     {
-        if(i_0 < (_DescendCB.NumGaussians_0))
+        if(i_0 < (_Descend_0CB.NumGaussians_0))
         {
         }
         else
@@ -412,7 +412,7 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         var _S51 : f32 = _S49 * cosTheta_0 - _S50 * sinTheta_0;
         var _S52 : f32 = _S49 * sinTheta_0 + _S50 * cosTheta_0;
         var dFLocal_0 : vec2<f32> = _S46;
-        if(bool(_DescendCB.UseBackwardAD_0))
+        if(bool(_Descend_0CB.UseBackwardAD_0))
         {
             var height_0 : f32 = GetHeightAtPos_0(_S51, _S52, gaussPos_3, gaussSigma_3);
             var ballPosX_0 : DiffPair_float_0;
@@ -439,11 +439,11 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         i_0 = i_0 + i32(1);
         ballPosGradient_0 = ballPosGradient_1;
     }
-    var adjust_0 : vec2<f32> = - ballPosGradient_0 * vec2<f32>(_DescendCB.LearningRate_0);
+    var adjust_0 : vec2<f32> = - ballPosGradient_0 * vec2<f32>(_Descend_0CB.LearningRate_0);
     var adjust_1 : vec2<f32>;
-    if((length(adjust_0)) > (_DescendCB.MaximumStepSize_0))
+    if((length(adjust_0)) > (_Descend_0CB.MaximumStepSize_0))
     {
-        adjust_1 = normalize(adjust_0) * vec2<f32>(_DescendCB.MaximumStepSize_0);
+        adjust_1 = normalize(adjust_0) * vec2<f32>(_Descend_0CB.MaximumStepSize_0);
     }
     else
     {
@@ -490,10 +490,10 @@ constantBuffer__RenderCB = null;
 constantBuffer__RenderCB_size = 16;
 constantBuffer__RenderCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
-// Constant buffer _DescendCB
-constantBuffer__DescendCB = null;
-constantBuffer__DescendCB_size = 16;
-constantBuffer__DescendCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _Descend_0CB
+constantBuffer__Descend_0CB = null;
+constantBuffer__Descend_0CB_size = 16;
+constantBuffer__Descend_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader GradientDescend
 Hash_Compute_GradientDescend = 0;
@@ -531,20 +531,20 @@ variableChanged_initialized = false;
 variable_FrameIndex = 0;
 variableDefault_FrameIndex = 0;
 variableChanged_FrameIndex = false;
-variable_LearningRate = 0.100000;
-variableDefault_LearningRate = 0.100000;
+variable_LearningRate = 0.100000001;
+variableDefault_LearningRate = 0.100000001;
 variableChanged_LearningRate = false;
-variable_MaximumStepSize = 0.010000;
-variableDefault_MaximumStepSize = 0.010000;
+variable_MaximumStepSize = 0.00999999978;
+variableDefault_MaximumStepSize = 0.00999999978;
 variableChanged_MaximumStepSize = false;
-variable_MouseState = [ 0.000000, 0.000000, 0.000000, 0.000000 ];
-variableDefault_MouseState = [ 0.000000, 0.000000, 0.000000, 0.000000 ];
+variable_MouseState = [ 0., 0., 0., 0. ];
+variableDefault_MouseState = [ 0., 0., 0., 0. ];
 variableChanged_MouseState = [ false, false, false, false ];
-variable_MouseStateLastFrame = [ 0.000000, 0.000000, 0.000000, 0.000000 ];
-variableDefault_MouseStateLastFrame = [ 0.000000, 0.000000, 0.000000, 0.000000 ];
+variable_MouseStateLastFrame = [ 0., 0., 0., 0. ];
+variableDefault_MouseStateLastFrame = [ 0., 0., 0., 0. ];
 variableChanged_MouseStateLastFrame = [ false, false, false, false ];
-variable_iResolution = [ 0.000000, 0.000000, 0.000000 ];
-variableDefault_iResolution = [ 0.000000, 0.000000, 0.000000 ];
+variable_iResolution = [ 0., 0., 0. ];
+variableDefault_iResolution = [ 0., 0., 0. ];
 variableChanged_iResolution = [ false, false, false ];
 variable_UseBackwardAD = true;
 variableDefault_UseBackwardAD = true;
@@ -589,7 +589,7 @@ static StructOffsets__RenderCB =
     _size: 16,
 }
 
-static StructOffsets__DescendCB =
+static StructOffsets__Descend_0CB =
 {
     LearningRate: 0,
     MaximumStepSize: 4,
@@ -767,7 +767,7 @@ async Init(device, encoder, useBlockingAPIs)
                 buffer: { type: "storage" }
             },
             {
-                // _DescendCB
+                // _Descend_0CB
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -781,7 +781,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_GradientDescend = newHash;
 
-            let shaderCode = class_SlangAutoDiff.ShaderCode_GradientDescend_Descend;
+            let shaderCode = class_SlangAutoDiff.ShaderCode_GradientDescend_Descend_0;
 
             this.ShaderModule_Compute_GradientDescend = device.createShaderModule({ code: shaderCode, label: "Compute Shader GradientDescend"});
             this.BindGroupLayout_Compute_GradientDescend = device.createBindGroupLayout({
@@ -1044,30 +1044,30 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SlangAutoDiff._RenderCB"
 
-    encoder.pushDebugGroup("SlangAutoDiff._DescendCB");
+    encoder.pushDebugGroup("SlangAutoDiff._Descend_0CB");
 
-    // Create constant buffer _DescendCB
-    if (this.constantBuffer__DescendCB === null)
+    // Create constant buffer _Descend_0CB
+    if (this.constantBuffer__Descend_0CB === null)
     {
-        this.constantBuffer__DescendCB = device.createBuffer({
-            label: "SlangAutoDiff._DescendCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__DescendCB._size),
-            usage: this.constantBuffer__DescendCB_usageFlags,
+        this.constantBuffer__Descend_0CB = device.createBuffer({
+            label: "SlangAutoDiff._Descend_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__Descend_0CB._size),
+            usage: this.constantBuffer__Descend_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _DescendCB
+    // Upload values to constant buffer _Descend_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__DescendCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Descend_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setFloat32(this.constructor.StructOffsets__DescendCB.LearningRate, this.variable_LearningRate, true);
-        view.setFloat32(this.constructor.StructOffsets__DescendCB.MaximumStepSize, this.variable_MaximumStepSize, true);
-        view.setInt32(this.constructor.StructOffsets__DescendCB.NumGaussians, this.variable_NumGaussians, true);
-        view.setUint32(this.constructor.StructOffsets__DescendCB.UseBackwardAD, (this.variable_UseBackwardAD === true ? 1 : 0), true);
-        device.queue.writeBuffer(this.constantBuffer__DescendCB, 0, bufferCPU);
+        view.setFloat32(this.constructor.StructOffsets__Descend_0CB.LearningRate, this.variable_LearningRate, true);
+        view.setFloat32(this.constructor.StructOffsets__Descend_0CB.MaximumStepSize, this.variable_MaximumStepSize, true);
+        view.setInt32(this.constructor.StructOffsets__Descend_0CB.NumGaussians, this.variable_NumGaussians, true);
+        view.setUint32(this.constructor.StructOffsets__Descend_0CB.UseBackwardAD, (this.variable_UseBackwardAD === true ? 1 : 0), true);
+        device.queue.writeBuffer(this.constantBuffer__Descend_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SlangAutoDiff._DescendCB"
+    encoder.popDebugGroup(); // "SlangAutoDiff._Descend_0CB"
 
     encoder.pushDebugGroup("SlangAutoDiff.GradientDescend");
 
@@ -1083,9 +1083,9 @@ async FillEncoder(device, encoder)
                     resource: { buffer: this.buffer_Data }
                 },
                 {
-                    // _DescendCB
+                    // _Descend_0CB
                     binding: 1,
-                    resource: { buffer: this.constantBuffer__DescendCB }
+                    resource: { buffer: this.constantBuffer__Descend_0CB }
                 },
             ]
         });

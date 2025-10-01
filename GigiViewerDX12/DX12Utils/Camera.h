@@ -12,9 +12,22 @@
 class Camera
 {
 public:
+
+    struct KeyStates
+    {
+        bool forward = false;
+        bool back = false;
+        bool left = false;
+        bool right = false;
+        bool up = false;
+        bool down = false;
+        bool fast = false;
+        bool slow = false;
+    };
+
 	// key states are indexed by capitol letters 'A' and VK_ constants like VK_LEFT
 	// Mouse state is (mouseX, mouseY, leftButton, rightButton)
-	void Update(const uint8_t g_keyStates[256], const float mouseState[4], const float mouseStateLastFrame[4], float frameTimeSeconds, float pos[3], float altitudeAzimuth[2], bool& cameraChanged);
+	void Update(const KeyStates& keyStates, const float mouseState[4], const float mouseStateLastFrame[4], float frameTimeSeconds, float pos[3], float altitudeAzimuth[2], bool& cameraChanged);
 
 	DirectX::XMMATRIX GetViewMatrix(const float pos[3], const float altitudeAzimuth[2]) const;
 	DirectX::XMMATRIX GetProjMatrix(float fovDegrees, const float resolution[2], float nearZ, float farZ, bool reverseZ, bool perspective) const;

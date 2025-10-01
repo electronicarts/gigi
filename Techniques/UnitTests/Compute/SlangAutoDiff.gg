@@ -87,8 +87,8 @@
             "resources": [
                 {
                     "name": "Data",
-                    "type": "Buffer",
                     "access": "UAV",
+                    "type": "Buffer",
                     "buffer": {
                         "type": "Float",
                         "PODAsStructuredBuffer": false
@@ -108,8 +108,8 @@
             "resources": [
                 {
                     "name": "Data",
-                    "type": "Buffer",
                     "access": "SRV",
+                    "type": "Buffer",
                     "buffer": {
                         "type": "Float",
                         "PODAsStructuredBuffer": false
@@ -117,8 +117,8 @@
                 },
                 {
                     "name": "Output",
-                    "type": "Texture",
                     "access": "UAV",
+                    "type": "Texture",
                     "buffer": {
                         "PODAsStructuredBuffer": false
                     }
@@ -135,20 +135,20 @@
                 1,
                 1
             ],
+            "slangOptions": {
+                "process": true
+            },
             "resources": [
                 {
                     "name": "Data",
-                    "type": "Buffer",
                     "access": "UAV",
+                    "type": "Buffer",
                     "buffer": {
                         "type": "Float",
                         "PODAsStructuredBuffer": false
                     }
                 }
             ],
-            "slangOptions": {
-                "process": true
-            },
             "CSNumThreads": [
                 1,
                 1,
@@ -265,7 +265,17 @@
                 ],
                 "shader": {
                     "name": "Descend"
-                }
+                },
+                "defines": [
+                    {
+                        "name": "SCREEN_MIN",
+                        "value": "0.001f"
+                    },
+                    {
+                        "name": "SCREEN_MAX",
+                        "value": "0.99f"
+                    }
+                ]
             }
         }
     ],

@@ -10,29 +10,31 @@ class GigiInterpreterPreviewWindowDX12;
 // Runtime storage for each render graph node type
 struct RuntimeTypes
 {
-    struct ViewableResource
-    {
-        enum class Type
-        {
-            Texture2D,
-            Texture2DArray,
-            Texture3D,
-            TextureCube,
-            ConstantBuffer,
-            Buffer,
-        };
+	struct ViewableResource
+	{
+		enum class Type
+		{
+			Texture2D,
+			Texture2DArray,
+			Texture3D,
+			TextureCube,
+			ConstantBuffer,
+			Texture2DMS,
+			Buffer,
+		};
 
-        ResourceType GetResourceType() const
-        {
-            switch (m_type)
-            {
-            case Type::Texture2D: return ResourceType::Texture2D;
-            case Type::Texture2DArray: return ResourceType::Texture2DArray;
-            case Type::Texture3D: return ResourceType::Texture3D;
-            case Type::TextureCube: return ResourceType::TextureCube;
-            }
-            return ResourceType::Texture2D;
-        }
+		ResourceType GetResourceType() const
+		{
+			switch (m_type)
+			{
+				case Type::Texture2D: return ResourceType::Texture2D;
+				case Type::Texture2DArray: return ResourceType::Texture2DArray;
+				case Type::Texture3D: return ResourceType::Texture3D;
+				case Type::TextureCube: return ResourceType::TextureCube;
+				case Type::Texture2DMS: return ResourceType::Texture2DMS;
+			}
+			return ResourceType::Texture2D;
+		}
 
         Type m_type = Type::Texture2D;
         std::string m_displayName;
@@ -49,43 +51,73 @@ struct RuntimeTypes
         bool m_isResultOfWrite = false;
         int m_structIndex = -1; // can be used by buffers
 
-        // If true, this will be updated. else, it will not.
-        // The creator of this struct will set this to false every execution, and it is up to the consumer to set this to true as long as it is wanted.
-        bool m_wantsToBeViewed = false;
-        bool m_wantsToBeReadBack = false;
-        int m_arrayIndex = 0;
-        int m_mipIndex = 0;
-    };
+        // For views of buffers. In item count / indices of data type.
+        unsigned int m_bufferViewBegin = 0;
+        unsigned int m_bufferViewCount = 0;
 
-    struct RenderGraphNode_Base
-    {
-        void Release(GigiInterpreterPreviewWindowDX12& interpreter);
-        void OnCompileOK(GigiInterpreterPreviewWindowDX12& interpreter);
-        void OnNewFrame()
-        {
-            m_viewableResourceIndex = 0;
-            m_renderGraphText = ""; // clear the text every frame
-        }
-        void HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite);
-        void HandleViewableTexture(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, const int resourceSize[3], int numMips, bool hideFromUI, bool isResultOfWrite)
-        {
-            HandleViewableResource(interpreter, type, displayName, resource, resourceFormat, 1, -1, resourceSize, numMips, 0, 0, hideFromUI, isResultOfWrite);
-        }
-        void HandleViewableConstantBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, int resourceSize, int structIndex, bool hideFromUI, bool isResultOfWrite)
-        {
-            int size[3] = { resourceSize, 1, 1 };
-            HandleViewableResource(interpreter, ViewableResource::Type::ConstantBuffer, displayName, resource, DXGI_FORMAT_UNKNOWN, 1, structIndex, size, 1, 0, 0, hideFromUI, isResultOfWrite);
-        }
-        void HandleViewableBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, int resourceSize, int stride, int count, bool hideFromUI, bool isResultOfWrite)
-        {
-            int size[3] = { resourceSize, 1, 1 };
-            HandleViewableResource(interpreter, ViewableResource::Type::Buffer, displayName, resource, resourceFormat, resourceFormatCount, structIndex, size, 1, stride, count, hideFromUI, isResultOfWrite);
-        }
+		// If true, this will be updated. else, it will not.
+		// The creator of this struct will set this to false every execution, and it is up to the consumer to set this to true as long as it is wanted.
+		bool m_wantsToBeViewed = false;
+		bool m_wantsToBeReadBack = false;
+		int m_arrayIndex = 0;
+		int m_mipIndex = 0;
+	};
 
-        std::vector<ViewableResource> m_viewableResources;
-        int m_viewableResourceIndex = 0;
-        std::string m_renderGraphText;
-    };
+	struct RenderGraphNode_Base
+	{
+		void Release(GigiInterpreterPreviewWindowDX12& interpreter);
+		void OnCompileOK(GigiInterpreterPreviewWindowDX12& interpreter);
+		void OnNewFrame()
+		{
+			m_viewableResourceIndex = 0;
+			m_renderGraphText = ""; // clear the text every frame
+		}
+		void HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite, unsigned int bufferViewBegin, unsigned int bufferViewCount);
+		void HandleViewableTexture(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, const int resourceSize[3], int numMips, bool hideFromUI, bool isResultOfWrite)
+		{
+			HandleViewableResource(interpreter, type, displayName, resource, resourceFormat, 1, -1, resourceSize, numMips, 0, 0, hideFromUI, isResultOfWrite, 0, 0);
+		}
+		void HandleViewableConstantBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, int resourceSize, int structIndex, bool hideFromUI, bool isResultOfWrite)
+		{
+			int size[3] = { resourceSize, 1, 1 };
+			HandleViewableResource(interpreter, ViewableResource::Type::ConstantBuffer, displayName, resource, DXGI_FORMAT_UNKNOWN, 1, structIndex, size, 1, 0, 0, hideFromUI, isResultOfWrite, 0, 0);
+		}
+        void HandleViewableBuffer(GigiInterpreterPreviewWindowDX12& interpreter, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, int resourceSize, int stride, int count, bool hideFromUI, bool isResultOfWrite, unsigned int bufferViewBegin, unsigned int bufferViewSize, bool bufferViewInBytes)
+        {
+            // Calculate the view as item count
+            unsigned int bufferViewCount = 0;
+            {
+                unsigned int unitsDivider = 1;
+                if (bufferViewInBytes)
+                {
+                    unitsDivider = (stride > 0)
+                        ? stride
+                        : Get_DXGI_FORMAT_Info(resourceFormat).bytesPerPixel;
+                    unitsDivider = (unitsDivider > 0) ? unitsDivider : 1;
+                }
+                bufferViewBegin = bufferViewBegin / unitsDivider;
+                bufferViewCount = count;
+
+                if (bufferViewCount >= bufferViewBegin)
+                    bufferViewCount -= bufferViewBegin;
+                else
+                    bufferViewCount = 0;
+
+                unsigned int bufferViewNumElements = bufferViewSize / unitsDivider;
+                if (bufferViewNumElements > 0 && bufferViewNumElements < bufferViewCount)
+                    bufferViewCount = bufferViewNumElements;
+            }
+
+			int size[3] = { resourceSize, 1, 1 };
+			HandleViewableResource(interpreter, ViewableResource::Type::Buffer, displayName, resource, resourceFormat, resourceFormatCount, structIndex, size, 1, stride, count, hideFromUI, isResultOfWrite, bufferViewBegin, bufferViewCount);
+		}
+
+		std::vector<ViewableResource> m_viewableResources;
+		int m_viewableResourceIndex = 0;
+		std::string m_renderGraphText;
+        bool m_inErrorState = false;
+        bool m_conditionIsTrue = true;
+	};
 
     struct RenderGraphNode_Resource_Buffer : public RenderGraphNode_Base
     {
@@ -152,10 +184,11 @@ struct RuntimeTypes
         ID3D12Resource* m_resourceInitialState = nullptr;
         ID3D12Resource* m_resource = nullptr;
 
-        bool m_resourceWantsReset = false;
-        DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;
-        int m_size[3] = { 0, 0, 0 };
-        int m_numMips = 1;
+		bool m_resourceWantsReset = false;
+		DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;
+		int m_size[3] = {0, 0, 0};
+		int m_numMips = 1;
+        unsigned int sampleCount = 1;
 
         struct SubResourceKey
         {
@@ -180,8 +213,8 @@ struct RuntimeTypes
             }
         };
 
-        bool GetDSV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& DSVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, const char* resourceName);
-        bool GetRTV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& RTVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, const char* resourceName);
+		bool GetDSV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& DSVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, int sampleCount, const char* resourceName);
+		bool GetRTV(ID3D12Device2* device, D3D12_CPU_DESCRIPTOR_HANDLE& handle, HeapAllocationTracker& RTVHeapAllocationTracker, TextureDimensionType dimension, int arrayIndex, int mipLevel, int sampleCount, const char* resourceName);
 
         std::unordered_map<SubResourceKey, int, SubResourceKey> m_dsvIndices;
         std::unordered_map<SubResourceKey, int, SubResourceKey> m_rtvIndices;
@@ -257,6 +290,9 @@ struct RuntimeTypes
 	struct RenderGraphNode_Action_Barrier : public RenderGraphNode_Base
 	{
 	};
+
+	struct RenderGraphNode_Reroute : public RenderGraphNode_Base
+	{};
 };
 
 inline RuntimeTypes::ViewableResource::Type TextureDimensionTypeToViewableResourceType(TextureDimensionType dimensionType)
@@ -267,6 +303,7 @@ inline RuntimeTypes::ViewableResource::Type TextureDimensionTypeToViewableResour
 		case TextureDimensionType::Texture2DArray: return RuntimeTypes::ViewableResource::Type::Texture2DArray;
 		case TextureDimensionType::Texture3D: return RuntimeTypes::ViewableResource::Type::Texture3D;
 		case TextureDimensionType::TextureCube: return RuntimeTypes::ViewableResource::Type::TextureCube;
+		case TextureDimensionType::Texture2DMS: return RuntimeTypes::ViewableResource::Type::Texture2DMS;
 	}
 	return RuntimeTypes::ViewableResource::Type::Texture2D;
 }

@@ -11,7 +11,7 @@
   !define DESCRIPTION "Rapid Graphics Development Platform"
   !define VERSIONMAJOR 1
   !define VERSIONMINOR 0
-  !define VERSIONBUILD 1
+  !define VERSIONBUILD 3
   !define SLUG "${APPNAME} v${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
 
   # These will be displayed by the "Click here for support information" link in "Add/Remove Programs"
@@ -103,7 +103,7 @@
 Section "Visual Studio Runtime"
   SetOutPath "$INSTDIR"
   File "VC_redist.x64.exe"
-  ExecWait '"$INSTDIR\VC_redist.x64.exe"'
+  ExecWait '"$INSTDIR\VC_redist.x64.exe" /quiet /norestart'
 SectionEnd
 
 ;--------------------------------

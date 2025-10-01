@@ -38,6 +38,8 @@ unsupportedTests = [
 
     # Just need to make work
     "RayTrace\\simpleRTDynamic",
+    "Raster\\simpleRasterMSAA",
+    "Buffers\\Strides",
 
     # WebGPU only
     "Buffers\\buffertest_webgpu",

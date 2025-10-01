@@ -274,11 +274,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			ShaderCompilationInfo shaderCompilationInfo;
 			shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelRayShaders;
 			shaderCompilationInfo.defines = node.shader.shader->defines;
-
-			if (!node.defines.empty())
-			{
-				shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), node.defines.begin(), node.defines.end());
-			}
 			
 			shaderCompilationInfo.defines.emplace_back("MAX_RECURSION_DEPTH", std::to_string(node.maxRecursionDepth));
 			shaderCompilationInfo.defines.emplace_back("RT_HIT_GROUP_COUNT", std::to_string(countHitGroups));
@@ -309,7 +304,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			// Ray tracing shader compilation must use dxc
 			for (const ShaderExport& shaderExport : shaderExports)
 			{
-				std::string fullFileName = (std::filesystem::path(m_tempDirectory) / "shaders" / shaderExport.fileName).string();
+				std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / shaderExport.fileName).string();
 
 				std::vector<std::string> allShaderFiles;
 
@@ -324,13 +319,13 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 				for (const std::string& fileName : allShaderFiles)
 				{
-					std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(m_tempDirectory) / "shaders")).string();
+					std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 					m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 				}
 
 				if (code.size() == 0)
 				{
-					m_logFn(LogLevel::Error, "Compiled shader %s is zero bytes (error)\n", shaderExport.fileName.c_str());
+					m_logFn(LogLevel::Error, "Compiled shader %s (%s shader \"%s\") is zero bytes (error)\n", shaderExport.fileName.c_str(), EnumToString(shaderExport.shaderType), shaderExport.shader->name.c_str());
 					return false;
 				}
 				allShaderCode.push_back(code);
@@ -619,8 +614,19 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					else
 						label = label + " (SRV)";
 
+                    unsigned int bufferViewBegin = 0;
+                    unsigned int bufferViewSize = 0;
+                    bool bufferViewInBytes = false;
+                    if (dep.pinIndex < node.linkProperties.size())
+                    {
+                        const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                        bufferViewBegin = linkProperties.bufferViewBegin;
+                        bufferViewSize = linkProperties.bufferViewSize;
+                        bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                    }
+
 					const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false);
+					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
 					break;
 				}
 			}
@@ -662,6 +668,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 							case TextureDimensionType::Texture2DArray: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DArray; desc.m_count = resourceInfo.m_size[2]; break;
 							case TextureDimensionType::Texture3D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture3D; desc.m_count = resourceInfo.m_size[2]; break;
 							case TextureDimensionType::TextureCube: desc.m_resourceType = DescriptorTableCache::ResourceType::TextureCube; desc.m_count = 6; break;
+							case TextureDimensionType::Texture2DMS: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DMS; break;
 						}
 						break;
 					}
@@ -734,6 +741,31 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 								desc.m_count = resourceInfo.m_count;
 							}
 
+                            if (dep.pinIndex < node.linkProperties.size())
+                            {
+                                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+
+                                unsigned int unitsDivider = 1;
+                                if (linkProperties.bufferViewUnits != MemoryUnitOfMeasurement::Items)
+                                {
+                                    unitsDivider = (shaderResourceBuffer.typeStruct.structIndex != -1)
+                                        ? (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes
+                                        : DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeBytes;
+                                    unitsDivider = max(unitsDivider, 1);
+                                }
+
+                                desc.m_firstElement = linkProperties.bufferViewBegin / unitsDivider;
+
+                                if (desc.m_count >= desc.m_firstElement)
+                                    desc.m_count -= desc.m_firstElement;
+                                else
+                                    desc.m_count = 0;
+
+                                unsigned int bufferViewNumElements = linkProperties.bufferViewSize / unitsDivider;
+                                if (bufferViewNumElements > 0)
+                                    desc.m_count = min(desc.m_count, bufferViewNumElements);
+                            }
+
 							desc.m_raw = node.shader.shader->resources[depIndex].buffer.raw;
 						}
 						break;
@@ -751,6 +783,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					std::ostringstream ss;
 					ss << "Cannot execute: resource \"" << GetNodeName(m_renderGraph.nodes[dep.nodeIndex]) << "\" doesn't exist yet";
 					runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
 					return true;
 				}
 
@@ -892,6 +925,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			ss << "\nCondition: " << (EvaluateCondition(node.condition) ? "true" : "false");
 		runtimeData.m_renderGraphText = ss.str();
 
+        runtimeData.m_conditionIsTrue = EvaluateCondition(node.condition);
+
 		// Do resource transitions and dispatch
 		if (EvaluateCondition(node.condition))
 		{
@@ -963,8 +998,19 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 					else
 						continue;
 
+                    unsigned int bufferViewBegin = 0;
+                    unsigned int bufferViewSize = 0;
+                    bool bufferViewInBytes = false;
+                    if (dep.pinIndex < node.linkProperties.size())
+                    {
+                        const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
+                        bufferViewBegin = linkProperties.bufferViewBegin;
+                        bufferViewSize = linkProperties.bufferViewSize;
+                        bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                    }
+
 					const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, true);
+					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, true, bufferViewBegin, bufferViewSize, bufferViewInBytes);
 					break;
 				}
 			}

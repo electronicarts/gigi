@@ -1,0 +1,15 @@
+{
+    "fileProperties":[
+        {"fileName": "public\\Technique.h", "renameTo":"public\\/*$(Name)*/Technique.h"},
+        {"fileName": "private\\Technique.cpp", "renameTo":"private\\/*$(Name)*/Technique.cpp"}
+    ],
+    "ignoreDirectories":["./NodeTemplates/"],
+    "nodeTemplateFiles":[
+        "./NodeTemplates/ResourceBuffer.xml",
+        "./NodeTemplates/ResourceTexture.xml",
+        "./NodeTemplates/ActionComputeShader.xml",
+        "./NodeTemplates/ActionCopyResource.xml",
+        "./NodeTemplates/ActionDrawCall.xml",
+        "./NodeTemplates/ActionRayShader.xml"
+    ]
+}

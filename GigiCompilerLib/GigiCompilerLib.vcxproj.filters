@@ -65,6 +65,9 @@
     <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\miniz.c">
       <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz</Filter>
     </ClCompile>
+    <ClCompile Include="Backends\UE_5_3\Backend_UE_5_3.cpp">
+      <Filter>Backends\UE_5_3</Filter>
+    </ClCompile>
     <ClCompile Include="..\external\timyxml2\tinyxml2.cpp">
       <Filter>external\timyxml2</Filter>
     </ClCompile>
@@ -334,6 +337,36 @@
     <ClInclude Include="..\external\timyxml2\tinyxml2.h">
       <Filter>external\timyxml2</Filter>
     </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_texture.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_barrier.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_computeShader.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_copyResource.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_drawCall.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_rayShader.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_subGraph.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_buffer.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_shaderConstants.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="Backends\UE_5_3\nodes\allNodes.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </ClInclude>
     <ClInclude Include="ParseText.h" />
     <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.h">
       <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
@@ -490,8 +523,26 @@
     <Filter Include="schemas\Misc">
       <UniqueIdentifier>{a3ba0859-abb0-42eb-bb97-0471b63a4037}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Backends\UE_5_3">
+      <UniqueIdentifier>{87c1024b-1224-4971-ba3c-9081e481f77a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\UE_5_3\templates">
+      <UniqueIdentifier>{db338c19-1edf-482e-acad-200b5817d93c}</UniqueIdentifier>
+    </Filter>
     <Filter Include="external\timyxml2">
       <UniqueIdentifier>{fa16a087-4567-426a-b093-af1421e05c99}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\UE_5_3\nodes">
+      <UniqueIdentifier>{bf123da1-1d7e-4ac8-a05f-bbfd8db9668a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\UE_5_3\templates\NodeTemplates">
+      <UniqueIdentifier>{43c296f8-22d7-4b11-a58b-80832dd4de1d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\UE_5_3\templates\public">
+      <UniqueIdentifier>{608aed42-ebbf-4cfe-a698-da95316b5c2d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Backends\UE_5_3\templates\private">
+      <UniqueIdentifier>{37257b4b-7b57-4b73-9edd-8d87a2831624}</UniqueIdentifier>
     </Filter>
     <Filter Include="Backends\DX12\templates\Module\AgilitySDK">
       <UniqueIdentifier>{a1018a8e-47c7-47bf-9f47-e02e857cf842}</UniqueIdentifier>
@@ -578,6 +629,39 @@
     </None>
     <None Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\readme.md">
       <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\ggconfig.json">
+      <Filter>Backends\UE_5_3\templates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\Readme.txt">
+      <Filter>Backends\UE_5_3\templates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ResourceTexture.xml">
+      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionComputeShader.xml">
+      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\public\Technique.h">
+      <Filter>Backends\UE_5_3\templates\public</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\private\Technique.cpp">
+      <Filter>Backends\UE_5_3\templates\private</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\install.bat">
+      <Filter>Backends\UE_5_3\templates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ResourceBuffer.xml">
+      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionCopyResource.xml">
+      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionDrawCall.xml">
+      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionRayShader.xml">
+      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
     </None>
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
       <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
@@ -681,6 +765,16 @@
     </None>
     <None Include="Backends\WebGPU\nodes\node_action_workGraph.inl">
       <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_reroute.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\DX12\nodes\node_reroute.inl">
+      <Filter>Backends\DX12\nodes</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\nodes\node_reroute.inl">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </None>
     </None>
   </ItemGroup>
   <ItemGroup>

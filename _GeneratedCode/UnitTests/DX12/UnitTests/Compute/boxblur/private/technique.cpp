@@ -68,7 +68,7 @@ namespace boxblur
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _BoxBlurCB
+            // _BoxBlur_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -79,7 +79,7 @@ namespace boxblur
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "boxblur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "boxblur_0.hlsl";
             shaderCompilationInfo.entryPoint = "BlurH";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "BlurH" : "");
@@ -115,7 +115,7 @@ namespace boxblur
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _BoxBlurCB
+            // _BoxBlur_1CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -126,7 +126,7 @@ namespace boxblur
                 return false;
 
             ShaderCompilationInfo shaderCompilationInfo;
-            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "boxblur.hlsl";
+            shaderCompilationInfo.fileName = std::filesystem::path(Context::s_techniqueLocation) / "shaders" / "boxblur_1.hlsl";
             shaderCompilationInfo.entryPoint = "BlurV";
             shaderCompilationInfo.shaderModel = "cs_6_1";
             shaderCompilationInfo.debugName = (c_debugNames ? "BlurV" : "");
@@ -790,11 +790,18 @@ namespace boxblur
             m_internal.texture_PingPongTexture = nullptr;
         }
 
-        // _BoxBlurCB
-        if (m_internal.constantBuffer__BoxBlurCB)
+        // _BoxBlur_0CB
+        if (m_internal.constantBuffer__BoxBlur_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__BoxBlurCB);
-            m_internal.constantBuffer__BoxBlurCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__BoxBlur_0CB);
+            m_internal.constantBuffer__BoxBlur_0CB = nullptr;
+        }
+
+        // _BoxBlur_1CB
+        if (m_internal.constantBuffer__BoxBlur_1CB)
+        {
+            s_delayedRelease.Add(m_internal.constantBuffer__BoxBlur_1CB);
+            m_internal.constantBuffer__BoxBlur_1CB = nullptr;
         }
     }
 
@@ -803,7 +810,7 @@ namespace boxblur
         // reset the timer index
         s_timerIndex = 0;
 
-        ScopedPerfEvent scopedPerf("boxblur", commandList, 5);
+        ScopedPerfEvent scopedPerf("boxblur", commandList, 6);
 
         std::chrono::high_resolution_clock::time_point startPointCPUTechnique;
         if(context->m_profile)
@@ -860,11 +867,11 @@ namespace boxblur
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _BoxBlurCB
+        // Shader Constants: _BoxBlur_0CB
         {
-            context->m_internal.constantBuffer__BoxBlurCB_cpu.radius = context->m_input.variable_radius;
-            context->m_internal.constantBuffer__BoxBlurCB_cpu.sRGB = context->m_input.variable_sRGB;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__BoxBlurCB, context->m_internal.constantBuffer__BoxBlurCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__BoxBlur_0CB_cpu.radius = context->m_input.variable_radius;
+            context->m_internal.constantBuffer__BoxBlur_0CB_cpu.sRGB = context->m_input.variable_sRGB;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__BoxBlur_0CB, context->m_internal.constantBuffer__BoxBlur_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -897,9 +904,9 @@ namespace boxblur
             commandList->SetPipelineState(ContextInternal::computeShader_BlurH_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.texture_PingPongTexture, context->m_internal.texture_PingPongTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__BoxBlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.texture_PingPongTexture, context->m_internal.texture_PingPongTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__BoxBlur_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -925,6 +932,13 @@ namespace boxblur
                 context->m_profileData[(s_timerIndex-1)/2].m_cpu = (float)std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::high_resolution_clock::now() - startPointCPU).count();
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
+        }
+
+        // Shader Constants: _BoxBlur_1CB
+        {
+            context->m_internal.constantBuffer__BoxBlur_1CB_cpu.radius = context->m_input.variable_radius;
+            context->m_internal.constantBuffer__BoxBlur_1CB_cpu.sRGB = context->m_input.variable_sRGB;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__BoxBlur_1CB, context->m_internal.constantBuffer__BoxBlur_1CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -964,9 +978,9 @@ namespace boxblur
             commandList->SetPipelineState(ContextInternal::computeShader_BlurV_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_internal.texture_PingPongTexture, context->m_internal.texture_PingPongTexture_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__BoxBlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_internal.texture_PingPongTexture, context->m_internal.texture_PingPongTexture_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_input.texture_InputTexture, context->m_input.texture_InputTexture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__BoxBlur_1CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1073,11 +1087,18 @@ namespace boxblur
             }
         }
 
-        // _BoxBlurCB
-        if (m_internal.constantBuffer__BoxBlurCB == nullptr)
+        // _BoxBlur_0CB
+        if (m_internal.constantBuffer__BoxBlur_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__BoxBlurCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_BoxBlurCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__BoxBlur_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_BoxBlur_0CB" : nullptr), Context::LogFn);
+        }
+
+        // _BoxBlur_1CB
+        if (m_internal.constantBuffer__BoxBlur_1CB == nullptr)
+        {
+            dirty = true;
+            m_internal.constantBuffer__BoxBlur_1CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_BoxBlur_1CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

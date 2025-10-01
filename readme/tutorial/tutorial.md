@@ -19,7 +19,7 @@ To use prebuilt binaries, go to the releases tab https://github.com/electronicar
 After downloading or building Gigi there are three executables in the root directory:
 * **GigiEdit.exe** - This is where you create and modify techniques.
 * **GigiViewerDX12.exe** - This lets you run your techniques and is where you profile, debug, and iterate. Supports hot reloading of shader files, asset files, and .gg files. Also python scriptable to automate rendering and GPU tasks.
-* **GigiCompiler.exe** - This command line utility generates code for your technique. The code is properly indented, has comments, uses human friendly variable names and is meant to look as if a human wrote it, and pass a reasonable code review.  Currently only DX12 code generation is supported in this public repo.  Privately, we have Frostbite, UE5 and Halcyon code generation support, and plan to have more backends in this public repo as time goes on.
+* **GigiCompiler.exe** - This command line utility generates code for your technique. The code is properly indented, has comments, uses human friendly variable names and is meant to look as if a human wrote it, and pass a reasonable code review.  Code generation is supported for C++/DX12, WebGPU and the unreal engine.  We plan to add more backends as time goes on.
 
 ## Built-in Techniques
 

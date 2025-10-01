@@ -55,6 +55,16 @@
             "description": "Integer types can specify an enum, which will then make symbols in both C++ and shader code.",
             "type": "string"
           },
+          "onUserChange": {
+            "description": "A boolean variable that gets set to true when the user changes this variable.",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the variable.",
+                "type": "string"
+              }
+            }
+          },
           "backends": {
             "description": "This variable can be limited to specific backends",
             "type": "object",
@@ -64,7 +74,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "WebGPU", "Interpreter"]
+                "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -215,7 +225,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "WebGPU", "Interpreter"]
+                "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -237,7 +247,7 @@
                 "access": {
                   "description": "How the resource is accessed",
                   "type": "string",
-                  "enum": ["UAV", "SRV", "CBV", "CopySource", "CopyDest", "Indirect", "RTScene", "VertexBuffer", "IndexBuffer", "RenderTarget", "DepthTarget", "Barrier", "ShadingRate", "Count"]
+                  "enum": ["UAV", "SRV", "CBV", "CopySource", "CopyDest", "Indirect", "RTScene", "VertexBuffer", "IndexBuffer", "RenderTarget", "DepthTarget", "Barrier", "ShadingRate", "Noop", "Count"]
                 },
                 "type": {
                   "description": "The resource type",
@@ -284,7 +294,7 @@
                     "dimension": {
                       "description": "The dimensionality of the texture",
                       "type": "string",
-                      "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube"]
+                      "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube", "Texture2DMS"]
                     },
                     "viewType": {
                       "description": "The dimensionality of the texture",
@@ -306,7 +316,7 @@
                       "type": "array",
                       "items": {
                         "type": "string",
-                      "enum": ["DX12", "WebGPU", "Interpreter"]
+                      "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                       }
                     },
                     "isWhiteList": {
@@ -466,7 +476,7 @@
                 "type": "array",
                 "items": {
                   "type": "string",
-                "enum": ["DX12", "WebGPU", "Interpreter"]
+                "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                 }
               },
               "isWhiteList": {
@@ -509,7 +519,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -632,7 +642,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -710,7 +720,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -758,7 +768,7 @@
                   "format": {
                     "description": "A specific format can be specified",
                     "type": "string",
-                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "BGRA8_Unorm", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "RG16_Uint", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RG32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC4_Unorm", "BC4_Snorm", "BC5_Unorm", "BC5_Snorm", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
+                    "enum": ["Any", "R8_Unorm", "RG8_Unorm", "RGBA8_Unorm", "RGBA8_Unorm_sRGB", "BGRA8_Unorm", "R8_Snorm", "RG8_Snorm", "RGBA8_Snorm", "R8_Uint", "RG8_Uint", "RGBA8_Uint", "R8_Sint", "RG8_Sint", "RGBA8_Sint", "R16_Float", "RG16_Float", "RGBA16_Float", "RGBA16_Unorm", "RGBA16_Snorm", "RG16_Uint", "R32_Float", "RG32_Float", "RGBA32_Float", "R32_Uint", "RG32_Uint", "RGBA32_Uint", "R11G11B10_Float", "D32_Float", "D16_Unorm", "D32_Float_S8", "D24_Unorm_S8", "BC1_Unorm", "BC4_Unorm", "BC4_Snorm", "BC5_Unorm", "BC5_Snorm", "BC7_Unorm", "BC7_Unorm_sRGB", "BC6_UF16", "BC6_SF16"]
                   },
                   "variable": {
                     "description": "The variable that holds the texture format. Assumed to be a uint32.",
@@ -841,11 +851,21 @@
               "dimension": {
                 "description": "The dimensionality of the texture",
                 "type": "string",
-                "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube"]
+                "enum": ["Texture2D", "Texture2DArray", "Texture3D", "TextureCube", "Texture2DMS"]
+              },
+              "msaaSettings": {
+                "description": "MSAA Settings for Texture2DMS, multiple samples are stored per pixel for antialiasing",
+                "type": "object",
+                "properties": {
+                  "sampleCount": {
+                    "description": "MSAA sample count, usually 2 or 4, most hardware also has 8 and some even 16 or more.",
+                    "type": "integer"
+                  }
+                }
               }
             }
           },
-          "actionComputeShader": {
+          "reroute": {
             "description": "",
             "type": "object",
             "properties": {
@@ -862,7 +882,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -920,6 +940,23 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
                     }
                   }
                 }
@@ -951,7 +988,144 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "actionComputeShader": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1064,11 +1238,11 @@
                 }
               },
               "entryPoint": {
-                "description": "The shader entrypoint. Overrides the shader entry entryPoint.",
+                "description": "The shader entrypoint. Overrides the shader entry entryPoint. Handled by front end during Gigi compilation and becomes shader entry point during code gen.",
                 "type": "string"
               },
               "defines": {
-                "description": "The defines the shader is compiled with, on top of whatever defines the shader has already",
+                "description": "The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.",
                 "type": "array",
                 "items": {
                   "type": "object",
@@ -1103,7 +1277,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1161,6 +1335,23 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
                     }
                   }
                 }
@@ -1192,7 +1383,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1277,11 +1468,11 @@
                 }
               },
               "entryPoint": {
-                "description": "The shader entrypoint. Overrides the shader entry entryPoint.",
+                "description": "The shader entrypoint. Overrides the shader entry entryPoint.  Handled by front end during Gigi compilation and becomes shader entry point during code gen.",
                 "type": "string"
               },
               "defines": {
-                "description": "The defines the shader is compiled with, on top of whatever defines the shader has already",
+                "description": "The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.",
                 "type": "array",
                 "items": {
                   "type": "object",
@@ -1324,7 +1515,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1382,6 +1573,23 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
                     }
                   }
                 }
@@ -1413,7 +1621,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1422,6 +1630,24 @@
                         }
                       }
                     }
+                  }
+                }
+              },
+              "bufferToBuffer": {
+                "description": "Settings when copying from a buffer to another buffer.",
+                "type": "object",
+                "properties": {
+                  "srcBegin": {
+                    "description": "Where the copy source begins in the source buffer. In Bytes.",
+                    "type": "integer"
+                  },
+                  "destBegin": {
+                    "description": "Where the copy destination begins in the destination buffer. In Bytes.",
+                    "type": "integer"
+                  },
+                  "size": {
+                    "description": "How much to copy. 0 to copy everything. In Bytes.",
+                    "type": "integer"
                   }
                 }
               },
@@ -1472,7 +1698,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -1530,6 +1756,23 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
                     }
                   }
                 }
@@ -1561,7 +1804,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -1874,7 +2117,7 @@
                 }
               },
               "defines": {
-                "description": "The defines the shaders ares compiled with, on top of whatever defines the shaders have already",
+                "description": "The defines the shaders ares compiled with, on top of whatever defines the shaders have already. Handled by front end during Gigi compilation and becomes shader defines during code gen.",
                 "type": "array",
                 "items": {
                   "type": "object",
@@ -2027,7 +2270,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2085,6 +2328,23 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
                     }
                   }
                 }
@@ -2116,7 +2376,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2243,7 +2503,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                    "enum": ["DX12", "WebGPU", "Interpreter"]
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                     }
                   },
                   "isWhiteList": {
@@ -2301,6 +2561,23 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
                     }
                   }
                 }
@@ -2332,7 +2609,7 @@
                           "type": "array",
                           "items": {
                             "type": "string",
-                          "enum": ["DX12", "WebGPU", "Interpreter"]
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
                           }
                         },
                         "isWhiteList": {
@@ -2646,6 +2923,16 @@ both the shader-f16 and subgroups features.",
             }
           }
         },
+        "UE_5_3": {
+          "description": "",
+          "type": "object",
+          "properties": {
+            "AllowRealTypes": {
+              "description": "CFLAG_AllowRealTypes. For 16 bit shader types.",
+              "type": "boolean"
+            }
+          }
+        },
         "common": {
           "description": "",
           "type": "object",
@@ -2663,7 +2950,7 @@ both the shader-f16 and subgroups features.",
               "type": "boolean"
             },
             "createPDBsAndBinaries": {
-              "description": "If true, will output PDBs and shader binaries, useful for crash debugging.",
+              "description": "If true, will output PDBs and shader binaries, useful for crash debugging. Also needed for rga.exe to run.",
               "type": "boolean"
             },
             "rgaPath": {
@@ -2694,8 +2981,16 @@ See .bat for more info",
           "enum": ["ShaderUnusedResource", "Count"]
           }
         },
+        "makeGraphViz": {
+          "description": "If true, will generate graphviz when building this technique",
+          "type": "boolean"
+        },
         "outDX12": {
           "description": "The output location for DX12",
+          "type": "string"
+        },
+        "outUE_5_3": {
+          "description": "The output location for UE 5.3",
           "type": "string"
         },
         "outWebGPU": {

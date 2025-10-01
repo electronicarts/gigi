@@ -109,6 +109,44 @@ struct ShowWindowsState
 };
 ShowWindowsState g_showWindows;
 
+// Portions of this software were based on https://devblogs.microsoft.com/oldnewthing/20100125-00/?p=15183
+HANDLE SetClipboardDataEx(UINT uFormat, void *pvData, DWORD cbData)
+{
+    if (OpenClipboard(NULL))
+    {
+        EmptyClipboard();
+        if (uFormat == CF_BITMAP ||
+            uFormat == CF_DSPBITMAP ||
+            uFormat == CF_PALETTE ||
+            uFormat == CF_METAFILEPICT ||
+            uFormat == CF_DSPMETAFILEPICT ||
+            uFormat == CF_ENHMETAFILE ||
+            uFormat == CF_DSPENHMETAFILE ||
+            uFormat == CF_OWNERDISPLAY) {
+            return NULL; // these are not HGLOBAL format
+        }
+        HANDLE hRc = NULL;
+        HGLOBAL hglob = GlobalAlloc(GMEM_MOVEABLE | GMEM_SHARE | GMEM_ZEROINIT,
+            cbData);
+        if (hglob) {
+            void* pvGlob = GlobalLock(hglob);
+            if (pvGlob) {
+                CopyMemory(pvGlob, pvData, cbData);
+                GlobalUnlock(hglob);
+                hRc = SetClipboardData(uFormat, hglob);
+            }
+            if (!hRc) {
+                DWORD blah = GetLastError();
+                GlobalFree(hglob);
+            }
+        }
+        CloseClipboard();
+        return hRc;
+    }
+    else
+        return NULL;
+}
+
 void EditorShowMessageBox(const char* msg, ...)
 {
     char buffer[4096];
@@ -1225,15 +1263,6 @@ struct Example :
         int nodeCount = ed::GetSelectedNodes(selectedNodes.data(), static_cast<int>(selectedNodes.size()));
         selectedNodes.resize(nodeCount);
 
-        ImGui::GetWindowDrawList()->AddRectFilled(
-            ImGui::GetCursorScreenPos(),
-            ImGui::GetCursorScreenPos() + ImVec2(paneWidth, ImGui::GetTextLineHeight()),
-            ImColor(ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]), ImGui::GetTextLineHeight() * 0.25f);
-        ImGui::Spacing(); ImGui::SameLine();
-        char buffer[256];
-        sprintf_s(buffer, "%i Nodes", (int)g_renderGraph.nodes.size());
-        ImGui::TextUnformatted(buffer);
-
 		static std::string searchQuery;
 
         // Make a sorted list of nodes
@@ -1250,7 +1279,7 @@ struct Example :
 				nodeId_++;
 
                 std::string nodeName = GetNodeName(node);
-                if (!searchQuery.empty() && StringFindForceLowercase(nodeName, searchQuery) == std::string::npos)
+                if ((!searchQuery.empty() && StringFindForceLowercase(nodeName, searchQuery) == std::string::npos) || node._index == RenderGraphNode::c_index_reroute)
                 {
                     continue;
                 }
@@ -1283,6 +1312,15 @@ struct Example :
 				);
             }
         }
+
+		ImGui::GetWindowDrawList()->AddRectFilled(
+			ImGui::GetCursorScreenPos(),
+			ImGui::GetCursorScreenPos() + ImVec2(paneWidth, ImGui::GetTextLineHeight()),
+			ImColor(ImGui::GetStyle().Colors[ImGuiCol_HeaderActive]), ImGui::GetTextLineHeight() * 0.25f);
+		ImGui::Spacing(); ImGui::SameLine();
+		char buffer[256];
+		sprintf_s(buffer, "%i Nodes", (int)sortedNodes.size());
+		ImGui::TextUnformatted(buffer);
 
         // Search bar
         {
@@ -1349,6 +1387,27 @@ struct Example :
             ImGui::End();
             return;
         }
+
+        if (ImGui::Button("Copy"))
+        {
+            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "what's up?");
+            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "bro.");
+
+            constexpr const char* msgType[3] = { "[Info] ", "[Warning] ", "[Error] " };
+
+            std::ostringstream fullText;
+
+            for (const auto& msg : m_BuildOutputBuffer)
+            {
+                int msgTypeIndex = static_cast<int>(msg.Type);
+                fullText << msgType[msgTypeIndex];
+                fullText << msg.Msg << "\n";
+            }
+
+            SetClipboardDataEx(CF_TEXT, (void*)fullText.str().c_str(), (DWORD)fullText.str().length() + 1);
+        }
+
+        ImGui::SameLine();
 
         if (ImGui::Button("Clear"))
             m_BuildOutputBuffer.clear();
@@ -1498,6 +1557,21 @@ struct Example :
                 title += buffer;
 
 				std::string oldNodeName = GetNodeName(node);
+
+                switch (node._index)
+                {
+                    case RenderGraphNode::c_index_actionComputeShader:
+                    {
+                        RenderGraphNode_Action_ComputeShader& nodeComputeShader = node.actionComputeShader;
+                        int shaderIndex = GetShaderIndexByName(g_renderGraph, ShaderType::Compute, nodeComputeShader.shader.name.c_str());
+                        if (shaderIndex != -1)
+                        {
+                            const Shader& shader = g_renderGraph.shaders[shaderIndex];
+                            nodeComputeShader.dispatchSize.shaderNumThreads = shader.NumThreads;
+                        }
+                        break;
+                    }
+                }
 
 				ImGui::TextUnformatted(title.c_str());
 				ImGui::Indent();
@@ -2041,6 +2115,62 @@ struct Example :
         }
     }
 
+    void HandleDoubleClick(int linkId)
+    {
+		LinkInfo& linkInfo = m_links[linkId];
+
+        // Create reroute node
+		char newNodeName[64];
+		int nextNodeIndex = 0;
+		while (true)
+		{
+			nextNodeIndex++;
+			sprintf_s(newNodeName, "Node %i", nextNodeIndex);
+			bool nameExists = false;
+			for (const RenderGraphNode& node : g_renderGraph.nodes)
+			{
+				if (GetNodeName(node) == newNodeName)
+				{
+					nameExists = true;
+					break;
+				}
+			}
+				if (!nameExists)
+					break;
+		}
+        RenderGraphNode newNode;
+        newNode._index = RenderGraphNode::c_index_reroute;
+        newNode.reroute.name = newNodeName;
+        g_renderGraph.nodes.push_back(newNode);
+        m_newNodePositions[(int)g_renderGraph.nodes.size()] = ed::ScreenToCanvas(ImGui::GetMousePos());
+        g_renderGraphDirty = true;
+        g_createdNodeIndex = (int)g_renderGraph.nodes.size();
+
+        // Make sure reroute pin exists
+        {
+			g_renderGraph.nodes.back().reroute.connections.resize(1);
+			g_renderGraph.nodes.back().reroute.connections[0].srcPin = "Pin";
+        }
+
+        int destNodeIndex = GetNodeIndexByName(g_renderGraph, linkInfo.destNodeName.c_str());
+
+		if (destNodeIndex >= 0)
+		{
+			std::vector<NodePinInfo> nodePinInfo = GetNodePins(g_renderGraph, g_renderGraph.nodes[destNodeIndex]);
+
+			int destPinIndex = GetNodePinIndexByName(nodePinInfo, linkInfo.destPin.c_str());
+			if (destPinIndex >= 0)
+			{
+				*nodePinInfo[destPinIndex].inputNode = newNodeName;
+				*nodePinInfo[destPinIndex].inputNodePin = g_renderGraph.nodes.back().reroute.connections.back().srcPin;
+			}
+		}
+
+        std::vector<NodePinInfo> nodePinInfo = GetNodePins(g_renderGraph, g_renderGraph.nodes.back());
+        *nodePinInfo[0].inputNode = linkInfo.srcNodeName;
+        *nodePinInfo[0].inputNodePin = linkInfo.srcPin;
+    }
+
     void HandleDoubleClick(const RenderGraphNode& nodeBase)
     {
         std::filesystem::path defaultPath = std::filesystem::path(g_renderGraph.editorFileName).remove_filename();
@@ -2297,6 +2427,11 @@ struct Example :
         result.rounding = 12.f;
         result.color = GetColorFromArray(g_renderGraph.styleSettings.actionNodeColor, 128);
 
+        if (node._index == RenderGraphNode::c_index_reroute)
+        {
+            result.color = ImColor(1.f, 1.f, 1.f, 0.78f);
+        }
+
         if (GetNodeIsResourceNode(node))
         {
             result.rounding = 0.f;
@@ -2368,6 +2503,16 @@ struct Example :
             if (nodeId && nodeId.Get() < g_groupNodesStartId)
                 HandleDoubleClick(g_renderGraph.nodes[nodeId.Get() - 1]);
         }
+
+        // handle link double click
+        {
+            auto linkId = ed::GetDoubleClickedLink();
+            if (linkId)
+            {
+                HandleDoubleClick((int)linkId.Get());
+            }
+        }
+
 
         // load file specified on command line, if given
         {
@@ -2463,14 +2608,28 @@ struct Example :
                 ed::SetNodePosition(nodeEditorId, ImVec2(editorPos[0], editorPos[1]));
             }
 
-            std::string nodeHeader = GetNodeShorterTypeName(node) + ": " + GetNodeName(node);
-            ImGui::Text(nodeHeader.c_str());
+			std::string nodeHeader = GetNodeShorterTypeName(node) + ": " + GetNodeName(node);
+
+            if (node._index != RenderGraphNode::c_index_reroute)
+            {
+				ImGui::Text(nodeHeader.c_str());
+            }
+
             std::vector<NodePinInfo> pinInfo = GetNodePins(g_renderGraph, node);
 
             // Calculate the maximum width of each pin, and the nodeHeader
-            float maxRowSize = ImGui::CalcTextSize(nodeHeader.c_str()).x;
-            for (NodePinInfo& info : pinInfo)
-                maxRowSize = std::max(maxRowSize, 48.0f + ImGui::CalcTextSize((info.name + info.accessLabel).c_str()).x);
+            float maxRowSize = 0.f;
+
+            if (node._index != RenderGraphNode::c_index_reroute)
+            {
+                maxRowSize = ImGui::CalcTextSize(nodeHeader.c_str()).x;
+				for (NodePinInfo& info : pinInfo)
+					maxRowSize = std::max(maxRowSize, 48.0f + ImGui::CalcTextSize((info.name + info.accessLabel).c_str()).x);
+            }
+            else
+            {
+                maxRowSize = 50.f;
+            }
 
             for (NodePinInfo& info : pinInfo)
             {
@@ -2488,7 +2647,7 @@ struct Example :
 					ImGui::PushStyleVar(ImGuiStyleVar_Alpha, alpha);
 
                     // left side
-					DrawPinIcon(info, false /*IsPinLinked(info.ID)*/, (int)(alpha * 255));
+					DrawPinIcon(info, node._index == RenderGraphNode::c_index_reroute, false /*IsPinLinked(info.ID)*/, (int)(alpha * 255));
 					ImGui::PopStyleVar();
 
 
@@ -2505,7 +2664,10 @@ struct Example :
                     ImGui::SameLine();
                 }
 
-                ImGui::Text((info.name + info.accessLabel).c_str());
+                if (node._index != RenderGraphNode::c_index_reroute)
+                {
+					ImGui::Text((info.name + info.accessLabel).c_str());
+                }
 
                 ImGui::SameLine();
                 float nodeAtX = ImGui::GetCursorPosX();
@@ -2523,7 +2685,7 @@ struct Example :
 
                 // right side
 
-				DrawPinIcon(info, false/*IsPinLinked(output.ID)*/, (int)(alpha * 255));
+				DrawPinIcon(info, node._index == RenderGraphNode::c_index_reroute, false/*IsPinLinked(output.ID)*/, (int)(alpha * 255));
 				ImGui::PopStyleVar();
 
                 ed::EndPin();

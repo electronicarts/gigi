@@ -1,0 +1,156 @@
+{
+    "$schema": "gigischema.json",
+    "name": "CopyPartialBuffer",
+    "version": "1.0",
+    "shaders": [
+        {
+            "name": "FillInput",
+            "fileName": "CopyPartialBuffer_Init.hlsl",
+            "NumThreads": [
+                64,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Input",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceBuffer": {
+                "name": "Input",
+                "editorPos": [
+                    -37.0,
+                    -30.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "multiply": 8
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Init",
+                "editorPos": [
+                    101.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Input",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FillInput"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Input"
+                    },
+                    "indirectBuffer": {
+                        "node": "Partial Self Copy"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Output",
+                "editorPos": [
+                    -37.0,
+                    34.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "type": "Float"
+                },
+                "count": {
+                    "multiply": 8
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Partial Copy",
+                "editorPos": [
+                    277.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "bufferToBuffer": {
+                    "srcBegin": 12,
+                    "destBegin": 8,
+                    "size": 40
+                },
+                "source": {
+                    "node": "Init",
+                    "pin": "Input"
+                },
+                "dest": {
+                    "node": "Init",
+                    "pin": "Output"
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Partial Self Copy",
+                "editorPos": [
+                    428.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "bufferToBuffer": {
+                    "srcBegin": 16,
+                    "size": 16
+                },
+                "source": {
+                    "node": "Partial Copy",
+                    "pin": "source"
+                },
+                "dest": {
+                    "node": "Partial Copy",
+                    "pin": "source"
+                }
+            }
+        }
+    ]
+}

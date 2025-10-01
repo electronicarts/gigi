@@ -104,7 +104,12 @@ struct DfltFixupVisitor
                 if (componentIndex > 0)
                     stream << ", ";
 
-                stream << std::fixed << std::setprecision(std::numeric_limits<float>::digits10) << values[componentIndex];
+                std::ostringstream singleValueStream;
+                singleValueStream << std::setprecision(std::numeric_limits<float>::max_digits10) << values[componentIndex];
+                std::string singleValueString = singleValueStream.str();
+                stream << singleValueString;
+                if (singleValueString.find('.') == std::string::npos)
+                    stream << ".";
 
                 if (m_backend != Backend::WebGPU)
                     stream << "f";
@@ -222,6 +227,10 @@ struct DataFixupVisitor
 
 struct AddNodeInfoToShadersVisitor
 {
+    AddNodeInfoToShadersVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
     template <typename TDATA>
     bool Visit(TDATA& data, const std::string& path)
     {
@@ -233,32 +242,45 @@ struct AddNodeInfoToShadersVisitor
         ShaderDefine newDefine;
         std::ostringstream stream;
 
+        int shaderIndex = GetShaderIndex(renderGraph, node.shader.name.c_str());
+        if (shaderIndex == -1)
+            return false;
+
+        if (visitedShaders.count(shaderIndex) > 0)
+            return true;
+        visitedShaders.insert(shaderIndex);
+
+        Shader& shader = renderGraph.shaders[shaderIndex];
+
         newDefine.name = "__GigiDispatchMultiply";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.multiply[0] << "," << node.dispatchSize.multiply[1] << "," << node.dispatchSize.multiply[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchDivide";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.divide[0] << "," << node.dispatchSize.divide[1] << "," << node.dispatchSize.divide[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchPreAdd";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.preAdd[0] << "," << node.dispatchSize.preAdd[1] << "," << node.dispatchSize.preAdd[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchPostAdd";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.postAdd[0] << "," << node.dispatchSize.postAdd[1] << "," << node.dispatchSize.postAdd[2] << ")";
         newDefine.value = stream.str();
-        node.defines.push_back(newDefine);
+        shader.defines.push_back(newDefine);
 
         return true;
     }
+
+    RenderGraph& renderGraph;
+    std::unordered_set<int> visitedShaders;
 };
 
 struct ErrorCheckVisitor
@@ -1268,6 +1290,36 @@ struct ReferenceFixupVisitor
 
         return true;
     }
+	bool Visit(RenderGraphNode_Reroute& data, const std::string& path)
+	{
+		if (visitedNode[data.nodeIndex])
+			return true;
+		visitedNode[data.nodeIndex] = true;
+
+		for (int connectionIndex = 0; connectionIndex < (int)data.connections.size(); ++connectionIndex)
+		{
+			// set the source pin
+			NodePinConnection& connection = data.connections[connectionIndex];
+			connection.srcNodePinIndex = connectionIndex;
+
+			// get the dest node
+			connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
+			if (connection.dstNodeIndex == -1)
+			{
+				Assert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+				return false;
+			}
+
+			// get the dest node pin
+			connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
+			if (connection.dstNodePinIndex == -1)
+			{
+				Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+				return false;
+			}
+		}
+		return true;
+	}
 
     bool Visit(RenderGraphNode_Action_CopyResource& data, const std::string& path)
     {
@@ -1774,6 +1826,15 @@ struct ValidationVisitor
 
             Assert(false, "Variable \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
             return false;
+        }
+
+        if (!variable.onUserChange.name.empty())
+        {
+            int variableIndex = GetVariableIndex(renderGraph, variable.onUserChange.name.c_str());
+            Assert(variableIndex != -1, "Could not find variable \"%s\".\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            const Variable& variable = renderGraph.variables[variableIndex];
+            Assert(!variable.Const, "Variable \"%s\" cannot be const.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            Assert(variable.type == DataFieldType::Bool, "Variable \"%s\" must be a bool.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
         }
 
         return true;
@@ -2285,6 +2346,20 @@ struct SanitizeVisitor
         );
         return true;
     }
+	bool Visit(RenderGraphNode_Reroute& data, const std::string& path)
+	{
+		data.connections.erase(
+			std::remove_if(
+				data.connections.begin(), data.connections.end(),
+				[](const NodePinConnection& connection)
+				{
+					return connection.srcPin.empty() || connection.dstNode.empty() || connection.dstPin.empty();
+				}
+			),
+			data.connections.end()
+		);
+		return true;
+	}
 
     bool Visit(WebGPU_RWTextureSplit& data, const std::string& path)
     {
@@ -2782,8 +2857,15 @@ struct ShaderDataVisitor
 
     bool HookupVariables(Shader& shader, const std::string& path)
     {
-        if (!shader.copyFile)
-            return true;
+        // Don't scan these type of shaders for variables
+        switch (shader.type)
+        {
+            case ShaderType::RTClosestHit:
+            case ShaderType::RTAnyHit:
+            case ShaderType::RTIntersection:
+            case ShaderType::RTMiss:
+                return true;
+        }
 
         // Gather the variables referenced in this shader
         std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();

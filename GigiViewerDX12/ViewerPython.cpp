@@ -967,6 +967,11 @@ static PyObject* Python_GetShaderAssertMsg(PyObject* self, PyObject* args)
     return Py_BuildValue("s", msg.c_str());
 }
 
+static PyObject* Python_GetAppCommandLine(PyObject* self, PyObject* args)
+{
+    return Py_BuildValue("s", g_interface->GetAppCommandLine().c_str());
+}
+
 // Enum FromString
 #include "external/df_serialize/_common.h"
 #define ENUM_BEGIN(_NAME, _DESCRIPTION) \
@@ -1121,6 +1126,7 @@ void PythonInit(PythonInterface* interface)
         {"GetShaderAssertFormatString", Python_GetShaderAssertFormatString, METH_VARARGS, "Returns the format string of the specified shader assert."},
         {"GetShaderAssertDisplayName", Python_GetShaderAssertDisplayName, METH_VARARGS, "Returns the display name of the specified shader assert."},
         {"GetShaderAssertMsg", Python_GetShaderAssertMsg, METH_VARARGS, "Returns the message of the specified assert."},
+        {"GetAppCommandLine", Python_GetAppCommandLine, METH_VARARGS, "Returns the command line arguments without the executable name."},
         // Enum FromString and ToString functions
         #include "external/df_serialize/_common.h"
         #define ENUM_BEGIN(_NAME, _DESCRIPTION) \

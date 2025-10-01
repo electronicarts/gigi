@@ -159,7 +159,7 @@ namespace Mips_CS_2DArray
             shaderCompilationInfo.debugName = (c_debugNames ? "Mip2" : "");
             if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
-            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(4,4,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(2,2,1)");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
@@ -198,7 +198,7 @@ namespace Mips_CS_2DArray
             shaderCompilationInfo.debugName = (c_debugNames ? "Mip3" : "");
             if (c_debugShaders) shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchMultiply","uint3(1,1,1)");
-            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(8,8,1)");
+            shaderCompilationInfo.defines.emplace_back("__GigiDispatchDivide","uint3(2,2,1)");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchPreAdd","uint3(0,0,0)");
             shaderCompilationInfo.defines.emplace_back("__GigiDispatchPostAdd","uint3(0,0,0)");
 
@@ -941,8 +941,8 @@ namespace Mips_CS_2DArray
             commandList->SetPipelineState(ContextInternal::computeShader_Mip0_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 0 },
-                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 0, 0, 0, false },
+                { context->m_internal.texture__loadedTexture_0, context->m_internal.texture__loadedTexture_0_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -991,8 +991,8 @@ namespace Mips_CS_2DArray
             commandList->SetPipelineState(ContextInternal::computeShader_Mip1_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 0 },
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 1 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 0, 0, 0, false },
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 1, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -1041,8 +1041,8 @@ namespace Mips_CS_2DArray
             commandList->SetPipelineState(ContextInternal::computeShader_Mip2_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 1 },
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 2 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 1, 0, 0, false },
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 2, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -1091,8 +1091,8 @@ namespace Mips_CS_2DArray
             commandList->SetPipelineState(ContextInternal::computeShader_Mip3_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 2 },
-                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 3 }
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 2, 0, 0, false },
+                { context->m_output.texture_Output, context->m_output.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2DArray, false, 0, context->m_output.texture_Output_size[2], 3, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);

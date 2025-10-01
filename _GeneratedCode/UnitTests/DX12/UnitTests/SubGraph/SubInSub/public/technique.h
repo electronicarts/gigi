@@ -45,7 +45,7 @@ namespace SubInSub
         {
 
             // Variables
-            float4 variable_Inner1_Inner1Mult = {1.000000f, 0.500000f, 2.000000f, 1.000000f};
+            float4 variable_Inner1_Inner1Mult = {1.f, 0.5f, 2.f, 1.f};
 
             ID3D12Resource* texture_Input = nullptr;
             unsigned int texture_Input_size[3] = { 0, 0, 0 };

@@ -38,7 +38,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	}
 	ret /= 9.0f;
 
-	if (_FilterSub_Iteration_0_BlurCB.FilterSub_Iteration_0_sRGB)
+	if ((bool)_FilterSub_Iteration_0_BlurCB.FilterSub_Iteration_0_sRGB)
 		ret = LinearToSRGB(ret);
 
 	Output[px] = float4(ret, 1.0f);

@@ -799,14 +799,14 @@ namespace YesVertexStruct_YesIndex_NoInstance
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_internal.constantBuffer__PixelShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__PixelShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(1, descriptorTablePS);

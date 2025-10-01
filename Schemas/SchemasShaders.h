@@ -50,10 +50,9 @@ ENUM_BEGIN(ShaderResourceAccessType, "The type of a shader resource")
     ENUM_ITEM(DepthTarget, "Used as a depth buffer")
     ENUM_ITEM(Barrier, "Used by the barrier node")
     ENUM_ITEM(ShadingRate, "Used as a shading rate image")
+    ENUM_ITEM(Noop, "Used by the reroute node")
     ENUM_ITEM(Count, "")
 ENUM_END()
-
-#include "DataFieldTypes.h"
 
 ENUM_BEGIN(TextureViewType, "The type that a texture is actually viewed as, in a shader. A subset of DataFieldType.")
     ENUM_ITEM(Int, "int")
@@ -88,6 +87,7 @@ ENUM_BEGIN(TextureDimensionType, "The type of a texture")
     ENUM_ITEM(Texture2DArray, "Texture2DArray")
     ENUM_ITEM(Texture3D, "Texture3D")
     ENUM_ITEM(TextureCube, "TextureCube")
+    ENUM_ITEM(Texture2DMS, "Texture2DMS")
 ENUM_END()
 
 ENUM_BEGIN(ShaderType, "The type of a shader resource")
@@ -134,24 +134,6 @@ STRUCT_BEGIN(CooperativeVectorData, "Data needed for cooperative vectors support
     STRUCT_FIELD(CooperativeVectorBufferLayout, srcLayout, CooperativeVectorBufferLayout::RowMajor, "The layout of the source data.", 0)
     STRUCT_FIELD(CooperativeVectorDataType, destType, CooperativeVectorDataType::_float16, "The data type you want it to be converted to.", 0)
     STRUCT_FIELD(CooperativeVectorBufferLayout, destLayout, CooperativeVectorBufferLayout::RowMajor, "The layout you want it to be converted to.", 0)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReference, "A reference to a variable")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReferenceNoConst, "A reference to a variable. No const variables allowed.")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
-STRUCT_END()
-
-STRUCT_BEGIN(VariableReferenceConstOnly, "A reference to a variable. Only const variables allowed.")
-    STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
-
-    STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(StructReference, "A reference to a struct")

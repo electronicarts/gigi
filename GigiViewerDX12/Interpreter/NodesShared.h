@@ -581,7 +581,8 @@ inline ResourceType TextureDimensionTypeToResourceType(TextureDimensionType type
 		case TextureDimensionType::Texture2D: return ResourceType::Texture2D;
 		case TextureDimensionType::Texture2DArray: return ResourceType::Texture2DArray;
 		case TextureDimensionType::Texture3D: return ResourceType::Texture3D;
-		case TextureDimensionType::TextureCube: return ResourceType::TextureCube;
+        case TextureDimensionType::TextureCube: return ResourceType::TextureCube;
+        case TextureDimensionType::Texture2DMS: return ResourceType::Texture2DMS;
 	}
 	return ResourceType::Texture2D;
 }

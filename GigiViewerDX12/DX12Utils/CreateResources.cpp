@@ -6,7 +6,7 @@
 #include "CreateResources.h"
 #include "GigiCompilerLib/Utils.h"
 
-ID3D12Resource* CreateTexture(ID3D12Device* device, unsigned int size[3], unsigned int numMips, DXGI_FORMAT format, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, const char* debugName)
+ID3D12Resource* CreateTexture(ID3D12Device* device, unsigned int size[3], unsigned int numMips, DXGI_FORMAT format, unsigned int sampleCount, D3D12_RESOURCE_FLAGS flags, D3D12_RESOURCE_STATES state, ResourceType textureType, const char* debugName)
 {
     if (numMips == 0)
     {
@@ -25,12 +25,13 @@ ID3D12Resource* CreateTexture(ID3D12Device* device, unsigned int size[3], unsign
     textureDesc.Width = size[0];
     textureDesc.Height = size[1];
     textureDesc.Flags = flags;
-    textureDesc.SampleDesc.Count = 1;
+    textureDesc.SampleDesc.Count = sampleCount;
     textureDesc.SampleDesc.Quality = 0;
 
     switch(textureType)
     {
         case ResourceType::Texture2D:
+        case ResourceType::Texture2DMS:
         {
             textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
             textureDesc.DepthOrArraySize = 1;

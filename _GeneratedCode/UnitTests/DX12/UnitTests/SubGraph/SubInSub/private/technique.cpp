@@ -820,9 +820,9 @@ namespace SubInSub
             commandList->SetPipelineState(ContextInternal::computeShader_Inner1_Inner2_Rotate_Colors_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_output.texture_Inner1_Inner2_Output, context->m_output.texture_Inner1_Inner2_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
-                { context->m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 }
+                { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_output.texture_Inner1_Inner2_Output, context->m_output.texture_Inner1_Inner2_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
+                { context->m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -881,13 +881,8 @@ namespace SubInSub
                 commandList->EndQuery(context->m_internal.m_TimestampQueryHeap, D3D12_QUERY_TYPE_TIMESTAMP, s_timerIndex++);
             }
 
-            // Even if two buffers have the same stride and count, one could be padded for alignment differently based on use
-            unsigned int srcSize = context->m_output.texture_Inner1_Inner2_Output->GetDesc().Width;
-            unsigned int destSize = context->m_input.texture_Input->GetDesc().Width;
-            if (srcSize == destSize)
-                commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_Inner1_Inner2_Output);
-            else
-                commandList->CopyBufferRegion(context->m_input.texture_Input, 0, context->m_output.texture_Inner1_Inner2_Output, 0, min(srcSize, destSize));
+            // Copy the texture.
+            commandList->CopyResource(context->m_input.texture_Input, context->m_output.texture_Inner1_Inner2_Output);
 
             if(context->m_profile)
             {

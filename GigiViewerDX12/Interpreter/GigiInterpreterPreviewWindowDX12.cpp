@@ -28,7 +28,7 @@ void RuntimeTypes::RenderGraphNode_Base::OnCompileOK(GigiInterpreterPreviewWindo
 	m_viewableResources.clear();
 }
 
-void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int _resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite)
+void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterPreviewWindowDX12& interpreter, ViewableResource::Type type, const char* displayName, ID3D12Resource* resource, DXGI_FORMAT resourceFormat, int resourceFormatCount, int structIndex, const int _resourceSize[3], int numMips, int stride, int count, bool hideFromUI, bool isResultOfWrite, unsigned int bufferViewBegin, unsigned int bufferViewCount)
 {
 	// View depth stencil format textures as two resources
 	if (resourceFormat == DXGI_FORMAT_D24_UNORM_S8_UINT || resourceFormat == DXGI_FORMAT_D32_FLOAT_S8X24_UINT)
@@ -37,10 +37,10 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 		DXGI_FORMAT format2 = (resourceFormat == DXGI_FORMAT_D24_UNORM_S8_UINT) ? DXGI_FORMAT_X24_TYPELESS_G8_UINT : DXGI_FORMAT_X32_TYPELESS_G8X24_UINT;
 
 		std::string longerDisplayName = std::string(displayName) + " (Depth)";
-		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format1, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite);
+		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format1, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite, bufferViewBegin, bufferViewCount);
 
 		longerDisplayName = std::string(displayName) + " (Stencil)";
-		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format2, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite);
+		HandleViewableResource(interpreter, type, longerDisplayName.c_str(), resource, format2, resourceFormatCount, structIndex, _resourceSize, numMips, stride, count, hideFromUI, isResultOfWrite, bufferViewBegin, bufferViewCount);
 
 		return;
 	}
@@ -55,6 +55,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 	res.m_displayName = displayName;
 	res.m_hideFromUI = hideFromUI;
 	res.m_isResultOfWrite = isResultOfWrite;
+    res.m_bufferViewBegin = bufferViewBegin;
+    res.m_bufferViewCount = bufferViewCount;
 
 	// downsize the resource based on mip index
 	int resourceSize[3] = { _resourceSize[0], _resourceSize[1], _resourceSize[2] };
@@ -112,6 +114,7 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 					case RuntimeTypes::ViewableResource::Type::Texture2DArray:
 					case RuntimeTypes::ViewableResource::Type::Texture3D:
 					case RuntimeTypes::ViewableResource::Type::TextureCube:
+                    case RuntimeTypes::ViewableResource::Type::Texture2DMS:
 					{
 						// Make the view slice
 						{
@@ -119,7 +122,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 							if (res.m_type != RuntimeTypes::ViewableResource::Type::Texture3D)
 								size[2] = 1;
 
-							res.m_resource = CreateTexture(interpreter.m_device, size, 1, res.m_format, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, ResourceType::Texture2D, (std::string(displayName) + " Copy").c_str());
+							unsigned int sampleCount = 1;
+							res.m_resource = CreateTexture(interpreter.m_device, size, 1, res.m_format, sampleCount, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COPY_DEST, ResourceType::Texture2D, (std::string(displayName) + " Copy").c_str());
 							interpreter.m_transitions.Track(TRANSITION_DEBUG_INFO(res.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
 						}
 
@@ -210,7 +214,7 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 
 					interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, &srcBox);
 				}
-				else if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray || res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube || res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D)
+				else if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray || res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube || res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D || res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS)
 				{
 					DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(resourceFormat);
 
@@ -224,7 +228,10 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 					dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
 					dest.SubresourceIndex = 0;
 
-					interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+					// MSAA preview is not implemented yet.
+					// D3D12 ERROR : ID3D12CommandList::CopyTextureRegion : The destination resource multisampling properties must equal the source resource.The destination resource has 1 samples and 0 quality.The source resource has 8 samples and 0 quality.[RESOURCE_MANIPULATION ERROR #849: COPYTEXTUREREGION_INVALIDDSTRESOURCE]
+					if(res.m_type != RuntimeTypes::ViewableResource::Type::Texture2DMS)
+					    interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
 				}
 				else
 				{
@@ -246,7 +253,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 				if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D ||
 					res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray ||
 					res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D ||
-					res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube)
+                    res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube ||
+                    res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS)
 				{
 					// Calculate the number of sub resources
 					D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
@@ -271,7 +279,10 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 						dest.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
 						dest.PlacedFootprint = layouts[subResourceIndex];
 
-						interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+						// MSAA preview is not implemented yet.
+						// D3D12 ERROR : ID3D12CommandList::CopyTextureRegion : The destination resource multisampling properties must equal the source resource.The destination resource has 1 samples and 0 quality.The source resource has 8 samples and 0 quality.[RESOURCE_MANIPULATION ERROR #849: COPYTEXTUREREGION_INVALIDDSTRESOURCE]
+						if( res.m_type != RuntimeTypes::ViewableResource::Type::Texture2DMS)
+							interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
 					}
 				}
 				else
@@ -304,7 +315,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 		if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D ||
 			res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray ||
 			res.m_type == RuntimeTypes::ViewableResource::Type::Texture3D ||
-			res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube)
+			res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube ||
+            res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS)
 		{
 			DXGI_FORMAT_Info resourceFormatInfo = Get_DXGI_FORMAT_Info(resourceFormat);
 			uploadBufferUnalignedPitch = resourceSize[0] * resourceFormatInfo.bytesPerPixel;
@@ -374,7 +386,8 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 		}
 		else if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D ||
 			res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DArray ||
-			res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube)
+			res.m_type == RuntimeTypes::ViewableResource::Type::TextureCube ||
+			res.m_type == RuntimeTypes::ViewableResource::Type::Texture2DMS)
 		{
 			D3D12_RESOURCE_DESC resourceDesc = resource->GetDesc();
 			std::vector<unsigned char> layoutMem(sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64));

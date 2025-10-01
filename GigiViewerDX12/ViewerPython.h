@@ -98,7 +98,7 @@ public:
 	virtual int GGEnumCount(const char* enumName) = 0;
 
 	virtual std::string GetGPUString() = 0;
-
+    virtual std::string GetAppCommandLine() = 0;
 	virtual std::string GetScriptLocation() = 0;
 
 	// The location and name of the python script

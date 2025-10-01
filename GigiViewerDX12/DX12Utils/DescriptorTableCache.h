@@ -38,6 +38,7 @@ public:
 		Texture2DArray,
 		Texture3D,
 		TextureCube,
+		Texture2DMS,
 		RTScene
 	};
 
@@ -55,8 +56,11 @@ public:
 		UINT m_stride = 0;
 
 		// used by buffers
-		UINT m_count = 0;
+        UINT m_firstElement = 0;
 		bool m_raw = false;
+
+        // Number of items in a buffer, or number of indices / z slices in a texture
+        UINT m_count = 0;
 	};
 
 	bool GetDescriptorTable(ID3D12Device* device, HeapAllocationTracker& heapAllocationTracker, const ResourceDescriptor* descriptors, int count, D3D12_GPU_DESCRIPTOR_HANDLE& handle, std::string& error, const char* debugText)
@@ -114,7 +118,7 @@ public:
 							bool isByteAddressBuffer = (descriptor.m_raw);
 
 							srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-							srvDesc.Buffer.FirstElement = 0;
+							srvDesc.Buffer.FirstElement = descriptor.m_firstElement;
 
 							// A buffer can't both be structured and raw in DX12. Raw takes precedence in Gigi.
 							if (isByteAddressBuffer)
@@ -128,6 +132,7 @@ public:
                                     ? descriptor.m_stride
                                     : (UINT)Get_DXGI_FORMAT_Info(descriptor.m_format).bytesPerPixel;
                                 srvDesc.Buffer.NumElements = descriptor.m_count * itemBytes / 4;
+                                srvDesc.Buffer.FirstElement = descriptor.m_firstElement * itemBytes / 4;
 							}
 							else
 							{
@@ -136,6 +141,38 @@ public:
 								srvDesc.Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : descriptor.m_format;
                                 srvDesc.Buffer.NumElements = descriptor.m_count;
 							}
+
+                            // Verify the view is in range of the resource
+                            if (descriptor.m_resource)
+                            {
+                                D3D12_RESOURCE_DESC resourceDesc = descriptor.m_resource->GetDesc();
+
+                                unsigned int itemSize = 0;
+
+                                if (isByteAddressBuffer)
+                                    itemSize = 4;
+                                else
+                                    itemSize = (srvDesc.Buffer.StructureByteStride > 0) ? srvDesc.Buffer.StructureByteStride : Get_DXGI_FORMAT_Info(srvDesc.Format).bytesPerPixel;
+
+                                size_t itemCount = (size_t)(resourceDesc.Width / itemSize);
+
+                                if (srvDesc.Buffer.FirstElement >= itemCount)
+                                {
+                                    char buffer[2048];
+                                    sprintf_s(buffer, "[entry %i] Buffer view (SRV) first element is out of range at %zu items (%zu bytes) when buffer has %zu items (%zu bytes).", i, srvDesc.Buffer.FirstElement, srvDesc.Buffer.FirstElement * itemSize, itemCount, itemCount * itemSize);
+                                    error = buffer;
+                                    return false;
+                                }
+
+                                if (srvDesc.Buffer.FirstElement + srvDesc.Buffer.NumElements > itemCount)
+                                {
+                                    char buffer[2048];
+                                    sprintf_s(buffer, "[entry %i] Buffer view (SRV) firstElement+NumElements is out of range at %zu items (%zu bytes) when buffer has %zu items (%zu bytes).", i, srvDesc.Buffer.FirstElement + srvDesc.Buffer.NumElements, (srvDesc.Buffer.FirstElement + srvDesc.Buffer.NumElements) * itemSize, itemCount, itemCount * itemSize);
+                                    error = buffer;
+                                    return false;
+                                }
+                            }
+
 							break;
 						}
 						case ResourceType::Texture2D:
@@ -178,6 +215,11 @@ public:
 							srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
 							break;
 						}
+						case ResourceType::Texture2DMS:
+						{
+							srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DMS;
+							break;
+						}
 					}
 
 					device->CreateShaderResourceView(descriptor.m_resource, &srvDesc, handle);
@@ -202,7 +244,7 @@ public:
 						bool isByteAddressBuffer = (descriptor.m_raw);
 
 						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-						uavDesc.Buffer.FirstElement = 0;
+						uavDesc.Buffer.FirstElement = descriptor.m_firstElement;
 						uavDesc.Buffer.CounterOffsetInBytes = 0;
 
 						// A buffer can't both be structured and raw in DX12. Raw takes precedence in Gigi.
@@ -217,6 +259,7 @@ public:
                                 ? descriptor.m_stride
                                 : (UINT)Get_DXGI_FORMAT_Info(descriptor.m_format).bytesPerPixel;
                             uavDesc.Buffer.NumElements = descriptor.m_count * itemBytes / 4;
+                            uavDesc.Buffer.FirstElement = descriptor.m_firstElement * itemBytes / 4;
 						}
 						else
 						{
@@ -225,6 +268,38 @@ public:
 							uavDesc.Format = isStructuredBuffer ? DXGI_FORMAT_UNKNOWN : descriptor.m_format;
                             uavDesc.Buffer.NumElements = descriptor.m_count;
 						}
+
+                        // Verify the view is in range of the resource
+                        if (descriptor.m_resource)
+                        {
+                            D3D12_RESOURCE_DESC resourceDesc = descriptor.m_resource->GetDesc();
+
+                            unsigned int itemSize = 0;
+
+                            if (isByteAddressBuffer)
+                                itemSize = 4;
+                            else
+                                itemSize = (uavDesc.Buffer.StructureByteStride > 0) ? uavDesc.Buffer.StructureByteStride : Get_DXGI_FORMAT_Info(uavDesc.Format).bytesPerPixel;
+
+                            size_t itemCount = (size_t)(resourceDesc.Width / itemSize);
+
+                            if (uavDesc.Buffer.FirstElement >= itemCount)
+                            {
+                                char buffer[2048];
+                                sprintf_s(buffer, "[entry %i] Buffer view (SRV) first element is out of range at %zu items (%zu bytes) when buffer has %zu items (%zu bytes).", i, uavDesc.Buffer.FirstElement, uavDesc.Buffer.FirstElement * itemSize, itemCount, itemCount * itemSize);
+                                error = buffer;
+                                return false;
+                            }
+
+                            if (uavDesc.Buffer.FirstElement + uavDesc.Buffer.NumElements > itemCount)
+                            {
+                                char buffer[2048];
+                                sprintf_s(buffer, "[entry %i] Buffer view (SRV) firstElement+NumElements is out of range at %zu items (%zu bytes) when buffer has %zu items (%zu bytes).", i, uavDesc.Buffer.FirstElement + uavDesc.Buffer.NumElements, (uavDesc.Buffer.FirstElement + uavDesc.Buffer.NumElements) * itemSize, itemCount, itemCount * itemSize);
+                                error = buffer;
+                                return false;
+                            }
+                        }
+
 						break;
 					}
 					case ResourceType::Texture2D:
@@ -346,6 +421,7 @@ private:
 		size_t hash6 = std::hash<size_t>()(static_cast<size_t>(v.m_resourceType));
 		size_t hash7 = std::hash<size_t>()(static_cast<size_t>(v.m_raw));
 		size_t hash8 = std::hash<size_t>()(static_cast<size_t>(v.m_UAVMipIndex));
+        size_t hash9 = std::hash<size_t>()(static_cast<size_t>(v.m_firstElement));
 
 		size_t hash12 = HashCombine(hash1, hash2);
 		size_t hash34 = HashCombine(hash3, hash4);
@@ -355,7 +431,7 @@ private:
 		size_t hash1234 = HashCombine(hash12, hash34);
 		size_t hash5678 = HashCombine(hash56, hash78);
 
-		return HashCombine(hash1234, hash5678);
+        return HashCombine(HashCombine(hash1234, hash5678), hash9);
 	}
 
 	struct Entry

@@ -991,8 +991,8 @@ namespace Mips_RGS_2D
             dxrCommandList->SetPipelineState1(ContextInternal::rayShader_RayGen_rtso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_output.texture_MipTex, context->m_output.texture_MipTex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 1 },
-                { context->m_input.buffer_VertexBuffer, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::RTScene, false, context->m_input.buffer_VertexBuffer_tlasSize, 1, 0 }
+                { context->m_output.texture_MipTex, context->m_output.texture_MipTex_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 1, 0, 0, false },
+                { context->m_input.buffer_VertexBuffer, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::RTScene, false, context->m_input.buffer_VertexBuffer_tlasSize, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);

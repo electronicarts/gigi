@@ -867,7 +867,7 @@ namespace VRS
             commandList->SetPipelineState(ContextInternal::computeShader_MakeShadingRate_pso);
 
             DX12Utils::ResourceDescriptor descriptors[] = {
-                { context->m_internal.texture_ShadingRate, context->m_internal.texture_ShadingRate_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 }
+                { context->m_internal.texture_ShadingRate, context->m_internal.texture_ShadingRate_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
@@ -916,7 +916,7 @@ namespace VRS
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__VertexShaderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
@@ -1056,7 +1056,7 @@ namespace VRS
 
             DX12Utils::ResourceDescriptor descriptorsPS[] =
             {
-                { context->m_output.texture_Depth_Buffer, context->m_output.texture_Depth_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0 },
+                { context->m_output.texture_Depth_Buffer, context->m_output.texture_Depth_Buffer_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTablePS = GetDescriptorTable(device, s_srvHeap, descriptorsPS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTablePS);
@@ -1169,7 +1169,7 @@ namespace VRS
 
             DX12Utils::ResourceDescriptor descriptorsVS[] =
             {
-                { context->m_internal.constantBuffer__QuadVSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0 },
+                { context->m_internal.constantBuffer__QuadVSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false },
             };
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTableVS = GetDescriptorTable(device, s_srvHeap, descriptorsVS, 1, Context::LogFn);
             commandList->SetGraphicsRootDescriptorTable(0, descriptorTableVS);
