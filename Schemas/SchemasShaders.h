@@ -92,7 +92,7 @@ ENUM_END()
 
 ENUM_BEGIN(ShaderType, "The type of a shader resource")
     ENUM_ITEM(Compute, "Compute shader")
-    ENUM_ITEM(WorkGraph, "WorkGraph Entry shader")
+    ENUM_ITEM(WorkGraph, "WorkGraph shader")
     ENUM_ITEM(RTRayGen, "Ray generation shader")
     ENUM_ITEM(RTClosestHit, "Closest hit shader")
     ENUM_ITEM(RTAnyHit, "Any hit shader")
@@ -149,7 +149,7 @@ STRUCT_BEGIN(ComputeShaderReference, "A reference to a shader")
     STRUCT_FIELD(struct Shader*, shader, nullptr, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
-STRUCT_BEGIN(WorkGraphShaderReference, "A reference to a work graph entry shader")
+STRUCT_BEGIN(WorkGraphShaderReference, "A reference to a work graph shader")
     STRUCT_FIELD(std::string, name, "", "The name of the shader", 0)
 
     STRUCT_FIELD(int, shaderIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)

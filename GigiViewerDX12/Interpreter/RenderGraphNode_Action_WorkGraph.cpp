@@ -850,7 +850,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         dispatchDesc.Mode = D3D12_DISPATCH_MODE_NODE_CPU_INPUT;
         dispatchDesc.NodeCPUInput = {};
         dispatchDesc.NodeCPUInput.EntrypointIndex = runtimeData.m_entrypointIndex;
-        dispatchDesc.NodeCPUInput.NumRecords = 1;
+        dispatchDesc.NodeCPUInput.NumRecords = node.numRecords; // todo: jan should it be a variable? or like something you can set throught a variable? probably
         dispatchDesc.NodeCPUInput.RecordStrideInBytes = 0;
         dispatchDesc.NodeCPUInput.pRecords = nullptr;
 
