@@ -1280,6 +1280,7 @@ struct ReferenceFixupVisitor
         // sort the connections to be in the same order as the shader resources are
         std::sort(data.connections.begin(), data.connections.end(), [](const NodePinConnection& a, const NodePinConnection& b) { return a.srcNodePinIndex < b.srcNodePinIndex; });
 
+        Visit(data.records, path + ".recordsBuffer");
         Visit(data.shadingRateImage, path + ".shadingRateImage");
 
         Visit(data.depthTarget, path + ".depthTarget");

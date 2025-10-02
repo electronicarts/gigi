@@ -402,9 +402,9 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
 
     STRUCT_FIELD(WorkGraphShaderReference, entryShader, {}, "The work graph entry shader.", 0)
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
-    STRUCT_FIELD(DispatchSizeDesc, dispatchSize, {}, "The dispatch size for the entry shader, if broadcasting", SCHEMA_FLAG_UI_COLLAPSABLE) // only used for broadcast entry points? // todo: jan are we using this
 
     STRUCT_FIELD(int, numRecords, 1, "how many records the work graph launches with.", 0)
+    STRUCT_FIELD(NodePinReferenceOptional, records, {}, "records to launch the work graph with", SCHEMA_FLAG_NO_UI)
 
     // Depth Settings
     STRUCT_FIELD(bool, depthTargetClear, false, "If true, clears the depth target before doing a draw call.", 0)

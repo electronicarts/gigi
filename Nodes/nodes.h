@@ -621,6 +621,13 @@ namespace FrontEndNodesNoCaching
                 }
 
                 PinInfo info;
+                info.srcPin = "recordsBuffer";
+                info.dstNode = &node.records.node;
+                info.dstPin = &node.records.pin;
+                info.readOnly = true;
+                info.access = ShaderResourceAccessType::SRV; // TODO: jan can reuse vertex buffer maybe : no, more like srv, maybe need custom one
+                ret.push_back(info);
+
                 info.srcPin = "shadingRateImage";
                 info.dstNode = &node.shadingRateImage.node;
                 info.dstPin = &node.shadingRateImage.pin;

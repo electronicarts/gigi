@@ -392,8 +392,8 @@ struct RenameReferencesVisitor
 
                 m_renameData.UpdateShaderName(node.entryShader.name);
 
-                m_renameData.UpdateNodeName(node.dispatchSize.node.name);
-                m_renameData.UpdateVariableName(node.dispatchSize.variable.name);
+                m_renameData.UpdateNodePin(node.records.node, node.records.pin);
+                m_renameData.UpdateNodeName(node.records.node);
 
                 m_renameData.UpdateNodePin(node.shadingRateImage.node, node.shadingRateImage.pin);
                 m_renameData.UpdateNodeName(node.shadingRateImage.node);

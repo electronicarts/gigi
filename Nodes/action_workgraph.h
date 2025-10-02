@@ -7,7 +7,6 @@
 
 namespace FrontEndNodes
 {
-    // todo: jan move to action_workgraph.h
     inline int GetPinCount(const RenderGraphNode_Action_WorkGraph& node)
     {
         int ret = 0;
@@ -15,6 +14,7 @@ namespace FrontEndNodes
         ret += node.entryShader.shader ? (int)node.entryShader.shader->resources.size() : 0;
 
         ret +=
+            1 + // records buffer
             1 + // shading rate image
             1 + // depth target
             (int)node.colorTargets.size(); // color targets
@@ -31,6 +31,11 @@ namespace FrontEndNodes
                 return node.entryShader.shader->resources[pinIndex].name;
             pinIndex -= (int)node.entryShader.shader->resources.size();
         }
+
+        // optional records buffer
+        if (pinIndex == 0)
+            return "recordsBuffer";
+        pinIndex--;
 
         // optional shading rate image
         if (pinIndex == 0)
@@ -84,6 +89,17 @@ namespace FrontEndNodes
             }
             pinIndex -= (int)node.entryShader.shader->resources.size();
         }
+
+        // Optional records buffer
+        if (pinIndex == 0)
+        {
+            ret.access = ShaderResourceAccessType::SRV; // TODO: jan  check
+            ret.nodeIndex = node.records.nodeIndex;
+            ret.pinIndex = node.records.nodePinIndex;
+            ret.required = false;
+            return ret;
+        }
+        pinIndex--;
 
         // Optional shading rate image
         if (pinIndex == 0)
