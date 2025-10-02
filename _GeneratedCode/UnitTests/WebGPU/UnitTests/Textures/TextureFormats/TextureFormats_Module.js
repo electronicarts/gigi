@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "csmain", node "ComputeShader"
-static ShaderCode_ComputeShader_csmain = `
+// Shader code for Compute shader "csmain_0", node "ComputeShader"
+static ShaderCode_ComputeShader_csmain_0 = `
 @binding(0) @group(0) var tex : texture_storage_2d</*(tex_format)*/, write>;
 
 @compute
@@ -158,7 +158,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_ComputeShader = newHash;
 
-            let shaderCode = class_TextureFormats.ShaderCode_ComputeShader_csmain;
+            let shaderCode = class_TextureFormats.ShaderCode_ComputeShader_csmain_0;
             shaderCode = shaderCode.replace("/*(tex_format)*/", Shared.GetNonSRGBFormat(this.texture_Texture_format));
             shaderCode = shaderCode.replace("/*(texReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_ComputeShader_tex_ReadOnly_format));
 

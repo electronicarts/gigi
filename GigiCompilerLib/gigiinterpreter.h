@@ -667,6 +667,28 @@ public:
 		return;
 	}
 
+    template <typename T>
+    DataFieldComponentType DataFieldComponentTypeFromType(T* dummy)
+    {
+        if constexpr (std::is_same_v<T, int>)
+            return DataFieldComponentType::_int;
+        else if constexpr (std::is_same_v<T, uint16_t>)
+            return DataFieldComponentType::_uint16_t;
+        else if constexpr (std::is_same_v<T, uint32_t>)
+            return DataFieldComponentType::_uint32_t;
+        else if constexpr (std::is_same_v<T, int64_t>)
+            return DataFieldComponentType::_int64_t;
+        else if constexpr (std::is_same_v<T, uint64_t>)
+            return DataFieldComponentType::_uint64_t;
+        else if constexpr (std::is_same_v<T, float>)
+            return DataFieldComponentType::_float;
+        else
+        {
+            static_assert(!sizeof(T*), "Unhandled type in " __FUNCTION__);
+            return DataFieldComponentType::_int; // to suppress warning
+        }
+    }
+
 	void ExecuteSetvar(const SetVariable& setVar)
 	{
 		DataFieldType			type = m_renderGraph.variables[setVar.destination.variableIndex].type;
@@ -1043,6 +1065,16 @@ public:
 	{
 		memcpy(m_runtimeVariables[index].storage.value, m_runtimeVariables[index].storage.dflt, m_runtimeVariables[index].storage.size);
 	}
+
+    template <typename T>
+    bool GetRuntimeVariableAllowCast(int index, T& outValue)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(m_runtimeVariables[index].variable->type);
+        if (typeInfo.componentCount != 1)
+            return false;
+        ConvertTypedBinaryValue(m_runtimeVariables[index].storage.value, typeInfo.componentType, &outValue, DataFieldComponentTypeFromType(&outValue));
+        return true;
+    }
 
 	const RenderGraph& GetRenderGraph() const
 	{

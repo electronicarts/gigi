@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Non BVH Variation of Compute shader "SimpleRTCS", node "DoRT"
-static ShaderCode_DoRT_SimpleRTCS_NonBVH = `
+// Shader code for Non BVH Variation of Compute shader "SimpleRTCS_0", node "DoRT"
+static ShaderCode_DoRT_SimpleRTCS_0_NonBVH = `
 @binding(0) @group(0) var g_texture : texture_storage_2d</*(g_texture_format)*/, write>;
 
 struct _MatrixStorage_float4x4std140_0
@@ -45,7 +45,7 @@ struct _MatrixStorage_float4x4std140_0
     @align(16) data_0 : array<vec4<f32>, i32(4)>,
 };
 
-struct Struct_SimpleRTCSCB_std140_0
+struct Struct_SimpleRTCS_0CB_std140_0
 {
     @align(16) cameraPos_0 : vec3<f32>,
     @align(4) _padding0_0 : f32,
@@ -60,7 +60,7 @@ struct Struct_SimpleRTCSCB_std140_0
     @align(4) _padding5_0 : f32,
 };
 
-@binding(4) @group(0) var<uniform> _SimpleRTCSCB : Struct_SimpleRTCSCB_std140_0;
+@binding(4) @group(0) var<uniform> _SimpleRTCS_0CB : Struct_SimpleRTCS_0CB_std140_0;
 struct Struct_VertexBuffer_std430_0
 {
     @align(16) Color_0 : vec3<f32>,
@@ -254,14 +254,14 @@ fn SimpleRTCS(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var _S13 : vec2<f32> = (vec2<f32>(px_0) + vec2<f32>(0.5f)) / vec2<f32>(f32(w_0), f32(h_0)) * vec2<f32>(2.0f) - vec2<f32>(1.0f);
     var screenPos_0 : vec2<f32> = _S13;
     screenPos_0[i32(1)] = - _S13.y;
-    var _S14 : vec4<f32> = (((mat4x4<f32>(_SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(3)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(3)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(3)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(3)])) * (vec4<f32>(screenPos_0, _SimpleRTCSCB.depthNearPlane_0, 1.0f))));
+    var _S14 : vec4<f32> = (((mat4x4<f32>(_SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(3)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(3)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(3)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(3)])) * (vec4<f32>(screenPos_0, _SimpleRTCS_0CB.depthNearPlane_0, 1.0f))));
     var world_0 : vec4<f32> = _S14;
     var _S15 : vec3<f32> = _S14.xyz / vec3<f32>(_S14.w);
     world_0.x = _S15.x;
     world_0.y = _S15.y;
     world_0.z = _S15.z;
     var ray_0 : RayDesc_0;
-    ray_0.Origin_0 = _SimpleRTCSCB.cameraPos_0;
+    ray_0.Origin_0 = _SimpleRTCS_0CB.cameraPos_0;
     ray_0.TMin_0 = 0.0f;
     ray_0.TMax_0 = 10000.0f;
     ray_0.Direction_0 = normalize(world_0.xyz - ray_0.Origin_0);
@@ -275,15 +275,15 @@ fn SimpleRTCS(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     }
     else
     {
-        textureStore((g_texture), (px_0), (vec4<f32>(LinearToSRGB_0(_SimpleRTCSCB.missColor_0), 1.0f)));
+        textureStore((g_texture), (px_0), (vec4<f32>(LinearToSRGB_0(_SimpleRTCS_0CB.missColor_0), 1.0f)));
     }
     return;
 }
 
 `;
 
-// Shader code for BVH Variation of Compute shader "SimpleRTCS", node "DoRT"
-static ShaderCode_DoRT_SimpleRTCS_BVH = `
+// Shader code for BVH Variation of Compute shader "SimpleRTCS_0", node "DoRT"
+static ShaderCode_DoRT_SimpleRTCS_0_BVH = `
 @binding(0) @group(0) var g_texture : texture_storage_2d</*(g_texture_format)*/, write>;
 
 struct _MatrixStorage_float4x4std140_0
@@ -291,7 +291,7 @@ struct _MatrixStorage_float4x4std140_0
     @align(16) data_0 : array<vec4<f32>, i32(4)>,
 };
 
-struct Struct_SimpleRTCSCB_std140_0
+struct Struct_SimpleRTCS_0CB_std140_0
 {
     @align(16) cameraPos_0 : vec3<f32>,
     @align(4) _padding0_0 : f32,
@@ -306,7 +306,7 @@ struct Struct_SimpleRTCSCB_std140_0
     @align(4) _padding5_0 : f32,
 };
 
-@binding(4) @group(0) var<uniform> _SimpleRTCSCB : Struct_SimpleRTCSCB_std140_0;
+@binding(4) @group(0) var<uniform> _SimpleRTCS_0CB : Struct_SimpleRTCS_0CB_std140_0;
 @binding(1) @group(0) var<storage, read> g_scene : array<u32>;
 
 struct Struct_VertexBuffer_std430_0
@@ -688,14 +688,14 @@ fn SimpleRTCS(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var _S48 : vec2<f32> = (vec2<f32>(px_0) + vec2<f32>(0.5f)) / vec2<f32>(f32(w_0), f32(h_1)) * vec2<f32>(2.0f) - vec2<f32>(1.0f);
     var screenPos_0 : vec2<f32> = _S48;
     screenPos_0[i32(1)] = - _S48.y;
-    var _S49 : vec4<f32> = (((mat4x4<f32>(_SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(0)][i32(3)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(1)][i32(3)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(2)][i32(3)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(0)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(1)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(2)], _SimpleRTCSCB.clipToWorld_0.data_0[i32(3)][i32(3)])) * (vec4<f32>(screenPos_0, _SimpleRTCSCB.depthNearPlane_0, 1.0f))));
+    var _S49 : vec4<f32> = (((mat4x4<f32>(_SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(0)][i32(3)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(1)][i32(3)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(2)][i32(3)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(0)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(1)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(2)], _SimpleRTCS_0CB.clipToWorld_0.data_0[i32(3)][i32(3)])) * (vec4<f32>(screenPos_0, _SimpleRTCS_0CB.depthNearPlane_0, 1.0f))));
     var world_0 : vec4<f32> = _S49;
     var _S50 : vec3<f32> = _S49.xyz / vec3<f32>(_S49.w);
     world_0.x = _S50.x;
     world_0.y = _S50.y;
     world_0.z = _S50.z;
     var ray_0 : RayDesc_0;
-    ray_0.Origin_0 = _SimpleRTCSCB.cameraPos_0;
+    ray_0.Origin_0 = _SimpleRTCS_0CB.cameraPos_0;
     ray_0.TMin_0 = 0.0f;
     ray_0.TMax_0 = 10000.0f;
     ray_0.Direction_0 = normalize(world_0.xyz - ray_0.Origin_0);
@@ -709,7 +709,7 @@ fn SimpleRTCS(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     }
     else
     {
-        textureStore((g_texture), (px_0), (vec4<f32>(LinearToSRGB_0(_SimpleRTCSCB.missColor_0), 1.0f)));
+        textureStore((g_texture), (px_0), (vec4<f32>(LinearToSRGB_0(_SimpleRTCS_0CB.missColor_0), 1.0f)));
     }
     return;
 }
@@ -876,10 +876,10 @@ texture_DoRT_g_texture_ReadOnly_size = [0, 0, 0];
 texture_DoRT_g_texture_ReadOnly_format = "";
 texture_DoRT_g_texture_ReadOnly_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
-// Constant buffer _SimpleRTCSCB
-constantBuffer__SimpleRTCSCB = null;
-constantBuffer__SimpleRTCSCB_size = 128;
-constantBuffer__SimpleRTCSCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _SimpleRTCS_0CB
+constantBuffer__SimpleRTCS_0CB = null;
+constantBuffer__SimpleRTCS_0CB_size = 128;
+constantBuffer__SimpleRTCS_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader DoRT
 Hash_Compute_DoRT = 0;
@@ -986,7 +986,7 @@ static StructOffsets_VertexBufferFull =
     _size: 80,
 }
 
-static StructOffsets__SimpleRTCSCB =
+static StructOffsets__SimpleRTCS_0CB =
 {
     cameraPos_0: 0,
     cameraPos_1: 4,
@@ -1195,7 +1195,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_DoRT_g_texture_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _SimpleRTCSCB
+                // _SimpleRTCS_0CB
                 binding: 4,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1211,8 +1211,8 @@ async Init(device, encoder, useBlockingAPIs)
             this.Hash_Compute_DoRT = newHash;
 
             let shaderCode = this.buffer_Scene_isBVH
-                ? class_simpleRT_inline.ShaderCode_DoRT_SimpleRTCS_BVH
-                : class_simpleRT_inline.ShaderCode_DoRT_SimpleRTCS_NonBVH
+                ? class_simpleRT_inline.ShaderCode_DoRT_SimpleRTCS_0_BVH
+                : class_simpleRT_inline.ShaderCode_DoRT_SimpleRTCS_0_NonBVH
             ;
             shaderCode = "fn SCENE_IS_AABBS() -> bool { return " + this.buffer_Scene_isAABBs.toString() + "; }\n" + shaderCode;
             shaderCode = shaderCode.replace("/*(g_texture_format)*/", Shared.GetNonSRGBFormat(this.texture_Texture_format));
@@ -1305,52 +1305,52 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "simpleRT_inline.Copy_DoRT_g_texture"
 
-    encoder.pushDebugGroup("simpleRT_inline._SimpleRTCSCB");
+    encoder.pushDebugGroup("simpleRT_inline._SimpleRTCS_0CB");
 
-    // Create constant buffer _SimpleRTCSCB
-    if (this.constantBuffer__SimpleRTCSCB === null)
+    // Create constant buffer _SimpleRTCS_0CB
+    if (this.constantBuffer__SimpleRTCS_0CB === null)
     {
-        this.constantBuffer__SimpleRTCSCB = device.createBuffer({
-            label: "simpleRT_inline._SimpleRTCSCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__SimpleRTCSCB._size),
-            usage: this.constantBuffer__SimpleRTCSCB_usageFlags,
+        this.constantBuffer__SimpleRTCS_0CB = device.createBuffer({
+            label: "simpleRT_inline._SimpleRTCS_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__SimpleRTCS_0CB._size),
+            usage: this.constantBuffer__SimpleRTCS_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _SimpleRTCSCB
+    // Upload values to constant buffer _SimpleRTCS_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__SimpleRTCSCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__SimpleRTCS_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.cameraPos_0, this.variable_cameraPos[0], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.cameraPos_1, this.variable_cameraPos[1], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.cameraPos_2, this.variable_cameraPos[2], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_0, this.variable_clipToWorld[0], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_1, this.variable_clipToWorld[1], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_2, this.variable_clipToWorld[2], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_3, this.variable_clipToWorld[3], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_4, this.variable_clipToWorld[4], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_5, this.variable_clipToWorld[5], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_6, this.variable_clipToWorld[6], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_7, this.variable_clipToWorld[7], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_8, this.variable_clipToWorld[8], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_9, this.variable_clipToWorld[9], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_10, this.variable_clipToWorld[10], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_11, this.variable_clipToWorld[11], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_12, this.variable_clipToWorld[12], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_13, this.variable_clipToWorld[13], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_14, this.variable_clipToWorld[14], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.clipToWorld_15, this.variable_clipToWorld[15], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.depthNearPlane, this.variable_depthNearPlane, true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.hitColor_0, this.variable_hitColor[0], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.hitColor_1, this.variable_hitColor[1], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.hitColor_2, this.variable_hitColor[2], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.missColor_0, this.variable_missColor[0], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.missColor_1, this.variable_missColor[1], true);
-        view.setFloat32(this.constructor.StructOffsets__SimpleRTCSCB.missColor_2, this.variable_missColor[2], true);
-        device.queue.writeBuffer(this.constantBuffer__SimpleRTCSCB, 0, bufferCPU);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.cameraPos_0, this.variable_cameraPos[0], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.cameraPos_1, this.variable_cameraPos[1], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.cameraPos_2, this.variable_cameraPos[2], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_0, this.variable_clipToWorld[0], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_1, this.variable_clipToWorld[1], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_2, this.variable_clipToWorld[2], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_3, this.variable_clipToWorld[3], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_4, this.variable_clipToWorld[4], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_5, this.variable_clipToWorld[5], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_6, this.variable_clipToWorld[6], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_7, this.variable_clipToWorld[7], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_8, this.variable_clipToWorld[8], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_9, this.variable_clipToWorld[9], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_10, this.variable_clipToWorld[10], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_11, this.variable_clipToWorld[11], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_12, this.variable_clipToWorld[12], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_13, this.variable_clipToWorld[13], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_14, this.variable_clipToWorld[14], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.clipToWorld_15, this.variable_clipToWorld[15], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.depthNearPlane, this.variable_depthNearPlane, true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.hitColor_0, this.variable_hitColor[0], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.hitColor_1, this.variable_hitColor[1], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.hitColor_2, this.variable_hitColor[2], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.missColor_0, this.variable_missColor[0], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.missColor_1, this.variable_missColor[1], true);
+        view.setFloat32(this.constructor.StructOffsets__SimpleRTCS_0CB.missColor_2, this.variable_missColor[2], true);
+        device.queue.writeBuffer(this.constantBuffer__SimpleRTCS_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "simpleRT_inline._SimpleRTCSCB"
+    encoder.popDebugGroup(); // "simpleRT_inline._SimpleRTCS_0CB"
 
     encoder.pushDebugGroup("simpleRT_inline.DoRT");
 
@@ -1382,9 +1382,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_DoRT_g_texture_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _SimpleRTCSCB
+                    // _SimpleRTCS_0CB
                     binding: 4,
-                    resource: { buffer: this.constantBuffer__SimpleRTCSCB }
+                    resource: { buffer: this.constantBuffer__SimpleRTCS_0CB }
                 },
             ]
         });

@@ -24,7 +24,7 @@ def get_all_unit_tests():
         test_name = os.path.splitext(rel_path)[0].replace('/', '\\')
 
         # Skip RunTests.py as it's not a test itself
-        if test_name != "RunTests":
+        if test_name != "RunTests" and test_name != "TestLogic":
             unit_tests.append(test_name)
 
     return sorted(unit_tests)

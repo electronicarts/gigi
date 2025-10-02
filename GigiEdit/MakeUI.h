@@ -454,6 +454,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
     ImGui::PushID(label);
 
     bool showIndex = ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX) == 0);
+    bool allowResize = ((_FLAGS & SCHEMA_FLAG_UI_NO_RESIZE_ARRAY) == 0);
 
     ImGui::Indent();
     int deleteIndex = -1;
@@ -467,6 +468,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
     {
         ImGui::PushID(index);
 
+        if (showIndex)
         {
             char localLabel[256];
 			sprintf_s(localLabel, "%s[%i]", label, index);
@@ -474,43 +476,49 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
 			ShowUIToolTip(tooltip);
         }
 
-        ImGui::SameLine();
-		if (ImGui::SmallButton("X"))
-			deleteIndex = index;
-		ShowUIToolTip("Delete");
-        ImGui::SameLine();
+        if (allowResize)
         {
-			ImGui_Enabled enabled(index != 0);
-			if (ArrowButton2("Up", ImGuiDir_Up, true, false))
-                moveUpIndex = index;
-			ShowUIToolTip("Up");
             ImGui::SameLine();
-        }
-        {
-			ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
-			if (ArrowButton2("Down", ImGuiDir_Down, true, false))
-                moveDownIndex = index;
-			ShowUIToolTip("Down");
-			ImGui::SameLine();
-        }
-		{
-			ImGui_Enabled enabled(index != 0);
-			if (ArrowButton2("Up to Top", ImGuiDir_Up, true, true))
-                moveTopIndex = index;
-			ShowUIToolTip("Up To Top");
+            if (ImGui::SmallButton("X"))
+                deleteIndex = index;
+            ShowUIToolTip("Delete");
             ImGui::SameLine();
-        }
-		{
-			ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
-			if (ArrowButton2("Down to Bottom", ImGuiDir_Down, true, true))
-                moveBottomIndex = index;
-			ShowUIToolTip("Down to Bottom");
-        }
+            {
+                ImGui_Enabled enabled(index != 0);
+                if (ArrowButton2("Up", ImGuiDir_Up, true, false))
+                    moveUpIndex = index;
+                ShowUIToolTip("Up");
+                ImGui::SameLine();
+            }
+            {
+                ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
+                if (ArrowButton2("Down", ImGuiDir_Down, true, false))
+                    moveDownIndex = index;
+                ShowUIToolTip("Down");
+                ImGui::SameLine();
+            }
+            {
+                ImGui_Enabled enabled(index != 0);
+                if (ArrowButton2("Up to Top", ImGuiDir_Up, true, true))
+                    moveTopIndex = index;
+                ShowUIToolTip("Up To Top");
+                ImGui::SameLine();
+            }
+            {
+                ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
+                if (ArrowButton2("Down to Bottom", ImGuiDir_Down, true, true))
+                    moveBottomIndex = index;
+                ShowUIToolTip("Down to Bottom");
+            }
 
-        ImGui::SameLine();
-        if (ImGui::SmallButton("Duplicate"))
-            duplicateIndex = index;
-        ShowUIToolTip("Duplicate");
+            if (allowResize)
+            {
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Duplicate"))
+                    duplicateIndex = index;
+                ShowUIToolTip("Duplicate");
+            }
+        }
 
         ImGui::Indent();
 
@@ -567,12 +575,15 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
 
     ImGui::Unindent();
 
-	char localLabel[256];
-	sprintf_s(localLabel, "Add %s[] Item", label);
-    if (ImGui::Button(localLabel))
+    if (allowResize)
     {
-        ret = true;
-        TDYNAMICARRAY_RESIZE(value, TDYNAMICARRAY_SIZE(value) + 1);
+        char localLabel[256];
+        sprintf_s(localLabel, "Add %s[] Item", label);
+        if (ImGui::Button(localLabel))
+        {
+            ret = true;
+            TDYNAMICARRAY_RESIZE(value, TDYNAMICARRAY_SIZE(value) + 1);
+        }
     }
 
     ImGui::PopID();
@@ -1566,7 +1577,7 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
     ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None;
-    DataFieldType dataFieldRequirement = DataFieldType::Count;
+    DataFieldType dataFieldRequirement = value.UIType;
 
     switch (path())
     {
@@ -2601,4 +2612,80 @@ inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_CopyResource>(Rend
     }
 
     return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_ComputeShader>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Action_ComputeShader& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.shaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.shader.name.c_str());
+    return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_RayShader>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Action_RayShader& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.shaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.shader.name.c_str());
+    return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_DrawCall>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Action_DrawCall& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.amplificationShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.amplificationShader.name.c_str());
+    value.meshShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.meshShader.name.c_str());
+    value.vertexShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.vertexShader.name.c_str());
+    value.pixelShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.pixelShader.name.c_str());
+    return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ShaderVariableAliases>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderVariableAliases& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    // Prevent infinite recursion
+    static bool inside = false;
+    if (inside)
+        return UIOverrideResult::Continue;
+
+    if (value.shaderIndex == -1)
+        return UIOverrideResult::Finished;
+
+    const Shader& shader = renderGraph.shaders[value.shaderIndex];
+    if (shader.variableAliases.empty())
+        return UIOverrideResult::Finished;
+
+    // Make a ShaderVariableAliases which is the same size and content as the shader says it should be,
+    // but with the existing values mapped in where possible. Make that be the new ShaderVariableAliases.
+    {
+        ShaderVariableAliases mappedValues;
+        mappedValues.aliases.resize(shader.variableAliases.size());
+        for (int i = 0; i < shader.variableAliases.size(); ++i)
+        {
+            const ShaderVariableAliasDeclaration& alias = shader.variableAliases[i];
+            bool found = false;
+            for (const ShaderVariableAlias& existing : value.aliases)
+            {
+                if (existing.name == alias.name)
+                {
+                    mappedValues.aliases[i] = existing;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                mappedValues.aliases[i].name = alias.name;
+                mappedValues.aliases[i].variable.name = "";
+            }
+            mappedValues.aliases[i].variable.UIType = alias.type;
+        }
+        value = mappedValues;
+    }
+
+    if (value.aliases.empty())
+        return UIOverrideResult::Finished;
+
+    inside = true;
+    dirtyFlag |= ShowUI(renderGraph, "Variable Aliases", nullptr, value, path);
+    inside = false;
+    return UIOverrideResult::Finished;
 }

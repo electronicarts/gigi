@@ -534,6 +534,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>VariableReference</th></tr>
 <tr><td>std::string name</td><td>""</td><td>The name of the variable.</td></tr>
 <tr><td><i>int variableIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+<tr><td><i>DataFieldType UIType</i></td><td>DataFieldType::Count</td><td>If not count, will limit to variables of the specific type.</td></tr>
 </table>
 <br/>
 
@@ -901,6 +902,15 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>ShaderVariableAliasDeclaration : Specify a variable alias</b><br/><br/>
+<table>
+<tr><th colspan=3>ShaderVariableAliasDeclaration</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.</td></tr>
+<tr><td>DataFieldType type</td><td>DataFieldType::Count</td><td>The type of the alias.</td></tr>
+<tr><td><i>bool usedInShader</i></td><td>false</td><td>set to true if this is actually used in the shader</td></tr>
+</table>
+<br/>
+
 <b>RTHitGroup : A declaration of a ray tracing hit group, which may contain a closest hit, any hit, and intersection shader</b><br/><br/>
 <table>
 <tr><th colspan=3>RTHitGroup</th></tr>
@@ -943,6 +953,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>BackendRestriction backends</td><td>{}</td><td>The backends this file copy happens for.</td></tr>
 <tr><td>ShaderResource resources[]</td><td></td><td>SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.</td></tr>
 <tr><td>ShaderSampler samplers[]</td><td></td><td>SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.</td></tr>
+<tr><td>ShaderVariableAliasDeclaration variableAliases[]</td><td></td><td>Variable aliases allow a shader to read different variables per node by choosing what variable value is set for each alias</td></tr>
 <tr><td>ShaderConstantBuffer constantBuffers[]</td><td></td><td>A list of constant buffers this shader wants.</td></tr>
 <tr><td><i>std::vector<LoadedTextureReference> loadedTextureRefs</i></td><td>{}</td><td>The list of loaded textures this shader references.</td></tr>
 <tr><td><i>std::wstring entryPointW</i></td><td>L""</td><td>The wide string version of the entry point. Made for convinience.</td></tr>
@@ -1159,7 +1170,9 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool disallowDuplication</td><td>false</td><td>If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.</td></tr>
 <tr><td>MemoryUnitOfMeasurement bufferViewUnits</td><td>MemoryUnitOfMeasurement::Items</td><td>How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.</td></tr>
 <tr><td>unsigned int bufferViewBegin</td><td>0</td><td>Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.</td></tr>
+<tr><td>VariableReference bufferViewBeginVariable</td><td>{}</td><td>If specified, this variable will control where buffer views begin.</td></tr>
 <tr><td>unsigned int bufferViewSize</td><td>0</td><td>How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.</td></tr>
+<tr><td>VariableReference bufferViewSizeVariable</td><td>{}</td><td>If specified, this variable will control the buffer view size.</td></tr>
 </table>
 <br/>
 
@@ -1170,6 +1183,22 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>unsigned int destBegin</td><td>0</td><td>Where the copy destination begins in the destination buffer. In Bytes.</td></tr>
 <tr><td>unsigned int size</td><td>0</td><td>How much to copy. 0 to copy everything. In Bytes.</td></tr>
 <tr><td><i>bool hideUI</i></td><td>false</td><td>Used by UI system to know whether to show this or not</td></tr>
+</table>
+<br/>
+
+<b>ShaderVariableAlias : Specify a variable alias</b><br/><br/>
+<table>
+<tr><th colspan=3>ShaderVariableAlias</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.</td></tr>
+<tr><td>VariableReference variable</td><td>{}</td><td></td></tr>
+</table>
+<br/>
+
+<b>ShaderVariableAliases : Specify a variable alias</b><br/><br/>
+<table>
+<tr><th colspan=3>ShaderVariableAliases</th></tr>
+<tr><td>ShaderVariableAlias aliases[]</td><td></td><td></td></tr>
+<tr><td><i>int shaderIndex</i></td><td>-1</td><td></td></tr>
 </table>
 <br/>
 
@@ -1207,6 +1236,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>Condition condition</td><td>{}</td><td>An optional condition added for the action to happen</td></tr>
 <tr><td>LinkProperties linkProperties[]</td><td></td><td>Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.</td></tr>
 <tr><td>NodePinConnection connections[]</td><td></td><td>What is plugged into the pins</td></tr>
+<tr><td>bool hideInViewer</td><td>false</td><td>Whether this node is only intermediate and should be hidden in a viewer.</td></tr>
 </table>
 <br/>
 
@@ -1269,6 +1299,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"CS"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
 <tr><td>ComputeShaderReference shader</td><td>{}</td><td>The shader.</td></tr>
+<tr><td>ShaderVariableAliases shaderVariableAliases</td><td>{}</td><td></td></tr>
 <tr><td>DispatchSizeDesc dispatchSize</td><td>{}</td><td>The dispatch size.</td></tr>
 <tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint. Handled by front end during Gigi compilation and becomes shader entry point during code gen.</td></tr>
 <tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.</td></tr>
@@ -1283,6 +1314,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"RGS"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
 <tr><td>RayGenShaderReference shader</td><td>{}</td><td>The ray gen shader.</td></tr>
+<tr><td>ShaderVariableAliases shaderVariableAliases</td><td>{}</td><td></td></tr>
 <tr><td>RayDispatchSizeDesc dispatchSize</td><td>{}</td><td>The dispatch size.</td></tr>
 <tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint.  Handled by front end during Gigi compilation and becomes shader entry point during code gen.</td></tr>
 <tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.</td></tr>
@@ -1312,9 +1344,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Draw"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
 <tr><td>AmplificationShaderReferenceOptional amplificationShader</td><td>{}</td><td>The amplification shader.</td></tr>
+<tr><td>ShaderVariableAliases amplificationShaderVariableAliases</td><td>{}</td><td></td></tr>
 <tr><td>MeshShaderReferenceOptional meshShader</td><td>{}</td><td>The mesh shader.</td></tr>
+<tr><td>ShaderVariableAliases meshShaderVariableAliases</td><td>{}</td><td></td></tr>
 <tr><td>VertexShaderReferenceOptional vertexShader</td><td>{}</td><td>The vertex shader.</td></tr>
+<tr><td>ShaderVariableAliases vertexShaderVariableAliases</td><td>{}</td><td></td></tr>
 <tr><td>PixelShaderReference pixelShader</td><td>{}</td><td>The pixel shader.</td></tr>
+<tr><td>ShaderVariableAliases pixelShaderVariableAliases</td><td>{}</td><td></td></tr>
+<tr><td>NodePinReferenceOptional indirectBuffer</td><td>{}</td><td>Indirect buffer to make this draw use ExecuteIndirect</td></tr>
 <tr><td>int countPerInstance</td><td>-1</td><td>If using an index buffer, this is indexCountPerInstance, else is vertexCountPerInstance.  If -1, will use the count of the buffer.  Else, if a buffer is given, will use min(buffer count, countPerInstance).</td></tr>
 <tr><td>int instanceCount</td><td>1</td><td>How many instances to draw. If -1, will use the count of the instance buffer. Else, if an instance buffer is given, will use min (instance buffer count, instanceCount).</td></tr>
 <tr><td>DispatchSizeDesc meshShaderDispatchSize</td><td>{}</td><td>The mesh shader dispatch size.</td></tr>

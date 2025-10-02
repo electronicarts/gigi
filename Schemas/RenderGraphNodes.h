@@ -251,7 +251,9 @@ STRUCT_BEGIN(LinkProperties, "Properties of links between nodes.")
 
     STRUCT_FIELD(MemoryUnitOfMeasurement, bufferViewUnits, MemoryUnitOfMeasurement::Items, "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.", 0)
     STRUCT_FIELD(unsigned int, bufferViewBegin, 0, "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.", 0)
+    STRUCT_FIELD(VariableReference, bufferViewBeginVariable, {}, "If specified, this variable will control where buffer views begin.", 0)
     STRUCT_FIELD(unsigned int, bufferViewSize, 0, "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.", 0)
+    STRUCT_FIELD(VariableReference, bufferViewSizeVariable, {}, "If specified, this variable will control the buffer view size.", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(CopyResource_BufferToBuffer, "Settings for when copying from a buffer to a buffer")
@@ -259,6 +261,16 @@ STRUCT_BEGIN(CopyResource_BufferToBuffer, "Settings for when copying from a buff
     STRUCT_FIELD(unsigned int, destBegin, 0, "Where the copy destination begins in the destination buffer. In Bytes.", 0)
     STRUCT_FIELD(unsigned int, size, 0, "How much to copy. 0 to copy everything. In Bytes.", 0)
     STRUCT_FIELD(bool, hideUI, false, "Used by UI system to know whether to show this or not", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
+STRUCT_BEGIN(ShaderVariableAlias, "Specify a variable alias")
+    STRUCT_FIELD(std::string, name, "", "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.", SCHEMA_FLAG_UI_CONST)
+    STRUCT_FIELD(VariableReference, variable, {}, "", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(ShaderVariableAliases, "Specify a variable alias")
+    STRUCT_DYNAMIC_ARRAY(ShaderVariableAlias, aliases, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX | SCHEMA_FLAG_UI_NO_RESIZE_ARRAY)
+    STRUCT_FIELD(int, shaderIndex, -1, "", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 //========================================================
@@ -299,6 +311,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_ActionBase, RenderGraphNode_Base, "The base
     STRUCT_DYNAMIC_ARRAY(LinkProperties, linkProperties, "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.", SCHEMA_FLAG_NO_UI)
 
     STRUCT_DYNAMIC_ARRAY(NodePinConnection, connections, "What is plugged into the pins", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(bool, hideInViewer, false, "Whether this node is only intermediate and should be hidden in a viewer.", SCHEMA_FLAG_NONE)
 STRUCT_END()
 
 //========================================================
@@ -360,6 +373,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_ComputeShader, RenderGraphNode_Actio
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(ComputeShaderReference, shader, {}, "The shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, shaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(DispatchSizeDesc, dispatchSize, {}, "The dispatch size.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint. Handled by front end during Gigi compilation and becomes shader entry point during code gen.", 0)
@@ -373,6 +387,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_RayShader, RenderGraphNode_ActionBas
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(RayGenShaderReference, shader, {}, "The ray gen shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, shaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(RayDispatchSizeDesc, dispatchSize, {}, "The dispatch size.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.  Handled by front end during Gigi compilation and becomes shader entry point during code gen.", 0)
@@ -401,9 +416,15 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(AmplificationShaderReferenceOptional, amplificationShader, {}, "The amplification shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, amplificationShaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(MeshShaderReferenceOptional, meshShader, {}, "The mesh shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, meshShaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(VertexShaderReferenceOptional, vertexShader, {}, "The vertex shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, vertexShaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(PixelShaderReference, pixelShader, {}, "The pixel shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, pixelShaderVariableAliases, {}, "", 0)
+
+    STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "Indirect buffer to make this draw use ExecuteIndirect", SCHEMA_FLAG_NO_UI)
 
     // Vertex shader specific
     STRUCT_FIELD(int, countPerInstance, -1, "If using an index buffer, this is indexCountPerInstance, else is vertexCountPerInstance.  If -1, will use the count of the buffer.  Else, if a buffer is given, will use min(buffer count, countPerInstance).", 0)

@@ -72,6 +72,9 @@
     <ClCompile Include="..\external\imgui-node-editor\external\imgui\imgui_stdlib.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
+    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp">
+      <Filter>UI</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">
@@ -191,6 +194,9 @@
     </ClInclude>
     <ClInclude Include="..\external\imgui-node-editor\external\imgui\imgui_stdlib.h">
       <Filter>imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h">
+      <Filter>UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

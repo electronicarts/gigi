@@ -36,9 +36,9 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Init", node "Initialize"
-static ShaderCode_Initialize_Init = `
-struct Struct_InitCB_std140_0
+// Shader code for Compute shader "Init_0", node "Initialize"
+static ShaderCode_Initialize_Init_0 = `
+struct Struct_Init_0CB_std140_0
 {
     @align(16) FrameIndex_0 : i32,
     @align(4) _padding0_0 : f32,
@@ -54,7 +54,7 @@ struct Struct_InitCB_std140_0
     @align(4) initialized_0 : u32,
 };
 
-@binding(1) @group(0) var<uniform> _InitCB : Struct_InitCB_std140_0;
+@binding(1) @group(0) var<uniform> _Init_0CB : Struct_Init_0CB_std140_0;
 @binding(0) @group(0) var<storage, read_write> Data : array<f32>;
 
 fn wang_hash_init_0( seed_0 : vec3<u32>) -> u32
@@ -81,10 +81,10 @@ fn wang_hash_float01_0( state_0 : ptr<function, u32>) -> f32
 @workgroup_size(1, 1, 1)
 fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
-    var mouseState_0 : vec4<f32> = _InitCB.MouseState_0;
-    var mouseStateLastFrame_0 : vec4<f32> = _InitCB.MouseStateLastFrame_0;
+    var mouseState_0 : vec4<f32> = _Init_0CB.MouseState_0;
+    var mouseStateLastFrame_0 : vec4<f32> = _Init_0CB.MouseStateLastFrame_0;
     var _S5 : bool;
-    if(bool(_InitCB.MouseState_0.z))
+    if(bool(_Init_0CB.MouseState_0.z))
     {
         _S5 = !bool(mouseStateLastFrame_0.z);
     }
@@ -94,15 +94,15 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     }
     if(_S5)
     {
-        var uv_0 : vec2<f32> = mouseState_0.xy / _InitCB.iResolution_0.xy;
+        var uv_0 : vec2<f32> = mouseState_0.xy / _Init_0CB.iResolution_0.xy;
         Data[i32(0)] = uv_0.x;
         Data[i32(1)] = uv_0.y;
     }
-    if(bool(_InitCB.initialized_0))
+    if(bool(_Init_0CB.initialized_0))
     {
         return;
     }
-    var rng_0 : u32 = wang_hash_init_0(vec3<u32>(u32(322417843), u32(3405705229), u32(_InitCB.FrameIndex_0)));
+    var rng_0 : u32 = wang_hash_init_0(vec3<u32>(u32(322417843), u32(3405705229), u32(_Init_0CB.FrameIndex_0)));
     Data[i32(0)] = 0.5f;
     Data[i32(1)] = 0.5f;
     Data[i32(2)] = 0.0f;
@@ -110,7 +110,7 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var i_0 : i32 = i32(0);
     for(;;)
     {
-        if(i_0 < (_InitCB.NumGaussians_0))
+        if(i_0 < (_Init_0CB.NumGaussians_0))
         {
         }
         else
@@ -135,11 +135,11 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Render", node "Render"
-static ShaderCode_Render_Render = `
+// Shader code for Compute shader "Render_0", node "Render"
+static ShaderCode_Render_Render_0 = `
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
-struct Struct_RenderCB_std140_0
+struct Struct_Render_0CB_std140_0
 {
     @align(16) NumGaussians_0 : i32,
     @align(4) QuantizeDisplay_0 : u32,
@@ -147,7 +147,7 @@ struct Struct_RenderCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _RenderCB : Struct_RenderCB_std140_0;
+@binding(3) @group(0) var<uniform> _Render_0CB : Struct_Render_0CB_std140_0;
 @binding(0) @group(0) var<storage, read> Data : array<f32>;
 
 fn GetHeightAtPos_0( x_0 : f32,  y_0 : f32,  gaussPos_0 : vec2<f32>,  gaussSigma_0 : vec2<f32>) -> f32
@@ -213,7 +213,7 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var maxHeight_0 : f32 = 0.0f;
     for(;;)
     {
-        if(i_0 < (_RenderCB.NumGaussians_0))
+        if(i_0 < (_Render_0CB.NumGaussians_0))
         {
         }
         else
@@ -238,7 +238,7 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     var ball_0 : f32 = smoothstep(5.0f / f32(dims_0.x), 0.0f, length(vec2<f32>(Data[i32(0)], Data[i32(1)]) - uv_0));
     var color_0 : f32 = height_0 / maxHeight_0;
     var color_1 : f32;
-    if(bool(_RenderCB.QuantizeDisplay_0))
+    if(bool(_Render_0CB.QuantizeDisplay_0))
     {
         color_1 = floor(color_0 * 64.0f + 0.5f) / 64.0f;
     }
@@ -473,10 +473,10 @@ texture_Render_Output_ReadOnly_size = [0, 0, 0];
 texture_Render_Output_ReadOnly_format = "";
 texture_Render_Output_ReadOnly_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
-// Constant buffer _InitCB
-constantBuffer__InitCB = null;
-constantBuffer__InitCB_size = 80;
-constantBuffer__InitCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _Init_0CB
+constantBuffer__Init_0CB = null;
+constantBuffer__Init_0CB_size = 80;
+constantBuffer__Init_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader Initialize
 Hash_Compute_Initialize = 0;
@@ -485,10 +485,10 @@ BindGroupLayout_Compute_Initialize = null;
 PipelineLayout_Compute_Initialize = null;
 Pipeline_Compute_Initialize = null;
 
-// Constant buffer _RenderCB
-constantBuffer__RenderCB = null;
-constantBuffer__RenderCB_size = 16;
-constantBuffer__RenderCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _Render_0CB
+constantBuffer__Render_0CB = null;
+constantBuffer__Render_0CB_size = 16;
+constantBuffer__Render_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Constant buffer _Descend_0CB
 constantBuffer__Descend_0CB = null;
@@ -555,7 +555,7 @@ variableChanged_QuantizeDisplay = false;
 
 // -------------------- Structs
 
-static StructOffsets__InitCB =
+static StructOffsets__Init_0CB =
 {
     FrameIndex: 0,
     _padding0: 4,
@@ -580,7 +580,7 @@ static StructOffsets__InitCB =
     _size: 80,
 }
 
-static StructOffsets__RenderCB =
+static StructOffsets__Render_0CB =
 {
     NumGaussians: 0,
     QuantizeDisplay: 4,
@@ -702,7 +702,7 @@ async Init(device, encoder, useBlockingAPIs)
                 buffer: { type: "storage" }
             },
             {
-                // _InitCB
+                // _Init_0CB
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -716,7 +716,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Initialize = newHash;
 
-            let shaderCode = class_SlangAutoDiff.ShaderCode_Initialize_Init;
+            let shaderCode = class_SlangAutoDiff.ShaderCode_Initialize_Init_0;
 
             this.ShaderModule_Compute_Initialize = device.createShaderModule({ code: shaderCode, label: "Compute Shader Initialize"});
             this.BindGroupLayout_Compute_Initialize = device.createBindGroupLayout({
@@ -844,7 +844,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_Render_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _RenderCB
+                // _Render_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -858,7 +858,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Render = newHash;
 
-            let shaderCode = class_SlangAutoDiff.ShaderCode_Render_Render;
+            let shaderCode = class_SlangAutoDiff.ShaderCode_Render_Render_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Render_Output_ReadOnly_format));
 
@@ -945,40 +945,40 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SlangAutoDiff.Copy_Render_Output"
 
-    encoder.pushDebugGroup("SlangAutoDiff._InitCB");
+    encoder.pushDebugGroup("SlangAutoDiff._Init_0CB");
 
-    // Create constant buffer _InitCB
-    if (this.constantBuffer__InitCB === null)
+    // Create constant buffer _Init_0CB
+    if (this.constantBuffer__Init_0CB === null)
     {
-        this.constantBuffer__InitCB = device.createBuffer({
-            label: "SlangAutoDiff._InitCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__InitCB._size),
-            usage: this.constantBuffer__InitCB_usageFlags,
+        this.constantBuffer__Init_0CB = device.createBuffer({
+            label: "SlangAutoDiff._Init_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__Init_0CB._size),
+            usage: this.constantBuffer__Init_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _InitCB
+    // Upload values to constant buffer _Init_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__InitCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Init_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setInt32(this.constructor.StructOffsets__InitCB.FrameIndex, this.variable_FrameIndex, true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseState_0, this.variable_MouseState[0], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseState_1, this.variable_MouseState[1], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseState_2, this.variable_MouseState[2], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseState_3, this.variable_MouseState[3], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseStateLastFrame_0, this.variable_MouseStateLastFrame[0], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseStateLastFrame_1, this.variable_MouseStateLastFrame[1], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseStateLastFrame_2, this.variable_MouseStateLastFrame[2], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.MouseStateLastFrame_3, this.variable_MouseStateLastFrame[3], true);
-        view.setInt32(this.constructor.StructOffsets__InitCB.NumGaussians, this.variable_NumGaussians, true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.iResolution_0, this.variable_iResolution[0], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.iResolution_1, this.variable_iResolution[1], true);
-        view.setFloat32(this.constructor.StructOffsets__InitCB.iResolution_2, this.variable_iResolution[2], true);
-        view.setUint32(this.constructor.StructOffsets__InitCB.initialized, (this.variable_initialized === true ? 1 : 0), true);
-        device.queue.writeBuffer(this.constantBuffer__InitCB, 0, bufferCPU);
+        view.setInt32(this.constructor.StructOffsets__Init_0CB.FrameIndex, this.variable_FrameIndex, true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseState_0, this.variable_MouseState[0], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseState_1, this.variable_MouseState[1], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseState_2, this.variable_MouseState[2], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseState_3, this.variable_MouseState[3], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseStateLastFrame_0, this.variable_MouseStateLastFrame[0], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseStateLastFrame_1, this.variable_MouseStateLastFrame[1], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseStateLastFrame_2, this.variable_MouseStateLastFrame[2], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.MouseStateLastFrame_3, this.variable_MouseStateLastFrame[3], true);
+        view.setInt32(this.constructor.StructOffsets__Init_0CB.NumGaussians, this.variable_NumGaussians, true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.iResolution_0, this.variable_iResolution[0], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.iResolution_1, this.variable_iResolution[1], true);
+        view.setFloat32(this.constructor.StructOffsets__Init_0CB.iResolution_2, this.variable_iResolution[2], true);
+        view.setUint32(this.constructor.StructOffsets__Init_0CB.initialized, (this.variable_initialized === true ? 1 : 0), true);
+        device.queue.writeBuffer(this.constantBuffer__Init_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SlangAutoDiff._InitCB"
+    encoder.popDebugGroup(); // "SlangAutoDiff._Init_0CB"
 
     encoder.pushDebugGroup("SlangAutoDiff.Initialize");
 
@@ -994,9 +994,9 @@ async FillEncoder(device, encoder)
                     resource: { buffer: this.buffer_Data }
                 },
                 {
-                    // _InitCB
+                    // _Init_0CB
                     binding: 1,
-                    resource: { buffer: this.constantBuffer__InitCB }
+                    resource: { buffer: this.constantBuffer__Init_0CB }
                 },
             ]
         });
@@ -1021,28 +1021,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SlangAutoDiff.Initialize"
 
-    encoder.pushDebugGroup("SlangAutoDiff._RenderCB");
+    encoder.pushDebugGroup("SlangAutoDiff._Render_0CB");
 
-    // Create constant buffer _RenderCB
-    if (this.constantBuffer__RenderCB === null)
+    // Create constant buffer _Render_0CB
+    if (this.constantBuffer__Render_0CB === null)
     {
-        this.constantBuffer__RenderCB = device.createBuffer({
-            label: "SlangAutoDiff._RenderCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__RenderCB._size),
-            usage: this.constantBuffer__RenderCB_usageFlags,
+        this.constantBuffer__Render_0CB = device.createBuffer({
+            label: "SlangAutoDiff._Render_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__Render_0CB._size),
+            usage: this.constantBuffer__Render_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _RenderCB
+    // Upload values to constant buffer _Render_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__RenderCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Render_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setInt32(this.constructor.StructOffsets__RenderCB.NumGaussians, this.variable_NumGaussians, true);
-        view.setUint32(this.constructor.StructOffsets__RenderCB.QuantizeDisplay, (this.variable_QuantizeDisplay === true ? 1 : 0), true);
-        device.queue.writeBuffer(this.constantBuffer__RenderCB, 0, bufferCPU);
+        view.setInt32(this.constructor.StructOffsets__Render_0CB.NumGaussians, this.variable_NumGaussians, true);
+        view.setUint32(this.constructor.StructOffsets__Render_0CB.QuantizeDisplay, (this.variable_QuantizeDisplay === true ? 1 : 0), true);
+        device.queue.writeBuffer(this.constantBuffer__Render_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SlangAutoDiff._RenderCB"
+    encoder.popDebugGroup(); // "SlangAutoDiff._Render_0CB"
 
     encoder.pushDebugGroup("SlangAutoDiff._Descend_0CB");
 
@@ -1134,9 +1134,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_Render_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _RenderCB
+                    // _Render_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__RenderCB }
+                    resource: { buffer: this.constantBuffer__Render_0CB }
                 },
             ]
         });

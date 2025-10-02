@@ -43,7 +43,7 @@ namespace simpleRT_inline
             int MaterialID = 0;
         };
 
-        struct Struct__SimpleRTCSCB
+        struct Struct__SimpleRTCS_0CB
         {
             float3 cameraPos = {0.f, 0.f, 0.f};
             float _padding0 = 0.f;  // Padding
@@ -54,8 +54,8 @@ namespace simpleRT_inline
             float _padding1 = 0.f;  // Padding
         };
 
-        Struct__SimpleRTCSCB constantBuffer__SimpleRTCSCB_cpu;
-        ID3D12Resource* constantBuffer__SimpleRTCSCB = nullptr;
+        Struct__SimpleRTCS_0CB constantBuffer__SimpleRTCS_0CB_cpu;
+        ID3D12Resource* constantBuffer__SimpleRTCS_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_DoRT_pso;
         static ID3D12RootSignature* computeShader_DoRT_rootSig;

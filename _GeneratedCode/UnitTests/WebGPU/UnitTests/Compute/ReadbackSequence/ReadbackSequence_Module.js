@@ -36,9 +36,9 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "ReadbackSequenceCS", node "Node_1"
-static ShaderCode_Node_1_ReadbackSequenceCS = `
-struct Struct_ReadbackSequenceCSCB_std140_0
+// Shader code for Compute shader "ReadbackSequenceCS_0", node "Node_1"
+static ShaderCode_Node_1_ReadbackSequenceCS_0 = `
+struct Struct_ReadbackSequenceCS_0CB_std140_0
 {
     @align(16) frameIndex_0 : i32,
     @align(4) _padding0_0 : f32,
@@ -46,7 +46,7 @@ struct Struct_ReadbackSequenceCSCB_std140_0
     @align(4) _padding2_0 : f32,
 };
 
-@binding(2) @group(0) var<uniform> _ReadbackSequenceCSCB : Struct_ReadbackSequenceCSCB_std140_0;
+@binding(2) @group(0) var<uniform> _ReadbackSequenceCS_0CB : Struct_ReadbackSequenceCS_0CB_std140_0;
 @binding(0) @group(0) var output : texture_storage_2d</*(output_format)*/, write>;
 
 @compute
@@ -54,15 +54,15 @@ struct Struct_ReadbackSequenceCSCB_std140_0
 fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
     var c_0 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
-    if(bool(((_ReadbackSequenceCSCB.frameIndex_0) & (i32(1)))))
+    if(bool(((_ReadbackSequenceCS_0CB.frameIndex_0) & (i32(1)))))
     {
         c_0[i32(2)] = 1.0f;
     }
-    if(bool(((_ReadbackSequenceCSCB.frameIndex_0) & (i32(2)))))
+    if(bool(((_ReadbackSequenceCS_0CB.frameIndex_0) & (i32(2)))))
     {
         c_0[i32(1)] = 1.0f;
     }
-    if(bool(((_ReadbackSequenceCSCB.frameIndex_0) & (i32(4)))))
+    if(bool(((_ReadbackSequenceCS_0CB.frameIndex_0) & (i32(4)))))
     {
         c_0[i32(0)] = 1.0f;
     }
@@ -80,10 +80,10 @@ texture_Node_1_output_ReadOnly_size = [0, 0, 0];
 texture_Node_1_output_ReadOnly_format = "";
 texture_Node_1_output_ReadOnly_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
-// Constant buffer _ReadbackSequenceCSCB
-constantBuffer__ReadbackSequenceCSCB = null;
-constantBuffer__ReadbackSequenceCSCB_size = 16;
-constantBuffer__ReadbackSequenceCSCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _ReadbackSequenceCS_0CB
+constantBuffer__ReadbackSequenceCS_0CB = null;
+constantBuffer__ReadbackSequenceCS_0CB_size = 16;
+constantBuffer__ReadbackSequenceCS_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader Node_1
 Hash_Compute_Node_1 = 0;
@@ -108,7 +108,7 @@ variableChanged_frameIndex = false;
 
 // -------------------- Structs
 
-static StructOffsets__ReadbackSequenceCSCB =
+static StructOffsets__ReadbackSequenceCS_0CB =
 {
     frameIndex: 0,
     _padding0: 4,
@@ -193,7 +193,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_Node_1_output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _ReadbackSequenceCSCB
+                // _ReadbackSequenceCS_0CB
                 binding: 2,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -207,7 +207,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Node_1 = newHash;
 
-            let shaderCode = class_ReadbackSequence.ShaderCode_Node_1_ReadbackSequenceCS;
+            let shaderCode = class_ReadbackSequence.ShaderCode_Node_1_ReadbackSequenceCS_0;
             shaderCode = shaderCode.replace("/*(output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(outputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Node_1_output_ReadOnly_format));
 
@@ -290,27 +290,27 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "ReadbackSequence.Copy_Node_1_output"
 
-    encoder.pushDebugGroup("ReadbackSequence._ReadbackSequenceCSCB");
+    encoder.pushDebugGroup("ReadbackSequence._ReadbackSequenceCS_0CB");
 
-    // Create constant buffer _ReadbackSequenceCSCB
-    if (this.constantBuffer__ReadbackSequenceCSCB === null)
+    // Create constant buffer _ReadbackSequenceCS_0CB
+    if (this.constantBuffer__ReadbackSequenceCS_0CB === null)
     {
-        this.constantBuffer__ReadbackSequenceCSCB = device.createBuffer({
-            label: "ReadbackSequence._ReadbackSequenceCSCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__ReadbackSequenceCSCB._size),
-            usage: this.constantBuffer__ReadbackSequenceCSCB_usageFlags,
+        this.constantBuffer__ReadbackSequenceCS_0CB = device.createBuffer({
+            label: "ReadbackSequence._ReadbackSequenceCS_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__ReadbackSequenceCS_0CB._size),
+            usage: this.constantBuffer__ReadbackSequenceCS_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _ReadbackSequenceCSCB
+    // Upload values to constant buffer _ReadbackSequenceCS_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__ReadbackSequenceCSCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__ReadbackSequenceCS_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setInt32(this.constructor.StructOffsets__ReadbackSequenceCSCB.frameIndex, this.variable_frameIndex, true);
-        device.queue.writeBuffer(this.constantBuffer__ReadbackSequenceCSCB, 0, bufferCPU);
+        view.setInt32(this.constructor.StructOffsets__ReadbackSequenceCS_0CB.frameIndex, this.variable_frameIndex, true);
+        device.queue.writeBuffer(this.constantBuffer__ReadbackSequenceCS_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "ReadbackSequence._ReadbackSequenceCSCB"
+    encoder.popDebugGroup(); // "ReadbackSequence._ReadbackSequenceCS_0CB"
 
     encoder.pushDebugGroup("ReadbackSequence.Node_1");
 
@@ -331,9 +331,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_Node_1_output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _ReadbackSequenceCSCB
+                    // _ReadbackSequenceCS_0CB
                     binding: 2,
-                    resource: { buffer: this.constantBuffer__ReadbackSequenceCSCB }
+                    resource: { buffer: this.constantBuffer__ReadbackSequenceCS_0CB }
                 },
             ]
         });

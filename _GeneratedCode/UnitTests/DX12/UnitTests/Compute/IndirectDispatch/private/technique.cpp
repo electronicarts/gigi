@@ -96,7 +96,7 @@ namespace IndirectDispatch
             ranges[0].RegisterSpace = 0;
             ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
-            // _Fill_Indirect_Dispatch_CountCB
+            // _Fill_Indirect_Dispatch_Count_0CB
             ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[1].NumDescriptors = 1;
             ranges[1].BaseShaderRegister = 0;
@@ -858,11 +858,11 @@ namespace IndirectDispatch
             m_internal.buffer_Indirect_Dispatch_Count = nullptr;
         }
 
-        // _Fill_Indirect_Dispatch_CountCB
-        if (m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB)
+        // _Fill_Indirect_Dispatch_Count_0CB
+        if (m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB);
-            m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB);
+            m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB = nullptr;
         }
     }
 
@@ -955,11 +955,11 @@ namespace IndirectDispatch
             }
         }
 
-        // Shader Constants: _Fill_Indirect_Dispatch_CountCB
+        // Shader Constants: _Fill_Indirect_Dispatch_Count_0CB
         {
-            context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB_cpu.Dispatch_Count_1 = context->m_input.variable_Dispatch_Count_1;
-            context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB_cpu.Dispatch_Count_2 = context->m_input.variable_Dispatch_Count_2;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB, context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB_cpu.Dispatch_Count_1 = context->m_input.variable_Dispatch_Count_1;
+            context->m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB_cpu.Dispatch_Count_2 = context->m_input.variable_Dispatch_Count_2;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB, context->m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -991,7 +991,7 @@ namespace IndirectDispatch
 
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_internal.buffer_Indirect_Dispatch_Count, context->m_internal.buffer_Indirect_Dispatch_Count_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Indirect_Dispatch_Count_stride, context->m_internal.buffer_Indirect_Dispatch_Count_count, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -1192,11 +1192,11 @@ namespace IndirectDispatch
             }
         }
 
-        // _Fill_Indirect_Dispatch_CountCB
-        if (m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB == nullptr)
+        // _Fill_Indirect_Dispatch_Count_0CB
+        if (m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__Fill_Indirect_Dispatch_CountCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Fill_Indirect_Dispatch_CountCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__Fill_Indirect_Dispatch_Count_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Fill_Indirect_Dispatch_Count_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

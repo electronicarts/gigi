@@ -135,6 +135,9 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 #include "UnitTests\Buffers\buffertest_viewOffsetCS\public\technique.h"
 #include "UnitTests\Buffers\buffertest_viewOffsetCS\public\imgui.h"
 #include "UnitTests\Buffers\buffertest_viewOffsetCS\private\technique.h"
+#include "UnitTests\Buffers\buffertest_viewOffsetCS_Vars\public\technique.h"
+#include "UnitTests\Buffers\buffertest_viewOffsetCS_Vars\public\imgui.h"
+#include "UnitTests\Buffers\buffertest_viewOffsetCS_Vars\private\technique.h"
 #include "UnitTests\Buffers\bufferViewDescriptorTable\public\technique.h"
 #include "UnitTests\Buffers\bufferViewDescriptorTable\public\imgui.h"
 #include "UnitTests\Buffers\bufferViewDescriptorTable\private\technique.h"
@@ -162,6 +165,9 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 #include "UnitTests\Compute\SlangAutoDiff\public\technique.h"
 #include "UnitTests\Compute\SlangAutoDiff\public\imgui.h"
 #include "UnitTests\Compute\SlangAutoDiff\private\technique.h"
+#include "UnitTests\Compute\VariableAliases\public\technique.h"
+#include "UnitTests\Compute\VariableAliases\public\imgui.h"
+#include "UnitTests\Compute\VariableAliases\private\technique.h"
 #include "UnitTests\CopyResource\CopyPartialBuffer\public\technique.h"
 #include "UnitTests\CopyResource\CopyPartialBuffer\public\imgui.h"
 #include "UnitTests\CopyResource\CopyPartialBuffer\private\technique.h"
@@ -328,6 +334,7 @@ static DX12Utils::ReadbackHelper    g_readbackHelper;
 BarrierTest::Context* m_BarrierTest = nullptr;
 buffertest::Context* m_buffertest = nullptr;
 buffertest_viewOffsetCS::Context* m_buffertest_viewOffsetCS = nullptr;
+buffertest_viewOffsetCS_Vars::Context* m_buffertest_viewOffsetCS_Vars = nullptr;
 bufferViewDescriptorTable::Context* m_bufferViewDescriptorTable = nullptr;
 StructuredBuffer::Context* m_StructuredBuffer = nullptr;
 boxblur::Context* m_boxblur = nullptr;
@@ -337,6 +344,7 @@ IndirectDispatch::Context* m_IndirectDispatch = nullptr;
 ReadbackSequence::Context* m_ReadbackSequence = nullptr;
 simple::Context* m_simple = nullptr;
 SlangAutoDiff::Context* m_SlangAutoDiff = nullptr;
+VariableAliases::Context* m_VariableAliases = nullptr;
 CopyPartialBuffer::Context* m_CopyPartialBuffer = nullptr;
 CopyResourceTest::Context* m_CopyResourceTest = nullptr;
 CopyResourceTest_FB::Context* m_CopyResourceTest_FB = nullptr;
@@ -399,6 +407,7 @@ bool g_doSubsetTest = false; // If true, it will only test the techniques set to
 bool g_doTest_BarrierTest = false;
 bool g_doTest_buffertest = false;
 bool g_doTest_buffertest_viewOffsetCS = false;
+bool g_doTest_buffertest_viewOffsetCS_Vars = false;
 bool g_doTest_bufferViewDescriptorTable = false;
 bool g_doTest_StructuredBuffer = false;
 bool g_doTest_boxblur = false;
@@ -408,6 +417,7 @@ bool g_doTest_IndirectDispatch = false;
 bool g_doTest_ReadbackSequence = false;
 bool g_doTest_simple = false;
 bool g_doTest_SlangAutoDiff = false;
+bool g_doTest_VariableAliases = false;
 bool g_doTest_CopyPartialBuffer = false;
 bool g_doTest_CopyResourceTest = false;
 bool g_doTest_CopyResourceTest_FB = false;
@@ -633,6 +643,20 @@ int main(int, char**)
         }
     }
 
+    if (!g_doSubsetTest || g_doTest_buffertest_viewOffsetCS_Vars)
+    {
+        buffertest_viewOffsetCS_Vars::Context::LogFn = &LogFunction;
+        buffertest_viewOffsetCS_Vars::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        buffertest_viewOffsetCS_Vars::Context::PerfEventEndFn = &PerfEventEndFn;
+        buffertest_viewOffsetCS_Vars::Context::s_techniqueLocation = L".\\UnitTests\\Buffers\\buffertest_viewOffsetCS_Vars\\";
+        m_buffertest_viewOffsetCS_Vars = buffertest_viewOffsetCS_Vars::CreateContext(g_pd3dDevice);
+        if (!m_buffertest_viewOffsetCS_Vars)
+        {
+            printf("Could not create m_buffertest_viewOffsetCS_Vars context");
+            return 1;
+        }
+    }
+
     if (!g_doSubsetTest || g_doTest_bufferViewDescriptorTable)
     {
         bufferViewDescriptorTable::Context::LogFn = &LogFunction;
@@ -755,6 +779,20 @@ int main(int, char**)
         if (!m_SlangAutoDiff)
         {
             printf("Could not create m_SlangAutoDiff context");
+            return 1;
+        }
+    }
+
+    if (!g_doSubsetTest || g_doTest_VariableAliases)
+    {
+        VariableAliases::Context::LogFn = &LogFunction;
+        VariableAliases::Context::PerfEventBeginFn = &PerfEventBeginFn;
+        VariableAliases::Context::PerfEventEndFn = &PerfEventEndFn;
+        VariableAliases::Context::s_techniqueLocation = L".\\UnitTests\\Compute\\VariableAliases\\";
+        m_VariableAliases = VariableAliases::CreateContext(g_pd3dDevice);
+        if (!m_VariableAliases)
+        {
+            printf("Could not create m_VariableAliases context");
             return 1;
         }
     }
@@ -1563,6 +1601,8 @@ int main(int, char**)
             buffertest::MakeUI(m_buffertest, g_pd3dCommandQueue);
         if (m_buffertest_viewOffsetCS && ImGui::CollapsingHeader("buffertest_viewOffsetCS"))
             buffertest_viewOffsetCS::MakeUI(m_buffertest_viewOffsetCS, g_pd3dCommandQueue);
+        if (m_buffertest_viewOffsetCS_Vars && ImGui::CollapsingHeader("buffertest_viewOffsetCS_Vars"))
+            buffertest_viewOffsetCS_Vars::MakeUI(m_buffertest_viewOffsetCS_Vars, g_pd3dCommandQueue);
         if (m_bufferViewDescriptorTable && ImGui::CollapsingHeader("bufferViewDescriptorTable"))
             bufferViewDescriptorTable::MakeUI(m_bufferViewDescriptorTable, g_pd3dCommandQueue);
         if (m_StructuredBuffer && ImGui::CollapsingHeader("StructuredBuffer"))
@@ -1581,6 +1621,8 @@ int main(int, char**)
             simple::MakeUI(m_simple, g_pd3dCommandQueue);
         if (m_SlangAutoDiff && ImGui::CollapsingHeader("SlangAutoDiff"))
             SlangAutoDiff::MakeUI(m_SlangAutoDiff, g_pd3dCommandQueue);
+        if (m_VariableAliases && ImGui::CollapsingHeader("VariableAliases"))
+            VariableAliases::MakeUI(m_VariableAliases, g_pd3dCommandQueue);
         if (m_CopyPartialBuffer && ImGui::CollapsingHeader("CopyPartialBuffer"))
             CopyPartialBuffer::MakeUI(m_CopyPartialBuffer, g_pd3dCommandQueue);
         if (m_CopyResourceTest && ImGui::CollapsingHeader("CopyResourceTest"))
@@ -1763,6 +1805,8 @@ int main(int, char**)
             buffertest::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_buffertest_viewOffsetCS)
             buffertest_viewOffsetCS::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_buffertest_viewOffsetCS_Vars)
+            buffertest_viewOffsetCS_Vars::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_bufferViewDescriptorTable)
             bufferViewDescriptorTable::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_StructuredBuffer)
@@ -1781,6 +1825,8 @@ int main(int, char**)
             simple::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_SlangAutoDiff)
             SlangAutoDiff::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
+        if (m_VariableAliases)
+            VariableAliases::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_CopyPartialBuffer)
             CopyPartialBuffer::OnNewFrame(NUM_FRAMES_IN_FLIGHT);
         if (m_CopyResourceTest)
@@ -1896,6 +1942,8 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PreExecute);
         if (m_buffertest_viewOffsetCS)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest_viewOffsetCS, UnitTestEvent::PreExecute);
+        if (m_buffertest_viewOffsetCS_Vars)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest_viewOffsetCS_Vars, UnitTestEvent::PreExecute);
         if (m_bufferViewDescriptorTable)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_bufferViewDescriptorTable, UnitTestEvent::PreExecute);
         if (m_StructuredBuffer)
@@ -1914,6 +1962,8 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PreExecute);
         if (m_SlangAutoDiff)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PreExecute);
+        if (m_VariableAliases)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VariableAliases, UnitTestEvent::PreExecute);
         if (m_CopyPartialBuffer)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyPartialBuffer, UnitTestEvent::PreExecute);
         if (m_CopyResourceTest)
@@ -2029,6 +2079,8 @@ int main(int, char**)
             buffertest::Execute(m_buffertest, g_pd3dDevice, g_pd3dCommandList);
         if (m_buffertest_viewOffsetCS)
             buffertest_viewOffsetCS::Execute(m_buffertest_viewOffsetCS, g_pd3dDevice, g_pd3dCommandList);
+        if (m_buffertest_viewOffsetCS_Vars)
+            buffertest_viewOffsetCS_Vars::Execute(m_buffertest_viewOffsetCS_Vars, g_pd3dDevice, g_pd3dCommandList);
         if (m_bufferViewDescriptorTable)
             bufferViewDescriptorTable::Execute(m_bufferViewDescriptorTable, g_pd3dDevice, g_pd3dCommandList);
         if (m_StructuredBuffer)
@@ -2047,6 +2099,8 @@ int main(int, char**)
             simple::Execute(m_simple, g_pd3dDevice, g_pd3dCommandList);
         if (m_SlangAutoDiff)
             SlangAutoDiff::Execute(m_SlangAutoDiff, g_pd3dDevice, g_pd3dCommandList);
+        if (m_VariableAliases)
+            VariableAliases::Execute(m_VariableAliases, g_pd3dDevice, g_pd3dCommandList);
         if (m_CopyPartialBuffer)
             CopyPartialBuffer::Execute(m_CopyPartialBuffer, g_pd3dDevice, g_pd3dCommandList);
         if (m_CopyResourceTest)
@@ -2162,6 +2216,8 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest, UnitTestEvent::PostExecute);
         if (m_buffertest_viewOffsetCS)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest_viewOffsetCS, UnitTestEvent::PostExecute);
+        if (m_buffertest_viewOffsetCS_Vars)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_buffertest_viewOffsetCS_Vars, UnitTestEvent::PostExecute);
         if (m_bufferViewDescriptorTable)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_bufferViewDescriptorTable, UnitTestEvent::PostExecute);
         if (m_StructuredBuffer)
@@ -2180,6 +2236,8 @@ int main(int, char**)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_simple, UnitTestEvent::PostExecute);
         if (m_SlangAutoDiff)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_SlangAutoDiff, UnitTestEvent::PostExecute);
+        if (m_VariableAliases)
+            UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_VariableAliases, UnitTestEvent::PostExecute);
         if (m_CopyPartialBuffer)
             UnitTest(g_pd3dDevice, g_pd3dCommandList, g_readbackHelper, m_CopyPartialBuffer, UnitTestEvent::PostExecute);
         if (m_CopyResourceTest)
@@ -2339,6 +2397,11 @@ int main(int, char**)
         buffertest_viewOffsetCS::DestroyContext(m_buffertest_viewOffsetCS);
         m_buffertest_viewOffsetCS = nullptr;
     }
+    if (m_buffertest_viewOffsetCS_Vars)
+    {
+        buffertest_viewOffsetCS_Vars::DestroyContext(m_buffertest_viewOffsetCS_Vars);
+        m_buffertest_viewOffsetCS_Vars = nullptr;
+    }
     if (m_bufferViewDescriptorTable)
     {
         bufferViewDescriptorTable::DestroyContext(m_bufferViewDescriptorTable);
@@ -2383,6 +2446,11 @@ int main(int, char**)
     {
         SlangAutoDiff::DestroyContext(m_SlangAutoDiff);
         m_SlangAutoDiff = nullptr;
+    }
+    if (m_VariableAliases)
+    {
+        VariableAliases::DestroyContext(m_VariableAliases);
+        m_VariableAliases = nullptr;
     }
     if (m_CopyPartialBuffer)
     {

@@ -28,35 +28,35 @@ namespace SubGraphLoops
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__FilterSub_Iteration_0_BlurCB
+        struct Struct__FilterSub_Iteration_0_Blur_0CB
         {
             unsigned int FilterSub_Iteration_0_sRGB = true;
             int __loopIndexValue_0 = 0;
             float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
-        struct Struct__FilterSub_Iteration_1_BlurCB
+        struct Struct__FilterSub_Iteration_1_Blur_0CB
         {
             unsigned int FilterSub_Iteration_1_sRGB = true;
             int __loopIndexValue_1 = 1;
             float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
-        struct Struct__FilterSub_Iteration_2_BlurCB
+        struct Struct__FilterSub_Iteration_2_Blur_0CB
         {
             unsigned int FilterSub_Iteration_2_sRGB = true;
             int __loopIndexValue_2 = 2;
             float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
-        struct Struct__FilterSub_Iteration_3_BlurCB
+        struct Struct__FilterSub_Iteration_3_Blur_0CB
         {
             unsigned int FilterSub_Iteration_3_sRGB = true;
             int __loopIndexValue_3 = 3;
             float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
-        struct Struct__FilterSub_Iteration_4_BlurCB
+        struct Struct__FilterSub_Iteration_4_Blur_0CB
         {
             unsigned int FilterSub_Iteration_4_sRGB = true;
             int __loopIndexValue_4 = 4;
@@ -70,32 +70,32 @@ namespace SubGraphLoops
         int variable___loopIndexValue_3 = 3;
         int variable___loopIndexValue_4 = 4;
 
-        Struct__FilterSub_Iteration_0_BlurCB constantBuffer__FilterSub_Iteration_0_BlurCB_cpu;
-        ID3D12Resource* constantBuffer__FilterSub_Iteration_0_BlurCB = nullptr;
+        Struct__FilterSub_Iteration_0_Blur_0CB constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu;
+        ID3D12Resource* constantBuffer__FilterSub_Iteration_0_Blur_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_FilterSub_Iteration_0_DoBlur_pso;
         static ID3D12RootSignature* computeShader_FilterSub_Iteration_0_DoBlur_rootSig;
 
-        Struct__FilterSub_Iteration_1_BlurCB constantBuffer__FilterSub_Iteration_1_BlurCB_cpu;
-        ID3D12Resource* constantBuffer__FilterSub_Iteration_1_BlurCB = nullptr;
+        Struct__FilterSub_Iteration_1_Blur_0CB constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu;
+        ID3D12Resource* constantBuffer__FilterSub_Iteration_1_Blur_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_FilterSub_Iteration_1_DoBlur_pso;
         static ID3D12RootSignature* computeShader_FilterSub_Iteration_1_DoBlur_rootSig;
 
-        Struct__FilterSub_Iteration_2_BlurCB constantBuffer__FilterSub_Iteration_2_BlurCB_cpu;
-        ID3D12Resource* constantBuffer__FilterSub_Iteration_2_BlurCB = nullptr;
+        Struct__FilterSub_Iteration_2_Blur_0CB constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu;
+        ID3D12Resource* constantBuffer__FilterSub_Iteration_2_Blur_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_FilterSub_Iteration_2_DoBlur_pso;
         static ID3D12RootSignature* computeShader_FilterSub_Iteration_2_DoBlur_rootSig;
 
-        Struct__FilterSub_Iteration_3_BlurCB constantBuffer__FilterSub_Iteration_3_BlurCB_cpu;
-        ID3D12Resource* constantBuffer__FilterSub_Iteration_3_BlurCB = nullptr;
+        Struct__FilterSub_Iteration_3_Blur_0CB constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu;
+        ID3D12Resource* constantBuffer__FilterSub_Iteration_3_Blur_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_FilterSub_Iteration_3_DoBlur_pso;
         static ID3D12RootSignature* computeShader_FilterSub_Iteration_3_DoBlur_rootSig;
 
-        Struct__FilterSub_Iteration_4_BlurCB constantBuffer__FilterSub_Iteration_4_BlurCB_cpu;
-        ID3D12Resource* constantBuffer__FilterSub_Iteration_4_BlurCB = nullptr;
+        Struct__FilterSub_Iteration_4_Blur_0CB constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu;
+        ID3D12Resource* constantBuffer__FilterSub_Iteration_4_Blur_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_FilterSub_Iteration_4_DoBlur_pso;
         static ID3D12RootSignature* computeShader_FilterSub_Iteration_4_DoBlur_rootSig;

@@ -242,45 +242,119 @@ struct AddNodeInfoToShadersVisitor
         ShaderDefine newDefine;
         std::ostringstream stream;
 
-        int shaderIndex = GetShaderIndex(renderGraph, node.shader.name.c_str());
-        if (shaderIndex == -1)
-            return false;
-
-        if (visitedShaders.count(shaderIndex) > 0)
-            return true;
-        visitedShaders.insert(shaderIndex);
-
-        Shader& shader = renderGraph.shaders[shaderIndex];
-
+        // Make node the dispatch parameters available
         newDefine.name = "__GigiDispatchMultiply";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.multiply[0] << "," << node.dispatchSize.multiply[1] << "," << node.dispatchSize.multiply[2] << ")";
         newDefine.value = stream.str();
-        shader.defines.push_back(newDefine);
+        node.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchDivide";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.divide[0] << "," << node.dispatchSize.divide[1] << "," << node.dispatchSize.divide[2] << ")";
         newDefine.value = stream.str();
-        shader.defines.push_back(newDefine);
+        node.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchPreAdd";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.preAdd[0] << "," << node.dispatchSize.preAdd[1] << "," << node.dispatchSize.preAdd[2] << ")";
         newDefine.value = stream.str();
-        shader.defines.push_back(newDefine);
+        node.defines.push_back(newDefine);
 
         newDefine.name = "__GigiDispatchPostAdd";
         stream = std::ostringstream();
         stream << "uint3(" << node.dispatchSize.postAdd[0] << "," << node.dispatchSize.postAdd[1] << "," << node.dispatchSize.postAdd[2] << ")";
         newDefine.value = stream.str();
-        shader.defines.push_back(newDefine);
+        node.defines.push_back(newDefine);
+
+        // All shader variable aliases that are const variables need to be added as defines so they are compile time constants
+        for (const ShaderVariableAlias& alias : node.shaderVariableAliases.aliases)
+        {
+            int variableIndex =  GetVariableIndex(renderGraph, alias.variable.name.c_str());
+            if (variableIndex == -1)
+                continue;
+
+            const Variable& var = renderGraph.variables[variableIndex];
+            if (!var.Const)
+                continue;
+
+            stream = std::ostringstream();
+            stream << "__GIGI_AlIAS_VARIABLE_CONST_" << alias.name;
+            newDefine.name = stream.str();
+            stream = std::ostringstream();
+            stream << var.dflt;
+            newDefine.value = stream.str();
+            node.defines.push_back(newDefine);
+        }
+
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_RayShader& node, const std::string& path)
+    {
+        ShaderDefine newDefine;
+        std::ostringstream stream;
+
+        // All shader variable aliases that are const variables need to be added as defines so they are compile time constants
+        for (const ShaderVariableAlias& alias : node.shaderVariableAliases.aliases)
+        {
+            int variableIndex = GetVariableIndex(renderGraph, alias.variable.name.c_str());
+            if (variableIndex == -1)
+                continue;
+
+            const Variable& var = renderGraph.variables[variableIndex];
+            if (!var.Const)
+                continue;
+
+            stream = std::ostringstream();
+            stream << "__GIGI_AlIAS_VARIABLE_CONST_" << alias.name;
+            newDefine.name = stream.str();
+            stream = std::ostringstream();
+            stream << var.dflt;
+            newDefine.value = stream.str();
+            node.defines.push_back(newDefine);
+        }
+
+        return true;
+    }
+
+    bool Visit(RenderGraphNode_Action_DrawCall& node, const std::string& path)
+    {
+        auto HandleShaderVariableAliases = [this, &node](const ShaderVariableAliases& aliases)
+            {
+                ShaderDefine newDefine;
+                std::ostringstream stream;
+
+                for (const ShaderVariableAlias& alias : aliases.aliases)
+                {
+                    int variableIndex = GetVariableIndex(renderGraph, alias.variable.name.c_str());
+                    if (variableIndex == -1)
+                        continue;
+
+                    const Variable& var = renderGraph.variables[variableIndex];
+                    if (!var.Const)
+                        continue;
+
+                    stream = std::ostringstream();
+                    stream << "__GIGI_AlIAS_VARIABLE_CONST_" << alias.name;
+                    newDefine.name = stream.str();
+                    stream = std::ostringstream();
+                    stream << var.dflt;
+                    newDefine.value = stream.str();
+                    node.defines.push_back(newDefine);
+                }
+            }
+        ;
+
+        HandleShaderVariableAliases(node.amplificationShaderVariableAliases);
+        HandleShaderVariableAliases(node.meshShaderVariableAliases);
+        HandleShaderVariableAliases(node.vertexShaderVariableAliases);
+        HandleShaderVariableAliases(node.pixelShaderVariableAliases);
 
         return true;
     }
 
     RenderGraph& renderGraph;
-    std::unordered_set<int> visitedShaders;
 };
 
 struct ErrorCheckVisitor
@@ -2779,6 +2853,7 @@ struct ShaderDataVisitor
         };
 
         std::unordered_set<std::string> variablesAccessedUnsorted;
+        std::unordered_set<std::string> variableAliasesAccessedUnsorted;
         ForEachToken((char*)fileContents.data(),
             [&](const std::string& tokenStr, const char* stringStart, const char* cursor)
             {
@@ -2805,6 +2880,19 @@ struct ShaderDataVisitor
                         return;
 
                     variablesAccessedUnsorted.insert(renderGraph.variables[variableIndex].name);
+                }
+                else if (BeginsWith(token, tokenIndex, "VariableAlias:"))
+                {
+                    std::string aliasName = tokenStr.substr(tokenIndex, tokenStr.length() - (tokenIndex + 3));
+
+                    int aliasIndex = GetVariableAliasIndex(shader, aliasName.c_str());
+                    if (aliasIndex == -1)
+                    {
+                        Assert(false, "Could not find variable alias \"%s\" referenced in shader file \"%s\".\nIn %s\n", aliasName.c_str(), shader.fileName.c_str(), path.c_str());
+                        return;
+                    }
+
+                    variableAliasesAccessedUnsorted.insert(aliasName);
                 }
                 else if (
                     BeginsWith(token, tokenIndex, "Image:") || BeginsWith(token, tokenIndex, "Image2D:") ||
@@ -3066,7 +3154,7 @@ struct ShaderDataVisitor
         }
 
         // if no variables referenced, we are done
-        if (variablesAccessedUnsorted.empty())
+        if (variablesAccessedUnsorted.empty() && variableAliasesAccessedUnsorted.empty())
             return true;
 
         // make a sorted list of accessed variables, for determinism
@@ -3074,6 +3162,10 @@ struct ShaderDataVisitor
         for (auto it : variablesAccessedUnsorted)
             variablesAccessed.push_back(it);
         std::sort(variablesAccessed.begin(), variablesAccessed.end());
+        std::vector<std::string> variableAliasessAccessed;
+        for (auto it : variableAliasesAccessedUnsorted)
+            variableAliasessAccessed.push_back(it);
+        std::sort(variableAliasessAccessed.begin(), variableAliasessAccessed.end());
 
         // add a struct for this constant buffer
         {
@@ -3114,6 +3206,23 @@ struct ShaderDataVisitor
                 newStruct.fields.push_back(newField);
             }
 
+            for (const std::string& aliasName : variableAliasessAccessed)
+            {
+                int aliasIndex = GetVariableAliasIndex(shader, aliasName.c_str());
+                Assert(aliasIndex >= 0, "Could not find variable alias %s.\nIn %s\n", aliasName.c_str(), path.c_str());
+
+                StructField newField;
+                newField.name = std::string("_alias_") + aliasName;
+                newField.type = shader.variableAliases[aliasIndex].type;
+
+                ZeroDfltIfEmpty(newField.dflt, newField.type, path);
+
+                newStruct.fields.push_back(newField);
+
+                // Also remember that this alias is actually used
+                shader.variableAliases[aliasIndex].usedInShader = true;
+            }
+
             // re-arrange and/or pad the struct fields to conform to alignment rules
             switch (backend)
             {
@@ -3132,7 +3241,8 @@ struct ShaderDataVisitor
             shader.constantBuffers.push_back(newCB);
         }
 
-        // Add a constant buffer resource that is set from the vars
+        // Make a constant buffer resource node that is set from the vars
+        RenderGraphNode newCBNode;
         {
             RenderGraphNode_Resource_ShaderConstants newCB;
             newCB.name = "_" + shader.name + "CB";
@@ -3145,41 +3255,84 @@ struct ShaderDataVisitor
                 newSetFromVar.variable.name = variableName;
                 newCB.setFromVar.push_back(newSetFromVar);
             }
-            RenderGraphNode node;
-            node._index = RenderGraphNode::c_index_resourceShaderConstants;
-            node.resourceShaderConstants = newCB;
-            renderGraph.nodes.push_back(node);
+            newCBNode._index = RenderGraphNode::c_index_resourceShaderConstants;
+            newCBNode.resourceShaderConstants = newCB;
         }
 
         // Hook up this constant buffer to every action node that uses this shader.
+        std::vector<RenderGraphNode> nodesToAdd;
+        int nodeHookupIndex = 0;
         for (RenderGraphNode& node : renderGraph.nodes)
         {
+            const ShaderVariableAliases* nodeVariableAliases = nullptr;
+
             // compute shader
             if (node._index == RenderGraphNode::c_index_actionComputeShader)
             {
-                if (node.actionComputeShader.shader.name != shader.name)
-                    continue;
+                if (node.actionComputeShader.shader.name == shader.name)
+                    nodeVariableAliases = &node.actionComputeShader.shaderVariableAliases;
             }
             // ray shader
             else if (node._index == RenderGraphNode::c_index_actionRayShader)
             {
-                if (node.actionRayShader.shader.name != shader.name)
-                    continue;
+                if (node.actionRayShader.shader.name == shader.name)
+                    nodeVariableAliases = &node.actionRayShader.shaderVariableAliases;
             }
             // draw call
             else if (node._index == RenderGraphNode::c_index_actionDrawCall)
             {
-                if (node.actionDrawCall.vertexShader.name != shader.name && node.actionDrawCall.pixelShader.name != shader.name &&
-                    node.actionDrawCall.amplificationShader.name != shader.name && node.actionDrawCall.meshShader.name != shader.name)
-                    continue;
+                if (node.actionDrawCall.vertexShader.name == shader.name)
+                    nodeVariableAliases = &node.actionDrawCall.vertexShaderVariableAliases;
+                else if (node.actionDrawCall.pixelShader.name == shader.name)
+                    nodeVariableAliases = &node.actionDrawCall.pixelShaderVariableAliases;
+                else if (node.actionDrawCall.amplificationShader.name == shader.name)
+                    nodeVariableAliases = &node.actionDrawCall.amplificationShaderVariableAliases;
+                else if (node.actionDrawCall.meshShader.name == shader.name)
+                    nodeVariableAliases = &node.actionDrawCall.meshShaderVariableAliases;
             }
-            // unknown node type
-            else
+
+            // Unknown node or shader type
+            if (!nodeVariableAliases)
                 continue;
+
+            // Add a constant buffer resource.
+            // Only add it once, unless there are variable aliases, in which case we need one per node.
+            // Add it delayed though since we are looping through the nodes right now.
+            std::string cbNodeName = "_" + shader.name + "CB";
+            if (nodeHookupIndex == 0 || variableAliasessAccessed.size() > 0)
+            {
+                if (variableAliasessAccessed.size() > 0)
+                {
+                    char buffer[1024];
+                    sprintf_s(buffer, "_%sCB_%i", shader.name.c_str(), nodeHookupIndex);
+                    cbNodeName = buffer;
+                }
+
+                RenderGraphNode newCBNodeCopy = newCBNode;
+
+                // Use the variable aliases to set up some more setvars
+                for (const ShaderVariableAlias& alias : nodeVariableAliases->aliases)
+                {
+                    // only make setvars for the aliases actually used
+                    int aliasIndex = GetVariableAliasIndex(shader, alias.name.c_str());
+                    if (aliasIndex == -1 || !shader.variableAliases[aliasIndex].usedInShader)
+                        continue;
+
+                    SetCBFromVar newSetFromVar;
+                    newSetFromVar.field = std::string("_alias_") + alias.name;
+                    newSetFromVar.variable = alias.variable;
+                    newCBNodeCopy.resourceShaderConstants.setFromVar.push_back(newSetFromVar);
+                }
+
+                newCBNodeCopy.resourceShaderConstants.name = cbNodeName;
+                newCBNodeCopy.resourceShaderConstants.originalName = cbNodeName;
+                nodesToAdd.push_back(newCBNodeCopy);
+                nodeHookupIndex++;
+            }
 
             NodePinConnection newConnection;
             newConnection.dstPin = "resource";
-            newConnection.dstNode = "_" + shader.name + "CB";
+            newConnection.dstNode = cbNodeName;
             newConnection.srcPin = "_" + shader.name + "CB";
 
             switch (node._index)
@@ -3189,6 +3342,10 @@ struct ShaderDataVisitor
                 case RenderGraphNode::c_index_actionDrawCall: node.actionDrawCall.connections.push_back(newConnection); break;
             }
         }
+
+        // Add the nodes now that we are done looping
+        for (const RenderGraphNode& newCB : nodesToAdd)
+            renderGraph.nodes.push_back(newCB);
 
         return true;
     }

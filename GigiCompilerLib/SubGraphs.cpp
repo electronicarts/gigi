@@ -337,6 +337,9 @@ struct RenameReferencesVisitor
                 m_renameData.UpdateShaderName(node.vertexShader.name);
                 m_renameData.UpdateShaderName(node.pixelShader.name);
 
+                m_renameData.UpdateNodePin(node.indirectBuffer.node, node.indirectBuffer.pin);
+                m_renameData.UpdateNodeName(node.indirectBuffer.node);
+
                 m_renameData.UpdateNodePin(node.shadingRateImage.node, node.shadingRateImage.pin);
                 m_renameData.UpdateNodePin(node.vertexBuffer.node, node.vertexBuffer.pin);
                 m_renameData.UpdateNodePin(node.indexBuffer.node, node.indexBuffer.pin);

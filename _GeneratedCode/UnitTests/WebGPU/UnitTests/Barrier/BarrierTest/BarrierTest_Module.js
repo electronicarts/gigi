@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Left", node "Draw_Left"
-static ShaderCode_Draw_Left_Left = `
+// Shader code for Compute shader "Left_0", node "Draw_Left"
+static ShaderCode_Draw_Left_Left_0 = `
 @binding(0) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 @compute
@@ -50,8 +50,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Right", node "Draw_Right"
-static ShaderCode_Draw_Right_Right = `
+// Shader code for Compute shader "Right_0", node "Draw_Right"
+static ShaderCode_Draw_Right_Right_0 = `
 @binding(0) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 @compute
@@ -70,8 +70,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "After", node "After"
-static ShaderCode_After_After = `
+// Shader code for Compute shader "After_0", node "After"
+static ShaderCode_After_After_0 = `
 @binding(1) @group(0) var OutputReadOnly : texture_storage_2d</*(OutputReadOnly_format)*/, read>;
 
 @binding(0) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
@@ -248,7 +248,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Draw_Left = newHash;
 
-            let shaderCode = class_BarrierTest.ShaderCode_Draw_Left_Left;
+            let shaderCode = class_BarrierTest.ShaderCode_Draw_Left_Left_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Draw_Left_Output_ReadOnly_format));
 
@@ -349,7 +349,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Draw_Right = newHash;
 
-            let shaderCode = class_BarrierTest.ShaderCode_Draw_Right_Right;
+            let shaderCode = class_BarrierTest.ShaderCode_Draw_Right_Right_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Draw_Right_Output_ReadOnly_format));
 
@@ -450,7 +450,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_After = newHash;
 
-            let shaderCode = class_BarrierTest.ShaderCode_After_After;
+            let shaderCode = class_BarrierTest.ShaderCode_After_After_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_After_Output_ReadOnly_format));
 

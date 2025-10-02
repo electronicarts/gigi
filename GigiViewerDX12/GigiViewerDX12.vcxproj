@@ -101,6 +101,7 @@
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\external\OpenFBX\libdeflate.c" />
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
+    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
     <ClCompile Include="BVH.cpp" />
     <ClCompile Include="ImageReadback.cpp" />
     <ClCompile Include="DX12Utils\Camera.cpp" />
@@ -121,7 +122,6 @@
     <ClCompile Include="DX12Utils\FileCache.cpp" />
     <ClCompile Include="DX12Utils\TextureCache.cpp" />
     <ClCompile Include="DX12Utils\UploadBufferTracker.cpp" />
-    <ClCompile Include="ImGuiHelper.cpp" />
     <ClCompile Include="Interpreter\GigiInterpreterPreviewWindowDX12.cpp" />
     <ClCompile Include="Interpreter\GigiInterpreterPreviewWindowDX12_UI.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Action_ComputeShader.cpp" />
@@ -147,6 +147,7 @@
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
     <ClInclude Include="..\external\OpenFBX\libdeflate.h" />
     <ClInclude Include="..\external\OpenFBX\ofbx.h" />
+    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
     <ClInclude Include="BVH.h" />
     <ClInclude Include="ImageReadback.h" />
     <ClInclude Include="DX12Utils\Camera.h" />
@@ -169,7 +170,6 @@
     <ClInclude Include="DX12Utils\Utils.h" />
     <ClInclude Include="f16.h" />
     <ClInclude Include="ImageSave.h" />
-    <ClInclude Include="ImGuiHelper.h" />
     <ClInclude Include="imgui\backends\imgui_impl_dx12.ps.hlsl.h" />
     <ClInclude Include="Interpreter\GigiInterpreterPreviewWindowDX12.h" />
     <ClInclude Include="Interpreter\NodesShared.h" />

@@ -772,6 +772,195 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
     }
 }
 
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, buffertest_viewOffsetCS_Vars::Context* context, UnitTestEvent event)
+{
+    // Create buffers and put them into the context as inputs, as appropriate
+    if (testContext.IsFirstPreExecute(event))
+    {
+        // Load, create and set buffer_InputStructuredBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_structuredbuffer.csv");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_structuredbuffer.csv");
+                return;
+            }
+
+            buffertest_viewOffsetCS_Vars::Struct_TestStruct inputStructuredBufferData;
+            bool result = DX12Utils::ParseCSV::ForEachValue(file.GetBytes(), true,
+                [&inputStructuredBufferData] (int tokenIndex, const char* token)
+                {
+                    // skip empty tokens, caused by trailing commas
+                    if (token[0] == 0)
+                        return true;
+
+                    switch (tokenIndex)
+                    {
+                        // float4 TheFloat4 = {0.0, 0.0, 0.0, 0.0};
+                        case 0:
+                        case 1:
+                        case 2:
+                        case 3:
+                        {
+                            sscanf(token, "%f", &inputStructuredBufferData.TheFloat4[tokenIndex]);
+                            break;
+                        }
+                        // int4 TheInt4 = {0, 0, 0, 0};
+                        case 4:
+                        case 5:
+                        case 6:
+                        case 7:
+                        {
+                            sscanf(token, "%i", &inputStructuredBufferData.TheInt4[tokenIndex - 4]);
+                            break;
+                        }
+                        // unsigned int TheBool = false;
+                        case 8:
+                        {
+                            if (!stricmp(token, "false"))
+                                inputStructuredBufferData.TheBool = false;
+                            if (!stricmp(token, "true"))
+                                inputStructuredBufferData.TheBool = true;
+                            else
+                                return false;
+                            break;
+                        }
+                        default: return false;
+                    }
+                    return true;
+                }
+            );
+
+            if (!result)
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_structuredbuffer.csv");
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_InputStructuredBuffer_format = DXGI_FORMAT_UNKNOWN;
+            context->m_input.buffer_InputStructuredBuffer_stride = sizeof(inputStructuredBufferData);
+            context->m_input.buffer_InputStructuredBuffer_count = 1;
+            context->m_input.buffer_InputStructuredBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_InputStructuredBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_InputStructuredBuffer_flags, inputStructuredBufferData, context->GetTechniqueNameW());
+        }
+
+        // Load, create and set buffer_InputTypedBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+                return;
+            }
+
+            std::vector<float> inputTypedBufferData;
+
+            bool result = DX12Utils::ParseCSV::ForEachValue(file.GetBytes(), true,
+                [&inputTypedBufferData](int tokenIndex, const char* token)
+                {
+                    // skip empty tokens, caused by trailing commas
+                    if (token[0] == 0)
+                        return true;
+
+                    float f;
+                    sscanf(token, "%f", &f);
+                    inputTypedBufferData.push_back(f);
+                    return true;
+                }
+            );
+
+            if (!result)
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_InputTypedBuffer_format = DXGI_FORMAT_R32_FLOAT;
+            context->m_input.buffer_InputTypedBuffer_stride = 0;
+            context->m_input.buffer_InputTypedBuffer_count = inputTypedBufferData.size();
+            context->m_input.buffer_InputTypedBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_InputTypedBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_InputTypedBuffer_flags, inputTypedBufferData, context->GetTechniqueNameW());
+        }
+
+        // Load, create and set buffer_InputTypedStructBuffer
+        {
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+                return;
+            }
+
+            std::vector<float> inputTypedBufferData;
+
+            bool result = DX12Utils::ParseCSV::ForEachValue(file.GetBytes(), true,
+                [&inputTypedBufferData](int tokenIndex, const char* token)
+                {
+                    // skip empty tokens, caused by trailing commas
+                    if (token[0] == 0)
+                        return true;
+
+                    float f;
+                    sscanf(token, "%f", &f);
+                    inputTypedBufferData.push_back(f);
+                    return true;
+                }
+            );
+
+            if (!result)
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_InputTypedStructBuffer_format = DXGI_FORMAT_R32_FLOAT;
+            context->m_input.buffer_InputTypedStructBuffer_stride = 0;
+            context->m_input.buffer_InputTypedStructBuffer_count = inputTypedBufferData.size();
+            context->m_input.buffer_InputTypedStructBuffer_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_InputTypedStructBuffer = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_InputTypedStructBuffer_flags, inputTypedBufferData, context->GetTechniqueNameW());
+        }
+
+        // Load, create and set buffer_InputTypedBufferRaw
+        {
+
+            DX12Utils::FileCache::File& file = DX12Utils::FileCache::Get("..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+            if (!file.Valid())
+            {
+                testContext.Fail("Could not load ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+                return;
+            }
+
+            std::vector<float> inputTypedBufferRawData;
+
+            bool result = DX12Utils::ParseCSV::ForEachValue(file.GetBytes(), true,
+                [&inputTypedBufferRawData](int tokenIndex, const char* token)
+                {
+                    // skip empty tokens, caused by trailing commas
+                    if (token[0] == 0)
+                        return true;
+
+                    float f;
+                    sscanf(token, "%f", &f);
+                    inputTypedBufferRawData.push_back(f);
+                    return true;
+                }
+            );
+
+            if (!result)
+                testContext.Fail("Could not load %s ..\\..\\..\\Techniques\\UnitTests\\Buffers\\buffertest_typedbuffer.csv");
+
+            // Create a buffer and set the buffer data on the technique context
+            context->m_input.buffer_InputTypedBufferRaw_format = DXGI_FORMAT_R32_FLOAT;
+            context->m_input.buffer_InputTypedBufferRaw_stride = 0;
+            context->m_input.buffer_InputTypedBufferRaw_count = inputTypedBufferRawData.size();
+            context->m_input.buffer_InputTypedBufferRaw_state = D3D12_RESOURCE_STATE_COPY_DEST;
+            context->m_input.buffer_InputTypedBufferRaw = context->CreateManagedBuffer(device, commandList, context->m_input.c_buffer_InputTypedBufferRaw_flags, inputTypedBufferRawData, context->GetTechniqueNameW());
+        }
+    }
+
+    if (testContext.IsFirstPostExecute(event))
+    {
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest_viewOffsetCS_Vars\\0.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedStructBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest_viewOffsetCS_Vars\\1.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputStructuredBuffer, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest_viewOffsetCS_Vars\\2.bin");
+        testContext.VerifyReadbackBinary(device, commandList, context->m_output.buffer_OutputTypedBufferRaw, D3D12_RESOURCE_STATE_COPY_DEST, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Buffers\\buffertest_viewOffsetCS_Vars\\3.bin");
+    }
+}
+
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, bufferViewDescriptorTable::Context* context, UnitTestEvent event)
 {
     if (testContext.IsFirstPostExecute(event))
@@ -989,6 +1178,12 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         context->m_input.variable_FrameIndex++;
         context->m_input.variable_initialized = true;
     }
+}
+
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, VariableAliases::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Color, context->m_output.c_texture_Color_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\VariableAliases\\0.png");
 }
 
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, CopyResourceTest::Context* context, UnitTestEvent event)

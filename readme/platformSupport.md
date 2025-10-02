@@ -13,10 +13,10 @@ Below are the details of what is supported on each platform, based on the unit t
 
 | Platform | Supported Tests | Unsupported Tests | Support Rate |
 |----------|----------------|-------------------|--------------|
-| Viewer | 89/89 | 0/89 | 100.0% |
-| DX12 | 66/89 | 23/89 | 74.2% |
-| WebGPU | 49/89 | 40/89 | 55.1% |
-| UE 5.3 | 19/89 | 70/89 | 21.3% |
+| Viewer | 92/92 | 0/92 | 100.0% |
+| DX12 | 68/92 | 24/92 | 73.9% |
+| WebGPU | 50/92 | 42/92 | 54.3% |
+| UE 5.3 | 20/92 | 72/92 | 21.7% |
 
 ## Detailed Test Support by Platform
 
@@ -29,6 +29,7 @@ Below are the details of what is supported on each platform, based on the unit t
 | `Buffers\bufferViewDescriptorTable` | ✅ | ✅ | ❌ | ❌ |
 | `Buffers\buffertest` | ✅ | ✅ | ❌ | ✅ |
 | `Buffers\buffertest_viewOffsetCS` | ✅ | ✅ | ❌ | ❌ |
+| `Buffers\buffertest_viewOffsetCS_Vars` | ✅ | ✅ | ❌ | ❌ |
 | `Buffers\buffertest_webgpu` | ✅ | ❌ | ✅ | ❌ |
 | `Buffers\uint16` | ✅ | ❌ | ❌ | ❌ |
 | `Compute\BufferAtomics` | ✅ | ✅ | ✅ | ❌ |
@@ -37,6 +38,7 @@ Below are the details of what is supported on each platform, based on the unit t
 | `Compute\OutputToMultipleInputs` | ✅ | ❌ | ❌ | ❌ |
 | `Compute\ReadbackSequence` | ✅ | ✅ | ✅ | ✅ |
 | `Compute\SlangAutoDiff` | ✅ | ✅ | ✅ | ✅ |
+| `Compute\VariableAliases` | ✅ | ✅ | ✅ | ✅ |
 | `Compute\boxblur` | ✅ | ✅ | ✅ | ✅ |
 | `Compute\simple` | ✅ | ✅ | ✅ | ✅ |
 | `CopyResource\CopyPartialBuffer` | ✅ | ✅ | ❌ | ❌ |
@@ -51,6 +53,7 @@ Below are the details of what is supported on each platform, based on the unit t
 | `MeshShaders\MeshAmplificationLines` | ✅ | ✅ | ❌ | ❌ |
 | `Python\GPUWrite` | ✅ | ❌ | ❌ | ❌ |
 | `Python\profiling` | ✅ | ❌ | ❌ | ❌ |
+| `Raster\IndirectDraw` | ✅ | ❌ | ❌ | ❌ |
 | `Raster\NoVertex_NoIndex_NoInstance` | ✅ | ✅ | ✅ | ✅ |
 | `Raster\Stencil` | ✅ | ✅ | ✅ | ✅ |
 | `Raster\VRS` | ✅ | ✅ | ❌ | ❌ |

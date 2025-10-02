@@ -123,7 +123,9 @@ struct BackendUE_5_3 : public BackendBase
         for (size_t depIndex = depsIndexStart; depIndex < (depsIndexStart + depsCount); ++depIndex)
         {
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             {
@@ -133,7 +135,9 @@ struct BackendUE_5_3 : public BackendBase
                     const LinkProperties& linkProperties = node.linkProperties[pinIndex];
                     UAVMipIndex = linkProperties.UAVMipIndex;
                     bufferViewBegin = linkProperties.bufferViewBegin;
+                    bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                     bufferViewSize = linkProperties.bufferViewSize;
+                    bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                     bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
                 }
             }
@@ -202,8 +206,24 @@ struct BackendUE_5_3 : public BackendBase
                 {
                     RenderGraphNode_Resource_Buffer& depNode = depNodeBase.resourceBuffer;
 
-                    if (bufferViewBegin > 0 || bufferViewSize > 0)
-                        shaderParams << "        TODO: make the below use a view of the buffer starting at " << bufferViewBegin << " with a size of " << bufferViewSize << " (this line is described in " << (bufferViewInBytes ? "BYTES" : "ITEM COUNT") << ")\n";
+                    if (bufferViewBegin > 0 || bufferViewSize > 0 || bufferViewBeginVarIndex != -1 || bufferViewSizeVarIndex != -1)
+                    {
+                        shaderParams << "        TODO: make the below use a view of the buffer starting at ";
+
+                        if (bufferViewBeginVarIndex != -1)
+                            shaderParams << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+                        else
+                            shaderParams << bufferViewBegin;
+
+                        shaderParams << " with a size of ";
+
+                        if (bufferViewSizeVarIndex != -1)
+                            shaderParams << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+                        else
+                            shaderParams << bufferViewSize;
+
+                        shaderParams << " (this line is described in " << (bufferViewInBytes ? "BYTES" : "ITEM COUNT") << ")\n";
+                    }
 
                     if (dep.access == ShaderResourceAccessType::Indirect)
                     {
@@ -312,7 +332,7 @@ struct BackendUE_5_3 : public BackendBase
                                 break;
                             }
                         }
-                        shaderParams << "        SHADER_PARAMETER(" << fieldType << ", cb" << depNode.name << "_" << field.name << ")\n";
+                        shaderParams << "        SHADER_PARAMETER(" << fieldType << ", cb" << depNode.structure.name << "_" << field.name << ")\n";
                     }
                     break;
                 }
@@ -1596,6 +1616,7 @@ static void CopyShaderFile(Shader& shader, const std::unordered_map<std::string,
 
     options.m_writeConstantBufferDefinition = ProcessShaderOptions_HLSL::WriteConstantBufferDefinition_NotInStruct;
     options.m_writeVariableReference = ProcessShaderOptions_HLSL::WriteVariableReference_NotInStruct;
+    options.m_writeVariableAlias = ProcessShaderOptions_HLSL::WriteVariableAlias_NotInStruct;
     options.m_writeSamplerDefinition = ProcessShaderOptions_HLSL::WriteSamplerDefinition_NoRegister;
     options.m_writeResourceDefinition = ProcessShaderOptions_HLSL::WriteResourceDefinition_NoRegister;
 

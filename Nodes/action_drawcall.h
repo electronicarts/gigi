@@ -64,6 +64,11 @@ namespace FrontEndNodes
             return "shadingRateImage";
         pinIndex--;
 
+        // optional indirect args buffer
+        if (pinIndex == 0)
+            return "indirectBuffer";
+        pinIndex--;
+
         // optional vertex buffer
         if (pinIndex == 0)
             return "vertexBuffer";
@@ -205,6 +210,17 @@ namespace FrontEndNodes
             ret.access = ShaderResourceAccessType::ShadingRate;
             ret.nodeIndex = node.shadingRateImage.nodeIndex;
             ret.pinIndex = node.shadingRateImage.nodePinIndex;
+            ret.required = false;
+            return ret;
+        }
+        pinIndex--;
+
+        // Optional indirect buffer
+        if (pinIndex == 0)
+        {
+            ret.access = ShaderResourceAccessType::Indirect;
+            ret.nodeIndex = node.indirectBuffer.nodeIndex;
+            ret.pinIndex = node.indirectBuffer.nodePinIndex;
             ret.required = false;
             return ret;
         }

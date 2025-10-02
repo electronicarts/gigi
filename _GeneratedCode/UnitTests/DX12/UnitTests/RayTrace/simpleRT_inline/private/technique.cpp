@@ -69,7 +69,7 @@ namespace simpleRT_inline
             ranges[2].RegisterSpace = 0;
             ranges[2].OffsetInDescriptorsFromTableStart = 2;
 
-            // _SimpleRTCSCB
+            // _SimpleRTCS_0CB
             ranges[3].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[3].NumDescriptors = 1;
             ranges[3].BaseShaderRegister = 0;
@@ -726,11 +726,11 @@ namespace simpleRT_inline
             m_output.texture_Texture = nullptr;
         }
 
-        // _SimpleRTCSCB
-        if (m_internal.constantBuffer__SimpleRTCSCB)
+        // _SimpleRTCS_0CB
+        if (m_internal.constantBuffer__SimpleRTCS_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__SimpleRTCSCB);
-            m_internal.constantBuffer__SimpleRTCSCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__SimpleRTCS_0CB);
+            m_internal.constantBuffer__SimpleRTCS_0CB = nullptr;
         }
     }
 
@@ -819,14 +819,14 @@ namespace simpleRT_inline
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _SimpleRTCSCB
+        // Shader Constants: _SimpleRTCS_0CB
         {
-            context->m_internal.constantBuffer__SimpleRTCSCB_cpu.cameraPos = context->m_input.variable_cameraPos;
-            context->m_internal.constantBuffer__SimpleRTCSCB_cpu.clipToWorld = context->m_input.variable_clipToWorld;
-            context->m_internal.constantBuffer__SimpleRTCSCB_cpu.depthNearPlane = context->m_input.variable_depthNearPlane;
-            context->m_internal.constantBuffer__SimpleRTCSCB_cpu.hitColor = context->m_input.variable_hitColor;
-            context->m_internal.constantBuffer__SimpleRTCSCB_cpu.missColor = context->m_input.variable_missColor;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__SimpleRTCSCB, context->m_internal.constantBuffer__SimpleRTCSCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__SimpleRTCS_0CB_cpu.cameraPos = context->m_input.variable_cameraPos;
+            context->m_internal.constantBuffer__SimpleRTCS_0CB_cpu.clipToWorld = context->m_input.variable_clipToWorld;
+            context->m_internal.constantBuffer__SimpleRTCS_0CB_cpu.depthNearPlane = context->m_input.variable_depthNearPlane;
+            context->m_internal.constantBuffer__SimpleRTCS_0CB_cpu.hitColor = context->m_input.variable_hitColor;
+            context->m_internal.constantBuffer__SimpleRTCS_0CB_cpu.missColor = context->m_input.variable_missColor;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__SimpleRTCS_0CB, context->m_internal.constantBuffer__SimpleRTCS_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -858,7 +858,7 @@ namespace simpleRT_inline
                 { context->m_output.texture_Texture, context->m_output.texture_Texture_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_input.buffer_Scene, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::RTScene, false, context->m_input.buffer_Scene_tlasSize, 1, 0, 0, 0, false },
                 { context->m_input.buffer_Scene_VB, context->m_input.buffer_Scene_VB_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_Scene_VB_stride, context->m_input.buffer_Scene_VB_count, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__SimpleRTCSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__SimpleRTCS_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 4, Context::LogFn);
@@ -965,11 +965,11 @@ namespace simpleRT_inline
             }
         }
 
-        // _SimpleRTCSCB
-        if (m_internal.constantBuffer__SimpleRTCSCB == nullptr)
+        // _SimpleRTCS_0CB
+        if (m_internal.constantBuffer__SimpleRTCS_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__SimpleRTCSCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_SimpleRTCSCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__SimpleRTCS_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_SimpleRTCS_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

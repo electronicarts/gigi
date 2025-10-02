@@ -287,6 +287,11 @@ inline int GetShaderIndexByName(const RenderGraph& renderGraph, ShaderType shade
     return -1;
 }
 
+inline int GetShaderIndexByName(const RenderGraph& renderGraph,const char* name)
+{
+    return GetShaderIndexByName(renderGraph, ShaderType::Count, name);
+}
+
 struct NodePinInfo
 {
     std::string name;
@@ -495,6 +500,13 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.name = "shadingRateImage";
     pin.inputNode = &node.shadingRateImage.node;
     pin.inputNodePin = &node.shadingRateImage.pin;
+    pin.accessLabel = " (R)";
+    ret.push_back(pin);
+
+    // make a pin for indirect draw
+    pin.name = "indirectBuffer";
+    pin.inputNode = &node.indirectBuffer.node;
+    pin.inputNodePin = &node.indirectBuffer.pin;
     pin.accessLabel = " (R)";
     ret.push_back(pin);
 

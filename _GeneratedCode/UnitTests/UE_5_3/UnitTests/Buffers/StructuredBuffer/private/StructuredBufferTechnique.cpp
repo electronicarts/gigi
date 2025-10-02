@@ -21,9 +21,9 @@ public:
 
     BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
         SHADER_PARAMETER_RDG_BUFFER_UAV(RWStructuredBuffer<TheStructure>, buff)
-        SHADER_PARAMETER(float, cb_csmainCB_frameDeltaTime)
-        SHADER_PARAMETER(int32, cb_csmainCB_frameIndex)
-        SHADER_PARAMETER(FVector2f, cb_csmainCB__padding0)
+        SHADER_PARAMETER(float, cb_csmain_0CB_frameDeltaTime)
+        SHADER_PARAMETER(int32, cb_csmain_0CB_frameIndex)
+        SHADER_PARAMETER(FVector2f, cb_csmain_0CB__padding0)
     END_SHADER_PARAMETER_STRUCT()
 
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
@@ -58,8 +58,8 @@ void AddTechnique(FRDGBuilder& GraphBuilder, const FViewInfo& View, FTechniquePa
         // Set shader parameters
         FcsmainCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FcsmainCS::FParameters>();
         PassParameters->buff = GraphBuilder.CreateUAV(Buffer_buff, PF_Unknown);
-        PassParameters->cb_csmainCB_frameDeltaTime = View.ViewState->TechniqueState_StructuredBuffer.Var_frameDeltaTime;
-        PassParameters->cb_csmainCB_frameIndex = View.ViewState->TechniqueState_StructuredBuffer.Var_frameIndex;
+        PassParameters->cb_csmain_0CB_frameDeltaTime = View.ViewState->TechniqueState_StructuredBuffer.Var_frameDeltaTime;
+        PassParameters->cb_csmain_0CB_frameIndex = View.ViewState->TechniqueState_StructuredBuffer.Var_frameIndex;
 
         // Calculate dispatch size
         FIntVector dispatchSize = FIntVector(Buffer_buff->Desc.NumElements, 1, 1);

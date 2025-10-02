@@ -21,8 +21,8 @@ public:
 
     BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
         SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, output)
-        SHADER_PARAMETER(int32, cb_ReadbackSequenceCSCB_frameIndex)
-        SHADER_PARAMETER(FVector3f, cb_ReadbackSequenceCSCB__padding0)
+        SHADER_PARAMETER(int32, cb_ReadbackSequenceCS_0CB_frameIndex)
+        SHADER_PARAMETER(FVector3f, cb_ReadbackSequenceCS_0CB__padding0)
     END_SHADER_PARAMETER_STRUCT()
 
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
@@ -57,7 +57,7 @@ void AddTechnique(FRDGBuilder& GraphBuilder, const FViewInfo& View, FTechniquePa
         // Set shader parameters
         FNode_1CS::FParameters* PassParameters = GraphBuilder.AllocParameters<FNode_1CS::FParameters>();
         PassParameters->output = GraphBuilder.CreateUAV(Texture_Output);
-        PassParameters->cb_ReadbackSequenceCSCB_frameIndex = View.ViewState->TechniqueState_ReadbackSequence.Var_frameIndex;
+        PassParameters->cb_ReadbackSequenceCS_0CB_frameIndex = View.ViewState->TechniqueState_ReadbackSequence.Var_frameIndex;
 
         // Calculate dispatch size
         FIntVector dispatchSize = Texture_Output->Desc.GetSize();

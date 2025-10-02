@@ -45,6 +45,11 @@ struct ProcessShaderOptions_HLSL
 	static void WriteVariableReference_NotInStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const Variable& variable);
 	void (*m_writeVariableReference)(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const Variable& variable) = WriteVariableReference_InStruct;
 
+    // How to write variable aliases
+    static void WriteVariableAlias_InStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& variable);
+    static void WriteVariableAlias_NotInStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& variable);
+    void (*m_writeVariableAlias)(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& variable) = WriteVariableAlias_InStruct;
+
 	// How to write samplers
 	static void WriteSamplerDefinition_Register(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderSampler& sampler);
 	static void WriteSamplerDefinition_NoRegister(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderSampler& sampler);

@@ -764,6 +764,18 @@ inline void GetScopeFromVariable(const char* variableName, std::string& scope, s
     }
 }
 
+inline int GetVariableAliasIndex(const Shader& shader, const char* name)
+{
+    int index = -1;
+    for (const ShaderVariableAliasDeclaration& alias : shader.variableAliases)
+    {
+        index++;
+        if (!_stricmp(alias.name.c_str(), name))
+            return index;
+    }
+    return -1;
+}
+
 // Shaders reference the original name of variables, before subgraph flattening and similar.
 // So, we need a special routine to find the variable mentioned.
 // All other varibale references should be updated to the correct variables.

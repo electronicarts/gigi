@@ -1,7 +1,7 @@
 // SlangAutoDiff technique, shader Render
 
 
-struct Struct__RenderCB
+struct Struct__Render_0CB
 {
     int NumGaussians;
     uint QuantizeDisplay;
@@ -10,7 +10,7 @@ struct Struct__RenderCB
 
 Buffer<float> Data : register(t0);
 RWTexture2D<float4> Output : register(u0);
-ConstantBuffer<Struct__RenderCB> _RenderCB : register(b0);
+ConstantBuffer<Struct__Render_0CB> _Render_0CB : register(b0);
 
 #line 2
 
@@ -71,7 +71,7 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 	// calculate the height at this pixel
 	float height = 0.0f;
 	float maxHeight = 0.0f;
-	for (int i = 0; i < _RenderCB.NumGaussians; ++i)
+	for (int i = 0; i < _Render_0CB.NumGaussians; ++i)
 	{
 		// Get the data from the buffer
 		float2 gaussPos = float2(Data[4+i*5+0], Data[4+i*5+1]);
@@ -109,7 +109,7 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 
 	// Write the normalized height into the red channel, and the ball into the green channel
 	float color = height / maxHeight;
-	if ((bool)_RenderCB.QuantizeDisplay)
+	if ((bool)_Render_0CB.QuantizeDisplay)
 		color = floor(color * 64.0f + 0.5f) / 64.0f;
 	Output[px] = float4(LinearToSRGB(float3(color, ball, 0.0f)), 1.0f);
 }

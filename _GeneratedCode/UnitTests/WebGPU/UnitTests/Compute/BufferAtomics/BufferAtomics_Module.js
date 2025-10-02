@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "BufferAtomicsCS", node "RunShader"
-static ShaderCode_RunShader_BufferAtomicsCS = `
+// Shader code for Compute shader "BufferAtomicsCS_0", node "RunShader"
+static ShaderCode_RunShader_BufferAtomicsCS_0 = `
 @binding(0) @group(0) var<storage, read_write> TheBuffer : array<atomic<u32>>;
 
 @compute
@@ -67,8 +67,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "ClearBufferCS", node "ClearBuffer"
-static ShaderCode_ClearBuffer_ClearBufferCS = `
+// Shader code for Compute shader "ClearBufferCS_0", node "ClearBuffer"
+static ShaderCode_ClearBuffer_ClearBufferCS_0 = `
 @binding(0) @group(0) var<storage, read_write> TheBuffer : array<u32>;
 
 @compute
@@ -170,7 +170,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_ClearBuffer = newHash;
 
-            let shaderCode = class_BufferAtomics.ShaderCode_ClearBuffer_ClearBufferCS;
+            let shaderCode = class_BufferAtomics.ShaderCode_ClearBuffer_ClearBufferCS_0;
 
             this.ShaderModule_Compute_ClearBuffer = device.createShaderModule({ code: shaderCode, label: "Compute Shader ClearBuffer"});
             this.BindGroupLayout_Compute_ClearBuffer = device.createBindGroupLayout({
@@ -229,7 +229,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_RunShader = newHash;
 
-            let shaderCode = class_BufferAtomics.ShaderCode_RunShader_BufferAtomicsCS;
+            let shaderCode = class_BufferAtomics.ShaderCode_RunShader_BufferAtomicsCS_0;
 
             this.ShaderModule_Compute_RunShader = device.createShaderModule({ code: shaderCode, label: "Compute Shader RunShader"});
             this.BindGroupLayout_Compute_RunShader = device.createBindGroupLayout({
