@@ -666,11 +666,11 @@ struct BackendUE_5_3 : public BackendBase
             //case TextureFormat::RGBA8_Sint:
             case TextureFormat::R16_Float: return "PF_R16F";
             //case TextureFormat::RG16_Float:
-            //case TextureFormat::RGBA16_Float:
+            case TextureFormat::RGBA16_Float: return "PF_FloatRGBA"; // EPixelFormat comment says this is RGBA16F
             case TextureFormat::RGBA16_Unorm: return "PF_R16G16B16A16_UNORM";
             case TextureFormat::R32_Float: return "PF_R32_FLOAT";
             //case TextureFormat::RG32_Float:
-            //case TextureFormat::RGBA32_Float:
+            case TextureFormat::RGBA32_Float: return "PF_A32B32G32R32F"; //  https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/D3D12RHI/Private/D3D12RHI.cpp shows that PF_A32B32G32R32F is set to DXGI_FORMAT_R32G32B32A32_FLOAT
             case TextureFormat::R32_Uint: return "PF_R32_UINT";
             case TextureFormat::RGBA32_Uint: return "PF_R32G32B32A32_UINT";
             case TextureFormat::R11G11B10_Float: return "PF_FloatR11G11B10";
@@ -681,7 +681,7 @@ struct BackendUE_5_3 : public BackendBase
             default:
             {
                 Assert(false, "Unhandled TextureFormat: \"%s\"", EnumToString(format));
-                return nullptr;
+                return "<Unhandled TextureFormat>";
             }
         }
     }
