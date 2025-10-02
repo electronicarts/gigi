@@ -401,6 +401,11 @@ struct RenameReferencesVisitor
 
 				return true;
             }
+            case RenderGraphNode::c_index_actionExternal:
+            {
+                // TODO: this!
+                return true;
+            }
             default:
             {
                 ShowErrorMessage("Unhandled node type in Subgraphs.cpp " __FUNCTION__);

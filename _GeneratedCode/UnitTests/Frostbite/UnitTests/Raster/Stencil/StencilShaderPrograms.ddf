@@ -1,0 +1,12 @@
+import "Engine.Render/Core/ShaderPrograms.ddf";
+
+module WorldRender;
+namespace fb;
+
+#include <Engine.World.Render/Module.h>
+
+extend ShaderProgram
+{
+	ShaderProgram_Stencil_Draw_1_VSPS,
+	ShaderProgram_Stencil_Draw_2_VSPS,
+}

@@ -1,0 +1,30 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "nodes": [
+        {
+            "actionExternal": {
+                "name": "AMD Super Resolution",
+                "externalNodeData": {
+                    "AMD_FidelityFXSDK_Upscaling": {
+                        "maxRenderSize": [
+                            1706,
+                            960
+                        ],
+                        "maxUpscaleSize": [
+                            2560,
+                            1440
+                        ],
+                        "ENABLE_HIGH_DYNAMIC_RANGE": true,
+                        "ENABLE_DEPTH_INVERTED": true,
+                        "ENABLE_DEPTH_INFINITE": true,
+                        "ENABLE_AUTO_EXPOSURE": true,
+                        "ENABLE_DEBUG_CHECKING": true,
+                        "ENABLE_NON_LINEAR_COLORSPACE": true,
+                        "ENABLE_DEBUG_VISUALIZATION": true
+                    }
+                }
+            }
+        }
+    ]
+}

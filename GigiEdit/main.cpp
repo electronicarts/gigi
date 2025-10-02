@@ -2419,6 +2419,43 @@ struct Example :
         return result;
     }
 
+    struct ExternalNodeInfo
+    {
+        unsigned int nodeType = ExternalNodeData::c_index__None;
+        std::string subfolder;
+        unsigned int subfolderColor = 0;
+        std::string name;
+    };
+
+    std::vector<ExternalNodeInfo> GetExternalNodeInfo()
+    {
+        std::vector<ExternalNodeInfo> ret(ExternalNodeData::c_index__Count);
+
+        for (int i = 0; i < int(ExternalNodeData::c_index__Count); ++i)
+        {
+            ExternalNodeInfo& nodeInfo = ret[i];
+            nodeInfo.nodeType = i + 1;
+
+            switch (nodeInfo.nodeType)
+            {
+                case ExternalNodeData::c_index_AMD_FidelityFXSDK_Upscaling:
+                {
+                    nodeInfo.subfolder = "AMD";
+                    //nodeInfo.subfolderColor = IM_COL32(234, 16, 16, 255);
+                    nodeInfo.name = "Super Resolution";
+                    break;
+                }
+                default:
+                {
+                    Assert(false, "Unhandled ExternalNodeData type");
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
     void OnFrame(float deltaTime) override
     {
         //ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(nullptr);
@@ -3081,27 +3118,9 @@ struct Example :
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 128, 64, 255)); \
                 if (_TYPE::c_showInEditor && ImGui::MenuItem(_TYPE::c_editorName.c_str())) \
                 { \
-                    char newNodeName[64]; \
-                    int nextNodeIndex = 0; \
-                    while (true) \
-                    { \
-                        nextNodeIndex++; \
-                        sprintf_s(newNodeName, "Node %i", nextNodeIndex); \
-                        bool nameExists = false; \
-                        for (const RenderGraphNode& node : g_renderGraph.nodes) \
-                        { \
-                            if (GetNodeName(node) == newNodeName) \
-                            { \
-                                nameExists = true; \
-                                break; \
-                            } \
-                        } \
-                        if (!nameExists) \
-                            break; \
-                    } \
                     RenderGraphNode newNode; \
                     newNode._index = RenderGraphNode::c_index_##_NAME; \
-                    newNode._NAME.name = newNodeName; \
+                    newNode._NAME.name = GetUniqueNodeName(g_renderGraph, "Node"); \
                     g_renderGraph.nodes.push_back(newNode); \
                     m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion; \
                     g_renderGraphDirty = true; \
@@ -3112,6 +3131,56 @@ struct Example :
             #include "external/df_serialize/_fillunsetdefines.h"
             #include "Schemas/RenderGraphNodesVariant.h"
             // clang-format on
+
+            ImGui::Separator();
+
+            // DLL nodes
+            std::vector<ExternalNodeInfo> externalNodes = GetExternalNodeInfo();
+            std::sort(externalNodes.begin(), externalNodes.end(), [](const ExternalNodeInfo& a, const ExternalNodeInfo& b) { return a.name < b.name; });
+            std::sort(externalNodes.begin(), externalNodes.end(), [](const ExternalNodeInfo& a, const ExternalNodeInfo& b) { return a.subfolder < b.subfolder; });
+
+            std::string lastSubfolder;
+            bool showSubfolderContents = true;
+            for (const ExternalNodeInfo& externalNodeInfo : externalNodes)
+            {
+                if (externalNodeInfo.subfolder != lastSubfolder)
+                {
+                    if (showSubfolderContents && !lastSubfolder.empty())
+                        ImGui::EndMenu();
+
+                    lastSubfolder = externalNodeInfo.subfolder;
+                    if (lastSubfolder.empty())
+                        showSubfolderContents = true;
+                    else
+                    {
+                        if (externalNodeInfo.subfolderColor != 0)
+                            ImGui::PushStyleColor(ImGuiCol_Text, externalNodeInfo.subfolderColor);
+
+                        showSubfolderContents = ImGui::BeginMenu(lastSubfolder.c_str());
+
+                        if (externalNodeInfo.subfolderColor != 0)
+                            ImGui::PopStyleColor();
+                    }
+                }
+
+                if (showSubfolderContents && ImGui::MenuItem(externalNodeInfo.name.c_str()))
+                {
+                    std::string nodeName = externalNodeInfo.subfolder + std::string(" ") + externalNodeInfo.name;
+                    std::string newNodeName = GetUniqueNodeName(g_renderGraph, nodeName.c_str());
+
+                    RenderGraphNode newNode;
+                    newNode._index = RenderGraphNode::c_index_actionExternal;
+                    newNode.actionExternal.name = newNodeName;
+                    newNode.actionExternal.externalNodeData._index = externalNodeInfo.nodeType;
+                    g_renderGraph.nodes.push_back(newNode);
+                    m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion;
+                    g_renderGraphDirty = true;
+                    g_createdNodeIndex = (int)g_renderGraph.nodes.size();
+                }
+            }
+
+            if (showSubfolderContents && !lastSubfolder.empty())
+                ImGui::EndMenu();
 
             ImGui::Separator();
 

@@ -1,0 +1,13 @@
+import "Engine.Render/Core/ShaderPrograms.ddf";
+
+module WorldRender;
+namespace fb;
+
+#include <Engine.World.Render/Module.h>
+
+extend ShaderProgram
+{
+	ShaderProgram_VariableAliases_Set_Red_mainCs,
+	ShaderProgram_VariableAliases_Set_Green_mainCs,
+	ShaderProgram_VariableAliases_Set_Blue_mainCs,
+}

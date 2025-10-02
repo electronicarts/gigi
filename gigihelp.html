@@ -1202,6 +1202,24 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>ExternalNode_AMD_FidelityFXSDK_Upscaling : </b><br/><br/>
+<table>
+<tr><th colspan=3>ExternalNode_AMD_FidelityFXSDK_Upscaling</th></tr>
+<tr><td>unsigned int maxRenderSize[2]</td><td>{1024 , 768}</td><td>The maximum size that rendering will be performed at.</td></tr>
+<tr><td>unsigned int maxUpscaleSize[2]</td><td>{ 1024 , 768 }</td><td>The size of the presentation resolution targeted by the upscaling process.</td></tr>
+<tr><td>bool ENABLE_HIGH_DYNAMIC_RANGE</td><td>false</td><td>A bit indicating if the input color data provided is using a high-dynamic range.</td></tr>
+<tr><td>bool ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS</td><td>false</td><td>A bit indicating if the motion vectors are rendered at display resolution.</td></tr>
+<tr><td>bool ENABLE_MOTION_VECTORS_JITTER_CANCELLATION</td><td>false</td><td>A bit indicating that the motion vectors have the jittering pattern applied to them.</td></tr>
+<tr><td>bool ENABLE_DEPTH_INVERTED</td><td>false</td><td>A bit indicating that the input depth buffer data provided is inverted [1..0].</td></tr>
+<tr><td>bool ENABLE_DEPTH_INFINITE</td><td>false</td><td>A bit indicating that the input depth buffer data provided is using an infinite far plane.</td></tr>
+<tr><td>bool ENABLE_AUTO_EXPOSURE</td><td>false</td><td>A bit indicating if automatic exposure should be applied to input color data.</td></tr>
+<tr><td>bool ENABLE_DYNAMIC_RESOLUTION</td><td>false</td><td>A bit indicating that the application uses dynamic resolution scaling.</td></tr>
+<tr><td>bool ENABLE_DEBUG_CHECKING</td><td>false</td><td>A bit indicating that the runtime should check some API values and report issues.</td></tr>
+<tr><td>bool ENABLE_NON_LINEAR_COLORSPACE</td><td>false</td><td>A bit indicating that the color resource contains perceptual (gamma corrected) colors</td></tr>
+<tr><td>bool ENABLE_DEBUG_VISUALIZATION</td><td>false</td><td>A bit indicating if debug visualization is allowed. (memory consumption could increase)</td></tr>
+</table>
+<br/>
+
 <b>RenderGraphNode_Base : The base type of all node types</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode_Base</th></tr>
@@ -1427,6 +1445,17 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"Reroute"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"Rr"</td><td>Used by the editor.</td></tr>
 <tr><td><b>inline static const bool c_showInEditor</b></td><td>false</td><td>Used by the editor.</td></tr>
+</table>
+<br/>
+
+<b>RenderGraphNode_Action_External : Calls into external code.</b><br/><br/>
+<table>
+<tr><th colspan=3>RenderGraphNode_Action_External - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"External"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"External"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"External"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const bool c_showInEditor</b></td><td>false</td><td>Used by the editor.</td></tr>
+<tr><td>ExternalNodeData externalNodeData</td><td>{}</td><td></td></tr>
 </table>
 <br/>
 
@@ -1982,6 +2011,13 @@ See .bat for more info</td></tr>
 
 
 <h1>Variants</h1>
+<b>ExternalNodeData : Render graph node variant</b><br/><br/>
+<table>
+<tr><th colspan=3>ExternalNodeData</th></tr>
+<tr><td>ExternalNode_AMD_FidelityFXSDK_Upscaling AMD_FidelityFXSDK_Upscaling</td><td>{}</td><td></td></tr>
+</table>
+<br/>
+
 <b>RenderGraphNode : Render graph node variant</b><br/><br/>
 <table>
 <tr><th colspan=3>RenderGraphNode</th></tr>
@@ -1995,6 +2031,7 @@ See .bat for more info</td></tr>
 <tr><td>RenderGraphNode_Action_DrawCall actionDrawCall</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_SubGraph actionSubGraph</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_Barrier actionBarrier</td><td>{}</td><td></td></tr>
+<tr><td>RenderGraphNode_Action_External actionExternal</td><td>{}</td><td></td></tr>
 </table>
 <br/>
 

@@ -1,0 +1,13 @@
+import "Engine.Render/Core/ShaderPrograms.ddf";
+
+module WorldRender;
+namespace fb;
+
+#include <Engine.World.Render/Module.h>
+
+extend ShaderProgram
+{
+	ShaderProgram_SlangAutoDiff_Initialize_csmainCs,
+	ShaderProgram_SlangAutoDiff_GradientDescend_csmainCs,
+	ShaderProgram_SlangAutoDiff_Render_csmainCs,
+}

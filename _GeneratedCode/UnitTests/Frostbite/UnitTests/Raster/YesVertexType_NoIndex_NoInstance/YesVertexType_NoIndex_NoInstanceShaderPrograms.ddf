@@ -1,0 +1,11 @@
+import "Engine.Render/Core/ShaderPrograms.ddf";
+
+module WorldRender;
+namespace fb;
+
+#include <Engine.World.Render/Module.h>
+
+extend ShaderProgram
+{
+	ShaderProgram_YesVertexType_NoIndex_NoInstance_Rasterize_VSPS,
+}

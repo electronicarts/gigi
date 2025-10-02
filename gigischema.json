@@ -2996,6 +2996,237 @@
                 "type": "boolean"
               }
             }
+          },
+          "actionExternal": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
+              "externalNodeData": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "AMD_FidelityFXSDK_Upscaling": {
+                    "description": "",
+                    "type": "object",
+                    "properties": {
+                      "maxRenderSize": {
+                        "description": "The maximum size that rendering will be performed at.",
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "integer"
+                        }
+                      },
+                      "maxUpscaleSize": {
+                        "description": "The size of the presentation resolution targeted by the upscaling process.",
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "integer"
+                        }
+                      },
+                      "ENABLE_HIGH_DYNAMIC_RANGE": {
+                        "description": "A bit indicating if the input color data provided is using a high-dynamic range.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS": {
+                        "description": "A bit indicating if the motion vectors are rendered at display resolution.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_MOTION_VECTORS_JITTER_CANCELLATION": {
+                        "description": "A bit indicating that the motion vectors have the jittering pattern applied to them.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_DEPTH_INVERTED": {
+                        "description": "A bit indicating that the input depth buffer data provided is inverted [1..0].",
+                        "type": "boolean"
+                      },
+                      "ENABLE_DEPTH_INFINITE": {
+                        "description": "A bit indicating that the input depth buffer data provided is using an infinite far plane.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_AUTO_EXPOSURE": {
+                        "description": "A bit indicating if automatic exposure should be applied to input color data.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_DYNAMIC_RESOLUTION": {
+                        "description": "A bit indicating that the application uses dynamic resolution scaling.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_DEBUG_CHECKING": {
+                        "description": "A bit indicating that the runtime should check some API values and report issues.",
+                        "type": "boolean"
+                      },
+                      "ENABLE_NON_LINEAR_COLORSPACE": {
+                        "description": "A bit indicating that the color resource contains perceptual (gamma corrected) colors",
+                        "type": "boolean"
+                      },
+                      "ENABLE_DEBUG_VISUALIZATION": {
+                        "description": "A bit indicating if debug visualization is allowed. (memory consumption could increase)",
+                        "type": "boolean"
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }

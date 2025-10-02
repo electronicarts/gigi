@@ -446,6 +446,9 @@
     <ClInclude Include="Backends\Interpreter\templates\linalg.h">
       <Filter>Backends\Interpreter\templates</Filter>
     </ClInclude>
+    <ClInclude Include="..\Schemas\ExternalNodeVariant.h">
+      <Filter>schemas</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="schemas">
@@ -769,6 +772,14 @@
     <None Include="Backends\UE_5_3\nodes\node_reroute.inl">
       <Filter>Backends\UE_5_3\nodes</Filter>
     </None>
+    <None Include="Backends\UE_5_3\nodes\node_action_external.inl">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_external.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\DX12\nodes\node_action_external.inl">
+      <Filter>Backends\DX12\nodes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -783,6 +794,9 @@
     </Text>
     <Text Include="Backends\DX12\templates\Application\imgui\LICENSE.txt">
       <Filter>Backends\DX12\templates\Application\imgui</Filter>
+    </Text>
+    <Text Include="Backends\Frostbite\templates\readme.txt">
+      <Filter>Backends\Frostbite\templates</Filter>
     </Text>
     <Text Include="Backends\WebGPU\templates\Application\Readme.txt">
       <Filter>Backends\WebGPU\templates\Application</Filter>

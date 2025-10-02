@@ -838,3 +838,27 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
 
     return GigiCompileResult::OK;
 }
+
+/*
+TODO:
+* Replace external node type with a variant
+
+* have each DLL node type be able to specify:
+ * connection pins
+ * settings -> that can either be set to variables, or constants, which const variables are made for, behind the scenes?
+
+? maybe the const things on nodes (like displayed name) should not be const in the DLL node and should be set when they are instantiated, if code doesn't need to access it statically
+
+* In Gigi compiler, error if a DLL node is used but the platform doesn't support it, so it never even gets to the backend.  Need some centralized function to get DLL node info.
+
+* Make this call into Fidelity FX DLL(s) as an example & some good initial thing. Maybe put demos in the public browser after it goes out. Could port the AMD demos from their sample.
+
+* get approval for OSS includement of fidelity FX and libffi. I think both are MIT. verify. (not libffi. you removed that)
+
+* make a unit test that uses a DLL - unit test for the AMD things.
+
+* make sure this works for the installer / binaries too. The right files need to be put into the binaries and installer.
+
+? what are all the DLL node types we should have?  https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK?tab=readme-ov-file
+
+*/

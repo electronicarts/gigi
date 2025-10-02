@@ -5,6 +5,10 @@
 
 #pragma once
 
+#include "api/include/dx12/ffx_api_dx12.hpp"
+#include "upscalers/include/ffx_upscale.hpp"
+#include "framegeneration/include/ffx_framegeneration.hpp"
+
 class GigiInterpreterPreviewWindowDX12;
 
 // Runtime storage for each render graph node type
@@ -280,6 +284,23 @@ struct RuntimeTypes
 
 	struct RenderGraphNode_Reroute : public RenderGraphNode_Base
 	{};
+
+    struct RenderGraphNode_Action_External : public RenderGraphNode_Base
+    {
+        struct AMD_FidelityFXSDK_Upscaling
+        {
+            bool m_initialized = false;
+            ffx::CreateBackendDX12Desc m_backendDesc = {};
+            ffx::CreateContextDescUpscale m_createFsrDesc = {};
+            ffxQueryGetProviderVersion m_getVersion = {};
+
+            FfxApiEffectMemoryUsage m_gpuMemoryUsageUpscaler = { 0 };
+            ffxQueryDescUpscaleGetGPUMemoryUsageV2 m_upscalerGetGPUMemoryUsageV2 = {};
+
+            ffx::Context m_UpscalingContext = nullptr;
+        };
+        AMD_FidelityFXSDK_Upscaling m_AMD_FidelityFXSDK_Upscaling;
+    };
 };
 
 inline RuntimeTypes::ViewableResource::Type TextureDimensionTypeToViewableResourceType(TextureDimensionType dimensionType)

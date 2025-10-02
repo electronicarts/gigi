@@ -1,0 +1,13 @@
+import "Engine.Render/Core/ShaderPrograms.ddf";
+
+module WorldRender;
+namespace fb;
+
+#include <Engine.World.Render/Module.h>
+
+extend ShaderProgram
+{
+	ShaderProgram_BarrierTest_Draw_Left_csmainCs,
+	ShaderProgram_BarrierTest_Draw_Right_csmainCs,
+	ShaderProgram_BarrierTest_After_csmainCs,
+}

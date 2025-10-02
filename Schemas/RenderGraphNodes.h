@@ -273,6 +273,8 @@ STRUCT_BEGIN(ShaderVariableAliases, "Specify a variable alias")
     STRUCT_FIELD(int, shaderIndex, -1, "", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
+#include "ExternalNodeVariant.h"
+
 //========================================================
 // Base Nodes
 //========================================================
@@ -513,6 +515,15 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Reroute, RenderGraphNode_ActionBase, "Used 
     STRUCT_CONST(std::string, c_shortTypeName, "Reroute", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Rr", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, false, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
+STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_External, RenderGraphNode_ActionBase, "Calls into external code.")
+    STRUCT_CONST(std::string, c_editorName, "External", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shortTypeName, "External", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shorterTypeName, "External", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(bool, c_showInEditor, false, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(ExternalNodeData, externalNodeData, {}, "", 0)
 STRUCT_END()
 
 //========================================================

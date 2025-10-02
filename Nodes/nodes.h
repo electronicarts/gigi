@@ -226,6 +226,11 @@ void ExecuteOnActionNode(const RenderGraphNode& node, const LAMBDA& lambda)
             lambda(node.actionBarrier);
             break;
         }
+        case RenderGraphNode::c_index_actionExternal:
+        {
+            lambda(node.actionExternal);
+            break;
+        }
         default:
         {
             bool isResourceNode;
@@ -375,7 +380,7 @@ inline bool GetNodeIsResourceNode(const RenderGraphNode& node)
     ExecuteOnNode(node,
         [&ret](auto& node)
         {
-            ret = FrontEndNodes::GetIsResourceNode(node);
+            ret = node.c_isResourceNode;
         }
     );
     return ret;
@@ -773,6 +778,11 @@ namespace FrontEndNodesNoCaching
 				}
 				break;
 			}
+            case RenderGraphNode::c_index_actionExternal:
+            {
+                // TODO: this
+                break;
+            }
             default:
             {
                 Assert(false, "Unhandled node type in " __FUNCTION__);

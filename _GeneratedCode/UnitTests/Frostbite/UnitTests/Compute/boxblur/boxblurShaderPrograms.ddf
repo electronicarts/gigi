@@ -1,0 +1,12 @@
+import "Engine.Render/Core/ShaderPrograms.ddf";
+
+module WorldRender;
+namespace fb;
+
+#include <Engine.World.Render/Module.h>
+
+extend ShaderProgram
+{
+	ShaderProgram_boxblur_BlurH_BlurHCs,
+	ShaderProgram_boxblur_BlurV_BlurVCs,
+}

@@ -112,6 +112,9 @@
       <Filter>Interpreter</Filter>
     </ClCompile>
     <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_External.cpp">
+      <Filter>Interpreter</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">

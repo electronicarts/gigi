@@ -292,6 +292,24 @@ inline int GetShaderIndexByName(const RenderGraph& renderGraph,const char* name)
     return GetShaderIndexByName(renderGraph, ShaderType::Count, name);
 }
 
+// This function will return the base name if that name is not already taken.
+// Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+inline std::string GetUniqueNodeName(const RenderGraph& renderGraph, const char* baseName)
+{
+    if (GetNodeIndexByName(renderGraph, baseName) == -1)
+        return baseName;
+
+    int resourceNameIndex = -1;
+    char resourceName[1024];
+    do
+    {
+        resourceNameIndex++;
+        sprintf_s(resourceName, "%s %i", baseName, resourceNameIndex);
+    } while (GetNodeIndexByName(renderGraph, resourceName) != -1);
+
+    return resourceName;
+}
+
 struct NodePinInfo
 {
     std::string name;
@@ -685,6 +703,13 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
 	result[0].inputNodePin = &node.connections[0].dstPin;
 	result[0].accessLabel = "";
 
+    return result;
+}
+
+inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_External& node)
+{
+    // TODO: this
+    std::vector<NodePinInfo> result;
     return result;
 }
 
