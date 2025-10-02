@@ -62,7 +62,7 @@ namespace SubInSub
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _Inner1_Inner2_Inner2CSCB
+            // _Inner1_Inner2_Inner2CS_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -716,11 +716,11 @@ namespace SubInSub
             m_output.texture_Inner1_Inner2_Output = nullptr;
         }
 
-        // _Inner1_Inner2_Inner2CSCB
-        if (m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB)
+        // _Inner1_Inner2_Inner2CS_0CB
+        if (m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB);
-            m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB);
+            m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB = nullptr;
         }
     }
 
@@ -786,10 +786,10 @@ namespace SubInSub
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _Inner1_Inner2_Inner2CSCB
+        // Shader Constants: _Inner1_Inner2_Inner2CS_0CB
         {
-            context->m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB_cpu.Inner1_Inner1Mult = context->m_input.variable_Inner1_Inner1Mult;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB, context->m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB_cpu.Inner1_Inner1Mult = context->m_input.variable_Inner1_Inner1Mult;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB, context->m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -822,7 +822,7 @@ namespace SubInSub
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_output.texture_Inner1_Inner2_Output, context->m_output.texture_Inner1_Inner2_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -963,11 +963,11 @@ namespace SubInSub
             }
         }
 
-        // _Inner1_Inner2_Inner2CSCB
-        if (m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB == nullptr)
+        // _Inner1_Inner2_Inner2CS_0CB
+        if (m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__Inner1_Inner2_Inner2CSCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Inner1_Inner2_Inner2CSCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__Inner1_Inner2_Inner2CS_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Inner1_Inner2_Inner2CS_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

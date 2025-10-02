@@ -36,11 +36,11 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Fill_Indirect_Dispatch_Count", node "Fill_Indirect_Dispatch_Count"
-static ShaderCode_Fill_Indirect_Dispatch_Count_Fill_Indirect_Dispatch_Count = `
+// Shader code for Compute shader "Fill_Indirect_Dispatch_Count_0", node "Fill_Indirect_Dispatch_Count"
+static ShaderCode_Fill_Indirect_Dispatch_Count_Fill_Indirect_Dispatch_Count_0 = `
 @binding(0) @group(0) var<storage, read_write> IndirectDispatchCount : array<vec4<u32>>;
 
-struct Struct_Fill_Indirect_Dispatch_CountCB_std140_0
+struct Struct_Fill_Indirect_Dispatch_Count_0CB_std140_0
 {
     @align(16) Dispatch_Count_1_0 : vec3<u32>,
     @align(4) _padding0_0 : f32,
@@ -48,7 +48,7 @@ struct Struct_Fill_Indirect_Dispatch_CountCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(1) @group(0) var<uniform> _Fill_Indirect_Dispatch_CountCB : Struct_Fill_Indirect_Dispatch_CountCB_std140_0;
+@binding(1) @group(0) var<uniform> _Fill_Indirect_Dispatch_Count_0CB : Struct_Fill_Indirect_Dispatch_Count_0CB_std140_0;
 @compute
 @workgroup_size(1, 1, 1)
 fn FillIndirectDispatchCount(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
@@ -57,21 +57,21 @@ fn FillIndirectDispatchCount(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     IndirectDispatchCount[i32(0)][i32(1)] = u32(4);
     IndirectDispatchCount[i32(0)][i32(2)] = u32(3);
     IndirectDispatchCount[i32(0)][i32(3)] = u32(2);
-    IndirectDispatchCount[i32(1)][i32(0)] = _Fill_Indirect_Dispatch_CountCB.Dispatch_Count_1_0.x;
-    IndirectDispatchCount[i32(1)][i32(1)] = _Fill_Indirect_Dispatch_CountCB.Dispatch_Count_1_0.y;
-    IndirectDispatchCount[i32(1)][i32(2)] = _Fill_Indirect_Dispatch_CountCB.Dispatch_Count_1_0.z;
+    IndirectDispatchCount[i32(1)][i32(0)] = _Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_1_0.x;
+    IndirectDispatchCount[i32(1)][i32(1)] = _Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_1_0.y;
+    IndirectDispatchCount[i32(1)][i32(2)] = _Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_1_0.z;
     IndirectDispatchCount[i32(1)][i32(3)] = u32(42);
-    IndirectDispatchCount[i32(2)][i32(0)] = _Fill_Indirect_Dispatch_CountCB.Dispatch_Count_2_0.x;
-    IndirectDispatchCount[i32(2)][i32(1)] = _Fill_Indirect_Dispatch_CountCB.Dispatch_Count_2_0.y;
-    IndirectDispatchCount[i32(2)][i32(2)] = _Fill_Indirect_Dispatch_CountCB.Dispatch_Count_2_0.z;
+    IndirectDispatchCount[i32(2)][i32(0)] = _Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_2_0.x;
+    IndirectDispatchCount[i32(2)][i32(1)] = _Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_2_0.y;
+    IndirectDispatchCount[i32(2)][i32(2)] = _Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_2_0.z;
     IndirectDispatchCount[i32(2)][i32(3)] = u32(435);
     return;
 }
 
 `;
 
-// Shader code for Compute shader "Do_Indirect_Dispatch", node "Do_Indirect_Dispatch_1"
-static ShaderCode_Do_Indirect_Dispatch_1_Do_Indirect_Dispatch = `
+// Shader code for Compute shader "Do_Indirect_Dispatch_0", node "Do_Indirect_Dispatch_1"
+static ShaderCode_Do_Indirect_Dispatch_1_Do_Indirect_Dispatch_0 = `
 @binding(1) @group(0) var Render_TargetReadOnly : texture_storage_2d</*(Render_TargetReadOnly_format)*/, read>;
 
 @binding(0) @group(0) var Render_Target : texture_storage_2d</*(Render_Target_format)*/, write>;
@@ -88,8 +88,8 @@ fn DoIndirectDispatch(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Do_Indirect_Dispatch", node "Do_Indirect_Dispatch_2"
-static ShaderCode_Do_Indirect_Dispatch_2_Do_Indirect_Dispatch = `
+// Shader code for Compute shader "Do_Indirect_Dispatch_1", node "Do_Indirect_Dispatch_2"
+static ShaderCode_Do_Indirect_Dispatch_2_Do_Indirect_Dispatch_1 = `
 @binding(1) @group(0) var Render_TargetReadOnly : texture_storage_2d</*(Render_TargetReadOnly_format)*/, read>;
 
 @binding(0) @group(0) var Render_Target : texture_storage_2d</*(Render_Target_format)*/, write>;
@@ -106,8 +106,8 @@ fn DoIndirectDispatch(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Clear_Render_Target", node "Clear_Render_Target"
-static ShaderCode_Clear_Render_Target_Clear_Render_Target = `
+// Shader code for Compute shader "Clear_Render_Target_0", node "Clear_Render_Target"
+static ShaderCode_Clear_Render_Target_Clear_Render_Target_0 = `
 @binding(0) @group(0) var Render_Target : texture_storage_2d</*(Render_Target_format)*/, write>;
 
 @compute
@@ -153,10 +153,10 @@ BindGroupLayout_Compute_Clear_Render_Target = null;
 PipelineLayout_Compute_Clear_Render_Target = null;
 Pipeline_Compute_Clear_Render_Target = null;
 
-// Constant buffer _Fill_Indirect_Dispatch_CountCB
-constantBuffer__Fill_Indirect_Dispatch_CountCB = null;
-constantBuffer__Fill_Indirect_Dispatch_CountCB_size = 32;
-constantBuffer__Fill_Indirect_Dispatch_CountCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _Fill_Indirect_Dispatch_Count_0CB
+constantBuffer__Fill_Indirect_Dispatch_Count_0CB = null;
+constantBuffer__Fill_Indirect_Dispatch_Count_0CB_size = 32;
+constantBuffer__Fill_Indirect_Dispatch_Count_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader Fill_Indirect_Dispatch_Count
 Hash_Compute_Fill_Indirect_Dispatch_Count = 0;
@@ -201,7 +201,7 @@ variableChanged_Second_Dispatch_Offset = false;
 
 // -------------------- Structs
 
-static StructOffsets__Fill_Indirect_Dispatch_CountCB =
+static StructOffsets__Fill_Indirect_Dispatch_Count_0CB =
 {
     Dispatch_Count_1_0: 0,
     Dispatch_Count_1_1: 4,
@@ -416,7 +416,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Clear_Render_Target = newHash;
 
-            let shaderCode = class_IndirectDispatch.ShaderCode_Clear_Render_Target_Clear_Render_Target;
+            let shaderCode = class_IndirectDispatch.ShaderCode_Clear_Render_Target_Clear_Render_Target_0;
             shaderCode = shaderCode.replace("/*(Render_Target_format)*/", Shared.GetNonSRGBFormat(this.texture_Render_Target_format));
             shaderCode = shaderCode.replace("/*(Render_TargetReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Clear_Render_Target_Render_Target_ReadOnly_format));
 
@@ -469,7 +469,7 @@ async Init(device, encoder, useBlockingAPIs)
                 buffer: { type: "storage" }
             },
             {
-                // _Fill_Indirect_Dispatch_CountCB
+                // _Fill_Indirect_Dispatch_Count_0CB
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -483,7 +483,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Fill_Indirect_Dispatch_Count = newHash;
 
-            let shaderCode = class_IndirectDispatch.ShaderCode_Fill_Indirect_Dispatch_Count_Fill_Indirect_Dispatch_Count;
+            let shaderCode = class_IndirectDispatch.ShaderCode_Fill_Indirect_Dispatch_Count_Fill_Indirect_Dispatch_Count_0;
 
             this.ShaderModule_Compute_Fill_Indirect_Dispatch_Count = device.createShaderModule({ code: shaderCode, label: "Compute Shader Fill_Indirect_Dispatch_Count"});
             this.BindGroupLayout_Compute_Fill_Indirect_Dispatch_Count = device.createBindGroupLayout({
@@ -548,7 +548,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Do_Indirect_Dispatch_1 = newHash;
 
-            let shaderCode = class_IndirectDispatch.ShaderCode_Do_Indirect_Dispatch_1_Do_Indirect_Dispatch;
+            let shaderCode = class_IndirectDispatch.ShaderCode_Do_Indirect_Dispatch_1_Do_Indirect_Dispatch_0;
             shaderCode = shaderCode.replace("/*(Render_Target_format)*/", Shared.GetNonSRGBFormat(this.texture_Render_Target_format));
             shaderCode = shaderCode.replace("/*(Render_TargetReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Do_Indirect_Dispatch_1_Render_Target_ReadOnly_format));
 
@@ -615,7 +615,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Do_Indirect_Dispatch_2 = newHash;
 
-            let shaderCode = class_IndirectDispatch.ShaderCode_Do_Indirect_Dispatch_2_Do_Indirect_Dispatch;
+            let shaderCode = class_IndirectDispatch.ShaderCode_Do_Indirect_Dispatch_2_Do_Indirect_Dispatch_1;
             shaderCode = shaderCode.replace("/*(Render_Target_format)*/", Shared.GetNonSRGBFormat(this.texture_Render_Target_format));
             shaderCode = shaderCode.replace("/*(Render_TargetReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Do_Indirect_Dispatch_2_Render_Target_ReadOnly_format));
 
@@ -780,32 +780,32 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "IndirectDispatch.Copy_Do_Indirect_Dispatch_1_Render_Target"
 
-    encoder.pushDebugGroup("IndirectDispatch._Fill_Indirect_Dispatch_CountCB");
+    encoder.pushDebugGroup("IndirectDispatch._Fill_Indirect_Dispatch_Count_0CB");
 
-    // Create constant buffer _Fill_Indirect_Dispatch_CountCB
-    if (this.constantBuffer__Fill_Indirect_Dispatch_CountCB === null)
+    // Create constant buffer _Fill_Indirect_Dispatch_Count_0CB
+    if (this.constantBuffer__Fill_Indirect_Dispatch_Count_0CB === null)
     {
-        this.constantBuffer__Fill_Indirect_Dispatch_CountCB = device.createBuffer({
-            label: "IndirectDispatch._Fill_Indirect_Dispatch_CountCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB._size),
-            usage: this.constantBuffer__Fill_Indirect_Dispatch_CountCB_usageFlags,
+        this.constantBuffer__Fill_Indirect_Dispatch_Count_0CB = device.createBuffer({
+            label: "IndirectDispatch._Fill_Indirect_Dispatch_Count_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB._size),
+            usage: this.constantBuffer__Fill_Indirect_Dispatch_Count_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _Fill_Indirect_Dispatch_CountCB
+    // Upload values to constant buffer _Fill_Indirect_Dispatch_Count_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB.Dispatch_Count_1_0, this.variable_Dispatch_Count_1[0], true);
-        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB.Dispatch_Count_1_1, this.variable_Dispatch_Count_1[1], true);
-        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB.Dispatch_Count_1_2, this.variable_Dispatch_Count_1[2], true);
-        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB.Dispatch_Count_2_0, this.variable_Dispatch_Count_2[0], true);
-        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB.Dispatch_Count_2_1, this.variable_Dispatch_Count_2[1], true);
-        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_CountCB.Dispatch_Count_2_2, this.variable_Dispatch_Count_2[2], true);
-        device.queue.writeBuffer(this.constantBuffer__Fill_Indirect_Dispatch_CountCB, 0, bufferCPU);
+        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_1_0, this.variable_Dispatch_Count_1[0], true);
+        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_1_1, this.variable_Dispatch_Count_1[1], true);
+        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_1_2, this.variable_Dispatch_Count_1[2], true);
+        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_2_0, this.variable_Dispatch_Count_2[0], true);
+        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_2_1, this.variable_Dispatch_Count_2[1], true);
+        view.setUint32(this.constructor.StructOffsets__Fill_Indirect_Dispatch_Count_0CB.Dispatch_Count_2_2, this.variable_Dispatch_Count_2[2], true);
+        device.queue.writeBuffer(this.constantBuffer__Fill_Indirect_Dispatch_Count_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "IndirectDispatch._Fill_Indirect_Dispatch_CountCB"
+    encoder.popDebugGroup(); // "IndirectDispatch._Fill_Indirect_Dispatch_Count_0CB"
 
     encoder.pushDebugGroup("IndirectDispatch.Fill_Indirect_Dispatch_Count");
 
@@ -821,9 +821,9 @@ async FillEncoder(device, encoder)
                     resource: { buffer: this.buffer_Indirect_Dispatch_Count }
                 },
                 {
-                    // _Fill_Indirect_Dispatch_CountCB
+                    // _Fill_Indirect_Dispatch_Count_0CB
                     binding: 1,
-                    resource: { buffer: this.constantBuffer__Fill_Indirect_Dispatch_CountCB }
+                    resource: { buffer: this.constantBuffer__Fill_Indirect_Dispatch_Count_0CB }
                 },
             ]
         });

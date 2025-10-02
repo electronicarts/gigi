@@ -355,6 +355,24 @@
               }
             }
           },
+          "variableAliases": {
+            "description": "Variable aliases allow a shader to read different variables per node by choosing what variable value is set for each alias",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The type of the alias.",
+                  "type": "string",
+                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
+                }
+              }
+            }
+          },
           "constantBuffers": {
             "description": "A list of constant buffers this shader wants.",
             "type": "array",
@@ -954,9 +972,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -999,6 +1037,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               }
             }
           },
@@ -1091,9 +1133,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1137,6 +1199,10 @@
                   }
                 }
               },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
               "shader": {
                 "description": "The shader.",
                 "type": "object",
@@ -1144,6 +1210,35 @@
                   "name": {
                     "description": "The name of the shader",
                     "type": "string"
+                  }
+                }
+              },
+              "shaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -1349,9 +1444,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1395,6 +1510,10 @@
                   }
                 }
               },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
               "shader": {
                 "description": "The ray gen shader.",
                 "type": "object",
@@ -1402,6 +1521,35 @@
                   "name": {
                     "description": "The name of the shader",
                     "type": "string"
+                  }
+                }
+              },
+              "shaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -1587,9 +1735,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1632,6 +1800,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               },
               "bufferToBuffer": {
                 "description": "Settings when copying from a buffer to another buffer.",
@@ -1770,9 +1942,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1816,6 +2008,10 @@
                   }
                 }
               },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
               "amplificationShader": {
                 "description": "The amplification shader.",
                 "type": "object",
@@ -1823,6 +2019,35 @@
                   "name": {
                     "description": "The name of the shader",
                     "type": "string"
+                  }
+                }
+              },
+              "amplificationShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -1836,6 +2061,35 @@
                   }
                 }
               },
+              "meshShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
               "vertexShader": {
                 "description": "The vertex shader.",
                 "type": "object",
@@ -1846,12 +2100,84 @@
                   }
                 }
               },
+              "vertexShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
               "pixelShader": {
                 "description": "The pixel shader.",
                 "type": "object",
                 "properties": {
                   "name": {
                     "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "pixelShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "indirectBuffer": {
+                "description": "Indirect buffer to make this draw use ExecuteIndirect",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
                     "type": "string"
                   }
                 }
@@ -2342,9 +2668,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -2387,6 +2733,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               },
               "fileName": {
                 "description": "Relative file name",
@@ -2575,9 +2925,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -2620,6 +2990,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               }
             }
           }

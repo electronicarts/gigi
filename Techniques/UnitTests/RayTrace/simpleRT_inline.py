@@ -5,7 +5,7 @@ from PIL import Image
 import os
 
 resources = [
-	[ "DoRT._SimpleRTCSCB: _SimpleRTCSCB (CBV)", False ],
+	[ "DoRT._SimpleRTCS_0CB: _SimpleRTCS_0CB (CBV)", False ],
 	[ "DoRT.g_texture: Texture (UAV - After)", True ],
 ]
 

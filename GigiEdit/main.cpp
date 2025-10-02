@@ -27,6 +27,7 @@
 #include "MakeTypePath.h"
 
 #include "GigiCompilerLib/gigicompiler.h"
+#include "GigiCompilerLib/UI/ImGuiHelper.h"
 #include "Schemas/Visitor.h"
 #include "visitors.h"
 #include "StableSample.h"
@@ -3176,17 +3177,15 @@ struct Example :
 		{
 			if (ImGui::BeginMenu("Recent Files"))
 			{
+				int index = 0;
 				for (const auto& el : m_recentFiles.GetEntries())
 				{
-                    if (el.empty())
-                        continue;
-
-					if (ImGui::MenuItem(el.c_str()))
+					if (ImGui_FilePathMenuItem(el.c_str(), index++))
 					{
-                        // make a copy so we don't point to data we might change
-                        std::string fileName = el;
+						// make a copy so we don't point to data we might change
+						std::string fileName = el;
 						LoadJSONFile(fileName.c_str());
-                        break;
+						break;
 					}
 				}
 				ImGui::EndMenu();

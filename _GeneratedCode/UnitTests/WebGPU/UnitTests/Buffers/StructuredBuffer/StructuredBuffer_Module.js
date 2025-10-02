@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "csmain", node "csmain"
-static ShaderCode_csmain_csmain = `
+// Shader code for Compute shader "csmain_0", node "csmain"
+static ShaderCode_csmain_csmain_0 = `
 struct Struct_TheStructure_std430_0
 {
     @align(8) TheInt_0 : i32,
@@ -51,7 +51,7 @@ struct Struct_TheStructure_std430_0
 
 @binding(0) @group(0) var<storage, read_write> buff : array<Struct_TheStructure_std430_0>;
 
-struct Struct_csmainCB_std140_0
+struct Struct_csmain_0CB_std140_0
 {
     @align(16) frameDeltaTime_0 : f32,
     @align(4) frameIndex_0 : i32,
@@ -59,7 +59,7 @@ struct Struct_csmainCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(1) @group(0) var<uniform> _csmainCB : Struct_csmainCB_std140_0;
+@binding(1) @group(0) var<uniform> _csmain_0CB : Struct_csmain_0CB_std140_0;
 @compute
 @workgroup_size(1, 1, 1)
 fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
@@ -70,8 +70,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     buff[i32(0)].TheBool_0 = u32(0);
     buff[i32(0)].TheUINT_0 = u32(31337);
     buff[i32(0)].TheFloat2_0 = vec2<f32>(0.30000001192092896f, 3.0f);
-    buff[i32(1)].TheInt_0 = _csmainCB.frameIndex_0;
-    buff[i32(1)].TheFloat_0 = _csmainCB.frameDeltaTime_0;
+    buff[i32(1)].TheInt_0 = _csmain_0CB.frameIndex_0;
+    buff[i32(1)].TheFloat_0 = _csmain_0CB.frameDeltaTime_0;
     buff[i32(1)].TheEnum_0 = i32(2);
     buff[i32(1)].TheBool_0 = u32(2);
     buff[i32(1)].TheUINT_0 = u32(255);
@@ -177,10 +177,10 @@ static StructVertexBufferAttributes_TheStructure_Unpadded =
 
 // -------------------- Private Members
 
-// Constant buffer _csmainCB
-constantBuffer__csmainCB = null;
-constantBuffer__csmainCB_size = 16;
-constantBuffer__csmainCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _csmain_0CB
+constantBuffer__csmain_0CB = null;
+constantBuffer__csmain_0CB_size = 16;
+constantBuffer__csmain_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader csmain
 Hash_Compute_csmain = 0;
@@ -221,7 +221,7 @@ static StructOffsets_TheStructure =
     _size: 32,
 }
 
-static StructOffsets__csmainCB =
+static StructOffsets__csmain_0CB =
 {
     frameDeltaTime: 0,
     frameIndex: 4,
@@ -278,7 +278,7 @@ async Init(device, encoder, useBlockingAPIs)
                 buffer: { type: "storage" }
             },
             {
-                // _csmainCB
+                // _csmain_0CB
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -292,7 +292,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_csmain = newHash;
 
-            let shaderCode = class_StructuredBuffer.ShaderCode_csmain_csmain;
+            let shaderCode = class_StructuredBuffer.ShaderCode_csmain_csmain_0;
 
             this.ShaderModule_Compute_csmain = device.createShaderModule({ code: shaderCode, label: "Compute Shader csmain"});
             this.BindGroupLayout_Compute_csmain = device.createBindGroupLayout({
@@ -340,28 +340,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "StructuredBuffer.buff"
 
-    encoder.pushDebugGroup("StructuredBuffer._csmainCB");
+    encoder.pushDebugGroup("StructuredBuffer._csmain_0CB");
 
-    // Create constant buffer _csmainCB
-    if (this.constantBuffer__csmainCB === null)
+    // Create constant buffer _csmain_0CB
+    if (this.constantBuffer__csmain_0CB === null)
     {
-        this.constantBuffer__csmainCB = device.createBuffer({
-            label: "StructuredBuffer._csmainCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__csmainCB._size),
-            usage: this.constantBuffer__csmainCB_usageFlags,
+        this.constantBuffer__csmain_0CB = device.createBuffer({
+            label: "StructuredBuffer._csmain_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__csmain_0CB._size),
+            usage: this.constantBuffer__csmain_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _csmainCB
+    // Upload values to constant buffer _csmain_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__csmainCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__csmain_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setFloat32(this.constructor.StructOffsets__csmainCB.frameDeltaTime, this.variable_frameDeltaTime, true);
-        view.setInt32(this.constructor.StructOffsets__csmainCB.frameIndex, this.variable_frameIndex, true);
-        device.queue.writeBuffer(this.constantBuffer__csmainCB, 0, bufferCPU);
+        view.setFloat32(this.constructor.StructOffsets__csmain_0CB.frameDeltaTime, this.variable_frameDeltaTime, true);
+        view.setInt32(this.constructor.StructOffsets__csmain_0CB.frameIndex, this.variable_frameIndex, true);
+        device.queue.writeBuffer(this.constantBuffer__csmain_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "StructuredBuffer._csmainCB"
+    encoder.popDebugGroup(); // "StructuredBuffer._csmain_0CB"
 
     encoder.pushDebugGroup("StructuredBuffer.csmain");
 
@@ -377,9 +377,9 @@ async FillEncoder(device, encoder)
                     resource: { buffer: this.buffer_buff }
                 },
                 {
-                    // _csmainCB
+                    // _csmain_0CB
                     binding: 1,
-                    resource: { buffer: this.constantBuffer__csmainCB }
+                    resource: { buffer: this.constantBuffer__csmain_0CB }
                 },
             ]
         });

@@ -32,7 +32,7 @@ Host.DisableGGUserSave(True)
 exitCode = 0
 for fileName in glob.glob(os.getcwd() + "/Techniques/UnitTests/**/*.py", recursive = True):
 	relFileName = os.path.relpath(fileName, os.getcwd() + "/Techniques/UnitTests/")
-	if relFileName != "RunTests.py":
+	if relFileName != "RunTests.py" and relFileName != "TestLogic.py":
 		Host.Warn("Running Test: " + relFileName)
 		if not RunTest(fileName, relFileName):
 			exitCode = 1

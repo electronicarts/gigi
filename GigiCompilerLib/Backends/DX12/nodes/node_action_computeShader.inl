@@ -211,7 +211,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 continue;
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -219,7 +221,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -315,7 +319,21 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " }";
+            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                stringReplacementMap["/*$(Execute)*/"] << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                stringReplacementMap["/*$(Execute)*/"] << bufferViewBegin;
+
+            stringReplacementMap["/*$(Execute)*/"] << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                stringReplacementMap["/*$(Execute)*/"] << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                stringReplacementMap["/*$(Execute)*/"] << bufferViewSize;
+
+            stringReplacementMap["/*$(Execute)*/"] << ", " << ( bufferViewInBytes ? "true" : "false" ) << " }";
         }
 
         stringReplacementMap["/*$(Execute)*/"] <<

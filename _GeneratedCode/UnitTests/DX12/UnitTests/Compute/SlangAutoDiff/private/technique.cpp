@@ -61,7 +61,7 @@ namespace SlangAutoDiff
             ranges[0].RegisterSpace = 0;
             ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
-            // _InitCB
+            // _Init_0CB
             ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[1].NumDescriptors = 1;
             ranges[1].BaseShaderRegister = 0;
@@ -148,7 +148,7 @@ namespace SlangAutoDiff
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _RenderCB
+            // _Render_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -828,18 +828,18 @@ namespace SlangAutoDiff
             m_internal.buffer_Data = nullptr;
         }
 
-        // _InitCB
-        if (m_internal.constantBuffer__InitCB)
+        // _Init_0CB
+        if (m_internal.constantBuffer__Init_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__InitCB);
-            m_internal.constantBuffer__InitCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__Init_0CB);
+            m_internal.constantBuffer__Init_0CB = nullptr;
         }
 
-        // _RenderCB
-        if (m_internal.constantBuffer__RenderCB)
+        // _Render_0CB
+        if (m_internal.constantBuffer__Render_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__RenderCB);
-            m_internal.constantBuffer__RenderCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__Render_0CB);
+            m_internal.constantBuffer__Render_0CB = nullptr;
         }
 
         // _Descend_0CB
@@ -919,15 +919,15 @@ namespace SlangAutoDiff
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _InitCB
+        // Shader Constants: _Init_0CB
         {
-            context->m_internal.constantBuffer__InitCB_cpu.FrameIndex = context->m_input.variable_FrameIndex;
-            context->m_internal.constantBuffer__InitCB_cpu.MouseState = context->m_input.variable_MouseState;
-            context->m_internal.constantBuffer__InitCB_cpu.MouseStateLastFrame = context->m_input.variable_MouseStateLastFrame;
-            context->m_internal.constantBuffer__InitCB_cpu.NumGaussians = context->m_input.variable_NumGaussians;
-            context->m_internal.constantBuffer__InitCB_cpu.iResolution = context->m_input.variable_iResolution;
-            context->m_internal.constantBuffer__InitCB_cpu.initialized = context->m_input.variable_initialized;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__InitCB, context->m_internal.constantBuffer__InitCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__Init_0CB_cpu.FrameIndex = context->m_input.variable_FrameIndex;
+            context->m_internal.constantBuffer__Init_0CB_cpu.MouseState = context->m_input.variable_MouseState;
+            context->m_internal.constantBuffer__Init_0CB_cpu.MouseStateLastFrame = context->m_input.variable_MouseStateLastFrame;
+            context->m_internal.constantBuffer__Init_0CB_cpu.NumGaussians = context->m_input.variable_NumGaussians;
+            context->m_internal.constantBuffer__Init_0CB_cpu.iResolution = context->m_input.variable_iResolution;
+            context->m_internal.constantBuffer__Init_0CB_cpu.initialized = context->m_input.variable_initialized;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Init_0CB, context->m_internal.constantBuffer__Init_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -959,7 +959,7 @@ namespace SlangAutoDiff
 
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__InitCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__Init_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -983,11 +983,11 @@ namespace SlangAutoDiff
             }
         }
 
-        // Shader Constants: _RenderCB
+        // Shader Constants: _Render_0CB
         {
-            context->m_internal.constantBuffer__RenderCB_cpu.NumGaussians = context->m_input.variable_NumGaussians;
-            context->m_internal.constantBuffer__RenderCB_cpu.QuantizeDisplay = context->m_input.variable_QuantizeDisplay;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__RenderCB, context->m_internal.constantBuffer__RenderCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__Render_0CB_cpu.NumGaussians = context->m_input.variable_NumGaussians;
+            context->m_internal.constantBuffer__Render_0CB_cpu.QuantizeDisplay = context->m_input.variable_QuantizeDisplay;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__Render_0CB, context->m_internal.constantBuffer__Render_0CB_cpu, Context::LogFn);
         }
 
         // Shader Constants: _Descend_0CB
@@ -1079,7 +1079,7 @@ namespace SlangAutoDiff
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_internal.buffer_Data, context->m_internal.buffer_Data_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Buffer, false, context->m_internal.buffer_Data_stride, context->m_internal.buffer_Data_count, 0, 0, 0, false },
                 { context->m_input.texture_Output, context->m_input.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__RenderCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__Render_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1179,18 +1179,18 @@ namespace SlangAutoDiff
             }
         }
 
-        // _InitCB
-        if (m_internal.constantBuffer__InitCB == nullptr)
+        // _Init_0CB
+        if (m_internal.constantBuffer__Init_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__InitCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_InitCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__Init_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Init_0CB" : nullptr), Context::LogFn);
         }
 
-        // _RenderCB
-        if (m_internal.constantBuffer__RenderCB == nullptr)
+        // _Render_0CB
+        if (m_internal.constantBuffer__Render_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__RenderCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_RenderCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__Render_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_Render_0CB" : nullptr), Context::LogFn);
         }
 
         // _Descend_0CB

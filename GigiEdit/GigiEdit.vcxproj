@@ -109,6 +109,7 @@
     <ClCompile Include="..\external\nativefiledialog\src\nfd_common.c" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\GigiAssert.cpp" />
+    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="ui\builders.cpp" />
     <ClCompile Include="ui\drawing.cpp" />
@@ -140,6 +141,7 @@
     <ClInclude Include="..\external\nativefiledialog\src\common.h" />
     <ClInclude Include="..\external\nativefiledialog\src\include\nfd.h" />
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
+    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
     <ClInclude Include="EditorNodes.h" />
     <ClInclude Include="MakeTypePath.h" />
     <ClInclude Include="MakeUI.h" />

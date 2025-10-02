@@ -373,10 +373,15 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 
 					const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
+
 					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
 					break;
 				}
@@ -504,14 +509,28 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                                     unitsDivider = max(unitsDivider, 1);
                                 }
 
-                                desc.m_firstElement = linkProperties.bufferViewBegin / unitsDivider;
+                                unsigned int bufferViewBegin = linkProperties.bufferViewBegin;
+                                if (linkProperties.bufferViewBeginVariable.variableIndex != -1)
+                                {
+                                    if (!GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                                        return false;
+                                }
+
+                                unsigned int bufferViewSize = linkProperties.bufferViewSize;
+                                if (linkProperties.bufferViewSizeVariable.variableIndex != -1)
+                                {
+                                    if (!GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                                        return false;
+                                }
+
+                                desc.m_firstElement = bufferViewBegin / unitsDivider;
 
                                 if (desc.m_count >= desc.m_firstElement)
                                     desc.m_count -= desc.m_firstElement;
                                 else
                                     desc.m_count = 0;
 
-                                unsigned int bufferViewNumElements = linkProperties.bufferViewSize / unitsDivider;
+                                unsigned int bufferViewNumElements = bufferViewSize / unitsDivider;
                                 if (bufferViewNumElements > 0)
                                     desc.m_count = min(desc.m_count, bufferViewNumElements);
                             }
@@ -818,6 +837,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 

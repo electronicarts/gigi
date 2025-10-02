@@ -40,6 +40,7 @@ unsupportedTests = [
     "RayTrace\\simpleRTDynamic",
     "Raster\\simpleRasterMSAA",
     "Buffers\\Strides",
+    "Raster\\IndirectDraw",
 
     # WebGPU only
     "Buffers\\buffertest_webgpu",
@@ -62,7 +63,7 @@ for fileName in glob.glob(os.getcwd() + "/Techniques/UnitTests/**/*.py", recursi
     fileNameNoExtension = os.path.splitext(fileName)[0]
     fileName = fileNameNoExtension + ".gg"
 
-    if relFileNameNoExtension == "RunTests":
+    if relFileNameNoExtension == "RunTests" or relFileNameNoExtension == "TestLogic":
         continue
 
     # Unsupported unit tests

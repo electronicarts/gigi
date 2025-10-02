@@ -36,11 +36,11 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "FilterSub_Iteration_0_Blur", node "FilterSub_Iteration_0_DoBlur"
-static ShaderCode_FilterSub_Iteration_0_DoBlur_FilterSub_Iteration_0_Blur = `
+// Shader code for Compute shader "FilterSub_Iteration_0_Blur_0", node "FilterSub_Iteration_0_DoBlur"
+static ShaderCode_FilterSub_Iteration_0_DoBlur_FilterSub_Iteration_0_Blur_0 = `
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
-struct Struct_FilterSub_Iteration_0_BlurCB_std140_0
+struct Struct_FilterSub_Iteration_0_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_0_sRGB_0 : u32,
     @align(4) _loopIndexValue_0_0 : i32,
@@ -48,7 +48,7 @@ struct Struct_FilterSub_Iteration_0_BlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _FilterSub_Iteration_0_BlurCB : Struct_FilterSub_Iteration_0_BlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _FilterSub_Iteration_0_Blur_0CB : Struct_FilterSub_Iteration_0_Blur_0CB_std140_0;
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
@@ -98,7 +98,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_0_BlurCB._loopIndexValue_0_0 + i32(1);
+    var _S5 : i32 = _FilterSub_Iteration_0_Blur_0CB._loopIndexValue_0_0 + i32(1);
     const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
     var ret_0 : vec3<f32> = _S6;
@@ -130,7 +130,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         iy_0 = iy_0 + i32(1);
     }
     var ret_2 : vec3<f32> = ret_0 / vec3<f32>(9.0f);
-    if(bool(_FilterSub_Iteration_0_BlurCB.FilterSub_Iteration_0_sRGB_0))
+    if(bool(_FilterSub_Iteration_0_Blur_0CB.FilterSub_Iteration_0_sRGB_0))
     {
         ret_0 = LinearToSRGB_0(ret_2);
     }
@@ -144,11 +144,11 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "FilterSub_Iteration_1_Blur", node "FilterSub_Iteration_1_DoBlur"
-static ShaderCode_FilterSub_Iteration_1_DoBlur_FilterSub_Iteration_1_Blur = `
+// Shader code for Compute shader "FilterSub_Iteration_1_Blur_0", node "FilterSub_Iteration_1_DoBlur"
+static ShaderCode_FilterSub_Iteration_1_DoBlur_FilterSub_Iteration_1_Blur_0 = `
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
-struct Struct_FilterSub_Iteration_1_BlurCB_std140_0
+struct Struct_FilterSub_Iteration_1_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_1_sRGB_0 : u32,
     @align(4) _loopIndexValue_1_0 : i32,
@@ -156,7 +156,7 @@ struct Struct_FilterSub_Iteration_1_BlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _FilterSub_Iteration_1_BlurCB : Struct_FilterSub_Iteration_1_BlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _FilterSub_Iteration_1_Blur_0CB : Struct_FilterSub_Iteration_1_Blur_0CB_std140_0;
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
@@ -206,7 +206,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_1_BlurCB._loopIndexValue_1_0 + i32(1);
+    var _S5 : i32 = _FilterSub_Iteration_1_Blur_0CB._loopIndexValue_1_0 + i32(1);
     const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
     var ret_0 : vec3<f32> = _S6;
@@ -238,7 +238,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         iy_0 = iy_0 + i32(1);
     }
     var ret_2 : vec3<f32> = ret_0 / vec3<f32>(9.0f);
-    if(bool(_FilterSub_Iteration_1_BlurCB.FilterSub_Iteration_1_sRGB_0))
+    if(bool(_FilterSub_Iteration_1_Blur_0CB.FilterSub_Iteration_1_sRGB_0))
     {
         ret_0 = LinearToSRGB_0(ret_2);
     }
@@ -252,11 +252,11 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "FilterSub_Iteration_2_Blur", node "FilterSub_Iteration_2_DoBlur"
-static ShaderCode_FilterSub_Iteration_2_DoBlur_FilterSub_Iteration_2_Blur = `
+// Shader code for Compute shader "FilterSub_Iteration_2_Blur_0", node "FilterSub_Iteration_2_DoBlur"
+static ShaderCode_FilterSub_Iteration_2_DoBlur_FilterSub_Iteration_2_Blur_0 = `
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
-struct Struct_FilterSub_Iteration_2_BlurCB_std140_0
+struct Struct_FilterSub_Iteration_2_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_2_sRGB_0 : u32,
     @align(4) _loopIndexValue_2_0 : i32,
@@ -264,7 +264,7 @@ struct Struct_FilterSub_Iteration_2_BlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _FilterSub_Iteration_2_BlurCB : Struct_FilterSub_Iteration_2_BlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _FilterSub_Iteration_2_Blur_0CB : Struct_FilterSub_Iteration_2_Blur_0CB_std140_0;
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
@@ -314,7 +314,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_2_BlurCB._loopIndexValue_2_0 + i32(1);
+    var _S5 : i32 = _FilterSub_Iteration_2_Blur_0CB._loopIndexValue_2_0 + i32(1);
     const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
     var ret_0 : vec3<f32> = _S6;
@@ -346,7 +346,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         iy_0 = iy_0 + i32(1);
     }
     var ret_2 : vec3<f32> = ret_0 / vec3<f32>(9.0f);
-    if(bool(_FilterSub_Iteration_2_BlurCB.FilterSub_Iteration_2_sRGB_0))
+    if(bool(_FilterSub_Iteration_2_Blur_0CB.FilterSub_Iteration_2_sRGB_0))
     {
         ret_0 = LinearToSRGB_0(ret_2);
     }
@@ -360,11 +360,11 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "FilterSub_Iteration_3_Blur", node "FilterSub_Iteration_3_DoBlur"
-static ShaderCode_FilterSub_Iteration_3_DoBlur_FilterSub_Iteration_3_Blur = `
+// Shader code for Compute shader "FilterSub_Iteration_3_Blur_0", node "FilterSub_Iteration_3_DoBlur"
+static ShaderCode_FilterSub_Iteration_3_DoBlur_FilterSub_Iteration_3_Blur_0 = `
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
-struct Struct_FilterSub_Iteration_3_BlurCB_std140_0
+struct Struct_FilterSub_Iteration_3_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_3_sRGB_0 : u32,
     @align(4) _loopIndexValue_3_0 : i32,
@@ -372,7 +372,7 @@ struct Struct_FilterSub_Iteration_3_BlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _FilterSub_Iteration_3_BlurCB : Struct_FilterSub_Iteration_3_BlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _FilterSub_Iteration_3_Blur_0CB : Struct_FilterSub_Iteration_3_Blur_0CB_std140_0;
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
@@ -422,7 +422,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_3_BlurCB._loopIndexValue_3_0 + i32(1);
+    var _S5 : i32 = _FilterSub_Iteration_3_Blur_0CB._loopIndexValue_3_0 + i32(1);
     const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
     var ret_0 : vec3<f32> = _S6;
@@ -454,7 +454,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         iy_0 = iy_0 + i32(1);
     }
     var ret_2 : vec3<f32> = ret_0 / vec3<f32>(9.0f);
-    if(bool(_FilterSub_Iteration_3_BlurCB.FilterSub_Iteration_3_sRGB_0))
+    if(bool(_FilterSub_Iteration_3_Blur_0CB.FilterSub_Iteration_3_sRGB_0))
     {
         ret_0 = LinearToSRGB_0(ret_2);
     }
@@ -468,11 +468,11 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "FilterSub_Iteration_4_Blur", node "FilterSub_Iteration_4_DoBlur"
-static ShaderCode_FilterSub_Iteration_4_DoBlur_FilterSub_Iteration_4_Blur = `
+// Shader code for Compute shader "FilterSub_Iteration_4_Blur_0", node "FilterSub_Iteration_4_DoBlur"
+static ShaderCode_FilterSub_Iteration_4_DoBlur_FilterSub_Iteration_4_Blur_0 = `
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
-struct Struct_FilterSub_Iteration_4_BlurCB_std140_0
+struct Struct_FilterSub_Iteration_4_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_4_sRGB_0 : u32,
     @align(4) _loopIndexValue_4_0 : i32,
@@ -480,7 +480,7 @@ struct Struct_FilterSub_Iteration_4_BlurCB_std140_0
     @align(4) _padding1_0 : f32,
 };
 
-@binding(3) @group(0) var<uniform> _FilterSub_Iteration_4_BlurCB : Struct_FilterSub_Iteration_4_BlurCB_std140_0;
+@binding(3) @group(0) var<uniform> _FilterSub_Iteration_4_Blur_0CB : Struct_FilterSub_Iteration_4_Blur_0CB_std140_0;
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
@@ -530,7 +530,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_4_BlurCB._loopIndexValue_4_0 + i32(1);
+    var _S5 : i32 = _FilterSub_Iteration_4_Blur_0CB._loopIndexValue_4_0 + i32(1);
     const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
     var ret_0 : vec3<f32> = _S6;
@@ -562,7 +562,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
         iy_0 = iy_0 + i32(1);
     }
     var ret_2 : vec3<f32> = ret_0 / vec3<f32>(9.0f);
-    if(bool(_FilterSub_Iteration_4_BlurCB.FilterSub_Iteration_4_sRGB_0))
+    if(bool(_FilterSub_Iteration_4_Blur_0CB.FilterSub_Iteration_4_sRGB_0))
     {
         ret_0 = LinearToSRGB_0(ret_2);
     }
@@ -608,10 +608,10 @@ texture_FilterSub_Iteration_4_DoBlur_Output_ReadOnly_size = [0, 0, 0];
 texture_FilterSub_Iteration_4_DoBlur_Output_ReadOnly_format = "";
 texture_FilterSub_Iteration_4_DoBlur_Output_ReadOnly_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
-// Constant buffer _FilterSub_Iteration_0_BlurCB
-constantBuffer__FilterSub_Iteration_0_BlurCB = null;
-constantBuffer__FilterSub_Iteration_0_BlurCB_size = 16;
-constantBuffer__FilterSub_Iteration_0_BlurCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _FilterSub_Iteration_0_Blur_0CB
+constantBuffer__FilterSub_Iteration_0_Blur_0CB = null;
+constantBuffer__FilterSub_Iteration_0_Blur_0CB_size = 16;
+constantBuffer__FilterSub_Iteration_0_Blur_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader FilterSub_Iteration_0_DoBlur
 Hash_Compute_FilterSub_Iteration_0_DoBlur = 0;
@@ -620,10 +620,10 @@ BindGroupLayout_Compute_FilterSub_Iteration_0_DoBlur = null;
 PipelineLayout_Compute_FilterSub_Iteration_0_DoBlur = null;
 Pipeline_Compute_FilterSub_Iteration_0_DoBlur = null;
 
-// Constant buffer _FilterSub_Iteration_1_BlurCB
-constantBuffer__FilterSub_Iteration_1_BlurCB = null;
-constantBuffer__FilterSub_Iteration_1_BlurCB_size = 16;
-constantBuffer__FilterSub_Iteration_1_BlurCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _FilterSub_Iteration_1_Blur_0CB
+constantBuffer__FilterSub_Iteration_1_Blur_0CB = null;
+constantBuffer__FilterSub_Iteration_1_Blur_0CB_size = 16;
+constantBuffer__FilterSub_Iteration_1_Blur_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader FilterSub_Iteration_1_DoBlur
 Hash_Compute_FilterSub_Iteration_1_DoBlur = 0;
@@ -632,10 +632,10 @@ BindGroupLayout_Compute_FilterSub_Iteration_1_DoBlur = null;
 PipelineLayout_Compute_FilterSub_Iteration_1_DoBlur = null;
 Pipeline_Compute_FilterSub_Iteration_1_DoBlur = null;
 
-// Constant buffer _FilterSub_Iteration_2_BlurCB
-constantBuffer__FilterSub_Iteration_2_BlurCB = null;
-constantBuffer__FilterSub_Iteration_2_BlurCB_size = 16;
-constantBuffer__FilterSub_Iteration_2_BlurCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _FilterSub_Iteration_2_Blur_0CB
+constantBuffer__FilterSub_Iteration_2_Blur_0CB = null;
+constantBuffer__FilterSub_Iteration_2_Blur_0CB_size = 16;
+constantBuffer__FilterSub_Iteration_2_Blur_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader FilterSub_Iteration_2_DoBlur
 Hash_Compute_FilterSub_Iteration_2_DoBlur = 0;
@@ -644,10 +644,10 @@ BindGroupLayout_Compute_FilterSub_Iteration_2_DoBlur = null;
 PipelineLayout_Compute_FilterSub_Iteration_2_DoBlur = null;
 Pipeline_Compute_FilterSub_Iteration_2_DoBlur = null;
 
-// Constant buffer _FilterSub_Iteration_3_BlurCB
-constantBuffer__FilterSub_Iteration_3_BlurCB = null;
-constantBuffer__FilterSub_Iteration_3_BlurCB_size = 16;
-constantBuffer__FilterSub_Iteration_3_BlurCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _FilterSub_Iteration_3_Blur_0CB
+constantBuffer__FilterSub_Iteration_3_Blur_0CB = null;
+constantBuffer__FilterSub_Iteration_3_Blur_0CB_size = 16;
+constantBuffer__FilterSub_Iteration_3_Blur_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader FilterSub_Iteration_3_DoBlur
 Hash_Compute_FilterSub_Iteration_3_DoBlur = 0;
@@ -656,10 +656,10 @@ BindGroupLayout_Compute_FilterSub_Iteration_3_DoBlur = null;
 PipelineLayout_Compute_FilterSub_Iteration_3_DoBlur = null;
 Pipeline_Compute_FilterSub_Iteration_3_DoBlur = null;
 
-// Constant buffer _FilterSub_Iteration_4_BlurCB
-constantBuffer__FilterSub_Iteration_4_BlurCB = null;
-constantBuffer__FilterSub_Iteration_4_BlurCB_size = 16;
-constantBuffer__FilterSub_Iteration_4_BlurCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _FilterSub_Iteration_4_Blur_0CB
+constantBuffer__FilterSub_Iteration_4_Blur_0CB = null;
+constantBuffer__FilterSub_Iteration_4_Blur_0CB_size = 16;
+constantBuffer__FilterSub_Iteration_4_Blur_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader FilterSub_Iteration_4_DoBlur
 Hash_Compute_FilterSub_Iteration_4_DoBlur = 0;
@@ -760,7 +760,7 @@ variableDefault___loopIndexValue_4 = 4;
 variableChanged___loopIndexValue_4 = false;
 // -------------------- Structs
 
-static StructOffsets__FilterSub_Iteration_0_BlurCB =
+static StructOffsets__FilterSub_Iteration_0_Blur_0CB =
 {
     FilterSub_Iteration_0_sRGB: 0,
     __loopIndexValue_0: 4,
@@ -769,7 +769,7 @@ static StructOffsets__FilterSub_Iteration_0_BlurCB =
     _size: 16,
 }
 
-static StructOffsets__FilterSub_Iteration_1_BlurCB =
+static StructOffsets__FilterSub_Iteration_1_Blur_0CB =
 {
     FilterSub_Iteration_1_sRGB: 0,
     __loopIndexValue_1: 4,
@@ -778,7 +778,7 @@ static StructOffsets__FilterSub_Iteration_1_BlurCB =
     _size: 16,
 }
 
-static StructOffsets__FilterSub_Iteration_2_BlurCB =
+static StructOffsets__FilterSub_Iteration_2_Blur_0CB =
 {
     FilterSub_Iteration_2_sRGB: 0,
     __loopIndexValue_2: 4,
@@ -787,7 +787,7 @@ static StructOffsets__FilterSub_Iteration_2_BlurCB =
     _size: 16,
 }
 
-static StructOffsets__FilterSub_Iteration_3_BlurCB =
+static StructOffsets__FilterSub_Iteration_3_Blur_0CB =
 {
     FilterSub_Iteration_3_sRGB: 0,
     __loopIndexValue_3: 4,
@@ -796,7 +796,7 @@ static StructOffsets__FilterSub_Iteration_3_BlurCB =
     _size: 16,
 }
 
-static StructOffsets__FilterSub_Iteration_4_BlurCB =
+static StructOffsets__FilterSub_Iteration_4_Blur_0CB =
 {
     FilterSub_Iteration_4_sRGB: 0,
     __loopIndexValue_4: 4,
@@ -1193,7 +1193,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_0_DoBlur_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _FilterSub_Iteration_0_BlurCB
+                // _FilterSub_Iteration_0_Blur_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1207,7 +1207,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_FilterSub_Iteration_0_DoBlur = newHash;
 
-            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_0_DoBlur_FilterSub_Iteration_0_Blur;
+            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_0_DoBlur_FilterSub_Iteration_0_Blur_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_0_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_0_DoBlur_Output_ReadOnly_format));
 
@@ -1272,7 +1272,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_1_DoBlur_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _FilterSub_Iteration_1_BlurCB
+                // _FilterSub_Iteration_1_Blur_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1286,7 +1286,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_FilterSub_Iteration_1_DoBlur = newHash;
 
-            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_1_DoBlur_FilterSub_Iteration_1_Blur;
+            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_1_DoBlur_FilterSub_Iteration_1_Blur_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_1_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_1_DoBlur_Output_ReadOnly_format));
 
@@ -1351,7 +1351,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_2_DoBlur_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _FilterSub_Iteration_2_BlurCB
+                // _FilterSub_Iteration_2_Blur_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1365,7 +1365,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_FilterSub_Iteration_2_DoBlur = newHash;
 
-            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_2_DoBlur_FilterSub_Iteration_2_Blur;
+            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_2_DoBlur_FilterSub_Iteration_2_Blur_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_2_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_2_DoBlur_Output_ReadOnly_format));
 
@@ -1430,7 +1430,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_3_DoBlur_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _FilterSub_Iteration_3_BlurCB
+                // _FilterSub_Iteration_3_Blur_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1444,7 +1444,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_FilterSub_Iteration_3_DoBlur = newHash;
 
-            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_3_DoBlur_FilterSub_Iteration_3_Blur;
+            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_3_DoBlur_FilterSub_Iteration_3_Blur_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_3_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_3_DoBlur_Output_ReadOnly_format));
 
@@ -1509,7 +1509,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_4_DoBlur_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _FilterSub_Iteration_4_BlurCB
+                // _FilterSub_Iteration_4_Blur_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1523,7 +1523,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_FilterSub_Iteration_4_DoBlur = newHash;
 
-            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_4_DoBlur_FilterSub_Iteration_4_Blur;
+            let shaderCode = class_SubGraphLoops.ShaderCode_FilterSub_Iteration_4_DoBlur_FilterSub_Iteration_4_Blur_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_4_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_FilterSub_Iteration_4_DoBlur_Output_ReadOnly_format));
 
@@ -1758,28 +1758,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SubGraphLoops.Copy_FilterSub_Iteration_4_DoBlur_Output"
 
-    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_0_BlurCB");
+    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_0_Blur_0CB");
 
-    // Create constant buffer _FilterSub_Iteration_0_BlurCB
-    if (this.constantBuffer__FilterSub_Iteration_0_BlurCB === null)
+    // Create constant buffer _FilterSub_Iteration_0_Blur_0CB
+    if (this.constantBuffer__FilterSub_Iteration_0_Blur_0CB === null)
     {
-        this.constantBuffer__FilterSub_Iteration_0_BlurCB = device.createBuffer({
-            label: "SubGraphLoops._FilterSub_Iteration_0_BlurCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_0_BlurCB._size),
-            usage: this.constantBuffer__FilterSub_Iteration_0_BlurCB_usageFlags,
+        this.constantBuffer__FilterSub_Iteration_0_Blur_0CB = device.createBuffer({
+            label: "SubGraphLoops._FilterSub_Iteration_0_Blur_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB._size),
+            usage: this.constantBuffer__FilterSub_Iteration_0_Blur_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _FilterSub_Iteration_0_BlurCB
+    // Upload values to constant buffer _FilterSub_Iteration_0_Blur_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_0_BlurCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_0_BlurCB.FilterSub_Iteration_0_sRGB, (this.variable_FilterSub_Iteration_0_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_0_BlurCB.__loopIndexValue_0, this.variable___loopIndexValue_0, true);
-        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_0_BlurCB, 0, bufferCPU);
+        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB.FilterSub_Iteration_0_sRGB, (this.variable_FilterSub_Iteration_0_sRGB === true ? 1 : 0), true);
+        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB.__loopIndexValue_0, this.variable___loopIndexValue_0, true);
+        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_0_Blur_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_0_BlurCB"
+    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_0_Blur_0CB"
 
     encoder.pushDebugGroup("SubGraphLoops.FilterSub_Iteration_0_DoBlur");
 
@@ -1805,9 +1805,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_FilterSub_Iteration_0_DoBlur_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _FilterSub_Iteration_0_BlurCB
+                    // _FilterSub_Iteration_0_Blur_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_0_BlurCB }
+                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_0_Blur_0CB }
                 },
             ]
         });
@@ -1861,28 +1861,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SubGraphLoops.FilterSub_Iteration_0_Copy_back"
 
-    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_1_BlurCB");
+    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_1_Blur_0CB");
 
-    // Create constant buffer _FilterSub_Iteration_1_BlurCB
-    if (this.constantBuffer__FilterSub_Iteration_1_BlurCB === null)
+    // Create constant buffer _FilterSub_Iteration_1_Blur_0CB
+    if (this.constantBuffer__FilterSub_Iteration_1_Blur_0CB === null)
     {
-        this.constantBuffer__FilterSub_Iteration_1_BlurCB = device.createBuffer({
-            label: "SubGraphLoops._FilterSub_Iteration_1_BlurCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_1_BlurCB._size),
-            usage: this.constantBuffer__FilterSub_Iteration_1_BlurCB_usageFlags,
+        this.constantBuffer__FilterSub_Iteration_1_Blur_0CB = device.createBuffer({
+            label: "SubGraphLoops._FilterSub_Iteration_1_Blur_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB._size),
+            usage: this.constantBuffer__FilterSub_Iteration_1_Blur_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _FilterSub_Iteration_1_BlurCB
+    // Upload values to constant buffer _FilterSub_Iteration_1_Blur_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_1_BlurCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_1_BlurCB.FilterSub_Iteration_1_sRGB, (this.variable_FilterSub_Iteration_1_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_1_BlurCB.__loopIndexValue_1, this.variable___loopIndexValue_1, true);
-        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_1_BlurCB, 0, bufferCPU);
+        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB.FilterSub_Iteration_1_sRGB, (this.variable_FilterSub_Iteration_1_sRGB === true ? 1 : 0), true);
+        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB.__loopIndexValue_1, this.variable___loopIndexValue_1, true);
+        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_1_Blur_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_1_BlurCB"
+    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_1_Blur_0CB"
 
     encoder.pushDebugGroup("SubGraphLoops.FilterSub_Iteration_1_DoBlur");
 
@@ -1908,9 +1908,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_FilterSub_Iteration_1_DoBlur_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _FilterSub_Iteration_1_BlurCB
+                    // _FilterSub_Iteration_1_Blur_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_1_BlurCB }
+                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_1_Blur_0CB }
                 },
             ]
         });
@@ -1964,28 +1964,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SubGraphLoops.FilterSub_Iteration_1_Copy_back"
 
-    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_2_BlurCB");
+    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_2_Blur_0CB");
 
-    // Create constant buffer _FilterSub_Iteration_2_BlurCB
-    if (this.constantBuffer__FilterSub_Iteration_2_BlurCB === null)
+    // Create constant buffer _FilterSub_Iteration_2_Blur_0CB
+    if (this.constantBuffer__FilterSub_Iteration_2_Blur_0CB === null)
     {
-        this.constantBuffer__FilterSub_Iteration_2_BlurCB = device.createBuffer({
-            label: "SubGraphLoops._FilterSub_Iteration_2_BlurCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_2_BlurCB._size),
-            usage: this.constantBuffer__FilterSub_Iteration_2_BlurCB_usageFlags,
+        this.constantBuffer__FilterSub_Iteration_2_Blur_0CB = device.createBuffer({
+            label: "SubGraphLoops._FilterSub_Iteration_2_Blur_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB._size),
+            usage: this.constantBuffer__FilterSub_Iteration_2_Blur_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _FilterSub_Iteration_2_BlurCB
+    // Upload values to constant buffer _FilterSub_Iteration_2_Blur_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_2_BlurCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_2_BlurCB.FilterSub_Iteration_2_sRGB, (this.variable_FilterSub_Iteration_2_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_2_BlurCB.__loopIndexValue_2, this.variable___loopIndexValue_2, true);
-        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_2_BlurCB, 0, bufferCPU);
+        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB.FilterSub_Iteration_2_sRGB, (this.variable_FilterSub_Iteration_2_sRGB === true ? 1 : 0), true);
+        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB.__loopIndexValue_2, this.variable___loopIndexValue_2, true);
+        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_2_Blur_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_2_BlurCB"
+    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_2_Blur_0CB"
 
     encoder.pushDebugGroup("SubGraphLoops.FilterSub_Iteration_2_DoBlur");
 
@@ -2011,9 +2011,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_FilterSub_Iteration_2_DoBlur_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _FilterSub_Iteration_2_BlurCB
+                    // _FilterSub_Iteration_2_Blur_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_2_BlurCB }
+                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_2_Blur_0CB }
                 },
             ]
         });
@@ -2067,28 +2067,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SubGraphLoops.FilterSub_Iteration_2_Copy_back"
 
-    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_3_BlurCB");
+    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_3_Blur_0CB");
 
-    // Create constant buffer _FilterSub_Iteration_3_BlurCB
-    if (this.constantBuffer__FilterSub_Iteration_3_BlurCB === null)
+    // Create constant buffer _FilterSub_Iteration_3_Blur_0CB
+    if (this.constantBuffer__FilterSub_Iteration_3_Blur_0CB === null)
     {
-        this.constantBuffer__FilterSub_Iteration_3_BlurCB = device.createBuffer({
-            label: "SubGraphLoops._FilterSub_Iteration_3_BlurCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_3_BlurCB._size),
-            usage: this.constantBuffer__FilterSub_Iteration_3_BlurCB_usageFlags,
+        this.constantBuffer__FilterSub_Iteration_3_Blur_0CB = device.createBuffer({
+            label: "SubGraphLoops._FilterSub_Iteration_3_Blur_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB._size),
+            usage: this.constantBuffer__FilterSub_Iteration_3_Blur_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _FilterSub_Iteration_3_BlurCB
+    // Upload values to constant buffer _FilterSub_Iteration_3_Blur_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_3_BlurCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_3_BlurCB.FilterSub_Iteration_3_sRGB, (this.variable_FilterSub_Iteration_3_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_3_BlurCB.__loopIndexValue_3, this.variable___loopIndexValue_3, true);
-        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_3_BlurCB, 0, bufferCPU);
+        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB.FilterSub_Iteration_3_sRGB, (this.variable_FilterSub_Iteration_3_sRGB === true ? 1 : 0), true);
+        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB.__loopIndexValue_3, this.variable___loopIndexValue_3, true);
+        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_3_Blur_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_3_BlurCB"
+    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_3_Blur_0CB"
 
     encoder.pushDebugGroup("SubGraphLoops.FilterSub_Iteration_3_DoBlur");
 
@@ -2114,9 +2114,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_FilterSub_Iteration_3_DoBlur_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _FilterSub_Iteration_3_BlurCB
+                    // _FilterSub_Iteration_3_Blur_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_3_BlurCB }
+                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_3_Blur_0CB }
                 },
             ]
         });
@@ -2170,28 +2170,28 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SubGraphLoops.FilterSub_Iteration_3_Copy_back"
 
-    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_4_BlurCB");
+    encoder.pushDebugGroup("SubGraphLoops._FilterSub_Iteration_4_Blur_0CB");
 
-    // Create constant buffer _FilterSub_Iteration_4_BlurCB
-    if (this.constantBuffer__FilterSub_Iteration_4_BlurCB === null)
+    // Create constant buffer _FilterSub_Iteration_4_Blur_0CB
+    if (this.constantBuffer__FilterSub_Iteration_4_Blur_0CB === null)
     {
-        this.constantBuffer__FilterSub_Iteration_4_BlurCB = device.createBuffer({
-            label: "SubGraphLoops._FilterSub_Iteration_4_BlurCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_4_BlurCB._size),
-            usage: this.constantBuffer__FilterSub_Iteration_4_BlurCB_usageFlags,
+        this.constantBuffer__FilterSub_Iteration_4_Blur_0CB = device.createBuffer({
+            label: "SubGraphLoops._FilterSub_Iteration_4_Blur_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB._size),
+            usage: this.constantBuffer__FilterSub_Iteration_4_Blur_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _FilterSub_Iteration_4_BlurCB
+    // Upload values to constant buffer _FilterSub_Iteration_4_Blur_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_4_BlurCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_4_BlurCB.FilterSub_Iteration_4_sRGB, (this.variable_FilterSub_Iteration_4_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_4_BlurCB.__loopIndexValue_4, this.variable___loopIndexValue_4, true);
-        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_4_BlurCB, 0, bufferCPU);
+        view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB.FilterSub_Iteration_4_sRGB, (this.variable_FilterSub_Iteration_4_sRGB === true ? 1 : 0), true);
+        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB.__loopIndexValue_4, this.variable___loopIndexValue_4, true);
+        device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_4_Blur_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_4_BlurCB"
+    encoder.popDebugGroup(); // "SubGraphLoops._FilterSub_Iteration_4_Blur_0CB"
 
     encoder.pushDebugGroup("SubGraphLoops.FilterSub_Iteration_4_DoBlur");
 
@@ -2217,9 +2217,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_FilterSub_Iteration_4_DoBlur_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _FilterSub_Iteration_4_BlurCB
+                    // _FilterSub_Iteration_4_Blur_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_4_BlurCB }
+                    resource: { buffer: this.constantBuffer__FilterSub_Iteration_4_Blur_0CB }
                 },
             ]
         });

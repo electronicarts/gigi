@@ -46,15 +46,15 @@ namespace StructuredBuffer
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__csmainCB
+        struct Struct__csmain_0CB
         {
             float frameDeltaTime = 0.f;
             int frameIndex = 0;
             float2 _padding0 = {0.f, 0.f};  // Padding
         };
 
-        Struct__csmainCB constantBuffer__csmainCB_cpu;
-        ID3D12Resource* constantBuffer__csmainCB = nullptr;
+        Struct__csmain_0CB constantBuffer__csmain_0CB_cpu;
+        ID3D12Resource* constantBuffer__csmain_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_csmain_pso;
         static ID3D12RootSignature* computeShader_csmain_rootSig;

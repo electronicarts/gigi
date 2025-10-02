@@ -22,7 +22,7 @@ struct Struct_TheStructure
     float2 TheFloat2;
 };
 
-struct Struct__csmainCB
+struct Struct__csmain_0CB
 {
     float frameDeltaTime;
     int frameIndex;
@@ -30,9 +30,9 @@ struct Struct__csmainCB
 };
 
 RWStructuredBuffer<Struct_TheStructure> buff;
-float cb_csmainCB_frameDeltaTime;
-int cb_csmainCB_frameIndex;
-float2 cb_csmainCB__padding0;
+float cb_csmain_0CB_frameDeltaTime;
+int cb_csmain_0CB_frameIndex;
+float2 cb_csmain_0CB__padding0;
 
 
 [numthreads(1, 1, 1)]
@@ -45,8 +45,8 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 	buff[0].TheUINT = 31337;
 	buff[0].TheFloat2 = float2(0.3f, 3.0f);
 
-	buff[1].TheInt = cb_csmainCB_frameIndex;
-	buff[1].TheFloat = cb_csmainCB_frameDeltaTime;
+	buff[1].TheInt = cb_csmain_0CB_frameIndex;
+	buff[1].TheFloat = cb_csmain_0CB_frameDeltaTime;
 	buff[1].TheEnum = Trinary::Maybe;
 	buff[1].TheBool = 2;
 	buff[1].TheUINT = 255;

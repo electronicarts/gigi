@@ -338,6 +338,11 @@ public:
 						uavDesc.Texture3D.WSize = wsize;
 						break;
 					}
+					case ResourceType::Texture2DMS:
+					{
+						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMS;
+						break;
+					}
 				}
 
 				if (!FormatSupportedForUAV(device, uavDesc.Format))

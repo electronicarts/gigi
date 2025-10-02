@@ -4,7 +4,7 @@ import numpy
 import os
 
 resources = [
-	"Node_1._DummyCB: _DummyCB (CBV)",
+	"Node_1._Dummy_0CB: _Dummy_0CB (CBV)",
 ]
 
 # don't save gguser files during this script execution

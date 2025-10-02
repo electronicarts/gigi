@@ -845,8 +845,8 @@ fn RayGen(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "SimpleRTModifyScene", node "ModifyScene"
-static ShaderCode_ModifyScene_SimpleRTModifyScene = `
+// Shader code for Compute shader "SimpleRTModifyScene_0", node "ModifyScene"
+static ShaderCode_ModifyScene_SimpleRTModifyScene_0 = `
 struct Struct_VertexBuffer_std430_0
 {
     @align(16) Color_0 : vec3<f32>,
@@ -857,7 +857,7 @@ struct Struct_VertexBuffer_std430_0
 
 @binding(0) @group(0) var<storage, read_write> Scene : array<Struct_VertexBuffer_std430_0>;
 
-struct Struct_SimpleRTModifySceneCB_std140_0
+struct Struct_SimpleRTModifyScene_0CB_std140_0
 {
     @align(16) FrameIndex_0 : i32,
     @align(4) _padding0_1 : f32,
@@ -865,7 +865,7 @@ struct Struct_SimpleRTModifySceneCB_std140_0
     @align(4) _padding2_0 : f32,
 };
 
-@binding(1) @group(0) var<uniform> _SimpleRTModifySceneCB : Struct_SimpleRTModifySceneCB_std140_0;
+@binding(1) @group(0) var<uniform> _SimpleRTModifyScene_0CB : Struct_SimpleRTModifyScene_0CB_std140_0;
 struct Struct_VertexBuffer_0
 {
     @align(16) Color_0 : vec3<f32>,
@@ -887,7 +887,7 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     vertex_0._padding0_0 = _S2;
     vertex_0.Position_0 = _S3;
     vertex_0._padding1_0 = _S4;
-    vertex_0.Position_0 = vertex_0.Position_0 * vec3<f32>((1.0f + sin(6.28000020980834961f * f32(_SimpleRTModifySceneCB.FrameIndex_0) / 60.0f) * 0.5f + 0.5f));
+    vertex_0.Position_0 = vertex_0.Position_0 * vec3<f32>((1.0f + sin(6.28000020980834961f * f32(_SimpleRTModifyScene_0CB.FrameIndex_0) / 60.0f) * 0.5f + 0.5f));
     var _S5 : Struct_VertexBuffer_0 = vertex_0;
     Scene[_S1].Color_0 = vertex_0.Color_0;
     Scene[_S1]._padding0_0 = _S5._padding0_0;
@@ -1051,10 +1051,10 @@ constantBuffer__SimpleRTRayGenCB = null;
 constantBuffer__SimpleRTRayGenCB_size = 144;
 constantBuffer__SimpleRTRayGenCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
-// Constant buffer _SimpleRTModifySceneCB
-constantBuffer__SimpleRTModifySceneCB = null;
-constantBuffer__SimpleRTModifySceneCB_size = 16;
-constantBuffer__SimpleRTModifySceneCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _SimpleRTModifyScene_0CB
+constantBuffer__SimpleRTModifyScene_0CB = null;
+constantBuffer__SimpleRTModifyScene_0CB_size = 16;
+constantBuffer__SimpleRTModifyScene_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader ModifyScene
 Hash_Compute_ModifyScene = 0;
@@ -1207,7 +1207,7 @@ static StructOffsets__SimpleRTRayGenCB =
     _size: 144,
 }
 
-static StructOffsets__SimpleRTModifySceneCB =
+static StructOffsets__SimpleRTModifyScene_0CB =
 {
     FrameIndex: 0,
     _padding0: 4,
@@ -1365,7 +1365,7 @@ async Init(device, encoder, useBlockingAPIs)
                 buffer: { type: "storage" }
             },
             {
-                // _SimpleRTModifySceneCB
+                // _SimpleRTModifyScene_0CB
                 binding: 1,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -1379,7 +1379,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_ModifyScene = newHash;
 
-            let shaderCode = class_simpleRTDynamic.ShaderCode_ModifyScene_SimpleRTModifyScene;
+            let shaderCode = class_simpleRTDynamic.ShaderCode_ModifyScene_SimpleRTModifyScene_0;
 
             this.ShaderModule_Compute_ModifyScene = device.createShaderModule({ code: shaderCode, label: "Compute Shader ModifyScene"});
             this.BindGroupLayout_Compute_ModifyScene = device.createBindGroupLayout({
@@ -1598,27 +1598,27 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "simpleRTDynamic._SimpleRTRayGenCB"
 
-    encoder.pushDebugGroup("simpleRTDynamic._SimpleRTModifySceneCB");
+    encoder.pushDebugGroup("simpleRTDynamic._SimpleRTModifyScene_0CB");
 
-    // Create constant buffer _SimpleRTModifySceneCB
-    if (this.constantBuffer__SimpleRTModifySceneCB === null)
+    // Create constant buffer _SimpleRTModifyScene_0CB
+    if (this.constantBuffer__SimpleRTModifyScene_0CB === null)
     {
-        this.constantBuffer__SimpleRTModifySceneCB = device.createBuffer({
-            label: "simpleRTDynamic._SimpleRTModifySceneCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__SimpleRTModifySceneCB._size),
-            usage: this.constantBuffer__SimpleRTModifySceneCB_usageFlags,
+        this.constantBuffer__SimpleRTModifyScene_0CB = device.createBuffer({
+            label: "simpleRTDynamic._SimpleRTModifyScene_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__SimpleRTModifyScene_0CB._size),
+            usage: this.constantBuffer__SimpleRTModifyScene_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _SimpleRTModifySceneCB
+    // Upload values to constant buffer _SimpleRTModifyScene_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__SimpleRTModifySceneCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__SimpleRTModifyScene_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setInt32(this.constructor.StructOffsets__SimpleRTModifySceneCB.FrameIndex, this.variable_FrameIndex, true);
-        device.queue.writeBuffer(this.constantBuffer__SimpleRTModifySceneCB, 0, bufferCPU);
+        view.setInt32(this.constructor.StructOffsets__SimpleRTModifyScene_0CB.FrameIndex, this.variable_FrameIndex, true);
+        device.queue.writeBuffer(this.constantBuffer__SimpleRTModifyScene_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "simpleRTDynamic._SimpleRTModifySceneCB"
+    encoder.popDebugGroup(); // "simpleRTDynamic._SimpleRTModifyScene_0CB"
 
     encoder.pushDebugGroup("simpleRTDynamic.ModifyScene");
 
@@ -1634,9 +1634,9 @@ async FillEncoder(device, encoder)
                     resource: { buffer: this.buffer_Scene }
                 },
                 {
-                    // _SimpleRTModifySceneCB
+                    // _SimpleRTModifyScene_0CB
                     binding: 1,
-                    resource: { buffer: this.constantBuffer__SimpleRTModifySceneCB }
+                    resource: { buffer: this.constantBuffer__SimpleRTModifyScene_0CB }
                 },
             ]
         });

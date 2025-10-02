@@ -7,6 +7,7 @@ STRUCT_BEGIN(VariableReference, "A reference to a variable")
     STRUCT_FIELD(std::string, name, "", "The name of the variable.", 0)
 
     STRUCT_FIELD(int, variableIndex, -1, "Calculated for convenience.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(DataFieldType, UIType, DataFieldType::Count, "If not count, will limit to variables of the specific type.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
 STRUCT_BEGIN(VariableReferenceNoConst, "A reference to a variable. No const variables allowed.")

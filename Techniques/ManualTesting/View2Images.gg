@@ -1,0 +1,158 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "variables": [
+        {
+            "name": "OutputSize",
+            "type": "Uint2"
+        },
+        {
+            "name": "LinearToSRGB",
+            "comment": "If true, converts the images from linear to sRGB",
+            "type": "Bool",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Show",
+            "fileName": "View2Images.hlsl",
+            "resources": [
+                {
+                    "name": "Image1",
+                    "access": "SRV",
+                    "type": "Texture"
+                },
+                {
+                    "name": "Image2",
+                    "access": "SRV",
+                    "type": "Texture"
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "SRGB.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Image1",
+                "editorPos": [
+                    -1.0,
+                    -12.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Image2",
+                "editorPos": [
+                    -5.0,
+                    34.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -5.0,
+                    82.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "node": {
+                        "name": "Image1"
+                    }
+                },
+                "size": {
+                    "variable": {
+                        "name": "OutputSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Show",
+                "editorPos": [
+                    165.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Image1",
+                        "dstNode": "Image1",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Image2",
+                        "dstNode": "Image2",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Show"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                }
+            }
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "OutputSize"
+            },
+            "destinationIndex": 0,
+            "AVarIndex": 0,
+            "ANode": {
+                "name": "Image1"
+            },
+            "BVarIndex": 0,
+            "BNode": {
+                "name": "Image2"
+            }
+        },
+        {
+            "destination": {
+                "name": "OutputSize"
+            },
+            "destinationIndex": 1,
+            "AVarIndex": 1,
+            "ANode": {
+                "name": "Image1"
+            },
+            "op": "Maximum",
+            "BVarIndex": 1,
+            "BNode": {
+                "name": "Image2"
+            }
+        }
+    ]
+}

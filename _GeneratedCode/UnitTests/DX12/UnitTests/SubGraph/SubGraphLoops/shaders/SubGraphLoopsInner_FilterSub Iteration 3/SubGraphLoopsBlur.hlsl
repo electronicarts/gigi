@@ -1,7 +1,7 @@
 // Unnamed technique, shader Blur
 
 
-struct Struct__FilterSub_Iteration_3_BlurCB
+struct Struct__FilterSub_Iteration_3_Blur_0CB
 {
     uint FilterSub_Iteration_3_sRGB;
     int __loopIndexValue_3;
@@ -10,7 +10,7 @@ struct Struct__FilterSub_Iteration_3_BlurCB
 
 Texture2D<float4> Input : register(t0);
 RWTexture2D<float4> Output : register(u0);
-ConstantBuffer<Struct__FilterSub_Iteration_3_BlurCB> _FilterSub_Iteration_3_BlurCB : register(b0);
+ConstantBuffer<Struct__FilterSub_Iteration_3_Blur_0CB> _FilterSub_Iteration_3_Blur_0CB : register(b0);
 
 #line 2
 
@@ -26,7 +26,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	int2 dims;
 	Input.GetDimensions(dims.x, dims.y);
 
-	int radius = _FilterSub_Iteration_3_BlurCB.__loopIndexValue_3 + 1;
+	int radius = _FilterSub_Iteration_3_Blur_0CB.__loopIndexValue_3 + 1;
 	float3 ret = float3(0.0f, 0.0f, 0.0f);
 	for (int iy = -1; iy <= 1; ++iy)
 	{
@@ -38,7 +38,7 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	}
 	ret /= 9.0f;
 
-	if ((bool)_FilterSub_Iteration_3_BlurCB.FilterSub_Iteration_3_sRGB)
+	if ((bool)_FilterSub_Iteration_3_Blur_0CB.FilterSub_Iteration_3_sRGB)
 		ret = LinearToSRGB(ret);
 
 	Output[px] = float4(ret, 1.0f);

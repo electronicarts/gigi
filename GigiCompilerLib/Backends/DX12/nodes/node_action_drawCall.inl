@@ -1032,7 +1032,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1040,7 +1042,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1130,7 +1134,22 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -1175,7 +1194,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1183,7 +1204,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1273,7 +1296,22 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -1321,7 +1359,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1329,7 +1369,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1419,7 +1461,22 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -1468,7 +1525,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1476,7 +1535,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1566,7 +1627,22 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 

@@ -42,7 +42,7 @@
 #include "DX12Utils/sRGB.h"
 #include "DX12Utils/Camera.h"
 #include "version.h"
-#include "ImGuiHelper.h"
+#include "GigiCompilerLib/UI/ImGuiHelper.h"
 
 #include "ViewerPython.h"
 
@@ -165,8 +165,9 @@ enum class SRGBSettings : int
 static SRGBSettings g_sRGB = SRGBSettings::Auto;
 
 static bool g_hideUI = false;
-static bool g_hideResourceNodes = true;  // in profiler, and render graph window. To reduce clutter of things that we don't care about.
-static bool g_onlyShowWrites = true;     // Hide SRV, UAV before, etc. Only show the result of writes.
+static bool g_showResourceNodes = false;  // in profiler, and render graph window. To reduce clutter of things that we don't care about.
+static bool g_showNonWrites = false;      // Show SRV, UAV before, etc. otherwise it only shows the result of writes.
+static bool g_showEvenHidden = false;     // ignore hideInViewer flag on node
 
 static bool g_fullscreen = false;
 
@@ -1277,6 +1278,23 @@ bool LoadGGFile(const char* fileName, bool preserveState, bool addToRecentFiles)
         }
     }
 
+    // All variables that have not been overridden need to be reset to their default
+    for (const Variable& variable : g_interpreter.GetRenderGraph().variables)
+    {
+        if (variable.Const)
+            continue;
+
+        int rtVarIndex = g_interpreter.GetRuntimeVariableIndex(variable.name.c_str());
+        if (rtVarIndex == -1)
+            continue;
+
+        auto& rtVar = g_interpreter.GetRuntimeVariable(rtVarIndex);
+        if (rtVar.storage.overrideValue || rtVar.variable->transient)
+            continue;
+
+        g_interpreter.SetRuntimeVariableToDflt(rtVarIndex);
+    }
+
     if (preserveState)
     {
         // Restore camera
@@ -1345,12 +1363,10 @@ void ImGuiRecentFiles()
     {
         if (ImGui::BeginMenu("Recent Files"))
         {
+            int index = 0;
             for (const auto& el : g_recentFiles.GetEntries())
             {
-                if (el.empty())
-                    continue;
-
-                if (ImGui::MenuItem(el.c_str()))
+                if(ImGui_FilePathMenuItem(el.c_str(), index++))
                 {
                     // make a copy so we don't point to data we might change
                     std::string fileName = el;
@@ -1369,12 +1385,10 @@ void ImGuiRecentPythonScripts()
     {
         if (ImGui::BeginMenu("Recent Python Scripts"))
         {
+            int index = 0;
             for (const auto& el : g_recentPythonScripts.GetEntries())
             {
-                if (el.empty())
-                    continue;
-
-                if (ImGui::MenuItem(el.c_str()))
+                if (ImGui_FilePathMenuItem(el.c_str(), index++))
                 {
                     // make a copy so we don't point to data we might change
                     std::string fileName = el;
@@ -2342,6 +2356,26 @@ void SynchronizeSystemVariables()
 
                 AssignVariable(g_systemVariables.JitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(jitteredViewProjMtx));
                 AssignVariable(g_systemVariables.InvJitteredViewProjMtx_varName.c_str(), DataFieldType::Float4x4, XMMatrixTranspose(invJitteredViewProjMtx));
+            }
+
+            // Warn if a matrix involving projection is used, but there is no texture specified for aspect ratio
+            if (g_systemVariables.ProjMtx_textureName.empty() && (
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.ProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.InvProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.JitteredProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.InvJitteredProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.ViewProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.InvViewProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.JitteredViewProjMtx_varName.c_str()) != -1 ||
+                GetVariableIndex(g_interpreter.GetRenderGraph(), g_systemVariables.InvJitteredViewProjMtx_varName.c_str()) != -1)
+                )
+            {
+                static bool shown = false;
+                if (!shown)
+                {
+                    Log(LogLevel::Warn, "No texture is specified for the projection matrix aspect ratio, assuming 1:1. You can set the \"Proj Mtx Texture\" in the camera settings in the system variables tab.");
+                    shown = true;
+                }
             }
 
             // Camera Position and altitude azimuth
@@ -6432,7 +6466,11 @@ void ShowProfilerWindow()
         return;
     }
 
-    ImGui::Checkbox("Hide Resource Nodes", &g_hideResourceNodes);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+    ImGui::TextUnformatted("Show:");
+    ImGui::SameLine();
+    ImGui::Checkbox("Resources", &g_showResourceNodes);
+    ImGui::PopStyleVar();
 
     g_interpreter.m_enableProfiling = true;
 
@@ -6468,7 +6506,7 @@ void ShowProfilerWindow()
             entryIndex++;
 
             // skip resource nodes if we should
-            if (g_hideResourceNodes && entry.isResourceNode)
+            if (!g_showResourceNodes && entry.isResourceNode)
                 continue;
 
             if (stableSamples.size() < (entryIndex + 1) * 2)
@@ -6609,15 +6647,22 @@ void ShowRenderGraphWindow()
         return;
     }
 
-    ImGui::Checkbox("Hide Resource Nodes", &g_hideResourceNodes);
-    ImGui::Checkbox("Only Show Writes", &g_onlyShowWrites);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0,0));
+    ImGui::TextUnformatted("Show:");
+    ImGui::SameLine();
+    ImGui::Checkbox("Resources", &g_showResourceNodes);
+    ImGui::SameLine();
+    ImGui::Checkbox("NonWrites", &g_showNonWrites);
+    ImGui::SameLine();
+    ImGui::Checkbox("hideInViewer", &g_showEvenHidden);
+    ImGui::PopStyleVar();
 
     // loop through all the nodes in flattened render graph order
     const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
     for (int nodeIndex: renderGraph.flattenedNodeList)
     {
         // skip resource nodes if we should
-        if (g_hideResourceNodes)
+        if (!g_showResourceNodes)
         {
             switch (renderGraph.nodes[nodeIndex]._index)
             {
@@ -6653,6 +6698,17 @@ void ShowRenderGraphWindow()
             }
         );
 
+        bool hideInViewer = false;
+        ExecuteOnActionNode(renderGraph.nodes[nodeIndex],
+            [&](auto& node)
+            {
+                hideInViewer = node.hideInViewer;
+            }
+        );
+
+        if (!g_showEvenHidden && hideInViewer)
+            continue;
+
         // collapsing header
         {
             if (nodeIsInErrorState)
@@ -6661,7 +6717,8 @@ void ShowRenderGraphWindow()
                 ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
 
             char nodeLabel[512];
-            sprintf_s(nodeLabel, "%s: %s", nodeTypeName.c_str(), nodeName.c_str());
+            sprintf_s(nodeLabel, "%s: %s%s", nodeTypeName.c_str(), nodeName.c_str(), 
+                hideInViewer ? " (hideInViewer)" : "");
             bool collapsingHeaderOpen = ImGui::CollapsingHeader(nodeLabel);
 
             if (nodeIsInErrorState || nodeConditionIsFalse)
@@ -6689,7 +6746,7 @@ void ShowRenderGraphWindow()
             {
                 textureIndex++;
 
-                if (g_onlyShowWrites && !viewableResource.m_isResultOfWrite)
+                if (!g_showNonWrites && !viewableResource.m_isResultOfWrite)
                     continue;
 
                 if (viewableResource.m_hideFromUI || viewableResource.m_displayName.empty())
@@ -8591,11 +8648,14 @@ bool CreateDeviceD3D(HWND hWnd)
         }
     }
 
+    // Don't require MSAA 4x support to run the viewer. If there isn't support, the resources will gracefully fail to be created and the viewer will say so.
+    /*
     D3D12_FEATURE_DATA_MULTISAMPLE_QUALITY_LEVELS msaa;
     ZeroMemory(&msaa, sizeof(msaa));
     msaa.SampleCount = 4;
     if (g_pd3dDevice->CheckFeatureSupport(D3D12_FEATURE_MULTISAMPLE_QUALITY_LEVELS, &msaa, sizeof(msaa)) != S_OK)
         return false;
+    */
 
     {
         D3D12_DESCRIPTOR_HEAP_DESC desc = {};

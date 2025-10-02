@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Swap_Colors", node "Swap_Colors"
-static ShaderCode_Swap_Colors_Swap_Colors = `
+// Shader code for Compute shader "Swap_Colors_0", node "Swap_Colors"
+static ShaderCode_Swap_Colors_Swap_Colors_0 = `
 @binding(1) @group(0) var OutputReadOnly : texture_storage_2d</*(OutputReadOnly_format)*/, read>;
 
 @binding(0) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
@@ -205,7 +205,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Swap_Colors = newHash;
 
-            let shaderCode = class_SubGraphTest.ShaderCode_Swap_Colors_Swap_Colors;
+            let shaderCode = class_SubGraphTest.ShaderCode_Swap_Colors_Swap_Colors_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Inner_Exported_Tex_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Swap_Colors_Output_ReadOnly_format));
 

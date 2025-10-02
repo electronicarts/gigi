@@ -1449,6 +1449,20 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 					runtimeData.m_vertexBufferView.SizeInBytes = runtimeData.m_size;
 				}
 
+				// Make an index buffer if we should
+				if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::IndexBuffer))
+				{
+					if (formatInfo.structIndex != -1)
+					{
+						m_logFn(LogLevel::Error, "buffer \"%s\" is used as an instance buffer so cannot use a struct format.", node.name.c_str());
+						return false;
+					}
+
+					runtimeData.m_indexBufferView.BufferLocation = runtimeData.m_resource->GetGPUVirtualAddress();
+					runtimeData.m_indexBufferView.Format = formatInfo.format;
+					runtimeData.m_indexBufferView.SizeInBytes = runtimeData.m_size;
+				}
+
 				// track the new resources for state transitions
 				m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COMMON));
 				m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_COMMON));

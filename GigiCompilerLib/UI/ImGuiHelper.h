@@ -32,3 +32,12 @@ bool ImGui_Checkbox(const char* label, bool *value);
 // replacement for ImGui::Checkbox(label, value) but more compact UI and with color
 bool ImGui_CheckboxButton(const char* label, bool* value, ImVec4 color);
 
+// like MenuItem but prints the path differently from the filename for better user experience
+// first path then file
+// @param fileNameWithPath skipped if ""
+bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index);
+
+// like MenuItem but prints the path differently from the filename for better user experience
+// first file, then path
+bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index);
+

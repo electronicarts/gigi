@@ -5,7 +5,7 @@ import os
 
 resources = [
 	"csmain.buff: buff (UAV - After)",
-	"csmain._csmainCB: _csmainCB (CBV)"
+	"csmain._csmain_0CB: _csmain_0CB (CBV)"
 ]
 
 # don't save gguser files during this script execution

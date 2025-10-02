@@ -48,6 +48,16 @@ void ProcessShaderOptions_HLSL::WriteVariableReference_NotInStruct(const Process
     stream << "cb_" + options.m_shader.name + "CB_" + variable.name;
 }
 
+void ProcessShaderOptions_HLSL::WriteVariableAlias_InStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& alias)
+{
+    stream << "_" + options.m_shader.name + "CB._alias_" + alias.name;
+}
+
+void ProcessShaderOptions_HLSL::WriteVariableAlias_NotInStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& alias)
+{
+    stream << "cb_" + options.m_shader.name + "CB__alias_" + alias.name;
+}
+
 void ProcessShaderOptions_HLSL::WriteSamplerDefinition_Register(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderSampler& sampler)
 {
     stream << "\nSamplerState " << sampler.name << " : register(s" << sampler.registerIndex << sampler.registerSpaceString << ");";
@@ -238,6 +248,37 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
 
             options.m_writeVariableReference(options, shaderSpecificStringReplacementMap[key], variable);
         }
+    }
+
+    // Handle Variable Aliases
+    for (const ShaderVariableAliasDeclaration& alias : shader.variableAliases)
+    {
+        if (!alias.usedInShader)
+            continue;
+
+        std::string cast = (alias.type == DataFieldType::Bool ? "(bool)" : "");
+
+        shaderSpecificStringReplacementMap["__Post__ShaderResources"] <<
+            "\n" <<
+            DataFieldTypeToShaderType(alias.type) << " _GetVariableAliasValue_" << alias.name << "()\n"
+            "{\n"
+            "    #ifdef __GIGI_AlIAS_VARIABLE_CONST_" << alias.name << "\n"
+            "        return " << cast << "__GIGI_AlIAS_VARIABLE_CONST_" << alias.name << ";\n"
+            "    #else\n"
+            "        return " << cast
+            ;
+
+        options.m_writeVariableAlias(options, shaderSpecificStringReplacementMap["__Post__ShaderResources"], alias);
+
+        shaderSpecificStringReplacementMap["__Post__ShaderResources"] <<
+            ";\n"
+            "    #endif\n"
+            "}\n"
+            ;
+
+        std::string key = "/*$(VariableAlias:" + alias.name + ")*/";
+        shaderSpecificStringReplacementMap[key] = std::ostringstream();
+        shaderSpecificStringReplacementMap[key] << "_GetVariableAliasValue_" << alias.name << "()";
     }
 
     // Handle replaced variables
@@ -438,6 +479,10 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
             std::string param;
             if (token == "/*$(ShaderResources)*/")
             {
+                // Apply "__Post__ShaderResources" to "/*$(ShaderResources)*/" and clear it out
+                shaderSpecificStringReplacementMap[token] << shaderSpecificStringReplacementMap["__Post__ShaderResources"].str();
+                shaderSpecificStringReplacementMap["__Post__ShaderResources"] = std::ostringstream();
+
                 if (options.m_writeOriginalLineNumbers)
                 {
                     std::string old = shaderSpecificStringReplacementMap[token].str();

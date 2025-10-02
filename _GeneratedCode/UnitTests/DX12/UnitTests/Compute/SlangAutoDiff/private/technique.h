@@ -28,7 +28,7 @@ namespace SlangAutoDiff
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__InitCB
+        struct Struct__Init_0CB
         {
             int FrameIndex = 0;
             float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
@@ -40,7 +40,7 @@ namespace SlangAutoDiff
             float3 _padding1 = {0.f, 0.f, 0.f};  // Padding
         };
 
-        struct Struct__RenderCB
+        struct Struct__Render_0CB
         {
             int NumGaussians = 10;
             unsigned int QuantizeDisplay = false;
@@ -64,14 +64,14 @@ namespace SlangAutoDiff
 
         static const D3D12_RESOURCE_FLAGS c_buffer_Data_flags =  D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS; // Flags the buffer needs to have been created with
 
-        Struct__InitCB constantBuffer__InitCB_cpu;
-        ID3D12Resource* constantBuffer__InitCB = nullptr;
+        Struct__Init_0CB constantBuffer__Init_0CB_cpu;
+        ID3D12Resource* constantBuffer__Init_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_Initialize_pso;
         static ID3D12RootSignature* computeShader_Initialize_rootSig;
 
-        Struct__RenderCB constantBuffer__RenderCB_cpu;
-        ID3D12Resource* constantBuffer__RenderCB = nullptr;
+        Struct__Render_0CB constantBuffer__Render_0CB_cpu;
+        ID3D12Resource* constantBuffer__Render_0CB = nullptr;
 
         Struct__Descend_0CB constantBuffer__Descend_0CB_cpu;
         ID3D12Resource* constantBuffer__Descend_0CB = nullptr;

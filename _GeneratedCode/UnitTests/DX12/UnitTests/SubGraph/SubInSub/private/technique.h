@@ -28,13 +28,13 @@ namespace SubInSub
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__Inner1_Inner2_Inner2CSCB
+        struct Struct__Inner1_Inner2_Inner2CS_0CB
         {
             float4 Inner1_Inner1Mult = {1.f, 0.5f, 2.f, 1.f};
         };
 
-        Struct__Inner1_Inner2_Inner2CSCB constantBuffer__Inner1_Inner2_Inner2CSCB_cpu;
-        ID3D12Resource* constantBuffer__Inner1_Inner2_Inner2CSCB = nullptr;
+        Struct__Inner1_Inner2_Inner2CS_0CB constantBuffer__Inner1_Inner2_Inner2CS_0CB_cpu;
+        ID3D12Resource* constantBuffer__Inner1_Inner2_Inner2CS_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_Inner1_Inner2_Rotate_Colors_pso;
         static ID3D12RootSignature* computeShader_Inner1_Inner2_Rotate_Colors_rootSig;

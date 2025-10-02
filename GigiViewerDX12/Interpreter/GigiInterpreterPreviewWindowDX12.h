@@ -90,7 +90,8 @@ public:
 
 		m_profiler.Init(device, commandQueue);
 
-		// create indirect dispatch command
+		// create indirect commands
+		// Dispatch
 		{
 			D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
 			dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
@@ -105,6 +106,32 @@ public:
 				&dispatchDesc,
 				nullptr,
 				IID_PPV_ARGS(&m_commandSignatureDispatch));
+		}
+		// Draw
+		{
+			D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
+			dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+
+			D3D12_COMMAND_SIGNATURE_DESC dispatchDesc = {};
+			dispatchDesc.ByteStride = sizeof(uint32_t) * 4;
+			dispatchDesc.NumArgumentDescs = 1;
+			dispatchDesc.pArgumentDescs = &dispatchArg;
+			dispatchDesc.NodeMask = 0x0;
+
+			device->CreateCommandSignature(&dispatchDesc, nullptr, IID_PPV_ARGS(&m_commandSignatureDraw));
+		}
+		// DrawIndexed
+		{
+			D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
+			dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+
+			D3D12_COMMAND_SIGNATURE_DESC dispatchDesc = {};
+			dispatchDesc.ByteStride = sizeof(uint32_t) * 5;
+			dispatchDesc.NumArgumentDescs = 1;
+			dispatchDesc.pArgumentDescs = &dispatchArg;
+			dispatchDesc.NodeMask = 0x0;
+
+			device->CreateCommandSignature(&dispatchDesc, nullptr, IID_PPV_ARGS(&m_commandSignatureDrawIndexed));
 		}
 
 		// DX12 capabilities
@@ -237,6 +264,19 @@ public:
 			m_commandSignatureDispatch->Release();
 			m_commandSignatureDispatch = nullptr;
 		}
+
+        if (m_commandSignatureDraw)
+        {
+            m_commandSignatureDraw->Release();
+            m_commandSignatureDraw = nullptr;
+        }
+
+        if (m_commandSignatureDrawIndexed)
+        {
+            m_commandSignatureDrawIndexed->Release();
+            m_commandSignatureDrawIndexed = nullptr;
+        }
+
 
 		if (m_dxrDevice)
 		{
@@ -616,7 +656,7 @@ private:
 
 private:
 	friend struct RuntimeTypes;
-	static const int c_numSRVDescriptors = 4096;
+	static const int c_numSRVDescriptors = 16384;
 	static const int c_numRTVDescriptors = 128;
 	static const int c_numDSVDescriptors = 128;
 
@@ -829,8 +869,10 @@ private:
 	HeapAllocationTracker m_DSVHeapAllocationTracker;
 	ID3D12DescriptorHeap* m_DSVHeap = nullptr;
 
-	// Indirect dispatch
+	// Indirect signatures
 	ID3D12CommandSignature* m_commandSignatureDispatch = nullptr;
+	ID3D12CommandSignature* m_commandSignatureDraw = nullptr;
+	ID3D12CommandSignature* m_commandSignatureDrawIndexed = nullptr;
 
 	// DX12 Capabilities
 	D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};

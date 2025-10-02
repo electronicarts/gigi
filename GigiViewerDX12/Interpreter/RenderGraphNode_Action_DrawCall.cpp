@@ -904,14 +904,28 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
                             unitsDivider = max(unitsDivider, 1);
                         }
 
-                        desc.m_firstElement = linkProperties.bufferViewBegin / unitsDivider;
+                        unsigned int bufferViewBegin = linkProperties.bufferViewBegin;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1)
+                        {
+                            if (!GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                                return false;
+                        }
+
+                        unsigned int bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1)
+                        {
+                            if (!GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                                return false;
+                        }
+
+                        desc.m_firstElement = bufferViewBegin / unitsDivider;
 
                         if (desc.m_count >= desc.m_firstElement)
                             desc.m_count -= desc.m_firstElement;
                         else
                             desc.m_count = 0;
 
-                        unsigned int bufferViewNumElements = linkProperties.bufferViewSize / unitsDivider;
+                        unsigned int bufferViewNumElements = bufferViewSize / unitsDivider;
                         if (bufferViewNumElements > 0)
                             desc.m_count = min(desc.m_count, bufferViewNumElements);
                     }
@@ -1557,6 +1571,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
+
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 
@@ -1829,17 +1848,64 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
 			ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
 		}
-		// else if we have an index buffer, do DrawIndexedInstanced
-		else if (node.indexBuffer.resourceNodeIndex != -1)
+		// else if we have an indirect buffer, do indirect
+		else if (node.indirectBuffer.resourceNodeIndex != -1)
 		{
-			ss << "DrawIndexedInstanced:\n  indexCountPerInstance = " << indexCountPerInstance << "\n  instanceCount = " << instanceCount;
-			m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, 0, 0, 0);
+			ss << "Draw: Indirect";
+			const std::string& indirectBufferName = m_renderGraph.nodes[node.indirectBuffer.resourceNodeIndex].resourceBuffer.name;
+			bool exists = false;
+			const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(indirectBufferName.c_str(), exists);
+			if (!exists)
+				return true;
+
+			std::string label = node.name + std::string(".indirectBuffer") + std::string(": ") + indirectBufferName;
+			runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, 0, 0, false);
+
+			// This could be a temporary thing, but we can't indirect dispatch if the buffer doesn't exist
+			if (!resourceInfo.m_resource)
+				return true;
+
+			// Note: maybe this could move earlier, so there isn't an extra transition call here. like in the descriptor table logic even though it doesn't go in the descriptor table?
+			m_transitions.Transition(TRANSITION_DEBUG_INFO(resourceInfo.m_resource, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT));
+			m_transitions.Flush(m_commandList);
+
+			if (node.indexBuffer.resourceNodeIndex != -1)
+			{
+				ss << "DrawIndexedInstanced";
+				m_commandList->ExecuteIndirect(
+					m_commandSignatureDrawIndexed,
+					1,
+					resourceInfo.m_resource,
+					0,
+					nullptr,
+					0);
+			}
+			else
+			{
+				ss << "DrawInstanced";
+				m_commandList->ExecuteIndirect(
+					m_commandSignatureDraw,
+					1,
+					resourceInfo.m_resource,
+					0,
+					nullptr,
+					0);
+			}
 		}
-		// else do DrawInstanced
+		// else do direct
 		else
 		{
-			ss << "DrawInstanced:\n  vertexCountPerInstance = " << vertexCountPerInstance << "\n  instanceCount = " << instanceCount;
-			m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
+			if (node.indexBuffer.resourceNodeIndex != -1)
+			{
+				ss << "DrawIndexedInstanced:\n  indexCountPerInstance = " << indexCountPerInstance << "\n  instanceCount = " << instanceCount;
+				m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, 0, 0, 0);
+			}
+			// else do DrawInstanced
+			else
+			{
+				ss << "DrawInstanced:\n  vertexCountPerInstance = " << vertexCountPerInstance << "\n  instanceCount = " << instanceCount;
+				m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
+			}
 		}
 
 		// variable rate shading - set it back to dense sampling
@@ -2013,6 +2079,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 

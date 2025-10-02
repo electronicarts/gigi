@@ -61,6 +61,88 @@ bool ImGui_CheckboxButton(const char* label, bool* value, ImVec4 color)
 	return ret;
 }
 
+bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
+{
+    assert(fileNameWithPath);
+
+    if (*fileNameWithPath == 0)
+        return false;
+
+    ImGui::PushID(index);
+
+    const char* str = fileNameWithPath;
+    // end of path, beginning of filename
+    const char* end = str;
+
+    // find last \ or /
+    if (const char* here = strrchr(end, '/'))
+        end = here + 1;
+    if (const char* here = strrchr(end, '\\'))
+        end = here + 1;
+
+    float x = ImGui::GetCursorPosX();
+    x += ImGui::GetStyle().ItemSpacing.x / 2;
+    ImGui::SetCursorPosX(x + ImGui::CalcTextSize(str, end).x);  // like MenuItem() behaves, inner padding
+    bool selected = false;
+    bool activated = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
+    bool hovered = ImGui::IsItemHovered();
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(ImGui::GetStyle().ItemSpacing.x / 2, 0.0f));  // like MenuItem() behaves, inner padding
+    ImGui::SameLine();
+
+    if (!hovered)
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 50));
+
+    ImGui::SetCursorPosX(x);
+    ImGui::TextEx(str, end);
+    if (!hovered)
+        ImGui::PopStyleColor();
+
+    ImGui::PopID();
+
+    return activated;
+}
+
+bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
+{
+    assert(fileNameWithPath);
+
+    if (*fileNameWithPath == 0)
+        return false;
+
+    ImGui::PushID(index);
+
+    const char* str = fileNameWithPath;
+    // end of path, beginning of filename
+    const char* end = str;
+
+    // find last \ or /
+    if (const char* here = strrchr(end, '/'))
+        end = here + 1;
+    if (const char* here = strrchr(end, '\\'))
+        end = here + 1;
+
+    bool selected = false;
+    bool activated = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
+    bool hovered = ImGui::IsItemHovered();
+    ImGui::SameLine();
+
+    if (!hovered)
+        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 50));
+
+    // omit last \ or /
+    if (end != str)
+        --end;
+
+    ImGui::TextEx(str, end);
+    if (!hovered)
+        ImGui::PopStyleColor();
+
+    ImGui::PopID();
+
+    return activated;
+}
+
 bool ImGui_File(const char* label, std::string& inOutName, const char* filterList)
 {
 	ImGui::PushID(label);

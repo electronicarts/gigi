@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "RWCS", node "RW"
-static ShaderCode_RW_RWCS = `
+// Shader code for Compute shader "RWCS_0", node "RW"
+static ShaderCode_RW_RWCS_0 = `
 @binding(5) @group(0) var _loadedTexture_0 : texture_2d<f32>;
 
 @binding(4) @group(0) var importedTextureReadOnly : texture_storage_2d</*(importedTextureReadOnly_format)*/, read>;
@@ -306,7 +306,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_RW = newHash;
 
-            let shaderCode = class_Texture2DRW_CS.ShaderCode_RW_RWCS;
+            let shaderCode = class_Texture2DRW_CS.ShaderCode_RW_RWCS_0;
             shaderCode = shaderCode.replace("/*(nodeTexture_format)*/", Shared.GetNonSRGBFormat(this.texture_NodeTexture_format));
             shaderCode = shaderCode.replace("/*(importedTexture_format)*/", Shared.GetNonSRGBFormat(this.texture_ImportedTexture_format));
             shaderCode = shaderCode.replace("/*(nodeTextureReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_RW_nodeTexture_ReadOnly_format));

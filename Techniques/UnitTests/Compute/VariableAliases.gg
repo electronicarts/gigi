@@ -1,0 +1,252 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "variables": [
+        {
+            "name": "RenderSize",
+            "type": "Uint2",
+            "dflt": "32, 32",
+            "visibility": "User"
+        },
+        {
+            "name": "Node1Channel",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "User"
+        },
+        {
+            "name": "Node1Value",
+            "type": "Float",
+            "dflt": "0.25",
+            "visibility": "User"
+        },
+        {
+            "name": "Node2Channel",
+            "type": "Int",
+            "dflt": "1",
+            "visibility": "User"
+        },
+        {
+            "name": "Node2Value",
+            "type": "Float",
+            "dflt": "0.5",
+            "visibility": "User"
+        },
+        {
+            "name": "Node3Channel",
+            "type": "Int",
+            "dflt": "2",
+            "visibility": "User"
+        },
+        {
+            "name": "Node3Value",
+            "type": "Float",
+            "Const": true,
+            "dflt": "0.75",
+            "visibility": "User"
+        },
+        {
+            "name": "UnusedFloat",
+            "comment": "This is for the unused alias in the shader",
+            "type": "Float",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "SetChannel",
+            "fileName": "VariableAliases_SetChannel.hlsl",
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ],
+            "variableAliases": [
+                {
+                    "name": "Channel",
+                    "type": "Int"
+                },
+                {
+                    "name": "Value",
+                    "type": "Float"
+                },
+                {
+                    "name": "UnreadFloatVariable",
+                    "type": "Float"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    28.0,
+                    -4.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Set Red",
+                "editorPos": [
+                    149.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Color",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "SetChannel"
+                },
+                "shaderVariableAliases": {
+                    "aliases": [
+                        {
+                            "name": "Channel",
+                            "variable": {
+                                "name": "Node1Channel"
+                            }
+                        },
+                        {
+                            "name": "Value",
+                            "variable": {
+                                "name": "Node1Value"
+                            }
+                        },
+                        {
+                            "name": "UnreadFloatVariable",
+                            "variable": {
+                                "name": "UnusedFloat"
+                            }
+                        }
+                    ]
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Set Green",
+                "editorPos": [
+                    309.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Set Red",
+                        "dstPin": "Output"
+                    }
+                ],
+                "shader": {
+                    "name": "SetChannel"
+                },
+                "shaderVariableAliases": {
+                    "aliases": [
+                        {
+                            "name": "Channel",
+                            "variable": {
+                                "name": "Node2Channel"
+                            }
+                        },
+                        {
+                            "name": "Value",
+                            "variable": {
+                                "name": "Node2Value"
+                            }
+                        },
+                        {
+                            "name": "UnreadFloatVariable",
+                            "variable": {
+                                "name": "UnusedFloat"
+                            }
+                        }
+                    ]
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Set Blue",
+                "editorPos": [
+                    469.0,
+                    -14.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Set Green",
+                        "dstPin": "Output"
+                    }
+                ],
+                "shader": {
+                    "name": "SetChannel"
+                },
+                "shaderVariableAliases": {
+                    "aliases": [
+                        {
+                            "name": "Channel",
+                            "variable": {
+                                "name": "Node3Channel"
+                            }
+                        },
+                        {
+                            "name": "Value",
+                            "variable": {
+                                "name": "Node3Value"
+                            }
+                        },
+                        {
+                            "name": "UnreadFloatVariable",
+                            "variable": {
+                                "name": "UnusedFloat"
+                            }
+                        }
+                    ]
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        }
+    ]
+}
