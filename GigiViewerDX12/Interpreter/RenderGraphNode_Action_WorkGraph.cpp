@@ -402,18 +402,22 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         }
 
         // Create work graph state object
-        m_device->CreateStateObject(stateObjectDesc, IID_PPV_ARGS(&runtimeData.m_stateObject));
-
+        HRESULT hr = m_device->CreateStateObject(stateObjectDesc, IID_PPV_ARGS(&runtimeData.m_stateObject));
+        if (FAILED(hr))
+        {
+            m_logFn(LogLevel::Error, "Could not CreateStateObject");
+            return false;
+        }
 
         // get program desc and entrypoint index
             // Get work graph properties
         ID3D12StateObjectProperties1* stateObjectProperties;
         ID3D12WorkGraphProperties*    workGraphProperties;
 
-        HRESULT hr = runtimeData.m_stateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProperties));
+        hr = runtimeData.m_stateObject->QueryInterface(IID_PPV_ARGS(&stateObjectProperties));
         if (FAILED(hr))
         {
-                m_logFn(LogLevel::Error, "Could not QueryInterface for stateObjectProperties");
+            m_logFn(LogLevel::Error, "Could not QueryInterface for stateObjectProperties");
             return false;
         }
 
@@ -463,8 +467,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // create gpu records buffer : can actually be readwrite, node can write to it's input records. todo: jan, allthough this is an internal thing and undefined during graph execution .. maybe it's fine.
         // todo: jan check if we have any input records size and stride. aka is there supposed to be a buffer, otherwise there will be a hang.
 		// so we need to fail, if 0, we should use the default ones. 
-
-		// todo: jan does this need to be in upload? can't we put it in a proper heap?
 		runtimeData.m_records = CreateBuffer(m_device, sizeof(D3D12_NODE_GPU_INPUT), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD, (node.name + " Records Buffer").c_str());
 
 		runtimeData.m_recordStrideInBytes = workGraphProperties->GetEntrypointRecordSizeInBytes(workGraphIndex, runtimeData.m_entrypointIndex);
