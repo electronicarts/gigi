@@ -426,7 +426,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         // Get the index of our work graph inside the state object (state object can contain multiple work graphs)
         const auto workGraphIndex = workGraphProperties->GetWorkGraphIndex(programName.c_str());
-
+        if (workGraphIndex == -1)
+        {
+            m_logFn(LogLevel::Error, "WorkGraph with this entrypoint could not be found. are you sure the entry function is tagged with [NodeIsProgramEntry]");
+            return false;
+        }
         // Create backing memory buffer
         // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#getworkgraphmemoryrequirements
         D3D12_WORK_GRAPH_MEMORY_REQUIREMENTS memoryRequirements = {};
