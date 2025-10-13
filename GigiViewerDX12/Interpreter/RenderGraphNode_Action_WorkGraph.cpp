@@ -8,8 +8,6 @@
 #include "DX12Utils/CompileShaders.h"
 
 #include <d3dx12/d3dx12_state_object.h>
-
-#define ALLOW_MESH_NODES 0
        
 void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPreviewWindowDX12& interpreter)
 {
@@ -344,7 +342,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         ShaderCompilationInfo shaderCompilationInfo;
         shaderCompilationInfo.fileName = fullFileName;
         shaderCompilationInfo.entryPoint = entrypoint;
-        shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelWg; // 6_8. should be 6_9 for mesh nodes
+        shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelWg;
         shaderCompilationInfo.debugName = node.name;
         shaderCompilationInfo.defines = node.entryShader.shader->defines;
 
@@ -401,6 +399,28 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             librarySubobject->SetDXILLibrary(&shaderBytecode);
         }
 
+        // add mesh nodes to the stateobject
+        runtimeData.m_usesMeshNodes = node.meshNodes.size() > 0;
+        if (runtimeData.m_usesMeshNodes)
+        {
+            // use global node settings in general,
+            // but allow a collapsable field in the meshnode settings, where you can override it.
+
+            CD3DX12_RASTERIZER_SUBOBJECT* rasterizerSubobject; // from node settings, but can be overridden
+            CD3DX12_PRIMITIVE_TOPOLOGY_SUBOBJECT* primitiveTopologySubobject; // from settings; but can be overridden
+            CD3DX12_DEPTH_STENCIL_FORMAT_SUBOBJECT* depthStencilSubobject; // from input nodes
+            CD3DX12_RENDER_TARGET_FORMATS_SUBOBJECT* renderTargetSubobject; // from input nodes
+            CD3DX12_SAMPLE_DESC_SUBOBJECT* sampleDescSubobject; // comes from input rendertarget nodes as well, their msaa settings
+            CD3DX12_DEPTH_STENCIL2_SUBOBJECT depthStencilSubObject; // from main node but can be overridden
+            
+            for (size_t i = 0; i < node.meshNodes.size(); i++)
+            {
+                // TODO: JAN
+
+                // actually set it up
+            }
+        }
+
         // Create work graph state object
         HRESULT hr = m_device->CreateStateObject(stateObjectDesc, IID_PPV_ARGS(&runtimeData.m_stateObject));
         if (FAILED(hr))
@@ -430,6 +450,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         // Get the index of our work graph inside the state object (state object can contain multiple work graphs)
         const auto workGraphIndex = workGraphProperties->GetWorkGraphIndex(programName.c_str());
+        if (workGraphIndex == -1)
+        {
+            m_logFn(LogLevel::Error, "WorkGraph with this entrypoint could not be found. are you sure the entry function is tagged with [NodeIsProgramEntry]");
+            return false;
+        }
 
         // Create backing memory buffer
         // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#getworkgraphmemoryrequirements
@@ -520,7 +545,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // Queue up transitions, so we only do them if we actually execute the node
         std::vector<TransitionTracker::Item> queuedTransitions;
 
-#if ALLOW_MESH_NODES
         struct RenderTargetClearData
         {
             D3D12_CPU_DESCRIPTOR_HANDLE handle;
@@ -583,10 +607,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 }
             }
 
-            // Set the graphics root signature and PSO
-            // TODO: Jan
-            __debugbreak();
-
             // publish render targets as viewable resources (before)
             {
                 bool firstRenderTarget = true;
@@ -643,7 +663,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                     queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_RENDER_TARGET, colorTargetNode.resourceTexture.name.c_str()) });
 
                     D3D12_CPU_DESCRIPTOR_HANDLE colorTargetHandle;
-                    if (!textureInfo.GetRTV(m_device, colorTargetHandle, m_RTVHeapAllocationTracker, colorTargetNode.resourceTexture.dimension, ctSettings.arrayIndex, ctSettings.mipLevel, colorTargetNode.resourceTexture.name.c_str()))
+                    if (!textureInfo.GetRTV(m_device, colorTargetHandle, m_RTVHeapAllocationTracker, colorTargetNode.resourceTexture.dimension, ctSettings.arrayIndex, ctSettings.mipLevel, textureInfo.sampleCount, colorTargetNode.resourceTexture.name.c_str()))
                     {
                         m_logFn(LogLevel::Error, "node \"%s\": cannot make RTV for \"%s\" (%i,%i).\n", node.name.c_str(), colorTargetNode.resourceTexture.name.c_str(), ctSettings.arrayIndex, ctSettings.mipLevel);
                         return false;
@@ -697,7 +717,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
                             queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthTargetNode.resourceTexture.name.c_str()) });
 
-                            if (!textureInfo.GetDSV(m_device, depthTargetHandle, m_DSVHeapAllocationTracker, depthTargetNode.resourceTexture.dimension, node.depthArrayIndex, node.depthMipLevel, depthTargetNode.resourceTexture.name.c_str()))
+                            if (!textureInfo.GetDSV(m_device, depthTargetHandle, m_DSVHeapAllocationTracker, depthTargetNode.resourceTexture.dimension, node.depthArrayIndex, node.depthMipLevel, textureInfo.sampleCount, depthTargetNode.resourceTexture.name.c_str()))
                             {
                                 m_logFn(LogLevel::Error, "node \"%s\": cannot make DSV for \"%s\" (%i,%i).\n", node.name.c_str(), depthTargetNode.resourceTexture.name.c_str(), node.depthArrayIndex, node.depthMipLevel);
                                 return false;
@@ -724,7 +744,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 }
             }
         }
-#endif
 
         // records buffer transition
         if (node.records.resourceNodeIndex != -1)
@@ -875,7 +894,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         }
 
         // set root signature
-        m_commandList->SetComputeRootSignature(runtimeData.m_rootSignature);
+        if (runtimeData.m_usesMeshNodes)
+        {
+            m_commandList->SetGraphicsRootSignature(runtimeData.m_rootSignature);
+        }
+        else
+        {
+            m_commandList->SetComputeRootSignature(runtimeData.m_rootSignature);
+        }
 
         // Make the entry shader descriptor table gigi description
         std::vector<DescriptorTableCache::ResourceDescriptor> descriptorsWorkGraph;
@@ -908,7 +934,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             rootSigParamIndex++;
         }
 
-#if ALLOW_MESH_NODES
         if (runtimeData.m_usesMeshNodes)
         {
             // do color and depth target clears
@@ -961,7 +986,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 VRSCommandList->Release();
             }
         }
-#endif
 
         std::ostringstream ss;
         ss << "DispatchGraph:\n  " << node.name << '\n';
@@ -984,7 +1008,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#d3d12_set_work_graph_flags
         runtimeData.m_programDesc.WorkGraph.Flags &= ~D3D12_SET_WORK_GRAPH_FLAG_INITIALIZE;
 
-#if ALLOW_MESH_NODES
         if (runtimeData.m_usesMeshNodes)
         {
             // variable rate shading - set it back to dense sampling
@@ -1044,7 +1067,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 }
             }
         }
-#endif
 
         if (IsConditional(node.condition))
             ss << "\nCondition: " << (EvaluateCondition(node.condition) ? "true" : "false");

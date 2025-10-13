@@ -394,6 +394,12 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_Action
     STRUCT_FIELD(NodePinReference, dest, {}, "The resource being copied to.", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
+STRUCT_BEGIN(WorkGraphMeshNode, "Description of the Mesh nodes used in this workgraph")
+    STRUCT_FIELD(GeometryType, geometryType, GeometryType::TriangleList, "What to draw", 0)
+    STRUCT_FIELD(std::string, meshNodeFunctionName, {}, "name of the mesh shader function", 0)
+    STRUCT_FIELD(std::string, pixelShader, {}, "name of the pixel shader function to pair with", 0)
+STRUCT_END()
+
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBase, "Executes a work graph")
     STRUCT_CONST(std::string, c_editorName, "Work Graph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "WGraph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -405,6 +411,8 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
 
     STRUCT_FIELD(int, numRecords, 1, "how many records the work graph launches with.", 0)
     STRUCT_FIELD(NodePinReferenceOptional, records, {}, "records to launch the work graph with", SCHEMA_FLAG_NO_UI)
+
+    STRUCT_DYNAMIC_ARRAY(WorkGraphMeshNode, meshNodes, "the mesh nodes used need to be specified on the cpu side so they can be set up correctly.", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     // Depth Settings
     STRUCT_FIELD(bool, depthTargetClear, false, "If true, clears the depth target before doing a draw call.", 0)
