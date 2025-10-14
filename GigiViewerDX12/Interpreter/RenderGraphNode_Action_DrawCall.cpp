@@ -341,8 +341,6 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 		OnRootSignature(sig, node.vertexShader.shader);
 		OnRootSignature(sig, node.pixelShader.shader);
 
-
-
 		char* sigptr = (char*)sig->GetBufferPointer();
 		auto sigsize = sig->GetBufferSize();
 

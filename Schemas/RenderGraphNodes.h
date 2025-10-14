@@ -394,10 +394,17 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_Action
     STRUCT_FIELD(NodePinReference, dest, {}, "The resource being copied to.", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
+STRUCT_BEGIN(RenderState, "state to build the fixed pipeline from")
+    STRUCT_FIELD(DrawCullMode, cullMode, DrawCullMode::None, "", 0)
+    STRUCT_FIELD(bool, frontIsCounterClockwise, true, "", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(WorkGraphMeshNode, "Description of the Mesh nodes used in this workgraph")
     STRUCT_FIELD(GeometryType, geometryType, GeometryType::TriangleList, "What to draw", 0)
     STRUCT_FIELD(std::string, meshNodeFunctionName, {}, "name of the mesh shader function", 0)
     STRUCT_FIELD(std::string, pixelShader, {}, "name of the pixel shader function to pair with", 0)
+    STRUCT_FIELD(bool, overrideNodeRenderState, false,"whether to override the render state for this specific mesh node with the renderState below", 0)
+    STRUCT_FIELD(RenderState, renderState, {}, "the specialized render state for this mesh node.", SCHEMA_FLAG_UI_COLLAPSABLE)
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBase, "Executes a work graph")
@@ -413,6 +420,17 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
     STRUCT_FIELD(NodePinReferenceOptional, records, {}, "records to launch the work graph with", SCHEMA_FLAG_NO_UI)
 
     STRUCT_DYNAMIC_ARRAY(WorkGraphMeshNode, meshNodes, "the mesh nodes used need to be specified on the cpu side so they can be set up correctly.", SCHEMA_FLAG_UI_COLLAPSABLE)
+
+    STRUCT_FIELD(RenderState, renderState, {}, "default render state to use when mesh nodes", 0)
+
+    STRUCT_FIELD(bool, conservativeRasterization, false, "Turns on conservative rasterization", 0)
+    STRUCT_FIELD(bool, alphaAsCoverage, false, "Turns on alpha as coverage", 0)
+
+    STRUCT_FIELD(bool, independentAlpha, false, "If false, colorTargetSettings[0] defines blend mode for all color targets", 0)
+
+    STRUCT_STATIC_ARRAY(ColorTargetSettings, colorTargetSettings, 8, {}, "Settings for the color targets", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
+
+    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already", SCHEMA_FLAG_UI_COLLAPSABLE)
 
     // Depth Settings
     STRUCT_FIELD(bool, depthTargetClear, false, "If true, clears the depth target before doing a draw call.", 0)
@@ -436,18 +454,6 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
     STRUCT_FIELD(StencilOp, backFaceStencilPass, StencilOp::Keep, "When stencil and depth both pass", 0)
     STRUCT_FIELD(DepthTestFunction, frontFaceStencilFunc, DepthTestFunction::Always, "How to test stencil data against existing stencil data", 0)
     STRUCT_FIELD(DepthTestFunction, backFaceStencilFunc, DepthTestFunction::Always, "How to test stencil data against existing stencil data", 0)
-
-    STRUCT_FIELD(bool, conservativeRasterization, false, "Turns on conservative rasterization", 0)
-    STRUCT_FIELD(bool, alphaAsCoverage, false, "Turns on alpha as coverage", 0)
-
-    STRUCT_FIELD(bool, independentAlpha, false, "If false, colorTargetSettings[0] defines blend mode for all color targets", 0)
-
-    STRUCT_STATIC_ARRAY(ColorTargetSettings, colorTargetSettings, 8, {}, "Settings for the color targets", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
-
-    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already", SCHEMA_FLAG_UI_COLLAPSABLE)
-
-    STRUCT_FIELD(DrawCullMode, cullMode, DrawCullMode::None, "", 0)
-    STRUCT_FIELD(bool, frontIsCounterClockwise, true, "", 0)
 
     STRUCT_FIELD(ShadingRate, shadingRate, ShadingRate::_1x1, "For variable rate shading", 0)
     STRUCT_FIELD(ShadingRateCombiner, shadingRateCombiner1, ShadingRateCombiner::PassThrough, "For variable rate shading. This combines the provoking vertex shading rate with the rate set by the command list.", 0)

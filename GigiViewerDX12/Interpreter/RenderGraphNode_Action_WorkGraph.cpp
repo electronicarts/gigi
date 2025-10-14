@@ -204,6 +204,28 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 {
     if (nodeAction == NodeAction::Init)
     {
+        runtimeData.m_usesMeshNodes = node.meshNodes.size() > 0;
+
+        // check support:
+        D3D12_WORK_GRAPHS_TIER tier = D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED;
+        // check if supported: TODO: move to device itself, has some members for this
+        D3D12_FEATURE_DATA_D3D12_OPTIONS21 options = {};
+        if ((m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options, sizeof(options))) == S_OK) {
+            tier = options.WorkGraphsTier;
+        }
+
+        if (tier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
+        {
+            m_logFn(LogLevel::Error, "Work Graphs aren't supported on your device");
+            return false; 
+        }
+
+        if (runtimeData.m_usesMeshNodes && tier < D3D12_WORK_GRAPHS_TIER_1_1)
+        {
+            m_logFn(LogLevel::Error, "Work Graphs with Mesh Nodes aren't supported on your device");
+            return false;
+        }
+
         // Select shader file name
         const auto shaderFileName = node.entryShader;
 
@@ -342,7 +364,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         ShaderCompilationInfo shaderCompilationInfo;
         shaderCompilationInfo.fileName = fullFileName;
         shaderCompilationInfo.entryPoint = entrypoint;
-        shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelWg;
+        shaderCompilationInfo.shaderModel = runtimeData.m_usesMeshNodes ? m_renderGraph.settings.dx12.shaderModelWgMs : m_renderGraph.settings.dx12.shaderModelWg;
         shaderCompilationInfo.debugName = node.name;
         shaderCompilationInfo.defines = node.entryShader.shader->defines;
 
@@ -384,7 +406,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
 		}
 
-        // library functions are only for the mesh nodes. (and involve checking suffixes in the sample project)
 		if (blob.data() == nullptr)
 		{
 			return false;
@@ -399,25 +420,126 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             librarySubobject->SetDXILLibrary(&shaderBytecode);
         }
 
+        // WorkGraphPlayground from AMD as reference implementation
+        // 
         // add mesh nodes to the stateobject
-        runtimeData.m_usesMeshNodes = node.meshNodes.size() > 0;
         if (runtimeData.m_usesMeshNodes)
         {
             // use global node settings in general,
-            // but allow a collapsable field in the meshnode settings, where you can override it.
-
-            CD3DX12_RASTERIZER_SUBOBJECT* rasterizerSubobject; // from node settings, but can be overridden
-            CD3DX12_PRIMITIVE_TOPOLOGY_SUBOBJECT* primitiveTopologySubobject; // from settings; but can be overridden
-            CD3DX12_DEPTH_STENCIL_FORMAT_SUBOBJECT* depthStencilSubobject; // from input nodes
-            CD3DX12_RENDER_TARGET_FORMATS_SUBOBJECT* renderTargetSubobject; // from input nodes
-            CD3DX12_SAMPLE_DESC_SUBOBJECT* sampleDescSubobject; // comes from input rendertarget nodes as well, their msaa settings
-            CD3DX12_DEPTH_STENCIL2_SUBOBJECT depthStencilSubObject; // from main node but can be overridden
-            
+            // but allow a collapsable field in the meshnode settings, where you can override it.            
             for (size_t i = 0; i < node.meshNodes.size(); i++)
             {
-                // TODO: JAN
+                RenderState rstate = node.meshNodes[i].overrideNodeRenderState ? node.meshNodes[i].renderState : node.renderState;
 
-                // actually set it up
+                CD3DX12_STATE_OBJECT_CONFIG_SUBOBJECT* configSubobject = stateObjectDesc.CreateSubobject<CD3DX12_STATE_OBJECT_CONFIG_SUBOBJECT>();
+                configSubobject->SetFlags(D3D12_STATE_OBJECT_FLAG_WORK_GRAPHS_USE_GRAPHICS_STATE_FOR_GLOBAL_ROOT_SIGNATURE);
+
+                CD3DX12_RASTERIZER_SUBOBJECT* rasterizerSubobject = stateObjectDesc.CreateSubobject<CD3DX12_RASTERIZER_SUBOBJECT>();
+                rasterizerSubobject->SetFrontCounterClockwise(rstate.frontIsCounterClockwise);
+                rasterizerSubobject->SetCullMode(DrawCullModeToD3D12_CULL_MODE(rstate.cullMode));
+                rasterizerSubobject->SetFillMode(D3D12_FILL_MODE_SOLID);
+
+                // node specific - separate from other overrideable data, because on shader side it's like that as well.
+                CD3DX12_PRIMITIVE_TOPOLOGY_SUBOBJECT* primitiveTopologySubobject = stateObjectDesc.CreateSubobject<CD3DX12_PRIMITIVE_TOPOLOGY_SUBOBJECT>();
+                primitiveTopologySubobject->SetPrimitiveTopologyType(GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(node.meshNodes[i].geometryType));
+
+
+                CD3DX12_DEPTH_STENCIL_FORMAT_SUBOBJECT* depthStencilSubobject = nullptr;
+                if (node.depthTarget.resourceNodeIndex != -1)
+                {
+                    const RenderGraphNode& depthTargetNode = m_renderGraph.nodes[node.depthTarget.resourceNodeIndex];
+                    if (depthTargetNode._index == RenderGraphNode::c_index_resourceTexture)
+                    {
+                        bool exists = false;
+                        auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(depthTargetNode.resourceTexture.name.c_str(), exists);
+
+                        depthStencilSubobject = stateObjectDesc.CreateSubobject<CD3DX12_DEPTH_STENCIL_FORMAT_SUBOBJECT>();
+                        depthStencilSubobject->SetDepthStencilFormat(textureInfo.m_format);
+                    }
+                }
+
+                CD3DX12_RENDER_TARGET_FORMATS_SUBOBJECT* renderTargetSubobject = stateObjectDesc.CreateSubobject<CD3DX12_RENDER_TARGET_FORMATS_SUBOBJECT>();
+                int numRenderTargets = 0;
+                int numSamples = 1;
+                for (int i = 0; i < node.colorTargets.size(); ++i)
+                {
+                    if (node.colorTargets[i].resourceNodeIndex == -1)
+                        break;
+
+                    const RenderGraphNode& colorTargetNode = m_renderGraph.nodes[node.colorTargets[i].resourceNodeIndex];
+                    if (colorTargetNode._index != RenderGraphNode::c_index_resourceTexture)
+                        break;
+
+                    bool exists = false;
+                    auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(colorTargetNode.resourceTexture.name.c_str(), exists);
+                    if (!exists || !textureInfo.m_resource)
+                        break;
+
+                    renderTargetSubobject->SetRenderTargetFormat(i, textureInfo.m_format);
+
+                    numRenderTargets++;
+
+                    if (textureInfo.sampleCount > numSamples)
+                    {
+                        numSamples = textureInfo.sampleCount;
+                    }
+                }
+                renderTargetSubobject->SetNumRenderTargets(numRenderTargets);
+
+                CD3DX12_SAMPLE_DESC_SUBOBJECT* sampleDescSubobject = stateObjectDesc.CreateSubobject<CD3DX12_SAMPLE_DESC_SUBOBJECT>();
+                sampleDescSubobject->SetCount(numSamples);
+                sampleDescSubobject->SetQuality(0); //msaa settings TODO: Jan, not sure what to do here.
+
+                CD3DX12_GENERIC_PROGRAM_SUBOBJECT* genericProgramSubobject = stateObjectDesc.CreateSubobject<CD3DX12_GENERIC_PROGRAM_SUBOBJECT>();
+
+                // Use mesh shader name as program name. This name needs to be unique for any program.
+
+                std::wstring meshNameW = ToWideString(node.meshNodes[i].meshNodeFunctionName.c_str());
+                genericProgramSubobject->SetProgramName(meshNameW.c_str()); // TODO: jan, make unique, can there be different combination of mesh node with dfferent pixel shaders? possible?
+
+                // Add mesh shader to generic program
+                genericProgramSubobject->AddExport(meshNameW.c_str());
+
+                // Add subobject for pipeline configuration
+                genericProgramSubobject->AddSubobject(*rasterizerSubobject);
+                genericProgramSubobject->AddSubobject(*primitiveTopologySubobject);
+                genericProgramSubobject->AddSubobject(*depthStencilSubobject);
+                genericProgramSubobject->AddSubobject(*renderTargetSubobject);
+                genericProgramSubobject->AddSubobject(*sampleDescSubobject);
+
+                // TODO: compile pixel shader and add blob to state object and add export.
+                std::string pixelName = node.meshNodes[i].pixelShader.c_str();
+
+                shaderCompilationInfo.debugName = node.name + pixelName;
+                shaderCompilationInfo.entryPoint = pixelName;
+                shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelPs;
+
+                std::vector<std::string> allPixelShaderFiles;
+                std::vector<unsigned char> pixelBlob = CompileShaderToByteCode_dxc(shaderCompilationInfo, m_logFn, &allPixelShaderFiles);
+
+                // Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
+                for (const std::string& fileName : allPixelShaderFiles)
+                {
+                    std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
+                    m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
+                }
+
+                if (pixelBlob.data() == nullptr)
+                {
+                    m_logFn(LogLevel::Warn, "Failed to compile pixel shader for mesh node");
+                    continue; // TODO: Jan? return or continue?
+                }
+
+                // Add library to graph
+                {
+                    CD3DX12_SHADER_BYTECODE shaderBytecode = CD3DX12_SHADER_BYTECODE(pixelBlob.data(), pixelBlob.size());
+
+                    // add blob to state object
+                    CD3DX12_DXIL_LIBRARY_SUBOBJECT* librarySubobject = stateObjectDesc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
+                    librarySubobject->SetDXILLibrary(&shaderBytecode);
+
+                    genericProgramSubobject->AddExport(ToWideString(pixelName.c_str()).c_str());
+                }
             }
         }
 
@@ -478,8 +600,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#d3d12_set_program_desc
         runtimeData.m_programDesc.Type = D3D12_PROGRAM_TYPE_WORK_GRAPH;
         runtimeData.m_programDesc.WorkGraph.ProgramIdentifier = stateObjectProperties->GetProgramIdentifier(programName.c_str());
-        // Set flag to initialize backing memory.
-        // We'll clear this flag once we've run the work graph for the first time.
         runtimeData.m_programDesc.WorkGraph.Flags = D3D12_SET_WORK_GRAPH_FLAG_INITIALIZE;
         // Set backing memory
         if (runtimeData.m_backingMemory) {
@@ -489,11 +609,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         runtimeData.m_entrypointIndex = workGraphProperties->GetEntrypointIndex(workGraphIndex, { ToWideString(entrypoint.c_str()).c_str(), 0});
 
-        // create gpu records buffer : can actually be readwrite, node can write to it's input records. todo: jan, allthough this is an internal thing and undefined during graph execution .. maybe it's fine.
-        // todo: jan check if we have any input records size and stride. aka is there supposed to be a buffer, otherwise there will be a hang.
-		// so we need to fail, if 0, we should use the default ones. 
 		runtimeData.m_records = CreateBuffer(m_device, sizeof(D3D12_NODE_GPU_INPUT), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD, (node.name + " Records Buffer").c_str());
-
 		runtimeData.m_recordStrideInBytes = workGraphProperties->GetEntrypointRecordSizeInBytes(workGraphIndex, runtimeData.m_entrypointIndex);
 		if (runtimeData.m_recordStrideInBytes == 0)
 		{
