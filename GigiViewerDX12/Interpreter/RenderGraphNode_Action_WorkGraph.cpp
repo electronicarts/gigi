@@ -222,6 +222,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         if (runtimeData.m_usesMeshNodes && tier < D3D12_WORK_GRAPHS_TIER_1_1)
         {
+        https://gpuopen.com/learn/work_graphs_mesh_nodes/work_graphs_mesh_nodes-getting_started/#:~:text=This%20blog%20post%20describes%20the,nodes%20inside%20a%20work%20graph.
             m_logFn(LogLevel::Error, "Work Graphs with Mesh Nodes aren't supported on your device");
             return false;
         }
@@ -360,7 +361,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         std::string fullFileName = (std::filesystem::path(GetTempDirectory()) / "shaders" / node.entryShader.shader->destFileName).string();
         std::string entrypoint = node.entryPoint.empty() ? node.entryShader.shader->entryPoint : node.entryPoint;
 
-        // Shader compilation depends on which shader compiler they opted to use for this technique
         ShaderCompilationInfo shaderCompilationInfo;
         shaderCompilationInfo.fileName = fullFileName;
         shaderCompilationInfo.entryPoint = entrypoint;

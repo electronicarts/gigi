@@ -86,7 +86,9 @@ extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\externa
 static const UUID ExperimentalFeaturesEnabled[] =
 {
     D3D12ExperimentalShaderModels,
-    D3D12CooperativeVectorExperiment
+    D3D12CooperativeVectorExperiment,
+    D3D12ExperimentalShaderModels,
+    D3D12StateObjectsExperiment,
 };
 
 #include "Interpreter/GigiInterpreterPreviewWindowDX12.h"
