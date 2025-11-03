@@ -1466,6 +1466,17 @@ struct BackendWebGPU : public BackendBase
                     ;
             }
 
+            // Camera Jitter Raw
+            if (GetVariableIndex(renderGraph, ggUserFile.systemVars.CameraJitterRaw_varName.c_str()) != -1)
+            {
+                stringReplacementMap["/*$(IndexHTMLPreExecute)*/"] <<
+                    "                // Camera Jitter\n"
+                    "                " << renderGraph.name << ".variable_" << ggUserFile.systemVars.CameraJitterRaw_varName << " = [ 0, 0 ];\n"
+                    "                " << renderGraph.name << ".variableChanged_" << ggUserFile.systemVars.CameraJitterRaw_varName << " = new Array(2).fill(true);\n"
+                    "\n"
+                    ;
+            }
+
             // Camera FOV
             if (GetVariableIndex(renderGraph, ggUserFile.systemVars.CameraFOV_varName.c_str()) != -1)
             {

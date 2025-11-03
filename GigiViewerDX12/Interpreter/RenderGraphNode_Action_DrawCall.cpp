@@ -1849,7 +1849,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
 		}
 		// else if we have an indirect buffer, do indirect
-		else if (node.indirectBuffer.resourceNodeIndex != -1)
+		else if (node.enableIndirect && node.indirectBuffer.resourceNodeIndex != -1)
 		{
 			ss << "Draw: Indirect";
 			const std::string& indirectBufferName = m_renderGraph.nodes[node.indirectBuffer.resourceNodeIndex].resourceBuffer.name;

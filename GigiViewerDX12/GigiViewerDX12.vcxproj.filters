@@ -112,6 +112,10 @@
       <Filter>Interpreter</Filter>
     </ClCompile>
     <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
+    <ClCompile Include="Interpreter\RenderGraphNode_Action_External.cpp">
+      <Filter>Interpreter</Filter>
+    </ClCompile>
+    <ClCompile Include="AMDFrameInterpolation.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">
@@ -140,6 +144,9 @@
     </Filter>
     <Filter Include="external\imgui">
       <UniqueIdentifier>{48c7e155-5828-48cc-8cae-7915a191ffe3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared">
+      <UniqueIdentifier>{9a3dd963-deaf-4129-bd42-ea1439e6e2f9}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -246,6 +253,14 @@
     <ClInclude Include="ImageSave.h" />
     <ClInclude Include="BVH.h" />
     <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
+    <ClInclude Include="AMDFrameInterpolation.h" />
+    <ClInclude Include="..\Shared\HashAll.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
+    <ClInclude Include="CopyResizeTextureHLSL.h" />
+    <ClInclude Include="..\Shared\ffx_utils.h">
+      <Filter>Shared</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiViewerDX12.rc" />

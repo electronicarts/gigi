@@ -401,6 +401,26 @@ struct RenameReferencesVisitor
 
 				return true;
             }
+            case RenderGraphNode::c_index_actionExternal:
+            {
+                RenderGraphNode_Action_External& node = nodeBase.actionExternal;
+
+                // AMD_FidelityFXSDK_Upscaling
+                {
+                    ExternalNode_AMD_FidelityFXSDK_Upscaling& nodeData = node.externalNodeData.AMD_FidelityFXSDK_Upscaling;
+
+                    m_renameData.UpdateNodePin(nodeData.color.node, nodeData.color.pin);
+                    m_renameData.UpdateNodePin(nodeData.colorOpaqueOnly.node, nodeData.colorOpaqueOnly.pin);
+                    m_renameData.UpdateNodePin(nodeData.depth.node, nodeData.depth.pin);
+                    m_renameData.UpdateNodePin(nodeData.motionVectors.node, nodeData.motionVectors.pin);
+                    m_renameData.UpdateNodePin(nodeData.exposure.node, nodeData.exposure.pin);
+                    m_renameData.UpdateNodePin(nodeData.reactive.node, nodeData.reactive.pin);
+                    //m_renameData.UpdateNodePin(nodeData.transparencyAndComposition.node, nodeData.transparencyAndComposition.pin);
+                    m_renameData.UpdateNodePin(nodeData.output.node, nodeData.output.pin);
+                }
+
+                return true;
+            }
             default:
             {
                 ShowErrorMessage("Unhandled node type in Subgraphs.cpp " __FUNCTION__);

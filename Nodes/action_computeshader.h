@@ -13,8 +13,10 @@ namespace FrontEndNodes
         if (node.shader.shader)
             shaderResourceCount = (int)node.shader.shader->resources.size();
 
-        return shaderResourceCount // Shader resources
-            + 1;                   // Indirect dispatch buffer
+        if(node.enableIndirect)
+            ++shaderResourceCount;  // Indirect dispatch buffer
+
+        return shaderResourceCount; // Shader resources
     }
 
     inline std::string GetPinName(const RenderGraphNode_Action_ComputeShader& node, int pinIndex)
@@ -25,7 +27,7 @@ namespace FrontEndNodes
 
         if (pinIndex < shaderResourceCount)
             return node.shader.shader->resources[pinIndex].name;
-        else if (pinIndex == shaderResourceCount)
+        else if (node.enableIndirect && pinIndex == shaderResourceCount)
             return "indirectBuffer";
         else
             return "";
@@ -56,7 +58,7 @@ namespace FrontEndNodes
                 }
             }
         }
-        else if (pinIndex == shaderResourceCount)
+        else if (node.enableIndirect && pinIndex == shaderResourceCount)
         {
             ret.access = ShaderResourceAccessType::Indirect;
             ret.nodeIndex = node.dispatchSize.indirectBuffer.nodeIndex;

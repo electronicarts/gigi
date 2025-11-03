@@ -1181,8 +1181,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 			{
 				// Load the textures
 				ImportedTextureBinaryDesc binaryDesc;
-				if (!LoadTexture(loadedTextures, node, runtimeData, fullLoadFileName, node.loadFileNameAsSRGB, binaryDesc, desiredFormat) || loadedTextures.size() == 0)
-					return false;
+                if (!LoadTexture(loadedTextures, node, runtimeData, fullLoadFileName, node.loadFileNameAsSRGB, binaryDesc, desiredFormat) || loadedTextures.size() == 0)
+                {
+                    std::ostringstream ss;
+                    ss << "Could not load texture \"" << fullLoadFileName << "\"";
+                    runtimeData.m_renderGraphText = ss.str();
+                    runtimeData.m_inErrorState = true;
+                    return true;
+                }
 
 				// Set the desired size, now that we know it
 				desiredSize[0] = loadedTextures[0].width;

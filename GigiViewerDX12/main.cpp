@@ -23,6 +23,7 @@
 
 #include "PreviewClient.h"
 
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "backends/imgui_impl_win32.h"
@@ -92,6 +93,7 @@ static const UUID ExperimentalFeaturesEnabled[] =
 #include "Interpreter/GigiInterpreterPreviewWindowDX12.h"
 #include "Interpreter/NodesShared.h"
 #include "GigiEdit/StableSample.h"
+#include "AMDFrameInterpolation.h"
 
 #include <dxgidebug.h>
 #pragma comment(lib, "dxguid.lib")
@@ -138,7 +140,7 @@ static ID3D12GraphicsCommandList* g_pd3dCommandList = NULL;
 static ID3D12Fence* g_fence = NULL;
 static HANDLE                       g_fenceEvent = NULL;
 static UINT64                       g_fenceLastSignaledValue = 0;
-static IDXGISwapChain3* g_pSwapChain = NULL;
+static IDXGISwapChain4* g_pSwapChain = NULL;
 static HANDLE                       g_hSwapChainWaitableObject = NULL;
 static ID3D12Resource* g_mainRenderTargetResource[NUM_BACK_BUFFERS] = {};
 static D3D12_CPU_DESCRIPTOR_HANDLE  g_mainRenderTargetDescriptor[NUM_BACK_BUFFERS] = {};
@@ -208,7 +210,9 @@ static bool g_renderDocLaunchUI = false;
 static bool g_renderDocEnabled = true;
 static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
+
 static AgilitySDKChoice g_agilitySDKChoice = AgilitySDKChoice::Retail;
+static bool g_allowAMDFrameInterpolation = true;
 
 void RenderFrame(bool forceExecute);
 
@@ -537,6 +541,8 @@ bool g_resetLayout = true;
 bool g_profileMode = false;
 bool g_readbackAll = false;
 
+GGUserFile_AMD_FidelityFXSDK_FrameInterpolation g_AMDFrameInterpolation;
+
 struct ShowWindowsState
 {
     bool Log = true;
@@ -546,6 +552,7 @@ struct ShowWindowsState
     bool RenderGraph = true;
     bool Profiler = true;
     bool InternalVariables = false;
+    bool AMDFrameInterpolation = false;
 };
 ShowWindowsState g_showWindows;
 
@@ -560,6 +567,14 @@ bool g_showViewerSettings = false;
 // first half are this frame, second half are last frame
 uint8_t g_keyStates[512] = {};
 uint8_t* g_keyStatesLastFrame = &g_keyStates[256];
+
+Vec2 g_jitter = Vec2{ 0.0f, 0.0f };
+Vec2 g_jitterRaw = Vec2{ 0.0f, 0.0f };
+
+ImVec2 g_resourceViewImagePosition = ImVec2{ 0.0f, 0.0f };
+ImVec2 g_resourceViewImageSize = ImVec2{ 0.0f, 0.0f };
+ImVec2 g_resourceViewImageClipMin = ImVec2{ 0.0f, 0.0f };
+ImVec2 g_resourceViewImageClipMax = ImVec2{ 0.0f, 0.0f };
 
 // Portions of this software were based on https://devblogs.microsoft.com/oldnewthing/20100125-00/?p=15183
 HANDLE SetClipboardDataEx(UINT uFormat, void *pvData, DWORD cbData)
@@ -968,9 +983,13 @@ void GatherSnapshotData(GGUserFileV2Snapshot& snapshot)
             rtVar.variable->name == g_systemVariables.JitteredViewProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.InvJitteredViewProjMtx_varName ||
             rtVar.variable->name == g_systemVariables.CameraPos_varName ||
+            rtVar.variable->name == g_systemVariables.CameraUp_varName ||
+            rtVar.variable->name == g_systemVariables.CameraLeft_varName ||
+            rtVar.variable->name == g_systemVariables.CameraForward_varName ||
             rtVar.variable->name == g_systemVariables.CameraAltitudeAzimuth_varName ||
             rtVar.variable->name == g_systemVariables.CameraChanged_varName ||
             rtVar.variable->name == g_systemVariables.CameraJitter_varName ||
+            rtVar.variable->name == g_systemVariables.CameraJitterRaw_varName ||
             rtVar.variable->name == g_systemVariables.CameraFOV_varName ||
             rtVar.variable->name == g_systemVariables.CameraNearPlane_varName ||
             rtVar.variable->name == g_systemVariables.CameraFarPlane_varName ||
@@ -1017,6 +1036,7 @@ void SaveGGUserFile()
     ggUserData.syncInterval = g_syncInterval;
     ggUserData.systemVars = g_systemVariables;
     ggUserData.snapshots = g_userSnapshots;
+    ggUserData.AMDFrameInterpolation = g_AMDFrameInterpolation;
 
     // Save the data
     WriteToJSONFile(ggUserData, ggUserFileName.c_str());
@@ -1094,6 +1114,7 @@ GGUserFileV2 LoadGGUserFile()
     g_syncInterval = ggUserData.syncInterval;
     g_systemVariables = ggUserData.systemVars;
     g_userSnapshots = ggUserData.snapshots;
+    g_AMDFrameInterpolation = ggUserData.AMDFrameInterpolation;
     g_userSnapshotIndex = -1;
 
     g_systemVariables.camera.cameraPos = g_systemVariables.camera.startingCameraPos;
@@ -1484,6 +1505,18 @@ void HandleMainMenu()
             ImGui::MenuItem("Render Graph", "", &g_showWindows.RenderGraph);
             ImGui::MenuItem("Profiler", "", &g_showWindows.Profiler);
 
+            if (!g_allowAMDFrameInterpolation)
+            {
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            }
+            ImGui::MenuItem("AMD Frame Interpolation", "", &g_showWindows.AMDFrameInterpolation);
+            if (!g_allowAMDFrameInterpolation)
+            {
+                ImGui::PopStyleVar();
+                ImGui::PopItemFlag();
+            }
+
             ImGui::Separator();
 
             if (ImGui::MenuItem("Reset Layout", "", &g_resetLayout))
@@ -1792,6 +1825,7 @@ void MakeInitialLayout(ImGuiID dockspace_id)
     ImGui::DockBuilderDockWindow("Profiler", dockspace_right);
     ImGui::DockBuilderDockWindow("System Variables", dockspace_right);
     ImGui::DockBuilderDockWindow("Interpreter State", dockspace_right);
+    ImGui::DockBuilderDockWindow("AMD Frame Interpolation", dockspace_right);
     ImGui::DockBuilderDockWindow("Imported Resources", dockspace_left_bottom);
     ImGui::DockBuilderDockWindow("Shaders", dockspace_left_bottom);
     ImGui::DockBuilderDockWindow("Variables", dockspace_left);
@@ -2268,7 +2302,6 @@ void SynchronizeSystemVariables()
     {
         // Make the projection and jittered projection matrix
         DirectX::XMMATRIX projMtx, jitteredProjMtx;
-        Vec2 jitter;
         {
             // Get the resolution if we can
             float resolution[2] = { 1, 1 };
@@ -2283,12 +2316,12 @@ void SynchronizeSystemVariables()
             }
 
             // Get the projection matrix
-            projMtx = g_resourceView.camera.GetProjMatrix(g_systemVariables.camera.FOV, resolution, g_systemVariables.camera.nearPlane, g_systemVariables.camera.farPlane, g_systemVariables.camera.reverseZ, g_systemVariables.camera.perspective);
+            projMtx = g_resourceView.camera.GetProjMatrix(g_systemVariables.camera.FOV, resolution, g_systemVariables.camera.nearPlane, g_systemVariables.camera.farPlane, g_systemVariables.camera.reverseZ, g_systemVariables.camera.reverseZInfiniteDepth, g_systemVariables.camera.perspective);
 
             // Subpixel jitter
             jitteredProjMtx = projMtx;
             {
-                jitter[0] = jitter[1] = 0.5f;
+                g_jitter[0] = g_jitter[1] = 0.5f;
                 int jitterIndex = g_techniqueFrameIndex;
                 if (g_systemVariables.camera.jitterLength > 0)
                     jitterIndex = jitterIndex % g_systemVariables.camera.jitterLength;
@@ -2296,34 +2329,37 @@ void SynchronizeSystemVariables()
                 {
                     case GGUserFile_CameraJitterType::None:
                     {
-                        jitter[0] = jitter[1] = 0.5f;
+                        g_jitter[0] = g_jitter[1] = 0.5f;
                         break;
                     }
                     case GGUserFile_CameraJitterType::UniformWhite:
                     {
                         uint32_t rng = wang_hash_init(jitterIndex, 53637, 1927349);
-                        jitter[0] = wang_hash_float01(rng);
-                        jitter[1] = wang_hash_float01(rng);
+                        g_jitter[0] = wang_hash_float01(rng);
+                        g_jitter[1] = wang_hash_float01(rng);
                         break;
                     }
                     case GGUserFile_CameraJitterType::Halton23:
                     {
                         // jitterIndex + 1 to avoid the (0,0) at index 0
-                        jitter[0] = halton(jitterIndex + 1, 2);
-                        jitter[1] = halton(jitterIndex + 1, 3);
+                        g_jitter[0] = halton(jitterIndex + 1, 2);
+                        g_jitter[1] = halton(jitterIndex + 1, 3);
                         break;
                     }
                 }
 
-                jitter[0] -= 0.5f;
-                jitter[1] -= 0.5f;
+                g_jitter[0] -= 0.5f;
+                g_jitter[1] -= 0.5f;
 
-                jitter[0] /= resolution[0];
-                jitter[1] /= resolution[1];
+                g_jitterRaw[0] = g_jitter[0];
+                g_jitterRaw[1] = g_jitter[1];
 
-                // Times 2 because the projection matrix maps on screen points to be between -1 and +1, not 0 to 1, so the pixels are twice as big for jitter purposes.
-                jitteredProjMtx.r[2].m128_f32[0] += jitter[0] * 2.0f;
-                jitteredProjMtx.r[2].m128_f32[1] += jitter[1] * 2.0f;
+                g_jitter[0] /= resolution[0];
+                g_jitter[1] /= resolution[1];
+
+                // Times 2 because the projection matrix maps on screen points to be between -1 and +1, not -0.5 to 0.5, so the pixels are twice as big for jitter purposes.
+                jitteredProjMtx.r[2].m128_f32[0] += g_jitter[0] * 2.0f;
+                jitteredProjMtx.r[2].m128_f32[1] += g_jitter[1] * 2.0f;
             }
         }
 
@@ -2383,13 +2419,22 @@ void SynchronizeSystemVariables()
             AssignVariable(g_systemVariables.CameraPos_varName.c_str(), DataFieldType::Float3, g_systemVariables.camera.cameraPos);
             AssignVariable(g_systemVariables.CameraAltitudeAzimuth_varName.c_str(), DataFieldType::Float2, g_systemVariables.camera.cameraAltitudeAzimuth);
 
+            // Camera vectors
+            const std::array<float, 3> cameraUp = { viewMtx.r[0].m128_f32[1], viewMtx.r[1].m128_f32[1], viewMtx.r[2].m128_f32[1] };
+            const std::array<float, 3> cameraLeft = { viewMtx.r[0].m128_f32[0] , viewMtx.r[1].m128_f32[0] , viewMtx.r[2].m128_f32[0] };
+            const std::array<float, 3> cameraFwd = { viewMtx.r[0].m128_f32[2], viewMtx.r[1].m128_f32[2], viewMtx.r[2].m128_f32[2] };
+            AssignVariable(g_systemVariables.CameraUp_varName.c_str(), DataFieldType::Float3, cameraUp);
+            AssignVariable(g_systemVariables.CameraLeft_varName.c_str(), DataFieldType::Float3, cameraLeft);
+            AssignVariable(g_systemVariables.CameraForward_varName.c_str(), DataFieldType::Float3, cameraFwd);
+
             // Camera FOV, near plance and far plane
             AssignVariable(g_systemVariables.CameraFOV_varName.c_str(), DataFieldType::Float, g_systemVariables.camera.FOV);
             AssignVariable(g_systemVariables.CameraNearPlane_varName.c_str(), DataFieldType::Float, g_systemVariables.camera.nearPlane);
             AssignVariable(g_systemVariables.CameraFarPlane_varName.c_str(), DataFieldType::Float, g_systemVariables.camera.farPlane);
 
             // camera jitter
-            AssignVariable(g_systemVariables.CameraJitter_varName.c_str(), DataFieldType::Float2, jitter);
+            AssignVariable(g_systemVariables.CameraJitter_varName.c_str(), DataFieldType::Float2, g_jitter);
+            AssignVariable(g_systemVariables.CameraJitterRaw_varName.c_str(), DataFieldType::Float2, g_jitterRaw);
 
             // Shading rate image tile size
             AssignVariable(g_systemVariables.ShadingRateImageTileSize_varName.c_str(), DataFieldType::Uint, g_interpreter.GetOptions6().ShadingRateImageTileSize);
@@ -2417,6 +2462,14 @@ bool DropDownBoolean(const char* label, const char* option1, const char* option2
         b = (selected == 1);
         return true;
     }
+
+    return false;
+}
+
+bool DropDownOptions(const char* label, const char** options, int optionCount, int& i)
+{
+    if (ImGui::Combo(label, &i, options, optionCount))
+        return true;
 
     return false;
 }
@@ -2449,6 +2502,74 @@ struct timer
 
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 };
+
+void ShowAMDFrameInterpolation()
+{
+    if (!g_showWindows.AMDFrameInterpolation || g_hideUI)
+        return;
+
+    if (!ImGui::Begin("AMD Frame Interpolation", &g_showWindows.AMDFrameInterpolation))
+    {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::Checkbox("Enabled", &g_AMDFrameInterpolation.enabled);
+
+    // Version
+    if (ImGui::BeginCombo("Version", g_AMDFrameInterpolation.version.c_str()))
+    {
+        const std::vector<AMDFrameInterpolation::Version>& versions = AMDFrameInterpolation::GetVersions(g_pd3dDevice);
+        for (const AMDFrameInterpolation::Version& versionInfo : versions)
+        {
+            if (ImGui::Selectable(versionInfo.versionName.c_str(), g_AMDFrameInterpolation.version == versionInfo.versionName))
+                g_AMDFrameInterpolation.version = versionInfo.versionName;
+        }
+        ImGui::EndCombo();
+    }
+
+    ImGui::InputInt("sleepMS", (int*)&g_AMDFrameInterpolation.sleepMS);
+    ShowToolTip("The number of milliseconds to sleep every frame. Useful for artificially slowing down the rendering to see frame interpolation in action.");
+    g_AMDFrameInterpolation.sleepMS = std::min<unsigned int>(g_AMDFrameInterpolation.sleepMS, 250);
+    Sleep(g_AMDFrameInterpolation.sleepMS);
+
+    ShowNodeDropDown("depth", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.depth);
+    ShowToolTip("The depth buffer data");
+    ShowNodeDropDown("motionVectors", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.motionVectors);
+    ShowToolTip("The motion vector data");
+
+    // FfxApiCreateContextFramegenerationFlags
+    ImGui::Text("FfxApiCreateContextFramegenerationFlags:");
+    ImGui::Indent();
+    ImGui::Checkbox("ENABLE_ASYNC_WORKLOAD_SUPPORT", &g_AMDFrameInterpolation.ENABLE_ASYNC_WORKLOAD_SUPPORT);
+    ImGui::Checkbox("ENABLE_MOTION_VECTORS_JITTER_CANCELLATION", &g_AMDFrameInterpolation.ENABLE_MOTION_VECTORS_JITTER_CANCELLATION);
+    ShowToolTip("A bit indicating that the motion vectors have the jittering pattern applied to them.");
+    ImGui::Checkbox("ENABLE_HIGH_DYNAMIC_RANGE", &g_AMDFrameInterpolation.ENABLE_HIGH_DYNAMIC_RANGE);
+    ShowToolTip("A bit indicating if the input color data provided to all inputs is using a high-dynamic range.");
+    ImGui::Checkbox("ENABLE_DEBUG_CHECKING", &g_AMDFrameInterpolation.ENABLE_DEBUG_CHECKING);
+    ShowToolTip("A bit indicating that the runtime should check some API values and report issues.");
+    ImGui::Unindent();
+
+    // FfxApiDispatchFramegenerationFlags
+    ImGui::Text("FfxApiDispatchFramegenerationFlags:");
+    ImGui::Indent();
+    ImGui::Checkbox("DRAW_DEBUG_TEAR_LINES", &g_AMDFrameInterpolation.DRAW_DEBUG_TEAR_LINES);
+    ShowToolTip("A bit indicating that the debug tear lines will be drawn to the generated output.");
+    ImGui::Checkbox("DRAW_DEBUG_RESET_INDICATORS", &g_AMDFrameInterpolation.DRAW_DEBUG_RESET_INDICATORS);
+    ShowToolTip("A bit indicating that the debug reset indicators will be drawn to the generated output.");
+    ImGui::Checkbox("DRAW_DEBUG_VIEW", &g_AMDFrameInterpolation.DRAW_DEBUG_VIEW);
+    ShowToolTip("A bit indicating that the generated output resource will contain debug views with relevant information.");
+    ImGui::Checkbox("DRAW_DEBUG_PACING_LINES", &g_AMDFrameInterpolation.DRAW_DEBUG_PACING_LINES);
+    ShowToolTip("A bit indicating that the debug pacing lines will be drawn to the generated output.");
+    ImGui::Unindent();
+
+    ImGui::Checkbox("allowAsyncWorkloads", &g_AMDFrameInterpolation.allowAsyncWorkloads);
+    ShowToolTip("Sets the state of async workloads. Set to true to enable generation work on async compute.");
+    ImGui::Checkbox("onlyPresentGenerated", &g_AMDFrameInterpolation.onlyPresentGenerated);
+    ShowToolTip("Set to true to only present generated frames.");
+
+    ImGui::End();
+}
 
 void ShowInternalVariables()
 {
@@ -2926,6 +3047,9 @@ void ShowSystemVariables()
         ImGui::SeparatorText("Camera Variables");
 
         ShowVariableDropDown("CameraPos", DataFieldType::Float3, g_systemVariables.CameraPos_varName);
+        ShowVariableDropDown("CameraUp", DataFieldType::Float3, g_systemVariables.CameraUp_varName);
+        ShowVariableDropDown("CameraLeft", DataFieldType::Float3, g_systemVariables.CameraLeft_varName);
+        ShowVariableDropDown("CameraForward", DataFieldType::Float3, g_systemVariables.CameraForward_varName);
         ShowVariableDropDown("CameraAltitudeAzimuth", DataFieldType::Float2, g_systemVariables.CameraAltitudeAzimuth_varName);
         ShowVariableDropDown("Camera Changed", DataFieldType::Bool, g_systemVariables.CameraChanged_varName);
 
@@ -2945,7 +3069,14 @@ void ShowSystemVariables()
         ShowVariableDropDown("Inverse Jittered View Projection Matrix", DataFieldType::Float4x4, g_systemVariables.InvJitteredViewProjMtx_varName);
 
         ShowVariableDropDown("Camera Jitter", DataFieldType::Float2, g_systemVariables.CameraJitter_varName);
+        ShowToolTip("Float2: The camera jitter this frame in [-0.5,0.5] / resolution.");
+
+        ShowVariableDropDown("Camera Jitter Raw", DataFieldType::Float2, g_systemVariables.CameraJitterRaw_varName);
+        ShowToolTip("Float2: The camera jitter this frame in [-0.5,0.5].");
+
         ShowVariableDropDown("Camera FOV", DataFieldType::Float, g_systemVariables.CameraFOV_varName);
+        ShowToolTip("Float: In degrees.");
+
         ShowVariableDropDown("Camera Near Z", DataFieldType::Float, g_systemVariables.CameraNearPlane_varName);
         ShowVariableDropDown("Camera Far Z", DataFieldType::Float, g_systemVariables.CameraFarPlane_varName);
     }
@@ -2958,7 +3089,23 @@ void ShowSystemVariables()
         ShowToolTip("The projection matrix needs a resolution. Choose a texture to use as a source of that resolution.");
         DropDownBoolean("##Projective", "Orthographic", "Perspective", g_systemVariables.camera.perspective);
         DropDownBoolean("##LeftHanded", "Right Handed", "Left Handed", g_systemVariables.camera.leftHanded);
-        DropDownBoolean("##ReverseZ", "Normal Z", "Reversed Z", g_systemVariables.camera.reverseZ);
+
+        // Handle reverse Z options
+        {
+            int reverseZOptions = 0;
+            if (g_systemVariables.camera.reverseZInfiniteDepth)
+                reverseZOptions = 2;
+            else if (g_systemVariables.camera.reverseZ)
+                reverseZOptions = 1;
+
+            const char* options[] = { "Normal Z", "Reversed Z", "Reversed Infinite Z" };
+
+            DropDownOptions("##ReverseZ", options, 3, reverseZOptions);
+
+            g_systemVariables.camera.reverseZ = (reverseZOptions != 0);
+            g_systemVariables.camera.reverseZInfiniteDepth = (reverseZOptions == 2);
+        }
+
         ImGui::InputFloat("Near Z", &g_systemVariables.camera.nearPlane);
         ImGui::InputFloat("Far Z", &g_systemVariables.camera.farPlane);
         ImGui::InputFloat("FOV", &g_systemVariables.camera.FOV);
@@ -5354,6 +5501,11 @@ void CopyImageToClipBoard(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC 
 
 void ShowResourceView()
 {
+    g_resourceViewImagePosition = ImVec2{ 0.0f, 0.0f };
+    g_resourceViewImageSize = ImVec2{ 0.0f, 0.0f };
+    g_resourceViewImageClipMin = ImVec2{ 0.0f, 0.0f };
+    g_resourceViewImageClipMax = ImVec2{ 0.0f, 0.0f };
+
     // See if we have a texture selected, so we can turn off mouse wheel scroll if so, since that contols zoom.
     bool textureSelected = false;
     const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
@@ -5763,9 +5915,7 @@ void ShowResourceView()
                             // Force mouse data to be in range (switching images could make it not be)
                             int mouseHoverX = Clamp(g_resourceView.mousePosImageX, 0, res.m_size[0] - 1);
                             int mouseHoverY = Clamp(g_resourceView.mousePosImageY, 0, res.m_size[1] - 1);
-                            int mouseClickX = Clamp(g_resourceView.mouseClickImageX, 0, res.m_size[0] - 1);
-                            int mouseClickY = Clamp(g_resourceView.mouseClickImageY, 0, res.m_size[1] - 1);
-
+                            
                             // Show size and format
                             if (res.m_type == RuntimeTypes::ViewableResource::Type::Texture2D)
                                 ImGui::Text("%ix%i    %s", res.m_size[0], res.m_size[1], Get_DXGI_FORMAT_Info(res.m_origResourceDesc.Format).name);
@@ -5846,8 +5996,18 @@ void ShowResourceView()
                                 float imgui_x = ImGui::GetStyle().WindowPadding.x + ImGui::CalcTextSize("Mouse Hover 12345,12345 ").x;
 
                                 // Show the clicked pixel
-                                ImGui::Text("Mouse Click %i,%i", mouseClickX, mouseClickY);
-                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, mouseClickX, mouseClickY, res.m_arrayIndex, res.m_mipIndex, imgui_x, g_resourceView.mouseRegionRadiusPx);
+                                ImGui::Text("Mouse Click");
+                                ImGui::SameLine();
+                                ImGui::SetNextItemWidth(30.0f);
+                                ImGui::InputInt("##SamplePixelCoordX", &g_resourceView.mouseClickImageX, 0, 0);
+                                ImGui::SameLine();
+                                ImGui::SetNextItemWidth(30.0f);
+                                ImGui::InputInt("##SamplePixelCoordY", &g_resourceView.mouseClickImageY, 0, 0);
+                                
+                                g_resourceView.mouseClickImageX = Clamp(g_resourceView.mouseClickImageX, 0, res.m_size[0] - 1);
+                                g_resourceView.mouseClickImageY = Clamp(g_resourceView.mouseClickImageY, 0, res.m_size[1] - 1);
+                                
+                                ShowPixelValue(res.m_resourceReadback, res.m_origResourceDesc, g_resourceView.mouseClickImageX, g_resourceView.mouseClickImageY, res.m_arrayIndex, res.m_mipIndex, imgui_x, g_resourceView.mouseRegionRadiusPx);
 
                                 // Show the hovered pixel
                                 ImGui::Text("Mouse Hover %i,%i", mouseHoverX, mouseHoverY);
@@ -5996,6 +6156,9 @@ void ShowResourceView()
 						D3D12_GPU_DESCRIPTOR_HANDLE descTable;
 						ImVec2 imagePosition = ImVec2{ 0.0f, 0.0f };
 						ImVec2 imageSize = ImVec2{ 0.0f, 0.0f };
+                        ImVec2 imageClipMin = ImVec2{ 0.0f, 0.0f };
+                        ImVec2 imageClipMax = ImVec2{ 0.0f, 0.0f };
+
                         std::string error;
 						if (g_interpreter.GetDescriptorTableCache_ImGui().GetDescriptorTable(g_pd3dDevice, g_interpreter.GetSRVHeapAllocationTracker_ImGui(), &desc, 1, descTable, error, HEAP_DEBUG_TEXT()))
 						{
@@ -6023,6 +6186,8 @@ void ShowResourceView()
 
 							imageSize = ImVec2{ (float)res.m_size[0] * g_imageZoom, (float)res.m_size[1] * g_imageZoom };
 							imagePosition = ImGui::GetCursorScreenPos();
+                            imageClipMin = ImGui::GetCurrentWindow()->ClipRect.Min;
+                            imageClipMax = ImGui::GetCurrentWindow()->ClipRect.Max;
 
                             if (!g_profileMode)
 								ImGui::Image((ImTextureID)descTable.ptr, ImVec2{ imageSize }, ImVec2{ 0.0f, 0.0f }, ImVec2{ 1.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 1.0f, 1.0f }, ImVec4{ 1.0f, 1.0f, 1.0f, 0.0f });
@@ -6030,6 +6195,14 @@ void ShowResourceView()
 							ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetHistogramMin, PackFloatIntoPointer(0.0f));
                             ImGui::GetCurrentWindow()->DrawList->AddCallback(ImDrawCallback_SetHistogramMax, PackFloatIntoPointer(1.0f));
 						}
+
+                        // Store off information about the image viewed
+                        {
+                            g_resourceViewImagePosition = imagePosition;
+                            g_resourceViewImageSize = imageSize;
+                            g_resourceViewImageClipMin = imageClipMin;
+                            g_resourceViewImageClipMax = imageClipMax;
+                        }
 
                         // Draw a rectangle to show the mouse click location region
                         {
@@ -7915,6 +8088,7 @@ void RenderFrame(bool forceExecute)
     HandleMainMenu();
 
     ShowInternalVariables();
+    ShowAMDFrameInterpolation();
     ShowSystemVariables();
     ShowProfilerWindow();
     ShowRenderGraphWindow();
@@ -7951,6 +8125,29 @@ void RenderFrame(bool forceExecute)
         g_techniqueFrameIndex++;
     }
 
+    // Frame interpolation
+    {
+        POINT upperLeft = { 0, 0 };
+        ClientToScreen(g_hwnd, &upperLeft);
+
+        AMDFrameInterpolation::Desc desc{};
+        desc.device = g_pd3dDevice;
+        desc.commandList = g_pd3dCommandList;
+        desc.frameIndex = g_techniqueFrameIndex;
+        desc.jitterOffset[0] = g_jitterRaw[0];
+        desc.jitterOffset[1] = g_jitterRaw[1];
+        desc.frameTimeMS = ImGui::GetCurrentContext()->IO.DeltaTime * 1000.0f;
+        desc.imagePosition[0] = (int)(g_resourceViewImagePosition.x - (float)upperLeft.x);
+        desc.imagePosition[1] = (int)(g_resourceViewImagePosition.y - (float)upperLeft.y);
+        desc.imageSize[0] = (int)(g_resourceViewImageSize.x);
+        desc.imageSize[1] = (int)(g_resourceViewImageSize.y);
+        desc.imageClipMin[0] = (int)(g_resourceViewImageClipMin[0] - (float)upperLeft.x);
+        desc.imageClipMin[1] = (int)(g_resourceViewImageClipMin[1] - (float)upperLeft.y);
+        desc.imageClipMax[0] = (int)(g_resourceViewImageClipMax[0] - (float)upperLeft.x);
+        desc.imageClipMax[1] = (int)(g_resourceViewImageClipMax[1] - (float)upperLeft.y);
+        AMDFrameInterpolation::Tick(g_AMDFrameInterpolation, g_interpreter, g_pSwapChain, g_systemVariables.camera, g_resourceView.camera, desc);
+    }
+
     g_interpreter.CollectShaderAsserts(assertsBuffers);
     if (g_logCollectedShaderAsserts)
         g_interpreter.LogCollectedShaderAsserts();
@@ -7985,7 +8182,9 @@ void RenderFrame(bool forceExecute)
         ImGui::RenderPlatformWindowsDefault(NULL, (void*)g_pd3dCommandList);
     }
 
-    g_pSwapChain->Present((!g_profileMode) ? g_syncInterval : 0, 0);
+    UINT syncInterval = (!g_profileMode) ? g_syncInterval : 0;
+    UINT presentFlags = (syncInterval == 0) ? DXGI_PRESENT_ALLOW_TEARING : 0;
+    g_pSwapChain->Present(syncInterval, presentFlags);
 
     UINT64 fenceValue = g_fenceLastSignaledValue + 1;
     g_pd3dCommandQueue->Signal(g_fence, fenceValue);
@@ -8108,6 +8307,11 @@ int main(int argc, char** argv)
             g_renderDocEnabled = false;
             argIndex++;
         }
+        else if (!_stricmp(argv[argIndex], "-noamdframeinterpolation"))
+        {
+            g_allowAMDFrameInterpolation = false;
+            argIndex++;
+        }
         else if (!_stricmp(argv[argIndex], "-nopixcapture"))
         {
             g_pixCaptureEnabled = false;
@@ -8185,6 +8389,7 @@ int main(int argc, char** argv)
     g_hwnd = ::CreateWindowW(wc.lpszClassName, L"Gigi Viewer - DX12 (Gigi v" GIGI_VERSION() ")", WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
     DragAcceptFiles(g_hwnd, true);
 
+    g_interpreter.SetLogFn(&Log);
 	Log(LogLevel::Info, "Gigi Viewer " GIGI_VERSION_WITH_BUILD_NUMBER() " DX12 " BUILD_FLAVOR);
 
     // Initialize Direct3D
@@ -8250,8 +8455,7 @@ int main(int argc, char** argv)
 
     // Init the interpreter
     {
-        g_interpreter.SetLogFn(&Log);
-        if (!g_interpreter.Init(g_pd3dDevice, g_pd3dCommandQueue, NUM_FRAMES_IN_FLIGHT, g_pd3dSrvDescHeap, c_imguiSRVHeapSize, (int)g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)))
+        if (!g_interpreter.Init(g_pd3dDevice, g_pd3dCommandQueue, g_pSwapChain, NUM_FRAMES_IN_FLIGHT, g_pd3dSrvDescHeap, c_imguiSRVHeapSize, (int)g_pd3dDevice->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV)))
         {
             Log(LogLevel::Error, "Could not initialize interpreter\n");
             CleanupDeviceD3D();
@@ -8506,7 +8710,7 @@ bool CreateDeviceD3D(HWND hWnd)
         sd.Width = 0;
         sd.Height = 0;
         sd.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
-        sd.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+        sd.Flags = DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
         sd.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
         sd.SampleDesc.Count = 1;
         sd.SampleDesc.Quality = 0;
@@ -8708,6 +8912,10 @@ bool CreateDeviceD3D(HWND hWnd)
         if (swapChain1->QueryInterface(IID_PPV_ARGS(&g_pSwapChain)) != S_OK)
             return false;
         swapChain1->Release();
+
+        if (g_allowAMDFrameInterpolation)
+            AMDFrameInterpolation::Init(g_interpreter, g_pd3dDevice, g_pSwapChain, g_pd3dCommandQueue);
+
         g_pSwapChain->SetMaximumFrameLatency(NUM_BACK_BUFFERS);
         g_hSwapChainWaitableObject = g_pSwapChain->GetFrameLatencyWaitableObject();
     }
@@ -8715,12 +8923,14 @@ bool CreateDeviceD3D(HWND hWnd)
     dxgiFactory->Release();
 
     CreateRenderTarget();
+
     return true;
 }
 
 void CleanupDeviceD3D()
 {
     CleanupRenderTarget();
+    AMDFrameInterpolation::Release();
     if (g_pSwapChain) { g_pSwapChain->SetFullscreenState(false, NULL); g_pSwapChain->Release(); g_pSwapChain = NULL; }
     if (g_hSwapChainWaitableObject != NULL) { CloseHandle(g_hSwapChainWaitableObject); }
     for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)
@@ -8836,7 +9046,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
         {
             CleanupRenderTarget();
-            HRESULT result = g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT);
+            HRESULT result = g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
             assert(SUCCEEDED(result) && "Failed to resize swapchain.");
             CreateRenderTarget();
         }

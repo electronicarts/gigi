@@ -13,6 +13,7 @@
 #include <algorithm>
 #include "GigiCompilerLib/Utils.h"
 #include "GigiCompilerLib/ParseCSV.h"
+#include "Nodes/nodes.h"
 
 bool AdjustStructForAlignment_WebGPU(Struct& s, const std::string& path, bool isUniformBuffer);
 bool AdjustUniformStructForAlignment_DX12(Struct& s, const std::string& path);
@@ -219,10 +220,186 @@ struct DataFixupVisitor
         return true;
     }
 
+    bool Visit(RenderGraphNode_Action_External& node, const std::string& path)
+    {
+        StaticNodeInfo staticNodeInfo = GetStaticNodeInfo(node);
+        if (staticNodeInfo.backendSupported[(int)backend])
+            return true;
+
+        Assert(false, "Node \"%s\" is not supported on backend \"%s\"\n", node.name.c_str(), EnumToString(backend));
+        return false;
+    }
+
     std::vector<Struct> newStructs;
 
     RenderGraph& renderGraph;
     Backend backend;
+};
+
+struct HandleValueOrVariablesVisitor
+{
+    HandleValueOrVariablesVisitor(RenderGraph& renderGraph_)
+        : renderGraph(renderGraph_)
+    { }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Bool& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Bool;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = v.value ? "true" : "false";
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Float& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << v.value;
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Float;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Float2& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << v.value[0] << ", " << v.value[1];
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Float2;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Float3& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << v.value[0] << ", " << v.value[1] << ", " << v.value[2];
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Float3;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Int4& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << v.value[0] << ", " << v.value[1] << ", " << v.value[2] << ", " << v.value[3];
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Int4;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Enum_ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << (int)(v.value);
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Int;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    bool Visit(ValueOrVariable_Enum_ExternalNode_AMD_FidelityFXSDK_Upscaling_Version& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << (int)(v.value);
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Int;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
+    RenderGraph& renderGraph;
 };
 
 struct AddNodeInfoToShadersVisitor
@@ -1114,7 +1291,8 @@ struct ReferenceFixupVisitor
         visitedNode[data.nodeIndex] = true;
 
         // Make sure the indirect buffer is resolved too
-        Visit(data.dispatchSize.indirectBuffer, path);
+        if(data.enableIndirect)
+            Visit(data.dispatchSize.indirectBuffer, path);
 
         int connectionIndex = -1;
         Shader& shader = *data.shader.shader;

@@ -11,6 +11,8 @@
 #include "GigiAssert.h"
 // clang-format on
 
+#include "NodesStatic/all_nodes.h"
+
 struct InputNodeInfo
 {
     ShaderResourceAccessType access = ShaderResourceAccessType::Count;
@@ -93,6 +95,7 @@ namespace FrontEndNodes
 #include "action_drawcall.h"
 #include "action_subgraph.h"
 #include "action_barrier.h"
+#include "action_external.h"
 #include "reroute.h"
 
 #include "resource.h"
@@ -224,6 +227,16 @@ void ExecuteOnActionNode(const RenderGraphNode& node, const LAMBDA& lambda)
         case RenderGraphNode::c_index_actionBarrier:
         {
             lambda(node.actionBarrier);
+            break;
+        }
+        case RenderGraphNode::c_index_actionExternal:
+        {
+            lambda(node.actionExternal);
+            break;
+        }
+        case RenderGraphNode::c_index_reroute:
+        {
+            lambda(node.actionExternal);
             break;
         }
         default:
@@ -375,7 +388,7 @@ inline bool GetNodeIsResourceNode(const RenderGraphNode& node)
     ExecuteOnNode(node,
         [&ret](auto& node)
         {
-            ret = FrontEndNodes::GetIsResourceNode(node);
+            ret = node.c_isResourceNode;
         }
     );
     return ret;
@@ -443,28 +456,6 @@ inline void AddResourceDependency(RenderGraphNode& node, int pinIndex, int resou
     );
 }
 
-inline bool ShaderResourceTypeIsReadOnly(ShaderResourceAccessType access)
-{
-    switch (access)
-    {
-        case ShaderResourceAccessType::UAV: return false;
-        case ShaderResourceAccessType::RTScene: return true;
-        case ShaderResourceAccessType::SRV: return true;
-        case ShaderResourceAccessType::CopySource: return true;
-        case ShaderResourceAccessType::CopyDest: return false;
-        case ShaderResourceAccessType::CBV: return true;
-        case ShaderResourceAccessType::Indirect: return true;
-        case ShaderResourceAccessType::VertexBuffer: return true;
-        case ShaderResourceAccessType::RenderTarget: return false;
-        case ShaderResourceAccessType::DepthTarget: return false;
-        case ShaderResourceAccessType::Barrier: return false;
-        case ShaderResourceAccessType::ShadingRate: return true;
-    }
-
-    Assert(false, "Unhandled ShaderResourceType: %i", access);
-    return false;
-}
-
 inline bool AccessIsReadOnly(unsigned int accessedAs)
 {
     for (unsigned int i = 0; i < (unsigned int)ShaderResourceAccessType::Count; ++i)
@@ -517,6 +508,18 @@ namespace FrontEndNodesNoCaching
                 continue;
 
             if (!_stricmp(renderGraph.shaders[index].name.c_str(), name))
+                return index;
+        }
+        return -1;
+    }
+
+    // Returns -1 if it couldn't find it
+    inline int GetVariableIndexByName(const RenderGraph& renderGraph, const char* name)
+    {
+        // Get the shader the shader reference
+        for (int index = 0; index < (int)renderGraph.variables.size(); ++index)
+        {
+            if (!_stricmp(renderGraph.variables[index].name.c_str(), name))
                 return index;
         }
         return -1;
@@ -583,14 +586,16 @@ namespace FrontEndNodesNoCaching
                     ret.push_back(info);
                 }
 
-                PinInfo info;
-                info.srcPin = "indirectBuffer";
-                info.dstNode = &node.dispatchSize.indirectBuffer.node;
-                info.dstPin = &node.dispatchSize.indirectBuffer.pin;
-                info.readOnly = true;
-                info.access = ShaderResourceAccessType::Indirect;
-                ret.push_back(info);
-
+                if (node.enableIndirect)
+                {
+                    PinInfo info;
+                    info.srcPin = "indirectBuffer";
+                    info.dstNode = &node.dispatchSize.indirectBuffer.node;
+                    info.dstPin = &node.dispatchSize.indirectBuffer.pin;
+                    info.readOnly = true;
+                    info.access = ShaderResourceAccessType::Indirect;
+                    ret.push_back(info);
+                }
                 break;
             }
             case RenderGraphNode::c_index_actionRayShader:
@@ -773,6 +778,24 @@ namespace FrontEndNodesNoCaching
 				}
 				break;
 			}
+            case RenderGraphNode::c_index_actionExternal:
+            {
+                StaticNodeInfo staticNodeInfo = GetStaticNodeInfo(nodeBase.actionExternal);
+
+                PinInfo info;
+                for (const StaticNodePinInfo& staticPinInfo : staticNodeInfo.pins)
+                {
+                    info.srcPin = staticPinInfo.srcPin;
+                    info.dstNode = staticPinInfo.dstNode;
+                    info.dstPin = staticPinInfo.dstPin;
+                    info.outputOnly = staticPinInfo.outputOnly;
+                    info.readOnly = staticPinInfo.readOnly;
+                    info.access = staticPinInfo.access;
+                    ret.push_back(info);
+                }
+
+                break;
+            }
             default:
             {
                 Assert(false, "Unhandled node type in " __FUNCTION__);
@@ -923,6 +946,24 @@ namespace FrontEndNodesNoCaching
             *indexUsed = nameIndex;
 
         return name;
+    }
+
+    // This function will return the base name if that name is not already taken.
+    // Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+    inline std::string GetUniqueVariableName(const RenderGraph& renderGraph, const char* baseName)
+    {
+        if (GetVariableIndexByName(renderGraph, baseName) == -1)
+            return baseName;
+
+        int resourceNameIndex = -1;
+        char resourceName[1024];
+        do
+        {
+            resourceNameIndex++;
+            sprintf_s(resourceName, "%s_%i", baseName, resourceNameIndex);
+        } while (GetVariableIndexByName(renderGraph, resourceName) != -1);
+
+        return resourceName;
     }
 
     // This function will return the base name if that name is not already taken.

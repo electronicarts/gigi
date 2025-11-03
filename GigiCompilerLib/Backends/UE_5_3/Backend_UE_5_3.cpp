@@ -39,6 +39,13 @@ struct BackendUE_5_3 : public BackendBase
         int importedNodeIndex = -1;
     };
 
+    static std::string StringEscape(const std::string& s)
+    {
+        std::string ret = s;
+        StringReplaceAll(ret, "\\", "\\\\");
+        return ret;
+    }
+
     static BufferNodeType GetBufferNodeType(const RenderGraph& renderGraph, const RenderGraphNode_Resource_Buffer& node)
     {
         BufferNodeType ret;
@@ -1416,7 +1423,7 @@ struct BackendUE_5_3 : public BackendBase
                     "    }\n"
                     "};\n"
                     "\n"
-                    "IMPLEMENT_GLOBAL_SHADER(F" << shader.name << "MS, \"" << fileName << "\", \"" << shader.entryPoint << "\", SF_RayMiss);\n"
+                    "IMPLEMENT_GLOBAL_SHADER(F" << shader.name << "MS, \"" << StringEscape(fileName) << "\", \"" << shader.entryPoint << "\", SF_RayMiss);\n"
                     "\n"
                     ;
             }
@@ -1480,7 +1487,7 @@ struct BackendUE_5_3 : public BackendBase
                     "    }\n"
                     "};\n"
                     "\n"
-                    "IMPLEMENT_GLOBAL_SHADER(F" << hitGroup.name << "HG, \"" << fileName.str() << "\", \"" << entryPointString.str() << "\", SF_RayHitGroup);\n"
+                    "IMPLEMENT_GLOBAL_SHADER(F" << hitGroup.name << "HG, \"" << StringEscape(fileName.str()) << "\", \"" << entryPointString.str() << "\", SF_RayHitGroup);\n"
                     "\n"
                     ;
             }

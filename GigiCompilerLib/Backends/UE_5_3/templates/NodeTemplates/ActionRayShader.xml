@@ -25,7 +25,7 @@ public:
     }
 };
 
-IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/RG, "/*$(Node:FileName)*/", "/*$(Node:EntryPoint)*/", SF_RayGen);
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/RG, "/*$(Node:FileNameStringEscaped)*/", "/*$(Node:EntryPoint)*/", SF_RayGen);
 
 </ActionRayShader:TechniqueCPP_Shaders>
 

@@ -1,0 +1,1377 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "Version",
+            "comment": "FSR version to use",
+            "type": "Int",
+            "dflt": "Default",
+            "visibility": "User",
+            "Enum": "_Gigi_ExternalNode_AMD_FidelityFXSDK_Upscaling_Version"
+        },
+        {
+            "name": "QualityPreset",
+            "comment": "Quality presets that control render size",
+            "type": "Int",
+            "visibility": "User",
+            "Enum": "QualityPresets"
+        },
+        {
+            "name": "RenderSize",
+            "comment": "The size rendered at",
+            "type": "Uint2",
+            "dflt": "640, 360",
+            "visibility": "User"
+        },
+        {
+            "name": "OutputSize",
+            "comment": "The size upscaled to",
+            "type": "Uint2",
+            "dflt": "1280, 720",
+            "visibility": "User"
+        },
+        {
+            "name": "LODBias",
+            "comment": "Make smaller for sharper textures",
+            "type": "Float",
+            "dflt": "-2.0f",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "-5.0f",
+                "max": "0.0f"
+            }
+        },
+        {
+            "name": "MeshScale",
+            "comment": "Uniform scale for the mesh",
+            "type": "Float",
+            "dflt": "0.01f",
+            "visibility": "User"
+        },
+        {
+            "name": "UseFSR",
+            "comment": "If false, uses a linear sampler to upscale",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "Sharpening",
+            "comment": "Enable an additional sharpening pass.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "Sharpness",
+            "comment": "The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness.",
+            "type": "Float",
+            "dflt": "1.000000",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0.0",
+                "max": "1.0"
+            }
+        },
+        {
+            "name": "PreExposure",
+            "comment": "The pre exposure value (must be > 0.0f)",
+            "type": "Float",
+            "dflt": "1.000000",
+            "visibility": "User"
+        },
+        {
+            "name": "UnitsToMeters",
+            "comment": "The scale factor to convert view space units to meters.",
+            "type": "Float",
+            "dflt": "1.000000",
+            "visibility": "User"
+        },
+        {
+            "name": "Reset",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            }
+        },
+        {
+            "name": "ToneMapper",
+            "comment": "What tone mapper to use",
+            "type": "Int",
+            "dflt": "ACES",
+            "visibility": "User",
+            "Enum": "ToneMappingOperation",
+            "UIGroup": "ToneMapping"
+        },
+        {
+            "name": "PreExposureFStops",
+            "comment": "exposure in fstop, applied before upscaling.  -1 is half as much lighting, +1 is twice as much lighting.",
+            "type": "Float",
+            "dflt": "2.0f",
+            "visibility": "User",
+            "UIGroup": "ToneMapping"
+        },
+        {
+            "name": "ExposureFStops",
+            "comment": "exposure in fstop.  -1 is half as much lighting, +1 is twice as much lighting.",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User",
+            "UIGroup": "ToneMapping"
+        },
+        {
+            "name": "CameraJitterRaw",
+            "type": "Float2",
+            "dflt": "0.000000, 0.000000"
+        },
+        {
+            "name": "FrameRateS",
+            "type": "Float",
+            "dflt": "16.670000"
+        },
+        {
+            "name": "FrameRateMS",
+            "type": "Float",
+            "dflt": "16.670000"
+        },
+        {
+            "name": "CameraNearPlane",
+            "type": "Float",
+            "dflt": "0.000000"
+        },
+        {
+            "name": "CameraFarPlane",
+            "type": "Float",
+            "dflt": "1.000000"
+        },
+        {
+            "name": "CameraFOV",
+            "type": "Float",
+            "dflt": "0.785398"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "ViewProjMtxLastFrame",
+            "type": "Float4x4"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "JitteredViewProjMtx",
+            "type": "Float4x4"
+        },
+        {
+            "name": "JitteredViewProjMtxLastFrame",
+            "type": "Float4x4"
+        },
+        {
+            "name": "ENABLE_HIGH_DYNAMIC_RANGE",
+            "comment": "A bit indicating if the input color data provided is using a high-dynamic range.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS",
+            "comment": "A bit indicating if the motion vectors are rendered at display resolution.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_MOTION_VECTORS_JITTER_CANCELLATION",
+            "comment": "A bit indicating that the motion vectors have the jittering pattern applied to them.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_DEPTH_INVERTED",
+            "comment": "A bit indicating that the input depth buffer data provided is inverted [1..0].",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_DEPTH_INFINITE",
+            "comment": "A bit indicating that the input depth buffer data provided is using an infinite far plane.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_AUTO_EXPOSURE",
+            "comment": "A bit indicating if automatic exposure should be applied to input color data.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_DYNAMIC_RESOLUTION",
+            "comment": "A bit indicating that the application uses dynamic resolution scaling.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_DEBUG_CHECKING",
+            "comment": "A bit indicating that the runtime should check some API values and report issues.",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_NON_LINEAR_COLORSPACE",
+            "comment": "A bit indicating that the color resource contains perceptual (gamma corrected) colors",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "ENABLE_DEBUG_VISUALIZATION",
+            "comment": "A bit indicating if debug visualization is allowed. (memory consumption could increase)",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "DRAW_DEBUG_VIEW",
+            "comment": "A boolean variable. False if no variable given. A bit indicating that the output resource will contain debug views with relevant information.",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "NON_LINEAR_COLOR_SRGB",
+            "comment": "A bit indicating that the input color resource contains perceptual sRGB colors",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "NON_LINEAR_COLOR_PQ",
+            "comment": "A bit indicating that the input color resource contains perceptual PQ colors",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "Reactive Mask Mode",
+            "comment": "Reactive mask setting",
+            "type": "Int",
+            "dflt": "Generate",
+            "visibility": "User",
+            "Enum": "_Gigi_ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "Scale",
+            "comment": "A value to scale the output",
+            "type": "Float",
+            "dflt": "1.000000",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "Cutoff Threshold",
+            "comment": "A threshold value to generate a binary reactive mask",
+            "type": "Float",
+            "dflt": "0.200000",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "Binary Value",
+            "comment": "A value to set for the binary reactive mask",
+            "type": "Float",
+            "dflt": "0.900000",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "APPLY_TONEMAP",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "APPLY_INVERSETONEMAP",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "APPLY_THRESHOLD",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "USE_COMPONENTS_MAX",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User",
+            "UIGroup": "Reactive Mask"
+        },
+        {
+            "name": "CameraFOVRadians",
+            "type": "Float",
+            "dflt": "0.785398"
+        },
+        {
+            "name": "RenderSizeFloat",
+            "type": "Float2",
+            "dflt": "1.000000, 1.000000"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "VS",
+            "fileName": "vs.hlsl",
+            "type": "Vertex",
+            "entryPoint": "vsmain"
+        },
+        {
+            "name": "PS",
+            "fileName": "ps.hlsl",
+            "type": "Pixel",
+            "entryPoint": "psmain",
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "Tonemap",
+            "fileName": "tonemap.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "HDR",
+                    "access": "SRV",
+                    "type": "Texture"
+                },
+                {
+                    "name": "SDR",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ]
+        },
+        {
+            "name": "Upscale",
+            "fileName": "upscale.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "source",
+                    "access": "SRV",
+                    "type": "Texture"
+                },
+                {
+                    "name": "dest",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "linearWrapSampler"
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "Vertex",
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                },
+                {
+                    "name": "UV",
+                    "type": "Float2",
+                    "semantic": "UV"
+                },
+                {
+                    "name": "MaterialID",
+                    "type": "Int",
+                    "semantic": "MaterialID"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionExternal": {
+                "name": "AMD Super Resolution",
+                "editorPos": [
+                    181.0,
+                    383.0
+                ],
+                "condition": {
+                    "variable1": "UseFSR",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "externalNodeData": {
+                    "AMD_FidelityFXSDK_Upscaling": {
+                        "version": {
+                            "variable": {
+                                "name": "Version"
+                            }
+                        },
+                        "ENABLE_HIGH_DYNAMIC_RANGE": {
+                            "value": true,
+                            "variable": {
+                                "name": "ENABLE_HIGH_DYNAMIC_RANGE"
+                            }
+                        },
+                        "ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS": {
+                            "value": false,
+                            "variable": {
+                                "name": "ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS"
+                            }
+                        },
+                        "ENABLE_MOTION_VECTORS_JITTER_CANCELLATION": {
+                            "value": false,
+                            "variable": {
+                                "name": "ENABLE_MOTION_VECTORS_JITTER_CANCELLATION"
+                            }
+                        },
+                        "ENABLE_DEPTH_INVERTED": {
+                            "value": true,
+                            "variable": {
+                                "name": "ENABLE_DEPTH_INVERTED"
+                            }
+                        },
+                        "ENABLE_DEPTH_INFINITE": {
+                            "value": true,
+                            "variable": {
+                                "name": "ENABLE_DEPTH_INFINITE"
+                            }
+                        },
+                        "ENABLE_AUTO_EXPOSURE": {
+                            "value": true,
+                            "variable": {
+                                "name": "ENABLE_AUTO_EXPOSURE"
+                            }
+                        },
+                        "ENABLE_DYNAMIC_RESOLUTION": {
+                            "value": false,
+                            "variable": {
+                                "name": "ENABLE_DYNAMIC_RESOLUTION"
+                            }
+                        },
+                        "ENABLE_DEBUG_CHECKING": {
+                            "value": true,
+                            "variable": {
+                                "name": "ENABLE_DEBUG_CHECKING"
+                            }
+                        },
+                        "ENABLE_NON_LINEAR_COLORSPACE": {
+                            "value": false,
+                            "variable": {
+                                "name": "ENABLE_NON_LINEAR_COLORSPACE"
+                            }
+                        },
+                        "ENABLE_DEBUG_VISUALIZATION": {
+                            "value": false,
+                            "variable": {
+                                "name": "ENABLE_DEBUG_VISUALIZATION"
+                            }
+                        },
+                        "color": {
+                            "node": "Transparent",
+                            "pin": "colorTarget0"
+                        },
+                        "colorOpaqueOnly": {
+                            "node": "Node 1",
+                            "pin": "Pin"
+                        },
+                        "depth": {
+                            "node": "Transparent",
+                            "pin": "depthTarget"
+                        },
+                        "motionVectors": {
+                            "node": "Transparent",
+                            "pin": "colorTarget2"
+                        },
+                        "reactive": {
+                            "node": "Reactive",
+                            "pin": "resource"
+                        },
+                        "output": {
+                            "node": "Output HDR",
+                            "pin": "resource"
+                        },
+                        "jitterOffset": {
+                            "value": [
+                                0.0,
+                                0.0
+                            ],
+                            "variable": {
+                                "name": "CameraJitterRaw"
+                            }
+                        },
+                        "motionVectorScale": {
+                            "value": [
+                                1.0,
+                                1.0
+                            ],
+                            "variable": {
+                                "name": "RenderSizeFloat"
+                            }
+                        },
+                        "enableSharpening": {
+                            "value": false,
+                            "variable": {
+                                "name": "Sharpening"
+                            }
+                        },
+                        "sharpness": {
+                            "value": 1.0,
+                            "variable": {
+                                "name": "Sharpness"
+                            }
+                        },
+                        "frameTimeDelta": {
+                            "value": 16.670000076293947,
+                            "variable": {
+                                "name": "FrameRateMS"
+                            }
+                        },
+                        "preExposure": {
+                            "value": 1.0,
+                            "variable": {
+                                "name": "PreExposure"
+                            }
+                        },
+                        "reset": {
+                            "name": "Reset"
+                        },
+                        "cameraNear": {
+                            "value": 0.0,
+                            "variable": {
+                                "name": "CameraNearPlane"
+                            }
+                        },
+                        "cameraFar": {
+                            "value": 1.0,
+                            "variable": {
+                                "name": "CameraFarPlane"
+                            }
+                        },
+                        "cameraFovAngleVertical": {
+                            "value": 0.785398006439209,
+                            "variable": {
+                                "name": "CameraFOVRadians"
+                            }
+                        },
+                        "viewSpaceToMetersFactor": {
+                            "value": 1.0,
+                            "variable": {
+                                "name": "UnitsToMeters"
+                            }
+                        },
+                        "DRAW_DEBUG_VIEW": {
+                            "value": false,
+                            "variable": {
+                                "name": "DRAW_DEBUG_VIEW"
+                            }
+                        },
+                        "NON_LINEAR_COLOR_SRGB": {
+                            "value": false,
+                            "variable": {
+                                "name": "NON_LINEAR_COLOR_SRGB"
+                            }
+                        },
+                        "NON_LINEAR_COLOR_PQ": {
+                            "value": false,
+                            "variable": {
+                                "name": "NON_LINEAR_COLOR_PQ"
+                            }
+                        },
+                        "reactiveMask": {
+                            "reactiveMaskMode": {
+                                "value": "Generate",
+                                "variable": {
+                                    "name": "Reactive Mask Mode"
+                                }
+                            },
+                            "scale": {
+                                "value": 1.0,
+                                "variable": {
+                                    "name": "Scale"
+                                }
+                            },
+                            "cutoffThreshold": {
+                                "value": 0.20000000298023225,
+                                "variable": {
+                                    "name": "Cutoff Threshold"
+                                }
+                            },
+                            "binaryValue": {
+                                "value": 0.8999999761581421,
+                                "variable": {
+                                    "name": "Binary Value"
+                                }
+                            },
+                            "APPLY_TONEMAP": {
+                                "value": true,
+                                "variable": {
+                                    "name": "APPLY_TONEMAP"
+                                }
+                            },
+                            "APPLY_INVERSETONEMAP": {
+                                "value": false,
+                                "variable": {
+                                    "name": "APPLY_INVERSETONEMAP"
+                                }
+                            },
+                            "APPLY_THRESHOLD": {
+                                "value": false,
+                                "variable": {
+                                    "name": "APPLY_THRESHOLD"
+                                }
+                            },
+                            "USE_COMPONENTS_MAX": {
+                                "value": true,
+                                "variable": {
+                                    "name": "USE_COMPONENTS_MAX"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color",
+                "editorPos": [
+                    -568.0,
+                    274.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth",
+                "editorPos": [
+                    -568.0,
+                    210.0
+                ],
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Motion Vectors",
+                "editorPos": [
+                    -580.0,
+                    402.0
+                ],
+                "format": {
+                    "format": "RG32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output HDR",
+                "editorPos": [
+                    -85.0,
+                    498.0
+                ],
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "OutputSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Opaue",
+                "editorPos": [
+                    -350.0,
+                    182.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {
+                        "clear": true
+                    },
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.0,
+                            0.0,
+                            0.0,
+                            0.0
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "defines": [
+                    {
+                        "name": "OPAQUE_PASS",
+                        "value": "1"
+                    }
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "vertexBuffer",
+                    "pin": "resource"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Color",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "LinearDepth",
+                        "pin": "resource"
+                    },
+                    {
+                        "node": "Motion Vectors",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth",
+                    "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "LinearDepth",
+                "editorPos": [
+                    -568.0,
+                    338.0
+                ],
+                "format": {
+                    "format": "R32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "vertexBuffer",
+                "editorPos": [
+                    -571.0,
+                    162.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Transparent",
+                "editorPos": [
+                    -126.0,
+                    182.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "VS"
+                },
+                "pixelShader": {
+                    "name": "PS"
+                },
+                "depthWrite": false,
+                "depthTest": "Greater",
+                "independentAlpha": true,
+                "colorTargetSettings": [
+                    {
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {
+                        "writeChannels": [
+                            false,
+                            false,
+                            false,
+                            false
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "defines": [
+                    {
+                        "name": "OPAQUE_PASS",
+                        "value": "0"
+                    }
+                ],
+                "frontIsCounterClockwise": false,
+                "vertexBuffer": {
+                    "node": "Opaue",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "Opaue",
+                        "pin": "colorTarget0"
+                    },
+                    {
+                        "node": "Opaue",
+                        "pin": "colorTarget1"
+                    },
+                    {
+                        "node": "Opaue",
+                        "pin": "colorTarget2"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Opaue",
+                    "pin": "depthTarget"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Tonemap",
+                "editorPos": [
+                    667.0,
+                    268.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "HDR",
+                        "dstNode": "Node",
+                        "dstPin": "Pin 0"
+                    },
+                    {
+                        "srcPin": "SDR",
+                        "dstNode": "Output SDR",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Tonemap"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output HDR"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output SDR",
+                "editorPos": [
+                    507.0,
+                    370.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "OutputSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Manual Upscale",
+                "editorPos": [
+                    187.0,
+                    188.0
+                ],
+                "condition": {
+                    "variable1": "UseFSR",
+                    "comparison": "IsFalse"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "source",
+                        "dstNode": "Transparent",
+                        "dstPin": "colorTarget0"
+                    },
+                    {
+                        "srcPin": "dest",
+                        "dstNode": "Output HDR",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Upscale"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output HDR"
+                    }
+                }
+            }
+        },
+        {
+            "actionBarrier": {
+                "name": "Node",
+                "editorPos": [
+                    485.0,
+                    258.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin 0",
+                        "dstNode": "Manual Upscale",
+                        "dstPin": "dest"
+                    },
+                    {
+                        "srcPin": "Pin 1",
+                        "dstNode": "AMD Super Resolution",
+                        "dstPin": "output"
+                    },
+                    {
+                        "srcPin": "Pin 2"
+                    }
+                ]
+            }
+        },
+        {
+            "reroute": {
+                "name": "Node 1",
+                "editorPos": [
+                    -133.0,
+                    421.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Pin",
+                        "dstNode": "Opaue",
+                        "dstPin": "colorTarget0"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Reactive",
+                "editorPos": [
+                    -85.0,
+                    450.0
+                ],
+                "format": {
+                    "format": "R8_Unorm"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
+                }
+            }
+        }
+    ],
+    "enums": [
+        {
+            "name": "ToneMappingOperation",
+            "items": [
+                {
+                    "label": "None"
+                },
+                {
+                    "label": "Reinhard_Simple"
+                },
+                {
+                    "label": "ACES_Luminance"
+                },
+                {
+                    "label": "ACES"
+                }
+            ]
+        },
+        {
+            "name": "_Gigi_ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode",
+            "items": [
+                {
+                    "label": "Off"
+                },
+                {
+                    "label": "Generate"
+                },
+                {
+                    "label": "Custom"
+                }
+            ]
+        },
+        {
+            "name": "QualityPresets",
+            "items": [
+                {
+                    "label": "NativeAA"
+                },
+                {
+                    "label": "Quality"
+                },
+                {
+                    "label": "Balanced"
+                },
+                {
+                    "label": "Performance"
+                },
+                {
+                    "label": "UltraPerformance"
+                },
+                {
+                    "label": "Custom"
+                }
+            ]
+        },
+        {
+            "name": "_Gigi_ExternalNode_AMD_FidelityFXSDK_Upscaling_Version",
+            "items": [
+                {
+                    "label": "Default"
+                },
+                {
+                    "label": "v2_3_4"
+                },
+                {
+                    "label": "v3_1_5"
+                }
+            ]
+        }
+    ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "FrameRateMS"
+            },
+            "AVar": {
+                "name": "FrameRateS"
+            },
+            "op": "Multiply",
+            "BLiteral": "1000.0f"
+        },
+        {
+            "destination": {
+                "name": "JitteredViewProjMtxLastFrame"
+            },
+            "AVar": {
+                "name": "JitteredViewProjMtx"
+            },
+            "op": "Noop",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "ViewProjMtxLastFrame"
+            },
+            "AVar": {
+                "name": "ViewProjMtx"
+            },
+            "op": "Noop",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "CameraFOVRadians"
+            },
+            "AVar": {
+                "name": "CameraFOV"
+            },
+            "op": "Multiply",
+            "BLiteral": "3.14159265359f"
+        },
+        {
+            "destination": {
+                "name": "CameraFOVRadians"
+            },
+            "AVar": {
+                "name": "CameraFOVRadians"
+            },
+            "op": "Divide",
+            "BLiteral": "180.0f"
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "OutputSize"
+            },
+            "op": "Multiply",
+            "BLiteral": "1,1",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "NativeAA"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "OutputSize"
+            },
+            "op": "Multiply",
+            "BLiteral": "2,2",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "Quality"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "RenderSize"
+            },
+            "op": "Divide",
+            "BLiteral": "3,3",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "Quality"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "OutputSize"
+            },
+            "op": "Multiply",
+            "BLiteral": "10,10",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "Balanced"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "RenderSize"
+            },
+            "op": "Divide",
+            "BLiteral": "17,17",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "Balanced"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "OutputSize"
+            },
+            "op": "Multiply",
+            "BLiteral": "1,1",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "Performance"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "RenderSize"
+            },
+            "op": "Divide",
+            "BLiteral": "2,2",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "Performance"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "OutputSize"
+            },
+            "op": "Multiply",
+            "BLiteral": "1,1",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "UltraPerformance"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSize"
+            },
+            "AVar": {
+                "name": "RenderSize"
+            },
+            "op": "Divide",
+            "BLiteral": "3,3",
+            "condition": {
+                "variable1": "QualityPreset",
+                "comparison": "Equals",
+                "value2": "UltraPerformance"
+            }
+        },
+        {
+            "destination": {
+                "name": "RenderSizeFloat"
+            },
+            "AVar": {
+                "name": "RenderSize"
+            },
+            "op": "Noop"
+        }
+    ]
+}

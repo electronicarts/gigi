@@ -340,8 +340,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				;
 		}
 
-		// Calculate dispatch size
-		if (node.dispatchSize.indirectBuffer.nodeIndex == -1)
+        // Calculate dispatch size
+        int indirectBufferResourceNodeIndex = node.enableIndirect ? node.dispatchSize.indirectBuffer.nodeIndex : -1;
+		if (indirectBufferResourceNodeIndex == -1)
 		{
 			stringReplacementMap["/*$(Execute)*/"] << "        // Calculate dispatch size\n";
 
@@ -415,17 +416,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 			"                computePass.setBindGroup(0, bindGroup);\n"
 			;
 
-		if (node.dispatchSize.indirectBuffer.nodeIndex == -1)
+		if (indirectBufferResourceNodeIndex != -1)
 		{
-			stringReplacementMap["/*$(Execute)*/"] <<
-				"                computePass.dispatchWorkgroups(dispatchSize[0], dispatchSize[1], dispatchSize[2]);\n"
-				;
-		}
-		else
-		{
-			int indirectBufferResourceNodeIndex = node.dispatchSize.indirectBuffer.nodeIndex;
 			if (!GetNodeIsResourceNode(renderGraph.nodes[indirectBufferResourceNodeIndex]))
-				indirectBufferResourceNodeIndex = GetResourceNodeForPin(renderGraph, node.dispatchSize.indirectBuffer.nodeIndex, node.dispatchSize.indirectBuffer.nodePinIndex);
+				indirectBufferResourceNodeIndex = GetResourceNodeForPin(renderGraph, indirectBufferResourceNodeIndex, node.dispatchSize.indirectBuffer.nodePinIndex);
 
 			RenderGraphNode& bufferNodeBase = renderGraph.nodes[indirectBufferResourceNodeIndex];
 			Assert(bufferNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Expected a buffer node");
@@ -441,6 +435,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
 			stringReplacementMap["/*$(Execute)*/"] << " * 4 * 4); // byte offset.  *4 because sizeof(UINT) is 4.  *4 again because of 4 items per dispatch.\n";
 		}
+        else
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "                computePass.dispatchWorkgroups(dispatchSize[0], dispatchSize[1], dispatchSize[2]);\n"
+                ;
+        }
 
 		stringReplacementMap["/*$(Execute)*/"] <<
 			"            computePass.end();\n"

@@ -10,7 +10,7 @@
   !define APPNAME "Gigi"
   !define DESCRIPTION "Rapid Graphics Development Platform"
   !define VERSIONMAJOR 1
-  !define VERSIONMINOR 0
+  !define VERSIONMINOR 01
   !define VERSIONBUILD 5
   !define SLUG "${APPNAME} v${VERSIONMAJOR}.${VERSIONMINOR}.${VERSIONBUILD}"
 

@@ -30,10 +30,19 @@ public:
 		bool isUAVBarrier = false;
 	};
 
-	bool IsTracked(ID3D12Resource* resource)
+	bool IsTracked(ID3D12Resource* resource) const
 	{
 		return m_trackedResources.count(resource) > 0;
 	}
+
+    D3D12_RESOURCE_STATES GetCurrentState(ID3D12Resource* resource) const
+    {
+        if (!IsTracked(resource))
+            return D3D12_RESOURCE_STATE_COMMON;
+
+        auto it = m_trackedResources.find(resource);
+        return it->second.currentState;
+    }
 
 	void Track(ID3D12Resource* resource, D3D12_RESOURCE_STATES initialState, const char* debugText)
 	{

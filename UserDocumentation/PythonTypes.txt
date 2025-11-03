@@ -84,6 +84,12 @@
   TextureFormatFromString()
   TextureFormatToString()
 
+  ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskModeFromString()
+  ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskModeToString()
+
+  ExternalNode_AMD_FidelityFXSDK_Upscaling_VersionFromString()
+  ExternalNode_AMD_FidelityFXSDK_Upscaling_VersionToString()
+
   PreviewMsgCS_Log_LevelFromString()
   PreviewMsgCS_Log_LevelToString()
 
@@ -477,6 +483,22 @@
     Host.TextureFormat_LAST = 40
     Host.TextureFormat_COUNT = 41
 
+  ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode:
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode_FIRST = 0
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode_Off = 0
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode_Generate = 1
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode_Custom = 2
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode_LAST = 2
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode_COUNT = 3
+
+  ExternalNode_AMD_FidelityFXSDK_Upscaling_Version:
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_Version_FIRST = 0
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_Version_Default = 0
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_Version_v2_3_4 = 1
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_Version_v3_1_5 = 2
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_Version_LAST = 2
+    Host.ExternalNode_AMD_FidelityFXSDK_Upscaling_Version_COUNT = 3
+
   PreviewMsgCS_Log_Level:
     Host.PreviewMsgCS_Log_Level_FIRST = 0
     Host.PreviewMsgCS_Log_Level_Info = 0
@@ -543,8 +565,9 @@
     Host.GigiCompileResult_DfltFixup = 19
     Host.GigiCompileResult_HandleOutputsToMultiInput = 20
     Host.GigiCompileResult_DuplicateNodeShaders = 21
-    Host.GigiCompileResult_LAST = 21
-    Host.GigiCompileResult_COUNT = 22
+    Host.GigiCompileResult_ValueOrVariables = 22
+    Host.GigiCompileResult_LAST = 22
+    Host.GigiCompileResult_COUNT = 23
 
   GigiCompileWarning:
     Host.GigiCompileWarning_FIRST = 0

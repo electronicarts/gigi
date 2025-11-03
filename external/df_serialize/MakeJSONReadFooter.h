@@ -296,6 +296,32 @@ inline bool ReadFromJSON_PostLoad(RenderGraph& renderGraph)
 
             renderGraph.version = "1.0";
         }
+        else if (renderGraph.version == "1.0")
+        {
+            // version 1.01 hides the "indirectBuffer" pin, you can still enable in the UI with "enableIndirect"
+            for (RenderGraphNode& node : renderGraph.nodes)
+            {
+                switch (node._index)
+                {
+                case RenderGraphNode::c_index_actionComputeShader:
+                {
+                    RenderGraphNode_Action_ComputeShader& ref = node.actionComputeShader;
+                    if (!ref.dispatchSize.indirectBuffer.pin.empty())
+                        ref.enableIndirect = true;
+                }
+                break;
+                case RenderGraphNode::c_index_actionDrawCall:
+                {
+                    RenderGraphNode_Action_DrawCall& ref = node.actionDrawCall;
+                    if (!ref.indirectBuffer.pin.empty())
+                        ref.enableIndirect = true;
+                }
+                break;
+                }
+            }
+
+            renderGraph.version = "1.01";
+        }
         else
         {
             char buffer[1024];

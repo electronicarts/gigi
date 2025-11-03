@@ -20,7 +20,7 @@ public:
     }
 };
 
-IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/CS, "/*$(Node:FileName)*/", "/*$(Node:EntryPoint)*/", SF_Compute);
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/CS, "/*$(Node:FileNameStringEscaped)*/", "/*$(Node:EntryPoint)*/", SF_Compute);
 
 </ActionComputeShader:TechniqueCPP_Shaders>
 

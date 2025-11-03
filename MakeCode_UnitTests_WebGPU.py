@@ -85,6 +85,9 @@ unsupportedTests = [
 
     # Unsure if supported
     "Raster\\IndirectDraw",
+
+    # Unsupported
+    "AMD\\Upscale",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

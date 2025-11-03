@@ -15,4 +15,6 @@ VARIANT_BEGIN(RenderGraphNode, "Render graph node variant")
     VARIANT_TYPE(RenderGraphNode_Action_DrawCall, actionDrawCall, {}, "")
     VARIANT_TYPE(RenderGraphNode_Action_SubGraph, actionSubGraph, {}, "")
     VARIANT_TYPE(RenderGraphNode_Action_Barrier, actionBarrier, {}, "")
+
+    VARIANT_TYPE(RenderGraphNode_Action_External, actionExternal, {}, "")
 VARIANT_END()

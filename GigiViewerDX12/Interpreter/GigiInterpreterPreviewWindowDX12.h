@@ -38,12 +38,14 @@ public:
 	GigiInterpreterPreviewWindowDX12()
 		: m_fileWatcher(1.0f)
 	{
+        s_interpreter = this;
 	}
 
-	bool Init(ID3D12Device14* device, ID3D12CommandQueue* commandQueue, int maxFramesInFlight, ID3D12DescriptorHeap* ImGuiSRVHeap, int ImGuiSRVHeapDescriptorCount, int ImGuiSRVHeapDescriptorSize)
+	bool Init(ID3D12Device14* device, ID3D12CommandQueue* commandQueue, struct IDXGISwapChain3* swapChain, int maxFramesInFlight, ID3D12DescriptorHeap* ImGuiSRVHeap, int ImGuiSRVHeapDescriptorCount, int ImGuiSRVHeapDescriptorSize)
 	{
 		m_device = device;
 		m_commandQueue = commandQueue;
+        m_swapChain = swapChain;
 		m_maxFramesInFlight = maxFramesInFlight;
 
 		m_descriptorTableCache_imgui.Init(maxFramesInFlight);
@@ -444,6 +446,13 @@ public:
 		);
 	}
 
+    void SetDescriptorHeaps()
+    {
+        // Set our SRV heap
+        ID3D12DescriptorHeap* ppHeaps[] = { m_SRVHeap };
+        m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+    }
+
 	bool Execute(ID3D12GraphicsCommandList* commandList)
 	{
 		// Set the command list
@@ -505,9 +514,7 @@ public:
 			#include "Schemas/RenderGraphNodesVariant.h"
 			// clang-format on
 
-			// Set our SRV heap
-			ID3D12DescriptorHeap* ppHeaps[] = { m_SRVHeap };
-			m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+            SetDescriptorHeaps();
 
 			// Execute
 			ret = IGigiInterpreter<RuntimeTypes>::Execute();
@@ -721,54 +728,59 @@ public:
 		return m_dx12_options_experimental;
 	}
 
-	UploadBufferTracker getUploadBufferTracker()
+	UploadBufferTracker& getUploadBufferTracker()
 	{
 		return m_uploadBufferTracker;
 	}
 
-	DelayedReleaseTracker getDelayedReleaseTracker()
+	DelayedReleaseTracker& getDelayedReleaseTracker()
 	{
 		return m_delayedRelease;
 	}
 
-	HeapAllocationTracker getSRVHeapAllocationTracker()
+	HeapAllocationTracker& getSRVHeapAllocationTracker()
 	{
 		return m_SRVHeapAllocationTracker;
 	}
 
-	HeapAllocationTracker getRTVHeapAllocationTracker()
+	HeapAllocationTracker& getRTVHeapAllocationTracker()
 	{
 		return m_RTVHeapAllocationTracker;
 	}
 
-	HeapAllocationTracker getDSVHeapAllocationTracker()
+	HeapAllocationTracker& getDSVHeapAllocationTracker()
 	{
 		return m_DSVHeapAllocationTracker;
 	}
 
-	TextureCache getTextureCache() {
+	TextureCache& getTextureCache() {
 		return m_textures;
 	}
 
-	FileCache getFileCache() {
+	FileCache& getFileCache() {
 		return m_files;
 	}
 
-	ObjCache getObjCache() {
+	ObjCache& getObjCache() {
 		return m_objs;
 	}
 
-	FBXCache getFBXCache() {
+	FBXCache& getFBXCache() {
 		return m_fbxs;
 	}
 
-	PLYCache getPLYCache() {
+	PLYCache& getPLYCache() {
 		return m_plys;
 	}
 
-	DescriptorTableCache getDescriptorTableCache() {
+	DescriptorTableCache& getDescriptorTableCache() {
 		return m_descriptorTableCache;
 	}
+
+
+    Profiler& GetProfiler() {
+        return m_profiler;
+    }
 
 	enum class FileWatchOwner
 	{
@@ -791,6 +803,11 @@ public:
 	// @param sig 0 makes the function not fail
 	// @param shader 0 makes the function not fail
 	void OnRootSignature(ID3DBlob *sig, const Shader* shader);
+
+    static LogFn GetLogFn() { return s_interpreter->m_logFn; }
+
+    const TransitionTracker& GetTransitions() const { return m_transitions; }
+    TransitionTracker& GetTransitionsNonConst() { return m_transitions; }
 
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
@@ -818,10 +835,13 @@ private:
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
 	bool DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates);
 
+    bool OnNodeAction_External_AMD_FidelityFXSDK_Upscaling(const RenderGraphNode_Action_External& node, RuntimeTypes::RenderGraphNode_Action_External& runtimeData, NodeAction nodeAction);
+
 	std::vector<FiredAssertInfo> collectedAsserts;
 
 	ID3D12Device14* m_device = nullptr;
 	ID3D12CommandQueue* m_commandQueue = nullptr;
+    IDXGISwapChain3* m_swapChain = nullptr;
 	ID3D12GraphicsCommandList* m_commandList = nullptr;
 	UploadBufferTracker m_uploadBufferTracker;
 	TransitionTracker m_transitions;
@@ -884,6 +904,8 @@ private:
 	D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
+
+    static GigiInterpreterPreviewWindowDX12* s_interpreter;
 };
 
 inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)

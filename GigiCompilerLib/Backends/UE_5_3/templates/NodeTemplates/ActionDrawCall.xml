@@ -20,7 +20,7 @@ public:
     }
 };
 
-IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/VS, "/*$(Node:FileNameVS)*/", "/*$(Node:EntryPointVS)*/", SF_Vertex);
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/VS, "/*$(Node:FileNameVSStringEscaped)*/", "/*$(Node:EntryPointVS)*/", SF_Vertex);
 
 // Draw Call "/*$(Node:Name)*/" Pixel Shader/*$(Node:CommentInComment)*/
 class F/*$(Node:Name)*/PS : public FGlobalShader
@@ -43,7 +43,7 @@ public:
     }
 };
 
-IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/PS, "/*$(Node:FileNamePS)*/", "/*$(Node:EntryPointPS)*/", SF_Pixel);
+IMPLEMENT_GLOBAL_SHADER(F/*$(Node:Name)*/PS, "/*$(Node:FileNamePSStringEscaped)*/", "/*$(Node:EntryPointPS)*/", SF_Pixel);
 
 BEGIN_SHADER_PARAMETER_STRUCT(F/*$(Node:Name)*/Parameters, )
     SHADER_PARAMETER_STRUCT_INCLUDE(F/*$(Node:Name)*/VS::FParameters, VSParameters)
