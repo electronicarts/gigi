@@ -646,8 +646,7 @@ void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, GigiI
         frameGenerationConfigDesc.generationRect.height = renderSize[1];
 
         // Note: Setting the generation rect to just the visible portion of the viewed image makes the quality a lot worse. I'm not sure why.
-        static bool constrainWindow = false;
-        if (constrainWindow)
+        if (settings.constrainToRectangle)
         {
             frameGenerationConfigDesc.generationRect.left = desc.imageClipMin[0];
             frameGenerationConfigDesc.generationRect.top = desc.imageClipMin[1];

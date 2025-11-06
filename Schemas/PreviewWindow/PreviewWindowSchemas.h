@@ -73,6 +73,7 @@ STRUCT_BEGIN(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, "")
 
     STRUCT_FIELD(bool, allowAsyncWorkloads, { true }, "Sets the state of async workloads. Set to true to enable generation work on async compute.", 0)
     STRUCT_FIELD(bool, onlyPresentGenerated, { false }, "Set to true to only present generated frames.", 0)
+    STRUCT_FIELD(bool, constrainToRectangle, { false }, "If true, constrains frame generation to the texture being viewed.", 0)
 STRUCT_END()
 
 ENUM_BEGIN(GGUserFile_TLASBuildFlags, "D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE etc")

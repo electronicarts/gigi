@@ -2568,6 +2568,9 @@ void ShowAMDFrameInterpolation()
     ImGui::Checkbox("onlyPresentGenerated", &g_AMDFrameInterpolation.onlyPresentGenerated);
     ShowToolTip("Set to true to only present generated frames.");
 
+    ImGui::Checkbox("constrainToRectangle", &g_AMDFrameInterpolation.constrainToRectangle);
+    ShowToolTip("If true, constrains frame generation to the texture being viewed.");
+
     ImGui::End();
 }
 
@@ -8017,6 +8020,53 @@ public:
     {
         return m_scriptLocation;
     }
+
+    #define MAKE_GETTER_SETTER_BOOL(FUNC, FIELD) \
+        bool FUNC(bool value, bool wantToSet) override final \
+        { \
+            bool ret = ##FIELD; \
+            if (wantToSet) \
+                ##FIELD = value; \
+            return ret; \
+        }
+
+    #define MAKE_GETTER_SETTER_UNSIGNED_INT(FUNC, FIELD) \
+        unsigned int FUNC(unsigned int value, bool wantToSet) override final \
+        { \
+            unsigned int ret = ##FIELD; \
+            if (wantToSet) \
+                ##FIELD = value; \
+            return ret; \
+        }
+
+    #define MAKE_GETTER_SETTER_STRING(FUNC, FIELD) \
+        std::string FUNC(const char* value, bool wantToSet) override final \
+        { \
+            std::string ret = ##FIELD; \
+            if (wantToSet) \
+                ##FIELD = value; \
+            return ret; \
+        }
+
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_Enabled, g_AMDFrameInterpolation.enabled);
+    MAKE_GETTER_SETTER_UNSIGNED_INT(AMDFrameGen_SleepMS, g_AMDFrameInterpolation.sleepMS);
+    MAKE_GETTER_SETTER_STRING(AMDFrameGen_Depth, g_AMDFrameInterpolation.depth);
+    MAKE_GETTER_SETTER_STRING(AMDFrameGen_MotionVectors, g_AMDFrameInterpolation.motionVectors);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_ASYNC_WORKLOAD_SUPPORT, g_AMDFrameInterpolation.ENABLE_ASYNC_WORKLOAD_SUPPORT);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_MOTION_VECTORS_JITTER_CANCELLATION, g_AMDFrameInterpolation.ENABLE_MOTION_VECTORS_JITTER_CANCELLATION);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_HIGH_DYNAMIC_RANGE, g_AMDFrameInterpolation.ENABLE_HIGH_DYNAMIC_RANGE);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_DEBUG_CHECKING, g_AMDFrameInterpolation.ENABLE_DEBUG_CHECKING);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_TEAR_LINES, g_AMDFrameInterpolation.DRAW_DEBUG_TEAR_LINES);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_RESET_INDICATORS, g_AMDFrameInterpolation.DRAW_DEBUG_RESET_INDICATORS);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_VIEW, g_AMDFrameInterpolation.DRAW_DEBUG_VIEW);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_PACING_LINES, g_AMDFrameInterpolation.DRAW_DEBUG_PACING_LINES);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_allowAsyncWorkloads, g_AMDFrameInterpolation.allowAsyncWorkloads);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_onlyPresentGenerated, g_AMDFrameInterpolation.onlyPresentGenerated);
+    MAKE_GETTER_SETTER_BOOL(AMDFrameGen_constrainToRectangle, g_AMDFrameInterpolation.constrainToRectangle);
+
+    #undef MAKE_GETTER_SETTER_BOOL
+    #undef MAKE_GETTER_SETTER_UNSIGNED_INT
+    #undef MAKE_GETTER_SETTER_STRING
 
     // Helper functions and storage
     void Tick(void)

@@ -101,6 +101,22 @@ public:
     virtual std::string GetAppCommandLine() = 0;
 	virtual std::string GetScriptLocation() = 0;
 
+    virtual bool AMDFrameGen_Enabled(bool value, bool wantToSet) = 0;
+    virtual unsigned int AMDFrameGen_SleepMS(unsigned int value, bool wantToSet) = 0;
+    virtual std::string AMDFrameGen_Depth(const char* value, bool wantToSet) = 0;
+    virtual std::string AMDFrameGen_MotionVectors(const char* value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_ENABLE_ASYNC_WORKLOAD_SUPPORT(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_ENABLE_MOTION_VECTORS_JITTER_CANCELLATION(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_ENABLE_HIGH_DYNAMIC_RANGE(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_ENABLE_DEBUG_CHECKING(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_DRAW_DEBUG_TEAR_LINES(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_DRAW_DEBUG_RESET_INDICATORS(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_DRAW_DEBUG_VIEW(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_DRAW_DEBUG_PACING_LINES(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_allowAsyncWorkloads(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_onlyPresentGenerated(bool value, bool wantToSet) = 0;
+    virtual bool AMDFrameGen_constrainToRectangle(bool value, bool wantToSet) = 0;
+
 	// The location and name of the python script
 	std::string m_scriptLocation;
 };
