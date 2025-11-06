@@ -8,6 +8,8 @@
 #include "DX12Utils/Utils.h"
 #include <d3dx12/d3dx12.h>
 
+GigiInterpreterPreviewWindowDX12* GigiInterpreterPreviewWindowDX12::s_interpreter = nullptr;
+
 void RuntimeTypes::RenderGraphNode_Base::Release(GigiInterpreterPreviewWindowDX12& interpreter)
 {
 	for (RuntimeTypes::ViewableResource& viewableResource : m_viewableResources)

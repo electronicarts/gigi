@@ -972,6 +972,68 @@ static PyObject* Python_GetAppCommandLine(PyObject* self, PyObject* args)
     return Py_BuildValue("s", g_interface->GetAppCommandLine().c_str());
 }
 
+#define MAKE_GETTER_SETTER_BOOL(NAME) \
+    static PyObject* Python_##NAME(PyObject* self, PyObject* args) \
+    { \
+        bool wantToSet = true; \
+        int value = -1; \
+        if (!PyArg_ParseTuple(args, "|p:" __FUNCTION__, &value)) \
+            return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()"); \
+\
+        wantToSet = (value != -1); \
+\
+        if (g_interface->##NAME(value == 1, wantToSet)) \
+            Py_RETURN_TRUE; \
+        else \
+            Py_RETURN_FALSE; \
+    }
+
+#define MAKE_GETTER_SETTER_UNSIGNED_INT(NAME) \
+    static PyObject* Python_##NAME(PyObject* self, PyObject* args) \
+    { \
+        bool wantToSet = true; \
+        unsigned int value = (unsigned int)-1; \
+        if (!PyArg_ParseTuple(args, "|I:" __FUNCTION__, &value)) \
+            return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()"); \
+\
+        wantToSet = (value != (unsigned int)-1); \
+\
+        return Py_BuildValue("I", g_interface->##NAME(value, wantToSet)); \
+    }
+
+#define MAKE_GETTER_SETTER_STRING(NAME) \
+    static PyObject* Python_##NAME(PyObject* self, PyObject* args) \
+    { \
+        bool wantToSet = true; \
+        const char* value = nullptr; \
+        if (!PyArg_ParseTuple(args, "|s:" __FUNCTION__, &value)) \
+            return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()"); \
+\
+        wantToSet = (value != nullptr); \
+\
+        return Py_BuildValue("s", g_interface->##NAME(value, wantToSet).c_str()); \
+    }
+
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_Enabled);
+MAKE_GETTER_SETTER_UNSIGNED_INT(AMDFrameGen_SleepMS);
+MAKE_GETTER_SETTER_STRING(AMDFrameGen_Depth);
+MAKE_GETTER_SETTER_STRING(AMDFrameGen_MotionVectors);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_ASYNC_WORKLOAD_SUPPORT);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_MOTION_VECTORS_JITTER_CANCELLATION);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_HIGH_DYNAMIC_RANGE);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_ENABLE_DEBUG_CHECKING);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_TEAR_LINES);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_RESET_INDICATORS);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_VIEW);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_PACING_LINES);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_allowAsyncWorkloads);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_onlyPresentGenerated);
+MAKE_GETTER_SETTER_BOOL(AMDFrameGen_constrainToRectangle);
+
+#undef MAKE_GETTER_SETTER_BOOL
+#undef MAKE_GETTER_SETTER_UNSIGNED_INT
+#undef MAKE_GETTER_SETTER_STRING
+
 // Enum FromString
 #include "external/df_serialize/_common.h"
 #define ENUM_BEGIN(_NAME, _DESCRIPTION) \
@@ -1127,6 +1189,22 @@ void PythonInit(PythonInterface* interface)
         {"GetShaderAssertDisplayName", Python_GetShaderAssertDisplayName, METH_VARARGS, "Returns the display name of the specified shader assert."},
         {"GetShaderAssertMsg", Python_GetShaderAssertMsg, METH_VARARGS, "Returns the message of the specified assert."},
         {"GetAppCommandLine", Python_GetAppCommandLine, METH_VARARGS, "Returns the command line arguments without the executable name."},
+        {"AMDFrameGen_Enabled", Python_AMDFrameGen_Enabled, METH_VARARGS, ""},
+        {"AMDFrameGen_SleepMS", Python_AMDFrameGen_SleepMS, METH_VARARGS, ""},
+        {"AMDFrameGen_Depth", Python_AMDFrameGen_Depth, METH_VARARGS, ""},
+        {"AMDFrameGen_MotionVectors", Python_AMDFrameGen_MotionVectors, METH_VARARGS, ""},
+        {"AMDFrameGen_ENABLE_ASYNC_WORKLOAD_SUPPORT", Python_AMDFrameGen_ENABLE_ASYNC_WORKLOAD_SUPPORT, METH_VARARGS, ""},
+        {"AMDFrameGen_ENABLE_MOTION_VECTORS_JITTER_CANCELLATION", Python_AMDFrameGen_ENABLE_MOTION_VECTORS_JITTER_CANCELLATION, METH_VARARGS, ""},
+        {"AMDFrameGen_ENABLE_HIGH_DYNAMIC_RANGE", Python_AMDFrameGen_ENABLE_HIGH_DYNAMIC_RANGE, METH_VARARGS, ""},
+        {"AMDFrameGen_ENABLE_DEBUG_CHECKING", Python_AMDFrameGen_ENABLE_DEBUG_CHECKING, METH_VARARGS, ""},
+        {"AMDFrameGen_DRAW_DEBUG_TEAR_LINES", Python_AMDFrameGen_DRAW_DEBUG_TEAR_LINES, METH_VARARGS, ""},
+        {"AMDFrameGen_DRAW_DEBUG_RESET_INDICATORS", Python_AMDFrameGen_DRAW_DEBUG_RESET_INDICATORS, METH_VARARGS, ""},
+        {"AMDFrameGen_DRAW_DEBUG_VIEW", Python_AMDFrameGen_DRAW_DEBUG_VIEW, METH_VARARGS, ""},
+        {"AMDFrameGen_DRAW_DEBUG_PACING_LINES", Python_AMDFrameGen_DRAW_DEBUG_PACING_LINES, METH_VARARGS, ""},
+        {"AMDFrameGen_allowAsyncWorkloads", Python_AMDFrameGen_allowAsyncWorkloads, METH_VARARGS, ""},
+        {"AMDFrameGen_onlyPresentGenerated", Python_AMDFrameGen_onlyPresentGenerated, METH_VARARGS, ""},
+        {"AMDFrameGen_constrainToRectangle", Python_AMDFrameGen_constrainToRectangle, METH_VARARGS, ""},
+
         // Enum FromString and ToString functions
         #include "external/df_serialize/_common.h"
         #define ENUM_BEGIN(_NAME, _DESCRIPTION) \

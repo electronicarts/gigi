@@ -44,9 +44,11 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
 
         std::string fileNameVS = std::filesystem::path(node.vertexShader.shader->destFileName).replace_extension(".usf").string();
         StringReplaceAll(text, "/*$(Node:FileNameVS)*/", std::string("/Engine/Private/" + renderGraph.name + "/") + fileNameVS);
+        StringReplaceAll(text, "/*$(Node:FileNameVSStringEscaped)*/", StringEscape(std::string("/Engine/Private/" + renderGraph.name + "/") + fileNameVS));
 
         std::string fileNamePS = std::filesystem::path(node.pixelShader.shader->destFileName).replace_extension(".usf").string();
         StringReplaceAll(text, "/*$(Node:FileNamePS)*/", std::string("/Engine/Private/" + renderGraph.name + "/") + fileNamePS);
+        StringReplaceAll(text, "/*$(Node:FileNamePSStringEscaped)*/", StringEscape(std::string("/Engine/Private/" + renderGraph.name + "/") + fileNamePS));
 
         // Shader params - constant buffer and read/write resources
         std::string shaderParamsVS;

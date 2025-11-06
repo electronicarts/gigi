@@ -197,7 +197,7 @@ struct RuntimeTypes
 
 			static inline size_t hash_combine(size_t A, size_t B)
 			{
-				return A ^ (0x9e3779b9 + (A << 6) + (A >> 2));
+				return A ^ (B + 0x9e3779b9 + (A << 6) + (A >> 2));
 			}
 
 			size_t operator()(const SubResourceKey& key) const
@@ -280,6 +280,27 @@ struct RuntimeTypes
 
 	struct RenderGraphNode_Reroute : public RenderGraphNode_Base
 	{};
+
+    struct RenderGraphNode_Action_External : public RenderGraphNode_Base
+    {
+        void Release(GigiInterpreterPreviewWindowDX12& interpreter);
+
+        struct AMD_FidelityFXSDK_Upscaling
+        {
+            struct Context
+            {
+                void* m_UpscalingContext = nullptr;
+                size_t m_UpscalingContextHash = 0;
+                uint32_t m_maxRenderSize[2] = { 0, 0 };
+                uint32_t m_maxUpscaleSize[2] = { 0, 0 };
+                uint32_t m_age = 0; // Frames since last used
+            };
+
+            // Maps hash to context
+            std::vector<Context> m_contexts;
+        };
+        AMD_FidelityFXSDK_Upscaling m_AMD_FidelityFXSDK_Upscaling;
+    };
 };
 
 inline RuntimeTypes::ViewableResource::Type TextureDimensionTypeToViewableResourceType(TextureDimensionType dimensionType)

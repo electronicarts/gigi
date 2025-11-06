@@ -1,0 +1,51 @@
+{
+    "version": "2.0",
+    "systemVars": {
+        "iResolution_textureName": "Color",
+        "iTimeDelta_varName": "FrameRateS",
+        "camera": {
+            "reverseZInfiniteDepth": true,
+            "flySpeed": 1.0,
+            "jitterLength": 64,
+            "startingCameraPos": [
+                -14.159412384033204,
+                9.192329406738282,
+                25.312963485717775
+            ],
+            "startingCameraAltitudeAzimuth": [
+                -0.07036004960536957,
+                3.4973931312561037
+            ]
+        },
+        "ProjMtx_textureName": "Color"
+    },
+    "snapshot": {
+        "resourceViewNodeIndex": 9,
+        "resourceViewResourceIndex": 3,
+        "cameraPos": [
+            -14.159412384033204,
+            9.192329406738282,
+            25.312963485717775
+        ],
+        "cameraAltitudeAzimuth": [
+            -0.07036004960536957,
+            3.4973931312561037
+        ],
+        "importedResources": [
+            {
+                "nodeName": "vertexBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\ObjAssets\\bunny.obj",
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
+            }
+        ]
+    },
+    "AMDFrameInterpolation": {
+        "ENABLE_DEBUG_CHECKING": false,
+        "depth": "Depth",
+        "motionVectors": "Motion_Vectors"
+    }
+}

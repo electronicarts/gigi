@@ -45,6 +45,9 @@ unsupportedTests = [
     # WebGPU only
     "Buffers\\buffertest_webgpu",
     "Textures\\Mips_VSPS_2D_WebGPU",
+
+    # Unsupported
+    "AMD\\Upscale",    
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

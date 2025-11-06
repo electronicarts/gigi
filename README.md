@@ -116,6 +116,8 @@ Stephane Levesque
 
 Tristan Calderbank
 
+Vishnu Sujith Kurup
+
 William Donnelly
 
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)

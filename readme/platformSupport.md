@@ -13,15 +13,16 @@ Below are the details of what is supported on each platform, based on the unit t
 
 | Platform | Supported Tests | Unsupported Tests | Support Rate |
 |----------|----------------|-------------------|--------------|
-| Viewer | 92/92 | 0/92 | 100.0% |
-| DX12 | 68/92 | 24/92 | 73.9% |
-| WebGPU | 50/92 | 42/92 | 54.3% |
-| UE 5.3 | 20/92 | 72/92 | 21.7% |
+| Viewer | 93/93 | 0/93 | 100.0% |
+| DX12 | 68/93 | 25/93 | 73.1% |
+| WebGPU | 50/93 | 43/93 | 53.8% |
+| UE 5.3 | 20/93 | 73/93 | 21.5% |
 
 ## Detailed Test Support by Platform
 
 | Test Name | Viewer | DX12 | WebGPU | UE 5.3 |
 |-----------|--------|--------|--------|--------|
+| `AMD\Upscale` | ✅ | ❌ | ❌ | ❌ |
 | `Barrier\BarrierTest` | ✅ | ✅ | ✅ | ✅ |
 | `Buffers\MultipleUVMesh` | ✅ | ❌ | ❌ | ❌ |
 | `Buffers\Strides` | ✅ | ❌ | ❌ | ✅ |

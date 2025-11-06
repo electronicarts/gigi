@@ -55,6 +55,16 @@ size_t EnumCount() { return 0; }
 #include "../external/df_serialize/_fillunsetdefines.h"
 #include "schemas.h"
 
+// EnumName functions
+template <typename T>
+const char* EnumName() { return nullptr; }
+#include "external/df_serialize/_common.h"
+#define ENUM_BEGIN(_NAME, _DESCRIPTION) template <> inline constexpr const char* EnumName<_NAME>() { return #_NAME; }
+#define ENUM_ITEM(_NAME, _DESCRIPTION)
+#define ENUM_END()
+#include "../external/df_serialize/_fillunsetdefines.h"
+#include "schemas.h"
+
 // EnumDispatch functions
 #include "external/df_serialize/_common.h"
 #define ENUM_BEGIN(_NAME, _DESCRIPTION) \

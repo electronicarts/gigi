@@ -194,3 +194,22 @@ private:
 	int m_GPUTimerIndexStart = 0;
 	int m_GPUTimerIndexStop = 0;
 };
+
+class BasicPixScopeProfiler
+{
+public:
+    BasicPixScopeProfiler(ID3D12GraphicsCommandList* commandList, const char* label)
+        : m_commandList(commandList)
+    {
+        unsigned char labelHash = (unsigned char)std::hash<std::string_view>()(label);
+        PIXBeginEvent(m_commandList, PIX_COLOR_INDEX(labelHash), "%s", label);
+    }
+
+    ~BasicPixScopeProfiler()
+    {
+        PIXEndEvent(m_commandList);
+    }
+
+private:
+    ID3D12GraphicsCommandList* m_commandList = nullptr;
+};

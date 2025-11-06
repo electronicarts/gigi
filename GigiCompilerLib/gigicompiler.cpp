@@ -29,7 +29,7 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
     {
         static inline size_t hash_combine(size_t A, size_t B)
         {
-            return A ^ (0x9e3779b9 + (A << 6) + (A >> 2));
+            return A ^ (B + 0x9e3779b9 + (A << 6) + (A >> 2));
         }
 
         size_t operator()(const OutputConnection& key) const
@@ -121,7 +121,8 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
                 bool disallowDuplication = false;
                 ExecuteOnActionNode(outputNode, [&inputConnection, &disallowDuplication](auto& node)
                     {
-                        disallowDuplication = node.linkProperties[inputConnection.pinIndex].disallowDuplication;
+                        if (inputConnection.pinIndex < node.linkProperties.size())
+                            disallowDuplication = node.linkProperties[inputConnection.pinIndex].disallowDuplication;
                     }
                 );
                 if (!disallowDuplication)
@@ -698,6 +699,13 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     {
         if (!RemoveBackendData(renderGraph))
             return GigiCompileResult::BackendData;
+    }
+
+    // Add variables for the "ValueOrVariable" types so they can be treated as always variables
+    {
+        HandleValueOrVariablesVisitor visitor(renderGraph);
+        if (!Visit(renderGraph, visitor, "renderGraph"))
+            return GigiCompileResult::ValueOrVariables;
     }
 
     // Add node info to shaders as defines

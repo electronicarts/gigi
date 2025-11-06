@@ -345,11 +345,11 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     }
 
     // Indirect dispatch
-    if (node.dispatchSize.indirectBuffer.nodeIndex != -1)
+    int indirectBufferResourceNodeIndex = node.enableIndirect ? node.dispatchSize.indirectBuffer.nodeIndex : -1;
+    if (indirectBufferResourceNodeIndex != -1)
     {
-        int indirectBufferResourceNodeIndex = node.dispatchSize.indirectBuffer.nodeIndex;
         if (!GetNodeIsResourceNode(renderGraph.nodes[indirectBufferResourceNodeIndex]))
-            indirectBufferResourceNodeIndex = GetResourceNodeForPin(renderGraph, node.dispatchSize.indirectBuffer.nodeIndex, node.dispatchSize.indirectBuffer.nodePinIndex);
+            indirectBufferResourceNodeIndex = GetResourceNodeForPin(renderGraph, indirectBufferResourceNodeIndex, node.dispatchSize.indirectBuffer.nodePinIndex);
 
         Assert(indirectBufferResourceNodeIndex != -1, "Could not find resource node for indirect dispatch");
         Assert(renderGraph.nodes[indirectBufferResourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");

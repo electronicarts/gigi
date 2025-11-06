@@ -94,7 +94,7 @@ namespace DX12Utils
 
         static inline size_t hash_combine(size_t A, size_t B)
         {
-            return A ^ (0x9e3779b9 + (A << 6) + (A >> 2));
+            return A ^ (B + 0x9e3779b9 + (A << 6) + (A >> 2));
         }
 
         size_t operator()(const SubResourceHeapAllocationInfo& key) const

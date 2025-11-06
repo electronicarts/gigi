@@ -446,6 +446,21 @@
     <ClInclude Include="Backends\Interpreter\templates\linalg.h">
       <Filter>Backends\Interpreter\templates</Filter>
     </ClInclude>
+    <ClInclude Include="..\Schemas\ExternalNodeVariant.h">
+      <Filter>schemas</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Nodes\action_external.h">
+      <Filter>Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Nodes\reroute.h">
+      <Filter>Nodes</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NodesStatic\action_external.h">
+      <Filter>NodesStatic</Filter>
+    </ClInclude>
+    <ClInclude Include="..\NodesStatic\all_nodes.h">
+      <Filter>NodesStatic</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="schemas">
@@ -579,6 +594,9 @@
     </Filter>
     <Filter Include="Backends\Interpreter\templates">
       <UniqueIdentifier>{70910021-e323-4186-9f2b-57f649a8f2b1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="NodesStatic">
+      <UniqueIdentifier>{5d89a298-a980-43d3-b068-5485d9c29db7}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -769,6 +787,21 @@
     <None Include="Backends\UE_5_3\nodes\node_reroute.inl">
       <Filter>Backends\UE_5_3\nodes</Filter>
     </None>
+    </None>
+    <None Include="Backends\Halcyon\nodes\node_action_external.inl">
+      <Filter>Backends\Halcyon\nodes</Filter>
+    </None>
+    <None Include="Backends\UE_5_3\nodes\node_action_external.h">
+      <Filter>Backends\UE_5_3\nodes</Filter>
+    </None>
+    <None Include="Backends\Frostbite\nodes\node_action_external.inl">
+      <Filter>Backends\Frostbite\nodes</Filter>
+    </None>
+    <None Include="Backends\WebGPU\nodes\node_action_external.inl">
+      <Filter>Backends\WebGPU\nodes</Filter>
+    </None>
+    <None Include="Backends\DX12\nodes\node_action_external.inl">
+      <Filter>Backends\DX12\nodes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

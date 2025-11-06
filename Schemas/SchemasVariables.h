@@ -109,3 +109,32 @@ STRUCT_BEGIN(Enum, "Specifiy an enum")
     STRUCT_FIELD(std::string, originalName, "", "The name before renames and sanitization", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, scope, "", "The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
+
+//========================================================
+// ValueOrVariable Structs
+//========================================================
+
+STRUCT_BEGIN(ValueOrVariable_Bool, "ValueOrVariable<bool>")
+    STRUCT_FIELD(bool, value, false, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT)
+    STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(ValueOrVariable_Float, "ValueOrVariable<float>")
+    STRUCT_FIELD(float, value, 0.0f, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT)
+    STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(ValueOrVariable_Float2, "ValueOrVariable<float2>")
+    STRUCT_STATIC_ARRAY(float, value, 2, { 0 COMMA 0 }, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT | SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
+    STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(ValueOrVariable_Float3, "ValueOrVariable<float3>")
+    STRUCT_STATIC_ARRAY(float, value, 3, { 0 COMMA 0 COMMA 0 }, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT | SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
+    STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
+STRUCT_END()
+
+STRUCT_BEGIN(ValueOrVariable_Int4, "ValueOrVariable<int4>")
+    STRUCT_STATIC_ARRAY(int, value, 4, { 0 COMMA 0 COMMA 0 COMMA 0 }, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT | SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
+    STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
+STRUCT_END()

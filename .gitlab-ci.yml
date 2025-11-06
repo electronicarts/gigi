@@ -57,6 +57,9 @@ win64_build_release:
       - GigiCompilerLib/Backends/UE_5_3/templates/*
       - GigiCompilerLib/Backends/Interpreter/templates/*
       - GigiCompilerLib/Backends/WebGPU/templates/*
+      - amd_fidelityfx_framegeneration_dx12.dll
+      - amd_fidelityfx_loader_dx12.dll
+      - amd_fidelityfx_upscaler_dx12.dll
     expire_in: 1 week
   tags:
     - seed

@@ -44,7 +44,11 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
 void OnNodeRename(const std::string& oldName, const std::string& newName);
 void OnGoToShader(const char* name);
 void OnGoToVariable(const char* name);
+std::string OnCreateVariable(const char* name, DataFieldType type);
 void OnGoToStruct(const char* name);
+
+template <typename T>
+std::string OnCreateSystemEnum();
 
 bool RefreshSubGraphNode(RenderGraphNode_Action_SubGraph& subGraphNode);
 bool RefreshSubGraphNodes();
@@ -375,6 +379,37 @@ void OnGoToVariable(const char* name)
             return;
         }
     }
+}
+
+std::string OnCreateVariable(const char* name, DataFieldType type)
+{
+    std::string newVarName = GetUniqueVariableName(g_renderGraph, name);
+
+    Variable newVar;
+    newVar.name = newVarName;
+    newVar.type = type;
+    newVar.visibility = VariableVisibility::User;
+    g_renderGraph.variables.push_back(newVar);
+
+    return newVarName;
+}
+
+template <typename T>
+std::string OnCreateSystemEnum()
+{
+    Enum newEnum;
+    newEnum.name = GetUniqueEnumName(g_renderGraph, (std::string("_Gigi_") + std::string(EnumName<T>())).c_str());
+
+    for (size_t i = 0; i < EnumCount<T>(); ++i)
+    {
+        EnumItem newItem;
+        newItem.label = EnumToString((T)i);
+        newEnum.items.push_back(newItem);
+    }
+
+    g_renderGraph.enums.push_back(newEnum);
+
+    return newEnum.name;
 }
 
 void OnGoToStruct(const char* name)
@@ -2153,7 +2188,14 @@ struct Example :
 
     void HandleDoubleClick(const RenderGraphNode& nodeBase)
     {
-        std::filesystem::path defaultPath = std::filesystem::path(g_renderGraph.editorFileName).remove_filename();
+        std::filesystem::path defaultPath = std::filesystem::path(g_renderGraph.editorFileName);
+        if (defaultPath.is_relative())
+        {
+            char currentDirectory[4096];
+            GetCurrentDirectoryA(4096, currentDirectory);
+            defaultPath = std::filesystem::weakly_canonical(std::filesystem::path(currentDirectory) / defaultPath);
+        }
+        defaultPath = defaultPath.remove_filename();
 
         switch (nodeBase._index)
         {
@@ -2419,6 +2461,43 @@ struct Example :
         return result;
     }
 
+    struct ExternalNodeInfo
+    {
+        unsigned int nodeType = ExternalNodeData::c_index__None;
+        std::string subfolder;
+        unsigned int subfolderColor = 0;
+        std::string name;
+    };
+
+    std::vector<ExternalNodeInfo> GetExternalNodeInfo()
+    {
+        std::vector<ExternalNodeInfo> ret(ExternalNodeData::c_index__Count);
+
+        for (int i = 0; i < int(ExternalNodeData::c_index__Count); ++i)
+        {
+            ExternalNodeInfo& nodeInfo = ret[i];
+            nodeInfo.nodeType = i + 1;
+
+            switch (nodeInfo.nodeType)
+            {
+                case ExternalNodeData::c_index_AMD_FidelityFXSDK_Upscaling:
+                {
+                    nodeInfo.subfolder = "AMD";
+                    //nodeInfo.subfolderColor = IM_COL32(234, 16, 16, 255);
+                    nodeInfo.name = "Super Resolution";
+                    break;
+                }
+                default:
+                {
+                    Assert(false, "Unhandled ExternalNodeData type");
+                    break;
+                }
+            }
+        }
+
+        return ret;
+    }
+
     void OnFrame(float deltaTime) override
     {
         //ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(nullptr);
@@ -2624,6 +2703,8 @@ struct Example :
                     pinInfo.isInputPin = true;
                     pinInfo.node = GetNodeName(g_renderGraph.nodes[nodeEditorId - 1]);
                     pinInfo.pin = info.name;
+                    pinInfo.toolTip = info.toolTip;
+                    pinInfo.required = info.required;
                     m_pins[pinEditorId] = pinInfo;
 
                     ImGui::SameLine();
@@ -2661,6 +2742,8 @@ struct Example :
                 pinInfo.isInputPin = false;
                 pinInfo.node = GetNodeName(g_renderGraph.nodes[nodeEditorId - 1]);
                 pinInfo.pin = info.name;
+                pinInfo.toolTip = info.toolTip;
+                pinInfo.required = info.required;
                 m_pins[pinEditorId] = pinInfo;
             }
 
@@ -2897,6 +2980,7 @@ struct Example :
 
         // Menus
         ed::LinkId hoveredLink = 0;
+        ed::PinId hoveredPin = 0;
         ImVec2 openPopupPosition = ImGui::GetMousePos();
         {
             ed::Suspend();
@@ -2907,15 +2991,16 @@ struct Example :
             if (ed::ShowLinkContextMenu(&g_contextMenuLinkId))
                 ImGui::OpenPopup("Link Context Menu");
             hoveredLink = ed::GetHoveredLink();
+            hoveredPin = ed::GetHoveredPin();
             ed::Resume();
         }
 
         ed::Suspend();
         if (hoveredLink.Get() != 0)
         {
-            if (ImGui::IsPopupOpen("ShowLinkInfo") || !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+            ImGui::OpenPopup("ShowLinkInfo");
+            if (ImGui::IsPopupOpen("ShowLinkInfo"))// || !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
             {
-                ImGui::OpenPopup("ShowLinkInfo");
                 ImGui::SetNextWindowPos(ImGui::GetMousePos() + ImVec2(20, 0));
                 if (ImGui::Begin("ShowLinkInfo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize))
                 {
@@ -2932,6 +3017,32 @@ struct Example :
                     }
 
                     ImGui::End();
+                }
+            }
+        }
+        if (hoveredPin.Get() != 0)
+        {
+            if (m_pins.count((int)hoveredPin.Get()) > 0)
+            {
+                EditorPinInfo& pinInfo = m_pins[(int)hoveredPin.Get()];
+                std::ostringstream tooltipText;
+                if (!pinInfo.required)
+                    tooltipText << "[OPTIONAL] ";
+                tooltipText << pinInfo.toolTip;
+
+                std::string toolTipTextStr = tooltipText.str();
+                if (!toolTipTextStr.empty())
+                {
+                    ImGui::OpenPopup("ShowPinInfo");
+                    if (ImGui::IsPopupOpen("ShowPinInfo"))// || !ImGui::IsPopupOpen("", ImGuiPopupFlags_AnyPopupId | ImGuiPopupFlags_AnyPopupLevel))
+                    {
+                        ImGui::SetNextWindowPos(ImGui::GetMousePos() + ImVec2(20, 0));
+                        if (ImGui::Begin("ShowPinInfo", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize))
+                        {
+                            ImGui::TextUnformatted(toolTipTextStr.c_str());
+                            ImGui::End();
+                        }
+                    }
                 }
             }
         }
@@ -3081,27 +3192,9 @@ struct Example :
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 128, 64, 255)); \
                 if (_TYPE::c_showInEditor && ImGui::MenuItem(_TYPE::c_editorName.c_str())) \
                 { \
-                    char newNodeName[64]; \
-                    int nextNodeIndex = 0; \
-                    while (true) \
-                    { \
-                        nextNodeIndex++; \
-                        sprintf_s(newNodeName, "Node %i", nextNodeIndex); \
-                        bool nameExists = false; \
-                        for (const RenderGraphNode& node : g_renderGraph.nodes) \
-                        { \
-                            if (GetNodeName(node) == newNodeName) \
-                            { \
-                                nameExists = true; \
-                                break; \
-                            } \
-                        } \
-                        if (!nameExists) \
-                            break; \
-                    } \
                     RenderGraphNode newNode; \
                     newNode._index = RenderGraphNode::c_index_##_NAME; \
-                    newNode._NAME.name = newNodeName; \
+                    newNode._NAME.name = GetUniqueNodeName(g_renderGraph, "Node"); \
                     g_renderGraph.nodes.push_back(newNode); \
                     m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion; \
                     g_renderGraphDirty = true; \
@@ -3112,6 +3205,56 @@ struct Example :
             #include "external/df_serialize/_fillunsetdefines.h"
             #include "Schemas/RenderGraphNodesVariant.h"
             // clang-format on
+
+            ImGui::Separator();
+
+            // DLL nodes
+            std::vector<ExternalNodeInfo> externalNodes = GetExternalNodeInfo();
+            std::sort(externalNodes.begin(), externalNodes.end(), [](const ExternalNodeInfo& a, const ExternalNodeInfo& b) { return a.name < b.name; });
+            std::sort(externalNodes.begin(), externalNodes.end(), [](const ExternalNodeInfo& a, const ExternalNodeInfo& b) { return a.subfolder < b.subfolder; });
+
+            std::string lastSubfolder;
+            bool showSubfolderContents = true;
+            for (const ExternalNodeInfo& externalNodeInfo : externalNodes)
+            {
+                if (externalNodeInfo.subfolder != lastSubfolder)
+                {
+                    if (showSubfolderContents && !lastSubfolder.empty())
+                        ImGui::EndMenu();
+
+                    lastSubfolder = externalNodeInfo.subfolder;
+                    if (lastSubfolder.empty())
+                        showSubfolderContents = true;
+                    else
+                    {
+                        if (externalNodeInfo.subfolderColor != 0)
+                            ImGui::PushStyleColor(ImGuiCol_Text, externalNodeInfo.subfolderColor);
+
+                        showSubfolderContents = ImGui::BeginMenu(lastSubfolder.c_str());
+
+                        if (externalNodeInfo.subfolderColor != 0)
+                            ImGui::PopStyleColor();
+                    }
+                }
+
+                if (showSubfolderContents && ImGui::MenuItem(externalNodeInfo.name.c_str()))
+                {
+                    std::string nodeName = externalNodeInfo.subfolder + std::string(" ") + externalNodeInfo.name;
+                    std::string newNodeName = GetUniqueNodeName(g_renderGraph, nodeName.c_str());
+
+                    RenderGraphNode newNode;
+                    newNode._index = RenderGraphNode::c_index_actionExternal;
+                    newNode.actionExternal.name = newNodeName;
+                    newNode.actionExternal.externalNodeData._index = externalNodeInfo.nodeType;
+                    g_renderGraph.nodes.push_back(newNode);
+                    m_newNodePositions[(int)g_renderGraph.nodes.size()] = newNodePostion;
+                    g_renderGraphDirty = true;
+                    g_createdNodeIndex = (int)g_renderGraph.nodes.size();
+                }
+            }
+
+            if (showSubfolderContents && !lastSubfolder.empty())
+                ImGui::EndMenu();
 
             ImGui::Separator();
 
@@ -3154,6 +3297,8 @@ struct Example :
         bool isInputPin = false;
         std::string node;
         std::string pin;
+        std::string toolTip;
+        bool required = true;
     };
     std::unordered_map<int, EditorPinInfo> m_pins;
 
@@ -3169,7 +3314,6 @@ struct Example :
     };
 
     std::unordered_map<int, LinkInfo> m_links;
-
 
 	void ImGuiRecentFiles()
 	{

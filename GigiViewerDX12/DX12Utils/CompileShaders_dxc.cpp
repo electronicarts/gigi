@@ -176,7 +176,10 @@ static IDxcBlob* CompileShaderToByteCode_Private(
             IDxcBlobEncoding* errorsBlob = nullptr;
             hr = result->GetErrorBuffer(&errorsBlob);
             if (SUCCEEDED(hr) && errorsBlob)
-                logFn(LogLevel::Error, "Shader %ls failed to compile with errors:\n%s\n", fullFileName.c_str(), (const char*)errorsBlob->GetBufferPointer());
+            {
+                const char* errorText = (const char*)errorsBlob->GetBufferPointer();
+                logFn(LogLevel::Error, "Shader %ls failed to compile with errors:\n%s\n", fullFileName.c_str(), errorText);
+            }
         }
         else
         {

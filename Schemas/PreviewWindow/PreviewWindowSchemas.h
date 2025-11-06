@@ -50,6 +50,32 @@ STRUCT_END()
 // .gguser File Schema
 //========================================================
 
+STRUCT_BEGIN(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, "")
+    STRUCT_FIELD(bool, enabled, { false }, "", 0)
+    STRUCT_FIELD(unsigned int, sleepMS, 0, "The number of milliseconds to sleep every frame. Useful for artificially slowing down the rendering to see frame interpolation in action.", 0)
+
+    STRUCT_FIELD(std::string, version, "default", "The version used", SCHEMA_FLAG_NO_SERIALIZE)
+
+    // FfxApiCreateContextFramegenerationFlags
+    STRUCT_FIELD(bool, ENABLE_ASYNC_WORKLOAD_SUPPORT, { true }, "", 0)
+    STRUCT_FIELD(bool, ENABLE_MOTION_VECTORS_JITTER_CANCELLATION, { false }, "A bit indicating that the motion vectors have the jittering pattern applied to them.", 0)
+    STRUCT_FIELD(bool, ENABLE_HIGH_DYNAMIC_RANGE, { false }, "A bit indicating if the input color data provided to all inputs is using a high-dynamic range.", 0)
+    STRUCT_FIELD(bool, ENABLE_DEBUG_CHECKING, { true }, "A bit indicating that the runtime should check some API values and report issues.", 0)
+
+    // FfxApiDispatchFramegenerationFlags
+    STRUCT_FIELD(bool, DRAW_DEBUG_TEAR_LINES, { false }, "A bit indicating that the debug tear lines will be drawn to the generated output.", 0)
+    STRUCT_FIELD(bool, DRAW_DEBUG_RESET_INDICATORS, { false }, "A bit indicating that the debug reset indicators will be drawn to the generated output.", 0)
+    STRUCT_FIELD(bool, DRAW_DEBUG_VIEW, { false }, "A bit indicating that the generated output resource will contain debug views with relevant information.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(bool, DRAW_DEBUG_PACING_LINES, { false }, "A bit indicating that the debug pacing lines will be drawn to the generated output.", 0)
+
+    STRUCT_FIELD(std::string, depth, "", "The depth buffer data", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(std::string, motionVectors, "", "The motion vector data", SCHEMA_FLAG_NO_UI)
+
+    STRUCT_FIELD(bool, allowAsyncWorkloads, { true }, "Sets the state of async workloads. Set to true to enable generation work on async compute.", 0)
+    STRUCT_FIELD(bool, onlyPresentGenerated, { false }, "Set to true to only present generated frames.", 0)
+    STRUCT_FIELD(bool, constrainToRectangle, { false }, "If true, constrains frame generation to the texture being viewed.", 0)
+STRUCT_END()
+
 ENUM_BEGIN(GGUserFile_TLASBuildFlags, "D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_PREFER_FAST_TRACE etc")
 	ENUM_ITEM(None, "")
 	ENUM_ITEM(AllowUpdate, "")
@@ -114,6 +140,7 @@ STRUCT_BEGIN(GGUserFile_Camera, "")
 	STRUCT_FIELD(bool, perspective, true, "Perspective if true, orthographic if false.", 0)
 	STRUCT_FIELD(bool, leftHanded, true, "Left handed if true, right handed if false.", 0)
 	STRUCT_FIELD(bool, reverseZ, true, "If true, reverses the depth values for more precision. https://developer.nvidia.com/content/depth-precision-visualized", 0)
+    STRUCT_FIELD(bool, reverseZInfiniteDepth, false, "If true, reverses the depth values and has far plane at infinite z for more precision. https://developer.nvidia.com/content/depth-precision-visualized", 0)
 	STRUCT_FIELD(float, nearPlane, 0.1f, "The distance to the near plane.", 0)
 	STRUCT_FIELD(float, farPlane, 1000.0f, "The distance to the far plane. Set to zero for infinite Z.", 0)
 	STRUCT_FIELD(float, FOV, 45.0f, "Vertical field of view, in degrees", 0)
@@ -155,10 +182,14 @@ STRUCT_BEGIN(GGUserFile_SystemVars, "")
 	STRUCT_FIELD(std::string, InvJitteredProjMtx_varName, "InvJitteredProjMtx", "Inverted ProjMtx with jitter.", 0)
 	STRUCT_FIELD(std::string, JitteredViewProjMtx_varName, "JitteredViewProjMtx", "ViewProjMtx with jitter.", 0)
 	STRUCT_FIELD(std::string, InvJitteredViewProjMtx_varName, "InvJitteredViewProjMtx", "Inverted ViewProjMtx with jitter.", 0)
-	STRUCT_FIELD(std::string, CameraPos_varName, "CameraPos", "", 0)
+	STRUCT_FIELD(std::string, CameraPos_varName, "CameraPos", "Camera position in world space", 0)
+    STRUCT_FIELD(std::string, CameraUp_varName, "CameraUp", "Normalized camera up vector in world space", 0)
+    STRUCT_FIELD(std::string, CameraLeft_varName, "CameraLeft", "Normalized camera left vector in world space", 0)
+    STRUCT_FIELD(std::string, CameraForward_varName, "CameraForward", "Normalized camera forward vector in world space", 0)
 	STRUCT_FIELD(std::string, CameraAltitudeAzimuth_varName, "CameraAltitudeAzimuth", "", 0)
 	STRUCT_FIELD(std::string, CameraChanged_varName, "CameraChanged", "", 0)
 	STRUCT_FIELD(std::string, CameraJitter_varName, "CameraJitter", "", 0)
+    STRUCT_FIELD(std::string, CameraJitterRaw_varName, "CameraJitterRaw", "", 0)
 	STRUCT_FIELD(std::string, CameraFOV_varName, "CameraFOV", "", 0)
 	STRUCT_FIELD(std::string, CameraNearPlane_varName, "CameraNearPlane", "", 0)
 	STRUCT_FIELD(std::string, CameraFarPlane_varName, "CameraFarPlane", "", 0)
@@ -205,6 +236,8 @@ STRUCT_BEGIN(GGUserFileV2, "The contents of a .gguser file")
 	STRUCT_FIELD(GGUserFile_SystemVars, systemVars, {}, "", 0)
 	STRUCT_FIELD(GGUserFileV2Snapshot, snapshot, {}, "", 0)
 	STRUCT_DYNAMIC_ARRAY(GGUserFileV2Snapshot, snapshots, "", 0)
+
+    STRUCT_FIELD(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, AMDFrameInterpolation, {}, "", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(GGUserFileVersionOnly, "Only the version of the .gguser file")

@@ -155,7 +155,7 @@ STRUCT_END()
 STRUCT_BEGIN(DispatchSizeDesc, "The number of threads to dispatch. Not thread groups.  size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.")
     STRUCT_FIELD(TextureOrBufferNodeReference, node, {}, "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.", 0)
     STRUCT_FIELD(VariableReference, variable, {}, "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.", 0)
-    STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "If given, this buffer will be used as an indirect dispatch buffer", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "If given, this buffer will be used as an indirect dispatch buffer, only used if enableIndirect", SCHEMA_FLAG_NO_UI)
     STRUCT_STATIC_ARRAY(int, multiply, 3, { 1 COMMA 1 COMMA 1 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
     STRUCT_STATIC_ARRAY(int, divide, 3, { 1 COMMA 1 COMMA 1 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
     STRUCT_STATIC_ARRAY(int, preAdd, 3, { 0 COMMA 0 COMMA 0 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
@@ -273,6 +273,8 @@ STRUCT_BEGIN(ShaderVariableAliases, "Specify a variable alias")
     STRUCT_FIELD(int, shaderIndex, -1, "", SCHEMA_FLAG_NO_SERIALIZE)
 STRUCT_END()
 
+#include "ExternalNodeVariant.h"
+
 //========================================================
 // Base Nodes
 //========================================================
@@ -378,6 +380,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_ComputeShader, RenderGraphNode_Actio
 
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint. Handled by front end during Gigi compilation and becomes shader entry point during code gen.", 0)
     STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shader is compiled with, on top of whatever defines the shader has already. Handled by front end during Gigi compilation and becomes shader defines during code gen.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
+    STRUCT_FIELD(bool, enableIndirect, false, "If true, shows and enables indirectBuffer input", 0)
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_RayShader, RenderGraphNode_ActionBase, "Executes a dispatch rays shader")
@@ -424,7 +427,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase
     STRUCT_FIELD(PixelShaderReference, pixelShader, {}, "The pixel shader.", 0)
     STRUCT_FIELD(ShaderVariableAliases, pixelShaderVariableAliases, {}, "", 0)
 
-    STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "Indirect buffer to make this draw use ExecuteIndirect", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "Indirect buffer to make this draw use ExecuteIndirect, only used if enableIndirect", SCHEMA_FLAG_NO_UI)
 
     // Vertex shader specific
     STRUCT_FIELD(int, countPerInstance, -1, "If using an index buffer, this is indexCountPerInstance, else is vertexCountPerInstance.  If -1, will use the count of the buffer.  Else, if a buffer is given, will use min(buffer count, countPerInstance).", 0)
@@ -481,6 +484,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase
     STRUCT_FIELD(NodePinReferenceOptional, depthTarget, {}, "Depth Target", SCHEMA_FLAG_NO_UI)
 
     STRUCT_FIELD(GeometryType, geometryType, GeometryType::TriangleList, "What to draw", 0)
+    STRUCT_FIELD(bool, enableIndirect, false, "If true, shows and enables indirectBuffer input", 0)
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_SubGraph, RenderGraphNode_ActionBase, "Runs another Gigi technique")
@@ -513,6 +517,15 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Reroute, RenderGraphNode_ActionBase, "Used 
     STRUCT_CONST(std::string, c_shortTypeName, "Reroute", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shorterTypeName, "Rr", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(bool, c_showInEditor, false, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
+STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_External, RenderGraphNode_ActionBase, "Calls into external code.")
+    STRUCT_CONST(std::string, c_editorName, "External", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shortTypeName, "External", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shorterTypeName, "External", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(bool, c_showInEditor, false, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(ExternalNodeData, externalNodeData, {}, "", 0)
 STRUCT_END()
 
 //========================================================

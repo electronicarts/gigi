@@ -628,6 +628,11 @@ public:
 		}
 	}
 
+    void ConvertTypedBinaryValue(const void* src, DataFieldComponentType srcType, bool* dest)
+    {
+        ConvertTypedBinaryValueInternal(src, srcType, dest);
+    }
+
 	void ConvertTypedBinaryValue(const void* src, DataFieldComponentType srcType, void* dest, DataFieldComponentType destType)
 	{
 		switch (destType)
@@ -1074,6 +1079,58 @@ public:
             return false;
         ConvertTypedBinaryValue(m_runtimeVariables[index].storage.value, typeInfo.componentType, &outValue, DataFieldComponentTypeFromType(&outValue));
         return true;
+    }
+
+    template <>
+    bool GetRuntimeVariableAllowCast<bool>(int index, bool& outValue)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(m_runtimeVariables[index].variable->type);
+        if (typeInfo.componentCount != 1)
+            return false;
+        if (m_runtimeVariables[index].variable->type == DataFieldType::Bool)
+            memcpy(&outValue, m_runtimeVariables[index].storage.value, sizeof(bool));
+        else
+            ConvertTypedBinaryValue(m_runtimeVariables[index].storage.value, typeInfo.componentType, &outValue);
+        return true;
+    }
+
+    template <typename T>
+    bool GetRuntimeVariableAllowCast(int index, T* outValue, int outValueCount)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(m_runtimeVariables[index].variable->type);
+        if (typeInfo.componentCount != outValueCount)
+            return false;
+
+        const unsigned char* src = (unsigned char*)m_runtimeVariables[index].storage.value;
+        unsigned char* dest = (unsigned char*)outValue;
+        for (int i = 0; i < outValueCount; ++i)
+        {
+            ConvertTypedBinaryValue(src, typeInfo.componentType, dest, DataFieldComponentTypeFromType(outValue));
+            src += typeInfo.componentBytes;
+            dest += sizeof(T);
+        }
+
+        return true;
+    }
+
+	// Get the value of a variable, and if it fails, it's the programmer's fault. Should never be the user's fault.
+	template <typename T>
+	T GetRuntimeVariableValueAllowCast_NoFail(int variableIndex)
+	{
+		T ret = {};
+		Assert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
+		bool success = GetRuntimeVariableAllowCast(variableIndex, ret);
+		Assert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
+		return ret;
+	}
+
+    // Get the value of a variable, and if it fails, it's the programmer's fault. Should never be the user's fault.
+    template <typename T>
+    void GetRuntimeVariableValueAllowCast_NoFail(int variableIndex, T* outValue, int outValueCount)
+    {
+        Assert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
+        bool success = GetRuntimeVariableAllowCast(variableIndex, outValue, outValueCount);
+        Assert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
     }
 
 	const RenderGraph& GetRenderGraph() const

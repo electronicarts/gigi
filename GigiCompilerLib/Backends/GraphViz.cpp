@@ -216,7 +216,7 @@ static void WriteSpecificNodeInfo(RenderGraph& renderGraph, RenderGraphNode& var
         "\n            <tr><td bgcolor=\"thistle\">" << node.shader.shader->fileName << " : " << node.shader.shader->entryPoint << "()</td></tr>"
         "\n            <tr><td bgcolor=\"thistle\">Dispatch: ";
 
-    if (node.dispatchSize.indirectBuffer.nodeIndex != -1)
+    if (node.enableIndirect && node.dispatchSize.indirectBuffer.nodeIndex != -1)
     {
         out << "&lt;Indirect&gt;";
     }
