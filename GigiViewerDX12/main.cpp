@@ -57,6 +57,10 @@
 #include "ImageSave.h"
 #include "BVH.h"
 #include <comdef.h>
+
+#include <nv-api/nvapi.h>
+#pragma comment(lib, "amd64/nvapi64.lib")
+bool g_nvInitialized = false;
 // clang-format on
 
 #include <thread>
@@ -4333,7 +4337,7 @@ void AutoHistogram(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resourc
         }
         default:
         {
-            Assert(false, "Unhandled Channel Type");
+            GigiAssert(false, "Unhandled Channel Type");
             return;
         }
     }
@@ -4525,7 +4529,7 @@ void ShowPixelValue(ID3D12Resource* readbackResource, D3D12_RESOURCE_DESC resour
             }
             default:
             {
-                Assert(false, "Unhandled Channel Type");
+                GigiAssert(false, "Unhandled Channel Type");
                 break;
             }
         }
@@ -4836,7 +4840,7 @@ void SaveAsCSV(const char* fileName, unsigned char* bytes, const Struct& structD
                 }
                 default:
                 {
-                    Assert(false, "Unhandled DataFieldComponentType");
+                    GigiAssert(false, "Unhandled DataFieldComponentType");
                 }
             }
 
@@ -6417,7 +6421,7 @@ void ShowResourceView()
                         std::vector<unsigned char> bytes(viewInfo.size);
                         {
                             D3D12_RANGE readRange;
-                            readRange.Begin = bufferViewBegin * bufferViewItemSize;
+                            readRange.Begin = bufferViewBegin * bufferViewItemSize; 
                             readRange.End = (bufferViewBegin + bufferViewCount) * bufferViewItemSize;
 
                             D3D12_RANGE writeRange;
@@ -8710,7 +8714,11 @@ int main(int argc, char** argv)
 
     SaveGGUserFile();
 
+    if(g_nvInitialized)
+       NvAPI_Unload();
+
     PythonShutdown();
+
 
     if (g_renderDocEnabled)
     {
@@ -8830,6 +8838,15 @@ bool CreateDeviceD3D(HWND hWnd)
         char buffer[256];
         sprintf(buffer, "%u.%u.%u.%u", nProduct, nVersion, nSubVersion, nBuild);
         g_driverVersion = buffer;
+        g_interpreter.m_vendorId = desc.VendorId;
+    }
+
+    if(g_interpreter.IsVendorNVidia())
+    {
+        NvAPI_Status status = NvAPI_Initialize();
+        if (status == NVAPI_OK)
+            g_nvInitialized = true;
+        Log(LogLevel::Info, "NVAPI=%d", (int)g_nvInitialized);
     }
 
     // Create device
@@ -8855,6 +8872,8 @@ bool CreateDeviceD3D(HWND hWnd)
         }
     }
     adapter->Release();
+
+
 
     // [DEBUG] Setup debug interface to break on any warnings/errors
     if (pdx12Debug != NULL)

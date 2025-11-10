@@ -134,7 +134,7 @@ template <typename T>
 rapidjson::Value MakeJSONValue(const T& value, rapidjson::Document::AllocatorType& allocator)
 {
     // an update on 3/31/22 makes vs2022 makes this not able to be a static assert ):
-    Assert(false, __FUNCSIG__ ": Unsupported type encountered!");
+    GigiAssert(false, __FUNCSIG__ ": Unsupported type encountered!");
 
     rapidjson::Value ret;
     ret.SetBool(false);

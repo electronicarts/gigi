@@ -144,7 +144,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 					}
 					default:
 					{
-						Assert(false, "Inappropriate variable type given for texture size.");
+                        GigiAssert(false, "Inappropriate variable type given for texture size.");
 					}
 				}
 			}

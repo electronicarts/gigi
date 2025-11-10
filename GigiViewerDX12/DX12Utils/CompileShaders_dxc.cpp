@@ -13,6 +13,9 @@
 #include <vector>
 #include <filesystem>
 #include <comdef.h>
+class IDXGISwapChain;
+
+#include <nv-api/nvapi.h>
 
 // Note: you can specify include directories by pushing into arguments "-I <path>" which i think would get rid of the need for a custom include handler.
 
@@ -260,6 +263,105 @@ static IDxcBlob* CompileShaderToByteCode_Private(
     return code;
 }
 
+bool WrapperCreateComputePipelineState(
+    ID3D12Device* device,
+    const D3D12_COMPUTE_PIPELINE_STATE_DESC& psoDesc,
+    ID3D12PipelineState** pso)
+{
+    bool normalAPICall = true;
+
+    extern bool g_nvInitialized;
+    if (g_nvInitialized)
+    {
+        normalAPICall = false;
+        // see https://developer.nvidia.com/unlocking-gpu-intrinsics-hlsl
+        //
+        // Use the same UAV slot index and register space that are declared in the shader.
+        NVAPI_D3D12_PSO_SET_SHADER_EXTENSION_SLOT_DESC ExtensionDesc;
+        ExtensionDesc.baseVersion = NV_PSO_EXTENSION_DESC_VER;
+        ExtensionDesc.psoExtension = NV_PSO_SET_SHADER_EXTENSION_SLOT_AND_SPACE;
+        ExtensionDesc.version = NV_SET_SHADER_EXTENSION_SLOT_DESC_VER;
+        ExtensionDesc.uavSlot = 0; // u0
+        // space4318 = can be any number but must be the same in HLSL, here: nvidia hardware vendor id 0x10de=4318
+        ExtensionDesc.registerSpace = 4318;
+
+        // Put the pointer to the extension into an array - there can be multiple extensions enabled at once.
+        // Other supported extensions are:
+        //     - Extended rasterizer state
+        //  - Pass-through geometry shader, implicit or explicit
+        //  - Depth bound test
+        const NVAPI_D3D12_PSO_EXTENSION_DESC* pExtensions[] = { &ExtensionDesc };
+
+        // Now create the PSO.
+        NvAPI_Status NvapiStatus = NvAPI_D3D12_CreateComputePipelineState(
+            device,
+            &psoDesc,
+            ARRAYSIZE(pExtensions),
+            pExtensions,
+            pso);
+
+        if (NvapiStatus != NVAPI_OK)
+            return false;
+    }
+
+    if (normalAPICall)
+    {
+        HRESULT  hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pso));
+        if (FAILED(hr))
+            return false;
+    }
+
+    return true;
+}
+
+HRESULT WrapperCreateGraphicsPipelineState(
+    ID3D12Device* device,
+    const D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc,
+    ID3D12PipelineState** pso)
+{
+    HRESULT hr = S_OK;
+    bool normalAPICall = true;
+
+    extern bool g_nvInitialized;
+    if (g_nvInitialized)
+    {
+        normalAPICall = false;
+        // see https://developer.nvidia.com/unlocking-gpu-intrinsics-hlsl
+        //
+        // Use the same UAV slot index and register space that are declared in the shader.
+        NVAPI_D3D12_PSO_SET_SHADER_EXTENSION_SLOT_DESC ExtensionDesc;
+        ExtensionDesc.baseVersion = NV_PSO_EXTENSION_DESC_VER;
+        ExtensionDesc.psoExtension = NV_PSO_SET_SHADER_EXTENSION_SLOT_AND_SPACE;
+        ExtensionDesc.version = NV_SET_SHADER_EXTENSION_SLOT_DESC_VER;
+        ExtensionDesc.uavSlot = 0; // u0
+        // space4318 = can be any number but must be the same in HLSL, here: nvidia hardware vendor id 0x10de=4318
+        ExtensionDesc.registerSpace = 4318;
+
+        // Put the pointer to the extension into an array - there can be multiple extensions enabled at once.
+        // Other supported extensions are:
+        //     - Extended rasterizer state
+        //  - Pass-through geometry shader, implicit or explicit
+        //  - Depth bound test
+        const NVAPI_D3D12_PSO_EXTENSION_DESC* pExtensions[] = { &ExtensionDesc };
+
+        // Now create the PSO.
+        NvAPI_Status NvapiStatus = NvAPI_D3D12_CreateGraphicsPipelineState(
+            device,
+            &psoDesc,
+            ARRAYSIZE(pExtensions),
+            pExtensions,
+            pso);
+
+        if (NvapiStatus != NVAPI_OK)
+            hr = E_FAIL;
+    }
+
+    if (normalAPICall)
+    {
+        hr = device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(pso));
+    }
+    return hr;
+}
 
 bool MakeComputePSO_dxc(
     ID3D12Device* device,
@@ -278,8 +380,7 @@ bool MakeComputePSO_dxc(
     psoDesc.CS.BytecodeLength = code->GetBufferSize();
     psoDesc.CS.pShaderBytecode = code->GetBufferPointer();
 
-    HRESULT  hr = device->CreateComputePipelineState(&psoDesc, IID_PPV_ARGS(pso));
-    if (FAILED(hr))
+    if (!WrapperCreateComputePipelineState(device, psoDesc, pso))
         return false;
 
     code->Release();

@@ -37,7 +37,7 @@ struct BackendWebGPU : public BackendBase
             //case DataFieldType::Float4x4: return "float32x4x4"; // Doesn't actually exist
         }
 
-        Assert(false, "Unhandled DataFieldType: %s (%i)", EnumToString(dataFieldType), (int)dataFieldType);
+        GigiAssert(false, "Unhandled DataFieldType: %s (%i)", EnumToString(dataFieldType), (int)dataFieldType);
         return __FUNCTION__ " unknown DataFieldType";
     }
 
@@ -57,7 +57,7 @@ struct BackendWebGPU : public BackendBase
             case DrawBlendMode::InvDestColor: return "one-minus-dst";
         }
 
-        Assert(false, "Unhandled DrawBlendMode: %s (%i)", EnumToString(drawBlendMode), (int)drawBlendMode);
+        GigiAssert(false, "Unhandled DrawBlendMode: %s (%i)", EnumToString(drawBlendMode), (int)drawBlendMode);
         return __FUNCTION__ " unknown DrawBlendMode";
     }
 
@@ -75,7 +75,7 @@ struct BackendWebGPU : public BackendBase
             case StencilOp::Decriment: return "decrement-wrap";
         }
 
-        Assert(false, "Unhandled StencilOp: %s (%i)", EnumToString(stencilOp), (int)stencilOp);
+        GigiAssert(false, "Unhandled StencilOp: %s (%i)", EnumToString(stencilOp), (int)stencilOp);
         return __FUNCTION__ " unknown StencilOp";
     }
 
@@ -93,7 +93,7 @@ struct BackendWebGPU : public BackendBase
             case DepthTestFunction::Always: return "always";
         }
 
-        Assert(false, "Unhandled DepthTestFunction: %s (%i)", EnumToString(depthTestFunction), (int)depthTestFunction);
+        GigiAssert(false, "Unhandled DepthTestFunction: %s (%i)", EnumToString(depthTestFunction), (int)depthTestFunction);
         return __FUNCTION__ " unknown DepthTestFunction";
     }
 
@@ -106,7 +106,7 @@ struct BackendWebGPU : public BackendBase
             case GeometryType::PointList: return "point-list";
         }
 
-        Assert(false, "Unhandled GeometryType: %s (%i)", EnumToString(geometryType), (int)geometryType);
+        GigiAssert(false, "Unhandled GeometryType: %s (%i)", EnumToString(geometryType), (int)geometryType);
         return __FUNCTION__ " unknown GeometryType";
     }
 
@@ -119,7 +119,7 @@ struct BackendWebGPU : public BackendBase
             case DrawCullMode::Back: return "back";
         }
 
-        Assert(false, "Unhandled DrawCullMode: %s (%i)", EnumToString(drawCullMode), (int)drawCullMode);
+        GigiAssert(false, "Unhandled DrawCullMode: %s (%i)", EnumToString(drawCullMode), (int)drawCullMode);
         return __FUNCTION__ " unknown DrawCullMode";
     }
 
@@ -131,7 +131,7 @@ struct BackendWebGPU : public BackendBase
             case SamplerFilter::MinMagLinear_MipPoint: return "linear";
             case SamplerFilter::MinMagMipLinear: return "linear";
         }
-        Assert(false, "Unhandled SamplerFilter: %s (%i)", EnumToString(filter), (int)filter);
+        GigiAssert(false, "Unhandled SamplerFilter: %s (%i)", EnumToString(filter), (int)filter);
         return __FUNCTION__ " unknown SamplerFilter";
     }
 
@@ -143,7 +143,7 @@ struct BackendWebGPU : public BackendBase
             case SamplerFilter::MinMagLinear_MipPoint: return "linear";
             case SamplerFilter::MinMagMipLinear: return "linear";
         }
-        Assert(false, "Unhandled SamplerFilter: %s (%i)", EnumToString(filter), (int)filter);
+        GigiAssert(false, "Unhandled SamplerFilter: %s (%i)", EnumToString(filter), (int)filter);
         return __FUNCTION__ " unknown SamplerFilter";
     }
 
@@ -155,7 +155,7 @@ struct BackendWebGPU : public BackendBase
             case SamplerFilter::MinMagLinear_MipPoint: return "nearest";
             case SamplerFilter::MinMagMipLinear: return "linear";
         }
-        Assert(false, "Unhandled SamplerFilter: %s (%i)", EnumToString(filter), (int)filter);
+        GigiAssert(false, "Unhandled SamplerFilter: %s (%i)", EnumToString(filter), (int)filter);
         return __FUNCTION__ " unknown SamplerFilter";
     }
 
@@ -169,7 +169,7 @@ struct BackendWebGPU : public BackendBase
             //case SamplerAddressMode::Border:
         }
 
-        Assert(false, "Unhandled SamplerAddressMode: %s (%i)", EnumToString(addressMode), (int)addressMode);
+        GigiAssert(false, "Unhandled SamplerAddressMode: %s (%i)", EnumToString(addressMode), (int)addressMode);
         return __FUNCTION__ " unknown SamplerAddressMode";
     }
 
@@ -183,7 +183,7 @@ struct BackendWebGPU : public BackendBase
             case TextureDimensionType::TextureCube: return "cube";
         }
 
-        Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(dimension), (int)dimension);
+        GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(dimension), (int)dimension);
         return __FUNCTION__ " unknown TextureDimensionType";
     }
 
@@ -245,13 +245,13 @@ struct BackendWebGPU : public BackendBase
             case TextureFormat::RGBA16_Unorm:
             case TextureFormat::RGBA16_Snorm:
             {
-                Assert(false, "WebGPU does not support textureFormat: %s (%i)", EnumToString(format), (int)format);
+                GigiAssert(false, "WebGPU does not support textureFormat: %s (%i)", EnumToString(format), (int)format);
                 return __FUNCTION__ " unsupported TextureFormat";
                 break;
             }
         }
 
-        Assert(false, "Unhandled TextureFormat: %s (%i)", EnumToString(format), (int)format);
+        GigiAssert(false, "Unhandled TextureFormat: %s (%i)", EnumToString(format), (int)format);
         return __FUNCTION__ " unknown TextureFormat";
     }
 
@@ -307,7 +307,7 @@ struct BackendWebGPU : public BackendBase
             case ConditionComparison::GTE: stream << value1 << " >= " << value2; break;
             default:
             {
-                Assert(false, "Unhandled condition comparison");
+                GigiAssert(false, "Unhandled condition comparison");
                 return;
             }
         }
@@ -376,7 +376,7 @@ struct BackendWebGPU : public BackendBase
                 case RenderGraphNode::c_index_resourceTexture: resourcePrefix = "this.texture_"; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource node type!");
+                    GigiAssert(false, "Unhandled resource node type!");
                 }
             }
 
@@ -427,7 +427,7 @@ struct BackendWebGPU : public BackendBase
                     case RenderGraphNode::c_index_resourceTexture: resourcePrefix = "this.texture_"; break;
                     default:
                     {
-                        Assert(false, "Unhandled resource node type!");
+                        GigiAssert(false, "Unhandled resource node type!");
                     }
                 }
 
@@ -1831,13 +1831,13 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
 {
     if (shader.language == ShaderLanguage::WGSL)
     {
-        Assert(false, "WGSL is not yet supported as a source language for webgpu code generation. Shader \"%s\"", shader.name.c_str());
+        GigiAssert(false, "WGSL is not yet supported as a source language for webgpu code generation. Shader \"%s\"", shader.name.c_str());
         return;
     }
 
     if (shader.language != ShaderLanguage::HLSL && shader.language != ShaderLanguage::Slang)
     {
-        Assert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
+        GigiAssert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
         return;
     }
 
@@ -2036,7 +2036,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                                     }
                                 }
 
-                                Assert(positionFieldIndex != -1, "Could not find position field index in struct \"%s\" in shader \"%s\"", s.name.c_str(), options.m_shader.name.c_str());
+                                GigiAssert(positionFieldIndex != -1, "Could not find position field index in struct \"%s\" in shader \"%s\"", s.name.c_str(), options.m_shader.name.c_str());
                                 rtScenePositionFieldName = std::string(".") + s.fields[positionFieldIndex].name;
                             }
                             else
@@ -2052,7 +2052,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                 // Note: you can make a raygen shader without an RTScene
                 if (hasRTScene)
                 {
-                    Assert(options.m_attribStructsUsed.size() <= 1, "Multiple intersection attribute structs used in the same shader.");
+                    GigiAssert(options.m_attribStructsUsed.size() <= 1, "Multiple intersection attribute structs used in the same shader.");
                     std::string attributeStruct = "BuiltInTriangleIntersectionAttributes";
                     for (const std::string& a : options.m_attribStructsUsed)
                     {
@@ -2082,7 +2082,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                     // Ray gen shaders need more
                     if (options.m_shader.type == ShaderType::RTRayGen)
                     {
-                        Assert(options.m_attribStructsUsed.size() <= 1, "Multiple intersection attribute structs used in the same shader.");
+                        GigiAssert(options.m_attribStructsUsed.size() <= 1, "Multiple intersection attribute structs used in the same shader.");
                         std::string attributeStruct = "BuiltInTriangleIntersectionAttributes";
                         for (const std::string& a : options.m_attribStructsUsed)
                         {
@@ -2103,7 +2103,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                             {
                                 const std::string& hitGroupName = options.m_shader.Used_RTHitGroupIndex[usedRTHitGroupIndex];
                                 int hitGroupIndex = GetHitGroupIndex(renderGraph, hitGroupName.c_str());
-                                Assert(hitGroupIndex != -1, "Could not find hit group %s", hitGroupName.c_str());
+                                GigiAssert(hitGroupIndex != -1, "Could not find hit group %s", hitGroupName.c_str());
                                 const RTHitGroup& hitGroup = renderGraph.hitGroups[hitGroupIndex];
 
                                 if (hitGroup.intersection.shaderIndex == -1)
@@ -2135,7 +2135,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                             {
                                 const std::string& hitGroupName = options.m_shader.Used_RTHitGroupIndex[usedRTHitGroupIndex];
                                 int hitGroupIndex = GetHitGroupIndex(renderGraph, hitGroupName.c_str());
-                                Assert(hitGroupIndex != -1, "Could not find hit group %s", hitGroupName.c_str());
+                                GigiAssert(hitGroupIndex != -1, "Could not find hit group %s", hitGroupName.c_str());
                                 const RTHitGroup& hitGroup = renderGraph.hitGroups[hitGroupIndex];
 
                                 if (hitGroup.anyHit.shaderIndex == -1)
@@ -2167,7 +2167,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                             {
                                 const std::string& missShaderName = options.m_shader.Used_RTMissIndex[usedRTMissIndex];
                                 int missShaderIndex = GetShaderIndex(renderGraph, missShaderName.c_str());
-                                Assert(missShaderIndex != -1, "Could not find miss shader %s", missShaderName.c_str());
+                                GigiAssert(missShaderIndex != -1, "Could not find miss shader %s", missShaderName.c_str());
 
                                 const Shader& shader = renderGraph.shaders[missShaderIndex];
                                 shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] <<
@@ -2195,7 +2195,7 @@ static void ProcessShaderFile(const std::string& nodeName, const Shader& shader,
                             {
                                 const std::string& hitGroupName = options.m_shader.Used_RTHitGroupIndex[usedRTHitGroupIndex];
                                 int hitGroupIndex = GetHitGroupIndex(renderGraph, hitGroupName.c_str());
-                                Assert(hitGroupIndex != -1, "Could not find hit group %s", hitGroupName.c_str());
+                                GigiAssert(hitGroupIndex != -1, "Could not find hit group %s", hitGroupName.c_str());
                                 const RTHitGroup& hitGroup = renderGraph.hitGroups[hitGroupIndex];
 
                                 if (hitGroup.closestHit.shaderIndex == -1)
@@ -2333,7 +2333,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
 
         if (node.resourceTexture.dimension == TextureDimensionType::Texture2DMS)
         {
-            Assert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
+            GigiAssert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
             return;
         }
     }
@@ -2342,11 +2342,11 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
     {
         if (shader.type == ShaderType::Amplification)
         {
-            Assert(false, "Amplification shaders are not supported by WebGPU. (shader = \"%s\")", shader.name.c_str());
+            GigiAssert(false, "Amplification shaders are not supported by WebGPU. (shader = \"%s\")", shader.name.c_str());
         }
         else if (shader.type == ShaderType::Mesh)
         {
-            Assert(false, "Mesh shaders are not supported by WebGPU. (shader = \"%s\")", shader.name.c_str());
+            GigiAssert(false, "Mesh shaders are not supported by WebGPU. (shader = \"%s\")", shader.name.c_str());
         }
     }
 
@@ -2363,7 +2363,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             node.shadingRateCombiner2 != defaultNode.shadingRateCombiner2 ||
             node.shadingRateImage.nodeIndex != -1)
         {
-            Assert(false, "variable rate shading is not supported by WebGPU. (node = \"%s\")", node.name.c_str());
+            GigiAssert(false, "variable rate shading is not supported by WebGPU. (node = \"%s\")", node.name.c_str());
         }
     }
 
@@ -2400,7 +2400,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             }
             default:
             {
-                Assert(false, "Unhandled build flavor: %s", EnumToString(buildFlavor));
+                GigiAssert(false, "Unhandled build flavor: %s", EnumToString(buildFlavor));
                 return;
             }
         }
@@ -2431,7 +2431,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
         std::vector<unsigned char> data;
         if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
         {
-            Assert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
         }
         data.push_back(0);
 
@@ -2466,7 +2466,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
         std::vector<unsigned char> fileContents;
         if (!LoadFile(internalTemplateFile.absoluteFileName, fileContents))
         {
-            Assert(false, "Could not read file %s", internalTemplateFile.absoluteFileName.c_str());
+            GigiAssert(false, "Could not read file %s", internalTemplateFile.absoluteFileName.c_str());
         }
 
         char fullFileName[4096];
@@ -2552,7 +2552,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
 
             default:
             {
-                Assert(false, "Unhandled node type");
+                GigiAssert(false, "Unhandled node type");
                 break;
             }
         }
@@ -2572,7 +2572,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
         std::vector<unsigned char> data;
         if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
         {
-            Assert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
         }
 
         // get the folder to copy to
@@ -2596,7 +2596,7 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             }
             default:
             {
-                Assert(false, "Unhandled file copy type");
+                GigiAssert(false, "Unhandled file copy type");
                 break;
             }
         }
@@ -2789,7 +2789,7 @@ void PostLoad_WebGPU(RenderGraph& renderGraph)
                     break;
                 }
             }
-            Assert(shaderIndex != -1, "Could not find shader");
+            GigiAssert(shaderIndex != -1, "Could not find shader");
 
             const Shader& shader = renderGraph.shaders[shaderIndex];
 
@@ -2825,13 +2825,13 @@ void PostLoad_WebGPU(RenderGraph& renderGraph)
                 if (rwTextureSplit.pinNameR.empty())
                 {
                     int shaderIndex = FrontEndNodesNoCaching::GetShaderIndexByName(renderGraph, ShaderType::Count, rwTextureSplit.shaderName.c_str());
-                    Assert(shaderIndex >= 0, "Could not find shader \"%s\"", rwTextureSplit.shaderName.c_str());
+                    GigiAssert(shaderIndex >= 0, "Could not find shader \"%s\"", rwTextureSplit.shaderName.c_str());
                     Shader& shader = renderGraph.shaders[shaderIndex];
 
                     rwTextureSplit.pinNameR = FrontEndNodesNoCaching::GetUniqueShaderResourceName(shader.resources, (pinInfo.srcPin + "ReadOnly").c_str());
 
                     const ShaderResource* srcResource = FrontEndNodesNoCaching::GetShaderResourceByName(renderGraph, ShaderType::Count, rwTextureSplit.shaderName.c_str(), pinInfo.srcPin.c_str());
-                    Assert(srcResource != nullptr, "Could not find source shader resource to copy");
+                    GigiAssert(srcResource != nullptr, "Could not find source shader resource to copy");
 
                     // Add a new pin for the read only access
                     ShaderResource newResource = *srcResource;
@@ -2883,13 +2883,13 @@ void PostLoad_WebGPU(RenderGraph& renderGraph)
                 }
                 default: 
                 {
-                    Assert(false, "Unhandled node type in " __FUNCTION__);
+                    GigiAssert(false, "Unhandled node type in " __FUNCTION__);
                     break;
                 }
             }
         }
 
-        Assert(UAVSplitHandled, "Cound not find UAV node to split into R and W in " __FUNCTION__);
+        GigiAssert(UAVSplitHandled, "Cound not find UAV node to split into R and W in " __FUNCTION__);
 
         renderGraph.backendData.webGPU.RWTextureSplits.push_back(rwTextureSplit);
 
@@ -2975,7 +2975,7 @@ void PostLoad_WebGPU(RenderGraph& renderGraph)
                 resource.access = ShaderResourceAccessType::SRV;
 
                 // Also make sure that the buffer has a type set
-                Assert(resource.buffer.type != DataFieldType::Count || !resource.buffer.typeStruct.name.empty(), "WebGPU requires a buffer type given for RTScene buffer resource \"%s\" in shader \"%s\"", shader.name.c_str(), resource.name.c_str());
+                GigiAssert(resource.buffer.type != DataFieldType::Count || !resource.buffer.typeStruct.name.empty(), "WebGPU requires a buffer type given for RTScene buffer resource \"%s\" in shader \"%s\"", shader.name.c_str(), resource.name.c_str());
             }
         }
     }

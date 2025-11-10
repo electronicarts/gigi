@@ -126,7 +126,7 @@ inline std::string GetNodeTypeName(const RenderGraphNode& node)
         #include "Schemas/RenderGraphNodesVariant.h"
         // clang-format on
     }
-    Assert(false, "Unhandled node type");
+    GigiAssert(false, "Unhandled node type");
     return "";
 }
 
@@ -688,7 +688,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
             connectionIndex = i;
             break;
         }
-        Assert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for imported resource!");
+        GigiAssert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for imported resource!");
 
         NodePinInfo pin;
         pin.name = name;
@@ -708,7 +708,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
             connectionIndex = i;
             break;
         }
-        Assert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for exported resource!");
+        GigiAssert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for exported resource!");
 
         NodePinInfo pin;
         pin.name = name;

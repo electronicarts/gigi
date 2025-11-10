@@ -453,7 +453,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         default:
         {
-            Assert(false, "Unknown External Node Type");
+            GigiAssert(false, "Unknown External Node Type");
             return false;
         }
     }

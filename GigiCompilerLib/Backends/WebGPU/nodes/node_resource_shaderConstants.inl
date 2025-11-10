@@ -81,7 +81,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 					case DataFieldType::Uint: writeFunctionName = "setUint32"; break;
 					case DataFieldType::Float: writeFunctionName = "setFloat32"; break;
 					case DataFieldType::Bool: writeFunctionName = "setUint32"; break;
-					default: Assert(false, "Unhandled data field type in constant buffer: %s (%i)", EnumToString(field.type), (int)field.type);
+					default: GigiAssert(false, "Unhandled data field type in constant buffer: %s (%i)", EnumToString(field.type), (int)field.type);
 				}
 
 				for (int index = 0; index < fieldInfo.componentCount; ++index)

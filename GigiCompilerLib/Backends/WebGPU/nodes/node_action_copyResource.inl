@@ -28,7 +28,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         case RenderGraphNode::c_index_resourceBuffer: srcPrefix = "buffer";  break;
         default:
         {
-            Assert(false, "unhandled resource type in CopyResource node");
+            GigiAssert(false, "unhandled resource type in CopyResource node");
             break;
         }
     }
@@ -41,7 +41,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         case RenderGraphNode::c_index_resourceBuffer: destPrefix = "buffer";  break;
         default:
         {
-            Assert(false, "unhandled resource type in CopyResource node");
+            GigiAssert(false, "unhandled resource type in CopyResource node");
             break;
         }
     }

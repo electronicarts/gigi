@@ -26,34 +26,34 @@ namespace FrontEndNodes
     // resource specific
     inline void SetStartingState(RenderGraphNode_ActionBase& node, ShaderResourceAccessType state)
     {
-        Assert(false, "Function should not get called for action nodes");
+        GigiAssert(false, "Function should not get called for action nodes");
     }
 
     inline void SetFinalState(RenderGraphNode_ActionBase& node, ShaderResourceAccessType state)
     {
-        Assert(false, "Function should not get called for action nodes");
+        GigiAssert(false, "Function should not get called for action nodes");
     }
 
     inline ShaderResourceAccessType GetStartingState(const RenderGraphNode_ActionBase& node)
     {
-        Assert(false, "Function should not get called for action nodes");
+        GigiAssert(false, "Function should not get called for action nodes");
         return ShaderResourceAccessType::Count;
     }
 
     inline ShaderResourceAccessType GetFinalState(const RenderGraphNode_ActionBase& node)
     {
-        Assert(false, "Function should not get called for action nodes");
+        GigiAssert(false, "Function should not get called for action nodes");
         return ShaderResourceAccessType::Count;
     }
 
     inline ResourceVisibility GetResourceVisibility(const RenderGraphNode_ActionBase& node)
     {
-        Assert(false, "Function should not get called for action nodes");
+        GigiAssert(false, "Function should not get called for action nodes");
         return ResourceVisibility::Count;
     }
 
     inline void AddResourceAccessedAs(RenderGraphNode_ActionBase& node, ShaderResourceAccessType state, ShaderResourceAccessType originalState)
     {
-        Assert(false, "Function should not get called for action nodes");
+        GigiAssert(false, "Function should not get called for action nodes");
     }
 };

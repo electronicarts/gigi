@@ -77,12 +77,12 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
             OutputConnection outputConnection;
             outputConnection.nodeIndex = FrontEndNodesNoCaching::GetNodeIndexByName(renderGraph, pinInfo.dstNode->c_str());
 
-            Assert(outputConnection.nodeIndex != -1, "could not find node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
+            GigiAssert(outputConnection.nodeIndex != -1, "could not find node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
 
             RenderGraphNode& dstNode = renderGraph.nodes[outputConnection.nodeIndex];
             outputConnection.pinIndex = FrontEndNodesNoCaching::GetPinIndexByName(renderGraph, dstNode, pinInfo.dstPin->c_str());
 
-            Assert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstPin->c_str(), pinInfo.dstNode->c_str());
+            GigiAssert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstPin->c_str(), pinInfo.dstNode->c_str());
 
             inputConnection.pinIndex = pinIndex;
             inputConnection.subtreeIsReadOnly = !FrontEndNodesNoCaching::DoesSubtreeWriteResource(renderGraph, node, pinIndex);
@@ -641,7 +641,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     Backend backend;
     if (!GigiBuildFlavorBackend(buildFlavor, backend))
     {
-        Assert(false, "could not get backend for build flavor %s", EnumToString(buildFlavor));
+        GigiAssert(false, "could not get backend for build flavor %s", EnumToString(buildFlavor));
         return GigiCompileResult::NoBackend;
     }
 
@@ -653,7 +653,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     RenderGraph& renderGraph = outRenderGraph ? *outRenderGraph : renderGraph_;
     if (!ReadFromJSONFile(renderGraph, jsonFile.c_str()))
     {
-        Assert(false, "could not load %s", jsonFile.c_str());
+        GigiAssert(false, "could not load %s", jsonFile.c_str());
         return GigiCompileResult::CantLoadRenderGraph;
     }
     renderGraph.backend = backend;
@@ -665,7 +665,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     /*
     if (renderGraph.version != GIGI_VERSION())
     {
-        Assert(false, "%s is using version %s but this exe is version %s", jsonFile.c_str(), renderGraph.version.c_str(), GIGI_VERSION());
+        GigiAssert(false, "%s is using version %s but this exe is version %s", jsonFile.c_str(), renderGraph.version.c_str(), GIGI_VERSION());
         return GigiCompileResult::WrongVersion;
     }
     */

@@ -100,12 +100,12 @@ inline std::string DataFieldTypeToHLSLType(DataFieldType type)
         case DataFieldType::Float_16: return "float16_t";
         case DataFieldType::Count:
         {
-            Assert(false, "Invalid data field type: Count");
+            GigiAssert(false, "Invalid data field type: Count");
             return __FUNCTION__ " invalid field type";
         }
         default:
         {
-            Assert(false, "Unhandled data field type: %i", type);
+            GigiAssert(false, "Unhandled data field type: %i", type);
             return __FUNCTION__ " unknown field type";
         }
     }

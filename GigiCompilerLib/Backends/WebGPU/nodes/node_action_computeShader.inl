@@ -56,7 +56,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				case ShaderResourceType::Texture:
 				{
 					RenderGraphNode depNodeBase = renderGraph.nodes[node.resourceDependencies[resourceIndex].nodeIndex];
-					Assert(depNodeBase._index == RenderGraphNode::c_index_resourceTexture, "Expected a texture node");
+					GigiAssert(depNodeBase._index == RenderGraphNode::c_index_resourceTexture, "Expected a texture node");
 					RenderGraphNode_Resource_Texture& depNode = depNodeBase.resourceTexture;
 
 					// Figure out what kind of access this texture has: R, W, or R/W
@@ -117,7 +117,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				}
 				default:
 				{
-					Assert(false, "Unhandled resource type: %s (%i)", EnumToString(resource.type), (int)resource.type);
+					GigiAssert(false, "Unhandled resource type: %s (%i)", EnumToString(resource.type), (int)resource.type);
 				}
 			}
 
@@ -142,7 +142,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 		std::ostringstream modifyHashString;
 		if (RTSceneBufferNodeIndex != -1)
 		{
-			Assert(renderGraph.nodes[RTSceneBufferNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "RTScene is expected to be a buffer");
+			GigiAssert(renderGraph.nodes[RTSceneBufferNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "RTScene is expected to be a buffer");
 			const RenderGraphNode_Resource_Buffer& RTSceneBufferNode = renderGraph.nodes[RTSceneBufferNodeIndex].resourceBuffer;
 
 			std::string oldShaderCodeStringReplacement = shaderCodeStringReplacement.str();
@@ -273,7 +273,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				{
 					case ShaderResourceType::Texture:
 					{
-						Assert(depNodeBase._index == RenderGraphNode::c_index_resourceTexture, "Expected a texture node");
+						GigiAssert(depNodeBase._index == RenderGraphNode::c_index_resourceTexture, "Expected a texture node");
 						RenderGraphNode_Resource_Texture& depNode = depNodeBase.resourceTexture;
 						stringReplacementMap["/*$(Execute)*/"] <<
 							"                    resource: this.texture_" << depNode.name << ".createView({ dimension: \"" << TextureDimensionTypeToViewDimension(depNode.dimension) << "\""
@@ -305,7 +305,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 					}
 					default:
 					{
-						Assert(false, "Unhandled resource type: %s (%i)", EnumToString(dep.type), (int)dep.type);
+						GigiAssert(false, "Unhandled resource type: %s (%i)", EnumToString(dep.type), (int)dep.type);
 					}
 				}
 
@@ -383,7 +383,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 					}
 					default:
 					{
-						Assert(false, "Inappropriate variable type given for dispatch size.");
+						GigiAssert(false, "Inappropriate variable type given for dispatch size.");
 					}
 				}
 			}
@@ -422,7 +422,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 				indirectBufferResourceNodeIndex = GetResourceNodeForPin(renderGraph, indirectBufferResourceNodeIndex, node.dispatchSize.indirectBuffer.nodePinIndex);
 
 			RenderGraphNode& bufferNodeBase = renderGraph.nodes[indirectBufferResourceNodeIndex];
-			Assert(bufferNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Expected a buffer node");
+			GigiAssert(bufferNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Expected a buffer node");
 			RenderGraphNode_Resource_Buffer& bufferNode = bufferNodeBase.resourceBuffer;
 
 			stringReplacementMap["/*$(Execute)*/"] <<

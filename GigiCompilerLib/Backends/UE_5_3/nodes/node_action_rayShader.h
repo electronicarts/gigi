@@ -35,7 +35,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                     case 3: dispatch << "        FIntVector dispatchSize = FIntVector(" << VariableToString(variable, renderGraph) << "[0], " << VariableToString(variable, renderGraph) << "[1], " << VariableToString(variable, renderGraph) << "[2]);\n"; break;
                     default:
                     {
-                        Assert(false, "Inappropriate variable type given for dispatch size.");
+                        GigiAssert(false, "Inappropriate variable type given for dispatch size.");
                     }
                 }
             }

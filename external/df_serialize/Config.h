@@ -1,7 +1,7 @@
 // All STL usage is through these defined types.
 // You can use different types with the same interfaces used if you'd like to avoid STL.
 
-#define DFS_LOG(...) Assert(false, __VA_ARGS__);
+#define DFS_LOG(...) GigiAssert(false, __VA_ARGS__);
 
 #ifndef TDYNAMICARRAY
 #define TDYNAMICARRAY std::vector

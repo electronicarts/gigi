@@ -3,6 +3,22 @@
       {
         "fileName": "linalg.h",
         "type": "InternalShader"
+      },
+      {
+        "fileName": "HLSLTime.hlsl",
+        "type": "InternalShader"
+      },
+      {
+        "fileName": "nvHLSLExtns.h",
+        "type": "InternalShader"
+      },
+      {
+        "fileName": "nvHLSLExtnsInternal.h",
+        "type": "InternalShader"
+      },
+      {
+        "fileName": "nvShaderExtnEnums.h",
+        "type": "InternalShader"
       }
     ]
 }

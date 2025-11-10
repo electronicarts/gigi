@@ -62,7 +62,7 @@ template <typename T>
 void WriteJSONSchema(std::ostringstream& out, std::string indent, T* dummy)
 {
     const char* typeName = typeid(T).name();
-    Assert(false, "Unhandled type encountered (%s)", typeName);
+    GigiAssert(false, "Unhandled type encountered (%s)", typeName);
 }
 
 template <typename T>

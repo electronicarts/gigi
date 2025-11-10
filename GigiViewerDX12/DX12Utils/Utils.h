@@ -186,7 +186,7 @@ inline DXGI_FORMAT_Info Get_DXGI_FORMAT_Info(DXGI_FORMAT format)
 
 		default:
 		{
-			Assert(false, "Unhandled DXGI_FORMAT");
+            GigiAssert(false, "Unhandled DXGI_FORMAT");
 			return DXGI_FORMAT_INFO(uint8_t, 0, false);
 		}
 	}
@@ -349,7 +349,7 @@ inline D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAGS GGUserFile_TLASBuildF
 		case GGUserFile_TLASBuildFlags::MinimizeMemory: return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_MINIMIZE_MEMORY;
 		default:
 		{
-			Assert(false, "Unhandled GGUserFile_TLASBuildFlags");
+            GigiAssert(false, "Unhandled GGUserFile_TLASBuildFlags");
 			return D3D12_RAYTRACING_ACCELERATION_STRUCTURE_BUILD_FLAG_NONE;
 		}
 	}
@@ -418,6 +418,6 @@ inline D3D12_STENCIL_OP StencilOpToD3D12_STENCIL_OP(StencilOp op)
 		case StencilOp::Decriment: return D3D12_STENCIL_OP_DECR;
 	}
 
-	Assert(false, "Unhandled StencilOp");
+    GigiAssert(false, "Unhandled StencilOp");
 	return D3D12_STENCIL_OP_KEEP;
 }

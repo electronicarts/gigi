@@ -51,7 +51,7 @@ inline bool ShaderResourceTypeIsReadOnly(ShaderResourceAccessType access)
         case ShaderResourceAccessType::ShadingRate: return true;
     }
 
-    //Assert(false, "Unhandled ShaderResourceType: %i", access);
+    //GigiAssert(false, "Unhandled ShaderResourceType: %i", access);
     return true;
 }
 

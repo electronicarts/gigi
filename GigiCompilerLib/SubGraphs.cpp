@@ -459,7 +459,7 @@ struct RenameChildVisitor
         sprintf_s(newName, "%s.%s", m_subGraphNode.name.c_str(), node.name.c_str());
         if (NodeNameExists(m_parentGraph, newName))
         {
-            Assert(false, "Subgraph Node Name Collision");
+            GigiAssert(false, "Subgraph Node Name Collision");
             return false;
         }
 
@@ -484,7 +484,7 @@ struct RenameChildVisitor
         sprintf_s(newName, "%s.%s", m_subGraphNode.name.c_str(), variable.name.c_str());
         if (VariableNameExists(m_parentGraph, newName))
         {
-            Assert(false, "Subgraph Variable Name Collision");
+            GigiAssert(false, "Subgraph Variable Name Collision");
             return false;
         }
 

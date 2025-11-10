@@ -127,6 +127,8 @@ static ID3DBlob* CompileShaderToByteCode_Private(
     return shader;
 }
 
+bool WrapperCreateComputePipelineState(ID3D12Device * device, const D3D12_COMPUTE_PIPELINE_STATE_DESC & psoDesc, ID3D12PipelineState * *pso);
+
 bool MakeComputePSO_fxc(
     ID3D12Device* device,
 	const ShaderCompilationInfo& shaderInfo,
@@ -140,14 +142,12 @@ bool MakeComputePSO_fxc(
         return false;
 
     // Put shader bytecode into PSO
-    D3D12_COMPUTE_PIPELINE_STATE_DESC desc = {};
-    desc.pRootSignature = rootSig;
-    desc.CS.pShaderBytecode = shader->GetBufferPointer();
-    desc.CS.BytecodeLength = shader->GetBufferSize();
-
-    // Make PSO
-    HRESULT hr = device->CreateComputePipelineState(&desc, IID_PPV_ARGS(pso));
-    if (FAILED(hr))
+    D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
+    psoDesc.pRootSignature = rootSig;
+    psoDesc.CS.pShaderBytecode = shader->GetBufferPointer();
+    psoDesc.CS.BytecodeLength = shader->GetBufferSize();
+    
+    if (!WrapperCreateComputePipelineState(device, psoDesc, pso))
     {
         logFn(LogLevel::Error, "Could not create PSO for shader %s", shaderInfo.fileName.string());
         return false;

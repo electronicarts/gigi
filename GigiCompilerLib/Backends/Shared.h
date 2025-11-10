@@ -567,7 +567,7 @@ inline size_t DataFieldTypeToSize(DataFieldType type)
         case DataFieldType::Float_16: return 2;
         default:
         {
-            Assert(false, "Unknown data field type: %i", type);
+            GigiAssert(false, "Unknown data field type: %i", type);
             return 0;
         }
     }
@@ -597,7 +597,7 @@ inline size_t DataFieldTypeComponentCount(DataFieldType type)
         case DataFieldType::Float_16: return 1;
         default:
         {
-            Assert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
+            GigiAssert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
             return 0;
         }
     }
@@ -627,7 +627,7 @@ inline std::string GetNodeTypeString(const RenderGraphNode& node)
         #include "Schemas/RenderGraphNodesVariant.h"
         // clang-format on
     }
-    Assert(false, "Unhandled node type");
+    GigiAssert(false, "Unhandled node type");
     return "";
 }
 
@@ -679,7 +679,7 @@ inline std::string ConditionToString(const Condition& condition, const RenderGra
         case ConditionComparison::GTE: return value1 + " >= " + value2;
         default:
         {
-            Assert(false, "Unhandled condition comparison");
+            GigiAssert(false, "Unhandled condition comparison");
         }
     }
     return "";
@@ -718,16 +718,16 @@ inline const char* DataFieldTypeToShaderType(DataFieldType type)
         case DataFieldType::Float4x4: return "float4x4";
         case DataFieldType::Uint_16: return "uint16_t";
         case DataFieldType::Int_64: return "int64";
-        case DataFieldType::Uint_64: return "uint64";
+        case DataFieldType::Uint_64: return "uint64_t";
         case DataFieldType::Float_16: return "float16_t";
         case DataFieldType::Count:
         {
-            Assert(false, "Invalid data field type: Count");
+            GigiAssert(false, "Invalid data field type: Count");
             return __FUNCTION__ " invalid field type";
         }
         default:
         {
-            Assert(false, "Unhandled data field type: %i", type);
+            GigiAssert(false, "Unhandled data field type: %i", type);
             return __FUNCTION__ " unknown field type";
         }
     }
@@ -793,7 +793,7 @@ inline int GetScopedVariableIndex(const RenderGraph& renderGraph, const char* va
         bool didRename = false;
         do
         {
-            Assert(loopCount < 1000, "Variable rename loop detected while loop for variable \"%s\"", variableName);
+            GigiAssert(loopCount < 1000, "Variable rename loop detected while loop for variable \"%s\"", variableName);
             didRename = false;
 
             for (const VariableReplacement& replacement : renderGraph.variableReplacements)
@@ -889,7 +889,7 @@ inline DataFieldTypeInfoStruct DataFieldTypeInfo(DataFieldType type)
         case DataFieldType::Float_16: return DATA_FIELD_TYPE_INFO(uint16_t, 1, DataFieldType::Float_16);
         default:
         {
-            Assert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
+            GigiAssert(false, "Unknown data field type: %i (%s)", type, EnumToString(type));
 			return DATA_FIELD_TYPE_INFO(int, 0, DataFieldType::Int);
         }
     }
@@ -1029,7 +1029,7 @@ inline std::vector<InternalTemplateFile> ProcessTemplateFolder(RenderGraph& rend
         std::vector<unsigned char> fileData;
         if (!LoadFile(it.path().string().c_str(), fileData))
         {
-            Assert(false, "Could not load template file %s", it.path().string().c_str());
+            GigiAssert(false, "Could not load template file %s", it.path().string().c_str());
             return ret;
         }
 
@@ -1057,14 +1057,14 @@ inline std::vector<InternalTemplateFile> ProcessTemplateFolder(RenderGraph& rend
         doc.LoadFile(fullFileName.c_str());
         if (doc.Error())
         {
-            Assert(false, "Could not load xml file \"%s\" : %s", fullFileName.c_str(), doc.ErrorStr());
+            GigiAssert(false, "Could not load xml file \"%s\" : %s", fullFileName.c_str(), doc.ErrorStr());
             return ret;
         }
 
         auto rootElement = doc.RootElement();
         if (!rootElement)
         {
-            Assert(false, "Could not load xml file \"%s\" : no root element", fullFileName.c_str());
+            GigiAssert(false, "Could not load xml file \"%s\" : no root element", fullFileName.c_str());
             return ret;
         }
 
@@ -1075,7 +1075,7 @@ inline std::vector<InternalTemplateFile> ProcessTemplateFolder(RenderGraph& rend
             const char* split = strchr(elementName, ':');
             if (!split)
             {
-                Assert(false, "Could not process xml file \"%s\": xml tag <%s> should be of the format <nodeType:tag>.", fullFileName.c_str(), elementName);
+                GigiAssert(false, "Could not process xml file \"%s\": xml tag <%s> should be of the format <nodeType:tag>.", fullFileName.c_str(), elementName);
                 return ret;
             }
 
