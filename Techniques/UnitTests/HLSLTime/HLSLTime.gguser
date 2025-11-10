@@ -1,0 +1,29 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 10,
+        "resourceViewResourceIndex": 2,
+        "cameraAltitudeAzimuth": [
+            0.2772520184516907,
+            5.8084282875061039
+        ],
+        "savedVariables": [
+            {
+                "name": "Zoom",
+                "value": "0.360000"
+            },
+            {
+                "name": "Center",
+                "value": "-0.658000,-0.438000"
+            },
+            {
+                "name": "CenterFine",
+                "value": "0.726000,-0.094000"
+            },
+            {
+                "name": "Iterations",
+                "value": "886"
+            }
+        ]
+    }
+}

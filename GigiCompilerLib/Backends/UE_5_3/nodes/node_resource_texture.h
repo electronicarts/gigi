@@ -26,7 +26,7 @@ static void MakeTextureDesc(const RenderGraph& renderGraph, const RenderGraphNod
                 case 3: makeDesc << indent << "FIntVector textureSize = FIntVector(" << VariableToString(variable, renderGraph) << "[0], " << VariableToString(variable, renderGraph) << "[1], " << VariableToString(variable, renderGraph) << "[2]);\n"; break;
                 default:
                 {
-                    Assert(false, "Inappropriate variable type given for dispatch size.");
+                    GigiAssert(false, "Inappropriate variable type given for dispatch size.");
                 }
             }
         }
@@ -137,7 +137,7 @@ static void MakeTextureDesc(const RenderGraph& renderGraph, const RenderGraphNod
         }
         default:
         {
-            Assert(false, "Unhandled texture dimensionality \"%s\" in node \"%s\"", EnumToString(node.dimension), node.name);
+            GigiAssert(false, "Unhandled texture dimensionality \"%s\" in node \"%s\"", EnumToString(node.dimension), node.name);
         }
     }
 }

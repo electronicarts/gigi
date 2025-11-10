@@ -5,6 +5,6 @@
 
 static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode_Action_External& node, std::string& tag, std::string& text)
 {
-    Assert(false, "External nodes not yet implemented");
+    GigiAssert(false, "External nodes not yet implemented");
     return false;
 }

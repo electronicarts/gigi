@@ -353,7 +353,8 @@ public:
 					return false;
 				}
 
-				device->CreateUnorderedAccessView(descriptor.m_resource, nullptr, &uavDesc, handle);
+                if(descriptor.m_resource)
+				    device->CreateUnorderedAccessView(descriptor.m_resource, nullptr, &uavDesc, handle);
 			}
 			else if(descriptor.m_access == AccessType::CBV)
 			{

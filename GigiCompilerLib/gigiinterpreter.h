@@ -622,7 +622,7 @@ public:
 			case DataFieldComponentType::_float: dest[0] = static_cast<T>(((float*)src)[0]); break;
 			default:
 			{
-				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				GigiAssert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
 				break;
 			}
 		}
@@ -645,7 +645,7 @@ public:
 			case DataFieldComponentType::_float: ConvertTypedBinaryValueInternal(src, srcType, (float*)dest); break;
 			default:
 			{
-				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				GigiAssert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
 				break;
 			}
 		}
@@ -1118,9 +1118,9 @@ public:
 	T GetRuntimeVariableValueAllowCast_NoFail(int variableIndex)
 	{
 		T ret = {};
-		Assert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
+		GigiAssert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
 		bool success = GetRuntimeVariableAllowCast(variableIndex, ret);
-		Assert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
+		GigiAssert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
 		return ret;
 	}
 
@@ -1128,9 +1128,9 @@ public:
     template <typename T>
     void GetRuntimeVariableValueAllowCast_NoFail(int variableIndex, T* outValue, int outValueCount)
     {
-        Assert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
+        GigiAssert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
         bool success = GetRuntimeVariableAllowCast(variableIndex, outValue, outValueCount);
-        Assert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
+        GigiAssert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
     }
 
 	const RenderGraph& GetRenderGraph() const

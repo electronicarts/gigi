@@ -2489,7 +2489,7 @@ struct Example :
                 }
                 default:
                 {
-                    Assert(false, "Unhandled ExternalNodeData type");
+                    GigiAssert(false, "Unhandled ExternalNodeData type");
                     break;
                 }
             }

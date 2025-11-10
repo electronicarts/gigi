@@ -21,7 +21,7 @@ struct BackendDX12 : public BackendBase
             case ResourceVisibility::Internal: return "m_internal.";
             case ResourceVisibility::Exported: return "m_output.";
         }
-        Assert(false, "Unhandled ResourceVisibility: %i", (int)visibility);
+        GigiAssert(false, "Unhandled ResourceVisibility: %i", (int)visibility);
         return __FUNCTION__ " unknown ResourceVisibility";
     }
 
@@ -40,7 +40,7 @@ struct BackendDX12 : public BackendBase
             case DataFieldType::Float_16: return "DXGI_FORMAT_R16_FLOAT";
             default:
             {
-                Assert(false, "Unhandled DataFieldType: %i", (int)type);
+                GigiAssert(false, "Unhandled DataFieldType: %i", (int)type);
                 return __FUNCTION__ " unknown data field type";
             }
         }
@@ -55,7 +55,7 @@ struct BackendDX12 : public BackendBase
             case SamplerFilter::MinMagMipLinear: return "D3D12_FILTER_MIN_MAG_MIP_LINEAR";
             default:
             {
-                Assert(false, "Unhandled SamplerFilter: %i", (int)filter);
+                GigiAssert(false, "Unhandled SamplerFilter: %i", (int)filter);
                 return __FUNCTION__ " unhandled SamplerFilter";
             }
         }
@@ -70,7 +70,7 @@ struct BackendDX12 : public BackendBase
             case DrawCullMode::Back: return "D3D12_CULL_MODE_BACK";
             default:
             {
-                Assert(false, "Unhandled DrawCullMode: %i (%s)", (int)drawCullMode, EnumToString(drawCullMode));
+                GigiAssert(false, "Unhandled DrawCullMode: %i (%s)", (int)drawCullMode, EnumToString(drawCullMode));
                 return __FUNCTION__ " unhandled DrawCullMode";
             }
         }
@@ -92,7 +92,7 @@ struct BackendDX12 : public BackendBase
             case DrawBlendMode::InvDestColor: return "D3D12_BLEND_INV_DEST_COLOR";
             default:
             {
-                Assert(false, "Unhandled DrawBlendMode: %i (%s)", (int)mode, EnumToString(mode));
+                GigiAssert(false, "Unhandled DrawBlendMode: %i (%s)", (int)mode, EnumToString(mode));
                 return __FUNCTION__ " unhandled DrawBlendMode";
             }
         }
@@ -109,7 +109,7 @@ struct BackendDX12 : public BackendBase
             case TextureDimensionType::Texture2DMS: return "D3D12_RTV_DIMENSION_TEXTURE2DMS";
             default:
             {
-                Assert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
+                GigiAssert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
                 return __FUNCTION__ " unhandled TextureDimensionType";
             }
         }
@@ -125,7 +125,7 @@ struct BackendDX12 : public BackendBase
             case TextureDimensionType::Texture2DMS: return "D3D12_DSV_DIMENSION_TEXTURE2DMS";
             default:
             {
-                Assert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
+                GigiAssert(false, "Unhandled TextureDimensionType: %i (%s)", (int)textureDimensionType, EnumToString(textureDimensionType));
                 return __FUNCTION__ " unhandled TextureDimensionType";
             }
         }
@@ -140,7 +140,7 @@ struct BackendDX12 : public BackendBase
             case GeometryType::PointList: return "D3D_PRIMITIVE_TOPOLOGY_POINTLIST";
             default:
             {
-                Assert(false, "Unhandled GeometryType: %i (%s)", (int)geometryType, EnumToString(geometryType));
+                GigiAssert(false, "Unhandled GeometryType: %i (%s)", (int)geometryType, EnumToString(geometryType));
                 return __FUNCTION__ " unhandled GeometryType";
             }
         }
@@ -155,7 +155,7 @@ struct BackendDX12 : public BackendBase
 		    case GeometryType::PointList: return "D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT";
 		    default:
 		    {
-                Assert(false, "Unhandled GeometryType: %i (%s)", (int)geometryType, EnumToString(geometryType));
+                GigiAssert(false, "Unhandled GeometryType: %i (%s)", (int)geometryType, EnumToString(geometryType));
                 return __FUNCTION__ " unhandled GeometryType";
 		    }
 	    }
@@ -175,7 +175,7 @@ struct BackendDX12 : public BackendBase
             case DepthTestFunction::Always: return "D3D12_COMPARISON_FUNC_ALWAYS";
             default:
             {
-                Assert(false, "Unhandled DepthTestFunction: %i (%s)", (int)function, EnumToString(function));
+                GigiAssert(false, "Unhandled DepthTestFunction: %i (%s)", (int)function, EnumToString(function));
                 return __FUNCTION__ " unhandled DepthTestFunction";
             }
         }
@@ -195,7 +195,7 @@ struct BackendDX12 : public BackendBase
             case StencilOp::Decriment: return "D3D12_STENCIL_OP_DECR";
         }
 
-        Assert(false, "Unhandled StencilOp: %i (%s)", (int)op, EnumToString(op));
+        GigiAssert(false, "Unhandled StencilOp: %i (%s)", (int)op, EnumToString(op));
         return __FUNCTION__ " unhandled StencilOp";
     }
 
@@ -208,7 +208,7 @@ struct BackendDX12 : public BackendBase
             case SamplerAddressMode::Border: return "D3D12_TEXTURE_ADDRESS_MODE_BORDER";
             default:
             {
-                Assert(false, "Unhandled SamplerAddressMode: %i", (int)addressMode);
+                GigiAssert(false, "Unhandled SamplerAddressMode: %i", (int)addressMode);
                 return __FUNCTION__ " unhandled SamplerAddressMode";
             }
         }
@@ -220,7 +220,7 @@ struct BackendDX12 : public BackendBase
         {
             case TextureFormat::Any:
             {
-                Assert(false, "TextureFormat::Any is not an acceptable texture format to convert to a DXGI format.");
+                GigiAssert(false, "TextureFormat::Any is not an acceptable texture format to convert to a DXGI format.");
                 break;
             }
             case TextureFormat::R8_Unorm: return "DXGI_FORMAT_R8_UNORM";
@@ -262,7 +262,7 @@ struct BackendDX12 : public BackendBase
             case TextureFormat::BC6_SF16: return "DXGI_FORMAT_BC6H_SF16";
         }
 
-        Assert(false, "Unhandled TextureFormat: %s (%i)", EnumToString(textureFormat), (int)textureFormat);
+        GigiAssert(false, "Unhandled TextureFormat: %s (%i)", EnumToString(textureFormat), (int)textureFormat);
         return __FUNCTION__ " unknown texture format";
     }
 
@@ -284,7 +284,7 @@ struct BackendDX12 : public BackendBase
             case ShaderResourceAccessType::ShadingRate: return "D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE";
         }
 
-        Assert(false, "Unhandled ShaderResourceType: %s (%i)", EnumToString(resourceType), (int)resourceType);
+        GigiAssert(false, "Unhandled ShaderResourceType: %s (%i)", EnumToString(resourceType), (int)resourceType);
         return __FUNCTION__ " unknown resource type";
     }
 
@@ -301,7 +301,7 @@ struct BackendDX12 : public BackendBase
             case ShadingRate::_4x4: return "D3D12_SHADING_RATE_4X4";
         }
 
-        Assert(false, "Unhandled ShadingRate: %s (%i)", EnumToString(shadingRate), (int)shadingRate);
+        GigiAssert(false, "Unhandled ShadingRate: %s (%i)", EnumToString(shadingRate), (int)shadingRate);
         return __FUNCTION__ " unknown ShadingRate";
     }
 
@@ -316,7 +316,7 @@ struct BackendDX12 : public BackendBase
             case ShadingRateCombiner::Sum: return "D3D12_SHADING_RATE_COMBINER_SUM";
         }
 
-        Assert(false, "Unhandled ShadingRateCombiner: %s (%i)", EnumToString(shadingRateCombiner), (int)shadingRateCombiner);
+        GigiAssert(false, "Unhandled ShadingRateCombiner: %s (%i)", EnumToString(shadingRateCombiner), (int)shadingRateCombiner);
         return __FUNCTION__ " unknown ShadingRateCombiner";
     }
 
@@ -339,7 +339,7 @@ struct BackendDX12 : public BackendBase
             }
             default:
             {
-                Assert(false, "Unhandled variable visibility");
+                GigiAssert(false, "Unhandled variable visibility");
             }
         }
 
@@ -363,7 +363,7 @@ struct BackendDX12 : public BackendBase
             case ResourceVisibility::Exported: path = "m_output."; break;
             default:
             {
-                Assert(false, "Unhandled resource visibility");
+                GigiAssert(false, "Unhandled resource visibility");
             }
         }
 
@@ -373,7 +373,7 @@ struct BackendDX12 : public BackendBase
             case RenderGraphNode::c_index_resourceTexture: return path + "texture_" + GetNodeName(node);
             default:
             {
-                Assert(false, "Unhandled resource node type");
+                GigiAssert(false, "Unhandled resource node type");
             }
         }
         return "<error>";
@@ -448,7 +448,7 @@ struct BackendDX12 : public BackendBase
             case DataFieldType::Uint_64: return "uint64_t";
             default:
             {
-                Assert(false, "Unhandled data field type: %s (%i)", EnumToString(type), type);
+                GigiAssert(false, "Unhandled data field type: %s (%i)", EnumToString(type), type);
                 return __FUNCTION__ " unknown field type";
             }
         }
@@ -495,7 +495,7 @@ struct BackendDX12 : public BackendBase
             {
                 case RenderGraphNode::c_index_resourceBuffer: resourcePrefix = "buffer_"; break;
                 case RenderGraphNode::c_index_resourceTexture: resourcePrefix = "texture_"; break;
-                default: Assert(false, "Unhandled resource node type"); break;
+                default: GigiAssert(false, "Unhandled resource node type"); break;
             }
 
             if (transition.oldState == ShaderResourceAccessType::UAV && transition.newState == ShaderResourceAccessType::UAV)
@@ -813,7 +813,7 @@ struct BackendDX12 : public BackendBase
                     case DataFieldType::Int_64: varSymbols = "I"; break;
                     case DataFieldType::Uint_64: varSymbols = "I"; break;
                     case DataFieldType::Float_16: varSymbols = "f"; break;
-                    default: Assert(false, "Unhandled Variable Type: %i", variable.type); break;
+                    default: GigiAssert(false, "Unhandled Variable Type: %i", variable.type); break;
                 }
 
                 // Put the function in the list of functions exposed to python
@@ -1160,7 +1160,7 @@ struct BackendDX12 : public BackendBase
                     }
                     default:
                     {
-                        Assert(false, "Unhandled Variable Type: %i", variable.type);
+                        GigiAssert(false, "Unhandled Variable Type: %i", variable.type);
                         break;
                     }
                 }
@@ -1402,7 +1402,7 @@ struct BackendDX12 : public BackendBase
                     {
                         case RenderGraphNode::c_index_resourceBuffer: resourcePrefix = "buffer_"; break;
                         case RenderGraphNode::c_index_resourceTexture: resourcePrefix = "texture_"; break;
-                        default: Assert(false, "Unhandled resource node type"); break;
+                        default: GigiAssert(false, "Unhandled resource node type"); break;
                     }
 
                     stringReplacementMap["/*$(Execute)*/"] <<
@@ -1476,7 +1476,7 @@ struct BackendDX12 : public BackendBase
                     }
                     default:
                     {
-                        Assert(false, "Unhandled variable visibility");
+                        GigiAssert(false, "Unhandled variable visibility");
                     }
                 }
 
@@ -1537,7 +1537,7 @@ struct BackendDX12 : public BackendBase
                 {
                     case RenderGraphNode::c_index_resourceBuffer: resourcePrefix = "buffer_"; break;
                     case RenderGraphNode::c_index_resourceTexture: resourcePrefix = "texture_"; break;
-                    default: Assert(false, "Unhandled resource node type"); break;
+                    default: GigiAssert(false, "Unhandled resource node type"); break;
                 }
 
                 stringReplacementMap["/*$(Execute)*/"] <<
@@ -1602,7 +1602,7 @@ void CopyShaderFileDX12(Shader& shader, const std::unordered_map<std::string, st
 {
     if (shader.language != ShaderLanguage::HLSL && shader.language != ShaderLanguage::Slang)
     {
-        Assert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
+        GigiAssert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
         return;
     }
 
@@ -1629,7 +1629,7 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUs
 
         if (node.resourceTexture.dimension == TextureDimensionType::Texture2DMS)
         {
-            Assert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
+            GigiAssert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
             return;
         }
     }
@@ -1664,7 +1664,7 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUs
             }
             default:
             {
-                Assert(false, "Unhandled build flavor: %s", EnumToString(buildFlavor));
+                GigiAssert(false, "Unhandled build flavor: %s", EnumToString(buildFlavor));
                 return;
             }
         }
@@ -1694,7 +1694,7 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUs
         std::vector<unsigned char> data;
         if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
         {
-            Assert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
         }
 
         // get the folder to copy to
@@ -1718,7 +1718,7 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUs
             }
             default:
             {
-                Assert(false, "Unhandled file copy type");
+                GigiAssert(false, "Unhandled file copy type");
                 break;
             }
         }

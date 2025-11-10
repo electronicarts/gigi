@@ -28,12 +28,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         {
             if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::RenderTarget))
             {
-                Assert(false, "Texture \"%s\" can't be used as both a shading rate texture and a render target texture.", node.name.c_str());
+                GigiAssert(false, "Texture \"%s\" can't be used as both a shading rate texture and a render target texture.", node.name.c_str());
             }
 
             if (node.accessedAs & (1 << (unsigned int)ShaderResourceAccessType::DepthTarget))
             {
-                Assert(false, "Texture \"%s\" can't be used as both a shading rate texture and a depth target texture.", node.name.c_str());
+                GigiAssert(false, "Texture \"%s\" can't be used as both a shading rate texture and a depth target texture.", node.name.c_str());
             }
         }
     }
@@ -320,7 +320,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                     }
                     default:
                     {
-                        Assert(false, "Inappropriate variable type given for texture size.");
+                        GigiAssert(false, "Inappropriate variable type given for texture size.");
                     }
                 }
             }
@@ -403,7 +403,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case TextureDimensionType::TextureCube: textureType = "DX12Utils::ResourceType::TextureCube"; break;
                 default:
                 {
-                    Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(node.dimension), (int)node.dimension);
+                    GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(node.dimension), (int)node.dimension);
                 }
             }
 

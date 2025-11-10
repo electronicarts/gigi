@@ -25,7 +25,7 @@ static inline FfxApiResourceState D3D12State_To_FfxState(D3D12_RESOURCE_STATES s
         case D3D12_RESOURCE_STATE_DEPTH_WRITE: return FFX_API_RESOURCE_STATE_DEPTH_ATTACHMENT;
         default:
         {
-            Assert(false, "Unhandled D3D12_RESOURCE_STATES in " __FUNCTION__);
+            GigiAssert(false, "Unhandled D3D12_RESOURCE_STATES in " __FUNCTION__);
             return FFX_API_RESOURCE_STATE_COMMON;
         }
     }

@@ -88,7 +88,7 @@ int main(int argc, char** argv)
     GigiBuildFlavor buildFlavor;
     if (!StringToEnum(argv[1], buildFlavor))
     {
-        Assert(false, "Could not find build flavor '%s'", argv[1]);
+        GigiAssert(false, "Could not find build flavor '%s'", argv[1]);
         return (int)GigiCompileResult::NoBackend;
     }
 
@@ -96,7 +96,7 @@ int main(int argc, char** argv)
     Backend backend;
     if (!GigiBuildFlavorBackend(buildFlavor, backend))
     {
-        Assert(false, "Could not get backend for build flavor '%s'", argv[1]);
+        GigiAssert(false, "Could not get backend for build flavor '%s'", argv[1]);
         return (int)GigiCompileResult::NoBackend;
     }
 

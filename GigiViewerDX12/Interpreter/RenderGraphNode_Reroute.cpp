@@ -9,6 +9,6 @@
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Reroute& node, RuntimeTypes::RenderGraphNode_Reroute& runtimeData, NodeAction nodeAction)
 {
 	// No-op. Should never get to a backend.
-	Assert(false, "Reroute nodes should be removed by the front end.");
+    GigiAssert(false, "Reroute nodes should be removed by the front end.");
 	return false;
 }

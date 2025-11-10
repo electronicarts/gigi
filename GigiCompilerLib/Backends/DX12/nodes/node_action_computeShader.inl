@@ -89,7 +89,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateShared)*/"] << "\n            ranges[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
             default:
             {
-                Assert(false, "Unhandled resource access type: %i", resource.access);
+                GigiAssert(false, "Unhandled resource access type: %i", resource.access);
             }
         }
 
@@ -246,7 +246,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
                     resourceTypeString = "DX12Utils::ResourceType::Buffer";
 
-                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    GigiAssert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
                     RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
                     size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
                     rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
@@ -293,7 +293,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(node.shader.shader->resources[depIndex].texture.dimension), (int)node.shader.shader->resources[depIndex].texture.dimension);
+                            GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(node.shader.shader->resources[depIndex].texture.dimension), (int)node.shader.shader->resources[depIndex].texture.dimension);
                             break;
                         }
                     }
@@ -302,7 +302,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Unhandled resource type");
+                    GigiAssert(false, "Unhandled resource type");
                 }
             }
 
@@ -315,7 +315,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource type: %i", dep.access);
+                    GigiAssert(false, "Unhandled resource type: %i", dep.access);
                 }
             }
 
@@ -351,8 +351,8 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         if (!GetNodeIsResourceNode(renderGraph.nodes[indirectBufferResourceNodeIndex]))
             indirectBufferResourceNodeIndex = GetResourceNodeForPin(renderGraph, indirectBufferResourceNodeIndex, node.dispatchSize.indirectBuffer.nodePinIndex);
 
-        Assert(indirectBufferResourceNodeIndex != -1, "Could not find resource node for indirect dispatch");
-        Assert(renderGraph.nodes[indirectBufferResourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+        GigiAssert(indirectBufferResourceNodeIndex != -1, "Could not find resource node for indirect dispatch");
+        GigiAssert(renderGraph.nodes[indirectBufferResourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
         RenderGraphNode_Resource_Buffer& bufferNode = renderGraph.nodes[indirectBufferResourceNodeIndex].resourceBuffer;
 
         if (node.dispatchSize.indirectOffsetVariable.variableIndex != -1)
@@ -367,7 +367,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             }
             else
             {
-                Assert(false, "Unhandled data type \"%s\" for Indirect Offset variable \"%s\" in compute shader node \"%s\"", EnumToString(variable.type), variable.name.c_str(), node.name.c_str());
+                GigiAssert(false, "Unhandled data type \"%s\" for Indirect Offset variable \"%s\" in compute shader node \"%s\"", EnumToString(variable.type), variable.name.c_str(), node.name.c_str());
             }
         }
         else
@@ -440,7 +440,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Inappropriate variable type given for dispatch size.");
+                    GigiAssert(false, "Inappropriate variable type given for dispatch size.");
                 }
             }
         }

@@ -46,7 +46,7 @@ inline StaticNodeInfo GetStaticNodeInfo(RenderGraphNode_Action_External& node)
         }
         default:
         {
-            Assert(false, "Unhandled external node type in " __FUNCTION__);
+            GigiAssert(false, "Unhandled external node type in " __FUNCTION__);
             break;
         }
     }

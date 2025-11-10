@@ -13,10 +13,10 @@ Below are the details of what is supported on each platform, based on the unit t
 
 | Platform | Supported Tests | Unsupported Tests | Support Rate |
 |----------|----------------|-------------------|--------------|
-| Viewer | 93/93 | 0/93 | 100.0% |
-| DX12 | 68/93 | 25/93 | 73.1% |
-| WebGPU | 50/93 | 43/93 | 53.8% |
-| UE 5.3 | 20/93 | 73/93 | 21.5% |
+| Viewer | 94/94 | 0/94 | 100.0% |
+| DX12 | 68/94 | 26/94 | 72.3% |
+| WebGPU | 50/94 | 44/94 | 53.2% |
+| UE 5.3 | 20/94 | 74/94 | 21.3% |
 
 ## Detailed Test Support by Platform
 
@@ -49,6 +49,7 @@ Below are the details of what is supported on each platform, based on the unit t
 | `Data\binaryTexU8` | ✅ | ❌ | ❌ | ❌ |
 | `Data\ply_cube_binary_type` | ✅ | ❌ | ❌ | ❌ |
 | `Data\ply_cube_uv_struct` | ✅ | ❌ | ❌ | ❌ |
+| `HLSLTime\HLSLTime` | ✅ | ❌ | ❌ | ❌ |
 | `MeshShaders\Mesh` | ✅ | ✅ | ❌ | ❌ |
 | `MeshShaders\MeshAmplification` | ✅ | ✅ | ❌ | ❌ |
 | `MeshShaders\MeshAmplificationLines` | ✅ | ✅ | ❌ | ❌ |

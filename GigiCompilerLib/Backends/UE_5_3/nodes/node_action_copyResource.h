@@ -75,14 +75,14 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
 					}
 					default:
 					{
-						Assert(false, "Unsupported node type.");
+                        GigiAssert(false, "Unsupported node type.");
 					}
 				}
 			}
 			else
 			{
 				// Not currently supported.
-				Assert(false, "Not supported in UE when this code was written.");
+                GigiAssert(false, "Not supported in UE when this code was written.");
 
 				// A custom compute shader to do copying could be emitted!
 			}

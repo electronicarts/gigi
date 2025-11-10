@@ -111,6 +111,7 @@ unsupportedTests = [
 
     # Unsupported
     "AMD\\Upscale",
+    "HLSLTime\\HLSLTime",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

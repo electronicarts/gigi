@@ -32,7 +32,7 @@ namespace FrontEndNodes
     }
     inline bool GetIsResourceNode(const RenderGraphNode_Base& node)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
         return false;
     }
 
@@ -43,48 +43,48 @@ namespace FrontEndNodes
     }
     inline std::string GetPinName(const RenderGraphNode_Base& node, int pinIndex)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
         return "";
     }
     inline InputNodeInfo GetPinInputNodeInfo(const RenderGraphNode_Base& node, int pinIndex)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
         return InputNodeInfo();
     }
 
     // resource specific
     inline void SetStartingState(RenderGraphNode_Base& node, ShaderResourceAccessType state)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
     }
     inline void SetFinalState(RenderGraphNode_Base& node, ShaderResourceAccessType state)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
     }
     inline ShaderResourceAccessType GetStartingState(const RenderGraphNode_Base& node)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
         return ShaderResourceAccessType::Count;
     }
     inline ShaderResourceAccessType GetFinalState(const RenderGraphNode_Base& node)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
         return ShaderResourceAccessType::Count;
     }
     inline ResourceVisibility GetResourceVisibility(const RenderGraphNode_Base& node)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
         return ResourceVisibility::Count;
     }
     inline void AddResourceAccessedAs(RenderGraphNode_Base& node, ShaderResourceAccessType state, ShaderResourceAccessType originalState)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
     }
 
     // action specific
     inline void AddResourceDependency(RenderGraphNode_Base& node, int pinIndex, int resourceNodeIndex, ShaderResourceType type, ShaderResourceAccessType accessedAs)
     {
-        Assert(false, "Should not be called");
+        GigiAssert(false, "Should not be called");
     }
 };
 
@@ -188,7 +188,7 @@ void ExecuteOnResourceNode(const RenderGraphNode& node, const LAMBDA& lambda)
                 }
             );
 
-            Assert(!isResourceNode, "Unhandled resource node type in " __FUNCTION__);
+            GigiAssert(!isResourceNode, "Unhandled resource node type in " __FUNCTION__);
         }
     }
 }
@@ -249,7 +249,7 @@ void ExecuteOnActionNode(const RenderGraphNode& node, const LAMBDA& lambda)
                 }
             );
 
-            Assert(isResourceNode, "Unhandled action node type in " __FUNCTION__);
+            GigiAssert(isResourceNode, "Unhandled action node type in " __FUNCTION__);
         }
     }
 }
@@ -576,7 +576,7 @@ namespace FrontEndNodesNoCaching
                     info.dstPin = &connection.dstPin;
 
                     const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::Compute, node.shader.name.c_str(), connection.srcPin.c_str());
-                    Assert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.shader.name.c_str());
+                    GigiAssert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.shader.name.c_str());
                     if (shaderResource)
                     {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);
@@ -609,7 +609,7 @@ namespace FrontEndNodesNoCaching
                     info.dstPin = &connection.dstPin;
 
                     const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::RTRayGen, node.shader.name.c_str(), connection.srcPin.c_str());
-                    Assert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.shader.name.c_str());
+                    GigiAssert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.shader.name.c_str());
                     if (shaderResource)
                     {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);
@@ -659,7 +659,7 @@ namespace FrontEndNodesNoCaching
                     const ShaderResource* shaderResourceVS = GetShaderResourceByName(renderGraph, ShaderType::Vertex, node.vertexShader.name.c_str(), connection.srcPin.c_str());
                     const ShaderResource* shaderResourcePS = GetShaderResourceByName(renderGraph, ShaderType::Pixel, node.pixelShader.name.c_str(), connection.srcPin.c_str());
 
-                    Assert(shaderResourceAS != nullptr || shaderResourceMS != nullptr || shaderResourceVS != nullptr || shaderResourcePS != nullptr, "Could not find shader resource \"%s\" for draw call node \"%s\" " __FUNCTION__, connection.srcPin.c_str(), node.name.c_str());
+                    GigiAssert(shaderResourceAS != nullptr || shaderResourceMS != nullptr || shaderResourceVS != nullptr || shaderResourcePS != nullptr, "Could not find shader resource \"%s\" for draw call node \"%s\" " __FUNCTION__, connection.srcPin.c_str(), node.name.c_str());
 
                     if (shaderResourceAS)
                     {
@@ -798,7 +798,7 @@ namespace FrontEndNodesNoCaching
             }
             default:
             {
-                Assert(false, "Unhandled node type in " __FUNCTION__);
+                GigiAssert(false, "Unhandled node type in " __FUNCTION__);
                 break;
             }
         }
@@ -1020,7 +1020,7 @@ namespace FrontEndNodesNoCaching
         const RenderGraphNode* nodePtr = &textureNode_;
         while (1)
         {
-            Assert(nodePtr->_index == RenderGraphNode::c_index_resourceTexture, "Reached a node that wasn't a texture!");
+            GigiAssert(nodePtr->_index == RenderGraphNode::c_index_resourceTexture, "Reached a node that wasn't a texture!");
             const RenderGraphNode_Resource_Texture& textureNode = nodePtr->resourceTexture;
 
             // We can't know the format of imported textures
@@ -1035,7 +1035,7 @@ namespace FrontEndNodesNoCaching
             else if (!textureNode.format.node.name.empty())
             {
                 int nodeIndex = GetNodeIndexByName(renderGraph, textureNode.format.node.name.c_str());
-                Assert(nodeIndex >= 0, "Could not find node");
+                GigiAssert(nodeIndex >= 0, "Could not find node");
                 nodePtr = &renderGraph.nodes[nodeIndex];
             }
             // Otherwise, return the format set on this node

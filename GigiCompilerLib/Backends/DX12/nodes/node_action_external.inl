@@ -5,5 +5,5 @@
 
 static void MakeStringReplacementForNode(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, RenderGraphNode_Action_External& node)
 {
-    Assert(false, "External nodes not yet implemented");
+    GigiAssert(false, "External nodes not yet implemented");
 }

@@ -451,7 +451,7 @@ void MakeRenderGraphGraphViz(RenderGraph& renderGraph, const char* outFolder)
         {
             if (pinsUsed.count(link.pinIndex) > 0)
             {
-                Assert(false, "Action node %s pin %i output goes to multiple places. This is not necesarily an error, but is often not intended", GetNodeName(renderGraph.nodes[nodeIndex]).c_str(), link.pinIndex);
+                GigiAssert(false, "Action node %s pin %i output goes to multiple places. This is not necesarily an error, but is often not intended", GetNodeName(renderGraph.nodes[nodeIndex]).c_str(), link.pinIndex);
             }
             pinsUsed.insert(link.pinIndex);
         }

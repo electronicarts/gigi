@@ -137,7 +137,10 @@ public:
 		}
 
 		// DX12 capabilities
-		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &m_dx12_options4, sizeof(m_dx12_options4))))
+		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &m_dx12_options, sizeof(m_dx12_options))))
+			return false;
+
+        if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &m_dx12_options4, sizeof(m_dx12_options4))))
 			return false;
 
 		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &m_dx12_options5, sizeof(m_dx12_options5))))
@@ -170,6 +173,12 @@ public:
 
 		// Create the preview device
 		hr = m_device->QueryInterface(IID_PPV_ARGS(&m_previewDevice));
+  
+		m_envDefines.push_back(ShaderDefine("ENV_DOUBLE_SUPPORT", m_dx12_options.DoublePrecisionFloatShaderOps ? "1" : "0"));
+        m_envDefines.push_back(ShaderDefine("ENV_VENDOR_NVIDIA", IsVendorNVidia() ? "1" : "0"));
+		m_envDefines.push_back(ShaderDefine("ENV_VENDOR_AMD", IsVendorAMD() ? "1" : "0"));
+		m_envDefines.push_back(ShaderDefine("ENV_VENDOR_INTEL", IsVendorIntel() ? "1" : "0"));
+
 
 		return true;
 	}
@@ -578,8 +587,13 @@ public:
 	bool m_enableProfiling = false;
 	bool m_drawWireframe = false;
 	bool m_allowRaytracing = true;
+    uint32_t m_vendorId = 0;
 
-	// Imported Resources: Maps node name to an imported texture description
+	bool IsVendorNVidia() const { return m_vendorId == 0x10de; }
+	bool IsVendorAMD() const { return m_vendorId == 0x1002 || m_vendorId == 0x1022; }
+	bool IsVendorIntel() const { return m_vendorId == 0x163C || m_vendorId == 0x8085 || m_vendorId == 0x8086 || m_vendorId == 0x8087; }
+
+    // Imported Resources: Maps node name to an imported texture description
 	enum class ImportedResourceState
 	{
 		dirty,
@@ -683,7 +697,7 @@ public:
 		return m_dx12_options4.Native16BitShaderOpsSupported;
 	}
 
-	const D3D12_FEATURE_DATA_D3D12_OPTIONS4& GetOptions4() const
+    const D3D12_FEATURE_DATA_D3D12_OPTIONS4& GetOptions4() const
 	{
 		return m_dx12_options4;
 	}
@@ -833,9 +847,22 @@ private:
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
-	bool DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates);
+    bool MakeDescriptorTableDesc(
+        std::vector<DescriptorTableCache::ResourceDescriptor>& descs,
+        struct RuntimeTypes::RenderGraphNode_Base& runtimeData,
+        const std::vector<ResourceDependency>& resourceDependencies,
+        const std::vector<LinkProperties>& linkProperties,
+        const char* nodeName,
+        const Shader* shaderPtr,
+        int& pinOffset,
+        std::vector<TransitionTracker::Item>& queuedTransitions,
+        const std::unordered_map<ID3D12Resource*,
+        D3D12_RESOURCE_STATES>& importantResourceStates);
 
     bool OnNodeAction_External_AMD_FidelityFXSDK_Upscaling(const RenderGraphNode_Action_External& node, RuntimeTypes::RenderGraphNode_Action_External& runtimeData, NodeAction nodeAction);
+
+    // @return success
+    bool BuildDescriptorRanges(const Shader* shader, std::vector<D3D12_DESCRIPTOR_RANGE>& ranges);
 
 	std::vector<FiredAssertInfo> collectedAsserts;
 
@@ -895,6 +922,7 @@ private:
 	ID3D12CommandSignature* m_commandSignatureDrawIndexed = nullptr;
 
 	// DX12 Capabilities
+	D3D12_FEATURE_DATA_D3D12_OPTIONS m_dx12_options = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
@@ -906,6 +934,7 @@ private:
 	D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
 
     static GigiInterpreterPreviewWindowDX12* s_interpreter;
+    std::vector<ShaderDefine> m_envDefines;
 };
 
 inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)

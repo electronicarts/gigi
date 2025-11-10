@@ -44,7 +44,7 @@ inline void ZeroDfltIfEmpty(std::string& dflt, DataFieldType type, const std::st
             case DataFieldType::Float_16: dflt = "0"; break;
             default:
             {
-                Assert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(type), type, path.c_str());
+                GigiAssert(false, "Unhandled data field type %s (%i).\nIn %s\n", EnumToString(type), type, path.c_str());
                 break;
             }
         }
@@ -226,7 +226,7 @@ struct DataFixupVisitor
         if (staticNodeInfo.backendSupported[(int)backend])
             return true;
 
-        Assert(false, "Node \"%s\" is not supported on backend \"%s\"\n", node.name.c_str(), EnumToString(backend));
+        GigiAssert(false, "Node \"%s\" is not supported on backend \"%s\"\n", node.name.c_str(), EnumToString(backend));
         return false;
     }
 
@@ -549,20 +549,20 @@ struct ErrorCheckVisitor
         {
             if (node.meshShader.shaderIndex != -1)
             {
-                Assert(false, "Node %s has both a vertex shader and a mesh shader, only one is allowed.\nIn %s\n", node.name.c_str(), path.c_str());
+                GigiAssert(false, "Node %s has both a vertex shader and a mesh shader, only one is allowed.\nIn %s\n", node.name.c_str(), path.c_str());
                 return false;
             }
 
             if (node.amplificationShader.shaderIndex != -1)
             {
-                Assert(false, "Node %s has both a vertex shader and an amplification shader. Amplification shader is not allowed when a vertex shader is specified.\nIn %s\n", node.name.c_str(), path.c_str());
+                GigiAssert(false, "Node %s has both a vertex shader and an amplification shader. Amplification shader is not allowed when a vertex shader is specified.\nIn %s\n", node.name.c_str(), path.c_str());
                 return false;
             }
         }
         // else, there needs to be a mesh shader
         else if (node.meshShader.shaderIndex == -1)
         {
-            Assert(false, "Node %s has neither a vertex shader or mesh shader.  One must be specified.\nIn %s\n", node.name.c_str(), path.c_str());
+            GigiAssert(false, "Node %s has neither a vertex shader or mesh shader.  One must be specified.\nIn %s\n", node.name.c_str(), path.c_str());
             return false;
         }
 
@@ -571,17 +571,17 @@ struct ErrorCheckVisitor
         {
             if (node.vertexBuffer.nodeIndex != -1)
             {
-                Assert(false, "Node %s has uses a mesh shader, but has a vertex buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV.\nIn %s\n", node.name.c_str(), path.c_str());
+                GigiAssert(false, "Node %s has uses a mesh shader, but has a vertex buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV.\nIn %s\n", node.name.c_str(), path.c_str());
                 return false;
             }
             if (node.indexBuffer.nodeIndex != -1)
             {
-                Assert(false, "Node %s has uses a mesh shader, but has an index buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV\nIn %s\n", node.name.c_str(), path.c_str());
+                GigiAssert(false, "Node %s has uses a mesh shader, but has an index buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV\nIn %s\n", node.name.c_str(), path.c_str());
                 return false;
             }
             if (node.instanceBuffer.nodeIndex != -1)
             {
-                Assert(false, "Node %s has uses a mesh shader, but has an instanceBuffer buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV\nIn %s\n", node.name.c_str(), path.c_str());
+                GigiAssert(false, "Node %s has uses a mesh shader, but has an instanceBuffer buffer plugged in, which is not allowed. You can give this buffer to the shader as an SRV\nIn %s\n", node.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -657,7 +657,7 @@ struct DepluralizeFileCopiesVisitor
                         {
                             if (fileCopyCount == 0)
                             {
-                                Assert(false, "No files found for file copy pattern %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
+                                GigiAssert(false, "No files found for file copy pattern %s!\nIn %s\n", copy.fileName.c_str(), path.c_str());
                                 return false;
                             }
                             break;
@@ -754,7 +754,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find compute shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find compute shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -769,7 +769,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTRayGen shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTRayGen shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -784,7 +784,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTClosestHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTClosestHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -802,7 +802,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTClosestHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTClosestHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -817,7 +817,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTAnyHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTAnyHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -835,7 +835,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTAnyHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTAnyHit shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -850,7 +850,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTIntersection shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTIntersection shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -868,7 +868,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find RTIntersection shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find RTIntersection shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -883,7 +883,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find vertex shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find vertex shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -898,7 +898,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find pixel shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find pixel shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -913,7 +913,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find amplification shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find amplification shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -928,7 +928,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find mesh shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find mesh shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -946,7 +946,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find vertex shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find vertex shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -964,7 +964,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find pixel shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find pixel shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -982,7 +982,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find amplification shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find amplification shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1000,7 +1000,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find mesh shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find mesh shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1038,7 +1038,7 @@ struct ReferenceFixupVisitor
             }
             default:
             {
-                Assert(false, "%s was referenced as a texture node, but is not one!\nIn %s\n", data.name.c_str(), path.c_str());
+                GigiAssert(false, "%s was referenced as a texture node, but is not one!\nIn %s\n", data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1063,7 +1063,7 @@ struct ReferenceFixupVisitor
             }
             default:
             {
-                Assert(false, "%s was referenced as a buffer node, but is not one!\nIn %s\n", data.name.c_str(), path.c_str());
+                GigiAssert(false, "%s was referenced as a buffer node, but is not one!\nIn %s\n", data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1093,7 +1093,7 @@ struct ReferenceFixupVisitor
             }
             default:
             {
-                Assert(false, "%s was referenced as a texture or buffer node, but is neither!\nIn %s\n", data.name.c_str(), path.c_str());
+                GigiAssert(false, "%s was referenced as a texture or buffer node, but is neither!\nIn %s\n", data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1110,7 +1110,7 @@ struct ReferenceFixupVisitor
         if (data.nodeIndex != -1)
             return true;
 
-        Assert(false, "Could not find node referenced: %s\nIn %s\n", data.name.c_str(), path.c_str(), path.c_str());
+        GigiAssert(false, "Could not find node referenced: %s\nIn %s\n", data.name.c_str(), path.c_str(), path.c_str());
         return false;
     }
 
@@ -1137,13 +1137,13 @@ struct ReferenceFixupVisitor
                 if (found)
                     break;
 
-                Assert(false, "Could not find pin referenced: %s:%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                GigiAssert(false, "Could not find pin referenced: %s:%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
                 return false;
             }
         }
         if (!found)
         {
-            Assert(false, "Could not find node referenced: %s\nIn %s\n", data.node.c_str(), path.c_str());
+            GigiAssert(false, "Could not find node referenced: %s\nIn %s\n", data.node.c_str(), path.c_str());
             return false;
         }
 
@@ -1176,7 +1176,7 @@ struct ReferenceFixupVisitor
 
             if (info.nodeIndex == -1)
             {
-                Assert(false, "Could not get resourceNodeIndex for nodePinReference %s.%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                GigiAssert(false, "Could not get resourceNodeIndex for nodePinReference %s.%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
                 return false;
             }
 
@@ -1213,13 +1213,13 @@ struct ReferenceFixupVisitor
                 if (found)
                     break;
 
-                Assert(false, "Could not find pin referenced: %s:%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                GigiAssert(false, "Could not find pin referenced: %s:%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
                 return false;
             }
         }
         if (!found)
         {
-            Assert(false, "Could not find node referenced: %s\nIn %s\n", data.node.c_str(), path.c_str());
+            GigiAssert(false, "Could not find node referenced: %s\nIn %s\n", data.node.c_str(), path.c_str());
             return false;
         }
 
@@ -1253,7 +1253,7 @@ struct ReferenceFixupVisitor
 
             if (info.nodeIndex == -1)
             {
-                Assert(false, "Could not get resourceNodeIndex for nodePinReferenceOptional %s.%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
+                GigiAssert(false, "Could not get resourceNodeIndex for nodePinReferenceOptional %s.%s\nIn %s\n", data.node.c_str(), data.pin.c_str(), path.c_str());
                 return false;
             }
 
@@ -1311,7 +1311,7 @@ struct ReferenceFixupVisitor
             }
             if (connection.srcNodePinIndex == -1)
             {
-                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find source pin \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1319,7 +1319,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1327,14 +1327,14 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                Assert(false, "Could not find dest pin %s (connections[%i]) in shader node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin %s (connections[%i]) in shader node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
 
         if (data.connections.size() != shader.resources.size())
         {
-            Assert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
+            GigiAssert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
             return false;
         }
 
@@ -1370,7 +1370,7 @@ struct ReferenceFixupVisitor
             }
             if (connection.srcNodePinIndex == -1)
             {
-                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find source pin \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1378,7 +1378,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in shader node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1386,14 +1386,14 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                Assert(false, "Could not find dest pin %s (connections[%i]) in shader node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin %s (connections[%i]) in shader node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
 
         if (data.connections.size() != shader.resources.size())
         {
-            Assert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
+            GigiAssert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
             return false;
         }
 
@@ -1419,7 +1419,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in SubGraph node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in SubGraph node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1427,7 +1427,7 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in SubGraph node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin \"%s\" (connections[%i]) in SubGraph node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1450,7 +1450,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1458,7 +1458,7 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1481,7 +1481,7 @@ struct ReferenceFixupVisitor
 			connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
 			if (connection.dstNodeIndex == -1)
 			{
-				Assert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+				GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
 				return false;
 			}
 
@@ -1489,7 +1489,7 @@ struct ReferenceFixupVisitor
 			connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
 			if (connection.dstNodePinIndex == -1)
 			{
-				Assert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+				GigiAssert(false, "Could not find dest pin \"%s\" (connections[%i]) in Barrier node \"%s\"\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
 				return false;
 			}
 		}
@@ -1521,13 +1521,13 @@ struct ReferenceFixupVisitor
 
         if (vertexShader && meshShader)
         {
-            Assert(false, "Node %s has both a vertex and mesh shader, which is not allowed.\nIn %s\n", data.name.c_str(), path.c_str());
+            GigiAssert(false, "Node %s has both a vertex and mesh shader, which is not allowed.\nIn %s\n", data.name.c_str(), path.c_str());
             return false;
         }
 
         if (!vertexShader && !meshShader)
         {
-            Assert(false, "Node %s has neither a vertex nor a mesh shader, one must be specified.\nIn %s\n", data.name.c_str(), path.c_str());
+            GigiAssert(false, "Node %s has neither a vertex nor a mesh shader, one must be specified.\nIn %s\n", data.name.c_str(), path.c_str());
             return false;
         }
 
@@ -1579,7 +1579,7 @@ struct ReferenceFixupVisitor
 
             if (connection.srcNodePinIndex == -1)
             {
-                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1587,7 +1587,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1595,14 +1595,14 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                Assert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
 
         if (data.connections.size() != (vertexPinCount + pixelPinCount + amplificationPinCount + meshPinCount))
         {
-            Assert(false, "node %s doesn't have the right number of connections for shaders\nIn %s\n", data.name.c_str(), path.c_str());
+            GigiAssert(false, "node %s doesn't have the right number of connections for shaders\nIn %s\n", data.name.c_str(), path.c_str());
             return false;
         }
 
@@ -1666,7 +1666,7 @@ struct ReferenceFixupVisitor
                 case ShaderResourceAccessType::CBV: resource.registerIndex = nextRegisterIndexCBV++; break;
                 default:
                 {
-                    Assert(false, "Unhandled shader resource access type %s (%i). Shader = \"%s\", Resource = \"%s\".\nIn %s\n", EnumToString(resource.access), resource.access, data.name.c_str(), resource.name.c_str(), path.c_str());
+                    GigiAssert(false, "Unhandled shader resource access type %s (%i). Shader = \"%s\", Resource = \"%s\".\nIn %s\n", EnumToString(resource.access), resource.access, data.name.c_str(), resource.name.c_str(), path.c_str());
                     return false;
                 }
             }
@@ -1717,7 +1717,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        Assert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1737,7 +1737,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        Assert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1757,7 +1757,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        Assert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(data.variableIndex != -1, "Could not find variable %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1777,7 +1777,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        Assert(data.structIndex != -1, "Could not find struct %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(data.structIndex != -1, "Could not find struct %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1797,7 +1797,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        Assert(data.structIndex != -1, "Could not find struct %s\nIn %s\n", data.structName.c_str(), path.c_str());
+        GigiAssert(data.structIndex != -1, "Could not find struct %s\nIn %s\n", data.structName.c_str(), path.c_str());
         return false;
     }
 
@@ -1815,7 +1815,7 @@ struct ReferenceFixupVisitor
                     break;
                 }
             }
-            Assert(data.variable1Index != -1, "Could not find variable %s\nIn %s\n", data.variable1.c_str(), path.c_str());
+            GigiAssert(data.variable1Index != -1, "Could not find variable %s\nIn %s\n", data.variable1.c_str(), path.c_str());
         }
 
         if (!data.variable2.empty())
@@ -1830,7 +1830,7 @@ struct ReferenceFixupVisitor
                     break;
                 }
             }
-            Assert(data.variable2Index != -1, "Could not find variable %s\nIn %s\n", data.variable2.c_str(), path.c_str());
+            GigiAssert(data.variable2Index != -1, "Could not find variable %s\nIn %s\n", data.variable2.c_str(), path.c_str());
         }
 
         return true;
@@ -1892,7 +1892,7 @@ struct ValidationVisitor
             {
                 if (shader.resources.size() != 0)
                 {
-                    Assert(false, "Shader type \'%s\' has resources defined, but only the ray gen shader can. Ray gen resources are global so are accessible if they are in the same file or if the ray gen file is #included.\nIn %s\n", EnumToString(shader.type), path.c_str());
+                    GigiAssert(false, "Shader type \'%s\' has resources defined, but only the ray gen shader can. Ray gen resources are global so are accessible if they are in the same file or if the ray gen file is #included.\nIn %s\n", EnumToString(shader.type), path.c_str());
                     return false;
                 }
             }
@@ -1910,7 +1910,7 @@ struct ValidationVisitor
         int BVarIndex = GetVariableIndex(renderGraph, condition.variable2.c_str());
         if (BVarIndex != -1 && renderGraph.variables[AVarIndex].type != renderGraph.variables[BVarIndex].type)
         {
-            Assert(false, "A condition with variable \"%s %s\" and \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[AVarIndex].type), condition.variable1.c_str(), EnumToString(renderGraph.variables[BVarIndex].type), condition.variable2.c_str(), path.c_str());
+            GigiAssert(false, "A condition with variable \"%s %s\" and \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[AVarIndex].type), condition.variable1.c_str(), EnumToString(renderGraph.variables[BVarIndex].type), condition.variable2.c_str(), path.c_str());
             return false;
         }
         return true;
@@ -1936,7 +1936,7 @@ struct ValidationVisitor
 
             if (destVarType != AVarType && setVar.op != SetVariableOperator::Noop)
             {
-                Assert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[AVarIndex].type), setVar.AVar.name.c_str(), path.c_str());
+                GigiAssert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[AVarIndex].type), setVar.AVar.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1951,7 +1951,7 @@ struct ValidationVisitor
 
             if (destVarType != BVarType)
             {
-                Assert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[BVarIndex].type), setVar.BVar.name.c_str(), path.c_str());
+                GigiAssert(false, "Setting the variable \"%s %s\" to an equation involving variable \"%s %s\" is not possible because they are different types.\nIn %s\n", EnumToString(renderGraph.variables[destVarIndex].type), setVar.destination.name.c_str(), EnumToString(renderGraph.variables[BVarIndex].type), setVar.BVar.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -1977,7 +1977,7 @@ struct ValidationVisitor
         {
             if (variable.type != DataFieldType::Int)
             {
-                Assert(false, "Variable \'%s\' uses enum \'%s\' but is not an integer type. Only integers can use enums.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
+                GigiAssert(false, "Variable \'%s\' uses enum \'%s\' but is not an integer type. Only integers can use enums.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
                 return false;
             }
 
@@ -1991,7 +1991,7 @@ struct ValidationVisitor
 
                     if (variable.dflt.empty())
                     {
-                        Assert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for Variable \'%s\' but the enum has no items!\nIn %s\n", variable.name.c_str(), path.c_str());
+                        GigiAssert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for Variable \'%s\' but the enum has no items!\nIn %s\n", variable.name.c_str(), path.c_str());
                         variable.dflt = renderGraph.enums[enumIndex].items[0].label;
                     }
 
@@ -1999,17 +1999,17 @@ struct ValidationVisitor
                 }
             }
 
-            Assert(false, "Variable \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
+            GigiAssert(false, "Variable \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", variable.name.c_str(), variable.Enum.c_str(), path.c_str());
             return false;
         }
 
         if (!variable.onUserChange.name.empty())
         {
             int variableIndex = GetVariableIndex(renderGraph, variable.onUserChange.name.c_str());
-            Assert(variableIndex != -1, "Could not find variable \"%s\".\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            GigiAssert(variableIndex != -1, "Could not find variable \"%s\".\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
             const Variable& variable = renderGraph.variables[variableIndex];
-            Assert(!variable.Const, "Variable \"%s\" cannot be const.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
-            Assert(variable.type == DataFieldType::Bool, "Variable \"%s\" must be a bool.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            GigiAssert(!variable.Const, "Variable \"%s\" cannot be const.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
+            GigiAssert(variable.type == DataFieldType::Bool, "Variable \"%s\" must be a bool.\nIn %s\n", variable.onUserChange.name.c_str(), path.c_str());
         }
 
         return true;
@@ -2028,7 +2028,7 @@ struct ValidationVisitor
 
             if (field.type != DataFieldType::Int)
             {
-                Assert(false, "Struct field \'%s\' uses enum \'%s\' but is not an integer type. Only integers can use enums.\nIn %s\n", field.name.c_str(), field.Enum.c_str(), path.c_str());
+                GigiAssert(false, "Struct field \'%s\' uses enum \'%s\' but is not an integer type. Only integers can use enums.\nIn %s\n", field.name.c_str(), field.Enum.c_str(), path.c_str());
                 return false;
             }
 
@@ -2041,7 +2041,7 @@ struct ValidationVisitor
                     field.enumIndex = enumIndex;
                     if (field.dflt.empty())
                     {
-                        Assert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for struct field \'%s\' but the enum has no items!\nIn %s\n", field.name.c_str(), path.c_str());
+                        GigiAssert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for struct field \'%s\' but the enum has no items!\nIn %s\n", field.name.c_str(), path.c_str());
                         field.dflt = renderGraph.enums[enumIndex].items[0].label;
                     }
                     break;
@@ -2050,7 +2050,7 @@ struct ValidationVisitor
             if (enumIndex != -1)
                 continue;
 
-            Assert(false, "Struct \'%s\' field \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", s.name.c_str(), field.name.c_str(), field.Enum.c_str(), path.c_str());
+            GigiAssert(false, "Struct \'%s\' field \'%s\' uses an undeclared enum \'%s\'.\nIn %s\n", s.name.c_str(), field.name.c_str(), field.Enum.c_str(), path.c_str());
             return false;
         }
         return true;
@@ -2061,7 +2061,7 @@ struct ValidationVisitor
         // make sure the render graph has a name.
         if (renderGraph.name.empty())
         {
-            Assert(false, "The render graph name is empty. That field is used to make namespaces and folder names, so is required.\nIn %s\n", path.c_str());
+            GigiAssert(false, "The render graph name is empty. That field is used to make namespaces and folder names, so is required.\nIn %s\n", path.c_str());
             return false;
         }
 
@@ -2085,7 +2085,7 @@ struct ValidationVisitor
                             indices.push_back(nodeIndex);
                     }
 
-                    Assert(false, "node name %s appears more than once in the render graph.\nIn %s\n", name.c_str(), path.c_str());
+                    GigiAssert(false, "node name %s appears more than once in the render graph.\nIn %s\n", name.c_str(), path.c_str());
                     return false;
                 }
                 names.insert(name);
@@ -2105,7 +2105,7 @@ struct ValidationVisitor
 
                 if (names.find(name) != names.end())
                 {
-                    Assert(false, "shader name %s appears more than once in the render graph.\nIn %s\n", name.c_str(), path.c_str());
+                    GigiAssert(false, "shader name %s appears more than once in the render graph.\nIn %s\n", name.c_str(), path.c_str());
                     return false;
                 }
                 names.insert(name);
@@ -2634,7 +2634,7 @@ struct ShaderAssertsVisitor
         std::vector<unsigned char> fileContents;
         if (!LoadFile(fileName, fileContents))
         {
-            Assert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            GigiAssert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
             return {};
         }
         fileContents.push_back(0);
@@ -2776,7 +2776,7 @@ struct ShaderAssertsVisitor
 
                 //store assert token to the function call replacement
                 {
-                    std::string replValue = "__gigiAssert(";
+                    std::string replValue = "__gigiGigiAssert(";
                     replValue += condition;
 
                     const std::string formatIdStr = std::to_string(AcquireFormatStringId(fmtStr.empty() ? condition : fmtStr));
@@ -2816,7 +2816,7 @@ struct ShaderAssertsVisitor
         TokenReplacement replacement;
         replacement.name = "/*$(ShaderResources)*/";
         replacement.value =
-            "\nvoid __gigiAssert(bool condition, uint fmtId,"
+            "\nvoid __gigiGigiAssert(bool condition, uint fmtId,"
             "\n  float v1 = 0, float v2 = 0, float v3 = 0,"
             "\n  float v4 = 0, float v5 = 0, float v6 = 0)"
             "\n{"
@@ -2952,7 +2952,7 @@ struct ShaderDataVisitor
         std::vector<unsigned char> fileContents;
         if (!LoadFile(fileName, fileContents))
         {
-            Assert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            GigiAssert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
             return false;
         }
         fileContents.push_back(0);
@@ -3016,7 +3016,7 @@ struct ShaderDataVisitor
         std::vector<unsigned char> fileContents;
         if (!LoadFile(fileName, fileContents))
         {
-            Assert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            GigiAssert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
             return false;
         }
         fileContents.push_back(0);
@@ -3049,7 +3049,7 @@ struct ShaderDataVisitor
                     int variableIndex = GetScopedVariableIndex(renderGraph, (shader.scope + variableName).c_str());
                     if (variableIndex == -1)
                     {
-                        Assert(false, "Could not find variable \"%s\" referenced in shader file \"%s\".\nIn %s\n", variableName.c_str(), shader.fileName.c_str(), path.c_str());
+                        GigiAssert(false, "Could not find variable \"%s\" referenced in shader file \"%s\".\nIn %s\n", variableName.c_str(), shader.fileName.c_str(), path.c_str());
                         return;
                     }
 
@@ -3066,7 +3066,7 @@ struct ShaderDataVisitor
                     int aliasIndex = GetVariableAliasIndex(shader, aliasName.c_str());
                     if (aliasIndex == -1)
                     {
-                        Assert(false, "Could not find variable alias \"%s\" referenced in shader file \"%s\".\nIn %s\n", aliasName.c_str(), shader.fileName.c_str(), path.c_str());
+                        GigiAssert(false, "Could not find variable alias \"%s\" referenced in shader file \"%s\".\nIn %s\n", aliasName.c_str(), shader.fileName.c_str(), path.c_str());
                         return;
                     }
 
@@ -3094,7 +3094,7 @@ struct ShaderDataVisitor
                     std::string fileName(fileNameBegin, fileNameEnd);
                     if (fileName.empty())
                     {
-                        Assert(false, "filename is empty.\nIn %s\n", path.c_str());
+                        GigiAssert(false, "filename is empty.\nIn %s\n", path.c_str());
                         return;
                     }
 
@@ -3132,7 +3132,7 @@ struct ShaderDataVisitor
                     TextureFormat textureFormat;
                     if (!StringToEnum(textureFormatStr.c_str(), textureFormat))
                     {
-                        Assert(false, "Unknown texture format: %s.\nIn %s\n", textureFormatStr.c_str(), path.c_str());
+                        GigiAssert(false, "Unknown texture format: %s.\nIn %s\n", textureFormatStr.c_str(), path.c_str());
                         return;
                     }
 
@@ -3140,7 +3140,7 @@ struct ShaderDataVisitor
                     TextureViewType viewType;
                     if (!StringToEnum(viewTypeStr.c_str(), viewType))
                     {
-                        Assert(false, "Unknown texture view type: %s.\nIn %s\n", viewTypeStr.c_str(), path.c_str());
+                        GigiAssert(false, "Unknown texture view type: %s.\nIn %s\n", viewTypeStr.c_str(), path.c_str());
                         return;
                     }
 
@@ -3156,7 +3156,7 @@ struct ShaderDataVisitor
                     }
                     else
                     {
-                        Assert(false, "Couldn't read loadFileNameAsSRGB: %s.\nIn %s\n", loadFileNameAsSRGBStr.c_str(), path.c_str());
+                        GigiAssert(false, "Couldn't read loadFileNameAsSRGB: %s.\nIn %s\n", loadFileNameAsSRGBStr.c_str(), path.c_str());
                         return;
                     }
 
@@ -3174,7 +3174,7 @@ struct ShaderDataVisitor
                         }
                         else
                         {
-                            Assert(false, "Couldn't read makeMips: %s.\nIn %s\n", makeMipsStr.c_str(), path.c_str());
+                            GigiAssert(false, "Couldn't read makeMips: %s.\nIn %s\n", makeMipsStr.c_str(), path.c_str());
                             return;
                         }
                     }
@@ -3354,7 +3354,7 @@ struct ShaderDataVisitor
             for (const std::string& variableName : variablesAccessed)
             {
                 int variableIndex = GetVariableIndex(renderGraph, variableName.c_str());
-                Assert(variableIndex >= 0, "Could not find variable %s.\nIn %s\n", variableName.c_str(), path.c_str());
+                GigiAssert(variableIndex >= 0, "Could not find variable %s.\nIn %s\n", variableName.c_str(), path.c_str());
                 const Variable& variable = renderGraph.variables[variableIndex];
 
                 StructField newField;
@@ -3374,8 +3374,8 @@ struct ShaderDataVisitor
                     else
                     {
                         int enumIndex = GetEnumIndex(renderGraph, variable.scope.c_str(), variable.Enum.c_str());
-                        Assert(enumIndex >= 0, "Could not find enum \"%s\"\nIn %s\n", variable.Enum.c_str(), path.c_str());
-                        Assert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for field \'%s\' but the enum has no items!\nIn %s\n", newField.name.c_str(), path.c_str());
+                        GigiAssert(enumIndex >= 0, "Could not find enum \"%s\"\nIn %s\n", variable.Enum.c_str(), path.c_str());
+                        GigiAssert(renderGraph.enums[enumIndex].items.size() > 0, "Tried to set a dflt for field \'%s\' but the enum has no items!\nIn %s\n", newField.name.c_str(), path.c_str());
                         newField.dflt = renderGraph.enums[enumIndex].items[0].label;
                         newField.enumIndex = enumIndex;
                     }
@@ -3387,7 +3387,7 @@ struct ShaderDataVisitor
             for (const std::string& aliasName : variableAliasessAccessed)
             {
                 int aliasIndex = GetVariableAliasIndex(shader, aliasName.c_str());
-                Assert(aliasIndex >= 0, "Could not find variable alias %s.\nIn %s\n", aliasName.c_str(), path.c_str());
+                GigiAssert(aliasIndex >= 0, "Could not find variable alias %s.\nIn %s\n", aliasName.c_str(), path.c_str());
 
                 StructField newField;
                 newField.name = std::string("_alias_") + aliasName;
@@ -3541,7 +3541,7 @@ struct ShaderDataVisitor
         std::vector<unsigned char> fileContents_;
         if (!LoadFile(fileName, fileContents_))
         {
-            Assert(false, "Could not load file %s.\nIn %s\n", fileName.c_str(), path.c_str());
+            GigiAssert(false, "Could not load file %s.\nIn %s\n", fileName.c_str(), path.c_str());
             return false;
         }
         fileContents_.push_back(0);

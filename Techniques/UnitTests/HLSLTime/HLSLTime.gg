@@ -1,0 +1,612 @@
+{
+    "$schema": "gigischema.json",
+    "name": "HelloWorld",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host"
+        },
+        {
+            "name": "Zoom",
+            "type": "Float",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "0.01",
+                "max": "1"
+            }
+        },
+        {
+            "name": "Center",
+            "type": "Float2",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "-2",
+                "max": "2"
+            }
+        },
+        {
+            "name": "CenterFine",
+            "type": "Float2",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "-1",
+                "max": "1"
+            }
+        },
+        {
+            "name": "Iterations",
+            "type": "Uint",
+            "dflt": "1000",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Slider",
+                "min": "1",
+                "max": "5000"
+            }
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Main",
+            "fileName": "Main.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Pre",
+            "fileName": "Pre.hlsl",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "State",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "State"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Post",
+            "fileName": "Post.hlsl",
+            "entryPoint": "csmain",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "State",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "State"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ]
+        },
+        {
+            "name": "QuadVS",
+            "fileName": "QuadVS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "mainVS"
+        },
+        {
+            "name": "QuadPS",
+            "fileName": "QuadPS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "mainPS",
+            "resources": [
+                {
+                    "name": "State",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "State"
+                        }
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "State",
+            "fields": [
+                {
+                    "name": "StartTime",
+                    "type": "Uint"
+                },
+                {
+                    "name": "EndTime",
+                    "type": "Uint"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    190.0,
+                    306.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Main",
+                "editorPos": [
+                    488.0,
+                    98.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Pre",
+                        "dstPin": "Output"
+                    }
+                ],
+                "shader": {
+                    "name": "Main"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "0"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Pre",
+                "editorPos": [
+                    325.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "State",
+                        "dstNode": "State",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Pre"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Post2",
+                "editorPos": [
+                    1061.0,
+                    271.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Main2",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "State",
+                        "dstNode": "Post1 ",
+                        "dstPin": "State"
+                    }
+                ],
+                "shader": {
+                    "name": "Post"
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "2"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "State",
+                "editorPos": [
+                    190.0,
+                    354.0
+                ],
+                "format": {
+                    "structureType": {
+                        "name": "State"
+                    }
+                },
+                "count": {
+                    "multiply": 4
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Main1",
+                "editorPos": [
+                    680.0,
+                    98.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Post0",
+                        "dstPin": "Output"
+                    }
+                ],
+                "shader": {
+                    "name": "Main"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "1"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Main2",
+                "editorPos": [
+                    920.0,
+                    98.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Post1 ",
+                        "dstPin": "Output"
+                    }
+                ],
+                "shader": {
+                    "name": "Main"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output"
+                    }
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "2"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Post0",
+                "editorPos": [
+                    552.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Main",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "State",
+                        "dstNode": "Pre",
+                        "dstPin": "State"
+                    }
+                ],
+                "shader": {
+                    "name": "Post"
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "0"
+                    }
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Post1 ",
+                "editorPos": [
+                    789.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Main1",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "State",
+                        "dstNode": "Post0",
+                        "dstPin": "State"
+                    }
+                ],
+                "shader": {
+                    "name": "Post"
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "1"
+                    }
+                ]
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "Quad",
+                "editorPos": [
+                    1221.0,
+                    114.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "State",
+                        "dstNode": "Post2",
+                        "dstPin": "State"
+                    }
+                ],
+                "vertexShader": {
+                    "name": "QuadVS"
+                },
+                "pixelShader": {
+                    "name": "QuadPS"
+                },
+                "countPerInstance": 6,
+                "colorTargets": [
+                    {
+                        "node": "Post2",
+                        "pin": "Output"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Post3",
+                "editorPos": [
+                    1429.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Quad",
+                        "dstPin": "colorTarget0"
+                    },
+                    {
+                        "srcPin": "State",
+                        "dstNode": "Quad",
+                        "dstPin": "State"
+                    }
+                ],
+                "shader": {
+                    "name": "Post"
+                },
+                "defines": [
+                    {
+                        "name": "TEST",
+                        "value": "3"
+                    }
+                ]
+            }
+        }
+    ],
+    "PrimaryOutput": {
+        "name": "Output"
+    }
+}

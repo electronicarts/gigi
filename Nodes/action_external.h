@@ -60,7 +60,7 @@ namespace FrontEndNodes
             }
             default:
             {
-                Assert(false, "Unhandled external node type for node %s", node.name.c_str());
+                GigiAssert(false, "Unhandled external node type for node %s", node.name.c_str());
             }
         }
         

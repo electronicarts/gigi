@@ -58,7 +58,7 @@ bool AdjustUniformStructForAlignment_DX12(Struct& s, const std::string& path)
                         }
                         default:
                         {
-                            Assert(false, "error while calculating padding.\nIn %s\n", path.c_str());
+                            GigiAssert(false, "error while calculating padding.\nIn %s\n", path.c_str());
                         }
                     }
                     bytesToPad = 0;
@@ -120,7 +120,7 @@ bool AdjustUniformStructForAlignment_DX12(Struct& s, const std::string& path)
                     }
                     default:
                     {
-                        Assert(false, "error while calculating terminating padding.\nIn %s\n", path.c_str());
+                        GigiAssert(false, "error while calculating terminating padding.\nIn %s\n", path.c_str());
                     }
                 }
                 bytesToPad = 0;
@@ -173,7 +173,7 @@ static size_t DesiredAlignment(DataFieldType type, bool isUniformBuffer)
 
         default:
         {
-            Assert(false, "Unhandled DataFieldType in " __FUNCTION__ ": %s (%i)", EnumToString(type), (int)type);
+            GigiAssert(false, "Unhandled DataFieldType in " __FUNCTION__ ": %s (%i)", EnumToString(type), (int)type);
             return 0;
         }
     }

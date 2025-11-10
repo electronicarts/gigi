@@ -159,7 +159,7 @@ template <typename T, typename U>
 bool JSONRead(T& value, U& document)
 {
     // an update on 3/31/22 makes vs2022 makes this not able to be a static assert ):
-    Assert(false, __FUNCSIG__ ": Unsupported type encountered!");
+    GigiAssert(false, __FUNCSIG__ ": Unsupported type encountered!");
     return false;
 }
 

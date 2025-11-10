@@ -45,14 +45,14 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(SolutionDir)\external\DXC\inc\;$(SolutionDir)\external\AMD\FidelityFX\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(SolutionDir)\external\DXC\inc\;$(SolutionDir)\external\NVIDIA\;$(SolutionDir)\external\AMD\FidelityFX\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
-    <LibraryPath>$(SolutionDir)\external\DXC\lib\x64\;$(SolutionDir)\external\AMD\FidelityFX\signedbin\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\external\DXC\lib\x64\;$(SolutionDir)\external\AMD\FidelityFX\signedbin\;$(SolutionDir)\external\NVIDIA\nv-api;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(SolutionDir)\external\DXC\inc\;$(SolutionDir)\external\AMD\FidelityFX\;$(IncludePath)</IncludePath>
+    <IncludePath>$(ProjectDir)python\Python310\include\;$(ProjectDir)imgui\;$(SolutionDir);$(SolutionDir)\external\nativefiledialog\src\include\;$(ProjectDir);$(SolutionDir)\external\gli\;$(SolutionDir)\external\glm\;$(SolutionDir)\external\DirectXTex\;$(SolutionDir)\external\DXC\inc\;$(SolutionDir)\external\NVIDIA\;$(SolutionDir)\external\AMD\FidelityFX\;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)</OutDir>
-    <LibraryPath>$(SolutionDir)\external\DXC\lib\x64\;$(SolutionDir)\external\AMD\FidelityFX\signedbin\;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)\external\DXC\lib\x64\;$(SolutionDir)\external\AMD\FidelityFX\signedbin\;$(SolutionDir)\external\NVIDIA\nv-api;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
