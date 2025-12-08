@@ -117,7 +117,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
         }
     ;
 
-    #define HandleTexture(NAME, extraLabel) \
+#define HandleTexture(NAME, extraLabel) \
         const RenderGraphNode_Resource_Texture* node_##NAME = GetTextureResourceNode(nodeData.##NAME.resourceNodeIndex, m_renderGraph.nodes); \
         bool textureExists_##NAME = false; \
         RuntimeTypes::RenderGraphNode_Resource_Texture& texture_##NAME = GetRuntimeNodeData_RenderGraphNode_Resource_Texture( node_##NAME ? node_##NAME->name.c_str() : "", textureExists_##NAME); \
@@ -125,18 +125,18 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
             PublishTexture(node, runtimeData_, *this, node_##NAME, texture_##NAME, #NAME, extraLabel, false);
 
     HandleTexture(color, " (SRV)")
-    HandleTexture(colorOpaqueOnly, " (SRV)")
-    HandleTexture(depth, " (SRV)")
-    HandleTexture(motionVectors, " (SRV)")
-    HandleTexture(exposure, " (SRV)")
-    HandleTexture(reactive, " (UAV - Before)")
-    //HandleTexture(transparencyAndComposition, " (SRV)")
-    HandleTexture(output, " (UAV - Before)")
+        HandleTexture(colorOpaqueOnly, " (SRV)")
+        HandleTexture(depth, " (SRV)")
+        HandleTexture(motionVectors, " (SRV)")
+        HandleTexture(exposure, " (SRV)")
+        HandleTexture(reactive, " (UAV - Before)")
+        //HandleTexture(transparencyAndComposition, " (SRV)")
+        HandleTexture(output, " (UAV - Before)")
 
-    #undef HandleTexture
+#undef HandleTexture
 
-    if (!textureExists_color || !textureExists_depth || !textureExists_motionVectors || !textureExists_output)
-        return true;
+        if (!textureExists_color || !textureExists_depth || !textureExists_motionVectors || !textureExists_output)
+            return true;
 
     // Input and output cannot be zero sized
     uint32_t renderSize[2] = { (uint32_t)texture_color.m_size[0], (uint32_t)texture_color.m_size[1] };
@@ -196,22 +196,22 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
 
             switch (desiredVersion)
             {
-                case ExternalNode_AMD_FidelityFXSDK_Upscaling_Version::Default: break;
-                case ExternalNode_AMD_FidelityFXSDK_Upscaling_Version::v2_3_4:
-                {
-                    matchString = "2.3.4";
-                    break;
-                }
-                case ExternalNode_AMD_FidelityFXSDK_Upscaling_Version::v3_1_5:
-                {
-                    matchString = "3.1.5";
-                    break;
-                }
-                default:
-                {
-                    m_logFn(LogLevel::Error, "Unhandled FSR version \"%s\"", EnumToString(desiredVersion));
-                    return false;
-                }
+            case ExternalNode_AMD_FidelityFXSDK_Upscaling_Version::Default: break;
+            case ExternalNode_AMD_FidelityFXSDK_Upscaling_Version::v2_3_4:
+            {
+                matchString = "2.3.4";
+                break;
+            }
+            case ExternalNode_AMD_FidelityFXSDK_Upscaling_Version::v3_1_5:
+            {
+                matchString = "3.1.5";
+                break;
+            }
+            default:
+            {
+                m_logFn(LogLevel::Error, "Unhandled FSR version \"%s\"", EnumToString(desiredVersion));
+                return false;
+            }
             }
 
             // get overrideVersionId
@@ -335,6 +335,69 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
         }
     }
 
+    // Query new FSR resource requirements (FSR4 API) after context creation
+    {
+        ffxQueryDescUpscaleGetResourceRequirements reqResourceReq = { 0 };
+        reqResourceReq.header.type = FFX_API_QUERY_DESC_TYPE_UPSCALE_GET_RESOURCE_REQUIREMENTS;
+
+        ffxReturnCode_t qret = ffxQuery(&context.m_UpscalingContext, &reqResourceReq.header);
+        if (qret == FFX_API_RETURN_OK)
+        {
+            uint64_t required = reqResourceReq.required_resources;
+            uint64_t optional = reqResourceReq.optional_resources;
+
+            // Interpret the bitmask using values from ffx_upscale.h (FFX_API_QUERY_RESOURCE_*)
+            bool requiresColor = (required & FFX_API_QUERY_RESOURCE_INPUT_COLOR) != 0;
+            bool requiresDepth = (required & FFX_API_QUERY_RESOURCE_INPUT_DEPTH) != 0;
+            bool requiresMV = (required & FFX_API_QUERY_RESOURCE_INPUT_MV) != 0;
+            // Disable exposure texture check for now as there is bug in ffxQueryDescUpscaleGetResourceRequirements
+            //bool requiresExposure = (required & FFX_API_QUERY_RESOURCE_INPUT_EXPOSURE) != 0;
+            bool requiresReactive = (required & FFX_API_QUERY_RESOURCE_INPUT_REACTIVEMASK) != 0;
+            //bool requiresTransparency = (required & FFX_API_QUERY_RESOURCE_INPUT_TRANSPARENCYCOMPOSITION) != 0;
+
+            // Use these booleans to validate inputs or allocate/enable optional resources.
+            if (requiresColor && !textureExists_color)
+            {
+                m_logFn(LogLevel::Error, "FSR upscaler requires 'color' input but it is not connected for node \"%s\"\n", node.name.c_str());
+                return false;
+            }
+
+            if (requiresDepth && !textureExists_depth)
+            {
+                m_logFn(LogLevel::Error, "FSR upscaler requires 'depth' input but it is not connected for node \"%s\"\n", node.name.c_str());
+                return false;
+            }
+
+            if (requiresMV && !textureExists_motionVectors)
+            {
+                m_logFn(LogLevel::Error, "FSR upscaler requires 'motionVectors' input but it is not connected for node \"%s\"\n", node.name.c_str());
+                return false;
+            }
+
+            // Disable exposure texture check for now as there is bug in ffxQueryDescUpscaleGetResourceRequirements
+            //if (requiresExposure && !textureExists_exposure)
+            //{
+            //    m_logFn(LogLevel::Error, "FSR upscaler requires 'exposure' input but it is not connected for node \"%s\"\n", node.name.c_str());
+            //    return false;
+            //}
+
+            if (requiresReactive && !textureExists_reactive)
+            {
+                m_logFn(LogLevel::Error, "FSR upscaler requires 'reactive' input but it is not connected for node \"%s\"\n", node.name.c_str());
+                return false;
+            }
+        }
+        else if (qret == FFX_API_RETURN_PROVIDER_NO_SUPPORT_NEW_DESCTYPE)
+        {
+            // Provider binary is old and doesn't support this new query type. Fall back.
+            m_logFn(LogLevel::Warn, "Provider does not support upscale resource-requirements query for node \"%s\"; falling back to older queries.", node.name.c_str());
+        }
+        else
+        {
+            m_logFn(LogLevel::Warn, "ffxQuery(FFX_API_QUERY_DESC_TYPE_UPSCALE_GET_RESOURCE_REQUIREMENTS) returned %u for node \"%s\"; continuing.", (unsigned)qret, node.name.c_str());
+        }
+    }
+
     // Execute the upscaling
     {
         ffx::DispatchDescUpscale dispatchUpscale{};
@@ -445,16 +508,16 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
     switch (node.externalNodeData._index)
     {
-        #include "external/df_serialize/_common.h"
-        #define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
+#include "external/df_serialize/_common.h"
+#define VARIANT_TYPE(_TYPE, _NAME, _DEFAULT, _DESCRIPTION) \
             case ExternalNodeData::c_index_##_NAME: return OnNodeAction_External_##_NAME(node, runtimeData, nodeAction);
-        #include "external/df_serialize/_fillunsetdefines.h"
-        #include "Schemas/ExternalNodeVariant.h"
+#include "external/df_serialize/_fillunsetdefines.h"
+#include "Schemas/ExternalNodeVariant.h"
 
-        default:
-        {
-            GigiAssert(false, "Unknown External Node Type");
-            return false;
-        }
+    default:
+    {
+        GigiAssert(false, "Unknown External Node Type");
+        return false;
+    }
     }
 }
