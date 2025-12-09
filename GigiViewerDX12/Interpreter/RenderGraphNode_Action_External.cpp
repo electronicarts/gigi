@@ -135,8 +135,17 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
 
 #undef HandleTexture
 
-        if (!textureExists_color || !textureExists_depth || !textureExists_motionVectors || !textureExists_output)
-            return true;
+    if (!textureExists_color)
+    { 
+        m_logFn(LogLevel::Error, "No color texture is connected for node \"%s\"\n", node.name.c_str());
+        return true;
+    }
+
+    if (!textureExists_output)
+    {
+        m_logFn(LogLevel::Error, "No output texture is connected for node \"%s\"\n", node.name.c_str());
+        return true;
+    }
 
     // Input and output cannot be zero sized
     uint32_t renderSize[2] = { (uint32_t)texture_color.m_size[0], (uint32_t)texture_color.m_size[1] };
@@ -347,7 +356,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
             uint64_t optional = reqResourceReq.optional_resources;
 
             // Interpret the bitmask using values from ffx_upscale.h (FFX_API_QUERY_RESOURCE_*)
-            bool requiresColor = (required & FFX_API_QUERY_RESOURCE_INPUT_COLOR) != 0;
+            
+            // We have checked the existence of color texture already at the start of this function
+            //bool requiresColor = (required & FFX_API_QUERY_RESOURCE_INPUT_COLOR) != 0; 
             bool requiresDepth = (required & FFX_API_QUERY_RESOURCE_INPUT_DEPTH) != 0;
             bool requiresMV = (required & FFX_API_QUERY_RESOURCE_INPUT_MV) != 0;
             // Disable exposure texture check for now as there is bug in ffxQueryDescUpscaleGetResourceRequirements
@@ -356,12 +367,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
             //bool requiresTransparency = (required & FFX_API_QUERY_RESOURCE_INPUT_TRANSPARENCYCOMPOSITION) != 0;
 
             // Use these booleans to validate inputs or allocate/enable optional resources.
-            if (requiresColor && !textureExists_color)
-            {
-                m_logFn(LogLevel::Error, "FSR upscaler requires 'color' input but it is not connected for node \"%s\"\n", node.name.c_str());
-                return false;
-            }
-
             if (requiresDepth && !textureExists_depth)
             {
                 m_logFn(LogLevel::Error, "FSR upscaler requires 'depth' input but it is not connected for node \"%s\"\n", node.name.c_str());
