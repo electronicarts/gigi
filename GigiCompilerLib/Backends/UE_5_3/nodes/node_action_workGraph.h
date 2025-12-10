@@ -7,6 +7,6 @@
 
 static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode_Action_WorkGraph& node, std::string& tag, std::string& text)
 {
-    Assert(false, "WorkGraph Nodes are not supported by Unreal Engine CodeGen. (node = \"%s\")", node.name.c_str());
+    GigiAssert(false, "WorkGraph Nodes are not supported by Unreal Engine CodeGen. (node = \"%s\")", node.name.c_str());
     return false;
 }

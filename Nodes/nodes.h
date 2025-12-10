@@ -615,7 +615,7 @@ namespace FrontEndNodesNoCaching
                     info.dstPin = &connection.dstPin;
 
                     const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::WorkGraph, node.entryShader.name.c_str(), connection.srcPin.c_str());
-                    Assert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.entryShader.name.c_str());
+                    GigiAssert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.entryShader.name.c_str());
                     if (shaderResource)
                     {
                         info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);

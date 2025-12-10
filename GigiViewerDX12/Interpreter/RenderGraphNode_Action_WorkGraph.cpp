@@ -38,168 +38,6 @@ void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPrev
     }
 }
 
-bool GigiInterpreterPreviewWindowDX12::WorkGraph_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_WorkGraph& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions)
-{
-    for (int resourceIndex = 0; resourceIndex < shader.resources.size(); ++resourceIndex)
-    {
-        const ShaderResource& shaderResource = shader.resources[resourceIndex];
-
-        int depIndex = 0;
-        while (depIndex < node.resourceDependencies.size() && node.resourceDependencies[depIndex].pinIndex != (resourceIndex + pinOffset))
-            depIndex++;
-
-        if (depIndex >= node.resourceDependencies.size())
-        {
-            m_logFn(LogLevel::Error, "Could not find resource dependency for shader resource \"%s\" in work graph node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
-            return false;
-        }
-        const ResourceDependency& dep = node.resourceDependencies[depIndex];
-
-        DescriptorTableCache::ResourceDescriptor desc;
-
-        const RenderGraphNode& resourceNode = m_renderGraph.nodes[dep.nodeIndex];
-        switch (resourceNode._index)
-        {
-        case RenderGraphNode::c_index_resourceTexture:
-        {
-            const RuntimeTypes::RenderGraphNode_Resource_Texture& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceNode.resourceTexture.name.c_str());
-            desc.m_resource = resourceInfo.m_resource;
-            desc.m_format = resourceInfo.m_format;
-
-            if (dep.pinIndex < node.linkProperties.size())
-            {
-                desc.m_UAVMipIndex = min(node.linkProperties[dep.pinIndex].UAVMipIndex, resourceInfo.m_numMips - 1);
-            }
-
-            switch (resourceNode.resourceTexture.dimension)
-            {
-            case TextureDimensionType::Texture2D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2D; break;
-            case TextureDimensionType::Texture2DArray: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DArray; desc.m_count = resourceInfo.m_size[2]; break;
-            case TextureDimensionType::Texture3D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture3D; desc.m_count = resourceInfo.m_size[2]; break;
-            case TextureDimensionType::TextureCube: desc.m_resourceType = DescriptorTableCache::ResourceType::TextureCube; desc.m_count = 6; break;
-            }
-            break;
-        }
-        case RenderGraphNode::c_index_resourceShaderConstants:
-        {
-            const RuntimeTypes::RenderGraphNode_Resource_ShaderConstants& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_ShaderConstants(resourceNode.resourceShaderConstants.name.c_str());
-            desc.m_resource = resourceInfo.m_buffer->buffer;
-            desc.m_format = DXGI_FORMAT_UNKNOWN;
-            desc.m_stride = (UINT)resourceInfo.m_buffer->size;
-            desc.m_count = 1;
-            break;
-        }
-        case RenderGraphNode::c_index_resourceBuffer:
-        {
-            const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-
-            if (dep.access == ShaderResourceAccessType::RTScene)
-            {
-                desc.m_resource = resourceInfo.m_tlas;
-                desc.m_format = DXGI_FORMAT_UNKNOWN;
-                desc.m_stride = resourceInfo.m_tlasSize;
-                desc.m_count = 1;
-                desc.m_raw = false;
-            }
-            else
-            {
-                desc.m_resource = resourceInfo.m_resource;
-
-                const ShaderResourceBuffer& shaderResourceBuffer = shader.resources[resourceIndex].buffer;
-                bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
-                if (isStructuredBuffer)
-                {
-                    desc.m_format = DXGI_FORMAT_UNKNOWN;
-                    if (shaderResourceBuffer.typeStruct.structIndex != -1)
-                        desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
-                    else
-                        desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
-                    desc.m_count = resourceInfo.m_size / desc.m_stride;
-                }
-                else
-                {
-                    desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
-                    desc.m_stride = 0;
-                    desc.m_count = resourceInfo.m_count;
-                }
-
-                desc.m_raw = shader.resources[resourceIndex].buffer.raw;
-            }
-            break;
-        }
-        default:
-        {
-            m_logFn(LogLevel::Error, "Unhandled dependency node type for work graph node \"%s\"", node.name.c_str());
-            return false;
-        }
-        }
-
-        // This could be a temporary thing, but we can't run the work graph if we don't have the resources we need.
-        if (!desc.m_resource)
-            return true;
-
-        switch (dep.access)
-        {
-        case ShaderResourceAccessType::UAV:
-        {
-            desc.m_access = DescriptorTableCache::AccessType::UAV;
-            queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, GetNodeName(resourceNode).c_str()) });
-            break;
-        }
-        case ShaderResourceAccessType::RTScene:
-        {
-            desc.m_access = DescriptorTableCache::AccessType::SRV;
-            queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, GetNodeName(resourceNode).c_str()) });
-            break;
-        }
-        case ShaderResourceAccessType::SRV:
-        {
-            desc.m_access = DescriptorTableCache::AccessType::SRV;
-            break;
-        }
-        case ShaderResourceAccessType::CBV:
-        {
-            // constant buffers are upload heap, don't need transitions to be written from CPU or read by shaders
-            desc.m_access = DescriptorTableCache::AccessType::CBV;
-            break;
-        }
-        case ShaderResourceAccessType::Indirect:
-        {
-            // This is handled elsewhere
-            continue;
-        }
-        default:
-        {
-            m_logFn(LogLevel::Error, "Unhandled shader resource access type \"%s\" for work graph node \"%s\"", EnumToString(dep.access), node.name.c_str());
-            return false;
-        }
-        }
-
-        switch (dep.type)
-        {
-        case ShaderResourceType::Texture: break;// Handled above
-        case ShaderResourceType::Buffer:
-        {
-            if (dep.access == ShaderResourceAccessType::RTScene)
-                desc.m_resourceType = DescriptorTableCache::ResourceType::RTScene;
-            else
-                desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer;
-            break;
-        }
-        case ShaderResourceType::ConstantBuffer: desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer; break;
-        default:
-        {
-            m_logFn(LogLevel::Error, "Unhandled shader resource type \"%s\" for work graph node \"%s\"", EnumToString(dep.type), node.name.c_str());
-            return false;
-        }
-        }
-
-        descs.push_back(desc);
-    }
-
-    return true;
-}
-
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_WorkGraph& node, RuntimeTypes::RenderGraphNode_Action_WorkGraph& runtimeData, NodeAction nodeAction)
 {
     if (nodeAction == NodeAction::Init)
@@ -684,7 +522,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         int descriptorTablePinOffset = 0;
         if (node.entryShader.shader)
         {
-            if (!WorkGraph_MakeDescriptorTableDesc(descriptorsWorkGraph, node, *node.entryShader.shader, descriptorTablePinOffset, queuedTransitions))
+            // If a resource is used as a vertex buffer and srv, it should transition to only the vertex buffer state.
+            // This map is meant to resolve situations like this. but is not used for base compute work graphs. 
+            // mesh nodes might need this to be properly filled out though.
+            std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES> importantResourceStates;
+
+            if (!MakeDescriptorTableDesc(descriptorsWorkGraph,runtimeData, node.resourceDependencies, node.linkProperties, node.name.c_str(), node.entryShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
                 return false;
             descriptorTablePinOffset += (int)node.entryShader.shader->resources.size();
         }

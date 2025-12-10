@@ -769,7 +769,7 @@ struct ShaderReferenceFixupVisitor
                 return true;
             }
         }
-        Assert(false, "Could not find work graph shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
+        GigiAssert(false, "Could not find work graph shader referenced: %s\nIn %s\n", data.name.c_str(), path.c_str());
         return false;
     }
 
@@ -1508,7 +1508,7 @@ struct ReferenceFixupVisitor
 
             if (connection.srcNodePinIndex == -1)
             {
-                Assert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1516,7 +1516,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                Assert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1524,7 +1524,7 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                Assert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -2839,7 +2839,7 @@ struct ShaderAssertsVisitor
                 };
 
                 std::string_view token(tokenStr);
-                const std::string_view prefix("/*$(Assert:");
+                const std::string_view prefix("/*$(GigiAssert:");
                 const std::string_view suffix(")*/");
 
                 if (!BeginsWith(token.data(), prefix.data()))
@@ -3022,7 +3022,7 @@ struct ShaderAssertsVisitor
             node.actionWorkGraph.connections.push_back(std::move(newConnection));
         else
         {
-            ShowErrorMessage("Shaders Assert: failed to add node connection: unsupported node type '%d'", node._index);
+            ShowErrorMessage("Shaders GigiAssert: failed to add node connection: unsupported node type '%d'", node._index);
             return false;
         }
 

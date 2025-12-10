@@ -847,6 +847,7 @@ private:
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
+    
     bool MakeDescriptorTableDesc(
         std::vector<DescriptorTableCache::ResourceDescriptor>& descs,
         struct RuntimeTypes::RenderGraphNode_Base& runtimeData,

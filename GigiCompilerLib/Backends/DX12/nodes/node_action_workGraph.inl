@@ -5,5 +5,5 @@
 
 static void MakeStringReplacementForNode(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, RenderGraphNode_Action_WorkGraph& node)
 {
-    Assert(false, "WorkGraph Nodes are not supported by DX12 CodeGen. (node = \"%s\")", node.name.c_str());
+    GigiAssert(false, "WorkGraph Nodes are not supported by DX12 CodeGen. (node = \"%s\")", node.name.c_str());
 }
