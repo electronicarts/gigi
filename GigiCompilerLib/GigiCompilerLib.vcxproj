@@ -187,6 +187,7 @@
     <ClCompile Include="Backends\Shared.cpp" />
     <ClCompile Include="Backends\UE_5_3\Backend_UE_5_3.cpp" />
     <None Include="..\.editorconfig" />
+    <None Include="Backends\DX12\nodes\node_action_workGraph.inl" />
     <None Include="Backends\DX12\nodes\node_action_external.inl" />
     <None Include="Backends\DX12\nodes\node_reroute.inl" />
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
@@ -247,6 +248,7 @@
     <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_workGraph.inl" />
     <None Include="Backends\WebGPU\nodes\node_reroute.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_buffer.inl" />
     <None Include="Backends\WebGPU\nodes\node_resource_shaderConstants.inl" />
@@ -316,6 +318,7 @@
     <ClInclude Include="..\Nodes\action_barrier.h" />
     <ClInclude Include="..\Nodes\action_external.h" />
     <ClInclude Include="..\Nodes\action_subgraph.h" />
+    <ClInclude Include="..\Nodes\action_workgraph.h" />
     <ClInclude Include="..\Nodes\reroute.h" />
     <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h" />
     <ClInclude Include="..\Schemas\DataFieldTypes.h" />
@@ -529,6 +532,7 @@
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_drawCall.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_rayShader.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_action_subGraph.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_workGraph.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_resource_buffer.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_resource_shaderConstants.h" />
     <ClInclude Include="Backends\UE_5_3\nodes\node_resource_texture.h" />

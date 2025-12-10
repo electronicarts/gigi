@@ -93,6 +93,7 @@ namespace FrontEndNodes
 #include "action_copyresource.h"
 #include "action_rayshader.h"
 #include "action_drawcall.h"
+#include "action_workGraph.h"
 #include "action_subgraph.h"
 #include "action_barrier.h"
 #include "action_external.h"
@@ -202,6 +203,11 @@ void ExecuteOnActionNode(const RenderGraphNode& node, const LAMBDA& lambda)
         case RenderGraphNode::c_index_actionComputeShader:
         {
             lambda(node.actionComputeShader);
+            break;
+        }
+        case RenderGraphNode::c_index_actionWorkGraph:
+        {
+            lambda(node.actionWorkGraph);
             break;
         }
         case RenderGraphNode::c_index_actionRayShader:
@@ -596,6 +602,37 @@ namespace FrontEndNodesNoCaching
                     info.access = ShaderResourceAccessType::Indirect;
                     ret.push_back(info);
                 }
+                break;
+            }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                RenderGraphNode_Action_WorkGraph& node = nodeBase.actionWorkGraph;
+                for (NodePinConnection& connection : node.connections)
+                {
+                    PinInfo info;
+                    info.srcPin = connection.srcPin;
+                    info.dstNode = &connection.dstNode;
+                    info.dstPin = &connection.dstPin;
+
+                    const ShaderResource* shaderResource = GetShaderResourceByName(renderGraph, ShaderType::WorkGraph, node.entryShader.name.c_str(), connection.srcPin.c_str());
+                    GigiAssert(shaderResource != nullptr, "Could not find shader resource \"%s\" in shader \"%s\" in " __FUNCTION__, connection.srcPin.c_str(), node.entryShader.name.c_str());
+                    if (shaderResource)
+                    {
+                        info.readOnly = ShaderResourceTypeIsReadOnly(shaderResource->access);
+                        info.access = shaderResource->access;
+                    }
+
+                    ret.push_back(info);
+                }
+
+                PinInfo info;
+                info.srcPin = "recordsBuffer";
+                info.dstNode = &node.records.node;
+                info.dstPin = &node.records.pin;
+                info.readOnly = true;
+                info.access = ShaderResourceAccessType::SRV; // TODO: jan can reuse vertex buffer maybe : no, more like srv, maybe need custom one
+                ret.push_back(info);
+
                 break;
             }
             case RenderGraphNode::c_index_actionRayShader:

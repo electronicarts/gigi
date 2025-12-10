@@ -91,7 +91,9 @@ extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\externa
 static const UUID ExperimentalFeaturesEnabled[] =
 {
     D3D12ExperimentalShaderModels,
-    D3D12CooperativeVectorExperiment
+    D3D12CooperativeVectorExperiment,
+    D3D12ExperimentalShaderModels,
+    D3D12StateObjectsExperiment,
 };
 
 #include "Interpreter/GigiInterpreterPreviewWindowDX12.h"
@@ -211,8 +213,8 @@ static RENDERDOC_API_1_6_0* g_renderDocAPI = nullptr;
 static bool g_renderDocCaptureNextFrame = false;
 static bool g_renderDocIsCapturing = false;
 static bool g_renderDocLaunchUI = false;
-static bool g_renderDocEnabled = true;
-static bool g_pixCaptureEnabled = true;
+static bool g_renderDocEnabled = false;
+static bool g_pixCaptureEnabled = false;
 static int g_renderDocFrameCaptureCount = 1;
 
 static AgilitySDKChoice g_agilitySDKChoice = AgilitySDKChoice::Retail;

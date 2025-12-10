@@ -1,227 +1,126 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="gigicompiler.cpp" />
-    <ClCompile Include="..\GigiAssert.cpp" />
+    <ClCompile Include="..\external\timyxml2\tinyxml2.cpp" />
     <ClCompile Include="..\FlattenRenderGraph.cpp" />
-    <ClCompile Include="..\Schemas\JSONSchema.h">
-      <Filter>schemas\utils</Filter>
-    </ClCompile>
+    <ClCompile Include="..\GigiAssert.cpp" />
+    <ClCompile Include="..\RenderGraph\Visitors.cpp" />
+    <ClCompile Include="Backends\DX12\Backend_DX12.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_demo.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_draw.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_impl_dx12.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_tables.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Application\main.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\Camera.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_dxc.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_fxc.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\dxutils.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\FileCache.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\TextureCache.cpp" />
+    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\miniz.c" />
+    <ClCompile Include="Backends\DX12\templates\Module\private\technique.cpp" />
+    <ClCompile Include="Backends\GraphViz.cpp" />
+    <ClCompile Include="Backends\Interpreter\Backend_Interpreter.cpp" />
+    <ClCompile Include="Backends\ProcessShader_HLSL.cpp" />
+    <ClCompile Include="Backends\Shared.cpp" />
+    <ClCompile Include="Backends\UE_5_3\Backend_UE_5_3.cpp" />
+    <ClCompile Include="Backends\WebGPU\Backend_WebGPU.cpp" />
+    <ClCompile Include="gigicompiler.cpp" />
     <ClCompile Include="gigiinterpreter.cpp" />
-    <ClCompile Include="Utils.cpp" />
-    <ClCompile Include="Parse.cpp">
-      <Filter>structParser</Filter>
-    </ClCompile>
-    <ClCompile Include="structParser.cpp">
-      <Filter>structParser</Filter>
-    </ClCompile>
-    <ClCompile Include="SubGraphs.cpp" />
+    <ClCompile Include="Parse.cpp" />
     <ClCompile Include="ProcessSlang.cpp" />
-    <ClCompile Include="Backends\GraphViz.cpp">
-      <Filter>Backends</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\Interpreter\Backend_Interpreter.cpp">
-      <Filter>Backends\Interpreter</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\Backend_DX12.cpp">
-      <Filter>Backends\DX12</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\private\technique.cpp">
-      <Filter>Backends\DX12\templates\Module\private</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\main.cpp">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\dxutils.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_demo.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_draw.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_impl_dx12.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_impl_win32.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_tables.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Application\imgui\imgui_widgets.cpp">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\FileCache.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\TextureCache.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\miniz.c">
-      <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\UE_5_3\Backend_UE_5_3.cpp">
-      <Filter>Backends\UE_5_3</Filter>
-    </ClCompile>
-    <ClCompile Include="..\external\timyxml2\tinyxml2.cpp">
-      <Filter>external\timyxml2</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_dxc.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders_fxc.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\DX12\templates\Module\DX12Utils\Camera.cpp">
-      <Filter>Backends\DX12\templates\Module\DX12Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\Shared.cpp">
-      <Filter>Backends</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\ProcessShader_HLSL.cpp">
-      <Filter>Backends</Filter>
-    </ClCompile>
-    <ClCompile Include="Backends\WebGPU\Backend_WebGPU.cpp">
-      <Filter>Backends\WebGPU</Filter>
-    </ClCompile>
-    <ClCompile Include="..\RenderGraph\Visitors.cpp">
-      <Filter>RenderGraph</Filter>
-    </ClCompile>
+    <ClCompile Include="structParser.cpp" />
+    <ClCompile Include="SubGraphs.cpp" />
+    <ClCompile Include="Utils.cpp" />
+    <ClCompile Include="..\Schemas\JSONSchema.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="gigicompiler.h" />
-    <ClInclude Include="..\Version.h" />
-    <ClInclude Include="..\GigiAssert.h" />
-    <ClInclude Include="..\FlattenRenderGraph.h" />
-    <ClInclude Include="..\Schemas\BackendList.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\RenderGraphNodes.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\RenderGraphNodesVariant.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\Schemas.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\SchemasCommon.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\SchemasShaders.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\SchemasVariables.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\HTML.h">
-      <Filter>schemas\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\JSON.h">
-      <Filter>schemas\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\Types.h">
-      <Filter>schemas\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\Visitor.h">
-      <Filter>schemas\utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\RenderGraph\Visitors.h">
-      <Filter>RenderGraph</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\action.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\action_computeshader.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\action_copyresource.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\action_rayshader.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\nodes.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\resource.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\resource_buffer.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\resource_shaderconstants.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Nodes\resource_texture.h">
-      <Filter>Nodes</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\rapidjson\rapidjson.h">
-      <Filter>external\rapidjson</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\Config.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeBinaryReadFooter.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeBinaryReadHeader.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeBinaryWriteFooter.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeBinaryWriteHeader.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeEqualityTests.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeHTMLFooter.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeHTMLHeader.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeJSONReadFooter.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeJSONReadHeader.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeJSONWriteFooter.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeJSONWriteHeader.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\MakeTypes.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\_common.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
-    <ClInclude Include="..\external\df_serialize\_fillunsetdefines.h">
-      <Filter>external\df_serialize</Filter>
-    </ClInclude>
+    <ClInclude Include="..\external\timyxml2\tinyxml2.h" />
+    <ClInclude Include="..\Nodes\action_drawcall.h" />
+    <ClInclude Include="..\Nodes\action_barrier.h" />
+    <ClInclude Include="..\Nodes\action_subgraph.h" />
+    <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h" />
+    <ClInclude Include="..\Schemas\DataFieldTypes.h" />
+    <ClInclude Include="..\Schemas\Misc\BackendTemplateSchemas.h" />
+    <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgClientToServerVariant.h" />
+    <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgServerToClientVariant.h" />
+    <ClInclude Include="..\Schemas\PreviewWindow\PreviewWindowSchemas.h" />
+    <ClInclude Include="..\Schemas\TextureFormats.h" />
+    <ClInclude Include="..\Schemas\Utils.h" />
+    <ClInclude Include="..\Schemas\WebGPU\WebGPUSchemas.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imconfig.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imgui.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imgui_impl_dx12.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imgui_internal.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imstb_rectpack.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imstb_textedit.h" />
+    <ClInclude Include="Backends\DX12\templates\Application\imgui\imstb_truetype.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12compatibility.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12sdklayers.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12shader.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\D3D12TokenizedProgramFormat.hpp" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12video.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dcommon.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_barriers.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_check_feature_support.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_core.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_default.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_pipeline_state_stream.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_property_format_table.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_render_pass.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_resource_helpers.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_root_signature.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dx12\d3dx12_state_object.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\AgilitySDK\include\dxgiformat.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\Camera.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\CompileShaders.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\DelayedReleaseTracker.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\dxutils.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\FileCache.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\HeapAllocationTracker.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\logfn.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\ParseCSV.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\ReadbackHelper.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\ShaderCompilerCommon.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\SRGB.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\stb\stb_image.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\TextureCache.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\miniz.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\tinyexr.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\private\technique.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\public\all.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\public\imgui.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\public\pythoninterface.h" />
+    <ClInclude Include="Backends\DX12\templates\Module\public\technique.h" />
+    <ClInclude Include="Backends\GraphViz.h" />
+    <ClInclude Include="Backends\Interpreter\templates\linalg.h" />
+    <ClInclude Include="Backends\ProcessShader.h" />
+    <ClInclude Include="Backends\Shared.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\allNodes.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_barrier.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_computeShader.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_copyResource.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_drawCall.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_rayShader.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_subGraph.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_buffer.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_shaderConstants.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_resource_texture.h" />
+    <ClInclude Include="GigiBuildFlavor.h" />
+    <ClInclude Include="GigiBuildFlavorList.h" />
     <ClInclude Include="gigiinterpreter.h" />
-    <ClInclude Include="..\Schemas\PreviewWindow\PreviewWindowSchemas.h">
-      <Filter>schemas\PreviewWindow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgClientToServerVariant.h">
-      <Filter>schemas\PreviewWindow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgServerToClientVariant.h">
-      <Filter>schemas\PreviewWindow</Filter>
-    </ClInclude>
-    <ClInclude Include="..\Schemas\DataFieldTypes.h">
-      <Filter>schemas</Filter>
-    </ClInclude>
+    <ClInclude Include="Parse.h" />
+    <ClInclude Include="ParseCSV.h" />
+    <ClInclude Include="ParseText.h" />
+    <ClInclude Include="ProcessSlang.h" />
+    <ClInclude Include="structParser.h" />
+    <ClInclude Include="SubGraphs.h" />
     <ClInclude Include="TupleCache.h" />
     <ClInclude Include="Utils.h" />
     <ClInclude Include="..\Schemas\TextureFormats.h">
@@ -600,180 +499,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Backends\DX12\nodes\node_action_barrier.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_action_computeShader.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_action_copyResource.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_action_drawCall.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_action_rayShader.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_action_subGraph.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_resource_buffer.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_resource_shaderConstants.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\node_resource_texture.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\nodes\nodes.inl">
-      <Filter>Backends\DX12\nodes</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\DX12Utils\stb\LICENSE">
-      <Filter>Backends\DX12\templates\Module\DX12Utils\stb</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Application\.gitignore">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Application\MakeSolution.bat">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\README.md">
-      <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\LICENSE">
-      <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz\readme.md">
-      <Filter>Backends\DX12\templates\Module\DX12Utils\tinyexr\deps\miniz</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\ggconfig.json">
-      <Filter>Backends\UE_5_3\templates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\Readme.txt">
-      <Filter>Backends\UE_5_3\templates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\NodeTemplates\ResourceTexture.xml">
-      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionComputeShader.xml">
-      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\public\Technique.h">
-      <Filter>Backends\UE_5_3\templates\public</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\private\Technique.cpp">
-      <Filter>Backends\UE_5_3\templates\private</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\install.bat">
-      <Filter>Backends\UE_5_3\templates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\NodeTemplates\ResourceBuffer.xml">
-      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionCopyResource.xml">
-      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionDrawCall.xml">
-      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
-    </None>
-    <None Include="Backends\UE_5_3\templates\NodeTemplates\ActionRayShader.xml">
-      <Filter>Backends\UE_5_3\templates\NodeTemplates</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.pdb">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3d12SDKLayers.dll">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3d12SDKLayers.pdb">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3dconfig.exe">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\d3dconfig.pdb">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\bin</Filter>
-    </None>
-    <None Include="Backends\DX12\templates\Module\ggconfig.json">
-      <Filter>Backends\DX12\templates\Module</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Module\ggconfig.json">
-      <Filter>Backends\WebGPU\templates\Module</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Module\Module.js">
-      <Filter>Backends\WebGPU\templates\Module</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\index.html">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\index.js">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\nodes.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_action_barrier.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_action_computeShader.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_action_copyResource.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_resource_buffer.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_resource_shaderConstants.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\nodes\node_resource_texture.inl">
-      <Filter>Backends\WebGPU\nodes</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\.gitignore">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\Node_GetPackages.bat">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\Node_Run.bat">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\Web_Open.bat">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\Web_Start.bat">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\jquery-csv.js">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Application\style.css">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Module\Shared.js">
-      <Filter>Backends\WebGPU\templates\Module</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Module\GigiRayTracingEmulation.hlsli">
-      <Filter>Backends\WebGPU\templates\Module</Filter>
-    </None>
-    <None Include="Backends\WebGPU\templates\Module\BVH.hlsli">
-      <Filter>Backends\WebGPU\templates\Module</Filter>
-    </None>
     <None Include="..\.editorconfig" />
     <None Include="Backends\Interpreter\templates\ggconfig.json">
       <Filter>Backends\Interpreter\templates</Filter>
@@ -805,45 +530,10 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="Backends\DX12\templates\Module\readme.txt">
-      <Filter>Backends\DX12\templates\Module</Filter>
-    </Text>
-    <Text Include="Backends\DX12\templates\Application\CMakeLists.txt">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </Text>
-    <Text Include="Backends\DX12\templates\Application\readme.txt">
-      <Filter>Backends\DX12\templates\Application</Filter>
-    </Text>
-    <Text Include="Backends\DX12\templates\Application\imgui\LICENSE.txt">
-      <Filter>Backends\DX12\templates\Application\imgui</Filter>
-    </Text>
-    <Text Include="Backends\WebGPU\templates\Application\Readme.txt">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12.idl">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
-    </Midl>
-    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12compatibility.idl">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
-    </Midl>
-    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12sdklayers.idl">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
-    </Midl>
-    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3d12video.idl">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
-    </Midl>
-    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\d3dcommon.idl">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
-    </Midl>
-    <Midl Include="Backends\DX12\templates\Module\AgilitySDK\include\dxgiformat.idl">
-      <Filter>Backends\DX12\templates\Module\AgilitySDK\include</Filter>
-    </Midl>
-  </ItemGroup>
-  <ItemGroup>
-    <Image Include="Backends\WebGPU\templates\Application\favicon.ico">
-      <Filter>Backends\WebGPU\templates\Application</Filter>
-    </Image>
+    <Text Include="Backends\DX12\templates\Application\CMakeLists.txt" />
+    <Text Include="Backends\DX12\templates\Application\imgui\LICENSE.txt" />
+    <Text Include="Backends\DX12\templates\Application\readme.txt" />
+    <Text Include="Backends\DX12\templates\Module\readme.txt" />
+    <Text Include="Backends\WebGPU\templates\Application\Readme.txt" />
   </ItemGroup>
 </Project>
