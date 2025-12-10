@@ -5,7 +5,7 @@
 // SlangAutoDiff technique, shader Init
 
 
-struct Struct__InitCB
+struct Struct__Init_0CB
 {
     int FrameIndex;
     float3 _padding0;
@@ -18,14 +18,14 @@ struct Struct__InitCB
 };
 
 RWBuffer<float> Data;
-int cb_InitCB_FrameIndex;
-float3 cb_InitCB__padding0;
-float4 cb_InitCB_MouseState;
-float4 cb_InitCB_MouseStateLastFrame;
-int cb_InitCB_NumGaussians;
-float3 cb_InitCB_iResolution;
-uint cb_InitCB_initialized;
-float3 cb_InitCB__padding1;
+int cb_Init_0CB_FrameIndex;
+float3 cb_Init_0CB__padding0;
+float4 cb_Init_0CB_MouseState;
+float4 cb_Init_0CB_MouseStateLastFrame;
+int cb_Init_0CB_NumGaussians;
+float3 cb_Init_0CB_iResolution;
+uint cb_Init_0CB_initialized;
+float3 cb_Init_0CB__padding1;
 
 
 static const float c_pi = 3.14159265359f;
@@ -54,21 +54,21 @@ float wang_hash_float01(inout uint state)
 void csmain(uint3 DTid : SV_DispatchThreadID)
 {
 	// set the ball position on click
-	float4 mouseState = cb_InitCB_MouseState;
-	float4 mouseStateLastFrame = cb_InitCB_MouseStateLastFrame;
+	float4 mouseState = cb_Init_0CB_MouseState;
+	float4 mouseStateLastFrame = cb_Init_0CB_MouseStateLastFrame;
 	if (mouseState.z && !mouseStateLastFrame.z)
 	{
-		float2 uv = mouseState.xy / cb_InitCB_iResolution.xy;
+		float2 uv = mouseState.xy / cb_Init_0CB_iResolution.xy;
 		Data[0] = uv.x;
 		Data[1] = uv.y;
 	}
 
-	if((bool)cb_InitCB_initialized)
+	if((bool)cb_Init_0CB_initialized)
 	{
 		return;
 	}
 
-	uint rng = wang_hash_init(uint3(0x1337b4b3, 0xcafef00d, cb_InitCB_FrameIndex));
+	uint rng = wang_hash_init(uint3(0x1337b4b3, 0xcafef00d, cb_Init_0CB_FrameIndex));
 	
 	// put the ball in the center
 	Data[0] = 0.5f;
@@ -78,7 +78,7 @@ void csmain(uint3 DTid : SV_DispatchThreadID)
 	Data[2] = 0.0f;
 	Data[3] = 0.0f;
 
-	for (int i = 0; i < cb_InitCB_NumGaussians; ++i)
+	for (int i = 0; i < cb_Init_0CB_NumGaussians; ++i)
 	{
 		// position
 		Data[4+i*5+0] = wang_hash_float01(rng);

@@ -29,7 +29,7 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
     {
         static inline size_t hash_combine(size_t A, size_t B)
         {
-            return A ^ (0x9e3779b9 + (A << 6) + (A >> 2));
+            return A ^ (B + 0x9e3779b9 + (A << 6) + (A >> 2));
         }
 
         size_t operator()(const OutputConnection& key) const
@@ -77,12 +77,12 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
             OutputConnection outputConnection;
             outputConnection.nodeIndex = FrontEndNodesNoCaching::GetNodeIndexByName(renderGraph, pinInfo.dstNode->c_str());
 
-            Assert(outputConnection.nodeIndex != -1, "could not find node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
+            GigiAssert(outputConnection.nodeIndex != -1, "could not find node \"%s\"", pinInfo.dstNode->c_str(), pinInfo.dstPin->c_str());
 
             RenderGraphNode& dstNode = renderGraph.nodes[outputConnection.nodeIndex];
             outputConnection.pinIndex = FrontEndNodesNoCaching::GetPinIndexByName(renderGraph, dstNode, pinInfo.dstPin->c_str());
 
-            Assert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstPin->c_str(), pinInfo.dstNode->c_str());
+            GigiAssert(outputConnection.pinIndex != -1, "could not find pin \"%s\" for node \"%s\"", pinInfo.dstPin->c_str(), pinInfo.dstNode->c_str());
 
             inputConnection.pinIndex = pinIndex;
             inputConnection.subtreeIsReadOnly = !FrontEndNodesNoCaching::DoesSubtreeWriteResource(renderGraph, node, pinIndex);
@@ -121,7 +121,8 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
                 bool disallowDuplication = false;
                 ExecuteOnActionNode(outputNode, [&inputConnection, &disallowDuplication](auto& node)
                     {
-                        disallowDuplication = node.linkProperties[inputConnection.pinIndex].disallowDuplication;
+                        if (inputConnection.pinIndex < node.linkProperties.size())
+                            disallowDuplication = node.linkProperties[inputConnection.pinIndex].disallowDuplication;
                     }
                 );
                 if (!disallowDuplication)
@@ -264,6 +265,44 @@ bool HandleOutputsToMultiInput(RenderGraph& renderGraph)
     return true;
 }
 
+static bool ShadersCompatibleForNoDuplicate(const Shader& A, const Shader& B)
+{
+    auto ArraysEqual = [](const auto& arrayA, const auto& arrayB) -> bool
+    {
+        if (arrayA.size() != arrayB.size())
+            return false;
+        for (size_t i = 0; i < arrayA.size(); ++i)
+        {
+            if (!(arrayA[i] == arrayB[i]))
+                return false;
+        }
+        return true;
+    };
+
+    // Return false for any incompatibilites, true otherwise.
+    if (
+        A.fileName != B.fileName ||
+        A.destFileName != B.destFileName ||
+        A.language != B.language ||
+        A.type != B.type ||
+        A.entryPoint != B.entryPoint ||
+        A.NumThreads[0] != B.NumThreads[0] ||
+        A.NumThreads[1] != B.NumThreads[1] ||
+        A.NumThreads[2] != B.NumThreads[2] ||
+        A.slangOptions != B.slangOptions ||
+        !ArraysEqual(A.defines, B.defines) ||
+        !ArraysEqual(A.tokenReplacements, B.tokenReplacements) ||
+        !ArraysEqual(A.resources, B.resources) ||
+        !ArraysEqual(A.samplers, B.samplers) ||
+        !ArraysEqual(A.variableAliases, B.variableAliases)
+    )
+    {
+        return false;
+    }
+
+    return true;
+}
+
 bool DuplicateNodeShaders(RenderGraph& renderGraph)
 {
     std::unordered_set<std::string> usedShaders;
@@ -297,8 +336,9 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
         }
 
         bool makeOutputFile = false;
-        if (newShader.language == ShaderLanguage::Slang)
+        if (newShader.language == ShaderLanguage::Slang || renderGraph.backend == Backend::WebGPU)
             makeOutputFile = true;
+
         // If we need a unique processed shader file...
         // Make the output file name include the unique index used in the shader data record name, so the filename is unique too.
         if (makeOutputFile)
@@ -314,6 +354,17 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
         else
         {
             newShader.copyFile = false;
+
+            // If a shader record like the one we were going to make already exists, use that one instead
+            for (const Shader& shader : renderGraph.shaders)
+            {
+                if (ShadersCompatibleForNoDuplicate(shader, newShader))
+                {
+                    shaderName = shader.name;
+                    usedShaders.insert(shaderName);
+                    return;
+                }
+            }
         }
 
         renderGraph.shaders.push_back(newShader);
@@ -347,12 +398,18 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
                 std::string dummyEntryPoint;
 
                 std::vector<ShaderDefine> nodeDefines = node.defines;
-                node.defines.clear();
-
                 HandleNodeShader(node.amplificationShader.name, nodeDefines, dummyEntryPoint);
+
+                nodeDefines = node.defines;
                 HandleNodeShader(node.meshShader.name, nodeDefines, dummyEntryPoint);
+
+                nodeDefines = node.defines;
                 HandleNodeShader(node.vertexShader.name, nodeDefines, dummyEntryPoint);
+
+                nodeDefines = node.defines;
                 HandleNodeShader(node.pixelShader.name, nodeDefines, dummyEntryPoint);
+
+                node.defines.clear();
 
                 break;
             }
@@ -396,11 +453,13 @@ bool DuplicateNodeShaders(RenderGraph& renderGraph)
 
         for (Shader& shader : renderGraph.shaders)
         {
-            if (copiedShaderFiles.count(shader.fileName) > 0)
+            std::string actualFileName = (shader.destFileName.empty()) ? shader.fileName : shader.destFileName;
+
+            if (copiedShaderFiles.count(actualFileName) > 0)
                 continue;
 
             shader.copyFile = true;
-            copiedShaderFiles.insert(shader.fileName);
+            copiedShaderFiles.insert(actualFileName);
         }
     }
 
@@ -597,7 +656,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     Backend backend;
     if (!GigiBuildFlavorBackend(buildFlavor, backend))
     {
-        Assert(false, "could not get backend for build flavor %s", EnumToString(buildFlavor));
+        GigiAssert(false, "could not get backend for build flavor %s", EnumToString(buildFlavor));
         return GigiCompileResult::NoBackend;
     }
 
@@ -609,7 +668,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     RenderGraph& renderGraph = outRenderGraph ? *outRenderGraph : renderGraph_;
     if (!ReadFromJSONFile(renderGraph, jsonFile.c_str()))
     {
-        Assert(false, "could not load %s", jsonFile.c_str());
+        GigiAssert(false, "could not load %s", jsonFile.c_str());
         return GigiCompileResult::CantLoadRenderGraph;
     }
     renderGraph.backend = backend;
@@ -621,7 +680,7 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
     /*
     if (renderGraph.version != GIGI_VERSION())
     {
-        Assert(false, "%s is using version %s but this exe is version %s", jsonFile.c_str(), renderGraph.version.c_str(), GIGI_VERSION());
+        GigiAssert(false, "%s is using version %s but this exe is version %s", jsonFile.c_str(), renderGraph.version.c_str(), GIGI_VERSION());
         return GigiCompileResult::WrongVersion;
     }
     */
@@ -657,12 +716,11 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
             return GigiCompileResult::BackendData;
     }
 
-    // Duplicate shaders as needed.
-    // Node defines are per node, not per shader, even though the shader may be shared by multiple nodes.
-    // A solution to copy the shader records and turn the node defines into shader defines.
+    // Add variables for the "ValueOrVariable" types so they can be treated as always variables
     {
-        if (!DuplicateNodeShaders(renderGraph))
-            return GigiCompileResult::DuplicateNodeShaders;
+        HandleValueOrVariablesVisitor visitor(renderGraph);
+        if (!Visit(renderGraph, visitor, "renderGraph"))
+            return GigiCompileResult::ValueOrVariables;
     }
 
     // Add node info to shaders as defines
@@ -670,6 +728,14 @@ GigiCompileResult GigiCompile(GigiBuildFlavor buildFlavor, const std::string& js
         AddNodeInfoToShadersVisitor visitor(renderGraph);
         if (!Visit(renderGraph, visitor, "renderGraph"))
             return GigiCompileResult::AddNodeInfoToShaders;
+    }
+
+    // Duplicate shaders as needed.
+    // Node defines are per node, not per shader, even though the shader may be shared by multiple nodes.
+    // A solution to copy the shader records and turn the node defines into shader defines.
+    {
+        if (!DuplicateNodeShaders(renderGraph))
+            return GigiCompileResult::DuplicateNodeShaders;
     }
 
     // Do a post load

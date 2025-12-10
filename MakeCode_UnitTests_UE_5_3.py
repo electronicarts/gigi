@@ -104,6 +104,14 @@ unsupportedTests = [
 
     # Need to implement buffer view begin / size
     "Buffers\\buffertest_viewOffsetCS",
+    "Buffers\\buffertest_viewOffsetCS_Vars",
+
+    # Unsure if supported
+    "Raster\\IndirectDraw",
+
+    # Unsupported
+    "AMD\\Upscale",
+    "HLSLTime\\HLSLTime",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES
@@ -116,7 +124,7 @@ for fileName in glob.glob(os.getcwd() + "/Techniques/UnitTests/**/*.py", recursi
     fileNameNoExtension = os.path.splitext(fileName)[0]
     fileName = fileNameNoExtension + ".gg"
 
-    if relFileNameNoExtension == "RunTests":
+    if relFileNameNoExtension == "RunTests" or relFileNameNoExtension == "TestLogic":
         #print("Skipping: " + relFileNameNoExtension)
         continue
 

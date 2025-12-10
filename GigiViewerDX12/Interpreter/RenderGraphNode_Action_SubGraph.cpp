@@ -9,6 +9,6 @@
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_SubGraph& node, RuntimeTypes::RenderGraphNode_Action_SubGraph& runtimeData, NodeAction nodeAction)
 {
 	// No-op. Should never get to a backend.
-	Assert(false, "Subgraph nodes should be removed by the front end.");
+    GigiAssert(false, "Subgraph nodes should be removed by the front end.");
 	return false;
 }

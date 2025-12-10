@@ -157,7 +157,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 			{
 				Variable& var = renderGraph.variables[node.count.variable.variableIndex];
 				stringReplacementMap["/*$(ExecuteInit)*/"] << "this.variable_" << var.name << ";\n";
-				Assert(DataFieldTypeComponentCount(var.type) == 1, "Inappropriate variable type given for buffer size.");
+                GigiAssert(DataFieldTypeComponentCount(var.type) == 1, "Inappropriate variable type given for buffer size.");
 			}
 			else
 			{

@@ -3,8 +3,8 @@
 //        Copyright (c) 2024 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
-#define GIGI_VERSION() "1.0"
-#define GIGI_VERSION_WITH_BUILD_NUMBER() GIGI_VERSION() ".4"
+#define GIGI_VERSION() "1.01"
+#define GIGI_VERSION_WITH_BUILD_NUMBER() GIGI_VERSION() ".6"
 
 // This is independent of GIGI_VERSION().
 // If the browser database / sharing system changes, this version updates and is a way to know that old data needs converting to the new format.

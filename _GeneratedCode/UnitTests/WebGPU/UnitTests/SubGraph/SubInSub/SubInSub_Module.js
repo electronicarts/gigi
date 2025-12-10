@@ -36,16 +36,16 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Inner1_Inner2_Inner2CS", node "Inner1_Inner2_Rotate_Colors"
-static ShaderCode_Inner1_Inner2_Rotate_Colors_Inner1_Inner2_Inner2CS = `
+// Shader code for Compute shader "Inner1_Inner2_Inner2CS_0", node "Inner1_Inner2_Rotate_Colors"
+static ShaderCode_Inner1_Inner2_Rotate_Colors_Inner1_Inner2_Inner2CS_0 = `
 @binding(0) @group(0) var Input : texture_2d<f32>;
 
-struct Struct_Inner1_Inner2_Inner2CSCB_std140_0
+struct Struct_Inner1_Inner2_Inner2CS_0CB_std140_0
 {
     @align(16) Inner1_Inner1Mult_0 : vec4<f32>,
 };
 
-@binding(3) @group(0) var<uniform> _Inner1_Inner2_Inner2CSCB : Struct_Inner1_Inner2_Inner2CSCB_std140_0;
+@binding(3) @group(0) var<uniform> _Inner1_Inner2_Inner2CS_0CB : Struct_Inner1_Inner2_Inner2CS_0CB_std140_0;
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 @compute
@@ -54,7 +54,7 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
     var px_0 : vec2<u32> = DTid_0.xy;
     var _S1 : vec3<i32> = vec3<i32>(vec3<u32>(px_0, u32(0)));
-    var _S2 : vec4<f32> = (textureLoad((Input), ((_S1)).xy, ((_S1)).z)).yzxw * _Inner1_Inner2_Inner2CSCB.Inner1_Inner1Mult_0;
+    var _S2 : vec4<f32> = (textureLoad((Input), ((_S1)).xy, ((_S1)).z)).yzxw * _Inner1_Inner2_Inner2CS_0CB.Inner1_Inner1Mult_0;
     // Manual fix for slang bug: https://github.com/shader-slang/slang/issues/6551
     textureStore((Output), (px_0), (_S2));
     return;
@@ -70,10 +70,10 @@ texture_Inner1_Inner2_Rotate_Colors_Output_ReadOnly_size = [0, 0, 0];
 texture_Inner1_Inner2_Rotate_Colors_Output_ReadOnly_format = "";
 texture_Inner1_Inner2_Rotate_Colors_Output_ReadOnly_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
-// Constant buffer _Inner1_Inner2_Inner2CSCB
-constantBuffer__Inner1_Inner2_Inner2CSCB = null;
-constantBuffer__Inner1_Inner2_Inner2CSCB_size = 16;
-constantBuffer__Inner1_Inner2_Inner2CSCB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
+// Constant buffer _Inner1_Inner2_Inner2CS_0CB
+constantBuffer__Inner1_Inner2_Inner2CS_0CB = null;
+constantBuffer__Inner1_Inner2_Inner2CS_0CB_size = 16;
+constantBuffer__Inner1_Inner2_Inner2CS_0CB_usageFlags = GPUBufferUsage.COPY_DST | GPUBufferUsage.UNIFORM;
 
 // Compute Shader Inner1_Inner2_Rotate_Colors
 Hash_Compute_Inner1_Inner2_Rotate_Colors = 0;
@@ -106,7 +106,7 @@ variableChanged_Inner1_Inner1Mult = [ false, false, false, false ];
 
 // -------------------- Structs
 
-static StructOffsets__Inner1_Inner2_Inner2CSCB =
+static StructOffsets__Inner1_Inner2_Inner2CS_0CB =
 {
     Inner1_Inner1Mult_0: 0,
     Inner1_Inner1Mult_1: 4,
@@ -231,7 +231,7 @@ async Init(device, encoder, useBlockingAPIs)
                 storageTexture : { access: "read-only", format: Shared.GetNonSRGBFormat(this.texture_Inner1_Inner2_Rotate_Colors_Output_ReadOnly_format), viewDimension: "2d" }
             },
             {
-                // _Inner1_Inner2_Inner2CSCB
+                // _Inner1_Inner2_Inner2CS_0CB
                 binding: 3,
                 visibility: GPUShaderStage.COMPUTE,
                 buffer: { type: "uniform" }
@@ -245,7 +245,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Inner1_Inner2_Rotate_Colors = newHash;
 
-            let shaderCode = class_SubInSub.ShaderCode_Inner1_Inner2_Rotate_Colors_Inner1_Inner2_Inner2CS;
+            let shaderCode = class_SubInSub.ShaderCode_Inner1_Inner2_Rotate_Colors_Inner1_Inner2_Inner2CS_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Inner1_Inner2_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Inner1_Inner2_Rotate_Colors_Output_ReadOnly_format));
 
@@ -332,30 +332,30 @@ async FillEncoder(device, encoder)
 
     encoder.popDebugGroup(); // "SubInSub.Copy_Inner1_Inner2_Rotate_Colors_Output"
 
-    encoder.pushDebugGroup("SubInSub._Inner1_Inner2_Inner2CSCB");
+    encoder.pushDebugGroup("SubInSub._Inner1_Inner2_Inner2CS_0CB");
 
-    // Create constant buffer _Inner1_Inner2_Inner2CSCB
-    if (this.constantBuffer__Inner1_Inner2_Inner2CSCB === null)
+    // Create constant buffer _Inner1_Inner2_Inner2CS_0CB
+    if (this.constantBuffer__Inner1_Inner2_Inner2CS_0CB === null)
     {
-        this.constantBuffer__Inner1_Inner2_Inner2CSCB = device.createBuffer({
-            label: "SubInSub._Inner1_Inner2_Inner2CSCB",
-            size: Shared.Align(16, this.constructor.StructOffsets__Inner1_Inner2_Inner2CSCB._size),
-            usage: this.constantBuffer__Inner1_Inner2_Inner2CSCB_usageFlags,
+        this.constantBuffer__Inner1_Inner2_Inner2CS_0CB = device.createBuffer({
+            label: "SubInSub._Inner1_Inner2_Inner2CS_0CB",
+            size: Shared.Align(16, this.constructor.StructOffsets__Inner1_Inner2_Inner2CS_0CB._size),
+            usage: this.constantBuffer__Inner1_Inner2_Inner2CS_0CB_usageFlags,
         });
     }
 
-    // Upload values to constant buffer _Inner1_Inner2_Inner2CSCB
+    // Upload values to constant buffer _Inner1_Inner2_Inner2CS_0CB
     {
-        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Inner1_Inner2_Inner2CSCB._size));
+        const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__Inner1_Inner2_Inner2CS_0CB._size));
         const view = new DataView(bufferCPU);
-        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CSCB.Inner1_Inner1Mult_0, this.variable_Inner1_Inner1Mult[0], true);
-        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CSCB.Inner1_Inner1Mult_1, this.variable_Inner1_Inner1Mult[1], true);
-        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CSCB.Inner1_Inner1Mult_2, this.variable_Inner1_Inner1Mult[2], true);
-        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CSCB.Inner1_Inner1Mult_3, this.variable_Inner1_Inner1Mult[3], true);
-        device.queue.writeBuffer(this.constantBuffer__Inner1_Inner2_Inner2CSCB, 0, bufferCPU);
+        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CS_0CB.Inner1_Inner1Mult_0, this.variable_Inner1_Inner1Mult[0], true);
+        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CS_0CB.Inner1_Inner1Mult_1, this.variable_Inner1_Inner1Mult[1], true);
+        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CS_0CB.Inner1_Inner1Mult_2, this.variable_Inner1_Inner1Mult[2], true);
+        view.setFloat32(this.constructor.StructOffsets__Inner1_Inner2_Inner2CS_0CB.Inner1_Inner1Mult_3, this.variable_Inner1_Inner1Mult[3], true);
+        device.queue.writeBuffer(this.constantBuffer__Inner1_Inner2_Inner2CS_0CB, 0, bufferCPU);
     }
 
-    encoder.popDebugGroup(); // "SubInSub._Inner1_Inner2_Inner2CSCB"
+    encoder.popDebugGroup(); // "SubInSub._Inner1_Inner2_Inner2CS_0CB"
 
     encoder.pushDebugGroup("SubInSub.Inner1_Inner2_Rotate_Colors");
 
@@ -381,9 +381,9 @@ async FillEncoder(device, encoder)
                     resource: this.texture_Inner1_Inner2_Rotate_Colors_Output_ReadOnly.createView({ dimension: "2d", mipLevelCount: 1, baseMipLevel: 0 })
                 },
                 {
-                    // _Inner1_Inner2_Inner2CSCB
+                    // _Inner1_Inner2_Inner2CS_0CB
                     binding: 3,
-                    resource: { buffer: this.constantBuffer__Inner1_Inner2_Inner2CSCB }
+                    resource: { buffer: this.constantBuffer__Inner1_Inner2_Inner2CS_0CB }
                 },
             ]
         });

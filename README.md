@@ -92,6 +92,8 @@ Chris Lewin
 
 Christian Deiss
 
+Craig Peters
+
 Gabriel Kannenberg
 
 Ivar Jönsson
@@ -99,6 +101,8 @@ Ivar Jönsson
 Jakub Marcowski
 
 Jan Werbrouck
+
+Kyle Bostelmann
 
 Martin Mittring
 
@@ -112,9 +116,9 @@ Stephane Levesque
 
 Tristan Calderbank
 
-William Donnelly
+Vishnu Sujith Kurup
 
-Kyle Bostelmann
+William Donnelly
 
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)
 

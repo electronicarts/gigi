@@ -1,0 +1,317 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.0",
+    "variables": [
+        {
+            "name": "Resolution",
+            "type": "Uint2",
+            "dflt": "1024,1024",
+            "visibility": "Host"
+        },
+        {
+            "name": "NumIndirectTriangles",
+            "type": "Uint",
+            "dflt": "1",
+            "visibility": "Host"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "IndirectDraw_VS",
+            "fileName": "IndirectDraw_VS.hlsl",
+            "type": "Vertex",
+            "entryPoint": "VSMain"
+        },
+        {
+            "name": "IndirectDraw_PS",
+            "fileName": "IndirectDraw_PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "PSMain"
+        },
+        {
+            "name": "IndirectDraw_CS",
+            "fileName": "IndirectDraw_CS.hlsl",
+            "entryPoint": "CSMain",
+            "resources": [
+                {
+                    "name": "IndirectArgsBuf",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "IndirectIndexBuf",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                },
+                {
+                    "name": "IndirectVertexBuf",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Float2"
+                    }
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionComputeShader": {
+                "name": "BuildIndirectArgs",
+                "editorPos": [
+                    -75.0,
+                    -30.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "IndirectArgsBuf",
+                        "dstNode": "IndirectArgsBuf",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "IndirectIndexBuf",
+                        "dstNode": "IndirectIndexBuf",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "IndirectVertexBuf",
+                        "dstNode": "IndirectVertexBuf",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "IndirectDraw_CS"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IndirectArgsBuf",
+                "editorPos": [
+                    -265.0,
+                    -46.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 5
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IndirectIndexBuf",
+                "editorPos": [
+                    -261.0,
+                    2.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 300
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "IndirectVertexBuf",
+                "editorPos": [
+                    -277.0,
+                    50.0
+                ],
+                "format": {
+                    "type": "Float2"
+                },
+                "count": {
+                    "multiply": 300
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "IndirectDrawIndexed",
+                "editorPos": [
+                    197.0,
+                    -46.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "IndirectDraw_VS"
+                },
+                "pixelShader": {
+                    "name": "IndirectDraw_PS"
+                },
+                "indirectBuffer": {
+                    "node": "BuildIndirectArgs",
+                    "pin": "IndirectArgsBuf"
+                },
+                "countPerInstance": 6,
+                "depthWrite": false,
+                "depthTest": "Always",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.5,
+                            0.5,
+                            0.5,
+                            1.0
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexBuffer": {
+                    "node": "BuildIndirectArgs",
+                    "pin": "IndirectVertexBuf"
+                },
+                "indexBuffer": {
+                    "node": "BuildIndirectArgs",
+                    "pin": "IndirectIndexBuf"
+                },
+                "colorTargets": [
+                    {
+                        "node": "ColorTarget",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ColorTarget",
+                "editorPos": [
+                    11.0,
+                    130.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Resolution"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "ColorTarget2",
+                "editorPos": [
+                    282.0,
+                    146.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "variable": {
+                        "name": "Resolution"
+                    }
+                }
+            }
+        },
+        {
+            "actionDrawCall": {
+                "name": "IndirectDraw",
+                "editorPos": [
+                    421.0,
+                    -46.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexShader": {
+                    "name": "IndirectDraw_VS"
+                },
+                "pixelShader": {
+                    "name": "IndirectDraw_PS"
+                },
+                "indirectBuffer": {
+                    "node": "IndirectDrawIndexed",
+                    "pin": "indirectBuffer"
+                },
+                "countPerInstance": 6,
+                "depthWrite": false,
+                "depthTest": "Always",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.5,
+                            0.5,
+                            0.5,
+                            1.0
+                        ]
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "vertexBuffer": {
+                    "node": "IndirectDrawIndexed",
+                    "pin": "vertexBuffer"
+                },
+                "colorTargets": [
+                    {
+                        "node": "ColorTarget2",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ]
+            }
+        }
+    ]
+}

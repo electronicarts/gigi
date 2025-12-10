@@ -355,6 +355,12 @@ STRUCT_BEGIN(LoadedTextureReference, "Information about a loaded texture referen
     STRUCT_FIELD(std::string, resourceName, "", "The name of the resource to replace it with.", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(ShaderVariableAliasDeclaration, "Specify a variable alias")
+    STRUCT_FIELD(std::string, name, "", "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.", 0)
+    STRUCT_FIELD(DataFieldType, type, DataFieldType::Count, "The type of the alias.", 0)
+    STRUCT_FIELD(bool, usedInShader, false, "set to true if this is actually used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
+STRUCT_END()
+
 //========================================================
 // A Hit Group
 //========================================================
@@ -422,6 +428,7 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 
     STRUCT_DYNAMIC_ARRAY(ShaderResource, resources, "SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
     STRUCT_DYNAMIC_ARRAY(ShaderSampler, samplers, "SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
+    STRUCT_DYNAMIC_ARRAY(ShaderVariableAliasDeclaration, variableAliases, "Variable aliases allow a shader to read different variables per node by choosing what variable value is set for each alias", SCHEMA_FLAG_UI_COLLAPSABLE)
     STRUCT_DYNAMIC_ARRAY(ShaderConstantBuffer, constantBuffers, "A list of constant buffers this shader wants.", SCHEMA_FLAG_NO_UI) // no UI since it's basically always automatic
 
     STRUCT_FIELD(std::vector<LoadedTextureReference>, loadedTextureRefs, {}, "The list of loaded textures this shader references.", SCHEMA_FLAG_NO_SERIALIZE)

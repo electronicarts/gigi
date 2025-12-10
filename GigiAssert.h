@@ -8,7 +8,7 @@
 #define STRINGIFY(x) #x
 #define TOSTRING(x) STRINGIFY(x)
 
-#define Assert(X, MSG, ...) \
+#define GigiAssert(X, MSG, ...) \
 { \
 	if ((X) == false) \
 	{ \

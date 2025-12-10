@@ -6,5 +6,5 @@
 static void MakeStringReplacementForNode(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, RenderGraphNode_Reroute& node)
 {
 	// No-op. Should never get to a backend.
-	Assert(false, "Reroute nodes should be removed by the front end.");
+    GigiAssert(false, "Reroute nodes should be removed by the front end.");
 }

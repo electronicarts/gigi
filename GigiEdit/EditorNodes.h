@@ -15,28 +15,7 @@ The editor doesn't want any of that, and just wants to edit the data as authored
 means some code redundancy.
 */
 
-inline bool ShaderResourceTypeIsReadOnly(ShaderResourceAccessType access)
-{
-    switch (access)
-    {
-        case ShaderResourceAccessType::UAV: return false;
-        case ShaderResourceAccessType::RTScene: return true;
-        case ShaderResourceAccessType::SRV: return true;
-        case ShaderResourceAccessType::CopySource: return true;
-        case ShaderResourceAccessType::CopyDest: return false;
-        case ShaderResourceAccessType::CBV: return true;
-        case ShaderResourceAccessType::Indirect: return true;
-        case ShaderResourceAccessType::VertexBuffer: return true;
-        case ShaderResourceAccessType::IndexBuffer: return true;
-        case ShaderResourceAccessType::RenderTarget: return false;
-        case ShaderResourceAccessType::DepthTarget: return false;
-        case ShaderResourceAccessType::Barrier: return false;
-        case ShaderResourceAccessType::ShadingRate: return true;
-    }
-
-    //Assert(false, "Unhandled ShaderResourceType: %i", access);
-    return true;
-}
+#include "NodesStatic/all_nodes.h"
 
 template <typename LAMBDA>
 void DispatchLambdaActionInner(RenderGraphNode_ActionBase& node, const LAMBDA& lambda)
@@ -147,7 +126,7 @@ inline std::string GetNodeTypeName(const RenderGraphNode& node)
         #include "Schemas/RenderGraphNodesVariant.h"
         // clang-format on
     }
-    Assert(false, "Unhandled node type");
+    GigiAssert(false, "Unhandled node type");
     return "";
 }
 
@@ -273,6 +252,26 @@ inline int GetNodeIndexByName(const RenderGraph& renderGraph, const char* name)
     return -1;
 }
 
+inline int GetVariableIndexByName(const RenderGraph& renderGraph, const char* name)
+{
+    for (int i = 0; i < (int)renderGraph.variables.size(); ++i)
+    {
+        if (!_stricmp(name, renderGraph.variables[i].name.c_str()))
+            return i;
+    }
+    return -1;
+}
+
+inline int GetEnumIndexByName(const RenderGraph& renderGraph, const char* name)
+{
+    for (int i = 0; i < (int)renderGraph.enums.size(); ++i)
+    {
+        if (!_stricmp(name, renderGraph.enums[i].name.c_str()))
+            return i;
+    }
+    return -1;
+}
+
 inline int GetShaderIndexByName(const RenderGraph& renderGraph, ShaderType shaderType, const char* name)
 {
     // Get the shader the shader reference
@@ -287,9 +286,71 @@ inline int GetShaderIndexByName(const RenderGraph& renderGraph, ShaderType shade
     return -1;
 }
 
+inline int GetShaderIndexByName(const RenderGraph& renderGraph,const char* name)
+{
+    return GetShaderIndexByName(renderGraph, ShaderType::Count, name);
+}
+
+// This function will return the base name if that name is not already taken.
+// Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+inline std::string GetUniqueNodeName(const RenderGraph& renderGraph, const char* baseName)
+{
+    if (GetNodeIndexByName(renderGraph, baseName) == -1)
+        return baseName;
+
+    int resourceNameIndex = -1;
+    char resourceName[1024];
+    do
+    {
+        resourceNameIndex++;
+        sprintf_s(resourceName, "%s %i", baseName, resourceNameIndex);
+    } while (GetNodeIndexByName(renderGraph, resourceName) != -1);
+
+    return resourceName;
+}
+
+// This function will return the base name if that name is not already taken.
+// Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+inline std::string GetUniqueVariableName(const RenderGraph& renderGraph, const char* baseName)
+{
+    if (GetVariableIndexByName(renderGraph, baseName) == -1)
+        return baseName;
+
+    int resourceNameIndex = -1;
+    char resourceName[1024];
+    do
+    {
+        resourceNameIndex++;
+        sprintf_s(resourceName, "%s_%i", baseName, resourceNameIndex);
+    } while (GetVariableIndexByName(renderGraph, resourceName) != -1);
+
+    return resourceName;
+}
+
+// This function will return the base name if that name is not already taken.
+// Otherwise, it will append _%i, with an ever increasing integer value for i, until it is unique, and will return that.
+inline std::string GetUniqueEnumName(const RenderGraph& renderGraph, const char* baseName)
+{
+    if (GetEnumIndexByName(renderGraph, baseName) == -1)
+        return baseName;
+
+    int resourceNameIndex = -1;
+    char resourceName[1024];
+    do
+    {
+        resourceNameIndex++;
+        sprintf_s(resourceName, "%s_%i", baseName, resourceNameIndex);
+    } while (GetEnumIndexByName(renderGraph, resourceName) != -1);
+
+    return resourceName;
+}
+
 struct NodePinInfo
 {
     std::string name;
+
+    std::string toolTip;
+
     bool isInput = true;
     std::string accessLabel;
 
@@ -300,6 +361,8 @@ struct NodePinInfo
     std::string* inputNodePin = nullptr;
 
     LinkProperties* linkProperties = nullptr;
+
+    bool required = true;
 };
 
 inline int GetNodePinIndexByName(const std::vector<NodePinInfo>& nodePinInfo, const char* name)
@@ -413,12 +476,16 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     node.connections.resize(numNewConnections);
 
     // make a pin for indirect dispatch
-    NodePinInfo pin;
-    pin.name = "indirectBuffer";
-    pin.inputNode = &node.dispatchSize.indirectBuffer.node;
-    pin.inputNodePin = &node.dispatchSize.indirectBuffer.pin;
-    pin.accessLabel = " (R)";
-    ret.push_back(pin);
+    if (node.enableIndirect)
+    {
+        NodePinInfo pin;
+        pin.name = "indirectBuffer";
+        pin.inputNode = &node.dispatchSize.indirectBuffer.node;
+        pin.inputNodePin = &node.dispatchSize.indirectBuffer.pin;
+        pin.accessLabel = " (R)";
+        pin.required = false;
+        ret.push_back(pin);
+    }
 
     return ret;
 }
@@ -519,13 +586,26 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.inputNode = &node.shadingRateImage.node;
     pin.inputNodePin = &node.shadingRateImage.pin;
     pin.accessLabel = " (R)";
+    pin.required = false;
     ret.push_back(pin);
+
+    // make a pin for indirect draw
+    if (node.enableIndirect)
+    {
+        pin.name = "indirectBuffer";
+        pin.inputNode = &node.indirectBuffer.node;
+        pin.inputNodePin = &node.indirectBuffer.pin;
+        pin.accessLabel = " (R)";
+        pin.required = false;
+        ret.push_back(pin);
+    }
 
     // Vertex Buffer
     pin.name = "vertexBuffer";
     pin.inputNode = &node.vertexBuffer.node;
     pin.inputNodePin = &node.vertexBuffer.pin;
     pin.accessLabel = " (R)";
+    pin.required = false;
     ret.push_back(pin);
 
     // Index Buffer
@@ -533,6 +613,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.inputNode = &node.indexBuffer.node;
     pin.inputNodePin = &node.indexBuffer.pin;
     pin.accessLabel = " (R)";
+    pin.required = false;
     ret.push_back(pin);
 
     // Instance Buffer
@@ -540,6 +621,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.inputNode = &node.instanceBuffer.node;
     pin.inputNodePin = &node.instanceBuffer.pin;
     pin.accessLabel = " (R)";
+    pin.required = false;
     ret.push_back(pin);
 
     // Depth Target
@@ -547,6 +629,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.inputNode = &node.depthTarget.node;
     pin.inputNodePin = &node.depthTarget.pin;
     pin.accessLabel = " (RW)";
+    pin.required = false;
     ret.push_back(pin);
 
     // Color targets
@@ -558,6 +641,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
         pin.inputNode = &node.colorTargets[i].node;
         pin.inputNodePin = &node.colorTargets[i].pin;
         pin.accessLabel = " (RW)";
+        pin.required = false;
         ret.push_back(pin);
         if (pin.inputNode->empty())
             break;
@@ -627,7 +711,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
             connectionIndex = i;
             break;
         }
-        Assert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for imported resource!");
+        GigiAssert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for imported resource!");
 
         NodePinInfo pin;
         pin.name = name;
@@ -647,7 +731,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
             connectionIndex = i;
             break;
         }
-        Assert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for exported resource!");
+        GigiAssert(connectionIndex >= 0, "GetNodePins in SubGraph could not find pin for exported resource!");
 
         NodePinInfo pin;
         pin.name = name;
@@ -680,6 +764,7 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
         ret[i].inputNode = &node.connections[i].dstNode;
         ret[i].inputNodePin = &node.connections[i].dstPin;
         ret[i].accessLabel = " (Barrier)";
+        ret[i].required = false;
     }
     return ret;
 }
@@ -695,6 +780,26 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
 	result[0].inputNode = &node.connections[0].dstNode;
 	result[0].inputNodePin = &node.connections[0].dstPin;
 	result[0].accessLabel = "";
+    result[0].required = false;
+
+    return result;
+}
+
+inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_External& node)
+{
+    StaticNodeInfo staticNodeInfo = GetStaticNodeInfo(node);
+
+    std::vector<NodePinInfo> result(staticNodeInfo.pins.size());
+
+    for (size_t i = 0; i < staticNodeInfo.pins.size(); ++i)
+    {
+        result[i].name = staticNodeInfo.pins[i].srcPin;
+        result[i].accessLabel = staticNodeInfo.pins[i].readOnly ? " (R)" : " (RW)";
+        result[i].inputNode = staticNodeInfo.pins[i].dstNode;
+        result[i].inputNodePin = staticNodeInfo.pins[i].dstPin;
+        result[i].required = staticNodeInfo.pins[i].required;
+        result[i].toolTip = staticNodeInfo.pins[i].toolTip;
+    }
 
     return result;
 }

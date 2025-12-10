@@ -55,7 +55,7 @@ namespace StructuredBuffer
             ranges[0].RegisterSpace = 0;
             ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
-            // _csmainCB
+            // _csmain_0CB
             ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[1].NumDescriptors = 1;
             ranges[1].BaseShaderRegister = 0;
@@ -702,11 +702,11 @@ namespace StructuredBuffer
             m_internal.m_TimestampReadbackBuffer = nullptr;
         }
 
-        // _csmainCB
-        if (m_internal.constantBuffer__csmainCB)
+        // _csmain_0CB
+        if (m_internal.constantBuffer__csmain_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__csmainCB);
-            m_internal.constantBuffer__csmainCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__csmain_0CB);
+            m_internal.constantBuffer__csmain_0CB = nullptr;
         }
     }
 
@@ -779,11 +779,11 @@ namespace StructuredBuffer
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _csmainCB
+        // Shader Constants: _csmain_0CB
         {
-            context->m_internal.constantBuffer__csmainCB_cpu.frameDeltaTime = context->m_input.variable_frameDeltaTime;
-            context->m_internal.constantBuffer__csmainCB_cpu.frameIndex = context->m_input.variable_frameIndex;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__csmainCB, context->m_internal.constantBuffer__csmainCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__csmain_0CB_cpu.frameDeltaTime = context->m_input.variable_frameDeltaTime;
+            context->m_internal.constantBuffer__csmain_0CB_cpu.frameIndex = context->m_input.variable_frameIndex;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__csmain_0CB, context->m_internal.constantBuffer__csmain_0CB_cpu, Context::LogFn);
         }
 
         // Compute Shader: csmain
@@ -801,7 +801,7 @@ namespace StructuredBuffer
 
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.buffer_buff, context->m_input.buffer_buff_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Buffer, false, context->m_input.buffer_buff_stride, context->m_input.buffer_buff_count, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__csmainCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__csmain_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -865,11 +865,11 @@ namespace StructuredBuffer
     {
         bool dirty = false;
 
-        // _csmainCB
-        if (m_internal.constantBuffer__csmainCB == nullptr)
+        // _csmain_0CB
+        if (m_internal.constantBuffer__csmain_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__csmainCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_csmainCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__csmain_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_csmain_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

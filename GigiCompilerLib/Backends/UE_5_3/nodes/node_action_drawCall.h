@@ -11,9 +11,9 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
     bool hasIndexBuffer = (node.indexBuffer.resourceNodeIndex != -1);
     bool hasInstanceBuffer = (node.instanceBuffer.resourceNodeIndex != -1);
 
-    Assert(!hasVertexBuffer || renderGraph.nodes[node.vertexBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error: vertex buffer is not a buffer.");
-    Assert(!hasIndexBuffer || renderGraph.nodes[node.indexBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error: index buffer is not a buffer.");
-    Assert(!hasInstanceBuffer || renderGraph.nodes[node.instanceBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error: instance buffer is not a buffer.");
+    GigiAssert(!hasVertexBuffer || renderGraph.nodes[node.vertexBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error: vertex buffer is not a buffer.");
+    GigiAssert(!hasIndexBuffer || renderGraph.nodes[node.indexBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error: index buffer is not a buffer.");
+    GigiAssert(!hasInstanceBuffer || renderGraph.nodes[node.instanceBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error: instance buffer is not a buffer.");
 
     const RenderGraphNode_Resource_Buffer* vertexBufferNode = hasVertexBuffer ? &renderGraph.nodes[node.vertexBuffer.resourceNodeIndex].resourceBuffer : nullptr;
     const RenderGraphNode_Resource_Buffer* indexBufferNode = hasIndexBuffer ? &renderGraph.nodes[node.indexBuffer.resourceNodeIndex].resourceBuffer : nullptr;
@@ -44,9 +44,11 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
 
         std::string fileNameVS = std::filesystem::path(node.vertexShader.shader->destFileName).replace_extension(".usf").string();
         StringReplaceAll(text, "/*$(Node:FileNameVS)*/", std::string("/Engine/Private/" + renderGraph.name + "/") + fileNameVS);
+        StringReplaceAll(text, "/*$(Node:FileNameVSStringEscaped)*/", StringEscape(std::string("/Engine/Private/" + renderGraph.name + "/") + fileNameVS));
 
         std::string fileNamePS = std::filesystem::path(node.pixelShader.shader->destFileName).replace_extension(".usf").string();
         StringReplaceAll(text, "/*$(Node:FileNamePS)*/", std::string("/Engine/Private/" + renderGraph.name + "/") + fileNamePS);
+        StringReplaceAll(text, "/*$(Node:FileNamePSStringEscaped)*/", StringEscape(std::string("/Engine/Private/" + renderGraph.name + "/") + fileNamePS));
 
         // Shader params - constant buffer and read/write resources
         std::string shaderParamsVS;
@@ -242,7 +244,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                     else if (format.importedNodeIndex != -1)
                     {
                         const RenderGraphNode& importedNodeBase = renderGraph.nodes[format.importedNodeIndex];
-                        Assert(importedNodeBase._index == RenderGraphNode::c_index_resourceTexture, "node \"%s\" tried to use a non texture as a color target: \"%s\"", node.name.c_str(), GetNodeName(importedNodeBase));
+                        GigiAssert(importedNodeBase._index == RenderGraphNode::c_index_resourceTexture, "node \"%s\" tried to use a non texture as a color target: \"%s\"", node.name.c_str(), GetNodeName(importedNodeBase));
                         const RenderGraphNode_Resource_Texture& importedNode = importedNodeBase.resourceTexture;
 
                         execute <<
@@ -302,7 +304,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                         else if (format.importedNodeIndex != -1)
                         {
                             const RenderGraphNode& importedNodeBase = renderGraph.nodes[format.importedNodeIndex];
-                            Assert(importedNodeBase._index == RenderGraphNode::c_index_resourceTexture, "node \"%s\" tried to use a non texture as a color target: \"%s\"", node.name.c_str(), GetNodeName(importedNodeBase));
+                            GigiAssert(importedNodeBase._index == RenderGraphNode::c_index_resourceTexture, "node \"%s\" tried to use a non texture as a color target: \"%s\"", node.name.c_str(), GetNodeName(importedNodeBase));
                             const RenderGraphNode_Resource_Texture& importedNode = importedNodeBase.resourceTexture;
 
                             execute <<
@@ -471,7 +473,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                     if (hasVertexBuffer)
                     {
                         const RenderGraphNode& vbNodeBase = renderGraph.nodes[node.vertexBuffer.resourceNodeIndex];
-                        Assert(vbNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+                        GigiAssert(vbNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
                         const RenderGraphNode_Resource_Buffer& vbNode = vbNodeBase.resourceBuffer;
 
                         if (vbNode.visibility == ResourceVisibility::Imported)
@@ -487,11 +489,11 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                         }
                         else if (vbNode.format.structureType.structIndex != -1)
                         {
-                            Assert(false, "TODO: implement");
+                            GigiAssert(false, "TODO: implement");
                         }
                         else
                         {
-                            Assert(false, "TODO: implement");
+                            GigiAssert(false, "TODO: implement");
                         }
 
                         streamIndex++;
@@ -500,7 +502,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                     if (hasInstanceBuffer)
                     {
                         const RenderGraphNode& ibNodeBase = renderGraph.nodes[node.instanceBuffer.resourceNodeIndex];
-                        Assert(ibNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+                        GigiAssert(ibNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
                         const RenderGraphNode_Resource_Buffer& ibNode = ibNodeBase.resourceBuffer;
 
                         if (ibNode.visibility == ResourceVisibility::Imported)
@@ -516,11 +518,11 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                         }
                         else if (ibNode.format.structureType.structIndex != -1)
                         {
-                            Assert(false, "TODO: implement");
+                            GigiAssert(false, "TODO: implement");
                         }
                         else
                         {
-                            Assert(false, "TODO: implement");
+                            GigiAssert(false, "TODO: implement");
                         }
 
                         streamIndex++;

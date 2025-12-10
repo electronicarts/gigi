@@ -24,7 +24,7 @@ static void MakeBufferDesc(const RenderGraph& renderGraph, const RenderGraphNode
                 case 1: makeDesc << indent << "uint32 NumElements = " << VariableToString(variable, renderGraph) << ";\n"; break;
                 default:
                 {
-                    Assert(false, "Inappropriate variable type given for buffer size.");
+                    GigiAssert(false, "Inappropriate variable type given for buffer size.");
                 }
             }
         }

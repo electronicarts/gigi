@@ -15,4 +15,5 @@
 #include "node_resource_buffer.h"
 #include "node_resource_shaderConstants.h"
 #include "node_resource_texture.h"
-#include "node_reroute.inl"
+#include "node_reroute.h"
+#include "node_action_External.h"

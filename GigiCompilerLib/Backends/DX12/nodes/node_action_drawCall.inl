@@ -207,7 +207,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesVertex[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource access type: %i", resource.access);
+                    GigiAssert(false, "Unhandled resource access type: %i", resource.access);
                 }
             }
 
@@ -240,7 +240,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesPixel[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource access type: %i", resource.access);
+                    GigiAssert(false, "Unhandled resource access type: %i", resource.access);
                 }
             }
 
@@ -273,7 +273,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesAmplification[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource access type: %i", resource.access);
+                    GigiAssert(false, "Unhandled resource access type: %i", resource.access);
                 }
             }
 
@@ -306,7 +306,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: stringReplacementMap["/*$(CreateDrawCallPSOs)*/"] << "\n            rangesMesh[" << descriptorTableRangeIndex << "].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;"; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource access type: %i", resource.access);
+                    GigiAssert(false, "Unhandled resource access type: %i", resource.access);
                 }
             }
 
@@ -574,7 +574,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         {
             if (node.vertexBuffer.resourceNodeIndex != -1)
             {
-                Assert(renderGraph.nodes[node.vertexBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+                GigiAssert(renderGraph.nodes[node.vertexBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
                 RenderGraphNode_Resource_Buffer& bufferNode = renderGraph.nodes[node.vertexBuffer.resourceNodeIndex].resourceBuffer;
                 if (bufferNode.format.structureType.structIndex != -1)
                 {
@@ -589,7 +589,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             if (node.instanceBuffer.resourceNodeIndex != -1)
             {
-                Assert(renderGraph.nodes[node.instanceBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+                GigiAssert(renderGraph.nodes[node.instanceBuffer.resourceNodeIndex]._index == RenderGraphNode::c_index_resourceBuffer, "Error");
                 RenderGraphNode_Resource_Buffer& bufferNode = renderGraph.nodes[node.instanceBuffer.resourceNodeIndex].resourceBuffer;
                 if (bufferNode.format.structureType.structIndex != -1)
                 {
@@ -618,7 +618,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 ;
 
             RenderGraphNode& nodeBase = renderGraph.nodes[node.vertexBuffer.resourceNodeIndex];
-            Assert(nodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+            GigiAssert(nodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
             RenderGraphNode_Resource_Buffer& bufferNode = nodeBase.resourceBuffer;
             if (bufferNode.visibility == ResourceVisibility::Imported)
             {
@@ -680,7 +680,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 ;
 
             RenderGraphNode& nodeBase = renderGraph.nodes[node.instanceBuffer.resourceNodeIndex];
-            Assert(nodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
+            GigiAssert(nodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Error");
             RenderGraphNode_Resource_Buffer& bufferNode = nodeBase.resourceBuffer;
             if (bufferNode.visibility == ResourceVisibility::Imported)
             {
@@ -1024,7 +1024,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             if (depIndex >= node.resourceDependencies.size())
             {
-                Assert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+                GigiAssert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
                 return;
             }
             const ResourceDependency& dep = node.resourceDependencies[depIndex];
@@ -1032,7 +1032,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1040,7 +1042,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1057,7 +1061,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
                     resourceTypeString = "DX12Utils::ResourceType::Buffer";
 
-                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    GigiAssert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
                     RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
                     size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
                     rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
@@ -1104,7 +1108,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
+                            GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
                             break;
                         }
                     }
@@ -1112,7 +1116,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
+                    GigiAssert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
                     return;
                 }
             }
@@ -1126,11 +1130,26 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource type: %i", dep.access);
+                    GigiAssert(false, "Unhandled resource type: %i", dep.access);
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -1167,7 +1186,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             if (depIndex >= node.resourceDependencies.size())
             {
-                Assert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+                GigiAssert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
                 return;
             }
             const ResourceDependency& dep = node.resourceDependencies[depIndex];
@@ -1175,7 +1194,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1183,7 +1204,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1200,7 +1223,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
                     resourceTypeString = "DX12Utils::ResourceType::Buffer";
 
-                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    GigiAssert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
                     RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
                     size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
                     rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
@@ -1247,7 +1270,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
+                            GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
                             break;
                         }
                     }
@@ -1255,7 +1278,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
+                    GigiAssert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
                     return;
                 }
             }
@@ -1269,11 +1292,26 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource type: %i", dep.access);
+                    GigiAssert(false, "Unhandled resource type: %i", dep.access);
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -1313,7 +1351,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             if (depIndex >= node.resourceDependencies.size())
             {
-                Assert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+                GigiAssert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
                 return;
             }
             const ResourceDependency& dep = node.resourceDependencies[depIndex];
@@ -1321,7 +1359,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1329,7 +1369,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1346,7 +1388,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
                     resourceTypeString = "DX12Utils::ResourceType::Buffer";
 
-                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    GigiAssert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
                     RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
                     size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
                     rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
@@ -1393,7 +1435,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
+                            GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
                             break;
                         }
                     }
@@ -1401,7 +1443,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
+                    GigiAssert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
                     return;
                 }
             }
@@ -1415,11 +1457,26 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource type: %i", dep.access);
+                    GigiAssert(false, "Unhandled resource type: %i", dep.access);
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -1460,7 +1517,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
             if (depIndex >= node.resourceDependencies.size())
             {
-                Assert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
+                GigiAssert(false, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
                 return;
             }
             const ResourceDependency& dep = node.resourceDependencies[depIndex];
@@ -1468,7 +1525,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             RenderGraphNode depNode = renderGraph.nodes[dep.nodeIndex];
 
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             if (dep.pinIndex < node.linkProperties.size())
@@ -1476,7 +1535,9 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
+                bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
+                bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                 bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
             }
 
@@ -1493,7 +1554,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         ;
                     resourceTypeString = "DX12Utils::ResourceType::Buffer";
 
-                    Assert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
+                    GigiAssert(renderGraph.nodes[dep.nodeIndex]._index == RenderGraphNode::c_index_resourceShaderConstants, "Unexpected problem occured!");
                     RenderGraphNode_Resource_ShaderConstants& node = renderGraph.nodes[dep.nodeIndex].resourceShaderConstants;
                     size_t sizeInBytesAligned = ALIGN(256, renderGraph.structs[node.structure.structIndex].sizeInBytes);
                     rawAndStrideAndCount << ", false, " << sizeInBytesAligned << ", 1";
@@ -1540,7 +1601,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                         case TextureDimensionType::TextureCube: resourceTypeString = "DX12Utils::ResourceType::TextureCube"; rawAndStrideAndCount << "6"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
+                            GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(shaderResource.texture.dimension), (int)shaderResource.texture.dimension);
                             break;
                         }
                     }
@@ -1548,7 +1609,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
+                    GigiAssert(false, "Unhandled resource type for draw call node \"%s\"", node.name.c_str());
                     return;
                 }
             }
@@ -1562,11 +1623,26 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 case ShaderResourceAccessType::CBV: accessType = " DX12Utils::AccessType::CBV, "; break;
                 default:
                 {
-                    Assert(false, "Unhandled resource type: %i", dep.access);
+                    GigiAssert(false, "Unhandled resource type: %i", dep.access);
                 }
             }
 
-            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", " << bufferViewBegin << ", " << bufferViewSize << ", " << ( bufferViewInBytes ? "true" : "false" ) << " },";
+            descriptorsText << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+
+            if (bufferViewBeginVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewBegin;
+
+            descriptorsText << ", ";
+
+            if (bufferViewSizeVarIndex != -1)
+                descriptorsText << "(UINT)" << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+            else
+                descriptorsText << bufferViewSize;
+
+            descriptorsText << ", " << (bufferViewInBytes ? "true" : "false") << " },";
+
             descriptorCount++;
         }
 
@@ -2010,7 +2086,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
                 default:
                 {
-                    Assert(false, "Inappropriate variable type given for dispatch size.");
+                    GigiAssert(false, "Inappropriate variable type given for dispatch size.");
                 }
             }
         }

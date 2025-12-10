@@ -1,7 +1,7 @@
 // All STL usage is through these defined types.
 // You can use different types with the same interfaces used if you'd like to avoid STL.
 
-#define DFS_LOG(...) Assert(false, __VA_ARGS__);
+#define DFS_LOG(...) GigiAssert(false, __VA_ARGS__);
 
 #ifndef TDYNAMICARRAY
 #define TDYNAMICARRAY std::vector
@@ -48,4 +48,5 @@
 #define SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX		((size_t) (1 << 6))  // If true, does not show the index of array items
 #define SCHEMA_FLAG_UI_CONST				((size_t) (1 << 7))  // If true, does not allow field to be edited
 #define SCHEMA_FLAG_UI_COLOR				((size_t) (1 << 8))  // If true, this value will be displayed as a color picker.
-#define SCHEMA_FLAG_UI_NO_PRETTY_LABEL		((size_t) (1 << 9))  // If true, this value will be displayed as a color picker.
+#define SCHEMA_FLAG_UI_NO_PRETTY_LABEL		((size_t) (1 << 9))  // If true, the label for this UI item will be shown raw, as is, instead of prettified.
+#define SCHEMA_FLAG_UI_NO_RESIZE_ARRAY		((size_t) (1 << 10)) // If true, the UI does not allow the array to be resized

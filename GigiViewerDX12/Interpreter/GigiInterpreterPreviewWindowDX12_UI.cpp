@@ -5,7 +5,7 @@
 
 // clang-format off
 #include "GigiInterpreterPreviewWindowDX12.h"
-#include "ImGuiHelper.h"
+#include "GigiCompilerLib/UI/ImGuiHelper.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <unordered_set>

@@ -61,7 +61,7 @@ void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGrap
         std::vector<unsigned char> data;
         if (!LoadFile((std::filesystem::path(renderGraph.baseDirectory) / fileCopy.fileName).string(), data))
         {
-            Assert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
         }
 
         // get the folder to copy to
@@ -85,7 +85,7 @@ void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGrap
             }
             default:
             {
-                Assert(false, "Unhandled file copy type");
+                GigiAssert(false, "Unhandled file copy type");
                 break;
             }
         }

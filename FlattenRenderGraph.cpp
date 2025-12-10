@@ -45,7 +45,7 @@ static void CalculateResourceTransitions(RenderGraph& renderGraph)
                     case RenderGraphNode::c_index_resourceTexture: resourceType = ShaderResourceType::Texture; break;
                     default:
                     {
-                        Assert(false, "Unhandled render graph node type");
+                        GigiAssert(false, "Unhandled render graph node type");
                         break;
                     }
                 }
@@ -175,7 +175,7 @@ void OptimizeAndFlattenRenderGraph(RenderGraph& renderGraph)
             if (connectionInfo.nodeIndex == -1)
             {
                 if (connectionInfo.required)
-                    Assert(false, "A pin is missing a connection: %s %s", GetNodeName(renderGraph.nodes[index]).c_str(), GetNodePinName(renderGraph.nodes[index], pinIndex).c_str());
+                    GigiAssert(false, "A pin is missing a connection: %s %s", GetNodeName(renderGraph.nodes[index]).c_str(), GetNodePinName(renderGraph.nodes[index], pinIndex).c_str());
                 continue;
             }
 
@@ -211,9 +211,9 @@ void OptimizeAndFlattenRenderGraph(RenderGraph& renderGraph)
                 }
 
                 // if we found a non read only connection, the parent of this connection is the one to be dependent on.
-                Assert(parentPinIndex != -1, "Error");
+                GigiAssert(parentPinIndex != -1, "Error");
                 InputNodeInfo inputNodeInfo = GetNodePinInputNodeInfo(renderGraph.nodes[parentNodeIndex], parentPinIndex);
-                Assert(inputNodeInfo.nodeIndex != -1, "Error");
+                GigiAssert(inputNodeInfo.nodeIndex != -1, "Error");
                 if (!ShaderResourceTypeIsReadOnly(inputNodeInfo.access))
                 {
                     rgdag.dag[index].dependentOn.push_back(parentNodeIndex);

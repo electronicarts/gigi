@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "ClearCS", node "Clear"
-static ShaderCode_Clear_ClearCS = `
+// Shader code for Compute shader "ClearCS_0", node "Clear"
+static ShaderCode_Clear_ClearCS_0 = `
 @binding(0) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
 @compute
@@ -50,8 +50,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Left_WriteColorCS", node "Left_WriteColor"
-static ShaderCode_Left_WriteColor_Left_WriteColorCS = `
+// Shader code for Compute shader "Left_WriteColorCS_0", node "Left_WriteColor"
+static ShaderCode_Left_WriteColor_Left_WriteColorCS_0 = `
 @binding(0) @group(0) var Color : texture_storage_2d</*(Color_format)*/, write>;
 
 @compute
@@ -77,8 +77,8 @@ fn csmain(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "Right_WriteColorCS", node "Right_WriteColor"
-static ShaderCode_Right_WriteColor_Right_WriteColorCS = `
+// Shader code for Compute shader "Right_WriteColorCS_0", node "Right_WriteColor"
+static ShaderCode_Right_WriteColor_Right_WriteColorCS_0 = `
 @binding(0) @group(0) var Color : texture_storage_2d</*(Color_format)*/, write>;
 
 @compute
@@ -278,7 +278,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Clear = newHash;
 
-            let shaderCode = class_ConstOverride.ShaderCode_Clear_ClearCS;
+            let shaderCode = class_ConstOverride.ShaderCode_Clear_ClearCS_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Clear_Output_ReadOnly_format));
 
@@ -379,7 +379,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Left_WriteColor = newHash;
 
-            let shaderCode = class_ConstOverride.ShaderCode_Left_WriteColor_Left_WriteColorCS;
+            let shaderCode = class_ConstOverride.ShaderCode_Left_WriteColor_Left_WriteColorCS_0;
             shaderCode = shaderCode.replace("/*(Color_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(ColorReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Left_WriteColor_Color_ReadOnly_format));
 
@@ -480,7 +480,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Right_WriteColor = newHash;
 
-            let shaderCode = class_ConstOverride.ShaderCode_Right_WriteColor_Right_WriteColorCS;
+            let shaderCode = class_ConstOverride.ShaderCode_Right_WriteColor_Right_WriteColorCS_0;
             shaderCode = shaderCode.replace("/*(Color_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(ColorReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Right_WriteColor_Color_ReadOnly_format));
 

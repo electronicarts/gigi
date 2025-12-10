@@ -338,6 +338,11 @@ public:
 						uavDesc.Texture3D.WSize = wsize;
 						break;
 					}
+					case ResourceType::Texture2DMS:
+					{
+						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMS;
+						break;
+					}
 				}
 
 				if (!FormatSupportedForUAV(device, uavDesc.Format))
@@ -348,7 +353,8 @@ public:
 					return false;
 				}
 
-				device->CreateUnorderedAccessView(descriptor.m_resource, nullptr, &uavDesc, handle);
+                if(descriptor.m_resource)
+				    device->CreateUnorderedAccessView(descriptor.m_resource, nullptr, &uavDesc, handle);
 			}
 			else if(descriptor.m_access == AccessType::CBV)
 			{

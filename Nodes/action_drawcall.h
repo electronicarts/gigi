@@ -15,6 +15,9 @@ namespace FrontEndNodes
         ret += node.pixelShader.shader ? (int)node.pixelShader.shader->resources.size() : 0;
         ret += node.amplificationShader.shader ? (int)node.amplificationShader.shader->resources.size() : 0;
         ret += node.meshShader.shader ? (int)node.meshShader.shader->resources.size() : 0;
+        
+        if(node.enableIndirect)
+            ++ret; // Indirect dispatch buffer
 
         ret +=
             1 + // shading rate image
@@ -63,6 +66,14 @@ namespace FrontEndNodes
         if (pinIndex == 0)
             return "shadingRateImage";
         pinIndex--;
+
+        // optional indirect args buffer
+        if (node.enableIndirect)
+        {
+            if (pinIndex == 0)
+                return "indirectBuffer";
+            pinIndex--;
+        }
 
         // optional vertex buffer
         if (pinIndex == 0)
@@ -209,6 +220,20 @@ namespace FrontEndNodes
             return ret;
         }
         pinIndex--;
+
+        // Optional indirect buffer
+        if (node.enableIndirect)
+        {
+            if (pinIndex == 0)
+            {
+                ret.access = ShaderResourceAccessType::Indirect;
+                ret.nodeIndex = node.indirectBuffer.nodeIndex;
+                ret.pinIndex = node.indirectBuffer.nodePinIndex;
+                ret.required = false;
+                return ret;
+            }
+            pinIndex--;
+        }
 
         // Optional vertex buffer
         if (pinIndex == 0)

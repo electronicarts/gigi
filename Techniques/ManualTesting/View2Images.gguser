@@ -1,0 +1,29 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 3,
+        "resourceViewResourceIndex": 4,
+        "importedResources": [
+            {
+                "nodeName": "Image1",
+                "texture": {
+                    "fileName": "cabinsmall.png",
+                    "binaryFormat": "Any"
+                }
+            },
+            {
+                "nodeName": "Image2",
+                "texture": {
+                    "fileName": "cabinsmall.png",
+                    "binaryFormat": "Any"
+                }
+            }
+        ],
+        "savedVariables": [
+            {
+                "name": "LinearToSRGB",
+                "value": "true"
+            }
+        ]
+    }
+}

@@ -44,6 +44,8 @@ struct SemanticEnumToString
 	int m_semanticIndex = -1;
 };
 
+HRESULT WrapperCreateGraphicsPipelineState(ID3D12Device* device, const D3D12_GRAPHICS_PIPELINE_STATE_DESC& psoDesc, ID3D12PipelineState** pso);
+
 bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData)
 {
 	// Make the root signature
@@ -170,107 +172,23 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 
 		// Vertex Descriptor table
 		std::vector<D3D12_DESCRIPTOR_RANGE> rangesVertex;
-		if (node.vertexShader.shader)
-		{
-			for (const ShaderResource& resource : node.vertexShader.shader->resources)
-			{
-				D3D12_DESCRIPTOR_RANGE desc;
-
-				switch (resource.access)
-				{
-					case ShaderResourceAccessType::UAV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV; break;
-					case ShaderResourceAccessType::RTScene:
-					case ShaderResourceAccessType::SRV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
-					case ShaderResourceAccessType::CBV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-					default: return false;
-				}
-
-				desc.NumDescriptors = 1;
-				desc.BaseShaderRegister = resource.registerIndex;
-				desc.RegisterSpace = 0;
-				desc.OffsetInDescriptorsFromTableStart = (UINT)rangesVertex.size();
-
-				rangesVertex.push_back(desc);
-			}
-		}
+		if (!BuildDescriptorRanges(node.vertexShader.shader, rangesVertex))
+			return false;
 
 		// Pixel Descriptor table
 		std::vector<D3D12_DESCRIPTOR_RANGE> rangesPixel;
-		if (node.pixelShader.shader)
-		{
-			for (const ShaderResource& resource : node.pixelShader.shader->resources)
-			{
-				D3D12_DESCRIPTOR_RANGE desc;
-
-				switch (resource.access)
-				{
-					case ShaderResourceAccessType::UAV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV; break;
-					case ShaderResourceAccessType::RTScene:
-					case ShaderResourceAccessType::SRV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
-					case ShaderResourceAccessType::CBV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-					default: return false;
-				}
-
-				desc.NumDescriptors = 1;
-				desc.BaseShaderRegister = resource.registerIndex;
-				desc.RegisterSpace = 0;
-				desc.OffsetInDescriptorsFromTableStart = (UINT)rangesPixel.size();
-
-				rangesPixel.push_back(desc);
-			}
-		}
+		if(!BuildDescriptorRanges(node.pixelShader.shader, rangesPixel))
+			return false;
 
 		// Amplification Descriptor table
 		std::vector<D3D12_DESCRIPTOR_RANGE> rangesAmplification;
-		if (node.amplificationShader.shader)
-		{
-			for (const ShaderResource& resource : node.amplificationShader.shader->resources)
-			{
-				D3D12_DESCRIPTOR_RANGE desc;
-
-				switch (resource.access)
-				{
-					case ShaderResourceAccessType::UAV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV; break;
-					case ShaderResourceAccessType::RTScene:
-					case ShaderResourceAccessType::SRV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
-					case ShaderResourceAccessType::CBV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-					default: return false;
-				}
-
-				desc.NumDescriptors = 1;
-				desc.BaseShaderRegister = resource.registerIndex;
-				desc.RegisterSpace = 0;
-				desc.OffsetInDescriptorsFromTableStart = (UINT)rangesAmplification.size();
-
-				rangesAmplification.push_back(desc);
-			}
-		}
+		if(!BuildDescriptorRanges(node.amplificationShader.shader, rangesAmplification))
+			return false;
 
 		// Mesh Descriptor table
 		std::vector<D3D12_DESCRIPTOR_RANGE> rangesMesh;
-		if (node.meshShader.shader)
-		{
-			for (const ShaderResource& resource : node.meshShader.shader->resources)
-			{
-				D3D12_DESCRIPTOR_RANGE desc;
-
-				switch (resource.access)
-				{
-					case ShaderResourceAccessType::UAV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV; break;
-					case ShaderResourceAccessType::RTScene:
-					case ShaderResourceAccessType::SRV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
-					case ShaderResourceAccessType::CBV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-					default: return false;
-				}
-
-				desc.NumDescriptors = 1;
-				desc.BaseShaderRegister = resource.registerIndex;
-				desc.RegisterSpace = 0;
-				desc.OffsetInDescriptorsFromTableStart = (UINT)rangesMesh.size();
-
-				rangesMesh.push_back(desc);
-			}
-		}
+		if(!BuildDescriptorRanges(node.meshShader.shader, rangesMesh))
+			return false;
 
 		// Vertex Root parameter
 		int numParams = 0;
@@ -693,7 +611,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				}
 			}
 
-            assert(sampleCount > 0);
+            GigiAssert(sampleCount > 0, "sampleCount cannot be 0");
 			psoDesc.SampleDesc.Count = sampleCount;
 
 			return SetupPSODescRet::None;
@@ -745,7 +663,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 			psoDesc.VS.pShaderBytecode = runtimeData.m_vertexShaderBytes.data();
 			psoDesc.VS.BytecodeLength = (UINT)runtimeData.m_vertexShaderBytes.size();
 
-			HRESULT hr = m_device->CreateGraphicsPipelineState(&psoDesc, IID_PPV_ARGS(&runtimeData.m_pso));
+			HRESULT hr = WrapperCreateGraphicsPipelineState(m_device, psoDesc, &runtimeData.m_pso);
 
 			if (FAILED(hr))
 			{
@@ -801,201 +719,7 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 	return true;
 }
 
- bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates)
-{
-	for (int resourceIndex = 0; resourceIndex < shader.resources.size(); ++resourceIndex)
-	{
-		const ShaderResource& shaderResource = shader.resources[resourceIndex];
-
-		int depIndex = 0;
-		while (depIndex < node.resourceDependencies.size() && node.resourceDependencies[depIndex].pinIndex != (resourceIndex+pinOffset))
-			depIndex++;
-
-		if (depIndex >= node.resourceDependencies.size())
-		{
-			m_logFn(LogLevel::Error, "Could not find resource dependency for shader resource \"%s\" in draw call node \"%s\"", shaderResource.name.c_str(), node.name.c_str());
-			return false;
-		}
-		const ResourceDependency& dep = node.resourceDependencies[depIndex];
-
-		DescriptorTableCache::ResourceDescriptor desc;
-
-		const RenderGraphNode& resourceNode = m_renderGraph.nodes[dep.nodeIndex];
-		switch (resourceNode._index)
-		{
-			case RenderGraphNode::c_index_resourceTexture:
-			{
-				const RuntimeTypes::RenderGraphNode_Resource_Texture& resourceInfo =  GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceNode.resourceTexture.name.c_str());
-				desc.m_resource = resourceInfo.m_resource;
-				desc.m_format = resourceInfo.m_format;
-
-				if (dep.pinIndex < node.linkProperties.size())
-				{
-					desc.m_UAVMipIndex = min(node.linkProperties[dep.pinIndex].UAVMipIndex, resourceInfo.m_numMips - 1);
-				}
-
-				switch (resourceNode.resourceTexture.dimension)
-				{
-					case TextureDimensionType::Texture2D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2D; break;
-					case TextureDimensionType::Texture2DArray: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DArray; desc.m_count = resourceInfo.m_size[2]; break;
-					case TextureDimensionType::Texture3D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture3D; desc.m_count = resourceInfo.m_size[2]; break;
-					case TextureDimensionType::TextureCube: desc.m_resourceType = DescriptorTableCache::ResourceType::TextureCube; desc.m_count = 6; break;
-					case TextureDimensionType::Texture2DMS: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DMS; break;
-					default:
-						assert(0);
-				}
-				break;
-			}
-			case RenderGraphNode::c_index_resourceShaderConstants:
-			{
-				const RuntimeTypes::RenderGraphNode_Resource_ShaderConstants& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_ShaderConstants(resourceNode.resourceShaderConstants.name.c_str());
-				desc.m_resource = resourceInfo.m_buffer->buffer;
-				desc.m_format = DXGI_FORMAT_UNKNOWN;
-				desc.m_stride = (UINT)resourceInfo.m_buffer->size;
-				desc.m_count = 1;
-				break;
-			}
-			case RenderGraphNode::c_index_resourceBuffer:
-			{
-				const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-
-				if (dep.access == ShaderResourceAccessType::RTScene)
-				{
-					desc.m_resource = resourceInfo.m_tlas;
-					desc.m_format = DXGI_FORMAT_UNKNOWN;
-					desc.m_stride = resourceInfo.m_tlasSize;
-					desc.m_count = 1;
-					desc.m_raw = false;
-				}
-				else
-				{
-					desc.m_resource = resourceInfo.m_resource;
-
-					const ShaderResourceBuffer& shaderResourceBuffer = shader.resources[resourceIndex].buffer;
-					bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
-					if (isStructuredBuffer)
-					{
-						desc.m_format = DXGI_FORMAT_UNKNOWN;
-						if (shaderResourceBuffer.typeStruct.structIndex != -1)
-							desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
-						else
-							desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
-						desc.m_count = resourceInfo.m_size / desc.m_stride;
-					}
-					else
-					{
-						desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
-						desc.m_stride = 0;
-						desc.m_count = resourceInfo.m_count;
-					}
-
-                    if (dep.pinIndex < node.linkProperties.size())
-                    {
-                        const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
-
-                        unsigned int unitsDivider = 1;
-                        if (linkProperties.bufferViewUnits != MemoryUnitOfMeasurement::Items)
-                        {
-                            unitsDivider = (shaderResourceBuffer.typeStruct.structIndex != -1)
-                                ? (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes
-                                : DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeBytes;
-                            unitsDivider = max(unitsDivider, 1);
-                        }
-
-                        desc.m_firstElement = linkProperties.bufferViewBegin / unitsDivider;
-
-                        if (desc.m_count >= desc.m_firstElement)
-                            desc.m_count -= desc.m_firstElement;
-                        else
-                            desc.m_count = 0;
-
-                        unsigned int bufferViewNumElements = linkProperties.bufferViewSize / unitsDivider;
-                        if (bufferViewNumElements > 0)
-                            desc.m_count = min(desc.m_count, bufferViewNumElements);
-                    }
-
-					desc.m_raw = shader.resources[resourceIndex].buffer.raw;
-				}
-				break;
-			}
-			default:
-			{
-				m_logFn(LogLevel::Error, "Unhandled dependency node type for draw call node \"%s\"", node.name.c_str());
-				return false;
-			}
-		}
-
-		// This could be a temporary thing, but we can't run the draw call if we don't have the resources we need.
-		if (!desc.m_resource)
-			return true;
-
-		switch (dep.access)
-		{
-			case ShaderResourceAccessType::UAV:
-			{
-				desc.m_access = DescriptorTableCache::AccessType::UAV;
-				queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, GetNodeName(resourceNode).c_str()) });
-				break;
-			}
-			case ShaderResourceAccessType::RTScene:
-			{
-				desc.m_access = DescriptorTableCache::AccessType::SRV;
-				queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE, GetNodeName(resourceNode).c_str()) });
-				break;
-			}
-			case ShaderResourceAccessType::SRV:
-			{
-				desc.m_access = DescriptorTableCache::AccessType::SRV;
-
-				if (importantResourceStates.count(desc.m_resource) == 0)
-					queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(desc.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, GetNodeName(resourceNode).c_str()) });
-
-				break;
-			}
-			case ShaderResourceAccessType::CBV:
-			{
-				// constant buffers are upload heap, don't need transitions to be written from CPU or read by shaders
-				desc.m_access = DescriptorTableCache::AccessType::CBV;
-				break;
-			}
-			case ShaderResourceAccessType::Indirect:
-			{
-				// This is handled elsewhere
-				continue;
-			}
-			default:
-			{
-				m_logFn(LogLevel::Error, "Unhandled shader resource access type \"%s\" for draw call node \"%s\"", EnumToString(dep.access), node.name.c_str());
-				return false;
-			}
-		}
-
-		switch (dep.type)
-		{
-			case ShaderResourceType::Texture: break;// Handled above
-			case ShaderResourceType::Buffer:
-			{
-				if (dep.access == ShaderResourceAccessType::RTScene)
-					desc.m_resourceType = DescriptorTableCache::ResourceType::RTScene;
-				else
-					desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer;
-				break;
-			}
-			case ShaderResourceType::ConstantBuffer: desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer; break;
-			default:
-			{
-				m_logFn(LogLevel::Error, "Unhandled shader resource type \"%s\" for draw call node \"%s\"", EnumToString(dep.type), node.name.c_str());
-				return false;
-			}
-		}
-
-		descs.push_back(desc);
-	}
-
-	return true;
-}
-
-static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn)
+static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn, const std::vector<ShaderDefine> &envDefines )
 {
 	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
 
@@ -1004,6 +728,7 @@ static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader&
 	shaderCompilationInfo.entryPoint = shader.entryPoint;
 	shaderCompilationInfo.shaderModel = shaderModel;
 	shaderCompilationInfo.defines = shader.defines;
+	shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), envDefines.begin(), envDefines.end());
 
 	if (compileShadersForDebug)
 	{
@@ -1065,16 +790,16 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		bool compiledOK = true;
 
 		if (node.vertexShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
 
 		if (node.pixelShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
 
 		if (node.amplificationShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
 
 		if (node.meshShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn);
+			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
 
 		// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 		for (const std::string& fileName : allShaderFiles)
@@ -1555,6 +1280,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
+
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 
@@ -1567,40 +1297,25 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 		// Make the vertex shader descriptor table gigi description
 		std::vector<DescriptorTableCache::ResourceDescriptor> descriptorsVertexShader;
+
 		int descriptorTablePinOffset = 0;
-		if (node.vertexShader.shader)
-		{
-			if (!DrawCall_MakeDescriptorTableDesc(descriptorsVertexShader, node, *node.vertexShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
-				return false;
-			descriptorTablePinOffset += (int)node.vertexShader.shader->resources.size();
-		}
+		if (!MakeDescriptorTableDesc(descriptorsVertexShader, runtimeData, node.resourceDependencies, node.linkProperties, node.name.c_str(), node.vertexShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
+			return false;
 
 		// Make the pixel shader descriptor table gigi description
 		std::vector<DescriptorTableCache::ResourceDescriptor> descriptorsPixelShader;
-		if (node.pixelShader.shader)
-		{
-			if (!DrawCall_MakeDescriptorTableDesc(descriptorsPixelShader, node, *node.pixelShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
-				return false;
-			descriptorTablePinOffset += (int)node.pixelShader.shader->resources.size();
-		}
+		if (!MakeDescriptorTableDesc(descriptorsPixelShader, runtimeData, node.resourceDependencies, node.linkProperties, node.name.c_str(), node.pixelShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
+			return false;
 
 		// Make the amplification shader descriptor table gigi description
 		std::vector<DescriptorTableCache::ResourceDescriptor> descriptorsAmplificationShader;
-		if (node.amplificationShader.shader)
-		{
-			if (!DrawCall_MakeDescriptorTableDesc(descriptorsAmplificationShader, node, *node.amplificationShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
-				return false;
-			descriptorTablePinOffset += (int)node.amplificationShader.shader->resources.size();
-		}
+		if (!MakeDescriptorTableDesc(descriptorsAmplificationShader, runtimeData, node.resourceDependencies, node.linkProperties, node.name.c_str(), node.amplificationShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
+			return false;
 
 		// Make the mesh shader descriptor table gigi description
 		std::vector<DescriptorTableCache::ResourceDescriptor> descriptorsMeshShader;
-		if (node.meshShader.shader)
-		{
-			if (!DrawCall_MakeDescriptorTableDesc(descriptorsMeshShader, node, *node.meshShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
-				return false;
-			descriptorTablePinOffset += (int)node.meshShader.shader->resources.size();
-		}
+		if (!MakeDescriptorTableDesc(descriptorsMeshShader, runtimeData, node.resourceDependencies, node.linkProperties, node.name.c_str(), node.meshShader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
+			return false;
 
 		// Do all resource transitions desired by the descriptor tables
 		m_transitions.Transition(queuedTransitions);
@@ -1827,17 +1542,64 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
 			ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
 		}
-		// else if we have an index buffer, do DrawIndexedInstanced
-		else if (node.indexBuffer.resourceNodeIndex != -1)
+		// else if we have an indirect buffer, do indirect
+		else if (node.enableIndirect && node.indirectBuffer.resourceNodeIndex != -1)
 		{
-			ss << "DrawIndexedInstanced:\n  indexCountPerInstance = " << indexCountPerInstance << "\n  instanceCount = " << instanceCount;
-			m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, 0, 0, 0);
+			ss << "Draw: Indirect";
+			const std::string& indirectBufferName = m_renderGraph.nodes[node.indirectBuffer.resourceNodeIndex].resourceBuffer.name;
+			bool exists = false;
+			const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(indirectBufferName.c_str(), exists);
+			if (!exists)
+				return true;
+
+			std::string label = node.name + std::string(".indirectBuffer") + std::string(": ") + indirectBufferName;
+			runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, 0, 0, false);
+
+			// This could be a temporary thing, but we can't indirect dispatch if the buffer doesn't exist
+			if (!resourceInfo.m_resource)
+				return true;
+
+			// Note: maybe this could move earlier, so there isn't an extra transition call here. like in the descriptor table logic even though it doesn't go in the descriptor table?
+			m_transitions.Transition(TRANSITION_DEBUG_INFO(resourceInfo.m_resource, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT));
+			m_transitions.Flush(m_commandList);
+
+			if (node.indexBuffer.resourceNodeIndex != -1)
+			{
+				ss << "DrawIndexedInstanced";
+				m_commandList->ExecuteIndirect(
+					m_commandSignatureDrawIndexed,
+					1,
+					resourceInfo.m_resource,
+					0,
+					nullptr,
+					0);
+			}
+			else
+			{
+				ss << "DrawInstanced";
+				m_commandList->ExecuteIndirect(
+					m_commandSignatureDraw,
+					1,
+					resourceInfo.m_resource,
+					0,
+					nullptr,
+					0);
+			}
 		}
-		// else do DrawInstanced
+		// else do direct
 		else
 		{
-			ss << "DrawInstanced:\n  vertexCountPerInstance = " << vertexCountPerInstance << "\n  instanceCount = " << instanceCount;
-			m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
+			if (node.indexBuffer.resourceNodeIndex != -1)
+			{
+				ss << "DrawIndexedInstanced:\n  indexCountPerInstance = " << indexCountPerInstance << "\n  instanceCount = " << instanceCount;
+				m_commandList->DrawIndexedInstanced(indexCountPerInstance, instanceCount, 0, 0, 0);
+			}
+			// else do DrawInstanced
+			else
+			{
+				ss << "DrawInstanced:\n  vertexCountPerInstance = " << vertexCountPerInstance << "\n  instanceCount = " << instanceCount;
+				m_commandList->DrawInstanced(vertexCountPerInstance, instanceCount, 0, 0);
+			}
 		}
 
 		// variable rate shading - set it back to dense sampling
@@ -2011,6 +1773,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 

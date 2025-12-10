@@ -39,6 +39,13 @@ struct BackendUE_5_3 : public BackendBase
         int importedNodeIndex = -1;
     };
 
+    static std::string StringEscape(const std::string& s)
+    {
+        std::string ret = s;
+        StringReplaceAll(ret, "\\", "\\\\");
+        return ret;
+    }
+
     static BufferNodeType GetBufferNodeType(const RenderGraph& renderGraph, const RenderGraphNode_Resource_Buffer& node)
     {
         BufferNodeType ret;
@@ -59,7 +66,7 @@ struct BackendUE_5_3 : public BackendBase
             else if (buffNode->format.node.nodeIndex != -1)
             {
                 const RenderGraphNode& buffNodeBase = renderGraph.nodes[buffNode->format.node.nodeIndex];
-                Assert(buffNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Must be a buffer!");
+                GigiAssert(buffNodeBase._index == RenderGraphNode::c_index_resourceBuffer, "Must be a buffer!");
                 buffNode = &buffNodeBase.resourceBuffer;
             }
             else
@@ -85,7 +92,7 @@ struct BackendUE_5_3 : public BackendBase
             else if (texNode->format.node.nodeIndex != -1)
             {
                 const RenderGraphNode& texNodeBase = renderGraph.nodes[texNode->format.node.nodeIndex];
-                Assert(texNodeBase._index == RenderGraphNode::c_index_resourceTexture, "Must be a texture!");
+                GigiAssert(texNodeBase._index == RenderGraphNode::c_index_resourceTexture, "Must be a texture!");
                 texNode = &texNodeBase.resourceTexture;
             }
             else if (texNode->format.variable.variableIndex != -1)
@@ -123,7 +130,9 @@ struct BackendUE_5_3 : public BackendBase
         for (size_t depIndex = depsIndexStart; depIndex < (depsIndexStart + depsCount); ++depIndex)
         {
             unsigned int bufferViewBegin = 0;
+            int bufferViewBeginVarIndex = -1;
             unsigned int bufferViewSize = 0;
+            int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
             {
@@ -133,7 +142,9 @@ struct BackendUE_5_3 : public BackendBase
                     const LinkProperties& linkProperties = node.linkProperties[pinIndex];
                     UAVMipIndex = linkProperties.UAVMipIndex;
                     bufferViewBegin = linkProperties.bufferViewBegin;
+                    bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                     bufferViewSize = linkProperties.bufferViewSize;
+                    bufferViewSizeVarIndex = linkProperties.bufferViewSizeVariable.variableIndex;
                     bufferViewInBytes = (linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes);
                 }
             }
@@ -160,7 +171,7 @@ struct BackendUE_5_3 : public BackendBase
                         case ShaderResourceAccessType::UAV: macro = "SHADER_PARAMETER_RDG_TEXTURE_UAV"; typePrefix = "RW"; break;
                         default:
                         {
-                            Assert(false, "Unhandled dependency access in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.access));
+                            GigiAssert(false, "Unhandled dependency access in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.access));
                             break;
                         }
                     }
@@ -174,7 +185,7 @@ struct BackendUE_5_3 : public BackendBase
                         case TextureDimensionType::TextureCube: type = "TextureCube"; break;
                         default:
                         {
-                            Assert(false, "Unhandled texture dimension in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(depNode.dimension));
+                            GigiAssert(false, "Unhandled texture dimension in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(depNode.dimension));
                             break;
                         }
                     }
@@ -190,7 +201,7 @@ struct BackendUE_5_3 : public BackendBase
                         case TextureViewType::Float4: viewType = "<float4>"; break;
                         default:
                         {
-                            Assert(false, "Unhandled texture view type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(shader.resources[resourceIndex].texture.viewType));
+                            GigiAssert(false, "Unhandled texture view type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(shader.resources[resourceIndex].texture.viewType));
                             break;
                         }
                     }
@@ -202,8 +213,24 @@ struct BackendUE_5_3 : public BackendBase
                 {
                     RenderGraphNode_Resource_Buffer& depNode = depNodeBase.resourceBuffer;
 
-                    if (bufferViewBegin > 0 || bufferViewSize > 0)
-                        shaderParams << "        TODO: make the below use a view of the buffer starting at " << bufferViewBegin << " with a size of " << bufferViewSize << " (this line is described in " << (bufferViewInBytes ? "BYTES" : "ITEM COUNT") << ")\n";
+                    if (bufferViewBegin > 0 || bufferViewSize > 0 || bufferViewBeginVarIndex != -1 || bufferViewSizeVarIndex != -1)
+                    {
+                        shaderParams << "        TODO: make the below use a view of the buffer starting at ";
+
+                        if (bufferViewBeginVarIndex != -1)
+                            shaderParams << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);
+                        else
+                            shaderParams << bufferViewBegin;
+
+                        shaderParams << " with a size of ";
+
+                        if (bufferViewSizeVarIndex != -1)
+                            shaderParams << VariableToString(renderGraph.variables[bufferViewSizeVarIndex], renderGraph);
+                        else
+                            shaderParams << bufferViewSize;
+
+                        shaderParams << " (this line is described in " << (bufferViewInBytes ? "BYTES" : "ITEM COUNT") << ")\n";
+                    }
 
                     if (dep.access == ShaderResourceAccessType::Indirect)
                     {
@@ -225,7 +252,7 @@ struct BackendUE_5_3 : public BackendBase
                             case ShaderResourceAccessType::UAV: macro = "SHADER_PARAMETER_RDG_BUFFER_UAV"; typePrefix = "RW"; break;
                             default:
                             {
-                                Assert(false, "Unhandled dependency access in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.access));
+                                GigiAssert(false, "Unhandled dependency access in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.access));
                                 break;
                             }
                         }
@@ -269,7 +296,7 @@ struct BackendUE_5_3 : public BackendBase
                                 case DataFieldType::Float_16: viewType = "<half>"; break;
                                 default:
                                 {
-                                    Assert(false, "Unhandled buffer type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(shader.resources[resourceIndex].buffer.type));
+                                    GigiAssert(false, "Unhandled buffer type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(shader.resources[resourceIndex].buffer.type));
                                     break;
                                 }
                             }
@@ -308,17 +335,17 @@ struct BackendUE_5_3 : public BackendBase
                             case DataFieldType::Float_16: fieldType = "uint16"; break;
                             default:
                             {
-                                Assert(false, "Unhandled field type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(field.type));
+                                GigiAssert(false, "Unhandled field type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(field.type));
                                 break;
                             }
                         }
-                        shaderParams << "        SHADER_PARAMETER(" << fieldType << ", cb" << depNode.name << "_" << field.name << ")\n";
+                        shaderParams << "        SHADER_PARAMETER(" << fieldType << ", cb" << depNode.structure.name << "_" << field.name << ")\n";
                     }
                     break;
                 }
                 default:
                 {
-                    Assert(false, "Unhandled dependency type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.type));
+                    GigiAssert(false, "Unhandled dependency type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.type));
                     break;
                 }
             }
@@ -434,7 +461,7 @@ struct BackendUE_5_3 : public BackendBase
                 }
                 default:
                 {
-                    Assert(false, "Unhandled dependency type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.type));
+                    GigiAssert(false, "Unhandled dependency type in shader \"%s\": \"%s\"", shader.name.c_str(), EnumToString(dep.type));
                     break;
                 }
             }
@@ -459,7 +486,7 @@ struct BackendUE_5_3 : public BackendBase
             case DepthTestFunction::Always: return "CF_Always";
             default:
             {
-                Assert(false, "Unhandled DepthTestFunction: \"%s\"", EnumToString(func));
+                GigiAssert(false, "Unhandled DepthTestFunction: \"%s\"", EnumToString(func));
                 return nullptr;
             }
         }
@@ -479,7 +506,7 @@ struct BackendUE_5_3 : public BackendBase
             case StencilOp::Decriment: return "SO_Decrement";
             default:
             {
-                Assert(false, "Unhandled StencilOp: \"%s\"", EnumToString(op));
+                GigiAssert(false, "Unhandled StencilOp: \"%s\"", EnumToString(op));
                 return nullptr;
             }
         }
@@ -501,7 +528,7 @@ struct BackendUE_5_3 : public BackendBase
             case DrawBlendMode::InvDestColor: return "BF_InverseDestColor";
             default:
             {
-                Assert(false, "Unhandled DrawBlendMode: \"%s\"", EnumToString(mode));
+                GigiAssert(false, "Unhandled DrawBlendMode: \"%s\"", EnumToString(mode));
                 return nullptr;
             }
         }
@@ -516,7 +543,7 @@ struct BackendUE_5_3 : public BackendBase
             case DrawCullMode::Back: return (frontIsCounterClockwise ? "CM_CW" : "CM_CCW");
             default:
             {
-                Assert(false, "Unhandled DrawCullMode: \"%s\"", EnumToString(mode));
+                GigiAssert(false, "Unhandled DrawCullMode: \"%s\"", EnumToString(mode));
                 return nullptr;
             }
         }
@@ -639,7 +666,7 @@ struct BackendUE_5_3 : public BackendBase
             case DataFieldType::Float_16: return "PF_R16F";
             default:
             {
-                Assert(false, "Unhandled DataFieldType: \"%s\"", EnumToString(type));
+                GigiAssert(false, "Unhandled DataFieldType: \"%s\"", EnumToString(type));
                 return nullptr;
             }
         }
@@ -666,11 +693,11 @@ struct BackendUE_5_3 : public BackendBase
             //case TextureFormat::RGBA8_Sint:
             case TextureFormat::R16_Float: return "PF_R16F";
             //case TextureFormat::RG16_Float:
-            //case TextureFormat::RGBA16_Float:
+            case TextureFormat::RGBA16_Float: return "PF_FloatRGBA"; // EPixelFormat comment says this is RGBA16F
             case TextureFormat::RGBA16_Unorm: return "PF_R16G16B16A16_UNORM";
             case TextureFormat::R32_Float: return "PF_R32_FLOAT";
             //case TextureFormat::RG32_Float:
-            //case TextureFormat::RGBA32_Float:
+            case TextureFormat::RGBA32_Float: return "PF_A32B32G32R32F"; //  https://github.com/EpicGames/UnrealEngine/blob/release/Engine/Source/Runtime/D3D12RHI/Private/D3D12RHI.cpp shows that PF_A32B32G32R32F is set to DXGI_FORMAT_R32G32B32A32_FLOAT
             case TextureFormat::R32_Uint: return "PF_R32_UINT";
             case TextureFormat::RGBA32_Uint: return "PF_R32G32B32A32_UINT";
             case TextureFormat::R11G11B10_Float: return "PF_FloatR11G11B10";
@@ -680,8 +707,8 @@ struct BackendUE_5_3 : public BackendBase
             case TextureFormat::D24_Unorm_S8: return "PF_DepthStencil";// "PF_X24_G8";
             default:
             {
-                Assert(false, "Unhandled TextureFormat: \"%s\"", EnumToString(format));
-                return nullptr;
+                GigiAssert(false, "Unhandled TextureFormat: \"%s\"", EnumToString(format));
+                return "<Unhandled TextureFormat>";
             }
         }
     }
@@ -743,7 +770,7 @@ struct BackendUE_5_3 : public BackendBase
             case DataFieldType::Float_16: return "uint16";
             default:
             {
-                Assert(false, "Unhandled data field type: \"%s\"", EnumToString(type));
+                GigiAssert(false, "Unhandled data field type: \"%s\"", EnumToString(type));
                 return nullptr;
             }
         }
@@ -773,7 +800,7 @@ struct BackendUE_5_3 : public BackendBase
             case DataFieldType::Float_16: return "half";
             default:
             {
-                Assert(false, "Unhandled data field type: \"%s\"", EnumToString(type));
+                GigiAssert(false, "Unhandled data field type: \"%s\"", EnumToString(type));
                 return nullptr;
             }
         }
@@ -1269,7 +1296,7 @@ struct BackendUE_5_3 : public BackendBase
                 }
                 else if (setVar.ANode.nodeIndex != -1)
                 {
-                    Assert(false, "TODO: implement this");
+                    GigiAssert(false, "TODO: implement this");
                     //stringReplacementMap[destinationString] << BackendDX12::ResourceToString(renderGraph.nodes[setVar.ANode.nodeIndex]) << "_size";
                     //if (setVar.AVarIndex != -1)
                         //stringReplacementMap[destinationString] << "[" << setVar.AVarIndex << "]";
@@ -1315,7 +1342,7 @@ struct BackendUE_5_3 : public BackendBase
                     }
                     else if (setVar.BNode.nodeIndex != -1)
                     {
-                        Assert(false, "TODO: implement this");
+                        GigiAssert(false, "TODO: implement this");
                         //stringReplacementMap[destinationString] << BackendDX12::ResourceToString(renderGraph.nodes[setVar.BNode.nodeIndex]) << "_size";
                         //if (setVar.BVarIndex != -1)
                             //stringReplacementMap[destinationString] << "[" << setVar.BVarIndex << "]";
@@ -1396,7 +1423,7 @@ struct BackendUE_5_3 : public BackendBase
                     "    }\n"
                     "};\n"
                     "\n"
-                    "IMPLEMENT_GLOBAL_SHADER(F" << shader.name << "MS, \"" << fileName << "\", \"" << shader.entryPoint << "\", SF_RayMiss);\n"
+                    "IMPLEMENT_GLOBAL_SHADER(F" << shader.name << "MS, \"" << StringEscape(fileName) << "\", \"" << shader.entryPoint << "\", SF_RayMiss);\n"
                     "\n"
                     ;
             }
@@ -1460,7 +1487,7 @@ struct BackendUE_5_3 : public BackendBase
                     "    }\n"
                     "};\n"
                     "\n"
-                    "IMPLEMENT_GLOBAL_SHADER(F" << hitGroup.name << "HG, \"" << fileName.str() << "\", \"" << entryPointString.str() << "\", SF_RayHitGroup);\n"
+                    "IMPLEMENT_GLOBAL_SHADER(F" << hitGroup.name << "HG, \"" << StringEscape(fileName.str()) << "\", \"" << entryPointString.str() << "\", SF_RayHitGroup);\n"
                     "\n"
                     ;
             }
@@ -1472,7 +1499,7 @@ static void CopyShaderFile(Shader& shader, const std::unordered_map<std::string,
 {
     if (shader.language != ShaderLanguage::HLSL && shader.language != ShaderLanguage::Slang)
     {
-        Assert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
+        GigiAssert(false, "Unsupported shader source language encountered for shader \"%s\": %s", shader.name.c_str(), EnumToString(shader.language));
         return;
     }
 
@@ -1558,7 +1585,7 @@ static void CopyShaderFile(Shader& shader, const std::unordered_map<std::string,
                         break;
                 }
 
-                Assert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\" in shader \"%s\"", param.c_str(), options.m_shader.name.c_str());
+                GigiAssert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\" in shader \"%s\"", param.c_str(), options.m_shader.name.c_str());
                 if (foundIndex != -1)
                 {
                     stream = std::ostringstream();
@@ -1596,6 +1623,7 @@ static void CopyShaderFile(Shader& shader, const std::unordered_map<std::string,
 
     options.m_writeConstantBufferDefinition = ProcessShaderOptions_HLSL::WriteConstantBufferDefinition_NotInStruct;
     options.m_writeVariableReference = ProcessShaderOptions_HLSL::WriteVariableReference_NotInStruct;
+    options.m_writeVariableAlias = ProcessShaderOptions_HLSL::WriteVariableAlias_NotInStruct;
     options.m_writeSamplerDefinition = ProcessShaderOptions_HLSL::WriteSamplerDefinition_NoRegister;
     options.m_writeResourceDefinition = ProcessShaderOptions_HLSL::WriteResourceDefinition_NoRegister;
 
@@ -1612,7 +1640,7 @@ void RunBackend_UE_5_3(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
 
         if (node.resourceTexture.dimension == TextureDimensionType::Texture2DMS)
         {
-            Assert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
+            GigiAssert(false, "Multisampled textures not supported in code generator for ", EnumToString(buildFlavor));
             return;
         }
     }
@@ -1685,7 +1713,7 @@ void RunBackend_UE_5_3(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
                 char fullFileName[4096];
                 sprintf_s(fullFileName, "%s/shaders/%s", tempDirectory.c_str(), hitGroup.anyHit.shader->destFileName.c_str());
                 if (!LoadTextFile(std::filesystem::path(fullFileName).replace_extension(".usf").string().c_str(), shaderFile))
-                    Assert(false, "Could not read file %s", fullFileName);
+                    GigiAssert(false, "Could not read file %s", fullFileName);
 
                 outFile <<
                     "// ====================================\n"
@@ -1705,7 +1733,7 @@ void RunBackend_UE_5_3(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
                 char fullFileName[4096];
                 sprintf_s(fullFileName, "%s/shaders/%s", tempDirectory.c_str(), hitGroup.closestHit.shader->destFileName.c_str());
                 if (!LoadTextFile(std::filesystem::path(fullFileName).replace_extension(".usf").string().c_str(), shaderFile))
-                    Assert(false, "Could not read file %s", fullFileName);
+                    GigiAssert(false, "Could not read file %s", fullFileName);
 
                 outFile <<
                     "// ====================================\n"
@@ -1725,7 +1753,7 @@ void RunBackend_UE_5_3(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
                 char fullFileName[4096];
                 sprintf_s(fullFileName, "%s/shaders/%s", tempDirectory.c_str(), hitGroup.intersection.shader->destFileName.c_str());
                 if (!LoadTextFile(std::filesystem::path(fullFileName).replace_extension(".usf").string().c_str(), shaderFile))
-                    Assert(false, "Could not read file %s", fullFileName);
+                    GigiAssert(false, "Could not read file %s", fullFileName);
 
                 outFile <<
                     "// ====================================\n"
@@ -1756,7 +1784,7 @@ void RunBackend_UE_5_3(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
         std::vector<unsigned char> data;
         if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
         {
-            Assert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
         }
 
         // get the folder to copy to
@@ -1780,7 +1808,7 @@ void RunBackend_UE_5_3(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             }
             default:
             {
-                Assert(false, "Unhandled file copy type");
+                GigiAssert(false, "Unhandled file copy type");
                 break;
             }
         }

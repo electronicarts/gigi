@@ -337,6 +337,9 @@ struct RenameReferencesVisitor
                 m_renameData.UpdateShaderName(node.vertexShader.name);
                 m_renameData.UpdateShaderName(node.pixelShader.name);
 
+                m_renameData.UpdateNodePin(node.indirectBuffer.node, node.indirectBuffer.pin);
+                m_renameData.UpdateNodeName(node.indirectBuffer.node);
+
                 m_renameData.UpdateNodePin(node.shadingRateImage.node, node.shadingRateImage.pin);
                 m_renameData.UpdateNodePin(node.vertexBuffer.node, node.vertexBuffer.pin);
                 m_renameData.UpdateNodePin(node.indexBuffer.node, node.indexBuffer.pin);
@@ -409,6 +412,26 @@ struct RenameReferencesVisitor
 
 				return true;
             }
+            case RenderGraphNode::c_index_actionExternal:
+            {
+                RenderGraphNode_Action_External& node = nodeBase.actionExternal;
+
+                // AMD_FidelityFXSDK_Upscaling
+                {
+                    ExternalNode_AMD_FidelityFXSDK_Upscaling& nodeData = node.externalNodeData.AMD_FidelityFXSDK_Upscaling;
+
+                    m_renameData.UpdateNodePin(nodeData.color.node, nodeData.color.pin);
+                    m_renameData.UpdateNodePin(nodeData.colorOpaqueOnly.node, nodeData.colorOpaqueOnly.pin);
+                    m_renameData.UpdateNodePin(nodeData.depth.node, nodeData.depth.pin);
+                    m_renameData.UpdateNodePin(nodeData.motionVectors.node, nodeData.motionVectors.pin);
+                    m_renameData.UpdateNodePin(nodeData.exposure.node, nodeData.exposure.pin);
+                    m_renameData.UpdateNodePin(nodeData.reactive.node, nodeData.reactive.pin);
+                    //m_renameData.UpdateNodePin(nodeData.transparencyAndComposition.node, nodeData.transparencyAndComposition.pin);
+                    m_renameData.UpdateNodePin(nodeData.output.node, nodeData.output.pin);
+                }
+
+                return true;
+            }
             default:
             {
                 ShowErrorMessage("Unhandled node type in Subgraphs.cpp " __FUNCTION__);
@@ -447,7 +470,7 @@ struct RenameChildVisitor
         sprintf_s(newName, "%s.%s", m_subGraphNode.name.c_str(), node.name.c_str());
         if (NodeNameExists(m_parentGraph, newName))
         {
-            Assert(false, "Subgraph Node Name Collision");
+            GigiAssert(false, "Subgraph Node Name Collision");
             return false;
         }
 
@@ -472,7 +495,7 @@ struct RenameChildVisitor
         sprintf_s(newName, "%s.%s", m_subGraphNode.name.c_str(), variable.name.c_str());
         if (VariableNameExists(m_parentGraph, newName))
         {
-            Assert(false, "Subgraph Variable Name Collision");
+            GigiAssert(false, "Subgraph Variable Name Collision");
             return false;
         }
 

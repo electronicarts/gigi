@@ -55,7 +55,7 @@ namespace ReadbackSequence
             ranges[0].RegisterSpace = 0;
             ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
-            // _ReadbackSequenceCSCB
+            // _ReadbackSequenceCS_0CB
             ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[1].NumDescriptors = 1;
             ranges[1].BaseShaderRegister = 0;
@@ -702,11 +702,11 @@ namespace ReadbackSequence
             m_internal.m_TimestampReadbackBuffer = nullptr;
         }
 
-        // _ReadbackSequenceCSCB
-        if (m_internal.constantBuffer__ReadbackSequenceCSCB)
+        // _ReadbackSequenceCS_0CB
+        if (m_internal.constantBuffer__ReadbackSequenceCS_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__ReadbackSequenceCSCB);
-            m_internal.constantBuffer__ReadbackSequenceCSCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__ReadbackSequenceCS_0CB);
+            m_internal.constantBuffer__ReadbackSequenceCS_0CB = nullptr;
         }
     }
 
@@ -779,10 +779,10 @@ namespace ReadbackSequence
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _ReadbackSequenceCSCB
+        // Shader Constants: _ReadbackSequenceCS_0CB
         {
-            context->m_internal.constantBuffer__ReadbackSequenceCSCB_cpu.frameIndex = context->m_input.variable_frameIndex;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__ReadbackSequenceCSCB, context->m_internal.constantBuffer__ReadbackSequenceCSCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__ReadbackSequenceCS_0CB_cpu.frameIndex = context->m_input.variable_frameIndex;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__ReadbackSequenceCS_0CB, context->m_internal.constantBuffer__ReadbackSequenceCS_0CB_cpu, Context::LogFn);
         }
 
         // Compute Shader: Node_1
@@ -800,7 +800,7 @@ namespace ReadbackSequence
 
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Output, context->m_input.texture_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__ReadbackSequenceCSCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__ReadbackSequenceCS_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 2, Context::LogFn);
@@ -868,11 +868,11 @@ namespace ReadbackSequence
     {
         bool dirty = false;
 
-        // _ReadbackSequenceCSCB
-        if (m_internal.constantBuffer__ReadbackSequenceCSCB == nullptr)
+        // _ReadbackSequenceCS_0CB
+        if (m_internal.constantBuffer__ReadbackSequenceCS_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__ReadbackSequenceCSCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_ReadbackSequenceCSCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__ReadbackSequenceCS_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_ReadbackSequenceCS_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

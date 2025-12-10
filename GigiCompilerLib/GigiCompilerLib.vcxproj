@@ -58,6 +58,8 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -87,6 +89,8 @@
       <LanguageStandard>stdcpp17</LanguageStandard>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <AdditionalIncludeDirectories>
+      </AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -184,6 +188,7 @@
     <ClCompile Include="Backends\UE_5_3\Backend_UE_5_3.cpp" />
     <None Include="..\.editorconfig" />
     <None Include="Backends\DX12\nodes\node_action_workGraph.inl" />
+    <None Include="Backends\DX12\nodes\node_action_external.inl" />
     <None Include="Backends\DX12\nodes\node_reroute.inl" />
     <None Include="Backends\DX12\templates\Module\AgilitySDK\bin\D3D12Core.dll">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
@@ -217,7 +222,8 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </None>
-    <None Include="Backends\UE_5_3\nodes\node_reroute.inl" />
+    <None Include="Backends\UE_5_3\nodes\node_action_external.h" />
+    <None Include="Backends\UE_5_3\nodes\node_reroute.h" />
     <None Include="Backends\UE_5_3\templates\install.bat">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
@@ -238,6 +244,7 @@
     <None Include="Backends\WebGPU\nodes\node_action_barrier.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_computeShader.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_copyResource.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_external.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_drawCall.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_rayShader.inl" />
     <None Include="Backends\WebGPU\nodes\node_action_subGraph.inl" />
@@ -305,12 +312,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\timyxml2\tinyxml2.h" />
+    <ClInclude Include="..\NodesStatic\action_external.h" />
+    <ClInclude Include="..\NodesStatic\all_nodes.h" />
     <ClInclude Include="..\Nodes\action_drawcall.h" />
     <ClInclude Include="..\Nodes\action_barrier.h" />
+    <ClInclude Include="..\Nodes\action_external.h" />
     <ClInclude Include="..\Nodes\action_subgraph.h" />
     <ClInclude Include="..\Nodes\action_workgraph.h" />
+    <ClInclude Include="..\Nodes\reroute.h" />
     <ClInclude Include="..\Schemas\Browser\BrowserSchemas.h" />
     <ClInclude Include="..\Schemas\DataFieldTypes.h" />
+    <ClInclude Include="..\Schemas\ExternalNodeVariant.h" />
     <ClInclude Include="..\Schemas\Misc\BackendTemplateSchemas.h" />
     <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgClientToServerVariant.h" />
     <ClInclude Include="..\Schemas\PreviewWindow\PreviewMsgServerToClientVariant.h" />

@@ -1,0 +1,14 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewType": 6,
+        "resourceViewNodeIndex": 4,
+        "resourceViewResourceIndex": 0,
+        "savedVariables": [
+            {
+                "name": "NumIndirectTriangles",
+                "value": "6"
+            }
+        ]
+    }
+}

@@ -205,7 +205,7 @@ class Test_Buffers_StructuredBuffer
     {
         // Make sure we can copy the output buffers, for readback.
         module.buffer_buff_usageFlags = module.buffer_buff_usageFlags | GPUBufferUsage.COPY_SRC;
-        module.constantBuffer__csmainCB_usageFlags = module.constantBuffer__csmainCB_usageFlags | GPUBufferUsage.COPY_SRC;
+        module.constantBuffer__csmain_0CB_usageFlags = module.constantBuffer__csmain_0CB_usageFlags | GPUBufferUsage.COPY_SRC;
 
         // Create the buffer buff
         module.buffer_buff_count = 2;
@@ -231,7 +231,7 @@ class Test_Buffers_StructuredBuffer
     NodeOnly_PostExecute(device, encoder, module, frameIndex)
     {
         this.buffer_buff_Readback = Shared.GetReadbackBuffer_FromBuffer(device, encoder, module.buffer_buff);
-        this.constantBuffer__csmainCB_Readback = Shared.GetReadbackBuffer_FromBuffer(device, encoder, module.constantBuffer__csmainCB);
+        this.constantBuffer__csmainCB_Readback = Shared.GetReadbackBuffer_FromBuffer(device, encoder, module.constantBuffer__csmain_0CB);
     }
 
     async NodeOnly_Validate(module, frameIndex)
@@ -665,6 +665,34 @@ class Test_Compute_SlangAutoDiff
     }
 };
 export var test_Compute_SlangAutoDiff = new Test_Compute_SlangAutoDiff();
+
+class Test_Compute_VariableAliases
+{
+    async Init(device, module)
+    {
+        return 1; // Execute once
+    }
+
+    PreExecute(device, encoder, module, frameIndex)
+    {
+    }
+
+    NodeOnly_PostExecute(device, encoder, module, frameIndex)
+    {
+        this.texture_Color_Readback = Shared.GetReadbackBuffer_FromTexture(device, encoder, module.texture_Color);
+    }
+
+    async NodeOnly_Validate(module, frameIndex)
+    {
+        await Shared.ReadbackBuffer(this.texture_Color_Readback,
+            (view) =>
+            {
+                VerifyDataViewEqualsPNGFile(view, module.texture_Color, "../../../../../../Techniques/UnitTests/_GoldImages/Compute/VariableAliases/0.png");
+            }
+        );
+    }
+};
+export var test_Compute_VariableAliases = new Test_Compute_VariableAliases();
 
 class Test_CopyResource_CopyResourceTest
 {

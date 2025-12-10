@@ -36,8 +36,8 @@ loadingPromises = new Set();
 waitingOnPromises = false;
 
 // -------------------- Shaders
-// Shader code for Compute shader "Mip0CS", node "Mip0"
-static ShaderCode_Mip0_Mip0CS = `
+// Shader code for Compute shader "Mip0CS_0", node "Mip0"
+static ShaderCode_Mip0_Mip0CS_0 = `
 @binding(2) @group(0) var _loadedTexture_0 : texture_2d<f32>;
 
 @binding(0) @group(0) var Output : texture_storage_3d</*(Output_format)*/, write>;
@@ -97,8 +97,8 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "MipNCS", node "Mip1"
-static ShaderCode_Mip1_MipNCS = `
+// Shader code for Compute shader "MipNCS_0", node "Mip1"
+static ShaderCode_Mip1_MipNCS_0 = `
 @binding(0) @group(0) var Input : texture_storage_3d</*(Input_format)*/, write>;
 
 @binding(2) @group(0) var InputReadOnly : texture_storage_3d</*(InputReadOnly_format)*/, read>;
@@ -220,8 +220,8 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "MipNCS", node "Mip2"
-static ShaderCode_Mip2_MipNCS = `
+// Shader code for Compute shader "MipNCS_1", node "Mip2"
+static ShaderCode_Mip2_MipNCS_1 = `
 @binding(0) @group(0) var Input : texture_storage_3d</*(Input_format)*/, write>;
 
 @binding(2) @group(0) var InputReadOnly : texture_storage_3d</*(InputReadOnly_format)*/, read>;
@@ -343,8 +343,8 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 
 `;
 
-// Shader code for Compute shader "MipNCS", node "Mip3"
-static ShaderCode_Mip3_MipNCS = `
+// Shader code for Compute shader "MipNCS_2", node "Mip3"
+static ShaderCode_Mip3_MipNCS_2 = `
 @binding(0) @group(0) var Input : texture_storage_3d</*(Input_format)*/, write>;
 
 @binding(2) @group(0) var InputReadOnly : texture_storage_3d</*(InputReadOnly_format)*/, read>;
@@ -904,7 +904,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Mip0 = newHash;
 
-            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip0_Mip0CS;
+            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip0_Mip0CS_0;
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(OutputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Mip0_Output_ReadOnly_format));
 
@@ -983,7 +983,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Mip1 = newHash;
 
-            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip1_MipNCS;
+            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip1_MipNCS_0;
             shaderCode = shaderCode.replace("/*(Input_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(InputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Mip1_Input_ReadOnly_format));
@@ -1064,7 +1064,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Mip2 = newHash;
 
-            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip2_MipNCS;
+            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip2_MipNCS_1;
             shaderCode = shaderCode.replace("/*(Input_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(InputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Mip2_Input_ReadOnly_format));
@@ -1145,7 +1145,7 @@ async Init(device, encoder, useBlockingAPIs)
         {
             this.Hash_Compute_Mip3 = newHash;
 
-            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip3_MipNCS;
+            let shaderCode = class_Mips_CS_3D.ShaderCode_Mip3_MipNCS_2;
             shaderCode = shaderCode.replace("/*(Input_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(Output_format)*/", Shared.GetNonSRGBFormat(this.texture_Output_format));
             shaderCode = shaderCode.replace("/*(InputReadOnly_format)*/", Shared.GetNonSRGBFormat(this.texture_Mip3_Input_ReadOnly_format));

@@ -115,6 +115,9 @@ void Camera::Update(const KeyStates& keyStates, const float mouseState[4], const
             cameraChanged = true;
         }
     }
+
+    memcpy(m_lastPos, pos, sizeof(float) * 3);
+    memcpy(m_lastAltitudeAzimuth, altitudeAzimuth, sizeof(float) * 2);
 }
 
 DirectX::XMMATRIX Camera::GetViewMatrix(const float pos[3], const float altitudeAzimuth[2]) const
@@ -125,7 +128,81 @@ DirectX::XMMATRIX Camera::GetViewMatrix(const float pos[3], const float altitude
     return DirectX::XMMatrixTranslation(-pos[0], -pos[1], -pos[2]) * rot;
 }
 
-DirectX::XMMATRIX Camera::GetProjMatrix(float fovDegrees, const float resolution[2], float nearZ, float farZ, bool reverseZ, bool perspective) const
+// Adapting XMMatrixPerspectiveFovLH
+static inline DirectX::XMMATRIX XM_CALLCONV XMMatrixPerspectiveFovLH_ReverseZ_InfiniteDepth(float FovAngleY, float AspectRatio, float NearZ)
+{
+    assert(NearZ > 0.f);
+    assert(!DirectX::XMScalarNearEqual(FovAngleY, 0.0f, 0.00001f * 2.0f));
+    assert(!DirectX::XMScalarNearEqual(AspectRatio, 0.0f, 0.00001f));
+
+    float    SinFov;
+    float    CosFov;
+    DirectX::XMScalarSinCos(&SinFov, &CosFov, 0.5f * FovAngleY);
+
+    float Height = CosFov / SinFov;
+    float Width = Height / AspectRatio;
+
+    DirectX::XMMATRIX M;
+    M.r[0].m128_f32[0] = Width;
+    M.r[0].m128_f32[1] = 0.0f;
+    M.r[0].m128_f32[2] = 0.0f;
+    M.r[0].m128_f32[3] = 0.0f;
+
+    M.r[1].m128_f32[0] = 0.0f;
+    M.r[1].m128_f32[1] = Height;
+    M.r[1].m128_f32[2] = 0.0f;
+    M.r[1].m128_f32[3] = 0.0f;
+
+    M.r[2].m128_f32[0] = 0.0f;
+    M.r[2].m128_f32[1] = 0.0f;
+    M.r[2].m128_f32[2] = 0.0f;
+    M.r[2].m128_f32[3] = 1.0f;
+
+    M.r[3].m128_f32[0] = 0.0f;
+    M.r[3].m128_f32[1] = 0.0f;
+    M.r[3].m128_f32[2] = NearZ;
+    M.r[3].m128_f32[3] = 0.0f;
+    return M;
+}
+
+// Adapting XMMatrixPerspectiveFovRH
+static inline DirectX::XMMATRIX XM_CALLCONV XMMatrixPerspectiveFovRH_ReverseZ_InfiniteDepth(float FovAngleY, float AspectRatio, float NearZ)
+{
+    assert(NearZ > 0.f);
+    assert(!DirectX::XMScalarNearEqual(FovAngleY, 0.0f, 0.00001f * 2.0f));
+    assert(!DirectX::XMScalarNearEqual(AspectRatio, 0.0f, 0.00001f));
+
+    float    SinFov;
+    float    CosFov;
+    DirectX::XMScalarSinCos(&SinFov, &CosFov, 0.5f * FovAngleY);
+
+    float Height = CosFov / SinFov;
+    float Width = Height / AspectRatio;
+
+    DirectX::XMMATRIX M;
+    M.r[0].m128_f32[0] = Width;
+    M.r[0].m128_f32[1] = 0.0f;
+    M.r[0].m128_f32[2] = 0.0f;
+    M.r[0].m128_f32[3] = 0.0f;
+
+    M.r[1].m128_f32[0] = 0.0f;
+    M.r[1].m128_f32[1] = Height;
+    M.r[1].m128_f32[2] = 0.0f;
+    M.r[1].m128_f32[3] = 0.0f;
+
+    M.r[2].m128_f32[0] = 0.0f;
+    M.r[2].m128_f32[1] = 0.0f;
+    M.r[2].m128_f32[2] = 0.0f;
+    M.r[2].m128_f32[3] = -1.0f;
+
+    M.r[3].m128_f32[0] = 0.0f;
+    M.r[3].m128_f32[1] = 0.0f;
+    M.r[3].m128_f32[2] = NearZ;
+    M.r[3].m128_f32[3] = 0.0f;
+    return M;
+}
+
+DirectX::XMMATRIX Camera::GetProjMatrix(float fovDegrees, const float resolution[2], float nearZ, float farZ, bool reverseZ, bool reverseZInfiniteDepth, bool perspective) const
 {
     float fov = fovDegrees * c_pi / 180.0f;
 
@@ -136,15 +213,25 @@ DirectX::XMMATRIX Camera::GetProjMatrix(float fovDegrees, const float resolution
     if (nearZ == farZ)
         farZ = nearZ + 0.01f;
 
-    if (reverseZ)
+    if (reverseZ && !reverseZInfiniteDepth)
         std::swap(nearZ, farZ);
 
     if (perspective)
     {
-        if (m_leftHanded)
-            return DirectX::XMMatrixPerspectiveFovLH(fov, resolution[0] / resolution[1], nearZ, farZ);
+        if (reverseZInfiniteDepth)
+        {
+            if (m_leftHanded)
+                return XMMatrixPerspectiveFovLH_ReverseZ_InfiniteDepth(fov, resolution[0] / resolution[1], nearZ);
+            else
+                return XMMatrixPerspectiveFovRH_ReverseZ_InfiniteDepth(fov, resolution[0] / resolution[1], nearZ);
+        }
         else
-            return DirectX::XMMatrixPerspectiveFovRH(fov, resolution[0] / resolution[1], nearZ, farZ);
+        {
+            if (m_leftHanded)
+                return DirectX::XMMatrixPerspectiveFovLH(fov, resolution[0] / resolution[1], nearZ, farZ);
+            else
+                return DirectX::XMMatrixPerspectiveFovRH(fov, resolution[0] / resolution[1], nearZ, farZ);
+        }
     }
     else
     {

@@ -17,7 +17,7 @@ namespace FrontEndNodes
             case 1: return "dest";
             default:
             {
-                Assert(false, "pinIndex out of range for node %s", node.name.c_str());
+                GigiAssert(false, "pinIndex out of range for node %s", node.name.c_str());
                 return "";
             }
         }
@@ -45,7 +45,7 @@ namespace FrontEndNodes
             }
             default:
             {
-                Assert(false, "pinIndex out of range for node %s", node.name.c_str());
+                GigiAssert(false, "pinIndex out of range for node %s", node.name.c_str());
             }
         }
         return ret;

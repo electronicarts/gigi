@@ -35,7 +35,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
                     case 3: dispatch << "        FIntVector dispatchSize = FIntVector(" << VariableToString(variable, renderGraph) << "[0], " << VariableToString(variable, renderGraph) << "[1], " << VariableToString(variable, renderGraph) << "[2]);\n"; break;
                     default:
                     {
-                        Assert(false, "Inappropriate variable type given for dispatch size.");
+                        GigiAssert(false, "Inappropriate variable type given for dispatch size.");
                     }
                 }
             }
@@ -92,6 +92,7 @@ static bool ProcessNodeTag(const RenderGraph& renderGraph, const RenderGraphNode
 
         StringReplaceAll(text, "/*$(Node:EntryPoint)*/", node.shader.shader->entryPoint);
         StringReplaceAll(text, "/*$(Node:FileName)*/", std::string("/Engine/Private/" + renderGraph.name + "/") + fileName);
+        StringReplaceAll(text, "/*$(Node:FileNameStringEscaped)*/", StringEscape(std::string("/Engine/Private/" + renderGraph.name + "/") + fileName));
 
         StringReplaceAll(text, "/*$(Node:ShaderParams)*/", MakeShaderParams(renderGraph, node, node.resourceDependencies, *node.shader.shader, 0, node.resourceDependencies.size()));
 

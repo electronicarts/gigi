@@ -622,11 +622,16 @@ public:
 			case DataFieldComponentType::_float: dest[0] = static_cast<T>(((float*)src)[0]); break;
 			default:
 			{
-				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				GigiAssert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
 				break;
 			}
 		}
 	}
+
+    void ConvertTypedBinaryValue(const void* src, DataFieldComponentType srcType, bool* dest)
+    {
+        ConvertTypedBinaryValueInternal(src, srcType, dest);
+    }
 
 	void ConvertTypedBinaryValue(const void* src, DataFieldComponentType srcType, void* dest, DataFieldComponentType destType)
 	{
@@ -640,7 +645,7 @@ public:
 			case DataFieldComponentType::_float: ConvertTypedBinaryValueInternal(src, srcType, (float*)dest); break;
 			default:
 			{
-				Assert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
+				GigiAssert(false, "Unhandled DataFieldComponentType in " __FUNCTION__);
 				break;
 			}
 		}
@@ -666,6 +671,28 @@ public:
 
 		return;
 	}
+
+    template <typename T>
+    DataFieldComponentType DataFieldComponentTypeFromType(T* dummy)
+    {
+        if constexpr (std::is_same_v<T, int>)
+            return DataFieldComponentType::_int;
+        else if constexpr (std::is_same_v<T, uint16_t>)
+            return DataFieldComponentType::_uint16_t;
+        else if constexpr (std::is_same_v<T, uint32_t>)
+            return DataFieldComponentType::_uint32_t;
+        else if constexpr (std::is_same_v<T, int64_t>)
+            return DataFieldComponentType::_int64_t;
+        else if constexpr (std::is_same_v<T, uint64_t>)
+            return DataFieldComponentType::_uint64_t;
+        else if constexpr (std::is_same_v<T, float>)
+            return DataFieldComponentType::_float;
+        else
+        {
+            static_assert(!sizeof(T*), "Unhandled type in " __FUNCTION__);
+            return DataFieldComponentType::_int; // to suppress warning
+        }
+    }
 
 	void ExecuteSetvar(const SetVariable& setVar)
 	{
@@ -1043,6 +1070,68 @@ public:
 	{
 		memcpy(m_runtimeVariables[index].storage.value, m_runtimeVariables[index].storage.dflt, m_runtimeVariables[index].storage.size);
 	}
+
+    template <typename T>
+    bool GetRuntimeVariableAllowCast(int index, T& outValue)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(m_runtimeVariables[index].variable->type);
+        if (typeInfo.componentCount != 1)
+            return false;
+        ConvertTypedBinaryValue(m_runtimeVariables[index].storage.value, typeInfo.componentType, &outValue, DataFieldComponentTypeFromType(&outValue));
+        return true;
+    }
+
+    template <>
+    bool GetRuntimeVariableAllowCast<bool>(int index, bool& outValue)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(m_runtimeVariables[index].variable->type);
+        if (typeInfo.componentCount != 1)
+            return false;
+        if (m_runtimeVariables[index].variable->type == DataFieldType::Bool)
+            memcpy(&outValue, m_runtimeVariables[index].storage.value, sizeof(bool));
+        else
+            ConvertTypedBinaryValue(m_runtimeVariables[index].storage.value, typeInfo.componentType, &outValue);
+        return true;
+    }
+
+    template <typename T>
+    bool GetRuntimeVariableAllowCast(int index, T* outValue, int outValueCount)
+    {
+        DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(m_runtimeVariables[index].variable->type);
+        if (typeInfo.componentCount != outValueCount)
+            return false;
+
+        const unsigned char* src = (unsigned char*)m_runtimeVariables[index].storage.value;
+        unsigned char* dest = (unsigned char*)outValue;
+        for (int i = 0; i < outValueCount; ++i)
+        {
+            ConvertTypedBinaryValue(src, typeInfo.componentType, dest, DataFieldComponentTypeFromType(outValue));
+            src += typeInfo.componentBytes;
+            dest += sizeof(T);
+        }
+
+        return true;
+    }
+
+	// Get the value of a variable, and if it fails, it's the programmer's fault. Should never be the user's fault.
+	template <typename T>
+	T GetRuntimeVariableValueAllowCast_NoFail(int variableIndex)
+	{
+		T ret = {};
+		GigiAssert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
+		bool success = GetRuntimeVariableAllowCast(variableIndex, ret);
+		GigiAssert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
+		return ret;
+	}
+
+    // Get the value of a variable, and if it fails, it's the programmer's fault. Should never be the user's fault.
+    template <typename T>
+    void GetRuntimeVariableValueAllowCast_NoFail(int variableIndex, T* outValue, int outValueCount)
+    {
+        GigiAssert(variableIndex != -1, "Variable index was -1 in " __FUNCTION__);
+        bool success = GetRuntimeVariableAllowCast(variableIndex, outValue, outValueCount);
+        GigiAssert(success, "GetRuntimeVariableAllowCast failed in " __FUNCTION__);
+    }
 
 	const RenderGraph& GetRenderGraph() const
 	{

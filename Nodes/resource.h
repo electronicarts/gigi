@@ -14,6 +14,6 @@ namespace FrontEndNodes
 
     inline void AddResourceDependency(RenderGraphNode_ResourceBase& node, int pinIndex, int resourceNodeIndex, ShaderResourceType type, ShaderResourceAccessType accessedAs)
     {
-        Assert(false, "Function should not get called for resource nodes");
+        GigiAssert(false, "Function should not get called for resource nodes");
     }
 };

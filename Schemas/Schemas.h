@@ -38,6 +38,7 @@ ENUM_BEGIN(GigiCompileResult, "")
     ENUM_ITEM(DfltFixup, "")
     ENUM_ITEM(HandleOutputsToMultiInput, "")
     ENUM_ITEM(DuplicateNodeShaders, "")
+    ENUM_ITEM(ValueOrVariables, "")
 ENUM_END()
 
 ENUM_BEGIN(GigiCompileWarning, "Gigi compilation warnings")

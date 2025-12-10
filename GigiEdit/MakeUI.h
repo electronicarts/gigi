@@ -17,6 +17,9 @@
 #include <filesystem>
 // clang-format on
 
+#define BASIC_INPUTBOX_WIDTH 75.0f
+//#define TEXT_INPUTBOX_WIDTH 200.0f
+
 // Context for when ShowUIOverride is being called
 enum class ShowUIOverrideContext
 {
@@ -75,25 +78,38 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         std::string labelNameOuter = EnumToString(value); \
         if (labelNameOuter == "Count") \
             labelNameOuter = "<None>"; \
-        if (ImGui::BeginCombo(label, labelNameOuter.c_str())) \
-        {
+        struct ShowUIEnumEntry \
+        { \
+            const char* name; \
+            EnumType value; \
+        }; \
+        const ShowUIEnumEntry enumItems[] = {
 
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
+            { #_NAME, EnumType::_NAME },
+
+#define ENUM_END() \
+        }; \
+        float itemWidth = 0.0f; \
+        for (int enumItemIndex = 0; enumItemIndex < _countof(enumItems); ++enumItemIndex) \
+            itemWidth = std::max(itemWidth, ImGui::CalcTextSize(enumItems[enumItemIndex].name).x + ImGui::GetStyle().FramePadding.x * 2.0f); \
+        ImGui::SetNextItemWidth(itemWidth + ImGui::GetTextLineHeightWithSpacing() + 10); \
+        if (ImGui::BeginCombo(label, labelNameOuter.c_str())) \
+        { \
+            for (int enumItemIndex = 0; enumItemIndex < _countof(enumItems); ++enumItemIndex) \
             { \
-                std::string labelName = #_NAME; \
+                std::string labelName = enumItems[enumItemIndex].name; \
                 if (labelName == "Count") \
                     labelName = "<None>"; \
-                bool is_selected = (std::string(#_NAME) == EnumToString(value)); \
+                bool is_selected = (std::string(enumItems[enumItemIndex].name) == EnumToString(value)); \
                 if (ImGui::Selectable(labelName.c_str(), is_selected)) \
                 { \
-                    value = EnumType::_NAME; \
+                    value = enumItems[enumItemIndex].value; \
                     ret = true; \
                 } \
                 if (is_selected) \
                     ImGui::SetItemDefaultFocus(); \
-            }
-
-#define ENUM_END() \
+            } \
             ImGui::EndCombo();\
         } \
         if (ret) \
@@ -217,7 +233,7 @@ template <typename T>
 bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, T& value, TypePathEntry path)
 {
     // an update on 3/31/22 makes vs2022 makes this not able to be a static assert ):
-    Assert(false, __FUNCSIG__ ": Unsupported type encountered!");
+    GigiAssert(false, __FUNCSIG__ ": Unsupported type encountered!");
     return false;
 }
 
@@ -230,6 +246,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, st
 
     // SCHEMA_FLAG_UI_MULTILINETEXT
 
+    //ImGui::SetNextItemWidth(TEXT_INPUTBOX_WIDTH);
     if (ImGui::InputText(label, buffer, sizeof(buffer)))
     {
         value = buffer;
@@ -252,6 +269,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, bo
 
 bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, float& value, TypePathEntry path)
 {
+    ImGui::SetNextItemWidth(BASIC_INPUTBOX_WIDTH);
     bool ret = ImGui::InputFloat(label, &value);
     ShowUIToolTip(tooltip);
     if (ret)
@@ -261,6 +279,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, fl
 
 bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, int& value, TypePathEntry path)
 {
+    ImGui::SetNextItemWidth(BASIC_INPUTBOX_WIDTH);
     bool ret = ImGui::InputInt(label, &value, 0);
     ShowUIToolTip(tooltip);
     if (ret)
@@ -270,6 +289,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, in
 
 bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, unsigned int& value_, TypePathEntry path)
 {
+    ImGui::SetNextItemWidth(BASIC_INPUTBOX_WIDTH);
     int value = (int)value_;
     bool ret = ImGui::InputInt(label, &value, 0);
     if (ret)
@@ -282,6 +302,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, un
 
 bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, unsigned char& value_, TypePathEntry path)
 {
+    ImGui::SetNextItemWidth(BASIC_INPUTBOX_WIDTH);
     int value = (int)value_;
     bool ret = ImGui::InputInt(label, &value, 0);
     if (ret)
@@ -296,7 +317,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, un
 // Dynamic and static should probably be merged more deeply.
 // Dynamic should do what static does, but add the extra buttons.
 template <typename T, size_t N>
-bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TSTATICARRAY<T, N>& value, TypePathEntry path, size_t _FLAGS)
+bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TSTATICARRAY<T, N>& value, TypePathEntry path, size_t _FLAGS = 0)
 {
     bool ret = false;
 
@@ -327,8 +348,9 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
 
 		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
 		{
-			float width = ImGui::GetContentRegionAvail().x / float(N + 2);
-			ImGui::PushItemWidth(width);
+			//float width = ImGui::GetContentRegionAvail().x / float(N + 2);
+			//ImGui::PushItemWidth(width);
+            ImGui::SetNextItemWidth(BASIC_INPUTBOX_WIDTH);
 		}
 
 		bool showIndex = ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX) == 0);
@@ -341,7 +363,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
 			ImGui::PushID((int)index);
 			char label[256];
 			sprintf_s(label, "[%i]", (int)index);
-			ret |= ShowUI(renderGraph, showIndex ? label : "", nullptr, value[index], path);
+			ret |= ShowUI(renderGraph, showIndex ? label : "", tooltip, value[index], path);
 			if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0 && index + 1 < N)
 				ImGui::SameLine();
 			ImGui::PopID();
@@ -349,9 +371,14 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
 
 		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
 		{
-			ImGui::SameLine();
-			ImGui::Text("%s", label);
-			ShowUIToolTip(tooltip);
+            bool hideLabel = (!label || (label[0] == '#' && label[1] == '#'));
+
+            if (!hideLabel)
+            {
+                ImGui::SameLine();
+                ImGui::Text("%s", label);
+                ShowUIToolTip(tooltip);
+            }
 		}
 
 		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) != 0)
@@ -359,7 +386,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
 
 		if ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_FATITEMS) == 0)
 		{
-			ImGui::PopItemWidth();
+			//ImGui::PopItemWidth();
 		}
     }
 
@@ -371,9 +398,17 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
     return ret;
 }
 
+enum class ArrowButton2Type
+{
+    Arrow,
+    Plus,
+    Dot,
+};
+
 // copied from ImGui, the optional endMarker adds a rectangle to the triangle arrow indicating a stop
 // useful to scroll to beginning or end
-bool ArrowButton2(const char* str_id, ImGuiDir dir, bool smallButton, bool endMarker)
+// Adapted to draw more than arrows
+bool ArrowButton2(const char* str_id, ImGuiDir dir, bool smallButton, bool endMarker, ArrowButton2Type type = ArrowButton2Type::Arrow)
 {
 	if (smallButton)
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
@@ -409,12 +444,41 @@ bool ArrowButton2(const char* str_id, ImGuiDir dir, bool smallButton, bool endMa
 	const ImU32 text_col = ImGui::GetColorU32(ImGuiCol_Text);
 	ImGui::RenderNavHighlight(bb, id);
 	ImGui::RenderFrame(bb.Min, bb.Max, bg_col, true, g.Style.FrameRounding);
-	ImVec2 pos = bb.Min;
-	pos.x += ImMax(0.0f, (size.x - g.FontSize) * 0.5f);
-	pos.y += ImMax(0.0f, (size.y - g.FontSize) * 0.5f);
-	pos.x = roundf(pos.x);
-	pos.y = roundf(pos.y);
-	ImGui::RenderArrow(window->DrawList, pos, text_col, dir);
+    ImVec2 pos;
+
+    switch (type)
+    {
+        case ArrowButton2Type::Arrow:
+        {
+            pos = bb.Min;
+            pos.x += ImMax(0.0f, (size.x - g.FontSize) * 0.5f);
+            pos.y += ImMax(0.0f, (size.y - g.FontSize) * 0.5f);
+            pos.x = roundf(pos.x);
+            pos.y = roundf(pos.y);
+
+            ImGui::RenderArrow(window->DrawList, pos, text_col, dir);
+            break;
+        }
+        case ArrowButton2Type::Plus:
+        {
+            ImVec2 bbMid = (bb.Min + bb.Max) / 2.0f;
+            pos = bbMid;
+
+            float margin = window->DrawList->_Data->FontSize * 0.2f;
+
+            window->DrawList->AddLine(ImVec2(bbMid.x, bb.Min.y + margin), ImVec2(bbMid.x, bb.Max.y - margin), text_col, 2.0f);
+            window->DrawList->AddLine(ImVec2(bb.Min.x + margin, bbMid.y), ImVec2(bb.Max.x - margin, bbMid.y), text_col, 2.0f);
+            break;
+        }
+        case ArrowButton2Type::Dot:
+        {
+            pos = (bb.Min + bb.Max) / 2.0f;
+
+            window->DrawList->AddCircleFilled(pos, window->DrawList->_Data->FontSize * 0.20f, text_col, 8);
+            break;
+        }
+    }
+
 	if (endMarker)
 	{
 		const float h = roundf(g.FontSize / 8);
@@ -454,6 +518,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
     ImGui::PushID(label);
 
     bool showIndex = ((_FLAGS & SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX) == 0);
+    bool allowResize = ((_FLAGS & SCHEMA_FLAG_UI_NO_RESIZE_ARRAY) == 0);
 
     ImGui::Indent();
     int deleteIndex = -1;
@@ -467,6 +532,7 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
     {
         ImGui::PushID(index);
 
+        if (showIndex)
         {
             char localLabel[256];
 			sprintf_s(localLabel, "%s[%i]", label, index);
@@ -474,43 +540,49 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
 			ShowUIToolTip(tooltip);
         }
 
-        ImGui::SameLine();
-		if (ImGui::SmallButton("X"))
-			deleteIndex = index;
-		ShowUIToolTip("Delete");
-        ImGui::SameLine();
+        if (allowResize)
         {
-			ImGui_Enabled enabled(index != 0);
-			if (ArrowButton2("Up", ImGuiDir_Up, true, false))
-                moveUpIndex = index;
-			ShowUIToolTip("Up");
             ImGui::SameLine();
-        }
-        {
-			ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
-			if (ArrowButton2("Down", ImGuiDir_Down, true, false))
-                moveDownIndex = index;
-			ShowUIToolTip("Down");
-			ImGui::SameLine();
-        }
-		{
-			ImGui_Enabled enabled(index != 0);
-			if (ArrowButton2("Up to Top", ImGuiDir_Up, true, true))
-                moveTopIndex = index;
-			ShowUIToolTip("Up To Top");
+            if (ImGui::SmallButton("X"))
+                deleteIndex = index;
+            ShowUIToolTip("Delete");
             ImGui::SameLine();
-        }
-		{
-			ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
-			if (ArrowButton2("Down to Bottom", ImGuiDir_Down, true, true))
-                moveBottomIndex = index;
-			ShowUIToolTip("Down to Bottom");
-        }
+            {
+                ImGui_Enabled enabled(index != 0);
+                if (ArrowButton2("Up", ImGuiDir_Up, true, false))
+                    moveUpIndex = index;
+                ShowUIToolTip("Up");
+                ImGui::SameLine();
+            }
+            {
+                ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
+                if (ArrowButton2("Down", ImGuiDir_Down, true, false))
+                    moveDownIndex = index;
+                ShowUIToolTip("Down");
+                ImGui::SameLine();
+            }
+            {
+                ImGui_Enabled enabled(index != 0);
+                if (ArrowButton2("Up to Top", ImGuiDir_Up, true, true))
+                    moveTopIndex = index;
+                ShowUIToolTip("Up To Top");
+                ImGui::SameLine();
+            }
+            {
+                ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
+                if (ArrowButton2("Down to Bottom", ImGuiDir_Down, true, true))
+                    moveBottomIndex = index;
+                ShowUIToolTip("Down to Bottom");
+            }
 
-        ImGui::SameLine();
-        if (ImGui::SmallButton("Duplicate"))
-            duplicateIndex = index;
-        ShowUIToolTip("Duplicate");
+            if (allowResize)
+            {
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Duplicate"))
+                    duplicateIndex = index;
+                ShowUIToolTip("Duplicate");
+            }
+        }
 
         ImGui::Indent();
 
@@ -567,12 +639,15 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
 
     ImGui::Unindent();
 
-	char localLabel[256];
-	sprintf_s(localLabel, "Add %s[] Item", label);
-    if (ImGui::Button(localLabel))
+    if (allowResize)
     {
-        ret = true;
-        TDYNAMICARRAY_RESIZE(value, TDYNAMICARRAY_SIZE(value) + 1);
+        char localLabel[256];
+        sprintf_s(localLabel, "Add %s[] Item", label);
+        if (ImGui::Button(localLabel))
+        {
+            ret = true;
+            TDYNAMICARRAY_RESIZE(value, TDYNAMICARRAY_SIZE(value) + 1);
+        }
     }
 
     ImGui::PopID();
@@ -1005,38 +1080,47 @@ enum ShowUIOverride_ConstRequirement
     NotConst
 };
 
-template <typename TReference>
-inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None, DataFieldType dataFieldRequirement = DataFieldType::Count)
+inline std::vector<std::string> GetListOfVariableNames(RenderGraph& renderGraph, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement)
+{
+    std::vector<std::string> vars;
+    for (const Variable& var : renderGraph.variables)
+    {
+        bool validVar = true;
+        switch (constRequirement)
+        {
+            case ShowUIOverride_ConstRequirement::Const: validVar &= (var.Const == true); break;
+            case ShowUIOverride_ConstRequirement::NotConst: validVar &= (var.Const != true); break;
+        }
+        if (dataFieldRequirement != DataFieldType::Count)
+            validVar &= (var.type == dataFieldRequirement);
+        if (!validVar)
+            continue;
+        vars.push_back(var.name);
+    }
+    CaseInsensitiveSort(vars);
+    return vars;
+}
+
+template <typename TReference, typename TOnCreateVarLambda>
+inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, const char* newVarName, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement, TOnCreateVarLambda OnCreateVarLambda)
 {
     ImGui::PushID(label);
 
+    // Get a sorted list of variables
+    std::vector<std::string> vars = GetListOfVariableNames(renderGraph, constRequirement, dataFieldRequirement);
+
+    // add a blank to the beginning
+    vars.insert(vars.begin(), "");
+
+    // Get the longest text width of the server names
+    float comboWidth = 0.0f;
+    for (const std::string& name : vars)
+        comboWidth = std::max(comboWidth, ImGui::CalcTextSize(name.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+
+    // Show a drop down
+    ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
     if (ImGui::BeginCombo(label, value.name.c_str()))
     {
-        // Sort the list of variables
-        std::vector<std::string> vars;
-        for (const Variable& var : renderGraph.variables)
-        {
-            bool validVar = true;
-            switch (constRequirement)
-            {
-                case ShowUIOverride_ConstRequirement::Const: validVar &= (var.Const == true); break;
-                case ShowUIOverride_ConstRequirement::NotConst: validVar &= (var.Const != true); break;
-            }
-            if (dataFieldRequirement != DataFieldType::Count)
-                validVar &= (var.type == dataFieldRequirement);
-
-            if (!validVar)
-                continue;
-
-            vars.push_back(var.name);
-        }
-
-        CaseInsensitiveSort(vars);
-
-        // add a blank to the beginning
-        vars.insert(vars.begin(), "");
-
-        // Show a drop down
         for (const std::string& label : vars)
         {
             bool is_selected = value.name == label;
@@ -1055,9 +1139,23 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
-        OnGoToVariable(value.name.c_str());
-    ShowUIToolTip("Go to Variable");
+    if (!value.name.empty())
+    {
+        if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+            OnGoToVariable(value.name.c_str());
+        ShowUIToolTip((std::string("Go to Variable: ") + value.name).c_str());
+    }
+    else
+    {
+        if (ArrowButton2("CreateVar", ImGuiDir_Right, true, false, ArrowButton2Type::Plus))
+        {
+            value.name = OnCreateVariable(newVarName, dataFieldRequirement);
+            OnCreateVarLambda();
+            OnGoToVariable(value.name.c_str());
+            dirtyFlag = true;
+        }
+        ShowUIToolTip("Create New Variable");
+    }
 
     ImGui::PopID();
 
@@ -1067,7 +1165,7 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
     ShowUIOverride_ConstRequirement constRequirement = ShowUIOverride_ConstRequirement::None;
-    DataFieldType dataFieldRequirement = DataFieldType::Count;
+    DataFieldType dataFieldRequirement = value.UIType;
 
     switch (path())
     {
@@ -1079,17 +1177,17 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
         }
     }
 
-    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, constRequirement, dataFieldRequirement);
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, label, constRequirement, dataFieldRequirement, [](){});
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceNoConst& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, ShowUIOverride_ConstRequirement::NotConst);
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, label, ShowUIOverride_ConstRequirement::NotConst, DataFieldType::Count, [](){});
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VariableReferenceConstOnly& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, ShowUIOverride_ConstRequirement::Const);
+    return ShowUIOverride_VariableRef_Constraints(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, label, ShowUIOverride_ConstRequirement::Const, DataFieldType::Count, [](){});
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, StructReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
@@ -1350,7 +1448,9 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionDrawCall, TypePaths::RenderGraphNode_Action_DrawCall::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable1)() :
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionDrawCall, TypePaths::RenderGraphNode_Action_DrawCall::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionWorkGraph, TypePaths::RenderGraphNode_Action_WorkGraph::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable1)() :
-         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionWorkGraph, TypePaths::RenderGraphNode_Action_WorkGraph::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionWorkGraph, TypePaths::RenderGraphNode_Action_WorkGraph::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionExternal, TypePaths::RenderGraphNode_Action_External::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable1)() :
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionExternal, TypePaths::RenderGraphNode_Action_External::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
         {
             if (ImGui::BeginCombo(label, value.c_str()))
             {
@@ -2115,4 +2215,346 @@ inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_CopyResource>(Rend
     }
 
     return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_ComputeShader>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Action_ComputeShader& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.shaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.shader.name.c_str());
+    return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_RayShader>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Action_RayShader& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.shaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.shader.name.c_str());
+    return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<RenderGraphNode_Action_DrawCall>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RenderGraphNode_Action_DrawCall& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    value.amplificationShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.amplificationShader.name.c_str());
+    value.meshShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.meshShader.name.c_str());
+    value.vertexShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.vertexShader.name.c_str());
+    value.pixelShaderVariableAliases.shaderIndex = GetShaderIndexByName(renderGraph, value.pixelShader.name.c_str());
+    return UIOverrideResult::Continue;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ShaderVariableAliases>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ShaderVariableAliases& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    // Prevent infinite recursion
+    static bool inside = false;
+    if (inside)
+        return UIOverrideResult::Continue;
+
+    if (value.shaderIndex == -1)
+        return UIOverrideResult::Finished;
+
+    const Shader& shader = renderGraph.shaders[value.shaderIndex];
+    if (shader.variableAliases.empty())
+        return UIOverrideResult::Finished;
+
+    // Make a ShaderVariableAliases which is the same size and content as the shader says it should be,
+    // but with the existing values mapped in where possible. Make that be the new ShaderVariableAliases.
+    {
+        ShaderVariableAliases mappedValues;
+        mappedValues.aliases.resize(shader.variableAliases.size());
+        for (int i = 0; i < shader.variableAliases.size(); ++i)
+        {
+            const ShaderVariableAliasDeclaration& alias = shader.variableAliases[i];
+            bool found = false;
+            for (const ShaderVariableAlias& existing : value.aliases)
+            {
+                if (existing.name == alias.name)
+                {
+                    mappedValues.aliases[i] = existing;
+                    found = true;
+                    break;
+                }
+            }
+            if (!found)
+            {
+                mappedValues.aliases[i].name = alias.name;
+                mappedValues.aliases[i].variable.name = "";
+            }
+            mappedValues.aliases[i].variable.UIType = alias.type;
+        }
+        value = mappedValues;
+    }
+
+    if (value.aliases.empty())
+        return UIOverrideResult::Finished;
+
+    inside = true;
+    dirtyFlag |= ShowUI(renderGraph, "Variable Aliases", nullptr, value, path);
+    inside = false;
+    return UIOverrideResult::Finished;
+}
+
+template <typename T, typename TOnCreateVarLambda>
+UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, T& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, DataFieldType dataFieldType, TOnCreateVarLambda OnCreateVarLambda)
+{
+    ImGui::PushID(label);
+
+    // Show the value
+    dirtyFlag |= ShowUI(renderGraph, "##value", tooltip, value.value, path);
+    ImGui::SameLine();
+
+    // Show the variable popup window
+    {
+        bool hasVariable = !value.variable.name.empty();
+        ImGui::PushStyleColor(ImGuiCol_Text, hasVariable ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 255, 255, 255));
+        if (ArrowButton2("Variable", ImGuiDir_Right, true, false, ArrowButton2Type::Dot))
+        {
+            ImGui::OpenPopup("Choose Variable");
+        }
+
+        ImGui::PopStyleColor();
+
+        if (ImGui::BeginPopupContextItem("Choose Variable"))
+        {
+            // Get a sorted list of variables
+            std::vector<std::string> vars = GetListOfVariableNames(renderGraph, ShowUIOverride_ConstRequirement::None, dataFieldType);
+
+            // add a blank to the beginning
+            vars.insert(vars.begin(), "");
+
+            for (size_t labelIndex = 0; labelIndex < vars.size(); ++labelIndex)
+            {
+                bool checked = labelIndex > 0 && vars[labelIndex] == value.variable.name;
+                ImGui::MenuItem(labelIndex == 0 ? " " : vars[labelIndex].c_str(), nullptr, &checked);
+                if (checked)
+                {
+                    value.variable.name = vars[labelIndex];
+                    dirtyFlag = true;
+                }
+            }
+
+            ImGui::EndPopup();
+        }
+
+        ShowUIToolTip(hasVariable ? (std::string("Variable: ") + value.variable.name).c_str() : "Set a variable");
+
+        if (hasVariable)
+        {
+            ImGui::SameLine();
+            if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+                OnGoToVariable(value.variable.name.c_str());
+            ShowUIToolTip((std::string("Go to Variable: ") + value.variable.name).c_str());
+        }
+        else
+        {
+            ImGui::SameLine();
+            if (ArrowButton2("CreateVar", ImGuiDir_Right, true, false, ArrowButton2Type::Plus))
+            {
+                value.variable.name = OnCreateVariable(label, dataFieldType);
+                OnCreateVarLambda();
+                OnGoToVariable(value.variable.name.c_str());
+                dirtyFlag = true;
+            }
+            ShowUIToolTip("Create New Variable");
+        }
+        ImGui::SameLine();
+    }
+
+    // Show the label
+    ImGui::TextUnformatted(label);
+    ShowUIToolTip(tooltip);
+
+    ImGui::PopID();
+
+    return UIOverrideResult::Finished;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Bool>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Bool& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        renderGraph.variables[variableIndex].comment = tooltip;
+    };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Bool, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%s", value.value ? "true" : "false");
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Float>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Float& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        renderGraph.variables[variableIndex].comment = tooltip;
+    };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Float, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%f", value.value);
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Float2>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Float2& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        renderGraph.variables[variableIndex].comment = tooltip;
+    };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Float2, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%f, %f", value.value[0], value.value[1]);
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Float3>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Float3& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        renderGraph.variables[variableIndex].comment = tooltip;
+    };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Float3, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%f, %f, %f", value.value[0], value.value[1], value.value[2]);
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Int4>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Int4& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+        {
+            int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+            renderGraph.variables[variableIndex].comment = tooltip;
+        };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Int4, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%i, %i, %i, %i", value.value[0], value.value[1], value.value[2], value.value[3]);
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Enum_ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Enum_ExternalNode_AMD_FidelityFXSDK_Upscaling_GenerateReactiveMask_ReactiveMaskMode& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        renderGraph.variables[variableIndex].comment = tooltip;
+        renderGraph.variables[variableIndex].Enum = OnCreateSystemEnum<decltype(value.value)>();
+    };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Int, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%s", EnumToString(value.value));
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Enum_ExternalNode_AMD_FidelityFXSDK_Upscaling_Version>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Enum_ExternalNode_AMD_FidelityFXSDK_Upscaling_Version& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+        {
+            int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+            renderGraph.variables[variableIndex].comment = tooltip;
+            renderGraph.variables[variableIndex].Enum = OnCreateSystemEnum<decltype(value.value)>();
+        };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Int, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%s", EnumToString(value.value));
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
 }

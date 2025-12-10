@@ -38,12 +38,14 @@ public:
 	GigiInterpreterPreviewWindowDX12()
 		: m_fileWatcher(1.0f)
 	{
+        s_interpreter = this;
 	}
 
-	bool Init(ID3D12Device14* device, ID3D12CommandQueue* commandQueue, int maxFramesInFlight, ID3D12DescriptorHeap* ImGuiSRVHeap, int ImGuiSRVHeapDescriptorCount, int ImGuiSRVHeapDescriptorSize)
+	bool Init(ID3D12Device14* device, ID3D12CommandQueue* commandQueue, struct IDXGISwapChain3* swapChain, int maxFramesInFlight, ID3D12DescriptorHeap* ImGuiSRVHeap, int ImGuiSRVHeapDescriptorCount, int ImGuiSRVHeapDescriptorSize)
 	{
 		m_device = device;
 		m_commandQueue = commandQueue;
+        m_swapChain = swapChain;
 		m_maxFramesInFlight = maxFramesInFlight;
 
 		m_descriptorTableCache_imgui.Init(maxFramesInFlight);
@@ -90,7 +92,8 @@ public:
 
 		m_profiler.Init(device, commandQueue);
 
-		// create indirect dispatch command
+		// create indirect commands
+		// Dispatch
 		{
 			D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
 			dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
@@ -106,9 +109,38 @@ public:
 				nullptr,
 				IID_PPV_ARGS(&m_commandSignatureDispatch));
 		}
+		// Draw
+		{
+			D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
+			dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW;
+
+			D3D12_COMMAND_SIGNATURE_DESC dispatchDesc = {};
+			dispatchDesc.ByteStride = sizeof(uint32_t) * 4;
+			dispatchDesc.NumArgumentDescs = 1;
+			dispatchDesc.pArgumentDescs = &dispatchArg;
+			dispatchDesc.NodeMask = 0x0;
+
+			device->CreateCommandSignature(&dispatchDesc, nullptr, IID_PPV_ARGS(&m_commandSignatureDraw));
+		}
+		// DrawIndexed
+		{
+			D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
+			dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DRAW_INDEXED;
+
+			D3D12_COMMAND_SIGNATURE_DESC dispatchDesc = {};
+			dispatchDesc.ByteStride = sizeof(uint32_t) * 5;
+			dispatchDesc.NumArgumentDescs = 1;
+			dispatchDesc.pArgumentDescs = &dispatchArg;
+			dispatchDesc.NodeMask = 0x0;
+
+			device->CreateCommandSignature(&dispatchDesc, nullptr, IID_PPV_ARGS(&m_commandSignatureDrawIndexed));
+		}
 
 		// DX12 capabilities
-		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &m_dx12_options4, sizeof(m_dx12_options4))))
+		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &m_dx12_options, sizeof(m_dx12_options))))
+			return false;
+
+        if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS4, &m_dx12_options4, sizeof(m_dx12_options4))))
 			return false;
 
 		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS5, &m_dx12_options5, sizeof(m_dx12_options5))))
@@ -141,6 +173,12 @@ public:
 
 		// Create the preview device
 		hr = m_device->QueryInterface(IID_PPV_ARGS(&m_previewDevice));
+  
+		m_envDefines.push_back(ShaderDefine("ENV_DOUBLE_SUPPORT", m_dx12_options.DoublePrecisionFloatShaderOps ? "1" : "0"));
+        m_envDefines.push_back(ShaderDefine("ENV_VENDOR_NVIDIA", IsVendorNVidia() ? "1" : "0"));
+		m_envDefines.push_back(ShaderDefine("ENV_VENDOR_AMD", IsVendorAMD() ? "1" : "0"));
+		m_envDefines.push_back(ShaderDefine("ENV_VENDOR_INTEL", IsVendorIntel() ? "1" : "0"));
+
 
 		return true;
 	}
@@ -237,6 +275,19 @@ public:
 			m_commandSignatureDispatch->Release();
 			m_commandSignatureDispatch = nullptr;
 		}
+
+        if (m_commandSignatureDraw)
+        {
+            m_commandSignatureDraw->Release();
+            m_commandSignatureDraw = nullptr;
+        }
+
+        if (m_commandSignatureDrawIndexed)
+        {
+            m_commandSignatureDrawIndexed->Release();
+            m_commandSignatureDrawIndexed = nullptr;
+        }
+
 
 		if (m_dxrDevice)
 		{
@@ -404,6 +455,13 @@ public:
 		);
 	}
 
+    void SetDescriptorHeaps()
+    {
+        // Set our SRV heap
+        ID3D12DescriptorHeap* ppHeaps[] = { m_SRVHeap };
+        m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+    }
+
 	bool Execute(ID3D12GraphicsCommandList* commandList)
 	{
 		// Set the command list
@@ -465,9 +523,7 @@ public:
 			#include "Schemas/RenderGraphNodesVariant.h"
 			// clang-format on
 
-			// Set our SRV heap
-			ID3D12DescriptorHeap* ppHeaps[] = { m_SRVHeap };
-			m_commandList->SetDescriptorHeaps(_countof(ppHeaps), ppHeaps);
+            SetDescriptorHeaps();
 
 			// Execute
 			ret = IGigiInterpreter<RuntimeTypes>::Execute();
@@ -531,8 +587,13 @@ public:
 	bool m_enableProfiling = false;
 	bool m_drawWireframe = false;
 	bool m_allowRaytracing = true;
+    uint32_t m_vendorId = 0;
 
-	// Imported Resources: Maps node name to an imported texture description
+	bool IsVendorNVidia() const { return m_vendorId == 0x10de; }
+	bool IsVendorAMD() const { return m_vendorId == 0x1002 || m_vendorId == 0x1022; }
+	bool IsVendorIntel() const { return m_vendorId == 0x163C || m_vendorId == 0x8085 || m_vendorId == 0x8086 || m_vendorId == 0x8087; }
+
+    // Imported Resources: Maps node name to an imported texture description
 	enum class ImportedResourceState
 	{
 		dirty,
@@ -616,7 +677,7 @@ private:
 
 private:
 	friend struct RuntimeTypes;
-	static const int c_numSRVDescriptors = 4096;
+	static const int c_numSRVDescriptors = 16384;
 	static const int c_numRTVDescriptors = 128;
 	static const int c_numDSVDescriptors = 128;
 
@@ -636,7 +697,7 @@ public:
 		return m_dx12_options4.Native16BitShaderOpsSupported;
 	}
 
-	const D3D12_FEATURE_DATA_D3D12_OPTIONS4& GetOptions4() const
+    const D3D12_FEATURE_DATA_D3D12_OPTIONS4& GetOptions4() const
 	{
 		return m_dx12_options4;
 	}
@@ -681,54 +742,59 @@ public:
 		return m_dx12_options_experimental;
 	}
 
-	UploadBufferTracker getUploadBufferTracker()
+	UploadBufferTracker& getUploadBufferTracker()
 	{
 		return m_uploadBufferTracker;
 	}
 
-	DelayedReleaseTracker getDelayedReleaseTracker()
+	DelayedReleaseTracker& getDelayedReleaseTracker()
 	{
 		return m_delayedRelease;
 	}
 
-	HeapAllocationTracker getSRVHeapAllocationTracker()
+	HeapAllocationTracker& getSRVHeapAllocationTracker()
 	{
 		return m_SRVHeapAllocationTracker;
 	}
 
-	HeapAllocationTracker getRTVHeapAllocationTracker()
+	HeapAllocationTracker& getRTVHeapAllocationTracker()
 	{
 		return m_RTVHeapAllocationTracker;
 	}
 
-	HeapAllocationTracker getDSVHeapAllocationTracker()
+	HeapAllocationTracker& getDSVHeapAllocationTracker()
 	{
 		return m_DSVHeapAllocationTracker;
 	}
 
-	TextureCache getTextureCache() {
+	TextureCache& getTextureCache() {
 		return m_textures;
 	}
 
-	FileCache getFileCache() {
+	FileCache& getFileCache() {
 		return m_files;
 	}
 
-	ObjCache getObjCache() {
+	ObjCache& getObjCache() {
 		return m_objs;
 	}
 
-	FBXCache getFBXCache() {
+	FBXCache& getFBXCache() {
 		return m_fbxs;
 	}
 
-	PLYCache getPLYCache() {
+	PLYCache& getPLYCache() {
 		return m_plys;
 	}
 
-	DescriptorTableCache getDescriptorTableCache() {
+	DescriptorTableCache& getDescriptorTableCache() {
 		return m_descriptorTableCache;
 	}
+
+
+    Profiler& GetProfiler() {
+        return m_profiler;
+    }
 
 	enum class FileWatchOwner
 	{
@@ -751,6 +817,11 @@ public:
 	// @param sig 0 makes the function not fail
 	// @param shader 0 makes the function not fail
 	void OnRootSignature(ID3DBlob *sig, const Shader* shader);
+
+    static LogFn GetLogFn() { return s_interpreter->m_logFn; }
+
+    const TransitionTracker& GetTransitions() const { return m_transitions; }
+    TransitionTracker& GetTransitionsNonConst() { return m_transitions; }
 
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
@@ -776,13 +847,28 @@ private:
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
-	bool DrawCall_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_DrawCall& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions, const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResourceStates);
-	bool WorkGraph_MakeDescriptorTableDesc(std::vector<DescriptorTableCache::ResourceDescriptor>& descs, const RenderGraphNode_Action_WorkGraph& node, const Shader& shader, int pinOffset, std::vector<TransitionTracker::Item>& queuedTransitions);
+    bool MakeDescriptorTableDesc(
+        std::vector<DescriptorTableCache::ResourceDescriptor>& descs,
+        struct RuntimeTypes::RenderGraphNode_Base& runtimeData,
+        const std::vector<ResourceDependency>& resourceDependencies,
+        const std::vector<LinkProperties>& linkProperties,
+        const char* nodeName,
+        const Shader* shaderPtr,
+        int& pinOffset,
+        std::vector<TransitionTracker::Item>& queuedTransitions,
+        const std::unordered_map<ID3D12Resource*,
+        D3D12_RESOURCE_STATES>& importantResourceStates);
+
+    bool OnNodeAction_External_AMD_FidelityFXSDK_Upscaling(const RenderGraphNode_Action_External& node, RuntimeTypes::RenderGraphNode_Action_External& runtimeData, NodeAction nodeAction);
+
+    // @return success
+    bool BuildDescriptorRanges(const Shader* shader, std::vector<D3D12_DESCRIPTOR_RANGE>& ranges);
 
 	std::vector<FiredAssertInfo> collectedAsserts;
 
 	ID3D12Device14* m_device = nullptr;
 	ID3D12CommandQueue* m_commandQueue = nullptr;
+    IDXGISwapChain3* m_swapChain = nullptr;
 	ID3D12GraphicsCommandList* m_commandList = nullptr;
 	UploadBufferTracker m_uploadBufferTracker;
 	TransitionTracker m_transitions;
@@ -830,10 +916,13 @@ private:
 	HeapAllocationTracker m_DSVHeapAllocationTracker;
 	ID3D12DescriptorHeap* m_DSVHeap = nullptr;
 
-	// Indirect dispatch
+	// Indirect signatures
 	ID3D12CommandSignature* m_commandSignatureDispatch = nullptr;
+	ID3D12CommandSignature* m_commandSignatureDraw = nullptr;
+	ID3D12CommandSignature* m_commandSignatureDrawIndexed = nullptr;
 
 	// DX12 Capabilities
+	D3D12_FEATURE_DATA_D3D12_OPTIONS m_dx12_options = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
@@ -843,6 +932,9 @@ private:
 	D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
 	D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
+
+    static GigiInterpreterPreviewWindowDX12* s_interpreter;
+    std::vector<ShaderDefine> m_envDefines;
 };
 
 inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)

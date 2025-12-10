@@ -9,6 +9,6 @@
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_Barrier& node, RuntimeTypes::RenderGraphNode_Action_Barrier& runtimeData, NodeAction nodeAction)
 {
 	// No-op. Should never get to a backend.
-	Assert(false, "Barrier nodes should be removed by the front end.");
+    GigiAssert(false, "Barrier nodes should be removed by the front end.");
 	return false;
 }

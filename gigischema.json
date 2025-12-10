@@ -355,6 +355,24 @@
               }
             }
           },
+          "variableAliases": {
+            "description": "Variable aliases allow a shader to read different variables per node by choosing what variable value is set for each alias",
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "The type of the alias.",
+                  "type": "string",
+                  "enum": ["Int", "Int2", "Int3", "Int4", "Uint", "Uint2", "Uint3", "Uint4", "Float", "Float2", "Float3", "Float4", "Bool", "Float4x4", "Uint_16", "Int_64", "Uint_64", "Float_16", "Count"]
+                }
+              }
+            }
+          },
           "constantBuffers": {
             "description": "A list of constant buffers this shader wants.",
             "type": "array",
@@ -954,9 +972,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -999,6 +1037,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               }
             }
           },
@@ -1091,9 +1133,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1137,6 +1199,10 @@
                   }
                 }
               },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
               "shader": {
                 "description": "The shader.",
                 "type": "object",
@@ -1144,6 +1210,35 @@
                   "name": {
                     "description": "The name of the shader",
                     "type": "string"
+                  }
+                }
+              },
+              "shaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -1172,7 +1267,7 @@
                     }
                   },
                   "indirectBuffer": {
-                    "description": "If given, this buffer will be used as an indirect dispatch buffer",
+                    "description": "If given, this buffer will be used as an indirect dispatch buffer, only used if enableIndirect",
                     "type": "object",
                     "properties": {
                       "node": {
@@ -1257,6 +1352,10 @@
                     }
                   }
                 }
+              },
+              "enableIndirect": {
+                "description": "If true, shows and enables indirectBuffer input",
+                "type": "boolean"
               }
             }
           },
@@ -1349,9 +1448,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1395,6 +1514,10 @@
                   }
                 }
               },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
               "shader": {
                 "description": "The ray gen shader.",
                 "type": "object",
@@ -1402,6 +1525,35 @@
                   "name": {
                     "description": "The name of the shader",
                     "type": "string"
+                  }
+                }
+              },
+              "shaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -1587,9 +1739,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1632,6 +1804,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               },
               "bufferToBuffer": {
                 "description": "Settings when copying from a buffer to another buffer.",
@@ -1770,9 +1946,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -1816,6 +2012,10 @@
                   }
                 }
               },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
               "amplificationShader": {
                 "description": "The amplification shader.",
                 "type": "object",
@@ -1823,6 +2023,35 @@
                   "name": {
                     "description": "The name of the shader",
                     "type": "string"
+                  }
+                }
+              },
+              "amplificationShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
                 }
               },
@@ -1836,6 +2065,35 @@
                   }
                 }
               },
+              "meshShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
               "vertexShader": {
                 "description": "The vertex shader.",
                 "type": "object",
@@ -1846,12 +2104,84 @@
                   }
                 }
               },
+              "vertexShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
               "pixelShader": {
                 "description": "The pixel shader.",
                 "type": "object",
                 "properties": {
                   "name": {
                     "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "pixelShaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "indirectBuffer": {
+                "description": "Indirect buffer to make this draw use ExecuteIndirect, only used if enableIndirect",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
                     "type": "string"
                   }
                 }
@@ -1889,7 +2219,7 @@
                     }
                   },
                   "indirectBuffer": {
-                    "description": "If given, this buffer will be used as an indirect dispatch buffer",
+                    "description": "If given, this buffer will be used as an indirect dispatch buffer, only used if enableIndirect",
                     "type": "object",
                     "properties": {
                       "node": {
@@ -2250,6 +2580,10 @@
                 "description": "What to draw",
                 "type": "string",
                 "enum": ["TriangleList", "LineList", "PointList"]
+              },
+              "enableIndirect": {
+                "description": "If true, shows and enables indirectBuffer input",
+                "type": "boolean"
               }
             }
           },
@@ -2342,9 +2676,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -2387,6 +2741,10 @@
                     }
                   }
                 }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
               },
               "fileName": {
                 "description": "Relative file name",
@@ -2575,9 +2933,29 @@
                       "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
                     },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "bufferViewSize": {
                       "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
                       "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     }
                   }
                 }
@@ -2615,6 +2993,967 @@
                         "isWhiteList": {
                           "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
                           "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              }
+            }
+          },
+          "actionExternal": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
+              "externalNodeData": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "AMD_FidelityFXSDK_Upscaling": {
+                    "description": "",
+                    "type": "object",
+                    "properties": {
+                      "version": {
+                        "description": "FSR version to use",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "string",
+                            "enum": ["Default", "v2_3_4", "v3_1_5"]
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "initialMaxRenderSize": {
+                        "description": "The initial maximum render size. The context will be created as the maximum of this, and the color pin resource.",
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "integer"
+                        }
+                      },
+                      "initialMaxUpscaleSize": {
+                        "description": "The initial maximum upscale size. The context will be created as the maximum of this, and the output pin resource.",
+                        "type": "array",
+                        "minItems": 2,
+                        "maxItems": 2,
+                        "items": {
+                          "type": "integer"
+                        }
+                      },
+                      "ENABLE_HIGH_DYNAMIC_RANGE": {
+                        "description": "A bit indicating if the input color data provided is using a high-dynamic range.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS": {
+                        "description": "A bit indicating if the motion vectors are rendered at display resolution.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_MOTION_VECTORS_JITTER_CANCELLATION": {
+                        "description": "A bit indicating that the motion vectors have the jittering pattern applied to them.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_DEPTH_INVERTED": {
+                        "description": "A bit indicating that the input depth buffer data provided is inverted [1..0].",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_DEPTH_INFINITE": {
+                        "description": "A bit indicating that the input depth buffer data provided is using an infinite far plane.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_AUTO_EXPOSURE": {
+                        "description": "A bit indicating if automatic exposure should be applied to input color data.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_DYNAMIC_RESOLUTION": {
+                        "description": "A bit indicating that the application uses dynamic resolution scaling.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_DEBUG_CHECKING": {
+                        "description": "A bit indicating that the runtime should check some API values and report issues.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_NON_LINEAR_COLORSPACE": {
+                        "description": "A bit indicating that the color resource contains perceptual (gamma corrected) colors",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "ENABLE_DEBUG_VISUALIZATION": {
+                        "description": "A bit indicating if debug visualization is allowed. (memory consumption could increase)",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "color": {
+                        "description": "Color buffer for the current frame (at render resolution).",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "colorOpaqueOnly": {
+                        "description": "containing the opaque only color buffer for the current frame (at render resolution). Only needed if generating a reactive mask",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "depth": {
+                        "description": "32bit depth values for the current frame (at render resolution).",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "motionVectors": {
+                        "description": "2-dimensional motion vectors (at render resolution if FFX_FSR_ENABLE_DISPLAY_RESOLUTION_MOTION_VECTORS is not set).",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "exposure": {
+                        "description": "Optional resource containing a 1x1 exposure value.",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "reactive": {
+                        "description": "Optional resource containing alpha value of reactive objects in the scene.",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "output": {
+                        "description": "Output color buffer for the current frame (at presentation resolution).",
+                        "type": "object",
+                        "properties": {
+                          "node": {
+                            "description": "The name of the node",
+                            "type": "string"
+                          },
+                          "pin": {
+                            "description": "The name of the pin",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "jitterOffset": {
+                        "description": "The subpixel jitter offset applied to the camera.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "motionVectorScale": {
+                        "description": "The scale factor to apply to motion vectors.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "array",
+                            "minItems": 2,
+                            "maxItems": 2,
+                            "items": {
+                              "type": "number"
+                            }
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "enableSharpening": {
+                        "description": "Enable an additional sharpening pass.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "sharpness": {
+                        "description": "The sharpness value between 0 and 1, where 0 is no additional sharpness and 1 is maximum additional sharpness.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "frameTimeDelta": {
+                        "description": "The time elapsed since the last frame (expressed in milliseconds).",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "preExposure": {
+                        "description": "The pre exposure value (must be > 0.0f)",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "reset": {
+                        "description": "A boolean value which when set to true, indicates the camera has moved discontinuously. False if no variable given",
+                        "type": "object",
+                        "properties": {
+                          "name": {
+                            "description": "The name of the variable.",
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "cameraNear": {
+                        "description": "The distance to the near plane of the camera.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "cameraFar": {
+                        "description": "The distance to the far plane of the camera.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "cameraFovAngleVertical": {
+                        "description": "The camera angle field of view in the vertical direction (expressed in radians).",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "viewSpaceToMetersFactor": {
+                        "description": "The scale factor to convert view space units to meters.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "number"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "DRAW_DEBUG_VIEW": {
+                        "description": "A boolean variable. False if no variable given. A bit indicating that the output resource will contain debug views with relevant information.",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "NON_LINEAR_COLOR_SRGB": {
+                        "description": "A bit indicating that the input color resource contains perceptual sRGB colors",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "NON_LINEAR_COLOR_PQ": {
+                        "description": "A bit indicating that the input color resource contains perceptual PQ colors",
+                        "type": "object",
+                        "properties": {
+                          "value": {
+                            "description": "The value to use if no variable given",
+                            "type": "boolean"
+                          },
+                          "variable": {
+                            "description": "The variable to use",
+                            "type": "object",
+                            "properties": {
+                              "name": {
+                                "description": "The name of the variable.",
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "reactiveMask": {
+                        "description": "Settings for generating a reactive mask",
+                        "type": "object",
+                        "properties": {
+                          "reactiveMaskMode": {
+                            "description": "Reactive mask setting",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "string",
+                                "enum": ["Off", "Generate", "Custom"]
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "scale": {
+                            "description": "A value to scale the output",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "number"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "cutoffThreshold": {
+                            "description": "A threshold value to generate a binary reactive mask",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "number"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "binaryValue": {
+                            "description": "A value to set for the binary reactive mask",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "number"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "APPLY_TONEMAP": {
+                            "description": "",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "boolean"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "APPLY_INVERSETONEMAP": {
+                            "description": "",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "boolean"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "APPLY_THRESHOLD": {
+                            "description": "",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "boolean"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          },
+                          "USE_COMPONENTS_MAX": {
+                            "description": "",
+                            "type": "object",
+                            "properties": {
+                              "value": {
+                                "description": "The value to use if no variable given",
+                                "type": "boolean"
+                              },
+                              "variable": {
+                                "description": "The variable to use",
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "description": "The name of the variable.",
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
                         }
                       }
                     }

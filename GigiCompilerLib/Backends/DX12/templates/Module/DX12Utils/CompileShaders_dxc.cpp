@@ -105,7 +105,7 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     if (FAILED(hr))
     {
-        logFn(LogLevel::Error, "Could not load shader file \"%s\"", shaderInfo.fileName.string());
+        logFn(LogLevel::Error, "Could not load shader file \"%s\"", shaderInfo.fileName.string().c_str());
         return nullptr;
     }
 

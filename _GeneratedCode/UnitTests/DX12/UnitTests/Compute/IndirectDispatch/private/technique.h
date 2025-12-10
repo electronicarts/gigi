@@ -28,7 +28,7 @@ namespace IndirectDispatch
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__Fill_Indirect_Dispatch_CountCB
+        struct Struct__Fill_Indirect_Dispatch_Count_0CB
         {
             uint3 Dispatch_Count_1 = {50, 50, 1};
             float _padding0 = 0.f;  // Padding
@@ -47,8 +47,8 @@ namespace IndirectDispatch
         static ID3D12PipelineState* computeShader_Clear_Render_Target_pso;
         static ID3D12RootSignature* computeShader_Clear_Render_Target_rootSig;
 
-        Struct__Fill_Indirect_Dispatch_CountCB constantBuffer__Fill_Indirect_Dispatch_CountCB_cpu;
-        ID3D12Resource* constantBuffer__Fill_Indirect_Dispatch_CountCB = nullptr;
+        Struct__Fill_Indirect_Dispatch_Count_0CB constantBuffer__Fill_Indirect_Dispatch_Count_0CB_cpu;
+        ID3D12Resource* constantBuffer__Fill_Indirect_Dispatch_Count_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_Fill_Indirect_Dispatch_Count_pso;
         static ID3D12RootSignature* computeShader_Fill_Indirect_Dispatch_Count_rootSig;

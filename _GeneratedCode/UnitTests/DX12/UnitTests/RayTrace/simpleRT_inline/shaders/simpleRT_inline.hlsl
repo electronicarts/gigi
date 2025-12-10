@@ -7,7 +7,7 @@ struct Struct_VertexBuffer
     float3 Normal;
 };
 
-struct Struct__SimpleRTCSCB
+struct Struct__SimpleRTCS_0CB
 {
     float3 cameraPos;
     float _padding0;
@@ -21,7 +21,7 @@ struct Struct__SimpleRTCSCB
 RWTexture2D<float4> g_texture : register(u0);
 RaytracingAccelerationStructure g_scene : register(t0);
 StructuredBuffer<Struct_VertexBuffer> g_vertexBuffer : register(t1);
-ConstantBuffer<Struct__SimpleRTCSCB> _SimpleRTCSCB : register(b0);
+ConstantBuffer<Struct__SimpleRTCS_0CB> _SimpleRTCS_0CB : register(b0);
 
 #line 1
 
@@ -49,11 +49,11 @@ void SimpleRTCS(uint3 DTid : SV_DispatchThreadID)
 	float2 screenPos = (float2(px)+0.5f) / dimensions * 2.0 - 1.0;
 	screenPos.y = -screenPos.y;
 
-	float4 world = mul(float4(screenPos, _SimpleRTCSCB.depthNearPlane, 1), _SimpleRTCSCB.clipToWorld);
+	float4 world = mul(float4(screenPos, _SimpleRTCS_0CB.depthNearPlane, 1), _SimpleRTCS_0CB.clipToWorld);
 	world.xyz /= world.w;
 
 	RayDesc ray;
-	ray.Origin = _SimpleRTCSCB.cameraPos;
+	ray.Origin = _SimpleRTCS_0CB.cameraPos;
 	ray.TMin = 0;
 	ray.TMax = 10000.0f;
 	ray.Direction = normalize(world.xyz - ray.Origin);
@@ -74,8 +74,8 @@ void SimpleRTCS(uint3 DTid : SV_DispatchThreadID)
 	if (rayQuery.CommittedStatus() == COMMITTED_TRIANGLE_HIT)
 	{
 		g_texture[px] = float4(LinearToSRGB(g_vertexBuffer[rayQuery.CandidatePrimitiveIndex()*3].Normal*0.5f+0.5f), 1.0f);
-		//g_texture[px] = float4(_SimpleRTCSCB.hitColor, 1.0f);
+		//g_texture[px] = float4(_SimpleRTCS_0CB.hitColor, 1.0f);
 	}
 	else
-		g_texture[px] = float4(LinearToSRGB(_SimpleRTCSCB.missColor), 1.0f);
+		g_texture[px] = float4(LinearToSRGB(_SimpleRTCS_0CB.missColor), 1.0f);
 }

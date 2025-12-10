@@ -48,6 +48,16 @@ void ProcessShaderOptions_HLSL::WriteVariableReference_NotInStruct(const Process
     stream << "cb_" + options.m_shader.name + "CB_" + variable.name;
 }
 
+void ProcessShaderOptions_HLSL::WriteVariableAlias_InStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& alias)
+{
+    stream << "_" + options.m_shader.name + "CB._alias_" + alias.name;
+}
+
+void ProcessShaderOptions_HLSL::WriteVariableAlias_NotInStruct(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderVariableAliasDeclaration& alias)
+{
+    stream << "cb_" + options.m_shader.name + "CB__alias_" + alias.name;
+}
+
 void ProcessShaderOptions_HLSL::WriteSamplerDefinition_Register(const ProcessShaderOptions_HLSL& options, std::ostringstream& stream, const ShaderSampler& sampler)
 {
     stream << "\nSamplerState " << sampler.name << " : register(s" << sampler.registerIndex << sampler.registerSpaceString << ");";
@@ -96,14 +106,14 @@ void ProcessShaderOptions_HLSL::WriteResourceDefinition(const ProcessShaderOptio
                         case TextureDimensionType::Texture2DMS: textureType = "Texture2DMS"; break;
                         default:
                         {
-                            Assert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(resource.texture.dimension), (int)resource.texture.dimension);
+                            GigiAssert(false, "Unhandled TextureDimensionType: %s (%i)", EnumToString(resource.texture.dimension), (int)resource.texture.dimension);
                         }
                     }
 
                     DataFieldType viewDataFieldType;
                     if (!EnumToEnum(resource.texture.viewType, viewDataFieldType))
                     {
-                        Assert(false, "Could not convert TextureViewType to DataFieldType");
+                        GigiAssert(false, "Could not convert TextureViewType to DataFieldType");
                     }
 
                     std::string viewTypePrefix;
@@ -168,7 +178,7 @@ void ProcessShaderOptions_HLSL::WriteResourceDefinition(const ProcessShaderOptio
                 }
                 default:
                 {
-                    Assert(false, "Unhandled resource type: %i (%s) in shader %s", resource.type, EnumToString(resource.type), options.m_shader.originalName.c_str());
+                    GigiAssert(false, "Unhandled resource type: %i (%s) in shader %s", resource.type, EnumToString(resource.type), options.m_shader.originalName.c_str());
                     break;
                 }
             }
@@ -181,7 +191,7 @@ void ProcessShaderOptions_HLSL::WriteResourceDefinition(const ProcessShaderOptio
         }
         default:
         {
-            Assert(false, "Unhandled resource access type: %s (%i)", EnumToString(resource.access), resource.access);
+            GigiAssert(false, "Unhandled resource access type: %s (%i)", EnumToString(resource.access), resource.access);
             break;
         }
     }
@@ -240,6 +250,37 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
         }
     }
 
+    // Handle Variable Aliases
+    for (const ShaderVariableAliasDeclaration& alias : shader.variableAliases)
+    {
+        if (!alias.usedInShader)
+            continue;
+
+        std::string cast = (alias.type == DataFieldType::Bool ? "(bool)" : "");
+
+        shaderSpecificStringReplacementMap["__Post__ShaderResources"] <<
+            "\n" <<
+            DataFieldTypeToShaderType(alias.type) << " _GetVariableAliasValue_" << alias.name << "()\n"
+            "{\n"
+            "    #ifdef __GIGI_AlIAS_VARIABLE_CONST_" << alias.name << "\n"
+            "        return " << cast << "__GIGI_AlIAS_VARIABLE_CONST_" << alias.name << ";\n"
+            "    #else\n"
+            "        return " << cast
+            ;
+
+        options.m_writeVariableAlias(options, shaderSpecificStringReplacementMap["__Post__ShaderResources"], alias);
+
+        shaderSpecificStringReplacementMap["__Post__ShaderResources"] <<
+            ";\n"
+            "    #endif\n"
+            "}\n"
+            ;
+
+        std::string key = "/*$(VariableAlias:" + alias.name + ")*/";
+        shaderSpecificStringReplacementMap[key] = std::ostringstream();
+        shaderSpecificStringReplacementMap[key] << "_GetVariableAliasValue_" << alias.name << "()";
+    }
+
     // Handle replaced variables
     for (const VariableReplacement& replacement : renderGraph.variableReplacements)
     {
@@ -249,7 +290,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
         int variableIndex = GetScopedVariableIndex(renderGraph, replacement.destName.c_str());
         if (variableIndex == -1)
         {
-            Assert(false, "Could not find variable %s that replaced variable %s%s", replacement.destName.c_str(), replacement.srcScope.c_str(), replacement.srcName.c_str());
+            GigiAssert(false, "Could not find variable %s that replaced variable %s%s", replacement.destName.c_str(), replacement.srcScope.c_str(), replacement.srcName.c_str());
             return false;
         }
 
@@ -273,7 +314,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
     std::vector<unsigned char> shaderFile;
     if (!LoadFile(srcFileName, shaderFile))
     {
-        Assert(false, "Could not load file %s", srcFileName.c_str());
+        GigiAssert(false, "Could not load file %s", srcFileName.c_str());
         return false;
     }
     shaderFile.push_back(0);
@@ -438,6 +479,10 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
             std::string param;
             if (token == "/*$(ShaderResources)*/")
             {
+                // Apply "__Post__ShaderResources" to "/*$(ShaderResources)*/" and clear it out
+                shaderSpecificStringReplacementMap[token] << shaderSpecificStringReplacementMap["__Post__ShaderResources"].str();
+                shaderSpecificStringReplacementMap["__Post__ShaderResources"] = std::ostringstream();
+
                 if (options.m_writeOriginalLineNumbers)
                 {
                     std::string old = shaderSpecificStringReplacementMap[token].str();
@@ -572,7 +617,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                         break;
                 }
 
-                Assert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
+                GigiAssert(foundIndex != -1, "Could not find RTHitGroupIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
                 if (foundIndex != -1)
                 {
                     shaderSpecificStringReplacementMap[token] = std::ostringstream();
@@ -604,7 +649,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                         break;
                 }
 
-                Assert(foundIndex != -1, "Could not find RTMissIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
+                GigiAssert(foundIndex != -1, "Could not find RTMissIndex for \"%s\" in shader \"%s\"", param.c_str(), shader.name.c_str());
                 if (foundIndex != -1)
                 {
                     shaderSpecificStringReplacementMap[token] = std::ostringstream();
@@ -668,7 +713,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                 case ShaderType::Pixel: shaderModel = renderGraph.settings.dx12.shaderModelPs.c_str(); stage = "fragment"; break;
                 default:
                 {
-                    Assert(false, "Unhandled shader type (%s) in " __FUNCTION__, EnumToString(shader.type));
+                    GigiAssert(false, "Unhandled shader type (%s) in " __FUNCTION__, EnumToString(shader.type));
                     break;
                 }
             }
@@ -728,7 +773,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                 case ShaderType::RTRayGen: stage = "compute"; break; // webgpu / wgsl has no ray tracing shaders, so we emulate them with compute.
                 default:
                 {
-                    Assert(false, "Unhandled shader type (%s) in " __FUNCTION__, EnumToString(shader.type));
+                    GigiAssert(false, "Unhandled shader type (%s) in " __FUNCTION__, EnumToString(shader.type));
                     break;
                 }
             }
@@ -744,7 +789,7 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
         }
         else
         {
-            Assert(false, "Could not convert shader from \"%s\" to \"%s\"", EnumToString(shader.language), EnumToString(targetShaderLanguage));
+            GigiAssert(false, "Could not convert shader from \"%s\" to \"%s\"", EnumToString(shader.language), EnumToString(targetShaderLanguage));
         }
     }
 

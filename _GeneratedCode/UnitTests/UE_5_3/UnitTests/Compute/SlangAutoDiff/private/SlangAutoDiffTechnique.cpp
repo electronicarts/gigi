@@ -81,14 +81,14 @@ public:
 
     BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
         SHADER_PARAMETER_RDG_BUFFER_UAV(RWBuffer<float>, Data)
-        SHADER_PARAMETER(int32, cb_InitCB_FrameIndex)
-        SHADER_PARAMETER(FVector3f, cb_InitCB__padding0)
-        SHADER_PARAMETER(FVector4f, cb_InitCB_MouseState)
-        SHADER_PARAMETER(FVector4f, cb_InitCB_MouseStateLastFrame)
-        SHADER_PARAMETER(int32, cb_InitCB_NumGaussians)
-        SHADER_PARAMETER(FVector3f, cb_InitCB_iResolution)
-        SHADER_PARAMETER(uint32, cb_InitCB_initialized)
-        SHADER_PARAMETER(FVector3f, cb_InitCB__padding1)
+        SHADER_PARAMETER(int32, cb_Init_0CB_FrameIndex)
+        SHADER_PARAMETER(FVector3f, cb_Init_0CB__padding0)
+        SHADER_PARAMETER(FVector4f, cb_Init_0CB_MouseState)
+        SHADER_PARAMETER(FVector4f, cb_Init_0CB_MouseStateLastFrame)
+        SHADER_PARAMETER(int32, cb_Init_0CB_NumGaussians)
+        SHADER_PARAMETER(FVector3f, cb_Init_0CB_iResolution)
+        SHADER_PARAMETER(uint32, cb_Init_0CB_initialized)
+        SHADER_PARAMETER(FVector3f, cb_Init_0CB__padding1)
     END_SHADER_PARAMETER_STRUCT()
 
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
@@ -158,9 +158,9 @@ public:
     BEGIN_SHADER_PARAMETER_STRUCT(FParameters, )
         SHADER_PARAMETER_RDG_BUFFER_SRV(Buffer<float>, Data)
         SHADER_PARAMETER_RDG_TEXTURE_UAV(RWTexture2D<float4>, Output)
-        SHADER_PARAMETER(int32, cb_RenderCB_NumGaussians)
-        SHADER_PARAMETER(uint32, cb_RenderCB_QuantizeDisplay)
-        SHADER_PARAMETER(FVector2f, cb_RenderCB__padding0)
+        SHADER_PARAMETER(int32, cb_Render_0CB_NumGaussians)
+        SHADER_PARAMETER(uint32, cb_Render_0CB_QuantizeDisplay)
+        SHADER_PARAMETER(FVector2f, cb_Render_0CB__padding0)
     END_SHADER_PARAMETER_STRUCT()
 
     static bool ShouldCompilePermutation(const FGlobalShaderPermutationParameters& Parameters)
@@ -252,12 +252,12 @@ void AddTechnique(FRDGBuilder& GraphBuilder, const FViewInfo& View, FTechniquePa
         // Set shader parameters
         FInitializeCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FInitializeCS::FParameters>();
         PassParameters->Data = GraphBuilder.CreateUAV(Buffer_Data, PF_R32_FLOAT);
-        PassParameters->cb_InitCB_FrameIndex = View.ViewState->TechniqueState_SlangAutoDiff.Var_FrameIndex;
-        PassParameters->cb_InitCB_MouseState = View.ViewState->TechniqueState_SlangAutoDiff.Var_MouseState;
-        PassParameters->cb_InitCB_MouseStateLastFrame = View.ViewState->TechniqueState_SlangAutoDiff.Var_MouseStateLastFrame;
-        PassParameters->cb_InitCB_NumGaussians = View.ViewState->TechniqueState_SlangAutoDiff.Var_NumGaussians;
-        PassParameters->cb_InitCB_iResolution = View.ViewState->TechniqueState_SlangAutoDiff.Var_iResolution;
-        PassParameters->cb_InitCB_initialized = View.ViewState->TechniqueState_SlangAutoDiff.Var_initialized;
+        PassParameters->cb_Init_0CB_FrameIndex = View.ViewState->TechniqueState_SlangAutoDiff.Var_FrameIndex;
+        PassParameters->cb_Init_0CB_MouseState = View.ViewState->TechniqueState_SlangAutoDiff.Var_MouseState;
+        PassParameters->cb_Init_0CB_MouseStateLastFrame = View.ViewState->TechniqueState_SlangAutoDiff.Var_MouseStateLastFrame;
+        PassParameters->cb_Init_0CB_NumGaussians = View.ViewState->TechniqueState_SlangAutoDiff.Var_NumGaussians;
+        PassParameters->cb_Init_0CB_iResolution = View.ViewState->TechniqueState_SlangAutoDiff.Var_iResolution;
+        PassParameters->cb_Init_0CB_initialized = View.ViewState->TechniqueState_SlangAutoDiff.Var_initialized;
 
         // Calculate dispatch size
         FIntVector dispatchSize = FIntVector(1,1,1);
@@ -309,8 +309,8 @@ void AddTechnique(FRDGBuilder& GraphBuilder, const FViewInfo& View, FTechniquePa
         FRenderCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FRenderCS::FParameters>();
         PassParameters->Data = GraphBuilder.CreateSRV(Buffer_Data, PF_R32_FLOAT);
         PassParameters->Output = GraphBuilder.CreateUAV(Texture_Output);
-        PassParameters->cb_RenderCB_NumGaussians = View.ViewState->TechniqueState_SlangAutoDiff.Var_NumGaussians;
-        PassParameters->cb_RenderCB_QuantizeDisplay = View.ViewState->TechniqueState_SlangAutoDiff.Var_QuantizeDisplay;
+        PassParameters->cb_Render_0CB_NumGaussians = View.ViewState->TechniqueState_SlangAutoDiff.Var_NumGaussians;
+        PassParameters->cb_Render_0CB_QuantizeDisplay = View.ViewState->TechniqueState_SlangAutoDiff.Var_QuantizeDisplay;
 
         // Calculate dispatch size
         FIntVector dispatchSize = Texture_Output->Desc.GetSize();

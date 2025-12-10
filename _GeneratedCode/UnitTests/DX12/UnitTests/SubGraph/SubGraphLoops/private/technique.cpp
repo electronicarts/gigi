@@ -74,7 +74,7 @@ namespace SubGraphLoops
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _FilterSub_Iteration_0_BlurCB
+            // _FilterSub_Iteration_0_Blur_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -120,7 +120,7 @@ namespace SubGraphLoops
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _FilterSub_Iteration_1_BlurCB
+            // _FilterSub_Iteration_1_Blur_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -166,7 +166,7 @@ namespace SubGraphLoops
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _FilterSub_Iteration_2_BlurCB
+            // _FilterSub_Iteration_2_Blur_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -212,7 +212,7 @@ namespace SubGraphLoops
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _FilterSub_Iteration_3_BlurCB
+            // _FilterSub_Iteration_3_Blur_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -258,7 +258,7 @@ namespace SubGraphLoops
             ranges[1].RegisterSpace = 0;
             ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-            // _FilterSub_Iteration_4_BlurCB
+            // _FilterSub_Iteration_4_Blur_0CB
             ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
             ranges[2].NumDescriptors = 1;
             ranges[2].BaseShaderRegister = 0;
@@ -992,39 +992,39 @@ namespace SubGraphLoops
             m_output.texture_FilterSub_Iteration_4_Output = nullptr;
         }
 
-        // _FilterSub_Iteration_0_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB)
+        // _FilterSub_Iteration_0_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB);
-            m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB);
+            m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB = nullptr;
         }
 
-        // _FilterSub_Iteration_1_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB)
+        // _FilterSub_Iteration_1_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB);
-            m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB);
+            m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB = nullptr;
         }
 
-        // _FilterSub_Iteration_2_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB)
+        // _FilterSub_Iteration_2_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB);
-            m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB);
+            m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB = nullptr;
         }
 
-        // _FilterSub_Iteration_3_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB)
+        // _FilterSub_Iteration_3_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB);
-            m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB);
+            m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB = nullptr;
         }
 
-        // _FilterSub_Iteration_4_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB)
+        // _FilterSub_Iteration_4_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB)
         {
-            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB);
-            m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB = nullptr;
+            s_delayedRelease.Add(m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB);
+            m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB = nullptr;
         }
     }
 
@@ -1090,11 +1090,11 @@ namespace SubGraphLoops
                 commandList->ResourceBarrier(barrierCount, barriers);
         }
 
-        // Shader Constants: _FilterSub_Iteration_0_BlurCB
+        // Shader Constants: _FilterSub_Iteration_0_Blur_0CB
         {
-            context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB_cpu.FilterSub_Iteration_0_sRGB = context->m_input.variable_FilterSub_Iteration_0_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB_cpu.__loopIndexValue_0 = context->m_internal.variable___loopIndexValue_0;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB, context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu.FilterSub_Iteration_0_sRGB = context->m_input.variable_FilterSub_Iteration_0_sRGB;
+            context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu.__loopIndexValue_0 = context->m_internal.variable___loopIndexValue_0;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -1127,7 +1127,7 @@ namespace SubGraphLoops
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_output.texture_FilterSub_Iteration_0_Output, context->m_output.texture_FilterSub_Iteration_0_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1197,11 +1197,11 @@ namespace SubGraphLoops
             }
         }
 
-        // Shader Constants: _FilterSub_Iteration_1_BlurCB
+        // Shader Constants: _FilterSub_Iteration_1_Blur_0CB
         {
-            context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB_cpu.FilterSub_Iteration_1_sRGB = context->m_input.variable_FilterSub_Iteration_1_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB_cpu.__loopIndexValue_1 = context->m_internal.variable___loopIndexValue_1;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB, context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu.FilterSub_Iteration_1_sRGB = context->m_input.variable_FilterSub_Iteration_1_sRGB;
+            context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu.__loopIndexValue_1 = context->m_internal.variable___loopIndexValue_1;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -1241,7 +1241,7 @@ namespace SubGraphLoops
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_output.texture_FilterSub_Iteration_1_Output, context->m_output.texture_FilterSub_Iteration_1_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1311,11 +1311,11 @@ namespace SubGraphLoops
             }
         }
 
-        // Shader Constants: _FilterSub_Iteration_2_BlurCB
+        // Shader Constants: _FilterSub_Iteration_2_Blur_0CB
         {
-            context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB_cpu.FilterSub_Iteration_2_sRGB = context->m_input.variable_FilterSub_Iteration_2_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB_cpu.__loopIndexValue_2 = context->m_internal.variable___loopIndexValue_2;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB, context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu.FilterSub_Iteration_2_sRGB = context->m_input.variable_FilterSub_Iteration_2_sRGB;
+            context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu.__loopIndexValue_2 = context->m_internal.variable___loopIndexValue_2;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -1355,7 +1355,7 @@ namespace SubGraphLoops
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_output.texture_FilterSub_Iteration_2_Output, context->m_output.texture_FilterSub_Iteration_2_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1425,11 +1425,11 @@ namespace SubGraphLoops
             }
         }
 
-        // Shader Constants: _FilterSub_Iteration_3_BlurCB
+        // Shader Constants: _FilterSub_Iteration_3_Blur_0CB
         {
-            context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB_cpu.FilterSub_Iteration_3_sRGB = context->m_input.variable_FilterSub_Iteration_3_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB_cpu.__loopIndexValue_3 = context->m_internal.variable___loopIndexValue_3;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB, context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu.FilterSub_Iteration_3_sRGB = context->m_input.variable_FilterSub_Iteration_3_sRGB;
+            context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu.__loopIndexValue_3 = context->m_internal.variable___loopIndexValue_3;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -1469,7 +1469,7 @@ namespace SubGraphLoops
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_output.texture_FilterSub_Iteration_3_Output, context->m_output.texture_FilterSub_Iteration_3_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1539,11 +1539,11 @@ namespace SubGraphLoops
             }
         }
 
-        // Shader Constants: _FilterSub_Iteration_4_BlurCB
+        // Shader Constants: _FilterSub_Iteration_4_Blur_0CB
         {
-            context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB_cpu.FilterSub_Iteration_4_sRGB = context->m_input.variable_FilterSub_Iteration_4_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB_cpu.__loopIndexValue_4 = context->m_internal.variable___loopIndexValue_4;
-            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB, context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB_cpu, Context::LogFn);
+            context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu.FilterSub_Iteration_4_sRGB = context->m_input.variable_FilterSub_Iteration_4_sRGB;
+            context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu.__loopIndexValue_4 = context->m_internal.variable___loopIndexValue_4;
+            DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu, Context::LogFn);
         }
 
         // Transition resources for the next action
@@ -1583,7 +1583,7 @@ namespace SubGraphLoops
             DX12Utils::ResourceDescriptor descriptors[] = {
                 { context->m_input.texture_Input, context->m_input.texture_Input_format, DX12Utils::AccessType::SRV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
                 { context->m_output.texture_FilterSub_Iteration_4_Output, context->m_output.texture_FilterSub_Iteration_4_Output_format, DX12Utils::AccessType::UAV, DX12Utils::ResourceType::Texture2D, false, 0, 0, 0, 0, 0, false },
-                { context->m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
+                { context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB, DXGI_FORMAT_UNKNOWN, DX12Utils::AccessType::CBV, DX12Utils::ResourceType::Buffer, false, 256, 1, 0, 0, 0, false }
             };
 
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 3, Context::LogFn);
@@ -1876,39 +1876,39 @@ namespace SubGraphLoops
             }
         }
 
-        // _FilterSub_Iteration_0_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB == nullptr)
+        // _FilterSub_Iteration_0_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__FilterSub_Iteration_0_BlurCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_0_BlurCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_0_Blur_0CB" : nullptr), Context::LogFn);
         }
 
-        // _FilterSub_Iteration_1_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB == nullptr)
+        // _FilterSub_Iteration_1_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__FilterSub_Iteration_1_BlurCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_1_BlurCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_1_Blur_0CB" : nullptr), Context::LogFn);
         }
 
-        // _FilterSub_Iteration_2_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB == nullptr)
+        // _FilterSub_Iteration_2_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__FilterSub_Iteration_2_BlurCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_2_BlurCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_2_Blur_0CB" : nullptr), Context::LogFn);
         }
 
-        // _FilterSub_Iteration_3_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB == nullptr)
+        // _FilterSub_Iteration_3_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__FilterSub_Iteration_3_BlurCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_3_BlurCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_3_Blur_0CB" : nullptr), Context::LogFn);
         }
 
-        // _FilterSub_Iteration_4_BlurCB
-        if (m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB == nullptr)
+        // _FilterSub_Iteration_4_Blur_0CB
+        if (m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB == nullptr)
         {
             dirty = true;
-            m_internal.constantBuffer__FilterSub_Iteration_4_BlurCB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_4_BlurCB" : nullptr), Context::LogFn);
+            m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB = DX12Utils::CreateBuffer(device, 256, D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_COMMON, D3D12_HEAP_TYPE_DEFAULT, (c_debugNames ? L"_FilterSub_Iteration_4_Blur_0CB" : nullptr), Context::LogFn);
         }
         EnsureDrawCallPSOsCreated(device, dirty);
     }

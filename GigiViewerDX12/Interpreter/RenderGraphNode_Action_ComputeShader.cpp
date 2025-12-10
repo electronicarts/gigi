@@ -163,30 +163,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 			// Descriptor table
 			std::vector<D3D12_DESCRIPTOR_RANGE> ranges;
-			for (const ShaderResource& resource : node.shader.shader->resources)
-			{
-				D3D12_DESCRIPTOR_RANGE desc;
-
-				switch (resource.access)
-				{
-					case ShaderResourceAccessType::UAV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV; break;
-					case ShaderResourceAccessType::RTScene:
-					case ShaderResourceAccessType::SRV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_SRV; break;
-					case ShaderResourceAccessType::CBV: desc.RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV; break;
-					default:
-					{
-						m_logFn(LogLevel::Error, "Shader \"%s\" unhandled resource access: \"%s\"", node.shader.shader->name.c_str(), EnumToString(resource.access));
-						return false;
-					}
-				}
-
-				desc.NumDescriptors = 1;
-				desc.BaseShaderRegister = resource.registerIndex;
-				desc.RegisterSpace = 0;
-				desc.OffsetInDescriptorsFromTableStart = (UINT)ranges.size();
-
-				ranges.push_back(desc);
-			}
+			BuildDescriptorRanges( node.shader.shader, ranges);
 
 			// Root parameter
 			D3D12_ROOT_PARAMETER rootParam;
@@ -251,6 +228,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelCs;
 			shaderCompilationInfo.debugName = node.name;
 			shaderCompilationInfo.defines = node.shader.shader->defines;
+
+            shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), m_envDefines.begin(), m_envDefines.end());
 
 			if (m_compileShadersForDebug)
 			{
@@ -373,10 +352,15 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 
 					const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
+
 					runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
 					break;
 				}
@@ -388,215 +372,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 		// Fill out the descriptor table information
 		std::vector<DescriptorTableCache::ResourceDescriptor> descriptors;
-		{
-			int depIndex = -1;
-			for (const ResourceDependency& dep : node.resourceDependencies)
-			{
-				if (dep.access == ShaderResourceAccessType::Indirect)
-					continue;
-
-				depIndex++;
-				DescriptorTableCache::ResourceDescriptor desc;
-
-				const RenderGraphNode& resourceNode = m_renderGraph.nodes[dep.nodeIndex];
-				switch (resourceNode._index)
-				{
-					case RenderGraphNode::c_index_resourceTexture:
-					{
-						const RuntimeTypes::RenderGraphNode_Resource_Texture& resourceInfo =  GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceNode.resourceTexture.name.c_str());
-						desc.m_resource = resourceInfo.m_resource;
-						desc.m_format = resourceInfo.m_format;
-
-						if (dep.pinIndex < node.linkProperties.size())
-						{
-							desc.m_UAVMipIndex = min(node.linkProperties[dep.pinIndex].UAVMipIndex, resourceInfo.m_numMips - 1);
-						}
-
-						switch (resourceNode.resourceTexture.dimension)
-						{
-							case TextureDimensionType::Texture2D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2D; break;
-							case TextureDimensionType::Texture2DArray: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DArray; desc.m_count = resourceInfo.m_size[2]; break;
-							case TextureDimensionType::Texture3D: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture3D; desc.m_count = resourceInfo.m_size[2]; break;
-							case TextureDimensionType::TextureCube: desc.m_resourceType = DescriptorTableCache::ResourceType::TextureCube; desc.m_count = 6; break;
-							case TextureDimensionType::Texture2DMS: desc.m_resourceType = DescriptorTableCache::ResourceType::Texture2DMS; break;
-						}
-						break;
-					}
-					case RenderGraphNode::c_index_resourceShaderConstants:
-					{
-						const RuntimeTypes::RenderGraphNode_Resource_ShaderConstants& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_ShaderConstants(resourceNode.resourceShaderConstants.name.c_str());
-						desc.m_resource = resourceInfo.m_buffer->buffer;
-						desc.m_format = DXGI_FORMAT_UNKNOWN;
-						desc.m_stride = (UINT)resourceInfo.m_buffer->size;
-						desc.m_count = 1;
-						break;
-					}
-					case RenderGraphNode::c_index_resourceBuffer:
-					{
-						RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-
-						if (dep.access == ShaderResourceAccessType::RTScene)
-						{
-							if (!AccessIsReadOnly(resourceNode.resourceBuffer.accessedAs))
-							{
-								m_transitions.Untrack(resourceInfo.m_tlas);
-								m_delayedRelease.Add(resourceInfo.m_tlas);
-								resourceInfo.m_tlas = nullptr;
-								resourceInfo.m_tlasSize = 0;
-
-								m_transitions.Untrack(resourceInfo.m_blas);
-								m_delayedRelease.Add(resourceInfo.m_blas);
-								resourceInfo.m_blas = nullptr;
-								resourceInfo.m_blasSize = 0;
-
-								m_transitions.Untrack(resourceInfo.m_instanceDescs);
-								m_delayedRelease.Add(resourceInfo.m_instanceDescs);
-								resourceInfo.m_instanceDescs = nullptr;
-							}
-
-							if (!resourceInfo.m_tlas)
-							{
-								if (!MakeAccelerationStructures(resourceNode.resourceBuffer))
-								{
-									m_logFn(LogLevel::Error, "Failed to make acceleration structure for buffer \"%s\"", resourceNode.resourceBuffer.name.c_str());
-									return false;
-								}
-							}
-
-							desc.m_resource = resourceInfo.m_tlas;
-							desc.m_format = DXGI_FORMAT_UNKNOWN;
-							desc.m_stride = resourceInfo.m_tlasSize;
-							desc.m_count = 1;
-							desc.m_raw = false;
-						}
-						else
-						{
-							desc.m_resource = resourceInfo.m_resource;
-
-							const ShaderResourceBuffer& shaderResourceBuffer = node.shader.shader->resources[depIndex].buffer;
-							bool isStructuredBuffer = ShaderResourceBufferIsStructuredBuffer(shaderResourceBuffer);
-							if (isStructuredBuffer)
-							{
-								desc.m_format = DXGI_FORMAT_UNKNOWN;
-								if (shaderResourceBuffer.typeStruct.structIndex != -1)
-									desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
-								else
-									desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
-								desc.m_count = resourceInfo.m_size / desc.m_stride;
-							}
-							else
-							{
-								desc.m_format = DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeFormat;
-								desc.m_stride = 0;
-								desc.m_count = resourceInfo.m_count;
-							}
-
-                            if (dep.pinIndex < node.linkProperties.size())
-                            {
-                                const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
-
-                                unsigned int unitsDivider = 1;
-                                if (linkProperties.bufferViewUnits != MemoryUnitOfMeasurement::Items)
-                                {
-                                    unitsDivider = (shaderResourceBuffer.typeStruct.structIndex != -1)
-                                        ? (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes
-                                        : DataFieldTypeInfoDX12(shaderResourceBuffer.type).typeBytes;
-                                    unitsDivider = max(unitsDivider, 1);
-                                }
-
-                                desc.m_firstElement = linkProperties.bufferViewBegin / unitsDivider;
-
-                                if (desc.m_count >= desc.m_firstElement)
-                                    desc.m_count -= desc.m_firstElement;
-                                else
-                                    desc.m_count = 0;
-
-                                unsigned int bufferViewNumElements = linkProperties.bufferViewSize / unitsDivider;
-                                if (bufferViewNumElements > 0)
-                                    desc.m_count = min(desc.m_count, bufferViewNumElements);
-                            }
-
-							desc.m_raw = node.shader.shader->resources[depIndex].buffer.raw;
-						}
-						break;
-					}
-					default:
-					{
-						m_logFn(LogLevel::Error, "Unhandled dependency node type for compute shader node \"%s\"", node.name.c_str());
-						return false;
-					}
-				}
-
-				// This could be a temporary thing, but we can't run the compute shader if we don't have the resources we need.
-				if (!desc.m_resource)
-				{
-					std::ostringstream ss;
-					ss << "Cannot run due to resource not existing:\n" << GetNodeTypeString(resourceNode) << " \"" << GetNodeName(resourceNode) << "\" (\"" << GetNodeOriginalName(resourceNode) << "\")";
-					runtimeData.m_renderGraphText = ss.str();
-                    runtimeData.m_inErrorState = true;
-					return true;
-				}
-
-				switch (dep.access)
-				{
-					case ShaderResourceAccessType::UAV:
-					{
-						desc.m_access = DescriptorTableCache::AccessType::UAV;
-						queuedTransitions.push_back({ TRANSITION_DEBUG_INFO(desc.m_resource, D3D12_RESOURCE_STATE_UNORDERED_ACCESS) });
-						break;
-					}
-					case ShaderResourceAccessType::RTScene:
-					{
-						desc.m_access = DescriptorTableCache::AccessType::SRV;
-						queuedTransitions.push_back({ TRANSITION_DEBUG_INFO(desc.m_resource, D3D12_RESOURCE_STATE_RAYTRACING_ACCELERATION_STRUCTURE) });
-						break;
-					}
-					case ShaderResourceAccessType::SRV:
-					{
-						desc.m_access = DescriptorTableCache::AccessType::SRV;
-						queuedTransitions.push_back({ TRANSITION_DEBUG_INFO(desc.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE) });
-						break;
-					}
-					case ShaderResourceAccessType::CBV:
-					{
-						// constant buffers are upload heap, don't need transitions to be written from CPU or read by shaders
-						desc.m_access = DescriptorTableCache::AccessType::CBV;
-						break;
-					}
-					case ShaderResourceAccessType::Indirect:
-					{
-						// This is handled elsewhere
-						continue;
-					}
-					default:
-					{
-						m_logFn(LogLevel::Error, "Unhandled shader resource access type \"%s\" for compute shader node \"%s\"", EnumToString(dep.access), node.name.c_str());
-						return false;
-					}
-				}
-
-				switch (dep.type)
-				{
-					case ShaderResourceType::Texture: break; // handled above
-					case ShaderResourceType::Buffer:
-					{
-						if (dep.access == ShaderResourceAccessType::RTScene)
-							desc.m_resourceType = DescriptorTableCache::ResourceType::RTScene;
-						else
-							desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer;
-						break;
-					}
-					case ShaderResourceType::ConstantBuffer: desc.m_resourceType = DescriptorTableCache::ResourceType::Buffer; break;
-					default:
-					{
-						m_logFn(LogLevel::Error, "Unhandled shader resource type \"%s\" for compute shader node \"%s\"", EnumToString(dep.type), node.name.c_str());
-						return false;
-					}
-				}
-
-				descriptors.push_back(desc);
-			}
-		}
+        int descriptorTablePinOffset = 0;
+        std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES> importantResourceStates;
+        if (!MakeDescriptorTableDesc(descriptors, runtimeData, node.resourceDependencies, node.linkProperties, node.name.c_str(), node.shader.shader, descriptorTablePinOffset, queuedTransitions, importantResourceStates))
+            return false;
 
 		// calculate dispatch size
 		unsigned int dispatchSize[3] = { 1, 1, 1 };
@@ -818,6 +597,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                         const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                         bufferViewBegin = linkProperties.bufferViewBegin;
                         bufferViewSize = linkProperties.bufferViewSize;
+                        if (linkProperties.bufferViewBeginVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewBeginVariable.variableIndex, bufferViewBegin))
+                            return false;
+                        if (linkProperties.bufferViewSizeVariable.variableIndex != -1 && !GetRuntimeVariableAllowCast(linkProperties.bufferViewSizeVariable.variableIndex, bufferViewSize))
+                            return false;
                         bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
                     }
 

@@ -183,7 +183,7 @@ inline DXGI_FORMAT TextureFormatToDXGI_FORMAT(TextureFormat textureFormat)
 		case TextureFormat::BC6_SF16: return DXGI_FORMAT_BC6H_SF16;
 	}
 
-	Assert(false, "Unhandled TextureFormat");
+	GigiAssert(false, "Unhandled TextureFormat");
 	return DXGI_FORMAT_FORCE_UINT;
 }
 
@@ -207,7 +207,7 @@ inline D3D12_CULL_MODE DrawCullModeToD3D12_CULL_MODE(DrawCullMode cullMode)
 		case DrawCullMode::Back: return D3D12_CULL_MODE_BACK;
 		default:
 		{
-			Assert(false, "Unhandled DrawCullMode");
+			GigiAssert(false, "Unhandled DrawCullMode");
 			return D3D12_CULL_MODE_NONE;
 		}
 	}
@@ -222,7 +222,7 @@ inline D3D12_PRIMITIVE_TOPOLOGY GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY(GeometryT
 		case GeometryType::PointList: return D3D_PRIMITIVE_TOPOLOGY_POINTLIST;
 		default:
 		{
-			Assert(false, "Unhandled GeometryType");
+			GigiAssert(false, "Unhandled GeometryType");
 			return D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST;
 		}
 	}
@@ -237,7 +237,7 @@ inline D3D12_PRIMITIVE_TOPOLOGY_TYPE GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE
 		case GeometryType::PointList: return D3D12_PRIMITIVE_TOPOLOGY_TYPE_POINT;
 		default:
 		{
-			Assert(false, "Unhandled GeometryType");
+			GigiAssert(false, "Unhandled GeometryType");
 			return D3D12_PRIMITIVE_TOPOLOGY_TYPE_TRIANGLE;
 		}
 	}
@@ -257,7 +257,7 @@ inline D3D12_COMPARISON_FUNC DepthTestFunctionToD3D12_COMPARISON_FUNC(DepthTestF
 		case DepthTestFunction::Always: return D3D12_COMPARISON_FUNC_ALWAYS;
 		default:
 		{
-			Assert(false, "Unhandled DepthTestFunction");
+			GigiAssert(false, "Unhandled DepthTestFunction");
 			return D3D12_COMPARISON_FUNC_ALWAYS;
 		}
 	}
@@ -279,7 +279,7 @@ inline D3D12_BLEND DrawBlendModeToD3D12_BLEND(DrawBlendMode mode)
 		case DrawBlendMode::InvDestColor: return D3D12_BLEND_INV_DEST_COLOR;
 		default:
 		{
-			Assert(false, "Unhandled DrawBlendMode");
+			GigiAssert(false, "Unhandled DrawBlendMode");
 			return D3D12_BLEND_ONE;
 		}
 	}
@@ -341,7 +341,7 @@ inline DataFieldTypeInfoStructDX12 DataFieldTypeInfoDX12(DataFieldType type)
         case DataFieldType::Float_16: return DATA_FIELD_TYPE_INFO_DX12(uint16_t, 1, DXGI_FORMAT_R16_FLOAT, DXGI_FORMAT_R16_FLOAT, 1);
         default:
         {
-            Assert(false, "Unknown data field type: %i", type);
+            GigiAssert(false, "Unknown data field type: %i", type);
 			return DATA_FIELD_TYPE_INFO_DX12(int, 0, DXGI_FORMAT_FORCE_UINT, DXGI_FORMAT_FORCE_UINT, 0);
         }
     }

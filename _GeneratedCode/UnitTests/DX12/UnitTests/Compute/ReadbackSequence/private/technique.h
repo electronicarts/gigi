@@ -28,14 +28,14 @@ namespace ReadbackSequence
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
-        struct Struct__ReadbackSequenceCSCB
+        struct Struct__ReadbackSequenceCS_0CB
         {
             int frameIndex = 0;
             float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
-        Struct__ReadbackSequenceCSCB constantBuffer__ReadbackSequenceCSCB_cpu;
-        ID3D12Resource* constantBuffer__ReadbackSequenceCSCB = nullptr;
+        Struct__ReadbackSequenceCS_0CB constantBuffer__ReadbackSequenceCS_0CB_cpu;
+        ID3D12Resource* constantBuffer__ReadbackSequenceCS_0CB = nullptr;
 
         static ID3D12PipelineState* computeShader_Node_1_pso;
         static ID3D12RootSignature* computeShader_Node_1_rootSig;
