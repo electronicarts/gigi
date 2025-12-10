@@ -265,6 +265,7 @@
             document.getElementById('inputBox_Node3Channel').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); VariableAliases.variable_Node3Channel=event.target.value;});
             document.getElementById('inputBox_Node3Value').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); VariableAliases.variable_Node3Value=event.target.value;});
             document.getElementById('inputBox_UnusedFloat').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); VariableAliases.variable_UnusedFloat=event.target.value;});
+            document.getElementById('inputBox_ConstMultiplier').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); VariableAliases.variable_ConstMultiplier=event.target.value;});
 
             function ResetVariables()
             {
@@ -277,6 +278,7 @@
                     VariableAliases.variable_Node3Channel = VariableAliases.variableDefault_Node3Channel;
                     VariableAliases.variable_Node3Value = VariableAliases.variableDefault_Node3Value;
                     VariableAliases.variable_UnusedFloat = VariableAliases.variableDefault_UnusedFloat;
+                    VariableAliases.variable_ConstMultiplier = VariableAliases.variableDefault_ConstMultiplier;
             }
 
             function SetUIToVariables()
@@ -290,6 +292,7 @@
                     document.getElementById('inputBox_Node3Channel').value = VariableAliases.variable_Node3Channel;
                     document.getElementById('inputBox_Node3Value').value = VariableAliases.variable_Node3Value;
                     document.getElementById('inputBox_UnusedFloat').value = VariableAliases.variable_UnusedFloat;
+                    document.getElementById('inputBox_ConstMultiplier').value = VariableAliases.variable_ConstMultiplier;
             }
 
             // Set variables to their defaults
@@ -417,6 +420,12 @@
                     VariableAliases.variableChanged_UnusedFloat = false;
                 }
 
+                if (VariableAliases.variableChanged_ConstMultiplier)
+                {
+                    document.getElementById('inputBox_ConstMultiplier').value = VariableAliases.variable_ConstMultiplier;
+                    VariableAliases.variableChanged_ConstMultiplier = false;
+                }
+
 
                 // Submit the command encoder
                 device.queue.submit([encoder.finish()]);
@@ -533,6 +542,16 @@
                         </tr>
                     </table>
                     <br><br>
+                    <button type="button" class="collapsible">Host Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">ConstMultiplier&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_ConstMultiplier" disabled="true">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
                     <button type="button" id="ResetVariables">Reset Variables</button>
                     <br/>
                     <br/>
@@ -580,7 +599,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.01.6</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.01.7</a></b>
                 </td>
             </tr>
         </table>

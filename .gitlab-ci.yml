@@ -52,6 +52,7 @@ win64_build_release:
       - external/DXC/*
       - external/fonts/OpenSans-Regular.ttf
       - external/git/*
+      - external/FontAwesome/*
       - GigiCompilerLib/Backends/DX12/templates/*
       - GigiCompilerLib/Backends/Frostbite/templates/*
       - GigiCompilerLib/Backends/UE_5_3/templates/*

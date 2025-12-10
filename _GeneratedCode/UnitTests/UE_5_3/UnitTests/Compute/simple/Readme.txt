@@ -16,6 +16,24 @@ Copy Public/simpleTechnique.cpp to Engine/Source/Runtime/Renderer/Private/
 Copy the contents of Shaders to Engine/Shaders/Private/simple/
 
 =====================================================================================================
+Set Up Non Transient Storage
+=====================================================================================================
+
+This technique requires non transient storage.
+
+To set that up, put this struct into Engine\Source\Runtime\Renderer\Private\ScenePrivate.h:
+
+struct FTechniqueState_simple
+{
+    // Internal Variables - do not modify these
+    uint32 Var_DummyConstVar = uint32(1);
+};
+
+and put this member variable into FSceneViewState:
+
+FTechniqueState_simple TechniqueState_simple;
+
+=====================================================================================================
 Connect Technique
 =====================================================================================================
 

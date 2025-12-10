@@ -40,8 +40,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
 	uint2 px = DTid.xy;
 	float3 pixelValue = Output[px].rgb;
 
-	// Set the specified channel to the specified value
-	pixelValue[_GetVariableAliasValue_Channel()] = _GetVariableAliasValue_Value();
+    // Set the specified channel to the specified value
+    pixelValue[_GetVariableAliasValue_Channel()] = _GetVariableAliasValue_Value() * (1.f);
 
 	// Write it back
 	Output[px] = float4(pixelValue, 1.0);

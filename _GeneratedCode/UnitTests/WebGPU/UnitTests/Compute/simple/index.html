@@ -272,8 +272,29 @@
                 }
             );
 
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_DummyConstVar').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); simple.variable_DummyConstVar=event.target.value;});
+
+            function ResetVariables()
+            {
+                    simple.variable_DummyConstVar = simple.variableDefault_DummyConstVar;
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_DummyConstVar').value = simple.variable_DummyConstVar;
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
             // Initialize the technique from unit test logic
             await test_Compute_simple.Init(device, simple);
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
 
             // Frame rendering function
             let startTimeMs;
@@ -341,6 +362,14 @@
                     }
                 }
 
+                // If the technique changed the variables, update the UI
+                if (simple.variableChanged_DummyConstVar)
+                {
+                    document.getElementById('inputBox_DummyConstVar').value = simple.variable_DummyConstVar;
+                    simple.variableChanged_DummyConstVar = false;
+                }
+
+
                 // Submit the command encoder
                 device.queue.submit([encoder.finish()]);
 
@@ -401,6 +430,19 @@
                 <td>&nbsp;</td>
                 <td valign="top">
                     <b>simple</b><br/>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">DummyConstVar&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_DummyConstVar" disabled="true">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
                     <button type="button" class="collapsible">Imported Resources</button>
                     <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:block">
                         <tr><td>Texture URL: <div class="tooltip">Input<span class="tooltiptext">This is the input texture to be modified</span></div>&nbsp;</td><td><input type="text" id="importedResourceURL_Input"></td></tr>
@@ -450,7 +492,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.01.6</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.01.7</a></b>
                 </td>
             </tr>
         </table>

@@ -5,11 +5,13 @@
 
 // clang-format off
 #include "GigiInterpreterPreviewWindowDX12.h"
-#include "GigiCompilerLib/UI/ImGuiHelper.h"
+#include "Shared/UI/ImGuiHelper.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include <unordered_set>
 // clang-format on
+
+extern bool MenuOpen();
 
 // needed to make ImGui::Text() align with UI that is larger because of FarmePadding
 void ShowUI_StartGap()
@@ -1060,13 +1062,85 @@ void GigiInterpreterPreviewWindowDX12::ShowUI(bool minimalUI, bool paused)
 						// clang-format on
 					}
 
+                    // Show variable tooltip popup window. This makes it so we can't interact with the variables sometimes for some reason ):
+#if 0
+                    {
+                        char popupId[256];
+                        sprintf_s(popupId, "VariableTooltip_%p", var);
+
+                        bool itemHovered = false;
+                        if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled | ImGuiHoveredFlags_RectOnly) && !MenuOpen())
+                        {
+                            ImGui::OpenPopup(popupId);
+                            itemHovered = true;
+                        }
+
+                        if (ImGui::BeginPopup(popupId))
+                        {
+                            bool windowHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+                            bool closeWindow = false;
+
+                            // Tooltip if it exists
+                            if (!variable.variable->comment.empty())
+                                ImGui::TextUnformatted(variable.variable->comment.c_str());
+
+                            // type and default
+                            ImGui::Text("%s default \"%s\"", EnumToString(variable.variable->type), variable.variable->dflt.c_str());
+
+                            // Name in python / generated code
+                            ImGui::Text("Python: \"%s\"", variable.variable->name.c_str());
+                            ImGui::SameLine();
+                            if (ImGui::Button(ICON_FA_COPY "##PythonName"))
+                            {
+                                ImGui::SetClipboardText(variable.variable->name.c_str());
+                                closeWindow = true;
+                            }
+
+                            // Shader token
+                            char shaderToken[256];
+                            sprintf_s(shaderToken, "/*$(Variable:%s)*/", variable.variable->originalName.c_str());
+                            ImGui::Text("Shader: \"%s\"", shaderToken);
+                            ImGui::SameLine();
+                            if (ImGui::Button(ICON_FA_COPY "##ShaderToken"))
+                            {
+                                ImGui::SetClipboardText(shaderToken);
+                                closeWindow = true;
+                            }
+
+                            if ((!itemHovered && !windowHovered) || closeWindow)
+                                ImGui::CloseCurrentPopup();
+
+                            ImGui::EndPopup();
+                        }
+                    }
+#else
+                    if (ImGui::IsItemHovered())
+                    {
+                        ImGui::BeginTooltip();
+
+                        if (!variable.variable->comment.empty())
+                            ImGui::TextUnformatted(variable.variable->comment.c_str());
+
+                        // type and default
+                        ImGui::Text("%s default \"%s\"", EnumToString(variable.variable->type), variable.variable->dflt.c_str());
+
+                        // Name in python / generated code
+                        ImGui::Text("Python: \"%s\"", variable.variable->name.c_str());
+
+                        // Shader token
+                        char shaderToken[256];
+                        sprintf_s(shaderToken, "/*$(Variable:%s)*/", variable.variable->originalName.c_str());
+                        ImGui::Text("Shader: \"%s\"", shaderToken);
+
+                        ImGui::EndTooltip();
+                    }
+#endif
+
                     // If this variable is supposed to set the value of a bool to true when it changes, do that now
                     if (modifiedByUser && variable.variable->onUserChange.variableIndex != -1)
                         SetRuntimeVariableFromString(variable.variable->onUserChange.variableIndex, "true");
 
 //					ImGui::PopStyleColor(1);
-
-					ShowToolTip(variable.variable->comment.c_str());
 
 					bool hasChanged = valueCopy.size() != variable.storage.size
 						|| memcmp(variable.storage.value, valueCopy.data(), valueCopy.size()) != 0;

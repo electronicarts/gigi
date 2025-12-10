@@ -1,7 +1,7 @@
 {
     "$schema": "gigischema.json",
     "name": "buffertest_viewOffsetCS_Vars",
-    "version": "1.0",
+    "version": "1.01",
     "variables": [
         {
             "name": "gain",
@@ -37,6 +37,7 @@
         {
             "name": "OutputTypedBufferBegin",
             "type": "Int",
+            "Const": true,
             "dflt": "1"
         },
         {
@@ -103,6 +104,17 @@
             "name": "OutputTypedBufferRawSize",
             "type": "Int",
             "dflt": "0"
+        },
+        {
+            "name": "BufferSize1",
+            "type": "Uint",
+            "dflt": "1"
+        },
+        {
+            "name": "BufferSize2",
+            "type": "Uint",
+            "Const": true,
+            "dflt": "8"
         }
     ],
     "shaders": [
@@ -283,8 +295,8 @@
                     }
                 },
                 "count": {
-                    "node": {
-                        "name": "InputStructuredBuffer"
+                    "variable": {
+                        "name": "BufferSize1"
                     },
                     "multiply": 2
                 }
@@ -316,8 +328,8 @@
                     }
                 },
                 "count": {
-                    "node": {
-                        "name": "InputTypedBufferRaw"
+                    "variable": {
+                        "name": "BufferSize2"
                     }
                 }
             }
@@ -396,8 +408,7 @@
                         "bufferViewSizeVariable": {
                             "name": "OutputTypedBufferRawSize"
                         }
-                    },
-                    {}
+                    }
                 ],
                 "connections": [
                     {

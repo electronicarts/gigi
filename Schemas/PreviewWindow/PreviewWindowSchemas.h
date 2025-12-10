@@ -50,6 +50,32 @@ STRUCT_END()
 // .gguser File Schema
 //========================================================
 
+STRUCT_BEGIN(GGUserFile_Audio, "")
+
+    // Audio Settings
+    STRUCT_FIELD(unsigned int, sampleRate, 44100, "The sample rate.", 0)
+    STRUCT_FIELD(bool, stereo, true, "Stereo or mono.", 0)
+    STRUCT_FIELD(std::string, Var_Stereo, "AudioStereo", "A boolean variable for whether audio is mono or stereo. Stereo has two floats per sample, mono has 1. Holds the value you set above. Meant to be readable by shaders.", 0)
+    STRUCT_FIELD(std::string, Var_SampleRate, "AudioSampleRate", "A uint variable holding the sample rate. Holds the value you set above. Meant to be readable by shaders.", 0)
+
+    // Audio Output
+    STRUCT_FIELD(BufferNodeReference, outputBuffer, {}, "Must be an imported buffer. Gigi controls the size, and the format is always float.", 0)
+    STRUCT_FIELD(float, outputVolume, 1.0f, "Output volume.", 0)
+    STRUCT_FIELD(unsigned int, outputBufferLengthMs, 300, "The length of the audio output buffer in milliseconds. Smaller buffers have less latency but are more prone to starvation when there is bad perf.", 0)
+    STRUCT_FIELD(std::string, Var_AudioOutSampleWindowCount, "AudioOutSampleWindowCount", "The uint variable that says how many audio samples should be generated for output. Stereo has 2 floats per sample, mono has 1. Meant to be readable by shaders", 0)
+
+    // Audio Input
+    STRUCT_FIELD(BufferNodeReference, inputBuffer, {}, "Must be an imported buffer. Gigi controls the size, and the format is always float.", 0)
+    STRUCT_FIELD(float, inputVolume, 1.0f, "Input volume.", 0)
+    STRUCT_FIELD(unsigned int, inputBufferLengthMs, 300, "The length of the audio input buffer in milliseconds.", 0)
+    STRUCT_FIELD(std::string, Var_AudioInSampleWindowCount, "AudioInSampleWindowCount", "The uint variable that says how many audio samples should be consumed from input. Stereo has 2 floats per sample, mono has 1. Meant to be readable by shaders", 0)
+
+STRUCT_END()
+
+STRUCT_BEGIN(GGUserFile_WebCam, "")
+    STRUCT_FIELD(TextureNodeReference, outputTexture, {}, "Must be an imported texture. Gigi controls the size and the format.", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, "")
     STRUCT_FIELD(bool, enabled, { false }, "", 0)
     STRUCT_FIELD(unsigned int, sleepMS, 0, "The number of milliseconds to sleep every frame. Useful for artificially slowing down the rendering to see frame interpolation in action.", 0)
@@ -238,6 +264,8 @@ STRUCT_BEGIN(GGUserFileV2, "The contents of a .gguser file")
 	STRUCT_DYNAMIC_ARRAY(GGUserFileV2Snapshot, snapshots, "", 0)
 
     STRUCT_FIELD(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, AMDFrameInterpolation, {}, "", 0)
+    STRUCT_FIELD(GGUserFile_Audio, Audio, {}, "", 0)
+    STRUCT_FIELD(GGUserFile_WebCam, WebCam, {}, "", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(GGUserFileVersionOnly, "Only the version of the .gguser file")

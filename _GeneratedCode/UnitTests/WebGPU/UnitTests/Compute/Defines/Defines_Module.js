@@ -73,6 +73,11 @@ texture_Output_size = [0, 0, 0];
 texture_Output_format = "";
 texture_Output_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
+// -------------------- Private Variables
+
+variable_RenderSize = [ 64, 64, 1 ];
+variableDefault_RenderSize = [ 64, 64, 1 ];
+variableChanged_RenderSize = [ false, false, false ];
 
 async SetVarsBefore()
 {
@@ -93,10 +98,10 @@ async Init(device, encoder, useBlockingAPIs)
 {
     // Handle (re)creation of texture Output
     {
-        const baseSize = [ 1, 1, 1 ];
+        const baseSize = [ this.variable_RenderSize[0], this.variable_RenderSize[1], this.variable_RenderSize[2]];
         const desiredSize = [
-            Math.floor(((parseInt(baseSize[0]) + 0) * 64) / 1) + 0,
-            Math.floor(((parseInt(baseSize[1]) + 0) * 64) / 1) + 0,
+            Math.floor(((parseInt(baseSize[0]) + 0) * 1) / 1) + 0,
+            Math.floor(((parseInt(baseSize[1]) + 0) * 1) / 1) + 0,
             Math.floor(((parseInt(baseSize[2]) + 0) * 1) / 1) + 0
         ];
         const desiredFormat = "rgba8unorm";
@@ -289,7 +294,8 @@ async FillEncoder(device, encoder)
         });
 
         // Calculate dispatch size
-        const baseDispatchSize = this.texture_Output_size;
+
+        const baseDispatchSize = [ this.variable_RenderSize[0], this.variable_RenderSize[1], this.variable_RenderSize[2] ];
         const dispatchSize = [
             Math.floor((Math.floor(((parseInt(baseDispatchSize[0]) + 0) * 1) / 1) + 0 + 8 - 1) / 8),
             Math.floor((Math.floor(((parseInt(baseDispatchSize[1]) + 0) * 1) / 1) + 0 + 8 - 1) / 8),

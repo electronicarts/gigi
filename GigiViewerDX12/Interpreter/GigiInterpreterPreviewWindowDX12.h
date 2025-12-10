@@ -791,6 +791,9 @@ public:
 		return m_descriptorTableCache;
 	}
 
+    ID3D12Device14* GetDevice() {
+        return m_device;
+    }
 
     Profiler& GetProfiler() {
         return m_profiler;

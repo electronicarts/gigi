@@ -175,6 +175,10 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 
 			// Do copy for viewing
 			{
+                char profilerLabel[1024];
+                sprintf_s(profilerLabel, "Copy For Viewing: %s", displayName);
+                BasicPixScopeProfiler _p(interpreter.m_commandList, profilerLabel);
+
 				// Transition
 				interpreter.m_transitions.Transition(TRANSITION_DEBUG_INFO(resource, D3D12_RESOURCE_STATE_COPY_SOURCE));
 				interpreter.m_transitions.Transition(TRANSITION_DEBUG_INFO(res.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
@@ -249,6 +253,10 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 			// do copy for readback
 			if (res.m_wantsToBeReadBack)
 			{
+                char profilerLabel[1024];
+                sprintf_s(profilerLabel, "Copy For Readback: %s", displayName);
+                BasicPixScopeProfiler _p(interpreter.m_commandList, profilerLabel);
+
 				interpreter.m_transitions.Transition(TRANSITION_DEBUG_INFO(resource, D3D12_RESOURCE_STATE_COPY_SOURCE));
 				interpreter.m_transitions.Transition(TRANSITION_DEBUG_INFO(res.m_resourceReadback, D3D12_RESOURCE_STATE_COPY_DEST));
 				interpreter.m_transitions.Flush(interpreter.m_commandList);
@@ -760,7 +768,7 @@ const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResou
             ss << "Cannot run due to resource not existing:\n" << GetNodeTypeString(resourceNode) << " \"" << GetNodeName(resourceNode) << "\" (\"" << GetNodeOriginalName(resourceNode) << "\")";
             runtimeData.m_renderGraphText = ss.str();
             runtimeData.m_inErrorState = true;
-            return true;
+            return false;
         }
 
 		switch (dep.access)

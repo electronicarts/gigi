@@ -1,6 +1,14 @@
 {
     "$schema": "gigischema.json",
-    "version": "1.0",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "RenderSize",
+            "type": "Uint3",
+            "Const": true,
+            "dflt": "64, 64, 1"
+        }
+    ],
     "shaders": [
         {
             "name": "WriteOutputCS",
@@ -15,8 +23,8 @@
             "resources": [
                 {
                     "name": "Output",
-                    "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "type": "Texture"
                 }
             ]
         }
@@ -30,7 +38,6 @@
                     -14.0
                 ],
                 "linkProperties": [
-                    {},
                     {}
                 ],
                 "connections": [
@@ -44,8 +51,8 @@
                     "name": "WriteOutputCS"
                 },
                 "dispatchSize": {
-                    "node": {
-                        "name": "Output"
+                    "variable": {
+                        "name": "RenderSize"
                     }
                 },
                 "defines": [
@@ -68,11 +75,9 @@
                     "format": "RGBA8_Unorm"
                 },
                 "size": {
-                    "multiply": [
-                        64,
-                        64,
-                        1
-                    ]
+                    "variable": {
+                        "name": "RenderSize"
+                    }
                 }
             }
         }

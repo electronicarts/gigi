@@ -72,9 +72,10 @@
     <ClCompile Include="..\external\imgui-node-editor\external\imgui\imgui_stdlib.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
-    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp">
-      <Filter>UI</Filter>
+    <ClCompile Include="..\Shared\UI\ImGuiHelper.cpp">
+      <Filter>Shared\UI</Filter>
     </ClCompile>
+    <ClCompile Include="UICache.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">
@@ -97,6 +98,12 @@
     </Filter>
     <Filter Include="UI">
       <UniqueIdentifier>{2c93f1a2-f9db-4202-a136-c7b539f9e4b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared">
+      <UniqueIdentifier>{c30e3692-5eb8-4920-a4e8-6275591d50f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\UI">
+      <UniqueIdentifier>{dd1042ec-2a00-4b9c-8dc9-043a21e3b17e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -195,8 +202,12 @@
     <ClInclude Include="..\external\imgui-node-editor\external\imgui\imgui_stdlib.h">
       <Filter>imgui</Filter>
     </ClInclude>
-    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h">
-      <Filter>UI</Filter>
+    <ClInclude Include="..\Shared\UI\ImGuiHelper.h">
+      <Filter>Shared\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="UICache.h" />
+    <ClInclude Include="..\Shared\UI\Shared.h">
+      <Filter>Shared\UI</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
