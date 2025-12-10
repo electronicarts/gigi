@@ -201,6 +201,8 @@ STRUCT_BEGIN(SetVariable, "A variable modification")
     STRUCT_FIELD(bool, setBefore, true, "If true, this happens before execution. If false, happens after execution.", 0)
 
     STRUCT_FIELD(Condition, condition, {}, "An optional condition added for the action to happen", 0)
+
+    STRUCT_FIELD(std::string, comment, "", "", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(VariableReplacement, "When subgraph variables are replaced by parent variables, this gives the breadcrumbs needed to find that.")

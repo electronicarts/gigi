@@ -8,6 +8,8 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 #include <filesystem>
+
+#include "Shared/UI/ImGuiHelper.h"
 // Gigi change End
 
 extern "C" {
@@ -300,6 +302,18 @@ void Application::RecreateFontAtlas()
 	}
 
 	m_DefaultFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), 16.0f, &iconsConfig);
+
+    // Load Font Awesome icons
+    {
+        //io.Fonts->AddFontDefault();
+        static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        icons_config.GlyphMinAdvanceX = 16.0f * 0.8f;  // font size above is 16
+        io.Fonts->AddFontFromFileTTF("external/FontAwesome/Font Awesome 7 Free-Solid-900.otf", icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+    }
+
 	m_HeaderFont = m_DefaultFont;// io.Fonts->AddFontFromFileTTF("external/fonts/OpenSans-Regular.ttf", 20.0f, &iconsConfig);
 
 	io.Fonts->TexGlyphPadding = 1;

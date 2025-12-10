@@ -43,7 +43,7 @@
 #include "DX12Utils/sRGB.h"
 #include "DX12Utils/Camera.h"
 #include "version.h"
-#include "GigiCompilerLib/UI/ImGuiHelper.h"
+#include "Shared/UI/ImGuiHelper.h"
 
 #include "ViewerPython.h"
 
@@ -57,6 +57,9 @@
 #include "ImageSave.h"
 #include "BVH.h"
 #include <comdef.h>
+#include "Audio.h"
+#include "WebCam.h"
+#include "Shared/UI/Shared.h"
 
 #include <nv-api/nvapi.h>
 #pragma comment(lib, "amd64/nvapi64.lib")
@@ -217,6 +220,8 @@ static int g_renderDocFrameCaptureCount = 1;
 
 static AgilitySDKChoice g_agilitySDKChoice = AgilitySDKChoice::Retail;
 static bool g_allowAMDFrameInterpolation = true;
+static bool g_allowAudio = true;
+static bool g_allowWebCam = true;
 
 void RenderFrame(bool forceExecute);
 
@@ -546,6 +551,8 @@ bool g_profileMode = false;
 bool g_readbackAll = false;
 
 GGUserFile_AMD_FidelityFXSDK_FrameInterpolation g_AMDFrameInterpolation;
+GGUserFile_Audio g_Audio;
+GGUserFile_WebCam g_WebCam;
 
 struct ShowWindowsState
 {
@@ -557,6 +564,8 @@ struct ShowWindowsState
     bool Profiler = true;
     bool InternalVariables = false;
     bool AMDFrameInterpolation = false;
+    bool Audio = false;
+    bool WebCam = false;
 };
 ShowWindowsState g_showWindows;
 
@@ -1041,6 +1050,8 @@ void SaveGGUserFile()
     ggUserData.systemVars = g_systemVariables;
     ggUserData.snapshots = g_userSnapshots;
     ggUserData.AMDFrameInterpolation = g_AMDFrameInterpolation;
+    ggUserData.Audio = g_Audio;
+	ggUserData.WebCam = g_WebCam;
 
     // Save the data
     WriteToJSONFile(ggUserData, ggUserFileName.c_str());
@@ -1119,6 +1130,8 @@ GGUserFileV2 LoadGGUserFile()
     g_systemVariables = ggUserData.systemVars;
     g_userSnapshots = ggUserData.snapshots;
     g_AMDFrameInterpolation = ggUserData.AMDFrameInterpolation;
+    g_Audio = ggUserData.Audio;
+	g_WebCam = ggUserData.WebCam;
     g_userSnapshotIndex = -1;
 
     g_systemVariables.camera.cameraPos = g_systemVariables.camera.startingCameraPos;
@@ -1427,8 +1440,16 @@ void ImGuiRecentPythonScripts()
     }
 }
 
+bool g_menuOpen = false;
+bool MenuOpen()
+{
+    return g_menuOpen;
+}
+
 void HandleMainMenu()
 {
+    g_menuOpen = false;
+
     if (g_hideUI)
         return;
 
@@ -1438,6 +1459,7 @@ void HandleMainMenu()
     {
         if (ImGui::BeginMenu("File"))
         {
+            g_menuOpen = true;
             if (!g_isForEditor)
             {
                 if (ImGui::MenuItem("Open", "Ctrl+O"))
@@ -1491,6 +1513,7 @@ void HandleMainMenu()
 
         if (ImGui::BeginMenu("View"))
         {
+            g_menuOpen = true;
             ImGui::MenuItem("Hide UI", "Ctrl+U", &g_hideUI);
 
             if (ImGui::MenuItem("Fullscreen", "Ctrl+F", &g_fullscreen))
@@ -1521,6 +1544,30 @@ void HandleMainMenu()
                 ImGui::PopItemFlag();
             }
 
+            if (!g_allowAudio)
+            {
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            }
+            ImGui::MenuItem("Audio Settings", "", &g_showWindows.Audio);
+            if (!g_allowAudio)
+            {
+                ImGui::PopStyleVar();
+                ImGui::PopItemFlag();
+            }
+
+            if (!g_allowWebCam)
+            {
+                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
+            }
+            ImGui::MenuItem("WebCam Settings", "", &g_showWindows.WebCam);
+            if (!g_allowWebCam)
+            {
+                ImGui::PopStyleVar();
+                ImGui::PopItemFlag();
+            }
+
             ImGui::Separator();
 
             if (ImGui::MenuItem("Reset Layout", "", &g_resetLayout))
@@ -1543,6 +1590,7 @@ void HandleMainMenu()
 
         if (ImGui::BeginMenu("Settings"))
         {
+            g_menuOpen = true;
             if (ImGui::BeginMenu("Sync Interval"))
             {
                 bool selected = false;
@@ -1830,6 +1878,8 @@ void MakeInitialLayout(ImGuiID dockspace_id)
     ImGui::DockBuilderDockWindow("System Variables", dockspace_right);
     ImGui::DockBuilderDockWindow("Interpreter State", dockspace_right);
     ImGui::DockBuilderDockWindow("AMD Frame Interpolation", dockspace_right);
+    ImGui::DockBuilderDockWindow("Audio Settings", dockspace_right);
+    ImGui::DockBuilderDockWindow("WebCam Settings", dockspace_right);
     ImGui::DockBuilderDockWindow("Imported Resources", dockspace_left_bottom);
     ImGui::DockBuilderDockWindow("Shaders", dockspace_left_bottom);
     ImGui::DockBuilderDockWindow("Variables", dockspace_left);
@@ -2506,6 +2556,237 @@ struct timer
 
     std::chrono::steady_clock::time_point start_time = std::chrono::steady_clock::now();
 };
+
+void ShowWebCam()
+{
+    if (!g_showWindows.WebCam || g_hideUI)
+        return;
+
+    if (!ImGui::Begin("WebCam Settings", &g_showWindows.WebCam))
+    {
+        ImGui::End();
+        return;
+    }
+
+    ImGui::SeparatorText("WebCam Settings");
+
+    ImGui::Text("Device: %s", WebCam::GetDeviceName().c_str());
+
+    // Audio buffer - must be imported so this code can control the buffer size and format
+    {
+        float itemWidth = 0.0f;
+        std::vector<std::string> textureNodeNames;
+        for (const RenderGraphNode& nodeBase : g_interpreter.GetRenderGraph().nodes)
+        {
+            if (nodeBase._index != RenderGraphNode::c_index_resourceTexture)
+                continue;
+
+            if (nodeBase.resourceTexture.visibility != ResourceVisibility::Imported)
+                continue;
+
+            textureNodeNames.push_back(GetNodeName(nodeBase));
+
+            itemWidth = std::max(itemWidth, ImGui::CalcTextSize(textureNodeNames[textureNodeNames.size() - 1].c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+        }
+        CaseInsensitiveSort(textureNodeNames);
+
+        ImGui::SetNextItemWidth(itemWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+        if (ImGui::BeginCombo("Texture", g_WebCam.outputTexture.name.c_str()))
+        {
+            // Blank option
+            {
+                const bool is_selected = g_WebCam.outputTexture.name.empty();
+                if (ImGui::Selectable("##", is_selected))
+                    g_WebCam.outputTexture.name = "";
+
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+
+            // Other options
+            for (const std::string& textureName : textureNodeNames)
+            {
+                const bool is_selected = (g_WebCam.outputTexture.name == textureName);
+                if (ImGui::Selectable(textureName.c_str(), is_selected))
+                    g_WebCam.outputTexture.name = textureName;
+                if (is_selected)
+                    ImGui::SetItemDefaultFocus();
+            }
+
+            ImGui::EndCombo();
+        }
+        ShowToolTip(GGUserFile_WebCam::c_description_outputTexture);
+    }
+
+    ImGui::End();
+}
+
+void ShowAudio()
+{
+    if (!g_showWindows.Audio || g_hideUI)
+        return;
+
+    if (!ImGui::Begin("Audio Settings", &g_showWindows.Audio))
+    {
+        ImGui::End();
+        return;
+    }
+
+    // Audio Settings
+    {
+        ImGui::PushID("Audio Settings");
+
+        ImGui::SeparatorText("Audio Settings");
+
+        ImGui::InputInt("Sample Rate", (int*)&g_Audio.sampleRate, 0, 0);
+        ShowToolTip(GGUserFile_Audio::c_description_sampleRate);
+
+        ImGui::Checkbox("Stereo", &g_Audio.stereo);
+        ShowToolTip(GGUserFile_Audio::c_description_stereo);
+
+        ShowVariableDropDown("Stereo Variable", DataFieldType::Bool, g_Audio.Var_Stereo);
+        ShowToolTip(GGUserFile_Audio::c_description_Var_Stereo);
+
+        ShowVariableDropDown("Sample Rate Variable", DataFieldType::Uint, g_Audio.Var_SampleRate);
+        ShowToolTip(GGUserFile_Audio::c_description_Var_SampleRate);
+
+        ImGui::PopID();
+    }
+
+    // Audio Output
+    {
+        ImGui::PushID("Audio Output");
+
+        ImGui::SeparatorText("Audio Output");
+
+        ImGui::Text("Device: %s", Audio::GetOutputDeviceName().c_str());
+
+        // Audio buffer - must be imported so this code can control the buffer size and format
+        {
+            float itemWidth = 0.0f;
+            std::vector<std::string> bufferNodeNames;
+            for (const RenderGraphNode& nodeBase : g_interpreter.GetRenderGraph().nodes)
+            {
+                if (nodeBase._index != RenderGraphNode::c_index_resourceBuffer)
+                    continue;
+
+                if (nodeBase.resourceBuffer.visibility != ResourceVisibility::Imported)
+                    continue;
+
+                bufferNodeNames.push_back(GetNodeName(nodeBase));
+
+                itemWidth = std::max(itemWidth, ImGui::CalcTextSize(bufferNodeNames[bufferNodeNames.size() - 1].c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+            }
+            CaseInsensitiveSort(bufferNodeNames);
+
+            ImGui::SetNextItemWidth(itemWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+            if (ImGui::BeginCombo("Buffer", g_Audio.outputBuffer.name.c_str()))
+            {
+                // Blank option
+                {
+                    const bool is_selected = g_Audio.outputBuffer.name.empty();
+                    if (ImGui::Selectable("##", is_selected))
+                        g_Audio.outputBuffer.name = "";
+
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                // Other options
+                for (const std::string& bufferName : bufferNodeNames)
+                {
+                    const bool is_selected = (g_Audio.outputBuffer.name == bufferName);
+                    if (ImGui::Selectable(bufferName.c_str(), is_selected))
+                        g_Audio.outputBuffer.name = bufferName;
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+            ShowToolTip(GGUserFile_Audio::c_description_outputBuffer);
+        }
+
+        ImGui::SliderFloat("Volume", &g_Audio.outputVolume, 0.0f, 4.0f);
+        ShowToolTip(GGUserFile_Audio::c_description_outputVolume);
+
+        ImGui::InputInt("Buffer Length (ms)", (int*)&g_Audio.outputBufferLengthMs, 0, 0);
+        ShowToolTip(GGUserFile_Audio::c_description_outputBufferLengthMs);
+
+        ShowVariableDropDown("Sample Window Count Variable", DataFieldType::Uint, g_Audio.Var_AudioOutSampleWindowCount);
+        ShowToolTip(GGUserFile_Audio::c_description_Var_AudioOutSampleWindowCount);
+
+        ImGui::PopID();
+    }
+
+    // Audio Output
+    {
+        ImGui::PushID("Audio Input");
+
+        ImGui::SeparatorText("Audio Input");
+
+        ImGui::Text("Device: %s", Audio::GetInputDeviceName().c_str());
+
+        // Audio buffer - must be imported so this code can control the buffer size and format
+        {
+            float itemWidth = 0.0f;
+            std::vector<std::string> bufferNodeNames;
+            for (const RenderGraphNode& nodeBase : g_interpreter.GetRenderGraph().nodes)
+            {
+                if (nodeBase._index != RenderGraphNode::c_index_resourceBuffer)
+                    continue;
+
+                if (nodeBase.resourceBuffer.visibility != ResourceVisibility::Imported)
+                    continue;
+
+                bufferNodeNames.push_back(GetNodeName(nodeBase));
+
+                itemWidth = std::max(itemWidth, ImGui::CalcTextSize(bufferNodeNames[bufferNodeNames.size() - 1].c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+            }
+            CaseInsensitiveSort(bufferNodeNames);
+
+            ImGui::SetNextItemWidth(itemWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+            if (ImGui::BeginCombo("Buffer", g_Audio.inputBuffer.name.c_str()))
+            {
+                // Blank option
+                {
+                    const bool is_selected = g_Audio.inputBuffer.name.empty();
+                    if (ImGui::Selectable("##", is_selected))
+                        g_Audio.inputBuffer.name = "";
+
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                // Other options
+                for (const std::string& bufferName : bufferNodeNames)
+                {
+                    const bool is_selected = (g_Audio.inputBuffer.name == bufferName);
+                    if (ImGui::Selectable(bufferName.c_str(), is_selected))
+                        g_Audio.inputBuffer.name = bufferName;
+                    if (is_selected)
+                        ImGui::SetItemDefaultFocus();
+                }
+
+                ImGui::EndCombo();
+            }
+            ShowToolTip(GGUserFile_Audio::c_description_inputBuffer);
+        }
+
+        ImGui::SliderFloat("Volume", &g_Audio.inputVolume, 0.0f, 4.0f);
+        ShowToolTip(GGUserFile_Audio::c_description_inputVolume);
+
+        ImGui::InputInt("Buffer Length (ms)", (int*)&g_Audio.inputBufferLengthMs, 0, 0);
+        ShowToolTip(GGUserFile_Audio::c_description_inputBufferLengthMs);
+
+        ShowVariableDropDown("Sample Window Count Variable", DataFieldType::Uint, g_Audio.Var_AudioInSampleWindowCount);
+        ShowToolTip(GGUserFile_Audio::c_description_Var_AudioInSampleWindowCount);
+
+        ImGui::PopID();
+    }
+
+    ImGui::End();
+}
 
 void ShowAMDFrameInterpolation()
 {
@@ -6418,11 +6699,22 @@ void ShowResourceView()
                         viewInfo.size = bufferViewCount * bufferViewItemSize;
 
                         // Read back the data
-                        std::vector<unsigned char> bytes(viewInfo.size);
+                        std::vector<unsigned char> bytes;
                         {
                             D3D12_RANGE readRange;
                             readRange.Begin = bufferViewBegin * bufferViewItemSize; 
                             readRange.End = (bufferViewBegin + bufferViewCount) * bufferViewItemSize;
+
+                            // constrain the readback to the size of the buffer. This can come up if it changes sizes.
+                            {
+                                D3D12_RESOURCE_DESC desc = res.m_resourceReadback->GetDesc();
+                                viewInfo.size = std::min<int>(viewInfo.size, (unsigned int)desc.Width - (bufferViewBegin * bufferViewItemSize));
+                                viewInfo.count = viewInfo.size / bufferViewItemSize;
+                                readRange.End = std::min<size_t>(readRange.End, res.m_resourceReadback->GetDesc().Width-1);
+                            }
+
+                            bytes.resize(viewInfo.size);
+                            memset(bytes.data(), 0, bytes.size());
 
                             D3D12_RANGE writeRange;
                             writeRange.Begin = 1;
@@ -6430,8 +6722,11 @@ void ShowResourceView()
 
                             unsigned char* data = nullptr;
                             res.m_resourceReadback->Map(0, &readRange, reinterpret_cast<void**>(&data));
-                            memcpy(bytes.data(), &data[readRange.Begin], readRange.End - readRange.Begin);
-                            res.m_resourceReadback->Unmap(0, &writeRange);
+                            if (data)
+                            {
+                                memcpy(bytes.data(), &data[readRange.Begin], readRange.End - readRange.Begin);
+                                res.m_resourceReadback->Unmap(0, &writeRange);
+                            }
                         }
 
                         // handle choosing to view the data differently
@@ -8143,6 +8438,8 @@ void RenderFrame(bool forceExecute)
 
     ShowInternalVariables();
     ShowAMDFrameInterpolation();
+    ShowAudio();
+    ShowWebCam();
     ShowSystemVariables();
     ShowProfilerWindow();
     ShowRenderGraphWindow();
@@ -8169,6 +8466,12 @@ void RenderFrame(bool forceExecute)
 
     std::vector<RuntimeTypes::ViewableResource*> assertsBuffers = g_interpreter.MarkShaderAssertsForReadback();
 
+    if (g_allowAudio)
+        Audio::PreRender(g_Audio, g_interpreter, g_pd3dCommandList);
+
+    if (g_allowWebCam)
+		WebCam::PreRender(g_WebCam, g_interpreter, g_pd3dCommandList);
+
     // Run the Gigi technique if we should
     g_python.Tick();
     g_interpreter.Tick();
@@ -8178,6 +8481,9 @@ void RenderFrame(bool forceExecute)
         g_interpreter.Execute(g_pd3dCommandList);
         g_techniqueFrameIndex++;
     }
+
+    if (g_allowAudio)
+        Audio::PostRender(g_Audio, g_interpreter, g_pd3dCommandList, NUM_FRAMES_IN_FLIGHT, !(g_executeTechnique || forceExecute));
 
     // Frame interpolation
     {
@@ -8366,6 +8672,16 @@ int main(int argc, char** argv)
             g_allowAMDFrameInterpolation = false;
             argIndex++;
         }
+        else if (!_stricmp(argv[argIndex], "-noaudio"))
+        {
+            g_allowAudio = false;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-nowebcam"))
+        {
+            g_allowWebCam = false;
+            argIndex++;
+        }
         else if (!_stricmp(argv[argIndex], "-nopixcapture"))
         {
             g_pixCaptureEnabled = false;
@@ -8454,6 +8770,15 @@ int main(int argc, char** argv)
         return 1;
     }
 
+    // Initialize audio
+    if (g_allowAudio)
+        Audio::Init(NUM_FRAMES_IN_FLIGHT);
+    else
+        Log(LogLevel::Info, "Audio disabled by command line");
+
+    if (g_allowWebCam)
+        WebCam::Init();
+
     // Show the window
     ::ShowWindow(g_hwnd, SW_SHOWDEFAULT);
     ::UpdateWindow(g_hwnd);
@@ -8532,6 +8857,17 @@ int main(int argc, char** argv)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, NULL, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != NULL);
+
+    // Load Font Awesome icons
+    {
+        io.Fonts->AddFontDefault();
+        static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        icons_config.GlyphMinAdvanceX = 13.0f * 0.8f;  // default font size is 13
+        io.Fonts->AddFontFromFileTTF("external/FontAwesome/Font Awesome 7 Free-Solid-900.otf", icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+    }
 
     // just to have something in the log making it clear where the content is located
     Log(LogLevel::Info, "GPU: '%s' (driver %s) RayTracing:%s",
@@ -8702,6 +9038,12 @@ int main(int argc, char** argv)
 
     // Cleanup
 
+    if (g_allowAudio)
+        Audio::Shutdown(g_interpreter);
+
+    if (g_allowWebCam)
+        WebCam::Shutdown();
+
     g_interpreter.Release();
 
     ImGui_ImplDX12_Shutdown();
@@ -8718,7 +9060,6 @@ int main(int argc, char** argv)
        NvAPI_Unload();
 
     PythonShutdown();
-
 
     if (g_renderDocEnabled)
     {

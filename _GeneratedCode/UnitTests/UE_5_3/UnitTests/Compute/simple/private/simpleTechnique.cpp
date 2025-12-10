@@ -51,6 +51,7 @@ void AddTechnique(FRDGBuilder& GraphBuilder, const FViewInfo& View, FTechniquePa
     FRDGTextureRef Texture_Input = params.inputs.Texture_Input;
 
     // Run Compute Shader "DoSimpleCS" - Runs the shader
+    if (View.ViewState->TechniqueState_simple.Var_DummyConstVar == 1)
     {
         // Set shader parameters
         FDoSimpleCSCS::FParameters* PassParameters = GraphBuilder.AllocParameters<FDoSimpleCSCS::FParameters>();

@@ -39,7 +39,7 @@ namespace buffertest_viewOffsetCS_Vars
         // Variables
         int variable_InputTypedBufferBegin = 0;
         int variable_InputTypedBufferSize = 0;
-        int variable_OutputTypedBufferBegin = 1;
+        const int variable_OutputTypedBufferBegin = 1;
         int variable_OutputTypedBufferSize = 0;
         int variable_InputTypedStructBufferBegin = 0;
         int variable_InputTypedStructBufferSize = 0;
@@ -53,6 +53,8 @@ namespace buffertest_viewOffsetCS_Vars
         int variable_InputTypedBufferRawSize = 0;
         int variable_OutputTypedBufferRawBegin = 16;
         int variable_OutputTypedBufferRawSize = 0;
+        uint variable_BufferSize1 = 1;
+        const uint variable_BufferSize2 = 8;
 
         Struct__BufferTest_0CB constantBuffer__BufferTest_0CB_cpu;
         ID3D12Resource* constantBuffer__BufferTest_0CB = nullptr;

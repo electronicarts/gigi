@@ -6,6 +6,7 @@
 #pragma once
 
 #include <string>
+#include "external/IconFontCppHeaders/IconsFontAwesome7.h"
 
 struct ImVec4;
 
@@ -40,4 +41,3 @@ bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index);
 // like MenuItem but prints the path differently from the filename for better user experience
 // first file, then path
 bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index);
-

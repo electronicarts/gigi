@@ -255,8 +255,35 @@
             canvas.addEventListener('keydown', (event) => { KeyStates[event.keyCode] = 1; });
             canvas.addEventListener('keyup', (event) => { KeyStates[event.keyCode] = 0; });
 
+            // Hook up the on change events for UI
+            document.getElementById('inputBox_RenderSize0').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); Defines.variable_RenderSize[0]=event.target.value;});
+            document.getElementById('inputBox_RenderSize1').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); Defines.variable_RenderSize[1]=event.target.value;});
+            document.getElementById('inputBox_RenderSize2').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); Defines.variable_RenderSize[2]=event.target.value;});
+
+            function ResetVariables()
+            {
+                    Defines.variable_RenderSize[0] = Defines.variableDefault_RenderSize[0];
+                    Defines.variable_RenderSize[1] = Defines.variableDefault_RenderSize[1];
+                    Defines.variable_RenderSize[2] = Defines.variableDefault_RenderSize[2];
+            }
+
+            function SetUIToVariables()
+            {
+                    document.getElementById('inputBox_RenderSize0').value = Defines.variable_RenderSize[0];
+                    document.getElementById('inputBox_RenderSize1').value = Defines.variable_RenderSize[1];
+                    document.getElementById('inputBox_RenderSize2').value = Defines.variable_RenderSize[2];
+            }
+
+            // Set variables to their defaults
+            ResetVariables();
+
+            document.getElementById('ResetVariables').addEventListener('click',(event) => { ResetVariables(); SetUIToVariables(); });
+
             // Initialize the technique from unit test logic
             await test_Compute_Defines.Init(device, Defines);
+
+            // Make sure the UI shows the correct variable values
+            SetUIToVariables();
 
             // Frame rendering function
             let startTimeMs;
@@ -316,6 +343,26 @@
                         );
                     }
                 }
+
+                // If the technique changed the variables, update the UI
+                if (Defines.variableChanged_RenderSize[0])
+                {
+                    document.getElementById('inputBox_RenderSize0').value = Defines.variable_RenderSize[0];
+                    Defines.variableChanged_RenderSize[0] = false;
+                }
+
+                if (Defines.variableChanged_RenderSize[1])
+                {
+                    document.getElementById('inputBox_RenderSize1').value = Defines.variable_RenderSize[1];
+                    Defines.variableChanged_RenderSize[1] = false;
+                }
+
+                if (Defines.variableChanged_RenderSize[2])
+                {
+                    document.getElementById('inputBox_RenderSize2').value = Defines.variable_RenderSize[2];
+                    Defines.variableChanged_RenderSize[2] = false;
+                }
+
 
                 // Submit the command encoder
                 device.queue.submit([encoder.finish()]);
@@ -377,6 +424,21 @@
                 <td>&nbsp;</td>
                 <td valign="top">
                     <b>Defines</b><br/>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">RenderSize&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox_RenderSize0" disabled="true">
+                                <input type="text" id="inputBox_RenderSize1" disabled="true">
+                                <input type="text" id="inputBox_RenderSize2" disabled="true">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" id="ResetVariables">Reset Variables</button>
+                    <br/>
+                    <br/>
 
                     <button type=button class="collapsible">Camera</button>
                     <table cellspacing=0 cellpadding=0 class="collapsiblecontent" style="display:none">
@@ -421,7 +483,7 @@
                     <span id="FPS"></span>
                     <br />
                     <br />
-                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.01.6</a></b>
+                    <b>Created using <a href="https://github.com/electronicarts/gigi/">Gigi v1.01.7</a></b>
                 </td>
             </tr>
         </table>

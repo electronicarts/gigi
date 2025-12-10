@@ -27,7 +27,7 @@
 #include "MakeTypePath.h"
 
 #include "GigiCompilerLib/gigicompiler.h"
-#include "GigiCompilerLib/UI/ImGuiHelper.h"
+#include "Shared/UI/ImGuiHelper.h"
 #include "Schemas/Visitor.h"
 #include "visitors.h"
 #include "StableSample.h"
@@ -1695,28 +1695,28 @@ struct Example :
         {
             ImGui::SameLine();
 			ImGui_Enabled enabled(selectedIndex != 0);
-			if (ArrowButton2("Up", ImGuiDir_Up, true, false))
+            if (ImGui::SmallButton(ICON_FA_ANGLE_UP "##Up"))
                 wantsMoveUp = true;
 			ShowUIToolTip("Up");
         }
         {
             ImGui::SameLine();
 			ImGui_Enabled enabled(selectedIndex + 1 < dataList.size());
-			if (ArrowButton2("Down", ImGuiDir_Down, true, false))
+            if (ImGui::SmallButton(ICON_FA_ANGLE_DOWN "##Down"))
                 wantsMoveDown = true;
 			ShowUIToolTip("Down");
         }
 		{
             ImGui::SameLine();
 			ImGui_Enabled enabled(selectedIndex != 0);
-			if (ArrowButton2("Up to Top", ImGuiDir_Up, true, true))
+            if (ImGui::SmallButton(ICON_FA_ANGLES_UP "##Up to Top"))
                 wantsMoveTop = true;
 			ShowUIToolTip("Up To Top");
         }
 		{
             ImGui::SameLine();
 			ImGui_Enabled enabled(selectedIndex + 1 < dataList.size());
-			if (ArrowButton2("Down to Bottom", ImGuiDir_Down, true, true))
+            if (ImGui::SmallButton(ICON_FA_ANGLES_DOWN "##Down to Bottom"))
                 wantsMoveBottom = true;
 			ShowUIToolTip("Down to Bottom");
         }
@@ -1940,6 +1940,10 @@ struct Example :
         auto NameLambda = [&](size_t index, const SetVariable& item)
         {
             std::stringstream name;
+
+            if (!item.comment.empty())
+                name << item.comment << "\n";
+
             name << index << ") " << item.destination.name;
             if (item.destinationIndex != -1)
                 name << "[" << item.destinationIndex << "]";
@@ -2500,6 +2504,8 @@ struct Example :
 
     void OnFrame(float deltaTime) override
     {
+        UICache::OnFrame();
+
         //ImGuiID dockspace_id = ImGui::DockSpaceOverViewport(nullptr);
 
         ImGuiID dockspace_id = ImGui::DockSpace(ImGui::GetID("MyDockSpace"));

@@ -28,6 +28,9 @@ namespace Defines
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
+        // Variables
+        const uint3 variable_RenderSize = {64, 64, 1};
+
         static ID3D12PipelineState* computeShader_WriteOutput_pso;
         static ID3D12RootSignature* computeShader_WriteOutput_rootSig;
 
