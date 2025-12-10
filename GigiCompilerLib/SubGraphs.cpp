@@ -395,24 +395,6 @@ struct RenameReferencesVisitor
                 m_renameData.UpdateNodePin(node.records.node, node.records.pin);
                 m_renameData.UpdateNodeName(node.records.node);
 
-                m_renameData.UpdateNodePin(node.shadingRateImage.node, node.shadingRateImage.pin);
-                m_renameData.UpdateNodeName(node.shadingRateImage.node);
-
-                for (NodePinReferenceOptional& colorTarget : node.colorTargets)
-                {
-                    m_renameData.UpdateNodePin(colorTarget.node, colorTarget.pin);
-                    m_renameData.UpdateNodeName(colorTarget.node);
-                }
-
-                m_renameData.UpdateNodePin(node.depthTarget.node, node.depthTarget.pin);
-                m_renameData.UpdateNodeName(node.depthTarget.node);
-
-                for (NodePinConnection& connection : node.connections)
-                {
-                    m_renameData.UpdateNodePin(connection.dstNode, connection.dstPin);
-                    m_renameData.UpdateNodeName(connection.dstNode);
-                }
-
                 return true;
             }
             case RenderGraphNode::c_index_reroute:

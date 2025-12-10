@@ -204,8 +204,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 {
     if (nodeAction == NodeAction::Init)
     {
-        runtimeData.m_usesMeshNodes = node.meshNodes.size() > 0;
-
         // check support:
         D3D12_WORK_GRAPHS_TIER tier = D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED;
         // check if supported: TODO: move to device itself, has some members for this
@@ -218,13 +216,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         {
             m_logFn(LogLevel::Error, "Work Graphs aren't supported on your device");
             return false; 
-        }
-
-        if (runtimeData.m_usesMeshNodes && tier < D3D12_WORK_GRAPHS_TIER_1_1)
-        {
-        https://gpuopen.com/learn/work_graphs_mesh_nodes/work_graphs_mesh_nodes-getting_started/#:~:text=This%20blog%20post%20describes%20the,nodes%20inside%20a%20work%20graph.
-            m_logFn(LogLevel::Error, "Work Graphs with Mesh Nodes aren't supported on your device");
-            return false;
         }
 
         // Select shader file name
@@ -364,7 +355,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         ShaderCompilationInfo shaderCompilationInfo;
         shaderCompilationInfo.fileName = fullFileName;
         shaderCompilationInfo.entryPoint = entrypoint;
-        shaderCompilationInfo.shaderModel = runtimeData.m_usesMeshNodes ? m_renderGraph.settings.dx12.shaderModelWgMs : m_renderGraph.settings.dx12.shaderModelWg;
+        shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelWg;
         shaderCompilationInfo.debugName = node.name;
         shaderCompilationInfo.defines = node.entryShader.shader->defines;
 
@@ -418,129 +409,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             // add blob to state object
             auto librarySubobject = stateObjectDesc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
             librarySubobject->SetDXILLibrary(&shaderBytecode);
-        }
-
-        // WorkGraphPlayground from AMD as reference implementation
-        // 
-        // add mesh nodes to the stateobject
-        if (runtimeData.m_usesMeshNodes)
-        {
-            // use global node settings in general,
-            // but allow a collapsable field in the meshnode settings, where you can override it.            
-            for (size_t i = 0; i < node.meshNodes.size(); i++)
-            {
-                RenderState rstate = node.meshNodes[i].overrideNodeRenderState ? node.meshNodes[i].renderState : node.renderState;
-
-                CD3DX12_STATE_OBJECT_CONFIG_SUBOBJECT* configSubobject = stateObjectDesc.CreateSubobject<CD3DX12_STATE_OBJECT_CONFIG_SUBOBJECT>();
-                configSubobject->SetFlags(D3D12_STATE_OBJECT_FLAG_WORK_GRAPHS_USE_GRAPHICS_STATE_FOR_GLOBAL_ROOT_SIGNATURE);
-
-                CD3DX12_RASTERIZER_SUBOBJECT* rasterizerSubobject = stateObjectDesc.CreateSubobject<CD3DX12_RASTERIZER_SUBOBJECT>();
-                rasterizerSubobject->SetFrontCounterClockwise(rstate.frontIsCounterClockwise);
-                rasterizerSubobject->SetCullMode(DrawCullModeToD3D12_CULL_MODE(rstate.cullMode));
-                rasterizerSubobject->SetFillMode(D3D12_FILL_MODE_SOLID);
-
-                // node specific - separate from other overrideable data, because on shader side it's like that as well.
-                CD3DX12_PRIMITIVE_TOPOLOGY_SUBOBJECT* primitiveTopologySubobject = stateObjectDesc.CreateSubobject<CD3DX12_PRIMITIVE_TOPOLOGY_SUBOBJECT>();
-                primitiveTopologySubobject->SetPrimitiveTopologyType(GeometryTypeToD3D12_PRIMITIVE_TOPOLOGY_TYPE(node.meshNodes[i].geometryType));
-
-
-                CD3DX12_DEPTH_STENCIL_FORMAT_SUBOBJECT* depthStencilSubobject = nullptr;
-                if (node.depthTarget.resourceNodeIndex != -1)
-                {
-                    const RenderGraphNode& depthTargetNode = m_renderGraph.nodes[node.depthTarget.resourceNodeIndex];
-                    if (depthTargetNode._index == RenderGraphNode::c_index_resourceTexture)
-                    {
-                        bool exists = false;
-                        auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(depthTargetNode.resourceTexture.name.c_str(), exists);
-
-                        depthStencilSubobject = stateObjectDesc.CreateSubobject<CD3DX12_DEPTH_STENCIL_FORMAT_SUBOBJECT>();
-                        depthStencilSubobject->SetDepthStencilFormat(textureInfo.m_format);
-                    }
-                }
-
-                CD3DX12_RENDER_TARGET_FORMATS_SUBOBJECT* renderTargetSubobject = stateObjectDesc.CreateSubobject<CD3DX12_RENDER_TARGET_FORMATS_SUBOBJECT>();
-                int numRenderTargets = 0;
-                int numSamples = 1;
-                for (int i = 0; i < node.colorTargets.size(); ++i)
-                {
-                    if (node.colorTargets[i].resourceNodeIndex == -1)
-                        break;
-
-                    const RenderGraphNode& colorTargetNode = m_renderGraph.nodes[node.colorTargets[i].resourceNodeIndex];
-                    if (colorTargetNode._index != RenderGraphNode::c_index_resourceTexture)
-                        break;
-
-                    bool exists = false;
-                    auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(colorTargetNode.resourceTexture.name.c_str(), exists);
-                    if (!exists || !textureInfo.m_resource)
-                        break;
-
-                    renderTargetSubobject->SetRenderTargetFormat(i, textureInfo.m_format);
-
-                    numRenderTargets++;
-
-                    if (textureInfo.sampleCount > numSamples)
-                    {
-                        numSamples = textureInfo.sampleCount;
-                    }
-                }
-                renderTargetSubobject->SetNumRenderTargets(numRenderTargets);
-
-                CD3DX12_SAMPLE_DESC_SUBOBJECT* sampleDescSubobject = stateObjectDesc.CreateSubobject<CD3DX12_SAMPLE_DESC_SUBOBJECT>();
-                sampleDescSubobject->SetCount(numSamples);
-                sampleDescSubobject->SetQuality(0); //msaa settings TODO: Jan, not sure what to do here.
-
-                CD3DX12_GENERIC_PROGRAM_SUBOBJECT* genericProgramSubobject = stateObjectDesc.CreateSubobject<CD3DX12_GENERIC_PROGRAM_SUBOBJECT>();
-
-                // Use mesh shader name as program name. This name needs to be unique for any program.
-
-                std::wstring meshNameW = ToWideString(node.meshNodes[i].meshNodeFunctionName.c_str());
-                genericProgramSubobject->SetProgramName(meshNameW.c_str()); // TODO: jan, make unique, can there be different combination of mesh node with dfferent pixel shaders? possible?
-
-                // Add mesh shader to generic program
-                genericProgramSubobject->AddExport(meshNameW.c_str());
-
-                // Add subobject for pipeline configuration
-                genericProgramSubobject->AddSubobject(*rasterizerSubobject);
-                genericProgramSubobject->AddSubobject(*primitiveTopologySubobject);
-                genericProgramSubobject->AddSubobject(*depthStencilSubobject);
-                genericProgramSubobject->AddSubobject(*renderTargetSubobject);
-                genericProgramSubobject->AddSubobject(*sampleDescSubobject);
-
-                // TODO: compile pixel shader and add blob to state object and add export.
-                std::string pixelName = node.meshNodes[i].pixelShader.c_str();
-
-                shaderCompilationInfo.debugName = node.name + pixelName;
-                shaderCompilationInfo.entryPoint = pixelName;
-                shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelPs;
-
-                std::vector<std::string> allPixelShaderFiles;
-                std::vector<unsigned char> pixelBlob = CompileShaderToByteCode_dxc(shaderCompilationInfo, m_logFn, &allPixelShaderFiles);
-
-                // Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
-                for (const std::string& fileName : allPixelShaderFiles)
-                {
-                    std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
-                    m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
-                }
-
-                if (pixelBlob.data() == nullptr)
-                {
-                    m_logFn(LogLevel::Warn, "Failed to compile pixel shader for mesh node");
-                    continue; // TODO: Jan? return or continue?
-                }
-
-                // Add library to graph
-                {
-                    CD3DX12_SHADER_BYTECODE shaderBytecode = CD3DX12_SHADER_BYTECODE(pixelBlob.data(), pixelBlob.size());
-
-                    // add blob to state object
-                    CD3DX12_DXIL_LIBRARY_SUBOBJECT* librarySubobject = stateObjectDesc.CreateSubobject<CD3DX12_DXIL_LIBRARY_SUBOBJECT>();
-                    librarySubobject->SetDXILLibrary(&shaderBytecode);
-
-                    genericProgramSubobject->AddExport(ToWideString(pixelName.c_str()).c_str());
-                }
-            }
         }
 
         // Create work graph state object
@@ -660,206 +528,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
         // Queue up transitions, so we only do them if we actually execute the node
         std::vector<TransitionTracker::Item> queuedTransitions;
-
-        struct RenderTargetClearData
-        {
-            D3D12_CPU_DESCRIPTOR_HANDLE handle;
-            Vec4 color;
-        };
-        std::vector<RenderTargetClearData> renderTargetClearData;
-        struct DepthTargetClearData
-        {
-            bool clear = false;
-            D3D12_CPU_DESCRIPTOR_HANDLE handle;
-            D3D12_CLEAR_FLAGS flags;
-            float depth;
-            uint8_t stencil;
-        };
-        DepthTargetClearData depthTargetClearData;
-
-        int rasterWidth = -1;
-        int rasterHeight = -1;
-        std::vector<D3D12_CPU_DESCRIPTOR_HANDLE> colorTargetHandles;
-        D3D12_CPU_DESCRIPTOR_HANDLE depthTargetHandle;
-        D3D12_CPU_DESCRIPTOR_HANDLE* depthTargetHandlePtr = nullptr;
-
-        if (runtimeData.m_usesMeshNodes)
-        {
-            // Shading rate image transition
-            if (node.shadingRateImage.resourceNodeIndex != -1)
-            {
-                const RenderGraphNode& resourceNode = m_renderGraph.nodes[node.shadingRateImage.resourceNodeIndex];
-                if (resourceNode._index == RenderGraphNode::c_index_resourceTexture)
-                {
-                    bool exists = false;
-                    const auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(resourceNode.resourceTexture.name.c_str(), exists);
-                    if (exists && textureInfo.m_resource)
-                    {
-                        // publish as a viewable resource
-                        runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(resourceNode.resourceTexture.dimension), (node.name + std::string(".shadingRateImage")).c_str(), textureInfo.m_resource, textureInfo.m_format, textureInfo.m_size, textureInfo.m_numMips, false, false);
-
-                        // transition
-                        queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_SHADING_RATE_SOURCE, GetNodeName(resourceNode).c_str()) });
-
-                        if (VRSSupportLevel() == D3D12_VARIABLE_SHADING_RATE_TIER_2)
-                        {
-                            ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
-                            if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
-                            {
-                                m_logFn(LogLevel::Error, "Work Graph node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
-                                return false;
-                            }
-
-                            // Set the shading rate image
-                            VRSCommandList->RSSetShadingRateImage(textureInfo.m_resource);
-
-                            VRSCommandList->Release();
-                        }
-                        else
-                        {
-                            m_logFn(LogLevel::Error, "Work Graph call node \"%s\" could not enable sparse shading because it is not supported", node.name.c_str());
-                        }
-                    }
-                }
-            }
-
-            // publish render targets as viewable resources (before)
-            {
-                bool firstRenderTarget = true;
-                int renderTargetSize[3] = { 0, 0, 0 };
-
-                for (int i = 0; i < node.colorTargets.size(); ++i)
-                {
-                    if (node.colorTargets[i].resourceNodeIndex == -1)
-                        break;
-
-                    const RenderGraphNode& colorTargetNode = m_renderGraph.nodes[node.colorTargets[i].resourceNodeIndex];
-                    if (colorTargetNode._index != RenderGraphNode::c_index_resourceTexture)
-                        break;
-
-                    char buffer[256];
-                    sprintf_s(buffer, "%s.colorTarget%i (Before)", node.name.c_str(), i);
-
-                    bool exists = false;
-                    auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(colorTargetNode.resourceTexture.name.c_str(), exists);
-                    if (!exists || !textureInfo.m_resource)
-                        break;
-                    const ColorTargetSettings& ctSettings = node.colorTargetSettings[i];
-
-                    int textureMipSize[3] = { textureInfo.m_size[0], textureInfo.m_size[1], textureInfo.m_size[2] };
-                    for (int i = 0; i < ctSettings.mipLevel; ++i)
-                    {
-                        textureMipSize[0] = max(textureMipSize[0] / 2, 1);
-                        textureMipSize[1] = max(textureMipSize[1] / 2, 1);
-                    }
-
-                    if (firstRenderTarget)
-                    {
-                        firstRenderTarget = false;
-                        renderTargetSize[0] = textureMipSize[0];
-                        renderTargetSize[1] = textureMipSize[1];
-                        renderTargetSize[2] = textureMipSize[2];
-                    }
-                    else if (
-                        renderTargetSize[0] != textureMipSize[0] ||
-                        renderTargetSize[1] != textureMipSize[1])
-                    {
-                        std::ostringstream ss;
-                        ss << "color target " << i << " is size (" << textureMipSize[0] << ", " << textureMipSize[1] << ", " << textureMipSize[2] << ")"
-                            " which mismatches a previously seen render target size of (" << renderTargetSize[0] << ", " << renderTargetSize[1] << ", " << renderTargetSize[2] << ")";
-                        runtimeData.m_renderGraphText = ss.str();
-                        return true;
-                    }
-
-                    rasterWidth = textureMipSize[0];
-                    rasterHeight = textureMipSize[1];
-
-                    runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(colorTargetNode.resourceTexture.dimension), buffer, textureInfo.m_resource, textureInfo.m_format, textureInfo.m_size, textureInfo.m_numMips, false, false);
-
-                    queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_RENDER_TARGET, colorTargetNode.resourceTexture.name.c_str()) });
-
-                    D3D12_CPU_DESCRIPTOR_HANDLE colorTargetHandle;
-                    if (!textureInfo.GetRTV(m_device, colorTargetHandle, m_RTVHeapAllocationTracker, colorTargetNode.resourceTexture.dimension, ctSettings.arrayIndex, ctSettings.mipLevel, textureInfo.sampleCount, colorTargetNode.resourceTexture.name.c_str()))
-                    {
-                        m_logFn(LogLevel::Error, "node \"%s\": cannot make RTV for \"%s\" (%i,%i).\n", node.name.c_str(), colorTargetNode.resourceTexture.name.c_str(), ctSettings.arrayIndex, ctSettings.mipLevel);
-                        return false;
-                    }
-
-                    if (ctSettings.clear)
-                        renderTargetClearData.push_back({ colorTargetHandle, ctSettings.clearColor });
-
-                    colorTargetHandles.push_back(colorTargetHandle);
-                }
-
-                if (node.depthTarget.resourceNodeIndex != -1)
-                {
-                    const RenderGraphNode& depthTargetNode = m_renderGraph.nodes[node.depthTarget.resourceNodeIndex];
-                    if (depthTargetNode._index == RenderGraphNode::c_index_resourceTexture)
-                    {
-                        bool exists = false;
-                        auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(depthTargetNode.resourceTexture.name.c_str(), exists);
-                        if (exists && textureInfo.m_resource)
-                        {
-                            int textureMipSize[3] = { textureInfo.m_size[0], textureInfo.m_size[1], textureInfo.m_size[2] };
-                            for (int i = 0; i < node.depthMipLevel; ++i)
-                            {
-                                textureMipSize[0] = max(textureMipSize[0] / 2, 1);
-                                textureMipSize[1] = max(textureMipSize[1] / 2, 1);
-                            }
-
-                            if (firstRenderTarget)
-                            {
-                                firstRenderTarget = false;
-                                renderTargetSize[0] = textureMipSize[0];
-                                renderTargetSize[1] = textureMipSize[1];
-                                renderTargetSize[2] = textureMipSize[2];
-                            }
-                            else if (
-                                renderTargetSize[0] != textureMipSize[0] ||
-                                renderTargetSize[1] != textureMipSize[1])
-                            {
-                                std::ostringstream ss;
-                                ss << "depth target is size (" << textureMipSize[0] << ", " << textureMipSize[1] << ", " << textureMipSize[2] << ")"
-                                    " which mismatches a previously seen render target size of (" << renderTargetSize[0] << ", " << renderTargetSize[1] << ", " << renderTargetSize[2] << ")";
-                                runtimeData.m_renderGraphText = ss.str();
-                                return true;
-                            }
-
-                            rasterWidth = textureMipSize[0];
-                            rasterHeight = textureMipSize[1];
-                            char buffer[256];
-                            sprintf_s(buffer, "%s.depthTarget (Before)", node.name.c_str());
-                            runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(depthTargetNode.resourceTexture.dimension), buffer, textureInfo.m_resource, textureInfo.m_format, textureInfo.m_size, textureInfo.m_numMips, false, false);
-
-                            queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(textureInfo.m_resource, D3D12_RESOURCE_STATE_DEPTH_WRITE, depthTargetNode.resourceTexture.name.c_str()) });
-
-                            if (!textureInfo.GetDSV(m_device, depthTargetHandle, m_DSVHeapAllocationTracker, depthTargetNode.resourceTexture.dimension, node.depthArrayIndex, node.depthMipLevel, textureInfo.sampleCount, depthTargetNode.resourceTexture.name.c_str()))
-                            {
-                                m_logFn(LogLevel::Error, "node \"%s\": cannot make DSV for \"%s\" (%i,%i).\n", node.name.c_str(), depthTargetNode.resourceTexture.name.c_str(), node.depthArrayIndex, node.depthMipLevel);
-                                return false;
-                            }
-
-                            depthTargetHandlePtr = &depthTargetHandle;
-
-                            if (node.depthTargetClear || node.stencilClear)
-                            {
-                                D3D12_CLEAR_FLAGS clearFlags = (D3D12_CLEAR_FLAGS)0;
-                                if (node.depthTargetClear)
-                                    clearFlags |= D3D12_CLEAR_FLAG_DEPTH;
-                                if (node.stencilClear)
-                                    clearFlags |= D3D12_CLEAR_FLAG_STENCIL;
-
-                                depthTargetClearData.clear = true;
-                                depthTargetClearData.handle = depthTargetHandle;
-                                depthTargetClearData.flags = clearFlags;
-                                depthTargetClearData.depth = node.depthTargetClearValue;
-                                depthTargetClearData.stencil = node.stencilClearValue;
-                            }
-                        }
-                    }
-                }
-            }
-        }
 
         // records buffer transition
         if (node.records.resourceNodeIndex != -1)
@@ -1009,15 +677,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             }
         }
 
-        // set root signature
-        if (runtimeData.m_usesMeshNodes)
-        {
-            m_commandList->SetGraphicsRootSignature(runtimeData.m_rootSignature);
-        }
-        else
-        {
-            m_commandList->SetComputeRootSignature(runtimeData.m_rootSignature);
-        }
+        m_commandList->SetComputeRootSignature(runtimeData.m_rootSignature);
 
         // Make the entry shader descriptor table gigi description
         std::vector<DescriptorTableCache::ResourceDescriptor> descriptorsWorkGraph;
@@ -1050,59 +710,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             rootSigParamIndex++;
         }
 
-        if (runtimeData.m_usesMeshNodes)
-        {
-            // do color and depth target clears
-            for (const RenderTargetClearData& data : renderTargetClearData)
-                m_commandList->ClearRenderTargetView(data.handle, data.color.data(), 0, nullptr);
-            if (depthTargetClearData.clear)
-                m_commandList->ClearDepthStencilView(depthTargetClearData.handle, depthTargetClearData.flags, depthTargetClearData.depth, depthTargetClearData.stencil, 0, nullptr);
-
-            // clear viewport and scissor rect
-            D3D12_VIEWPORT viewport = { 0.0f, 0.0f, float(rasterWidth), float(rasterHeight), 0.0f, 1.0f };
-            D3D12_RECT scissorRect = { 0, 0, (LONG)rasterWidth, (LONG)rasterHeight };
-            m_commandList->RSSetViewports(1, &viewport);
-            m_commandList->RSSetScissorRects(1, &scissorRect);
-
-            m_commandList->OMSetRenderTargets((UINT)colorTargetHandles.size(), colorTargetHandles.data(), false, depthTargetHandlePtr);
-            m_commandList->OMSetStencilRef(node.stencilRef);
-
-            // variable rate shading - set sparse sampling
-            if (VRSSupportLevel() > D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED)
-            {
-                ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
-                if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
-                {
-                    m_logFn(LogLevel::Error, "Work graph node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
-                    return false;
-                }
-
-                D3D12_SHADING_RATE shadingRate;
-                if (!ShadingRateToD3D12_SHADING_RATE(node.shadingRate, shadingRate))
-                {
-                    m_logFn(LogLevel::Error, "Unhandled shading rate \"%s\" in node \"%s\"", EnumToString(node.shadingRate), node.name.c_str());
-                    return false;
-                }
-
-                D3D12_SHADING_RATE_COMBINER combiners[2];
-                if (!ShadingRateCombinerToD3D12_SHADING_RATE_COMBINER(node.shadingRateCombiner1, combiners[0]))
-                {
-                    m_logFn(LogLevel::Error, "Unhandled shading rate combiner \"%s\" in node \"%s\"", EnumToString(node.shadingRateCombiner1), node.name.c_str());
-                    return false;
-                }
-
-                if (!ShadingRateCombinerToD3D12_SHADING_RATE_COMBINER(node.shadingRateCombiner2, combiners[1]))
-                {
-                    m_logFn(LogLevel::Error, "Unhandled shading rate combiner \"%s\" in node \"%s\"", EnumToString(node.shadingRateCombiner2), node.name.c_str());
-                    return false;
-                }
-
-                VRSCommandList->RSSetShadingRate(shadingRate, combiners);
-
-                VRSCommandList->Release();
-            }
-        }
-
         std::ostringstream ss;
         ss << "DispatchGraph:\n  " << node.name << '\n';
 
@@ -1123,66 +730,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // Clear backing memory initialization flag, as the graph has run at least once now
         // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#d3d12_set_work_graph_flags
         runtimeData.m_programDesc.WorkGraph.Flags &= ~D3D12_SET_WORK_GRAPH_FLAG_INITIALIZE;
-
-        if (runtimeData.m_usesMeshNodes)
-        {
-            // variable rate shading - set it back to dense sampling
-            if (VRSSupportLevel() > D3D12_VARIABLE_SHADING_RATE_TIER_NOT_SUPPORTED)
-            {
-                ID3D12GraphicsCommandList5* VRSCommandList = nullptr;
-                if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&VRSCommandList))))
-                {
-                    m_logFn(LogLevel::Error, "Work graph node \"%s\" couldn't get a ID3D12GraphicsCommandList5*", node.name.c_str());
-                    return false;
-                }
-
-                VRSCommandList->RSSetShadingRate(D3D12_SHADING_RATE_1X1, nullptr);
-
-                if (VRSSupportLevel() == D3D12_VARIABLE_SHADING_RATE_TIER_2)
-                    VRSCommandList->RSSetShadingRateImage(nullptr);
-
-                VRSCommandList->Release();
-            }
-
-            // publish render targets as viewable resources (after)
-            {
-                for (int i = 0; i < node.colorTargets.size(); ++i)
-                {
-                    if (node.colorTargets[i].resourceNodeIndex == -1)
-                        break;
-
-                    const RenderGraphNode& colorTargetNode = m_renderGraph.nodes[node.colorTargets[i].resourceNodeIndex];
-                    if (colorTargetNode._index != RenderGraphNode::c_index_resourceTexture)
-                        break;
-
-                    char buffer[256];
-                    sprintf_s(buffer, "%s.colorTarget%i (After)", node.name.c_str(), i);
-
-                    bool exists = false;
-                    const auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(colorTargetNode.resourceTexture.name.c_str(), exists);
-                    if (!exists || !textureInfo.m_resource)
-                        break;
-
-                    runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(colorTargetNode.resourceTexture.dimension), buffer, textureInfo.m_resource, textureInfo.m_format, textureInfo.m_size, textureInfo.m_numMips, false, true);
-                }
-
-                if (node.depthTarget.resourceNodeIndex != -1)
-                {
-                    const RenderGraphNode& depthTargetNode = m_renderGraph.nodes[node.depthTarget.resourceNodeIndex];
-                    if (depthTargetNode._index == RenderGraphNode::c_index_resourceTexture)
-                    {
-                        bool exists = false;
-                        const auto& textureInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Texture(depthTargetNode.resourceTexture.name.c_str(), exists);
-                        if (exists && textureInfo.m_resource)
-                        {
-                            char buffer[256];
-                            sprintf_s(buffer, "%s.depthTarget (After)", node.name.c_str());
-                            runtimeData.HandleViewableTexture(*this, TextureDimensionTypeToViewableResourceType(depthTargetNode.resourceTexture.dimension), buffer, textureInfo.m_resource, textureInfo.m_format, textureInfo.m_size, textureInfo.m_numMips, false, true);
-                        }
-                    }
-                }
-            }
-        }
 
         if (IsConditional(node.condition))
             ss << "\nCondition: " << (EvaluateCondition(node.condition) ? "true" : "false");

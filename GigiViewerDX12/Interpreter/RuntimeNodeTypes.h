@@ -274,7 +274,6 @@ struct RuntimeTypes
     {
         void Release(GigiInterpreterPreviewWindowDX12& interpreter);
 
-        bool m_usesMeshNodes = false;
         ID3D12StateObject* m_stateObject = nullptr; // contains shader data, root sig, ...
         ID3D12RootSignature* m_rootSignature = nullptr;
         ID3D12Resource* m_backingMemory = nullptr;

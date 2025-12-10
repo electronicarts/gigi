@@ -474,33 +474,6 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.accessLabel = " (R)";
     ret.push_back(pin);
 
-    // Shading Rate Image
-    pin.name = "shadingRateImage";
-    pin.inputNode = &node.shadingRateImage.node;
-    pin.inputNodePin = &node.shadingRateImage.pin;
-    pin.accessLabel = " (R)";
-    ret.push_back(pin);
-
-    // Depth Target
-    pin.name = "depthTarget";
-    pin.inputNode = &node.depthTarget.node;
-    pin.inputNodePin = &node.depthTarget.pin;
-    pin.accessLabel = " (RW)";
-    ret.push_back(pin);
-
-    // Color targets
-    for (int i = 0; i < node.colorTargets.size(); ++i)
-    {
-        char buffer[256];
-        sprintf_s(buffer, "colorTarget%i", i);
-        pin.name = buffer;
-        pin.inputNode = &node.colorTargets[i].node;
-        pin.inputNodePin = &node.colorTargets[i].pin;
-        pin.accessLabel = " (RW)";
-        ret.push_back(pin);
-        if (pin.inputNode->empty())
-            break;
-    }
 
     return ret;
 }

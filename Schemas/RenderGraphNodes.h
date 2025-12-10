@@ -419,49 +419,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
     STRUCT_FIELD(int, numRecords, 1, "how many records the work graph launches with.", 0)
     STRUCT_FIELD(NodePinReferenceOptional, records, {}, "records to launch the work graph with", SCHEMA_FLAG_NO_UI)
 
-    STRUCT_DYNAMIC_ARRAY(WorkGraphMeshNode, meshNodes, "the mesh nodes used need to be specified on the cpu side so they can be set up correctly.", SCHEMA_FLAG_UI_COLLAPSABLE)
-
-    STRUCT_FIELD(RenderState, renderState, {}, "default render state to use when mesh nodes", 0)
-
-    STRUCT_FIELD(bool, conservativeRasterization, false, "Turns on conservative rasterization", 0)
-    STRUCT_FIELD(bool, alphaAsCoverage, false, "Turns on alpha as coverage", 0)
-
-    STRUCT_FIELD(bool, independentAlpha, false, "If false, colorTargetSettings[0] defines blend mode for all color targets", 0)
-
-    STRUCT_STATIC_ARRAY(ColorTargetSettings, colorTargetSettings, 8, {}, "Settings for the color targets", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
-
     STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already", SCHEMA_FLAG_UI_COLLAPSABLE)
-
-    // Depth Settings
-    STRUCT_FIELD(bool, depthTargetClear, false, "If true, clears the depth target before doing a draw call.", 0)
-    STRUCT_FIELD(float, depthTargetClearValue, 0.0f, "The value to clear the depth target to.", 0)
-    STRUCT_FIELD(bool, depthWrite, true, "If false, disables writing to the depth buffer", 0)
-    STRUCT_FIELD(int, depthArrayIndex, 0, "The array index, for Texture2DArray, Texture3D etc", 0)
-    STRUCT_FIELD(int, depthMipLevel, 0, "The mip to use", 0)
-    STRUCT_FIELD(DepthTestFunction, depthTest, DepthTestFunction::Less, "", 0)
-
-    // Stencil Settings
-    STRUCT_FIELD(bool, stencilClear, false, "If true, clears the stencil before doing a draw call.", 0)
-    STRUCT_FIELD(uint8_t, stencilClearValue, 0, "", 0)
-    STRUCT_FIELD(uint8_t, stencilRef, 0, "Sets the reference value for depth stencil tests.", 0)
-    STRUCT_FIELD(uint8_t, stencilReadMask, 255, "", 0)
-    STRUCT_FIELD(uint8_t, stencilWriteMask, 255, "", 0)
-    STRUCT_FIELD(StencilOp, frontFaceStencilFail, StencilOp::Keep, "When stencil test fails", 0)
-    STRUCT_FIELD(StencilOp, backFaceStencilFail, StencilOp::Keep, "When stencil test fails", 0)
-    STRUCT_FIELD(StencilOp, frontFaceStencilDepthFail, StencilOp::Keep, "When stencil passes but depth fails", 0)
-    STRUCT_FIELD(StencilOp, backFaceStencilDepthFail, StencilOp::Keep, "When stencil passes but depth fails", 0)
-    STRUCT_FIELD(StencilOp, frontFaceStencilPass, StencilOp::Keep, "When stencil and depth both pass", 0)
-    STRUCT_FIELD(StencilOp, backFaceStencilPass, StencilOp::Keep, "When stencil and depth both pass", 0)
-    STRUCT_FIELD(DepthTestFunction, frontFaceStencilFunc, DepthTestFunction::Always, "How to test stencil data against existing stencil data", 0)
-    STRUCT_FIELD(DepthTestFunction, backFaceStencilFunc, DepthTestFunction::Always, "How to test stencil data against existing stencil data", 0)
-
-    STRUCT_FIELD(ShadingRate, shadingRate, ShadingRate::_1x1, "For variable rate shading", 0)
-    STRUCT_FIELD(ShadingRateCombiner, shadingRateCombiner1, ShadingRateCombiner::PassThrough, "For variable rate shading. This combines the provoking vertex shading rate with the rate set by the command list.", 0)
-    STRUCT_FIELD(ShadingRateCombiner, shadingRateCombiner2, ShadingRateCombiner::PassThrough, "For variable rate shading. This combines the image based shading rate with the shading rate set by the command list and provoking vertex.", 0)
-    STRUCT_FIELD(NodePinReferenceOptional, shadingRateImage, {}, "The image used to determine shading rate on the screen. Must be a 2d texture with format R8_Uint.", SCHEMA_FLAG_NO_UI)
-
-    STRUCT_STATIC_ARRAY(NodePinReferenceOptional, colorTargets, 8, {}, "Color Targets", SCHEMA_FLAG_NO_UI)
-    STRUCT_FIELD(NodePinReferenceOptional, depthTarget, {}, "Depth Target", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase, "Rasterization")

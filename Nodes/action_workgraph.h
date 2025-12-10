@@ -13,11 +13,7 @@ namespace FrontEndNodes
 
         ret += node.entryShader.shader ? (int)node.entryShader.shader->resources.size() : 0;
 
-        ret +=
-            1 + // records buffer
-            1 + // shading rate image
-            1 + // depth target
-            (int)node.colorTargets.size(); // color targets
+        ret += 1; // records buffer
 
         return ret;
     }
@@ -36,28 +32,6 @@ namespace FrontEndNodes
         if (pinIndex == 0)
             return "recordsBuffer";
         pinIndex--;
-
-        // optional shading rate image
-        if (pinIndex == 0)
-            return "shadingRateImage";
-        pinIndex--;
-
-        // optional depth target
-        if (pinIndex == 0)
-            return "depthTarget";
-        pinIndex--;
-
-        // optional color targets
-        for (int i = 0; i < node.colorTargets.size(); ++i)
-        {
-            if (pinIndex == 0)
-            {
-                char buffer[256];
-                sprintf_s(buffer, "colorTarget%i", i);
-                return buffer;
-            }
-            pinIndex--;
-        }
 
         return "";
     }
@@ -93,49 +67,13 @@ namespace FrontEndNodes
         // Optional records buffer
         if (pinIndex == 0)
         {
-            ret.access = ShaderResourceAccessType::SRV; // TODO: jan  check
+            ret.access = ShaderResourceAccessType::SRV;
             ret.nodeIndex = node.records.nodeIndex;
             ret.pinIndex = node.records.nodePinIndex;
             ret.required = false;
             return ret;
         }
         pinIndex--;
-
-        // Optional shading rate image
-        if (pinIndex == 0)
-        {
-            ret.access = ShaderResourceAccessType::ShadingRate;
-            ret.nodeIndex = node.shadingRateImage.nodeIndex;
-            ret.pinIndex = node.shadingRateImage.nodePinIndex;
-            ret.required = false;
-            return ret;
-        }
-        pinIndex--;
-
-        // Optional depth target
-        if (pinIndex == 0)
-        {
-            ret.access = ShaderResourceAccessType::DepthTarget;
-            ret.nodeIndex = node.depthTarget.nodeIndex;
-            ret.pinIndex = node.depthTarget.nodePinIndex;
-            ret.required = false;
-            return ret;
-        }
-        pinIndex--;
-
-        // Optional Color Targets
-        for (int i = 0; i < node.colorTargets.size(); ++i)
-        {
-            if (pinIndex == 0)
-            {
-                ret.access = ShaderResourceAccessType::RenderTarget;
-                ret.nodeIndex = node.colorTargets[i].nodeIndex;
-                ret.pinIndex = node.colorTargets[i].nodePinIndex;
-                ret.required = false;
-                return ret;
-            }
-            pinIndex--;
-        }
 
         return ret;
 

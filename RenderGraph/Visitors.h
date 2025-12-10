@@ -1281,16 +1281,7 @@ struct ReferenceFixupVisitor
         std::sort(data.connections.begin(), data.connections.end(), [](const NodePinConnection& a, const NodePinConnection& b) { return a.srcNodePinIndex < b.srcNodePinIndex; });
 
         Visit(data.records, path + ".recordsBuffer");
-        Visit(data.shadingRateImage, path + ".shadingRateImage");
-
-        Visit(data.depthTarget, path + ".depthTarget");
-        for (int i = 0; i < data.colorTargets.size(); ++i)
-        {
-            char pathBuffer[64];
-            sprintf_s(pathBuffer, ".colorTargets[%i]", i);
-            Visit(data.colorTargets[i], path + pathBuffer);
-        }
-
+        
         return true;
     }
 	bool Visit(RenderGraphNode_Reroute& data, const std::string& path)
