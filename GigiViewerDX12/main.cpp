@@ -3047,6 +3047,7 @@ void ShowSystemVariables()
         ImGui::SeparatorText("Misc Variables");
 
         ShowVariableDropDown("VRS Image Tile Size", DataFieldType::Uint, g_systemVariables.ShadingRateImageTileSize_varName);
+        ImGui::SliderFloat("Motion Vector Depth Threshold", &g_systemVariables.motionVectorDepthThreshold, 0.0f, 1.0f);
     }
 
     // Camera variables
@@ -8199,7 +8200,7 @@ void RenderFrame(bool forceExecute)
         desc.imageClipMin[1] = (int)(g_resourceViewImageClipMin[1] - (float)upperLeft.y);
         desc.imageClipMax[0] = (int)(g_resourceViewImageClipMax[0] - (float)upperLeft.x);
         desc.imageClipMax[1] = (int)(g_resourceViewImageClipMax[1] - (float)upperLeft.y);
-        AMDFrameInterpolation::Tick(g_AMDFrameInterpolation, g_interpreter, g_pSwapChain, g_systemVariables.camera, g_resourceView.camera, desc);
+        AMDFrameInterpolation::Tick(g_AMDFrameInterpolation, g_systemVariables, g_interpreter, g_pSwapChain, g_resourceView.camera, desc);
     }
 
     g_interpreter.CollectShaderAsserts(assertsBuffers);

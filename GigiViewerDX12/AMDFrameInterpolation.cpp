@@ -326,9 +326,11 @@ namespace AMDFrameInterpolation
         }
     }
 
-    void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, GigiInterpreterPreviewWindowDX12& interpreter, IDXGISwapChain4*& swapChain, const GGUserFile_Camera& cameraSettings, const Camera& cameraState, const Desc& desc)
+    void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, const GGUserFile_SystemVars& sysSettigns, GigiInterpreterPreviewWindowDX12& interpreter, IDXGISwapChain4*& swapChain, const Camera& cameraState, const Desc& desc)
     {
         BasicPixScopeProfiler _p(desc.commandList, "AMD Frame Interpolation");
+
+        const GGUserFile_Camera& cameraSettings = sysSettigns.camera;
 
         if (s_state.m_swapChainContext == nullptr || s_state.m_failState)
             return;
@@ -470,7 +472,7 @@ namespace AMDFrameInterpolation
 
                 // motion-vector pass: depth-aware inliers
                 cb.mode = 1;
-                cb.depthThreshold = 0.1f; // tuneable: start small, e.g. 0.01 for normalized depth
+                cb.depthThreshold = sysSettigns.motionVectorDepthThreshold;
 
                 UploadBufferTracker::Buffer* cbBuffer = interpreter.getUploadBufferTracker().GetBufferT(desc.device, true, cb);
 
