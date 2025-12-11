@@ -295,160 +295,160 @@ static void getInternalResourceDescriptions(const FfxApiDimensions2D* displaySiz
 
     // Fill out the internal resource descriptions for optical flow
     internalResourceDescriptions->opticalFlowInput1 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width, opticalFlowInputTextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput1Level1 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 1, opticalFlowInputTextureSize.height >> 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1Level1", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1_LEVEL_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput1Level2 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 2, opticalFlowInputTextureSize.height >> 2, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1Level2", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1_LEVEL_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput1Level3 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 3, opticalFlowInputTextureSize.height >> 3, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1Level3", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1_LEVEL_3, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput1Level4 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 4, opticalFlowInputTextureSize.height >> 4, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1Level4", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1_LEVEL_4, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput1Level5 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 5, opticalFlowInputTextureSize.height >> 5, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1Level5", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1_LEVEL_5, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput1Level6 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 6, opticalFlowInputTextureSize.height >> 6, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput1Level6", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_1_LEVEL_6, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width, opticalFlowInputTextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2Level1 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 1, opticalFlowInputTextureSize.height >> 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2Level1", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2_LEVEL_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2Level2 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 2, opticalFlowInputTextureSize.height >> 2, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2Level2", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2_LEVEL_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2Level3 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 3, opticalFlowInputTextureSize.height >> 3, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2Level3", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2_LEVEL_3, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2Level4 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 4, opticalFlowInputTextureSize.height >> 4, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2Level4", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2_LEVEL_4, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2Level5 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 5, opticalFlowInputTextureSize.height >> 5, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2Level5", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2_LEVEL_5, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlowInput2Level6 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UINT, opticalFlowInputTextureSize.width >> 6, opticalFlowInputTextureSize.height >> 6, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowInput2Level6", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_INPUT_2_LEVEL_6, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowTextureSize.width, opticalFlowTextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1Level1 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel1TextureSize.width, opticalFlowLevel1TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1Level1", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1_LEVEL_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1Level2 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel2TextureSize.width, opticalFlowLevel2TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1Level2", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1_LEVEL_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1Level3 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel3TextureSize.width, opticalFlowLevel3TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1Level3", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1_LEVEL_3, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1Level4 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel4TextureSize.width, opticalFlowLevel4TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1Level4", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1_LEVEL_4, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1Level5 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel5TextureSize.width, opticalFlowLevel5TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1Level5", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1_LEVEL_5, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow1Level6 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel6TextureSize.width, opticalFlowLevel6TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow1Level6", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_1_LEVEL_6, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowTextureSize.width, opticalFlowTextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2Level1 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel1TextureSize.width, opticalFlowLevel1TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2Level1", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2_LEVEL_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2Level2 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel2TextureSize.width, opticalFlowLevel2TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2Level2", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2_LEVEL_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2Level3 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel3TextureSize.width, opticalFlowLevel3TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2Level3", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2_LEVEL_3, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2Level4 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel4TextureSize.width, opticalFlowLevel4TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2Level4", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2_LEVEL_4, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2Level5 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel5TextureSize.width, opticalFlowLevel5TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2Level5", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2_LEVEL_5, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
     internalResourceDescriptions->opticalFlow2Level6 = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowLevel6TextureSize.width, opticalFlowLevel6TextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlow2Level6", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_2_LEVEL_6, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
 
     internalResourceDescriptions->opticalFlowSCDHistogram = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, GetSCDHistogramTextureWidth(), 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowSCDHistogram", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_SCD_HISTOGRAM, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
 
     internalResourceDescriptions->opticalFlowSCDPreviousHistogram = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, GetSCDHistogramTextureWidth(), 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowSCDPreviousHistogram", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_SCD_PREVIOUS_HISTOGRAM, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
 
     internalResourceDescriptions->opticalFlowSCDTemp = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, 3, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_OpticalFlowSCDTemp", FFX_OF_RESOURCE_IDENTIFIER_OPTICAL_FLOW_SCD_TEMP, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED}
     };
@@ -461,12 +461,12 @@ static void getSharedResourceDescriptions(const FfxApiDimensions2D* displaySize,
     const FfxApiDimensions2D opticalFlowTextureSize = GetOpticalFlowTextureSize(*displaySize, minBlockSize);
 
     sharedResourceDescriptions->opticalFlowVector = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_SINT, opticalFlowTextureSize.width, opticalFlowTextureSize.height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_Result", 0, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 
     sharedResourceDescriptions->opticalFlowSCD = {
-        FFX_HEAP_TYPE_DEFAULT,
+        FfxResourceHeapPlacementInfo::InitDefault(),
         { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, 3, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"OPTICALFLOW_SCDOutput", 0, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 }

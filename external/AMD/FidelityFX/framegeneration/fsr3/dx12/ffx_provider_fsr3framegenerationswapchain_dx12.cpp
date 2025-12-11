@@ -24,42 +24,85 @@
 #include "../../../backend/dx12/ffx_dx12.h"
 #include "../../include/ffx_framegeneration.hpp"
 #include "../include/ffx_provider_fsr3framegenerationswapchain.h"
+#include "../../../framegeneration/include/ffx_framegeneration.h"
 
 #include <stdlib.h>
 
+#define FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MAJOR (FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_MAJOR)
+#define FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MINOR (FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_MINOR)
+#define FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_PATCH (FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_PATCH)
+
 bool ffxProvider_Fsr3FrameGenerationSwapChain::CanProvide(uint64_t type) const
 {
-    return (type & FFX_API_EFFECT_MASK) == FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN_DX12;
+    return ((type & FFX_API_EFFECT_MASK) == FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN &&
+            (type & FFX_API_BACKEND_MASK) == FFX_API_BACKEND_ID_DX12);
 }
 
 struct InternalFgScContext
 {
     InternalContextHeader header;
     IDXGISwapChain4* fiSwapChain;
+    FfxUInt32 version;
 };
 
-// If you change versioning in GetId() and GetVersionName(), you must also update the DLL
+#define STRINGIFY_(X) #X
+#define STRINGIFY(X) STRINGIFY_(X) 
+#define MAKE_VERSION_STRING(major, minor, patch) STRINGIFY major "." STRINGIFY minor "." STRINGIFY patch
+
+// If you change versioning in Id and VersionName, you must also update the DLL
 // version defines in framegeneration/dx12/resource/resource.h
-uint64_t ffxProvider_Fsr3FrameGenerationSwapChain::GetId() const
+ffxProvider_Fsr3FrameGenerationSwapChain::ffxProvider_Fsr3FrameGenerationSwapChain()
+: ffxProvider(0xF65C'DD12i64 << 32 | (FFX_SDK_MAKE_VERSION(FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MINOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_PATCH) & 0xFFFF'FFFF),
+              FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN,
+              MAKE_VERSION_STRING(FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_MINOR, FFX_FRAMEINTERPOLATION_SWAPCHAIN_VERSION_PATCH))
 {
-    // FG SwapChain DX12, version 3.1.5
-    return 0xF65C'DD12'03'001'005ui64;
 }
 
-const char* ffxProvider_Fsr3FrameGenerationSwapChain::GetVersionName() const
+static ffxReturnCode_t Fsr3FrameGenerationSwapChainParseVersion(ffxCreateContextDescHeader* header, FfxUInt32& versionPtr)
 {
-    return "3.1.5";
+    // Assume the 3.1.5 API version unless otherwise specified - this is the last version prior to ABI stability.
+    // We can't assume callers will supply this (due to tacit support for DLL swapping)
+    uint32_t version = FFX_FRAMEGENERATION_SWAPCHAIN_DX12_MAKE_VERSION(3, 1, 5);
+    bool bFoundVersion = false;
+
+    for (auto it = header; it; it = it->pNext)
+    {
+        if (auto versionDesc = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainVersionDX12>(it))
+        {
+            version = versionDesc->version;
+            bFoundVersion = true;
+            break;
+        }
+    }
+
+    if (version < FFX_FRAMEGENERATION_SWAPCHAIN_DX12_MAKE_VERSION(3, 1, 5) || version > FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxCreateContextDescFrameGenerationSwapChainVersionDX12 version is invalid.");
+        return FFX_API_RETURN_ERROR_PARAMETER;
+    }
+
+    if (!bFoundVersion)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"An instance of ffxCreateContextDescFrameGenerationSwapChainVersionDX12 must be attached to ffxCreateContextDescFrameGenerationSwapChain* and specify a valid version to access new API functions.");
+    }
+
+    versionPtr = version;
+
+    return FFX_OK;
 }
 
-ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxContext* context,
-                                                                                              ffxCreateContextDescHeader* header,
-                                                                                              Allocator&                  alloc) const
+ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc)
 {
     if (auto desc = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainWrapDX12>(header))
     {
+        FfxUInt32 version = 0;
+        VERIFY(Fsr3FrameGenerationSwapChainParseVersion(header, version) == FFX_OK, FFX_API_RETURN_ERROR_PARAMETER);
+
         InternalFgScContext* internal_context = alloc.construct<InternalFgScContext>();
         VERIFY(internal_context, FFX_API_RETURN_ERROR_MEMORY);
         internal_context->header.provider = this;
+
+        internal_context->version = version;
 
         FfxSwapchain swapChain = ffxGetSwapchainDX12(*desc->swapchain);
         TRY2(ffxReplaceSwapchainForFrameinterpolationDX12(desc->gameQueue, swapChain));
@@ -73,9 +116,14 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
     }
     else if (auto desc = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainNewDX12>(header))
     {
+        FfxUInt32 version = 0;
+        VERIFY(Fsr3FrameGenerationSwapChainParseVersion(header, version) == FFX_OK, FFX_API_RETURN_ERROR_PARAMETER);
+
         InternalFgScContext* internal_context = alloc.construct<InternalFgScContext>();
         VERIFY(internal_context, FFX_API_RETURN_ERROR_MEMORY);
         internal_context->header.provider = this;
+
+        internal_context->version = version;
 
         FfxSwapchain swapChain;
         TRY2(ffxCreateFrameinterpolationSwapchainDX12(desc->desc, desc->gameQueue, desc->dxgiFactory, swapChain));
@@ -89,9 +137,14 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
     }
     else if (auto desc = ffx::DynamicCast<ffxCreateContextDescFrameGenerationSwapChainForHwndDX12>(header))
     {
+        FfxUInt32 version = 0;
+        VERIFY(Fsr3FrameGenerationSwapChainParseVersion(header, version) == FFX_OK, FFX_API_RETURN_ERROR_PARAMETER);
+
         InternalFgScContext* internal_context = alloc.construct<InternalFgScContext>();
         VERIFY(internal_context, FFX_API_RETURN_ERROR_MEMORY);
         internal_context->header.provider = this;
+
+        internal_context->version = version;
 
         FfxSwapchain swapChain;
         TRY2(ffxCreateFrameinterpolationSwapchainForHwndDX12(desc->hwnd, desc->desc, desc->fullscreenDesc, desc->gameQueue, desc->dxgiFactory, swapChain));
@@ -109,7 +162,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::CreateContext(ffxConte
     }
 }
 
-ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::DestroyContext(ffxContext* context, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::DestroyContext(ffxContext* context, Allocator& alloc)
 {
     VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
@@ -225,4 +278,8 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGenerationSwapChain::Dispatch(ffxContext* c
     }
 }
 
-ffxProvider_Fsr3FrameGenerationSwapChain ffxProvider_Fsr3FrameGenerationSwapChain::Instance;
+ffxProvider_Fsr3FrameGenerationSwapChain& ffxProvider_Fsr3FrameGenerationSwapChain::GetInstance()
+{
+    static ffxProvider_Fsr3FrameGenerationSwapChain instance;
+    return instance;
+}

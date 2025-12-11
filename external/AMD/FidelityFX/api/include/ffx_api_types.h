@@ -67,6 +67,9 @@ enum FfxApiSurfaceFormat
     FFX_API_SURFACE_FORMAT_R8_TYPELESS,                 ///<  8 bit per channel, 1 channel typeless format
     FFX_API_SURFACE_FORMAT_R8G8_TYPELESS,               ///<  8 bit per channel, 2 channel typeless format
     FFX_API_SURFACE_FORMAT_R32_TYPELESS,                ///< 32 bit per channel, 1 channel typeless format
+    FFX_API_SURFACE_FORMAT_R32G32_UINT,                 ///< 32 bit per channel, 2 channel uint format
+    
+    FFX_API_SURFACE_FORMAT_R8_SNORM,                    ///<  8 bit per channel, 1 channel signed normalized format
 };
 
 /// An enumeration of resource usage.
@@ -147,6 +150,14 @@ struct FfxApiFloatCoords2D
     float y; ///< The y coordinate of a 2-dimensional point.
 };
 
+/// A structure encapsulating a 3-dimensional set of floating point coordinates.
+struct FfxApiFloatCoords3D
+{
+    float x;  ///< The x coordinate of a 3-dimensional point.
+    float y;  ///< The y coordinate of a 3-dimensional point.
+    float z;  ///< The z coordinate of a 3-dimensional point.
+};
+
 /// A structure encapsulating a 2-dimensional rect.
 struct FfxApiRect2D
 {
@@ -183,6 +194,8 @@ struct FfxApiResourceDescription
     uint32_t     usage;     ///< Resource usage flags.
 };
 
+#define FFX_RESOURCE_NAME_SIZE 64
+
 struct FfxApiResource
 {
     void* resource;
@@ -196,3 +209,23 @@ typedef struct FfxApiEffectMemoryUsage
     uint64_t totalUsageInBytes;
     uint64_t aliasableUsageInBytes;
 } FfxApiEffectMemoryUsage;
+
+/// A structure describing a constant buffer allocation.
+///
+/// @ingroup SDKTypes
+typedef struct FfxApiConstantBufferAllocation
+{
+    struct FfxApiResource resource;  ///< The resource representing the constant buffer resource.
+    uint64_t       handle;    ///< The binding handle for the constant buffer
+
+} FfxApiConstantBufferAllocation;
+
+/// A function definition for a constant buffer allocation callback
+/// Used to provide a constant buffer allocator to the calling backend
+///
+/// @param [in] data                       The constant buffer data.
+/// @param [in] dataSize                   The size of the constant buffer data.
+///
+/// @ingroup SDKTypes
+typedef FfxApiConstantBufferAllocation(*FfxApiConstantBufferAllocator)(void* data, const uint64_t dataSize);
+

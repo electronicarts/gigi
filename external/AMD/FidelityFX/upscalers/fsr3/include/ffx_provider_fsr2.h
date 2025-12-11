@@ -26,18 +26,14 @@
 class ffxProvider_FSR2: public ffxProvider
 {
 public:
-    ffxProvider_FSR2() = default;
+    ffxProvider_FSR2();
     virtual ~ffxProvider_FSR2() = default;
 
     virtual bool CanProvide(uint64_t type) const override;
 
-    virtual uint64_t GetId() const override;
+    virtual ffxReturnCode_t CreateContext(ffxContext* context, ffxCreateContextDescHeader* desc, Allocator& alloc) override;
 
-    virtual const char* GetVersionName() const override;
-
-    virtual ffxReturnCode_t CreateContext(ffxContext* context, ffxCreateContextDescHeader* desc, Allocator& alloc) const override;
-
-    virtual ffxReturnCode_t DestroyContext(ffxContext* context, Allocator& alloc) const override;
+    virtual ffxReturnCode_t DestroyContext(ffxContext* context, Allocator& alloc) override;
 
     virtual ffxReturnCode_t Configure(ffxContext* context, const ffxConfigureDescHeader* desc) const override;
 
@@ -45,6 +41,6 @@ public:
 
     virtual ffxReturnCode_t Dispatch(ffxContext* context, const ffxDispatchDescHeader* desc) const override;
 
-    static ffxProvider_FSR2 Instance;
+    static ffxProvider_FSR2& GetInstance();
     
 };

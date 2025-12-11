@@ -28,6 +28,13 @@
 extern "C" {
 #endif
 
+#define FFX_UPSCALER_VERSION_MAJOR 4
+#define FFX_UPSCALER_VERSION_MINOR 0
+#define FFX_UPSCALER_VERSION_PATCH 3
+
+#define FFX_UPSCALER_MAKE_VERSION(major, minor, patch) (((major) << 22) | ((minor) << 12) | (patch))
+#define FFX_UPSCALER_VERSION FFX_UPSCALER_MAKE_VERSION(FFX_UPSCALER_VERSION_MAJOR, FFX_UPSCALER_VERSION_MINOR, FFX_UPSCALER_VERSION_PATCH)
+
 enum FfxApiUpscaleQualityMode
 {
     FFX_UPSCALE_QUALITY_MODE_NATIVEAA          = 0, ///< Perform upscaling with a per-dimension upscaling ratio of 1.0x.
@@ -66,9 +73,7 @@ enum FfxApiDispatchUpscaleAutoreactiveFlags
     FFX_UPSCALE_AUTOREACTIVEFLAGS_USE_COMPONENTS_MAX   = (1<<3),
 };
 
-#define FFX_API_EFFECT_ID_UPSCALE 0x00010000u
-
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE 0x00010000u
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x00)
 struct ffxCreateContextDescUpscale
 {
     ffxCreateContextDescHeader header;
@@ -78,7 +83,7 @@ struct ffxCreateContextDescUpscale
     ffxApiMessage              fpMessage;       ///< A pointer to a function that can receive messages from the runtime. May be null.
 };
 
-#define FFX_API_DISPATCH_DESC_TYPE_UPSCALE 0x00010001u
+#define FFX_API_DISPATCH_DESC_TYPE_UPSCALE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x01)
 struct ffxDispatchDescUpscale
 {
     ffxDispatchDescHeader      header;
@@ -106,7 +111,7 @@ struct ffxDispatchDescUpscale
     uint32_t                   flags;                      ///< Zero or a combination of values from FfxApiDispatchFsrUpscaleFlags.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETUPSCALERATIOFROMQUALITYMODE 0x00010002u
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETUPSCALERATIOFROMQUALITYMODE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x02)
 struct ffxQueryDescUpscaleGetUpscaleRatioFromQualityMode
 {
     ffxQueryDescHeader header;
@@ -114,7 +119,7 @@ struct ffxQueryDescUpscaleGetUpscaleRatioFromQualityMode
     float*             pOutUpscaleRatio; ///< A pointer to a <c>float</c> which will hold the upscaling the per-dimension upscaling ratio.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETRENDERRESOLUTIONFROMQUALITYMODE 0x00010003u
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETRENDERRESOLUTIONFROMQUALITYMODE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x03)
 struct ffxQueryDescUpscaleGetRenderResolutionFromQualityMode
 {
     ffxQueryDescHeader header;
@@ -125,7 +130,7 @@ struct ffxQueryDescUpscaleGetRenderResolutionFromQualityMode
     uint32_t*          pOutRenderHeight; ///< A pointer to a <c>uint32_t</c> which will hold the calculated render resolution height.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTERPHASECOUNT 0x00010004u
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTERPHASECOUNT FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x04)
 struct ffxQueryDescUpscaleGetJitterPhaseCount
 {
     ffxQueryDescHeader header;
@@ -134,7 +139,7 @@ struct ffxQueryDescUpscaleGetJitterPhaseCount
     int32_t*           pOutPhaseCount; ///< A pointer to a <c>int32_t</c> which will hold the jitter phase count for the scaling factor between <c><i>renderWidth</i></c> and <c><i>displayWidth</i></c>.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTEROFFSET 0x00010005u
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GETJITTEROFFSET FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x05)
 struct ffxQueryDescUpscaleGetJitterOffset
 {
     ffxQueryDescHeader header;
@@ -144,7 +149,7 @@ struct ffxQueryDescUpscaleGetJitterOffset
     float*             pOutY;      ///< A pointer to a <c>float</c> which will contain the subpixel jitter offset for the y dimension.
 };
 
-#define FFX_API_DISPATCH_DESC_TYPE_UPSCALE_GENERATEREACTIVEMASK 0x00010006u
+#define FFX_API_DISPATCH_DESC_TYPE_UPSCALE_GENERATEREACTIVEMASK FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x06)
 struct ffxDispatchDescUpscaleGenerateReactiveMask
 {
     ffxDispatchDescHeader     header;
@@ -159,7 +164,7 @@ struct ffxDispatchDescUpscaleGenerateReactiveMask
     uint32_t                  flags;            ///< Flags to determine how to generate the reactive mask
 };
 
-#define FFX_API_CONFIGURE_DESC_TYPE_UPSCALE_KEYVALUE 0x00010007u
+#define FFX_API_CONFIGURE_DESC_TYPE_UPSCALE_KEYVALUE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x07)
 struct ffxConfigureDescUpscaleKeyValue
 {
     ffxConfigureDescHeader  header;
@@ -177,14 +182,14 @@ enum FfxApiConfigureUpscaleKey
     FFX_API_CONFIGURE_UPSCALE_KEY_FMINDISOCCLUSIONACCUMULATION = 4, //Override constant buffer fMinDisocclusionAccumulation. Increasing this value may reduce white pixel temporal flickering around swaying thin objects that are disoccluding one another often. Too high value may increase ghosting. A sufficiently negative value means for pixel coordinate at frame N that is disoccluded, add fAccumulationAddedPerFrame starting at frame N+2. Default value is -0.333. Value is clamped to [-1.0f, 1.0f].
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GPU_MEMORY_USAGE 0x00010008u
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GPU_MEMORY_USAGE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x08)
 struct ffxQueryDescUpscaleGetGPUMemoryUsage
 {
     ffxQueryDescHeader header;
     struct FfxApiEffectMemoryUsage* gpuMemoryUsageUpscaler;
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GPU_MEMORY_USAGE_V2 0x00010009u
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GPU_MEMORY_USAGE_V2 FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x09)
 struct ffxQueryDescUpscaleGetGPUMemoryUsageV2
 {
     ffxQueryDescHeader header;
@@ -205,12 +210,19 @@ enum FfxApiQueryResourceIdentifiers
     FFX_API_QUERY_RESOURCE_INPUT_TRANSPARENCYCOMPOSITION = (1<<5), //
 };
 
-#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GET_RESOURCE_REQUIREMENTS 0x0001000au
+#define FFX_API_QUERY_DESC_TYPE_UPSCALE_GET_RESOURCE_REQUIREMENTS FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x0a)
 struct ffxQueryDescUpscaleGetResourceRequirements
 {
     ffxQueryDescHeader header;
     uint64_t required_resources; // resources 64b bitfield, that given current context state, are required for effect correctness.
     uint64_t optional_resources; // resources 64b bitfield, that given current context state, will be consumed if provided, but are optional.
+};
+
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE_VERSION FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_UPSCALE, 0x0b)
+struct ffxCreateContextDescUpscaleVersion
+{
+    ffxCreateContextDescHeader header;
+    uint32_t                   version;           ///< The version of the API the application was built against. This must be set to FFX_UPSCALER_VERSION.
 };
 
 #ifdef __cplusplus

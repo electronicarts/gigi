@@ -31,27 +31,54 @@
 #include "FrameInterpolationSwapchainDX12_Helpers.h"
 
 #include "../../include/ffx_framegeneration.h"
+#include "../../internal/ffx_framegeneration_internal.h"
 #include "../../fsr3/include/ffx_frameinterpolation.h"
 #include "../../../backend/dx12/ffx_dx12.h"
 
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_MAJOR    3
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_MINOR    1
-#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_PATCH    5
-#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT DXGI_MAX_SWAP_CHAIN_BUFFERS
+#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_VERSION_PATCH    6
+#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK1 6
+#define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 DXGI_MAX_SWAP_CHAIN_BUFFERS
 #define FFX_FRAME_INTERPOLATION_SWAP_CHAIN_INTERPOLATION_OUTPUTS_COUNT 2
 
-
-typedef struct PacingData
+typedef enum FrameType
 {
-    FfxPresentCallbackFunc          presentCallback = nullptr;
+    Interpolated_1,
+    Real,
+    Count
+} FrameType;
+
+// No modifications to this type are permitted to maintain ABI stability
+template<typename ResourceType>
+struct TFrameInterpolationFrameInfo
+{
+    bool            doPresent;
+    ResourceType    resource;
+    UINT64          interpolationCompletedFenceValue;
+    UINT64          presentIndex;
+    UINT64          presentQpcDelta;
+};
+
+// Inherits from TFrameInterpolationFrameInfo but can be extended without becoming part of the ABI
+struct FrameInterpolationFrameInfoExt : public TFrameInterpolationFrameInfo<FfxApiResource>
+{
+};
+
+// No modifications to this type are permitted to maintain ABI stability
+template<typename ResourceType, typename TFrameInfo>
+struct TFrameInterpolationPacingData
+{
+    typedef TFrameInfo FrameInfo;
+
+    FfxApiPresentCallbackFunc       presentCallback = nullptr;
     void*                           presentCallbackContext = nullptr;
-    FfxApiResource                     uiSurface;
+    ResourceType                    uiSurface;
 
     bool                            vsync;
     bool                            tearingSupported;
     bool                            usePremulAlphaComposite;
     bool                            drawDebugPacingLines;
-
 
     UINT64                          interpolationCompletedFenceValue;
     UINT64                          replacementBufferFenceSignal;
@@ -59,41 +86,38 @@ typedef struct PacingData
     UINT32                          numFramesToPresent;
     UINT64                          currentFrameID;
 
-    typedef enum FrameType
-    {
-        Interpolated_1,
-        Real,
-        Count
-    } FrameType;
-
-    struct FrameInfo
-    {
-        bool            doPresent;
-        FfxApiResource     resource;
-        UINT64          interpolationCompletedFenceValue;
-        UINT64          presentIndex;
-        UINT64          presentQpcDelta;
-    };
-    
     FrameInfo frames[FrameType::Count];
 
     void invalidate()
     {
-        memset(this, 0, sizeof(PacingData));
+        memset(this, 0, sizeof(TFrameInterpolationPacingData));
     }
-} PacingData;
+};
 
-typedef struct FrameinterpolationPresentInfo
+// Inherits from TFrameInterpolationPacingData but can be extended without becoming part of the ABI
+struct FrameInterpolationPacingDataExt : public TFrameInterpolationPacingData<FfxApiResource, FrameInterpolationFrameInfoExt>
 {
+};
+
+// No modifications to this type are permitted to maintain ABI stability
+typedef TFrameInterpolationPacingData<FfxResourceSDK1, TFrameInterpolationFrameInfo<FfxResourceSDK1>> FrameInterpolationPacingDataSDK1;
+typedef TFrameInterpolationPacingData<FfxApiResource, TFrameInterpolationFrameInfo<FfxApiResource>> FrameInterpolationPacingDataSDK2;
+
+// No modifications to this type are permitted to maintain ABI stability
+template <size_t PoolSize, typename ResourceType, typename PacingType>
+struct TFrameInterpolationPresentInfo
+{
+    typedef PacingType PacingData;
+
     CRITICAL_SECTION    criticalSectionScheduledFrame;
     ID3D12Device*       device    = nullptr;
     IDXGISwapChain4*    swapChain = nullptr;
-    Dx12CommandPool<32>  commandPool;
+    Dx12CommandPool<PoolSize>  commandPool;
 
     PacingData          scheduledInterpolations;
     PacingData          scheduledPresents;
 
-    FfxApiResource         currentUiSurface;
+    ResourceType        currentUiSurface;
     uint32_t            uiCompositionFlags = 0;
 
     ID3D12CommandQueue* interpolationQueue      = nullptr;
@@ -120,11 +144,21 @@ typedef struct FrameinterpolationPresentInfo
     volatile bool       allowHybridSpin         = false;
     volatile uint32_t   hybridSpinTime          = 2; //Measured in system timer resolution units. Default is 2. Below 1 will frequently result in overshoot. Overshoots stop showing up >=2.
     volatile bool       allowWaitForSingleObjectOnFence = false;
-    
+
     FfxWaitCallbackFunc waitCallback            = nullptr;
 
-    volatile int64_t    previousPresentQpc         = 0;
-} FrameinterpolationPresentInfo;
+    volatile int64_t    previousPresentQpc      = 0;
+};
+
+// No modifications to this type are permitted to maintain ABI stability
+typedef TFrameInterpolationPresentInfo<8, FfxResourceSDK1, FrameInterpolationPacingDataSDK1> FrameinterpolationPresentInfoSDK1;
+typedef TFrameInterpolationPresentInfo<32, FfxResourceSDK1, FrameInterpolationPacingDataSDK1> FrameinterpolationPresentInfoSDK115;
+typedef TFrameInterpolationPresentInfo<32, FfxApiResource, FrameInterpolationPacingDataSDK2> FrameinterpolationPresentInfoSDK2;
+
+// This type can be extended without breaking the ABI
+struct FrameinterpolationPresentInfoExt : public TFrameInterpolationPresentInfo<32, FfxApiResource, FrameInterpolationPacingDataExt>
+{
+};
 
 typedef struct ReplacementResource
 {
@@ -142,6 +176,8 @@ typedef struct ReplacementResource
 static const GUID IID_IFfxFrameInterpolationSwapChain = { 0xbeed74b2, 0x282e, 0x4aa3, {0xbb, 0xf7, 0x53, 0x45, 0x60, 0x50, 0x7a, 0x45} };
 // {548CA0F7-DD5A-4CBC-BE21-7B0415E34907}
 static const GUID IID_IFfxFrameInterpolationSwapChainResourceInfo = {0x548ca0f7, 0xdd5a, 0x4cbc, {0xbe, 0x21, 0x7b, 0x4, 0x15, 0xe3, 0x49, 0x7}};
+// {5f5fa2f5-3bc5-48d8-a63b-e60318e38000}
+static const GUID IID_IFrameInterpolationSwapChainDX12 = { 0x5f5fa2f5, 0x3bc5, 0x48d8, {0xa6, 0x3b, 0xe6, 0x03, 0x18, 0xe3, 0x80, 0x00} };
 
 typedef struct FfxFrameInterpolationSwapChainResourceInfo
 {
@@ -151,13 +187,82 @@ typedef struct FfxFrameInterpolationSwapChainResourceInfo
 
 class DECLSPEC_UUID("BEED74B2-282E-4AA3-BBF7-534560507A45") FrameInterpolationSwapChainDX12 : public IDXGISwapChain4
 {
+public:
+    FrameInterpolationSwapChainDX12() {}
+    virtual ~FrameInterpolationSwapChainDX12() {}
+};
+
+// This is the stable pure-virtual COM API introduced with SDK 2.1.
+// *Once released you cannot modify a COM interface*
+// Instead create a new child interface & associated GUID with a V{N} suffix (like the DX12 API)
+// This replaces the current ParentType used when declaring TFrameInterpolationSwapChainDX12 as the parent of FrameInterpolationSwapChainDX12Stable.
+// FrameInterpolationSwapChainDX12Stable is deliberately hidden in the CPP file to ensure no-one calls it directly.
+// e.g. class <NEW-UUID> IFrameInterpolationSwapChainDX12V2 : public IFrameInterpolationSwapChainDX12 {};
+// e.g. class FrameInterpolationSwapChainDX12Stable : public TFrameInterpolationSwapChainDX12<IFrameInterpolationSwapChainDX12V2, ..>
+// This ensures that all communication to FrameInterpolationSwapChainDX12Stable is done through a COM interface.
+class DECLSPEC_UUID("5f5fa2f5-3bc5-48d8-a63b-e60318e38000") IFrameInterpolationSwapChainDX12 : public IDXGISwapChain4
+{
+public:
+    IFrameInterpolationSwapChainDX12() {}
+    virtual ~IFrameInterpolationSwapChainDX12() {}
+
+    virtual void presentPassthrough(UINT SyncInterval, UINT Flags) = 0;
+    virtual void presentWithUiComposition(UINT SyncInterval, UINT Flags) = 0;
+
+    virtual void dispatchInterpolationCommands(FfxApiResource * pInterpolatedFrame, FfxApiResource * pRealFrame) = 0;
+    virtual void presentInterpolated(UINT SyncInterval, UINT Flags) = 0;
+
+    virtual bool verifyUiDuplicateResource() = 0;
+    virtual void copyUiResource() = 0;
+
+    virtual bool verifyBackbufferDuplicateResources() = 0;
+    virtual bool destroyReplacementResources() = 0;
+    virtual bool killPresenterThread() = 0;
+    virtual bool spawnPresenterThread() = 0;
+    virtual void discardOutstandingInterpolationCommandLists() = 0;
+
+    virtual IDXGISwapChain4* real() = 0;
+
+    virtual void setFrameGenerationConfig(FfxFrameGenerationConfig const* config) = 0;
+    virtual bool waitForPresents() = 0;
+
+    virtual FfxApiResource interpolationOutput(int index = 0) = 0;
+    virtual ID3D12GraphicsCommandList* getInterpolationCommandList() = 0;
+
+    virtual void registerUiResource(FfxApiResource uiResource, uint32_t flags) = 0;
+    virtual void setWaitCallback(FfxWaitCallbackFunc waitCallbackFunc) = 0;
+    virtual void setFramePacingTuning(const FfxApiSwapchainFramePacingTuning * framePacingTuning) = 0;
+
+    virtual void GetGpuMemoryUsage(FfxApiEffectMemoryUsage * vramUsage) = 0;
+
+    virtual HRESULT init(
+        HWND hWnd,
+        const DXGI_SWAP_CHAIN_DESC1 * swapChainDesc1,
+        const DXGI_SWAP_CHAIN_FULLSCREEN_DESC * fullscreenDesc,
+        ID3D12CommandQueue * queue,
+        IDXGIFactory2 * dxgiFactory) = 0;
+
+protected:
+    virtual HRESULT               shutdown() = 0;
+    virtual UINT                  getInterpolationEnabledSwapChainFlags(UINT nonAdjustedFlags) = 0;
+    virtual DXGI_SWAP_CHAIN_DESC1 getInterpolationEnabledSwapChainDescription(const DXGI_SWAP_CHAIN_DESC1 * nonAdjustedDesc) = 0;
+};
+
+// *DO NOT* modify this type - no additions or removals are permitted to maintain the ABI
+// All changes must now go into FrameInterpolationSwapChainDX12Stable
+template<typename ParentType, typename PresentType, typename ConfigType, typename PresentCallbackType, size_t NumBuffers>
+class TFrameInterpolationSwapChainDX12 : public ParentType
+{
+#if FFX_ABI_TEST
+    friend struct FrameInterpolationSwapChainDX12ABITester;
+#endif
 protected:
     HRESULT               shutdown();
     UINT                  getInterpolationEnabledSwapChainFlags(UINT nonAdjustedFlags);
     DXGI_SWAP_CHAIN_DESC1 getInterpolationEnabledSwapChainDescription(const DXGI_SWAP_CHAIN_DESC1* nonAdjustedDesc);
 
-    FrameinterpolationPresentInfo presentInfo = {};
-    FfxFrameGenerationConfig      nextFrameGenerationConfig = {};
+    PresentType         presentInfo = {};
+    ConfigType          nextFrameGenerationConfig;
 
     CRITICAL_SECTION    criticalSection{};
     CRITICAL_SECTION    criticalSectionUpdateConfig{};
@@ -173,10 +278,10 @@ protected:
     UINT64              interpolationFenceValue              = 0;
     UINT64              gameFenceValue                       = 0;
     bool                frameInterpolationResetCondition     = false;
-    FfxApiRect2D           interpolationRect;
+    FfxApiRect2D        interpolationRect;
 
-    Dx12Commands*       registeredInterpolationCommandLists[FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT] = {};
-    ReplacementResource replacementSwapBuffers[FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT]  = {};
+    Dx12Commands*       registeredInterpolationCommandLists[NumBuffers] = {};
+    ReplacementResource replacementSwapBuffers[NumBuffers]  = {};
     ReplacementResource interpolationOutputs[FFX_FRAME_INTERPOLATION_SWAP_CHAIN_INTERPOLATION_OUTPUTS_COUNT] = {};
     ReplacementResource uiReplacementBuffer                                                          = {};
     int                 replacementSwapBufferIndex                                                   = 0;
@@ -202,11 +307,15 @@ protected:
     float               minLuminance                    = 0.0f;
     float               maxLuminance                    = 0.0f;
 
-    FfxPresentCallbackFunc         presentCallback                 = nullptr;
-    void*                          presentCallbackContext          = nullptr;
-    FfxFrameGenerationDispatchFunc frameGenerationCallback         = nullptr;
-    void*                          frameGenerationCallbackContext  = nullptr;
+    FfxApiPresentCallbackFunc           presentCallback                 = nullptr;
+    void*                               presentCallbackContext          = nullptr;
+    FfxApiFrameGenerationDispatchFunc   frameGenerationCallback         = nullptr;
+    void*                               frameGenerationCallbackContext  = nullptr;
 
+    UINT64 totalUsageInBytes = 0;
+    UINT64 aliasableUsageInBytes = 0;
+
+    void presentPassthrough(UINT SyncInterval, UINT Flags);
     void presentWithUiComposition(UINT SyncInterval, UINT Flags);
 
     void dispatchInterpolationCommands(FfxApiResource* pInterpolatedFrame, FfxApiResource* pRealFrame);
@@ -223,9 +332,6 @@ protected:
 
     IDXGISwapChain4* real();
 
-    UINT64 totalUsageInBytes = 0;
-    UINT64 aliasableUsageInBytes = 0;
-
 public:
     void setFrameGenerationConfig(FfxFrameGenerationConfig const* config);
     bool waitForPresents();
@@ -239,8 +345,8 @@ public:
 
     void GetGpuMemoryUsage(FfxApiEffectMemoryUsage * vramUsage);
 
-    FrameInterpolationSwapChainDX12();
-    virtual ~FrameInterpolationSwapChainDX12();
+    TFrameInterpolationSwapChainDX12();
+    virtual ~TFrameInterpolationSwapChainDX12();
 
     HRESULT init(
         HWND hWnd,
@@ -306,3 +412,8 @@ public:
     // IDXGISwapChain4
     virtual HRESULT STDMETHODCALLTYPE SetHDRMetaData(DXGI_HDR_METADATA_TYPE Type, UINT Size, void* pMetaData);
 };
+
+// These types *MUST NOT* be modified - they are not ABI stable.
+typedef TFrameInterpolationSwapChainDX12<FrameInterpolationSwapChainDX12, FrameinterpolationPresentInfoSDK1, FfxFrameGenerationConfigSDK1, FfxPresentCallbackDescriptionSDK1, FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK1> FrameInterpolationSwapChainDX12SDK1;
+typedef TFrameInterpolationSwapChainDX12<FrameInterpolationSwapChainDX12, FrameinterpolationPresentInfoSDK115, FfxFrameGenerationConfigSDK1, FfxPresentCallbackDescriptionSDK1, FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2> FrameInterpolationSwapChainDX12SDK115;
+typedef TFrameInterpolationSwapChainDX12<FrameInterpolationSwapChainDX12, FrameinterpolationPresentInfoSDK2, FfxFrameGenerationConfigSDK2, FfxPresentCallbackDescriptionSDK2, FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2> FrameInterpolationSwapChainDX12SDK2;

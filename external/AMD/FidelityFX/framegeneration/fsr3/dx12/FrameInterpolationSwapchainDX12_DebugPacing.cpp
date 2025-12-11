@@ -35,15 +35,15 @@ typedef HRESULT(__stdcall* D3D12SerializeVersionedRootSignatureType)(const D3D12
                                                                      ID3DBlob**                                 ppBlob,
                                                                      ID3DBlob**                                 ppErrorBlob);
 
-const uint32_t          s_debugPacingDescRingBufferSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT * 2 * 1;   // FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT real frames (i.e. * 2), 1 CBV each should be enough
-const uint32_t          s_debugPacingDescHeapRtvSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT * 2;
+const uint32_t          s_debugPacingDescRingBufferSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 * 2 * 1;   // FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT real frames (i.e. * 2), 1 CBV each should be enough
+const uint32_t          s_debugPacingDescHeapRtvSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 * 2;
 ID3D12RootSignature*    s_debugPacingRootSignature;
 ID3D12PipelineState*    s_debugPacingPipeline;
 uint32_t                s_debugPacingDescRingBufferBase;
 ID3D12DescriptorHeap*   s_debugPacingDescRingBuffer;
 uint32_t                s_debugPacingNextRtvDescriptor;
 ID3D12DescriptorHeap*   s_debugPacingDescHeapRtvCpu;
-ID3D12Resource*         s_debugPacingConstantBuffer[FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT];
+ID3D12Resource*         s_debugPacingConstantBuffer[FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2];
 uint32_t                s_debugPacingFrameIndex;
 const unsigned int      s_debugPacingConstantBufferSize = 256u;
 
@@ -231,7 +231,7 @@ FfxErrorCodes verifyDebugPacingGpuResources(ID3D12Device* dx12Device, DXGI_FORMA
         D3D12_HEAP_PROPERTIES heapProperties = {};
         heapProperties.Type                  = D3D12_HEAP_TYPE_UPLOAD;
 
-        for (int i = 0; i < FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT; ++i)
+        for (int i = 0; i < FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2; ++i)
         {
            if(FAILED(dx12Device->CreateCommittedResource(
                 &heapProperties,
@@ -253,7 +253,7 @@ FfxErrorCodes verifyDebugPacingGpuResources(ID3D12Device* dx12Device, DXGI_FORMA
 
 void releasePacingDebugGpuResources()
 {
-    for (int i = 0; i < FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT; ++i)
+    for (int i = 0; i < FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2; ++i)
     {
         SafeRelease(s_debugPacingConstantBuffer[i]);
     }
@@ -269,7 +269,7 @@ void releasePacingDebugGpuResources()
     s_debugPacingNextRtvDescriptor = 0;
 }
 
-FFX_API FfxErrorCode ffxFrameInterpolationDebugPacing(const FfxPresentCallbackDescription* params)
+FFX_API FfxErrorCode ffxFrameInterpolationDebugPacing(const ffxCallbackDescFrameGenerationPresent* params)
 {
     ID3D12Device*   dx12Device  = reinterpret_cast<ID3D12Device*>(params->device);
     ID3D12Resource* pRtResource = (ID3D12Resource*)(params->currentBackBuffer.resource);
@@ -297,7 +297,7 @@ FFX_API FfxErrorCode ffxFrameInterpolationDebugPacing(const FfxPresentCallbackDe
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type                   = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Transition.pResource   = pRtResource;
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT;
+    barrier.Transition.StateBefore = ffxGetDX12StateFromResourceState((FfxApiResourceState)params->currentBackBuffer.state);
     barrier.Transition.StateAfter  = D3D12_RESOURCE_STATE_RENDER_TARGET;
     if (barrier.Transition.StateBefore != barrier.Transition.StateAfter)
     {
@@ -328,7 +328,7 @@ FFX_API FfxErrorCode ffxFrameInterpolationDebugPacing(const FfxPresentCallbackDe
     dx12CbvDescription.SizeInBytes                      = s_debugPacingConstantBufferSize;
     dx12Device->CreateConstantBufferView(&dx12CbvDescription, cpuView);
 
-    s_debugPacingFrameIndex = (s_debugPacingFrameIndex + 1) % FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT;
+    s_debugPacingFrameIndex = (s_debugPacingFrameIndex + 1) % FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2;
 
     s_debugPacingDescRingBufferBase = (s_debugPacingDescRingBufferBase + 1) % s_debugPacingDescRingBufferSize;
     pCmdList->SetGraphicsRootDescriptorTable(0, gpuView);

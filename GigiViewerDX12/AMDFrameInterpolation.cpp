@@ -665,9 +665,9 @@ void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, GigiI
         }
     }
 
-    // Dispatch frame generation
-    {
-        ffx::DispatchDescFrameGenerationPrepare dispatchFgPrep{};
+        // Dispatch frame generation
+        {
+            ffx::DispatchDescFrameGenerationPrepareV2 dispatchFgPrep{};
 
         dispatchFgPrep.frameID = desc.frameIndex;
 
@@ -723,8 +723,8 @@ void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, GigiI
         SetFfxApiResourceToTexture(s_state.m_depth, dispatchFgPrep.depth, FFX_API_RESOURCE_USAGE_UAV, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
         SetFfxApiResourceToTexture(s_state.m_motionVectors, dispatchFgPrep.motionVectors, FFX_API_RESOURCE_USAGE_UAV, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-        ffx::DispatchDescFrameGenerationPrepareCameraInfo cameraConfig{};
-        memcpy(&cameraConfig.cameraPosition, cameraState.m_lastPos, sizeof(float) * 3);
+            ffx::DispatchDescFrameGenerationPrepareV2 cameraConfig{};
+            memcpy(&cameraConfig.cameraPosition, cameraState.m_lastPos, sizeof(float) * 3);
 
         DirectX::XMMATRIX viewMtx = cameraState.GetViewMatrix(cameraState.m_lastPos, cameraState.m_lastAltitudeAzimuth);
         const float cameraUp[3] = {viewMtx.r[0].m128_f32[1], viewMtx.r[1].m128_f32[1], viewMtx.r[2].m128_f32[1]};

@@ -21,7 +21,7 @@
 // THE SOFTWARE.
 
 #include "../include/ffx_api.h"
-#include "../include/ffx_api-helper.h"
+#include "../internal/ffx_api_helper.h"
 #include "../internal/ffx_internal_types.h"
 #include "../internal/ffx_error.h"
 #include "../internal/ffx_provider.h"
@@ -46,11 +46,32 @@ FFX_API_ENTRY ffxReturnCode_t ffxCreateContext(ffxContext* context, ffxCreateCon
 
     *context = nullptr;
 
-    const ffxProvider* provider = GetffxProvider(desc->type, GetVersionOverride(desc), GetDevice(desc));
-    VERIFY(provider != nullptr, FFX_API_RETURN_NO_PROVIDER);
+    // TODO: Bring in of remaining VK code
+#if defined(FFX_BACKEND_VK)
+    return FFX_API_RETURN_NO_PROVIDER;
+#else
     
     Allocator alloc{memCb};
-    return provider->CreateContext(context, desc, alloc);
+    std::optional<ffxProviderExternal> extProviderSlot;
+    ffxProvider* provider = GetProvider(desc->type, GetVersionOverride(desc), GetDevice(desc), extProviderSlot);
+    VERIFY(provider != nullptr, FFX_API_RETURN_NO_PROVIDER);
+
+#if FFX_BACKEND_DX12
+    if (extProviderSlot && &*extProviderSlot == provider)
+    {
+        // external provider was selected, need to move to heap allocation.
+        provider = alloc.construct<ffxProviderExternal>(std::move(*extProviderSlot));
+    }
+#endif
+
+    auto retCode = provider->CreateContext(context, desc, alloc);
+    if (retCode != FFX_API_RETURN_OK && provider->GetRefCount() == 0)
+    {
+        provider->~ffxProvider();
+        alloc.dealloc(provider);
+    }
+    return retCode;
+#endif // defined(FFX_BACKEND_VK)
 }
 
 FFX_API_ENTRY ffxReturnCode_t ffxDestroyContext(ffxContext* context, const ffxAllocationCallbacks* memCb)
@@ -58,7 +79,15 @@ FFX_API_ENTRY ffxReturnCode_t ffxDestroyContext(ffxContext* context, const ffxAl
     VERIFY(context != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
 
     Allocator alloc{memCb};
-    return GetAssociatedProvider(context)->DestroyContext(context, alloc);
+    ffxProvider* provider = GetAssociatedProvider(*context);
+    auto retCode = provider->DestroyContext(context, alloc);
+
+    if (provider->GetRefCount() == 0)
+    {
+        provider->~ffxProvider();
+        alloc.dealloc(provider);
+    }
+    return retCode;
 }
 
 FFX_API_ENTRY ffxReturnCode_t ffxConfigure(ffxContext* context, const ffxConfigureDescHeader* desc)
@@ -66,7 +95,7 @@ FFX_API_ENTRY ffxReturnCode_t ffxConfigure(ffxContext* context, const ffxConfigu
     VERIFY(desc != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(context != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
 
-    return GetAssociatedProvider(context)->Configure(context, desc);
+    return GetAssociatedProvider(*context)->Configure(context, desc);
 }
 
 FFX_API_ENTRY ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* header)
@@ -74,6 +103,7 @@ FFX_API_ENTRY ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* 
     VERIFY(header != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
 
     ffxReturnCode_t retCode;
+    std::optional<ffxProviderExternal> extProviderSlot;
     if (context == nullptr)
     {
         if (auto desc = ffx::DynamicCast<ffxQueryDescGetVersions>(header))
@@ -81,28 +111,30 @@ FFX_API_ENTRY ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* 
             // if output count is zero or no other pointer passed, count providers only
             if (desc->outputCount && (*desc->outputCount == 0 || (!desc->versionIds && !desc->versionNames)))
             {
-                *desc->outputCount = GetProviderCount(desc->createDescType, desc->device);
+                *desc->outputCount = GetProviderCount(desc->createDescType, desc->device, extProviderSlot);
             }
             else if (desc->outputCount && *desc->outputCount > 0)
             {
                 uint64_t capacity = *desc->outputCount;
-                *desc->outputCount = GetProviderVersions(desc->createDescType, desc->device, capacity, desc->versionIds, desc->versionNames);
+                *desc->outputCount = GetProviderVersions(desc->createDescType, desc->device, capacity, desc->versionIds, desc->versionNames, extProviderSlot);
             }
             return FFX_API_RETURN_OK;
         }
-        else if (auto provider = GetffxProvider(header->type, GetVersionOverride(header), GetDevice(header)))
+        // TODO: Bring in of remaining VK code
+#if !defined(FFX_BACKEND_VK)
+        else if (auto provider = GetProvider(header->type, GetVersionOverride(header), GetDevice(header), extProviderSlot))
         {
             retCode = provider->Query(nullptr, header);
         }
+#endif // !defined(FFX_BACKEND_VK)
         else
         {
             retCode = FFX_API_RETURN_NO_PROVIDER;
         }
-        return ffxQueryFallback(context, header, retCode);
     }
     else
     {
-        auto provider = GetAssociatedProvider(context);
+        auto provider = GetAssociatedProvider(*context);
         if (provider)
         {
             retCode = provider->Query(context, header);
@@ -111,10 +143,9 @@ FFX_API_ENTRY ffxReturnCode_t ffxQuery(ffxContext* context, ffxQueryDescHeader* 
         {
             retCode = FFX_API_RETURN_NO_PROVIDER;
         }
-        return ffxQueryFallback(context, header, retCode);
     }
 
-    return retCode;
+    return ffxQueryFallback(context, header, retCode);
 }
 
 FFX_API_ENTRY ffxReturnCode_t ffxDispatch(ffxContext* context, const ffxDispatchDescHeader* desc)
@@ -122,5 +153,5 @@ FFX_API_ENTRY ffxReturnCode_t ffxDispatch(ffxContext* context, const ffxDispatch
     VERIFY(desc != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(context != nullptr, FFX_API_RETURN_ERROR_PARAMETER);
 
-    return GetAssociatedProvider(context)->Dispatch(context, desc);
+    return GetAssociatedProvider(*context)->Dispatch(context, desc);
 }

@@ -23,9 +23,14 @@
 #pragma once
 #include "../../../api/include/dx12/ffx_api_dx12.h"
 
-#define FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN_DX12 0x00030000u
+#define FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_MAJOR 3
+#define FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_MINOR 1
+#define FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_PATCH 6
 
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_WRAP_DX12 0x30001u
+#define FFX_FRAMEGENERATION_SWAPCHAIN_DX12_MAKE_VERSION(major, minor, patch) (((major) << 22) | ((minor) << 12) | (patch))
+#define FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION FFX_FRAMEGENERATION_SWAPCHAIN_DX12_MAKE_VERSION(FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_MAJOR, FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_MINOR, FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION_PATCH)
+
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_WRAP_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x01)
 struct ffxCreateContextDescFrameGenerationSwapChainWrapDX12
 {
     ffxCreateContextDescHeader header;
@@ -33,7 +38,7 @@ struct ffxCreateContextDescFrameGenerationSwapChainWrapDX12
     ID3D12CommandQueue* gameQueue;      ///< Input command queue to be used for presentation.
 };
 
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_NEW_DX12 0x30005u
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_NEW_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x05)
 struct ffxCreateContextDescFrameGenerationSwapChainNewDX12
 {
     ffxCreateContextDescHeader header;
@@ -43,7 +48,7 @@ struct ffxCreateContextDescFrameGenerationSwapChainNewDX12
     ID3D12CommandQueue* gameQueue;      ///< Input command queue to be used for presentation.
 };
 
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_FOR_HWND_DX12 0x30006u
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_FOR_HWND_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x06)
 struct ffxCreateContextDescFrameGenerationSwapChainForHwndDX12
 {
     ffxCreateContextDescHeader header;
@@ -55,7 +60,7 @@ struct ffxCreateContextDescFrameGenerationSwapChainForHwndDX12
     ID3D12CommandQueue* gameQueue;                   ///< Input command queue to be used for presentation.
 };
 
-#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_REGISTERUIRESOURCE_DX12 0x30002u
+#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_REGISTERUIRESOURCE_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x02)
 struct ffxConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12
 {
     ffxConfigureDescHeader header;
@@ -63,27 +68,27 @@ struct ffxConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12
     uint32_t               flags;        ///< Zero or combination of values from FfxApiUiCompositionFlags.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_INTERPOLATIONCOMMANDLIST_DX12 0x30003u
+#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_INTERPOLATIONCOMMANDLIST_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x03)
 struct ffxQueryDescFrameGenerationSwapChainInterpolationCommandListDX12
 {
     ffxQueryDescHeader header;
     void** pOutCommandList;             ///< Output command list (ID3D12GraphicsCommandList) to be used for frame generation dispatch.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_INTERPOLATIONTEXTURE_DX12 0x30004u
+#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_INTERPOLATIONTEXTURE_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x04)
 struct ffxQueryDescFrameGenerationSwapChainInterpolationTextureDX12
 {
     ffxQueryDescHeader header;
     struct FfxApiResource *pOutTexture; ///< Output resource in which the frame interpolation result should be placed.
 };
 
-#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_WAIT_FOR_PRESENTS_DX12 0x30007u
+#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_WAIT_FOR_PRESENTS_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x07)
 struct ffxDispatchDescFrameGenerationSwapChainWaitForPresentsDX12
 {
     ffxDispatchDescHeader header;
 };
 
-#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_KEYVALUE_DX12 0x30008u
+#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_KEYVALUE_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x08)
 struct ffxConfigureDescFrameGenerationSwapChainKeyValueDX12
 {
     ffxConfigureDescHeader  header;
@@ -99,14 +104,14 @@ enum FfxApiConfigureFrameGenerationSwapChainKeyDX12
     FFX_API_CONFIGURE_FG_SWAPCHAIN_KEY_FRAMEPACINGTUNING = 2,                ///< Sets FfxApiSwapchainFramePacingTuning
 };
 
-#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_GPU_MEMORY_USAGE_DX12 0x00030009u
+#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_GPU_MEMORY_USAGE_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x09)
 struct ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12
 {
     ffxQueryDescHeader header;
     struct FfxApiEffectMemoryUsage* gpuMemoryUsageFrameGenerationSwapchain;
 };
 
-#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_GPU_MEMORY_USAGE_DX12_V2 0x0003000au
+#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_GPU_MEMORY_USAGE_DX12_V2 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x0a)
 struct ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2
 {
     ffxQueryDescHeader header;
@@ -118,4 +123,11 @@ struct ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2
     uint32_t uiResourceFormat;               ///< The surface format for the uiResource. One of the values from FfxApiSurfaceFormat. Set to FFX_API_SURFACE_FORMAT_UNKNOWN(0) if providing null uiResource in  ffxConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12. App needs to fill out before Query() call.
     uint32_t flags;                          ///< Zero or combination of values from FfxApiUiCompositionFlags. App needs to fill out before Query() call.
     struct FfxApiEffectMemoryUsage* gpuMemoryUsageFrameGenerationSwapchain;
+};
+
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_VERSION_DX12 FFX_API_MAKE_BACKEND_EFFECT_SUB_ID(FFX_API_BACKEND_ID_DX12, FFX_API_EFFECT_ID_FRAMEGENERATIONSWAPCHAIN, 0x0b)
+struct ffxCreateContextDescFrameGenerationSwapChainVersionDX12
+{
+    ffxCreateContextDescHeader header;
+    uint32_t                   version;           ///< The version of the API the application was built against. This must be set to FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION.
 };
