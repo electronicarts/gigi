@@ -417,14 +417,6 @@ STRUCT_BEGIN(RenderState, "state to build the fixed pipeline from")
     STRUCT_FIELD(bool, frontIsCounterClockwise, true, "", 0)
 STRUCT_END()
 
-STRUCT_BEGIN(WorkGraphMeshNode, "Description of the Mesh nodes used in this workgraph")
-    STRUCT_FIELD(GeometryType, geometryType, GeometryType::TriangleList, "What to draw", 0)
-    STRUCT_FIELD(std::string, meshNodeFunctionName, {}, "name of the mesh shader function", 0)
-    STRUCT_FIELD(std::string, pixelShader, {}, "name of the pixel shader function to pair with", 0)
-    STRUCT_FIELD(bool, overrideNodeRenderState, false,"whether to override the render state for this specific mesh node with the renderState below", 0)
-    STRUCT_FIELD(RenderState, renderState, {}, "the specialized render state for this mesh node.", SCHEMA_FLAG_UI_COLLAPSABLE)
-STRUCT_END()
-
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBase, "Executes a work graph")
     STRUCT_CONST(std::string, c_editorName, "Work Graph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "WGraph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
@@ -432,6 +424,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
     STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
 
     STRUCT_FIELD(WorkGraphShaderReference, entryShader, {}, "The work graph entry shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, shaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
 
     STRUCT_FIELD(int, numRecords, 1, "how many records the work graph launches with.", 0)

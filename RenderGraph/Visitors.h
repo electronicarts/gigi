@@ -1508,7 +1508,7 @@ struct ReferenceFixupVisitor
 
             if (connection.srcNodePinIndex == -1)
             {
-                GigiAssert(false, "Could not find source pin \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find source pin \"%s\" (connections[%i]) in work graph node \"%s\"\nIn %s\n", connection.srcPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1516,7 +1516,7 @@ struct ReferenceFixupVisitor
             connection.dstNodeIndex = GetNodeIndexByName(connection.dstNode.c_str());
             if (connection.dstNodeIndex == -1)
             {
-                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in draw call node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest node \"%s\" (connections[%i]) in work graph node \"%s\"\nIn %s\n", connection.dstNode.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
 
@@ -1524,7 +1524,7 @@ struct ReferenceFixupVisitor
             connection.dstNodePinIndex = GetNodePinIndexByName(renderGraph.nodes[connection.dstNodeIndex], connection.dstPin.c_str());
             if (connection.dstNodePinIndex == -1)
             {
-                GigiAssert(false, "Could not find dest pin %s (connections[%i]) in draw call node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
+                GigiAssert(false, "Could not find dest pin %s (connections[%i]) in work graph node %s\nIn %s\n", connection.dstPin.c_str(), connectionIndex, data.name.c_str(), path.c_str());
                 return false;
             }
         }
@@ -3570,7 +3570,7 @@ struct ShaderDataVisitor
             else if (node._index == RenderGraphNode::c_index_actionWorkGraph)
             {
                 if (node.actionWorkGraph.entryShader.name != shader.name)
-                    continue;
+                    nodeVariableAliases = &node.actionWorkGraph.shaderVariableAliases;
             }
             // ray shader
             else if (node._index == RenderGraphNode::c_index_actionRayShader)

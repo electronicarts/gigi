@@ -43,7 +43,6 @@ namespace FrontEndNodes
         InputNodeInfo ret;
         ret.nodeIndex = -1;
 
-        // Required pixel shader resource pins
         if (node.entryShader.shader)
         {
             if (pinIndex < node.entryShader.shader->resources.size())

@@ -398,6 +398,12 @@ struct RenameReferencesVisitor
                 m_renameData.UpdateNodePin(node.records.node, node.records.pin);
                 m_renameData.UpdateNodeName(node.records.node);
 
+                for (NodePinConnection& connection : node.connections)
+                {
+                    m_renameData.UpdateNodePin(connection.dstNode, connection.dstPin);
+                    m_renameData.UpdateNodeName(connection.dstNode);
+                }
+
                 return true;
             }
             case RenderGraphNode::c_index_reroute:
