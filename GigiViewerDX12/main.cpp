@@ -214,7 +214,7 @@ static RENDERDOC_API_1_6_0* g_renderDocAPI = nullptr;
 static bool g_renderDocCaptureNextFrame = false;
 static bool g_renderDocIsCapturing = false;
 static bool g_renderDocLaunchUI = false;
-static bool g_renderDocEnabled = true;
+static bool g_renderDocEnabled = false;
 static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
 
@@ -8662,9 +8662,9 @@ int main(int argc, char** argv)
             g_GPUValidation = true;
             argIndex++;
         }
-        else if (!_stricmp(argv[argIndex], "-norenderdoc"))
+        else if (!_stricmp(argv[argIndex], "-renderdoc"))
         {
-            g_renderDocEnabled = false;
+            g_renderDocEnabled = true;
             argIndex++;
         }
         else if (!_stricmp(argv[argIndex], "-noamdframeinterpolation"))
