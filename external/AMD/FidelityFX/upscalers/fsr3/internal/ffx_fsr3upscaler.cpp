@@ -42,7 +42,7 @@
 #include "../../../api/internal/gpu/ffx_core.h"
 #include "../../../api/internal/ffx_object_management.h"
 #if !defined(_GAMING_XBOX)
-#include "../../../api/internal/git_hash_branch.h"
+#include "../../../amdinternal/api/internal/git_hash_branch.h"
 #endif // !defined(_GAMING_XBOX)
 #include "../include/gpu/fsr1/ffx_fsr1.h"
 #include "../include/gpu/spd/ffx_spd.h"
@@ -201,132 +201,110 @@ static void fsr3upscalerDebugCheckDispatch(FfxFsr3UpscalerContext_Private* conte
 {
     if (params->commandList == nullptr)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"commandList is null");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"commandList is null");
     }
 
     if (params->color.resource == nullptr)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"color resource is null");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"color resource is null");
     }
 
     if (params->depth.resource == nullptr)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"depth resource is null");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"depth resource is null");
     }
 
     if (params->motionVectors.resource == nullptr)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"motionVectors resource is null");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"motionVectors resource is null");
     }
 
-    if (params->exposure.resource != nullptr)
+    if (params->exposure.resource == nullptr && !(context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_AUTO_EXPOSURE))
     {
-        if ((context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_AUTO_EXPOSURE) == FFX_FSR3UPSCALER_ENABLE_AUTO_EXPOSURE)
-        {
-            FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"exposure resource provided, however auto exposure flag is present");
-        }
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"exposure resource is null and auto exposure flag is unset");
+    }
+
+    if (params->exposure.resource != nullptr && (context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_AUTO_EXPOSURE))
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"exposure resource provided and auto exposure flag is set");
     }
 
     if (params->output.resource == nullptr)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"output resource is null");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"output resource is null");
     }
 
     if (fabs(params->jitterOffset.x) > 1.0f || fabs(params->jitterOffset.y) > 1.0f)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"jitterOffset contains value outside of expected range [-1.0, 1.0]");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"jitterOffset contains value outside of expected range [-1.0, 1.0]");
     }
 
     if ((params->motionVectorScale.x > (float)context->contextDescription.maxRenderSize.width) ||
         (params->motionVectorScale.y > (float)context->contextDescription.maxRenderSize.height))
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"motionVectorScale contains scale value greater than maxRenderSize");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"motionVectorScale contains scale value greater than maxRenderSize");
     }
     if ((params->motionVectorScale.x == 0.0f) ||
         (params->motionVectorScale.y == 0.0f))
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"motionVectorScale contains zero scale value");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"motionVectorScale contains zero scale value");
     }
 
     if ((params->renderSize.width > context->contextDescription.maxRenderSize.width) ||
         (params->renderSize.height > context->contextDescription.maxRenderSize.height))
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"renderSize is greater than context maxRenderSize");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"renderSize is greater than context maxRenderSize");
     }
     if ((params->renderSize.width == 0) ||
         (params->renderSize.height == 0))
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"renderSize contains zero dimension");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"renderSize contains zero dimension");
+    }
+
+    if ((params->upscaleSize.width == 0) ^ (params->upscaleSize.height == 0))
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"upscaleSize contains one dimension that is zero; to set maxUpscaleSize, both dimensions must be zero");
     }
 
     if (params->sharpness < 0.0f || params->sharpness > 1.0f)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"sharpness contains value outside of expected range [0.0, 1.0]");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"sharpness contains value outside of expected range [0.0, 1.0]");
     }
 
     if (params->frameTimeDelta < 1.0f)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"frameTimeDelta is less than 1.0f - this value should be milliseconds (~16.6f for 60fps)");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"frameTimeDelta is less than 1.0f - this value should be milliseconds (~16.6f for 60fps)");
     }
 
     if (params->preExposure == 0.0f)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"preExposure provided as 0.0f which is invalid");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"preExposure provided as 0.0f which is invalid");
     }
 
-    bool infiniteDepth = (context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_DEPTH_INFINITE) == FFX_FSR3UPSCALER_ENABLE_DEPTH_INFINITE;
-    bool inverseDepth = (context->contextDescription.flags & FFX_FSR3UPSCALER_ENABLE_DEPTH_INVERTED) == FFX_FSR3UPSCALER_ENABLE_DEPTH_INVERTED;
-
-    if (inverseDepth)
+    if (params->cameraNear < 0.075f)
     {
-        if (params->cameraNear < params->cameraFar)
-        {
-            FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING,
-                L"FFX_FSR3UPSCALER_ENABLE_DEPTH_INVERTED flag is present yet cameraNear is less than cameraFar");
-        }
-        if (infiniteDepth)
-        {
-            if (params->cameraNear != FLT_MAX)
-            {
-                FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING,
-                    L"FFX_FSR3UPSCALER_ENABLE_DEPTH_INFINITE and FFX_FSR3UPSCALER_ENABLE_DEPTH_INVERTED present, yet cameraNear != FLT_MAX");
-            }
-        }
-        if (params->cameraFar < 0.075f)
-        {
-            FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING,
-                L"FFX_FSR3UPSCALER_ENABLE_DEPTH_INVERTED present, cameraFar value is very low which may result in depth separation artefacting");
-        }
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING,
+            L"cameraNear value is very low which may result in depth separation artefacting");
     }
-    else
+
+    if (params->cameraFar < 0.075f)
     {
-        if (params->cameraNear > params->cameraFar)
-        {
-            FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING,
-                L"cameraNear is greater than cameraFar in non-inverted-depth context");
-        }
-        if (infiniteDepth)
-        {
-            if (params->cameraFar != FLT_MAX)
-            {
-                FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING,
-                    L"FFX_FSR3UPSCALER_ENABLE_DEPTH_INFINITE present, yet cameraFar != FLT_MAX");
-            }
-        }
-        if (params->cameraNear < 0.075f)
-        {
-            FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING,
-                L"cameraNear value is very low which may result in depth separation artefacting");
-        }
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING,
+            L"cameraFar value is very low which may result in depth separation artefacting");
+    }
+
+    if (params->cameraNear  == params->cameraFar)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"cameraNear and cameraFar are equal - this is invalid");
     }
 
     if (params->cameraFovAngleVertical <= 0.0f)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"cameraFovAngleVertical is 0.0f - this value should be > 0.0f");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"cameraFovAngleVertical is 0.0f - this value should be > 0.0f");
     }
     if (params->cameraFovAngleVertical > FFX_PI)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_ERROR, L"cameraFovAngleVertical is greater than 180 degrees/PI");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"cameraFovAngleVertical is greater than 180 degrees/PI");
     }
 }
 
@@ -543,32 +521,32 @@ static FfxErrorCode generateReactiveMaskInternal(FfxFsr3UpscalerContext_Private*
 
 static void getInternalResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D* maxUpscaleSize, FfxFsr3UpscalerInternalResourceDescriptions* internalResourceDescriptions)
 {
-    internalResourceDescriptions->accumulation1 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) },
+    internalResourceDescriptions->accumulation1 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_Accumulation1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_ACCUMULATION_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->accumulation2 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) },
+    internalResourceDescriptions->accumulation2 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_Accumulation2", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_ACCUMULATION_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->luma1 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_Luma1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->luma2 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_Luma2", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->intermediateFp16x1 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    internalResourceDescriptions->luma1 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_Luma1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->luma2 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_Luma2", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->intermediateFp16x1 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_IntermediateFp16x1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERMEDIATE_FP16x1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->shadingChange = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxRenderSize->width / 2, maxRenderSize->height / 2, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    internalResourceDescriptions->shadingChange = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxRenderSize->width / 2, maxRenderSize->height / 2, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_ShadingChange", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_SHADING_CHANGE, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->newLocks = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxUpscaleSize->width, maxUpscaleSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_NewLocks", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_NEW_LOCKS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->internalUpscaled1 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxUpscaleSize->width, maxUpscaleSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    internalResourceDescriptions->newLocks = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, maxUpscaleSize->width, maxUpscaleSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_NewLocks", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_NEW_LOCKS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->internalUpscaled1 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxUpscaleSize->width, maxUpscaleSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_InternalUpscaled1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERNAL_UPSCALED_COLOR_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->internalUpscaled2 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxUpscaleSize->width, maxUpscaleSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    internalResourceDescriptions->internalUpscaled2 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxUpscaleSize->width, maxUpscaleSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_InternalUpscaled2", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERNAL_UPSCALED_COLOR_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->spdMips = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_FLOAT, maxRenderSize->width / 2, maxRenderSize->height / 2, 1, 0, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_SpdMips", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_SPD_MIPS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->farthestDepthMip1 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width / 2, maxRenderSize->height / 2, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV) },
+    internalResourceDescriptions->spdMips = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_FLOAT, maxRenderSize->width / 2, maxRenderSize->height / 2, 1, 0, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_SpdMips", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_SPD_MIPS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->farthestDepthMip1 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_FLOAT, maxRenderSize->width / 2, maxRenderSize->height / 2, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_FarthestDepthMip1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_FARTHEST_DEPTH_MIP1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->lumaHistory1 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_LumaHistory1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_HISTORY_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->lumaHistory2 = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_LumaHistory2", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_HISTORY_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->lumaHistory1 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_LumaHistory1", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_HISTORY_1, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->lumaHistory2 = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_LumaHistory2", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LUMA_HISTORY_2, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 
     uint32_t atomicInitData = 0U;
-    internalResourceDescriptions->spdAtomicCounter = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) },
+    internalResourceDescriptions->spdAtomicCounter = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_SpdAtomicCounter", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_SPD_ATOMIC_COUNT, FfxResourceInitData::FfxResourceInitValue(sizeof(atomicInitData), 0) };
 
-    internalResourceDescriptions->dilatedReactiveMasks = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8G8B8A8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_DilatedReactiveMasks", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_DILATED_REACTIVE_MASKS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->dilatedReactiveMasks = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8G8B8A8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, (FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_DilatedReactiveMasks", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_DILATED_REACTIVE_MASKS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 
     // generate the data for the LUT.
     const uint32_t lanczos2LutWidth = 128;
@@ -579,27 +557,27 @@ static void getInternalResourceDescriptions(const FfxApiDimensions2D* maxRenderS
         const float y = lanczos2(x);
         lanczos2Weights[currentLanczosWidthIndex] = int16_t(roundf(y * 32767.0f));
     }
-    internalResourceDescriptions->lanczosLutData = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_SNORM, lanczos2LutWidth, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_READ_ONLY) },
+    internalResourceDescriptions->lanczosLutData = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16_SNORM, lanczos2LutWidth, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_READ_ONLY) },
         FFX_API_RESOURCE_STATE_COMPUTE_READ, L"FSR3UPSCALER_LanczosLutData", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_LANCZOS_LUT, {FFX_RESOURCE_INIT_DATA_TYPE_BUFFER, sizeof(lanczos2Weights), lanczos2Weights} };
 
     uint8_t defaultReactiveMaskData = 0U;
-    internalResourceDescriptions->defaultReactivityMask = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_READ_ONLY) },
+    internalResourceDescriptions->defaultReactivityMask = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_READ_ONLY) },
         FFX_API_RESOURCE_STATE_COMPUTE_READ, L"FSR3UPSCALER_DefaultReactivityMask", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERNAL_DEFAULT_REACTIVITY, FfxResourceInitData::FfxResourceInitValue(sizeof(defaultReactiveMaskData), defaultReactiveMaskData) };
 
-    static float defaultExposure[] = { 0.0f, 0.0f };
-    internalResourceDescriptions->defaultExposure = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32G32_FLOAT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_READ_ONLY) },
+    static const float defaultExposure[] = { 0.0f, 0.0f };
+    internalResourceDescriptions->defaultExposure = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32G32_FLOAT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_READ_ONLY) },
         FFX_API_RESOURCE_STATE_COMPUTE_READ, L"FSR3UPSCALER_DefaultExposure", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_INTERNAL_DEFAULT_EXPOSURE, FfxResourceInitData::FfxResourceInitBuffer(sizeof(defaultExposure), defaultExposure) };
 
-    internalResourceDescriptions->frameInfo = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32G32B32A32_FLOAT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_FrameInfo", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_FRAME_INFO, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->frameInfo = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32G32B32A32_FLOAT, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_FrameInfo", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_FRAME_INFO, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 }
 
 static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D* maxUpscaleSize, FfxFsr3UpscalerSharedResourceDescriptions* sharedResourceDescriptions)
 {
-    sharedResourceDescriptions->dilatedDepth = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    sharedResourceDescriptions->dilatedDepth = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_DilatedDepth", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_DILATED_DEPTH, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    sharedResourceDescriptions->dilatedMotionVectors = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    sharedResourceDescriptions->dilatedMotionVectors = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
             FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_DilatedVelocity", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_DILATED_MOTION_VECTORS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    sharedResourceDescriptions->reconstructedPrevNearestDepth = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT,maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) },
+    sharedResourceDescriptions->reconstructedPrevNearestDepth = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT,maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) },
             FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FSR3UPSCALER_ReconstructedPrevNearestDepth", FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_RECONSTRUCTED_PREVIOUS_NEAREST_DEPTH, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 
 }
@@ -1168,6 +1146,14 @@ static FfxErrorCode fsr3upscalerDispatch(FfxFsr3UpscalerContext_Private* context
             context->uavResources[FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_FARTHEST_DEPTH_MIP1],
             context->uavResources[FFX_FSR3UPSCALER_RESOURCE_IDENTIFIER_DILATED_REACTIVE_MASKS],
         };
+        for (int i = 0; i < _countof(aliasableResources); ++i)
+        {
+            FfxGpuJobDescription barrierJob          = {FFX_GPU_JOB_BARRIER};
+            barrierJob.barrierDescriptor.barrierType = FFX_BARRIER_TYPE_TRANSITION;
+            barrierJob.barrierDescriptor.resource    = aliasableResources[i];
+            barrierJob.barrierDescriptor.newState    = FFX_API_RESOURCE_STATE_UNORDERED_ACCESS;
+            context->contextDescription.backendInterface.fpScheduleGpuJob(&context->contextDescription.backendInterface, &barrierJob);
+        }
         for(int i = 0; i<_countof(aliasableResources); ++i)
         {
             FfxGpuJobDescription discardJob = { FFX_GPU_JOB_DISCARD };

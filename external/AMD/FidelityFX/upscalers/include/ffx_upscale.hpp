@@ -85,4 +85,9 @@ struct struct_type<ffxQueryDescUpscaleGetResourceRequirements> : std::integral_c
 
 struct QueryDescUpscaleGetResourceRequirements : public InitHelper<ffxQueryDescUpscaleGetResourceRequirements> {};
 
+template<>
+struct struct_type<ffxCreateContextDescUpscaleVersion> : std::integral_constant<uint64_t, FFX_API_CREATE_CONTEXT_DESC_TYPE_UPSCALE_VERSION> {};
+
+struct CreateContextDescUpscaleVersion : public InitHelper<ffxCreateContextDescUpscaleVersion> {};
+
 }

@@ -23,6 +23,8 @@
 #pragma once
 
 #include "ffx_internal_types.h"
+#include "../include/ffx_api.h"
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -58,6 +60,23 @@ FFX_API void ffxPrintMessage(uint32_t type, const wchar_t* message);
     {                                 \
         ffxPrintMessage( type, msg);  \
     } while (0)
+
+/// Macro to print message only once per call site
+/// by calling application registered callback,
+/// otherwise to debugger's TTY
+/// 
+/// @ingroup Messages
+#define FFX_PRINT_MESSAGE_ONCE(type, msg)   \
+        do                                  \
+        {                                   \
+            static bool bOnce = false;      \
+        	if (!bOnce)                     \
+            {                               \
+                ffxPrintMessage(type, msg); \
+                bOnce = true;               \
+            }                               \
+        } while (0)
+
 #ifdef __cplusplus
 }
 #endif  // #ifdef __cplusplus

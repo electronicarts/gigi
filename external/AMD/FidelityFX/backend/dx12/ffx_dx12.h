@@ -35,6 +35,7 @@
 #include <d3d12.h>
 #include <dxgi1_6.h>
 #include "../../api/internal/ffx_interface.h"
+#include "../../api/include/dx12/ffx_api_dx12.h"
 
 #if defined(__cplusplus)
 extern "C" {
@@ -118,6 +119,23 @@ FFX_API FfxApiResource ffxGetResourceDX12(const ID3D12Resource*  dx12Resource,
                                        const wchar_t*         ffxResName,
                                        uint32_t state = FFX_API_RESOURCE_STATE_COMPUTE_READ);
 
+/// Loads AMD AGS runtime dll to allow SDK calls to show up in Radeon GPU Profiler.
+///
+/// @param [in] agsDllPath                  The path to the DLL to load.
+///
+/// @retval
+/// FFX_OK                                  The operation completed successfully.
+/// @retval
+/// FFX_ERROR_INVALID_PATH                  Could not load the DLL using the provided path.
+/// @retval
+/// FFX_ERROR_BACKEND_API_ERROR             Could not get proc addresses for
+///                                         agsDriverExtensionsDX12_PushMarker and/or
+///                                         agsDriverExtensionsDX12_PopMarker and/or
+///                                         agsDriverExtensionsDX12_SetMarker.
+///
+/// @ingroup DX12Backend
+FFX_API FfxErrorCode ffxLoadAgsDll(const wchar_t* agsDllPath);
+
 /// Loads PIX runtime dll to allow SDK calls to show up in Microsoft PIX.
 ///
 /// @param [in] pixDllPath                  The path to the DLL to load.
@@ -127,10 +145,22 @@ FFX_API FfxApiResource ffxGetResourceDX12(const ID3D12Resource*  dx12Resource,
 /// @retval
 /// FFX_ERROR_INVALID_PATH                  Could not load the DLL using the provided path.
 /// @retval
-/// FFX_ERROR_BACKEND_API_ERROR             Could not get proc addresses for PIXBeginEvent and/or PIXEndEvent
+/// FFX_ERROR_BACKEND_API_ERROR             Could not get proc addresses for
+///                                         PIXBeginEvent and/or
+///                                         PIXEndEvent and/or
+///                                         PIXSetMarker
 ///
 /// @ingroup DX12Backend
-FFX_API FfxErrorCode ffxLoadPixDll(const wchar_t*  pixDllPath);
+FFX_API FfxErrorCode ffxLoadPixDll(const wchar_t* pixDllPath);
+
+/// Toggles debugging.
+/// 
+/// @param [in]  backendInterface                    A pointer to the backend interface.
+/// @param [in]  effect                              The effect the context is being created for.
+/// @param [in]  flag                                Flag indicating whether debugging should be enabled.
+/// 
+/// @ingroup DX12Backend
+FFX_API void ffxToggleDebuggingDX12(FfxInterface* backendInterface, FfxUInt32 effectContextId, bool flag);
 
 /// Fetch a <c><i>FfxApiSurfaceFormat</i></c> from a DXGI_FORMAT.
 ///
@@ -380,6 +410,32 @@ typedef FfxErrorCode (*FfxReleaseFiSwapchain)(FfxFrameInterpolationContext* fiCo
 ///
 /// @ingroup DX12Backend
 FFX_API FfxErrorCode ffxGetResourceSizeFromDescriptionDX12(FfxDevice device, const FfxCreateResourceDescription* createResourceDescription, uint64_t* sizeInBytes);
+
+/// Query The ABI version used by the swapchain
+///
+/// @param [in] gameSwapChain           The <c><i>FfxSwapchain</i></c>
+///
+/// @retval
+/// FFX_ABI_INVALID The ABI is Invalid or an error occurred
+/// @retval
+/// FFX_ABI_OLD The ABI predates FSR 3.1.4 and only supports upscaler replacement
+/// @retval
+/// FFX_ABI_1_1_4 The FSR 3.1.4 release - first one to support frame-gen replacement
+/// @retval
+/// FFX_ABI_1_1_5 The ABI is for a patch release for specific titles
+/// @retval
+/// FFX_ABI_2_0_0 The FSR4 release
+/// @retval
+/// FFX_ABI_VALID The latest stable ABI, currently a synonym for FFX_ABI_2_0_0
+///
+/// @ingroup DX12Backend
+FFX_API FfxABIVersion ffxGetSwapchainABIDX12(FfxSwapchain gameSwapChain);
+
+FFX_API void ffxRegisterConstantBufferAllocatorDX12(FfxApiConstantBufferAllocator fpConstantAllocator);
+FFX_API void ffxRegisterResourceAllocatorDX12(PfnFfxResourceAllocatorFunc fpResourceAllocator);
+FFX_API void ffxRegisterResourceDeallocatorDX12(PfnFfxResourceDeallocatorFunc fpResourceDeallocator);
+FFX_API void ffxRegisterHeapAllocatorDX12(PfnFfxHeapAllocatorFunc fpHeapAllocator);
+FFX_API void ffxRegisterHeapDeallocatorDX12(PfnFfxHeapDeallocatorFunc fpHeapDeallocator);
 
 #if defined(__cplusplus)
 }

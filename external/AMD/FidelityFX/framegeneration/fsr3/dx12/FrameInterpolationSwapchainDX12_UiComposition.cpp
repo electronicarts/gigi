@@ -41,8 +41,8 @@ typedef HRESULT(__stdcall* D3D12SerializeVersionedRootSignatureType)(const D3D12
                                                                      ID3DBlob**                                 ppBlob,
                                                                      ID3DBlob**                                 ppErrorBlob);
 
-const uint32_t          s_uiCompositionDescRingBufferSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT * 2 * 2;   // FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT real frames (i.e. * 2), 2 SRV each should be enough
-const uint32_t          s_uiCompositionDescHeapRtvSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT * 2;
+const uint32_t          s_uiCompositionDescRingBufferSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 * 2 * 2;   // FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 real frames (i.e. * 2), 2 SRV each should be enough
+const uint32_t          s_uiCompositionDescHeapRtvSize = FFX_FRAME_INTERPOLATION_SWAP_CHAIN_MAX_BUFFER_COUNT_SDK2 * 2;
 ID3D12RootSignature*    s_uiCompositionRootSignature;
 ID3D12PipelineState*    s_uiCompositionPipeline;
 ID3D12PipelineState*    s_uiCompositionPremulPipeline;
@@ -247,7 +247,7 @@ void releaseUiBlitGpuResources()
     s_uiCompositionNextRtvDescriptor = 0;
 }
 
-FFX_API FfxErrorCode ffxFrameInterpolationUiComposition(const FfxPresentCallbackDescription* params, void* unusedUserCtx)
+FFX_API ffxReturnCode_t ffxFrameInterpolationUiComposition(ffxCallbackDescFrameGenerationPresent* params, void* unusedUserCtx)
 {
     (void)unusedUserCtx;
     ID3D12Device*   dx12Device  = reinterpret_cast<ID3D12Device*>(params->device);
@@ -265,14 +265,24 @@ FFX_API FfxErrorCode ffxFrameInterpolationUiComposition(const FfxPresentCallback
     
     ID3D12CommandList*         pCommandList            = reinterpret_cast<ID3D12CommandList*>(params->commandList);
     ID3D12GraphicsCommandList* pCmdList                = (ID3D12GraphicsCommandList*)pCommandList;
-    ID3D12PipelineState*       dx12PipelineStateObject = nullptr;
-    if (params->usePremulAlpha)
+    ID3D12PipelineState*       dx12PipelineStateObject = s_uiCompositionPipeline;
+    
+    for (auto it = &params->header; it; it = it->pNext)
     {
-        dx12PipelineStateObject = s_uiCompositionPremulPipeline;
-    }
-    else
-    {
-        dx12PipelineStateObject = s_uiCompositionPipeline;
+        if (it->type == FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT_PREMUL_ALPHA)
+        {
+            ffxCallbackDescFrameGenerationPresentPremulAlpha* premulAlpha = (ffxCallbackDescFrameGenerationPresentPremulAlpha*)it;
+
+            if (premulAlpha->usePremulAlpha)
+            {
+                dx12PipelineStateObject = s_uiCompositionPremulPipeline;
+            }
+            else
+            {
+                dx12PipelineStateObject = s_uiCompositionPipeline;
+            }
+            break;
+        }
     }
 
     ID3D12Resource*            pResBackbuffer          = (ID3D12Resource*)(params->currentBackBuffer.resource);

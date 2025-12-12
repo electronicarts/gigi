@@ -33,8 +33,38 @@
 #include <tuple> // std::ignore
 #include <limits> // std::numeric_limits
 
+/// Maximum number of timestamps supported
+///
+/// @ingroup Defines
+#define FFX_MAX_TIMESTAMPS (16)
+
+// Disable this to remove the dll load of AMD AGS tracing
+#define ENABLE_AGS 1
+
 // Disable this to remove the dll load of PIX and PIX tracing
 #define ENABLE_PIX_CAPTURES 1
+
+#if defined(ENABLE_AGS)
+
+#ifdef __clang__
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma clang diagnostic ignored "-Wpointer-bool-conversion"
+#endif
+
+enum AGSReturnCode;
+struct AGSContext;
+
+static bool s_AgsDllLoaded = false;
+
+typedef AGSReturnCode(*AgsBeginEventOnCommandList)(AGSContext* context, ID3D12GraphicsCommandList* commandList, const char* data);
+typedef AGSReturnCode(*AgsEndEventOnCommandList)(AGSContext* context, ID3D12GraphicsCommandList* commandList);
+typedef AGSReturnCode(*AgsSetMarkerOnCommandList)(AGSContext* context, ID3D12GraphicsCommandList* commandList, const char* data);
+
+AgsBeginEventOnCommandList agsBeginEventOnCommandList = {};
+AgsEndEventOnCommandList   agsEndEventOnCommandList = {};
+AgsSetMarkerOnCommandList  agsSetMarkerOnCommandList = {};
+
+#endif // #if defined(ENABLE_AGS)
 
 #if defined(ENABLE_PIX_CAPTURES)
 // PIX instrumentation is only enabled if one of the preprocessor symbols USE_PIX, DBG, _DEBUG, PROFILE, or PROFILE_BUILD is defined.
@@ -49,13 +79,16 @@
 #pragma clang diagnostic ignored "-Wpointer-bool-conversion"
 #endif
 
-static bool s_PIXDLLLoaded = false;
+static bool s_PixDllLoaded = false;
 
-typedef void(WINAPI* BeginEventOnCommandList)(ID3D12GraphicsCommandList* commandList, UINT64 color, _In_ PCSTR formatString);
-typedef void(WINAPI* EndEventOnCommandList)(ID3D12GraphicsCommandList* commandList);
+typedef void(WINAPI *PixBeginEventOnCommandList)(ID3D12GraphicsCommandList* commandList, UINT64 color, _In_ PCSTR formatString);
+typedef void(WINAPI *PixEndEventOnCommandList)(ID3D12GraphicsCommandList* commandList);
+typedef void(WINAPI *PixSetMarkerOnCommandList)(ID3D12GraphicsCommandList* commandList, UINT64 color, _In_ PCSTR formatString);
 
-BeginEventOnCommandList pixBeginEventOnCommandList;
-EndEventOnCommandList   pixEndEventOnCommandList;
+PixBeginEventOnCommandList pixBeginEventOnCommandList = {};
+PixEndEventOnCommandList   pixEndEventOnCommandList = {};
+PixSetMarkerOnCommandList  pixSetMarkerOnCommandList = {};
+static const UINT32 s_pixColor = PIX_COLOR(255, 36, 36);
 
 #endif // #if defined(ENABLE_PIX_CAPTURES)
 
@@ -79,13 +112,18 @@ FfxErrorCode CreatePipelineDX12(FfxInterface* backendInterface, FfxShaderBlob* p
 FfxErrorCode DestroyPipelineDX12(FfxInterface* backendInterface, FfxPipelineState* pipeline, FfxUInt32 effectContextId);
 FfxErrorCode ScheduleGpuJobDX12(FfxInterface* backendInterface, const FfxGpuJobDescription* job);
 FfxErrorCode ExecuteGpuJobsDX12(FfxInterface* backendInterface, FfxCommandList commandList, FfxUInt32 effectContextId);
-void RegisterConstantBufferAllocatorDX12(FfxInterface* backendInterface, FfxConstantBufferAllocator fpConstantAllocator);
+FfxErrorCode CreateHeapDX12(FfxInterface* backendInterface, const FfxCreateHeapDescription* createHeapDescription, FfxUInt32 effectContextId, FfxResourceHeap* outHeap);
+FfxErrorCode DestroyHeapDX12(FfxInterface* backendInterface, FfxResourceHeap heap, FfxUInt32 effectContextId);
 
 #define FFX_MAX_RESOURCE_IDENTIFIER_COUNT   (128)
 #define FFX_MAX_STATIC_DESCRIPTOR_COUNT   (65536)
 
 // Constant buffer allocation callback
-static FfxConstantBufferAllocator s_fpConstantAllocator = nullptr;
+static FfxApiConstantBufferAllocator s_fpConstantAllocator = nullptr;
+static PfnFfxResourceAllocatorFunc   s_fpResourceAllocator = nullptr;
+static PfnFfxResourceDeallocatorFunc s_fpResourceDeallocator = nullptr;
+static PfnFfxHeapAllocatorFunc       s_fpHeapAllocator = nullptr;
+static PfnFfxHeapDeallocatorFunc     s_fpHeapDeallocator = nullptr;
 
 typedef struct BackendContext_DX12 {
 
@@ -102,6 +140,7 @@ typedef struct BackendContext_DX12 {
         uint32_t                srvDescIndex;
         uint32_t                uavDescIndex;
         uint32_t                uavDescCount;
+        bool                    heapAllocated;
     } Resource;
 
     uint32_t refCount;
@@ -159,7 +198,8 @@ typedef struct BackendContext_DX12 {
         uint32_t bindlessBufferHeapEnd;
 
         // Usage
-        bool                active;
+        bool                active : 1;
+        bool                debuggingEnabled : 1;
 
         // VRAM usage
         FfxApiEffectMemoryUsage vramUsage;
@@ -171,12 +211,18 @@ typedef struct BackendContext_DX12 {
     EffectContext*              pEffectContexts;
 
     // Allocation defaults
-    FfxConstantAllocation       FallbackConstantAllocator(void* data, FfxUInt64 dataSize);
+    FfxApiConstantBufferAllocation FallbackConstantAllocator(void* data, FfxUInt64 dataSize);
     void*                       constantBufferMem;
     ID3D12Resource*             constantBufferResource;
     uint32_t                    constantBufferSize;
     uint32_t                    constantBufferOffset;
     std::mutex                  constantBufferMutex;
+
+    ID3D12QueryHeap*            pTimestampQueryHeap;
+    uint32_t                    timestampCount;
+    uint32_t                    activeQueryCount;
+
+	bool 				        resourceHeapsSupported : 1;
 
 } BackendContext_DX12;
 
@@ -259,10 +305,14 @@ FfxErrorCode ffxGetInterfaceDX12(
 
 #if defined(FFX_FRAMEGENERATION)
     backendInterface->fpSwapChainConfigureFrameGeneration = ffxSetFrameGenerationConfigToSwapchainDX12;
+    backendInterface->fpGetSwapchainABI = ffxGetSwapchainABIDX12;
 #else
     backendInterface->fpSwapChainConfigureFrameGeneration = nullptr;
+    backendInterface->fpGetSwapchainABI = nullptr;
 #endif // defined(FFX_FRAMEGENERATION)
-    backendInterface->fpRegisterConstantBufferAllocator = RegisterConstantBufferAllocatorDX12;
+
+    backendInterface->fpCreateHeap = CreateHeapDX12;
+	backendInterface->fpDestroyHeap = DestroyHeapDX12;
 
     // Memory assignments
     backendInterface->scratchBuffer = scratchBuffer;
@@ -279,7 +329,6 @@ FfxErrorCode ffxGetInterfaceDX12(
 
     // Set the device
     backendInterface->device = device;
-
 
     // Assign the max number of contexts we'll be using
     backendContext->maxEffectContexts = (uint32_t)maxContexts;
@@ -315,11 +364,44 @@ FfxApiResource ffxGetResourceDX12(const ID3D12Resource* dx12Resource,
     return resource;
 }
 
+FfxErrorCode ffxLoadAgsDll(const wchar_t* agsDllPath)
+{
+#if defined(ENABLE_AGS)
+    // Only do this once
+    if (s_AgsDllLoaded)
+        return FFX_OK;
+
+    HMODULE module = LoadLibraryW(agsDllPath);
+
+    if (!module)
+    {
+        return FFX_ERROR_INVALID_PATH;
+    }
+
+    // Get handles to
+    // * agsDriverExtensionsDX12_PushMarker
+    // * agsDriverExtensionsDX12_PopMarker
+    // * agsDriverExtensionsDX12_SetMarker
+    agsBeginEventOnCommandList = (AgsBeginEventOnCommandList)GetProcAddress(module, "agsDriverExtensionsDX12_PushMarker");
+    agsEndEventOnCommandList = (AgsEndEventOnCommandList)GetProcAddress(module, "agsDriverExtensionsDX12_PopMarker");
+    agsSetMarkerOnCommandList = (AgsSetMarkerOnCommandList)GetProcAddress(module, "agsDriverExtensionsDX12_SetMarker");
+    if (!agsBeginEventOnCommandList || !agsEndEventOnCommandList || !agsSetMarkerOnCommandList)
+    {
+        return FFX_ERROR_BACKEND_API_ERROR;
+    }
+
+    s_AgsDllLoaded = true;
+
+#endif // #if defined(ENABLE_AGS)
+
+    return FFX_OK;
+}
+
 FfxErrorCode ffxLoadPixDll(const wchar_t* pixDllPath)
 {
 #if defined(ENABLE_PIX_CAPTURES)
     // Only do this once
-    if (s_PIXDLLLoaded)
+    if (s_PixDllLoaded)
         return FFX_OK;
 
     HMODULE module = LoadLibraryW(pixDllPath);
@@ -329,18 +411,29 @@ FfxErrorCode ffxLoadPixDll(const wchar_t* pixDllPath)
         return FFX_ERROR_INVALID_PATH;
     }
 
-    // Get handles to PIXBeginEvent and PIXEndEvent
-    pixBeginEventOnCommandList = (BeginEventOnCommandList)GetProcAddress(module, "PIXBeginEventOnCommandList");
-    pixEndEventOnCommandList   = (EndEventOnCommandList)GetProcAddress(module, "PIXEndEventOnCommandList");
-    if (!pixBeginEventOnCommandList || !pixEndEventOnCommandList)
+    // Get handles to
+    // * PIXBeginEvent
+    // * PIXEndEvent
+    // * PIXSetMarker
+    pixBeginEventOnCommandList = (PixBeginEventOnCommandList)GetProcAddress(module, "PIXBeginEventOnCommandList");
+    pixEndEventOnCommandList   = (PixEndEventOnCommandList)GetProcAddress(module, "PIXEndEventOnCommandList");
+    pixSetMarkerOnCommandList  = (PixSetMarkerOnCommandList)GetProcAddress(module, "PIXSetMarkerOnCommandList");
+    if (!pixBeginEventOnCommandList || !pixEndEventOnCommandList || !pixSetMarkerOnCommandList)
     {
         return FFX_ERROR_BACKEND_API_ERROR;
     }
 
-    s_PIXDLLLoaded = true;
+    s_PixDllLoaded = true;
 #endif // #if defined(ENABLE_PIX_CAPTURES)
 
     return FFX_OK;
+}
+
+void ffxToggleDebuggingDX12(FfxInterface* backendInterface, FfxUInt32 effectContextId, bool flag)
+{
+    BackendContext_DX12* backendContext = (BackendContext_DX12*)backendInterface->scratchBuffer;
+    BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+    effectContext.debuggingEnabled = flag;
 }
 
 void TIF(HRESULT result)
@@ -348,7 +441,7 @@ void TIF(HRESULT result)
     if (FAILED(result)) {
 
         wchar_t errorMessage[256];
-        memset(errorMessage, 0, 256);
+        memset(errorMessage, 0, sizeof(errorMessage));
         FormatMessageW(FORMAT_MESSAGE_FROM_SYSTEM, NULL, result, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), errorMessage, 255, NULL);
         char errA[256];
         size_t returnSize;
@@ -360,9 +453,9 @@ void TIF(HRESULT result)
     }
 }
 
-FfxConstantAllocation BackendContext_DX12::FallbackConstantAllocator(void* data, FfxUInt64 dataSize)
+FfxApiConstantBufferAllocation BackendContext_DX12::FallbackConstantAllocator(void* data, FfxUInt64 dataSize)
 {
-    FfxConstantAllocation allocation;
+    FfxApiConstantBufferAllocation allocation;
     std::lock_guard<std::mutex> cbLock{ constantBufferMutex };
 
     if (!constantBufferMem)
@@ -400,7 +493,7 @@ FfxConstantAllocation BackendContext_DX12::FallbackConstantAllocator(void* data,
     constantBufferOffset += size;
 
     allocation.resource = FfxApiResource(); // Not needed for directx
-    allocation.handle = FfxUInt64(bufferViewDesc);
+    allocation.handle = uint64_t(bufferViewDesc);
 
     return allocation;
 }
@@ -561,6 +654,8 @@ DXGI_FORMAT ffxGetDX12FormatFromSurfaceFormat(FfxApiSurfaceFormat surfaceFormat)
             return DXGI_FORMAT_R32G32_TYPELESS;
         case (FFX_API_SURFACE_FORMAT_R32G32_FLOAT):
             return DXGI_FORMAT_R32G32_FLOAT;
+        case (FFX_API_SURFACE_FORMAT_R32G32_UINT):
+            return DXGI_FORMAT_R32G32_UINT;
         case (FFX_API_SURFACE_FORMAT_R32_UINT):
             return DXGI_FORMAT_R32_UINT;
         case(FFX_API_SURFACE_FORMAT_R10G10B10A2_TYPELESS):
@@ -605,6 +700,8 @@ DXGI_FORMAT ffxGetDX12FormatFromSurfaceFormat(FfxApiSurfaceFormat surfaceFormat)
             return DXGI_FORMAT_R8_TYPELESS;
         case (FFX_API_SURFACE_FORMAT_R8_UNORM):
             return DXGI_FORMAT_R8_UNORM;
+        case (FFX_API_SURFACE_FORMAT_R8_SNORM):
+            return DXGI_FORMAT_R8_SNORM;
         case (FFX_API_SURFACE_FORMAT_R8_UINT):
             return DXGI_FORMAT_R8_UINT;
         case (FFX_API_SURFACE_FORMAT_R8G8_UINT):
@@ -656,6 +753,9 @@ FfxApiSurfaceFormat ffxGetSurfaceFormatDX12(DXGI_FORMAT format)
         case DXGI_FORMAT_R32G32_TYPELESS:
         case DXGI_FORMAT_R32G32_FLOAT:
             return FFX_API_SURFACE_FORMAT_R32G32_FLOAT;
+
+        case DXGI_FORMAT_R32G32_UINT:
+            return FFX_API_SURFACE_FORMAT_R32G32_UINT;
 
         case DXGI_FORMAT_R32G8X24_TYPELESS:
         case DXGI_FORMAT_D32_FLOAT_S8X24_UINT:
@@ -729,6 +829,8 @@ FfxApiSurfaceFormat ffxGetSurfaceFormatDX12(DXGI_FORMAT format)
         case DXGI_FORMAT_R8_UNORM:
         case DXGI_FORMAT_A8_UNORM:
             return FFX_API_SURFACE_FORMAT_R8_UNORM;
+        case DXGI_FORMAT_R8_SNORM:
+            return FFX_API_SURFACE_FORMAT_R8_SNORM;
         case DXGI_FORMAT_R8_UINT:
             return FFX_API_SURFACE_FORMAT_R8_UINT;
 
@@ -764,71 +866,68 @@ FfxApiResourceDescription ffxGetResourceDescriptionDX12(const ID3D12Resource* pR
     if (!pResource)
         return resourceDescription;
 
-    if (pResource)
-    {
-        D3D12_RESOURCE_DESC desc = const_cast<ID3D12Resource*>(pResource)->GetDesc();
+    D3D12_RESOURCE_DESC desc = const_cast<ID3D12Resource*>(pResource)->GetDesc();
         
-        if( desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
-        {
-            resourceDescription.flags  = FFX_API_RESOURCE_FLAGS_NONE;
-            resourceDescription.usage  = FFX_API_RESOURCE_USAGE_UAV;
-            resourceDescription.size  = (uint32_t)desc.Width;
-            resourceDescription.stride = (uint32_t)desc.Height;
-            resourceDescription.format = ffxGetSurfaceFormatDX12(desc.Format);
+    if( desc.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER)
+    {
+        resourceDescription.flags  = FFX_API_RESOURCE_FLAGS_NONE;
+        resourceDescription.usage  = FFX_API_RESOURCE_USAGE_UAV;
+        resourceDescription.size  = (uint32_t)desc.Width;
+        resourceDescription.stride = (uint32_t)desc.Height;
+        resourceDescription.format = ffxGetSurfaceFormatDX12(desc.Format);
 
-            // What should we initialize this to?? No case for this yet
-            resourceDescription.depth    = 0;
-            resourceDescription.mipCount = 0;
+        // What should we initialize this to?? No case for this yet
+        resourceDescription.depth    = 0;
+        resourceDescription.mipCount = 0;
 
-            // Set the type
-            resourceDescription.type = FFX_API_RESOURCE_TYPE_BUFFER;
-        }
-        else
-        {
-            // Set flags properly for resource registration
-            resourceDescription.flags     = FFX_API_RESOURCE_FLAGS_NONE;
+        // Set the type
+        resourceDescription.type = FFX_API_RESOURCE_TYPE_BUFFER;
+    }
+    else
+    {
+        // Set flags properly for resource registration
+        resourceDescription.flags     = FFX_API_RESOURCE_FLAGS_NONE;
            
-            // Check for depth use
-            resourceDescription.usage     = IsDepthDX12(desc.Format) ? FFX_API_RESOURCE_USAGE_DEPTHTARGET : FFX_API_RESOURCE_USAGE_READ_ONLY;
+        // Check for depth use
+        resourceDescription.usage     = IsDepthDX12(desc.Format) ? FFX_API_RESOURCE_USAGE_DEPTHTARGET : FFX_API_RESOURCE_USAGE_READ_ONLY;
             
-            if (IsStencilDX12(desc.Format))
-                resourceDescription.usage = (FfxApiResourceUsage)(resourceDescription.usage | FFX_API_RESOURCE_USAGE_STENCILTARGET);
+        if (IsStencilDX12(desc.Format))
+            resourceDescription.usage = (FfxApiResourceUsage)(resourceDescription.usage | FFX_API_RESOURCE_USAGE_STENCILTARGET);
 
-            // Unordered access use
-            if ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
-                resourceDescription.usage = (FfxApiResourceUsage)(resourceDescription.usage | FFX_API_RESOURCE_USAGE_UAV);
+        // Unordered access use
+        if ((desc.Flags & D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS) == D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS)
+            resourceDescription.usage = (FfxApiResourceUsage)(resourceDescription.usage | FFX_API_RESOURCE_USAGE_UAV);
 
-            // Resource-specific supplemental use flags
-            resourceDescription.usage    = (FfxApiResourceUsage)(resourceDescription.usage | additionalUsages);
+        // Resource-specific supplemental use flags
+        resourceDescription.usage    = (FfxApiResourceUsage)(resourceDescription.usage | additionalUsages);
 
-            resourceDescription.width    = (uint32_t)desc.Width;
-            resourceDescription.height   = (uint32_t)desc.Height;
-            resourceDescription.depth    = desc.DepthOrArraySize;
-            resourceDescription.mipCount = desc.MipLevels;
-            resourceDescription.format   = ffxGetSurfaceFormatDX12(desc.Format);
+        resourceDescription.width    = (uint32_t)desc.Width;
+        resourceDescription.height   = (uint32_t)desc.Height;
+        resourceDescription.depth    = desc.DepthOrArraySize;
+        resourceDescription.mipCount = desc.MipLevels;
+        resourceDescription.format   = ffxGetSurfaceFormatDX12(desc.Format);
 
-            switch (desc.Dimension)
-            {
-            case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
-                resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE1D;
-                break;
-            case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
-                if (FFX_CONTAINS_FLAG(additionalUsages, FFX_API_RESOURCE_USAGE_ARRAYVIEW))
-                    resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
-                else if (desc.DepthOrArraySize == 1)
-                    resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
-                else if (desc.DepthOrArraySize == 6)
-                    resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE_CUBE;
-                else
-                    resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
-                break;
-            case D3D12_RESOURCE_DIMENSION_TEXTURE3D:
-                resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE3D;
-                break;
-            default:
-                FFX_ASSERT_MESSAGE(false, "FFXInterface: DX12: Unsupported texture dimension requested. Please implement.");
-                break;
-            }
+        switch (desc.Dimension)
+        {
+        case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
+            resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE1D;
+            break;
+        case D3D12_RESOURCE_DIMENSION_TEXTURE2D:
+            if (FFX_CONTAINS_FLAG(additionalUsages, FFX_API_RESOURCE_USAGE_ARRAYVIEW))
+                resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
+            else if (desc.DepthOrArraySize == 1)
+                resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
+            else if (desc.DepthOrArraySize == 6)
+                resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE_CUBE;
+            else
+                resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE2D;
+            break;
+        case D3D12_RESOURCE_DIMENSION_TEXTURE3D:
+            resourceDescription.type = FFX_API_RESOURCE_TYPE_TEXTURE3D;
+            break;
+        default:
+            FFX_ASSERT_MESSAGE(false, "FFXInterface: DX12: Unsupported texture dimension requested. Please implement.");
+            break;
         }
     }
 
@@ -842,35 +941,183 @@ ID3D12Resource* getDX12ResourcePtr(BackendContext_DX12* backendContext, int32_t 
     return reinterpret_cast<ID3D12Resource*>(backendContext->pResources[resourceIndex].resourcePtr);
 }
 
-void beginMarkerDX12(BackendContext_DX12* backendContext, ID3D12GraphicsCommandList* pCmdList, const wchar_t* label)
+#if defined(ENABLE_AGS)
+AGSContext* getAgsContextPtr(BackendContext_DX12* backendContext)
 {
-    FFX_ASSERT(nullptr != backendContext);
-    FFX_ASSERT(nullptr != pCmdList);
+    FFX_ASSERT(backendContext != nullptr);
+    FFX_ASSERT(backendContext->device != nullptr);
 
-#if defined(ENABLE_PIX_CAPTURES)
-    if (s_PIXDLLLoaded)
+    // {d5a2a91b-7003-4f12-89de-209beb51fb94}
+    static const GUID IID_AGSContextData = { 0xd5a2a91b, 0x7003, 0x4f12, { 0x89, 0xde, 0x20, 0x9b, 0xeb, 0x51, 0xfb, 0x94 } };
+
+    AGSContext* context = {};
+    UINT contextByteCount = sizeof(context);
+
+    const HRESULT result = backendContext->device->GetPrivateData(IID_AGSContextData, &contextByteCount, &context);
+    if (result == S_OK)
+    {
+        if (contextByteCount == sizeof(context))
+        {
+            return context;
+        }
+    }
+
+    return nullptr;
+}
+#endif // #if defined(ENABLE_AGS)
+
+static void BeginEventDX12(BackendContext_DX12* backendContext, FfxUInt32 effectContextId, ID3D12GraphicsCommandList* pCmdList, const char* label)
+{
+    FFX_ASSERT(backendContext != nullptr);
+    FFX_ASSERT(pCmdList != nullptr);
+    const BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+
+    if (effectContext.debuggingEnabled)
+    {
+        #if defined(ENABLE_AGS)
+        if (s_AgsDllLoaded)
+        {
+            AGSContext* agsContext = getAgsContextPtr(backendContext);
+            if (agsContext != nullptr)
+            {
+                // Ignore error code
+                agsBeginEventOnCommandList(agsContext, pCmdList, label);
+            }
+        }
+        #endif // #if defined(ENABLE_AGS)
+
+        #if defined(ENABLE_PIX_CAPTURES)
+        if (s_PixDllLoaded)
+        {
+            pixBeginEventOnCommandList(pCmdList, s_pixColor, label);
+        }
+        #endif // #if defined(ENABLE_PIX_CAPTURES)
+    }
+}
+
+static void BeginEventDX12(BackendContext_DX12* backendContext, FfxUInt32 effectContextId, ID3D12GraphicsCommandList* pCmdList, const wchar_t* label)
+{
+    FFX_ASSERT(backendContext != nullptr);
+    FFX_ASSERT(pCmdList != nullptr);
+    const BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+
+    if (effectContext.debuggingEnabled)
     {
         char strLabel[FFX_RESOURCE_NAME_SIZE];
         WideCharToMultiByte(CP_UTF8, 0, label, -1, strLabel, int(std::size(strLabel)), nullptr, nullptr);
-        pixBeginEventOnCommandList(pCmdList, 0, strLabel);
+
+        #if defined(ENABLE_AGS)
+        if (s_AgsDllLoaded)
+        {
+            AGSContext* agsContext = getAgsContextPtr(backendContext);
+            if (agsContext != nullptr)
+            {
+                // Ignore error code
+                agsBeginEventOnCommandList(agsContext, pCmdList, strLabel);
+            }
+        }
+        #endif // #if defined(ENABLE_AGS)
+
+        #if defined(ENABLE_PIX_CAPTURES)
+        if (s_PixDllLoaded)
+        {
+            pixBeginEventOnCommandList(pCmdList, s_pixColor, strLabel);
+        }
+        #endif // #if defined(ENABLE_PIX_CAPTURES)
     }
-#endif // #if defined(ENABLE_PIX_CAPTURES)
 }
 
-void endMarkerDX12(BackendContext_DX12* backendContext, ID3D12GraphicsCommandList* pCmdList)
+static void EndEventDX12(BackendContext_DX12* backendContext, FfxUInt32 effectContextId, ID3D12GraphicsCommandList* pCmdList)
 {
-    FFX_ASSERT(nullptr != backendContext);
-    FFX_ASSERT(nullptr != pCmdList);
+    FFX_ASSERT(backendContext != nullptr);
+    FFX_ASSERT(pCmdList != nullptr);
+    const BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
 
-#if defined(ENABLE_PIX_CAPTURES)
-    if (s_PIXDLLLoaded)
+    if (effectContext.debuggingEnabled)
     {
-        pixEndEventOnCommandList(pCmdList);
+        #if defined(ENABLE_AGS)
+        if (s_AgsDllLoaded)
+        {
+            AGSContext* agsContext = getAgsContextPtr(backendContext);
+            if (agsContext != nullptr)
+            {
+                // Ignore error code
+                agsEndEventOnCommandList(agsContext, pCmdList);
+            }
+        }
+        #endif // #if defined(ENABLE_AGS)
+
+        #if defined(ENABLE_PIX_CAPTURES)
+        if (s_PixDllLoaded)
+        {
+            pixEndEventOnCommandList(pCmdList);
+        }
+        #endif // #if defined(ENABLE_PIX_CAPTURES)
     }
-#endif // #if defined(ENABLE_PIX_CAPTURES)
 }
 
-void addBarrier(BackendContext_DX12* backendContext, FfxResourceInternal* resource, FfxApiResourceState newState)
+static void InsertMarkerDX12(BackendContext_DX12* backendContext, FfxUInt32 effectContextId, ID3D12GraphicsCommandList* pCmdList, const char* label)
+{
+    FFX_ASSERT(backendContext != nullptr);
+    FFX_ASSERT(pCmdList != nullptr);
+    const BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+
+    if (effectContext.debuggingEnabled)
+    {
+        #if defined(ENABLE_AGS)
+        if (s_AgsDllLoaded)
+        {
+            AGSContext* agsContext = getAgsContextPtr(backendContext);
+            if (agsContext != nullptr)
+            {
+                // Ignore error code
+                agsSetMarkerOnCommandList(agsContext, pCmdList, label);
+            }
+        }
+        #endif // #if defined(ENABLE_AGS)
+
+        #if defined(ENABLE_PIX_CAPTURES)
+        if (s_PixDllLoaded)
+        {
+            pixSetMarkerOnCommandList(pCmdList, s_pixColor, label);
+        }
+        #endif // #if defined(ENABLE_PIX_CAPTURES)
+    }
+}
+
+static void InsertMarkerDX12(BackendContext_DX12* backendContext, FfxUInt32 effectContextId, ID3D12GraphicsCommandList* pCmdList, const wchar_t* label)
+{
+    FFX_ASSERT(backendContext != nullptr);
+    FFX_ASSERT(pCmdList != nullptr);
+    const BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+
+    if (effectContext.debuggingEnabled)
+    {
+        char strLabel[FFX_RESOURCE_NAME_SIZE];
+        WideCharToMultiByte(CP_UTF8, 0, label, -1, strLabel, int(std::size(strLabel)), nullptr, nullptr);
+
+        #if defined(ENABLE_AGS)
+        if (s_AgsDllLoaded)
+        {
+            AGSContext* agsContext = getAgsContextPtr(backendContext);
+            if (agsContext != nullptr)
+            {
+                // Ignore error code
+                agsSetMarkerOnCommandList(agsContext, pCmdList, strLabel);
+            }
+        }
+        #endif // #if defined(ENABLE_AGS)
+
+        #if defined(ENABLE_PIX_CAPTURES)
+        if (s_PixDllLoaded)
+        {
+            pixSetMarkerOnCommandList(pCmdList, s_pixColor, strLabel);
+        }
+        #endif // #if defined(ENABLE_PIX_CAPTURES)
+    }
+}
+
+void addBarrier(BackendContext_DX12* backendContext, FfxBarrierType type, FfxResourceInternal* resource, FfxApiResourceState newState = FFX_API_RESOURCE_STATE_COMMON)
 {
     FFX_ASSERT(NULL != backendContext);
     FFX_ASSERT(NULL != resource);
@@ -881,23 +1128,42 @@ void addBarrier(BackendContext_DX12* backendContext, FfxResourceInternal* resour
     FFX_ASSERT(NULL != dx12Resource);
     FFX_ASSERT(backendContext->barrierCount < FFX_MAX_BARRIERS);
 
-    FfxApiResourceState* currentState = &backendContext->pResources[resource->internalIndex].currentState;
+    switch (type)
+    {
+    case FFX_BARRIER_TYPE_TRANSITION:
+    {
+        FfxApiResourceState* currentState = &backendContext->pResources[resource->internalIndex].currentState;
+        if ((*currentState & newState) != newState)
+        {
 
-    if ((*currentState & newState) != newState) {
+            *barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+                dx12Resource,
+                ffxGetDX12StateFromResourceState(*currentState),
+                ffxGetDX12StateFromResourceState(newState));
 
-        *barrier = CD3DX12_RESOURCE_BARRIER::Transition(
-            dx12Resource,
-            ffxGetDX12StateFromResourceState(*currentState),
-            ffxGetDX12StateFromResourceState(newState));
+            *currentState = newState;
+            ++backendContext->barrierCount;
 
-        *currentState = newState;
-        ++backendContext->barrierCount;
-
+        }
+        else if (newState == FFX_API_RESOURCE_STATE_UNORDERED_ACCESS)
+        {
+            *barrier = CD3DX12_RESOURCE_BARRIER::UAV(dx12Resource);
+            ++backendContext->barrierCount;
+        }
+        break;
     }
-    else if (newState == FFX_API_RESOURCE_STATE_UNORDERED_ACCESS) {
-
+    case FFX_BARRIER_TYPE_UAV:
+    {
         *barrier = CD3DX12_RESOURCE_BARRIER::UAV(dx12Resource);
         ++backendContext->barrierCount;
+        break;
+    }
+    case FFX_BARRIER_TYPE_ALIAS:
+    {
+        *barrier = CD3DX12_RESOURCE_BARRIER::Aliasing(nullptr, dx12Resource);
+        ++backendContext->barrierCount;
+        break;
+    }
     }
 }
 
@@ -923,15 +1189,14 @@ FfxUInt32 GetSDKVersionDX12(FfxInterface*)
 
 uint64_t GetResourceGpuMemorySizeDX12(ID3D12Resource* resource)
 {
-    uint64_t      size = 0;
-    D3D12_RESOURCE_ALLOCATION_INFO allocInfo = {};
+    uint64_t size = 0;
     if (resource)
     {
         D3D12_RESOURCE_DESC desc = resource->GetDesc();
         ID3D12Device* pDevice = nullptr;
         if (SUCCEEDED(resource->GetDevice(IID_PPV_ARGS(&pDevice))))
         {
-            allocInfo = pDevice->GetResourceAllocationInfo(0, 1, &desc);
+            const D3D12_RESOURCE_ALLOCATION_INFO allocInfo = pDevice->GetResourceAllocationInfo(0, 1, &desc);
             size = allocInfo.SizeInBytes;
             pDevice->Release();
         }
@@ -959,7 +1224,7 @@ FfxErrorCode ffxGetResourceSizeFromDescriptionDX12(FfxDevice device, const FfxCr
     FFX_ASSERT(NULL != createResourceDescription);
     FFX_ASSERT(NULL != sizeInBytes);
 
-    if (createResourceDescription->heapType == FFX_HEAP_TYPE_UPLOAD)
+    if (createResourceDescription->heapInfo.heapType == FFX_HEAP_TYPE_UPLOAD)
     {
         *sizeInBytes = 0u;
         return FFX_OK;
@@ -1013,10 +1278,9 @@ FfxErrorCode ffxGetResourceSizeFromDescriptionDX12(FfxDevice device, const FfxCr
         break;
     }
     ID3D12Device* pDevice = nullptr;
-    D3D12_RESOURCE_ALLOCATION_INFO allocInfo = {};
     if (SUCCEEDED(((ID3D12Device*) device)->QueryInterface(IID_PPV_ARGS(&pDevice))))
     {
-        allocInfo = pDevice->GetResourceAllocationInfo(0, 1, &dx12ResourceDescription);
+        const D3D12_RESOURCE_ALLOCATION_INFO allocInfo = pDevice->GetResourceAllocationInfo(0, 1, &dx12ResourceDescription);
         pDevice->Release();
         *sizeInBytes = allocInfo.SizeInBytes;
         if (allocInfo.SizeInBytes != UINT64_MAX)
@@ -1045,11 +1309,8 @@ FfxErrorCode CreateBackendContextDX12(FfxInterface* backendInterface, FfxEffect 
 
         new (&backendContext->constantBufferMutex) std::mutex();
 
-        if (dx12Device != NULL) {
-
-            dx12Device->AddRef();
-            backendContext->device = dx12Device;
-        }
+        dx12Device->AddRef();
+        backendContext->device = dx12Device;
 
         // Map all of our pointers
         uint32_t gpuJobDescArraySize = FFX_ALIGN_UP(backendContext->maxEffectContexts * FFX_MAX_GPU_JOBS * sizeof(FfxGpuJobDescription), sizeof(uint32_t));
@@ -1108,10 +1369,22 @@ FfxErrorCode CreateBackendContextDX12(FfxInterface* backendInterface, FfxEffect 
         // initialize the bindless offset to *after* the ring-buffer 
         backendContext->descBindlessBase = FFX_RING_BUFFER_DESCRIPTOR_COUNT * backendContext->maxEffectContexts;
 
+        backendContext->pTimestampQueryHeap = nullptr;
+        backendContext->timestampCount = 0;
+        backendContext->activeQueryCount = 0;
+
         // DXGI factory used for memory usage tracking
         result = CreateDXGIFactory2(0, IID_PPV_ARGS(&backendContext->dxgiFactory));
 
         FFX_UNUSED(result);
+
+        D3D12_FEATURE_DATA_D3D12_OPTIONS dx12Options = {};
+		dx12Device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &dx12Options, sizeof(dx12Options));
+		backendContext->resourceHeapsSupported = dx12Options.ResourceHeapTier >= D3D12_RESOURCE_HEAP_TIER_2;
+        if (!backendContext->resourceHeapsSupported)
+        {
+            FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"FFXInterface: DX12: D3D12_RESOURCE_HEAP_TIER_2 not supported. GPU memory may be allocated less efficiently.");
+        }
     }
 
     // Increment the ref count
@@ -1125,6 +1398,7 @@ FfxErrorCode CreateBackendContextDX12(FfxInterface* backendInterface, FfxEffect 
             // Reset everything accordingly
             BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[i];
             effectContext.active = true;
+            effectContext.debuggingEnabled = false;
             effectContext.effectId = effect;
 
             effectContext.nextStaticResource = (i * FFX_MAX_RESOURCE_COUNT) + 1;
@@ -1302,6 +1576,12 @@ FfxErrorCode DestroyBackendContextDX12(FfxInterface* backendInterface, FfxUInt32
 
     if (!backendContext->refCount) {
 
+        if  (backendContext->pTimestampQueryHeap)
+        {
+            backendContext->pTimestampQueryHeap->Release();
+            backendContext->pTimestampQueryHeap = nullptr;
+        }
+
         // release constant buffer pool if it was allocated
         if (backendContext->constantBufferMem)
         {
@@ -1360,7 +1640,7 @@ FfxErrorCode CreateResourceDX12(
 
     D3D12_HEAP_PROPERTIES dx12HeapProperties = {};
 
-    switch (createResourceDescription->heapType)
+    switch (createResourceDescription->heapInfo.heapType)
     {
     case FFX_HEAP_TYPE_DEFAULT:
         dx12HeapProperties.Type = D3D12_HEAP_TYPE_DEFAULT;
@@ -1381,6 +1661,7 @@ FfxErrorCode CreateResourceDX12(
     outTexture->internalIndex = effectContext.nextStaticResource++;
     BackendContext_DX12::Resource* backendResource = &backendContext->pResources[outTexture->internalIndex];
     backendResource->resourceDescription = createResourceDescription->resourceDescription;
+    backendResource->heapAllocated = false;
 
     const auto& initData = createResourceDescription->initData;
 
@@ -1433,7 +1714,7 @@ FfxErrorCode CreateResourceDX12(
     }
 
     ID3D12Resource* dx12Resource = nullptr;
-    if (createResourceDescription->heapType == FFX_HEAP_TYPE_UPLOAD) {
+    if (createResourceDescription->heapInfo.heapType == FFX_HEAP_TYPE_UPLOAD) {
 
         D3D12_PLACED_SUBRESOURCE_FOOTPRINT dx12Footprint = {};
 
@@ -1457,7 +1738,17 @@ FfxErrorCode CreateResourceDX12(
         dx12UploadBufferDescription.SampleDesc.Count = 1;
         dx12UploadBufferDescription.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
 
-        TIF(dx12Device->CreateCommittedResource(&dx12HeapProperties, D3D12_HEAP_FLAG_NONE, &dx12UploadBufferDescription, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&dx12Resource)));
+        if (s_fpResourceAllocator)
+        {
+			ffxReturnCode_t error = s_fpResourceAllocator(effectContext.effectId, D3D12_RESOURCE_STATE_GENERIC_READ, &dx12HeapProperties,
+                                                          &dx12UploadBufferDescription, (FfxApiResourceDescription*)&createResourceDescription->resourceDescription,
+                                                          nullptr, &dx12Resource);
+            FFX_ASSERT_MESSAGE(error == FFX_API_RETURN_OK, "Resource allocation from application failed!");
+        }
+        else
+        {
+            TIF(dx12Device->CreateCommittedResource(&dx12HeapProperties, D3D12_HEAP_FLAG_NONE, &dx12UploadBufferDescription, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&dx12Resource)));
+        }
         resourceSize = GetResourceGpuMemorySizeDX12(dx12Resource);
 
         backendResource->initialState = FFX_API_RESOURCE_STATE_GENERIC_READ;
@@ -1467,7 +1758,7 @@ FfxErrorCode CreateResourceDX12(
         void* uploadBufferData = nullptr;
         TIF(dx12Resource->Map(0, &dx12EmptyRange, &uploadBufferData));
 
-        const uint8_t* src = static_cast<uint8_t*>(initData.buffer);
+        const uint8_t* src = static_cast<const uint8_t*>(initData.buffer);
         uint8_t* dst = static_cast<uint8_t*>(uploadBufferData);
         for (uint32_t currentRowIndex = 0; currentRowIndex < rowCount; ++currentRowIndex) {
 
@@ -1495,14 +1786,37 @@ FfxErrorCode CreateResourceDX12(
     }
     else {
 
-        const FfxApiResourceState resourceStates =
-            ((initData.type != FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED) && (createResourceDescription->heapType != FFX_HEAP_TYPE_UPLOAD))
+        const FfxApiResourceState resourceStates = (initData.type != FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED)
                 ? FFX_API_RESOURCE_STATE_COPY_DEST
                 : createResourceDescription->initialState;
         // Buffers ignore any input state and create in common (but issue a warning)
         const D3D12_RESOURCE_STATES dx12ResourceStates = dx12ResourceDescription.Dimension == D3D12_RESOURCE_DIMENSION_BUFFER ? D3D12_RESOURCE_STATE_COMMON : ffxGetDX12StateFromResourceState(resourceStates);
+       
+        if (!backendContext->resourceHeapsSupported && createResourceDescription->heapInfo.usePlacementHeap)
+        {
+			FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"FFXInterface: DX12: Resource heaps are not supported on this device. Ignoring provided heap.");
+        }
 
-        TIF(dx12Device->CreateCommittedResource(&dx12HeapProperties, D3D12_HEAP_FLAG_NONE, &dx12ResourceDescription, dx12ResourceStates, nullptr, IID_PPV_ARGS(&dx12Resource)));
+        if (backendContext->resourceHeapsSupported && createResourceDescription->heapInfo.usePlacementHeap)
+        {
+            ID3D12Heap* heap = reinterpret_cast<ID3D12Heap*>(createResourceDescription->heapInfo.placementHeap);
+            TIF(dx12Device->CreatePlacedResource(heap, createResourceDescription->heapInfo.placementHeapOffset, &dx12ResourceDescription, dx12ResourceStates, nullptr, IID_PPV_ARGS(&dx12Resource)));
+            backendResource->heapAllocated = true;
+        }
+        else
+        {
+            if (s_fpResourceAllocator)
+            {
+                ffxReturnCode_t error = s_fpResourceAllocator(effectContext.effectId, dx12ResourceStates, &dx12HeapProperties,
+                                                              &dx12ResourceDescription, (FfxApiResourceDescription*)&createResourceDescription->resourceDescription,
+                                                              nullptr, &dx12Resource);
+                FFX_ASSERT_MESSAGE(error == FFX_API_RETURN_OK, "Resource allocation from application failed!");
+            }
+            else
+            {
+                TIF(dx12Device->CreateCommittedResource(&dx12HeapProperties, D3D12_HEAP_FLAG_NONE, &dx12ResourceDescription, dx12ResourceStates, nullptr, IID_PPV_ARGS(&dx12Resource)));
+            }
+        }
         resourceSize = GetResourceGpuMemorySizeDX12(dx12Resource);
         backendResource->initialState = resourceStates;
         backendResource->currentState = resourceStates;
@@ -1692,7 +2006,7 @@ FfxErrorCode CreateResourceDX12(
 
             FfxResourceInternal copySrc;
             FfxCreateResourceDescription uploadDescription = { *createResourceDescription };
-            uploadDescription.heapType = FFX_HEAP_TYPE_UPLOAD;
+            uploadDescription.heapInfo.heapType = FFX_HEAP_TYPE_UPLOAD;
             uploadDescription.resourceDescription.usage = FFX_API_RESOURCE_USAGE_READ_ONLY;
             uploadDescription.initialState = FFX_API_RESOURCE_STATE_GENERIC_READ;
 
@@ -1710,10 +2024,13 @@ FfxErrorCode CreateResourceDX12(
         }
     }
 
-    effectContext.vramUsage.totalUsageInBytes += resourceSize;
-    if ((createResourceDescription->resourceDescription.flags & FFX_API_RESOURCE_FLAGS_ALIASABLE) == FFX_API_RESOURCE_FLAGS_ALIASABLE)
+	if (!backendResource->heapAllocated) // Only update memory usage for committed resources as placed resources are accounted for in the heap allocations
     {
-        effectContext.vramUsage.aliasableUsageInBytes += resourceSize;
+        effectContext.vramUsage.totalUsageInBytes += resourceSize;
+        if ((createResourceDescription->resourceDescription.flags & FFX_API_RESOURCE_FLAGS_ALIASABLE) == FFX_API_RESOURCE_FLAGS_ALIASABLE)
+        {
+            effectContext.vramUsage.aliasableUsageInBytes += resourceSize;
+        }
     }
 
     return FFX_OK;
@@ -1733,15 +2050,25 @@ FfxErrorCode DestroyResourceDX12(
 
 		if (dx12Resource) {
 
+            const bool heapAllocated = backendContext->pResources[resource.internalIndex].heapAllocated;
             uint64_t resourceSize = GetResourceGpuMemorySizeDX12(dx12Resource);
 
-			dx12Resource->Release();
-
-            // update effect memory usage
-            effectContext.vramUsage.totalUsageInBytes -= resourceSize;
-            if ((backendContext->pResources[resource.internalIndex].resourceDescription.flags & FFX_API_RESOURCE_FLAGS_ALIASABLE) == FFX_API_RESOURCE_FLAGS_ALIASABLE)
+            if (s_fpResourceDeallocator && !heapAllocated)
             {
-                effectContext.vramUsage.aliasableUsageInBytes -= resourceSize;
+                s_fpResourceDeallocator(effectContext.effectId, dx12Resource);
+            }
+            else
+            {
+			    dx12Resource->Release();
+            }
+
+            if (!heapAllocated) // Only update memory usage for committed resources as placed resources are accounted for in the heap allocations
+            {
+                effectContext.vramUsage.totalUsageInBytes -= resourceSize;
+                if ((backendContext->pResources[resource.internalIndex].resourceDescription.flags & FFX_API_RESOURCE_FLAGS_ALIASABLE) == FFX_API_RESOURCE_FLAGS_ALIASABLE)
+                {
+                    effectContext.vramUsage.aliasableUsageInBytes -= resourceSize;
+                }
             }
 
 			backendContext->pResources[resource.internalIndex].resourcePtr = nullptr;
@@ -1843,7 +2170,7 @@ FfxErrorCode RegisterResourceDX12(
     backendResource->currentState = state;
 
     // create resource views
-    if (dx12Resource) {
+    {
 
         D3D12_UNORDERED_ACCESS_VIEW_DESC dx12UavDescription = {};
         D3D12_SHADER_RESOURCE_VIEW_DESC dx12SrvDescription = {};
@@ -2055,7 +2382,7 @@ FfxApiResource GetResourceDX12(FfxInterface* backendInterface, FfxResourceIntern
     FfxApiResourceDescription ffxResDescription = backendInterface->fpGetResourceDescription(backendInterface, inResource);
 
     FfxApiResource resource = {};
-    resource.resource = resource.resource = reinterpret_cast<void*>(backendContext->pResources[inResource.internalIndex].resourcePtr);
+    resource.resource = reinterpret_cast<void*>(backendContext->pResources[inResource.internalIndex].resourcePtr);
     resource.state = backendContext->pResources[inResource.internalIndex].currentState;
     resource.description = ffxResDescription;
 
@@ -2076,7 +2403,7 @@ FfxErrorCode UnregisterResourcesDX12(FfxInterface* backendInterface, FfxCommandL
         internalResource.internalIndex = resourceIndex;
 
         BackendContext_DX12::Resource* backendResource = &backendContext->pResources[resourceIndex];
-        addBarrier(backendContext, &internalResource, backendResource->initialState);
+        addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &internalResource, backendResource->initialState);
     }
 
     FFX_ASSERT(nullptr != commandList);
@@ -2106,27 +2433,28 @@ FfxErrorCode registerStaticTextureSrv(BackendContext_DX12* backendContext, const
         return FFX_OK;
 
     // create resource views
-    if (dx12Resource)
     {
+        D3D12_RESOURCE_DESC dx12Desc = dx12Resource->GetDesc();
+        
         D3D12_SHADER_RESOURCE_VIEW_DESC dx12SrvDescription = {};
         dx12SrvDescription.Shader4ComponentMapping         = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-        dx12SrvDescription.Format                          = convertFormatSrv(dx12Resource->GetDesc().Format);
+        dx12SrvDescription.Format                          = convertFormatSrv(dx12Desc.Format);
 
-        uint32_t depthArraySize = dx12Resource->GetDesc().DepthOrArraySize;
+        uint32_t depthArraySize = dx12Desc.DepthOrArraySize;
 
-        switch (dx12Resource->GetDesc().Dimension)
+        switch (dx12Desc.Dimension)
         {
         case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
             if (depthArraySize > 1)
             {
                 dx12SrvDescription.ViewDimension            = D3D12_SRV_DIMENSION_TEXTURE1DARRAY;
-                dx12SrvDescription.Texture1DArray.MipLevels = dx12Resource->GetDesc().MipLevels;
+                dx12SrvDescription.Texture1DArray.MipLevels = dx12Desc.MipLevels;
                 dx12SrvDescription.Texture1DArray.ArraySize = std::numeric_limits<UINT>::max();
             }
             else
             {
                 dx12SrvDescription.ViewDimension       = D3D12_SRV_DIMENSION_TEXTURE1D;
-                dx12SrvDescription.Texture1D.MipLevels = dx12Resource->GetDesc().MipLevels;
+                dx12SrvDescription.Texture1D.MipLevels = dx12Desc.MipLevels;
             }
             break;
 
@@ -2134,20 +2462,19 @@ FfxErrorCode registerStaticTextureSrv(BackendContext_DX12* backendContext, const
             if (depthArraySize > 1)
             {
                 dx12SrvDescription.ViewDimension            = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-                dx12SrvDescription.Texture2DArray.MipLevels = dx12Resource->GetDesc().MipLevels;
-                dx12SrvDescription.Texture2DArray.ArraySize = depthArraySize;
+                dx12SrvDescription.Texture2DArray.MipLevels = dx12Desc.MipLevels;
                 dx12SrvDescription.Texture2DArray.ArraySize = std::numeric_limits<UINT>::max();
             }
             else
             {
                 dx12SrvDescription.ViewDimension       = D3D12_SRV_DIMENSION_TEXTURE2D;
-                dx12SrvDescription.Texture2D.MipLevels = dx12Resource->GetDesc().MipLevels;
+                dx12SrvDescription.Texture2D.MipLevels = dx12Desc.MipLevels;
             }
             break;
 
         case D3D12_RESOURCE_DIMENSION_TEXTURE3D:
             dx12SrvDescription.ViewDimension       = D3D12_SRV_DIMENSION_TEXTURE3D;
-            dx12SrvDescription.Texture3D.MipLevels = dx12Resource->GetDesc().MipLevels;
+            dx12SrvDescription.Texture3D.MipLevels = dx12Desc.MipLevels;
             break;
 
         default:
@@ -2184,18 +2511,19 @@ FfxErrorCode registerStaticBufferSrv(BackendContext_DX12* backendContext, const 
         return FFX_OK;
 
     // create resource views
-    if (dx12Resource)
     {
+        D3D12_RESOURCE_DESC dx12Desc = dx12Resource->GetDesc();
+        
         D3D12_SHADER_RESOURCE_VIEW_DESC dx12SrvDescription = {};
         dx12SrvDescription.Shader4ComponentMapping         = ShaderComponentMapping;
 
-        switch (dx12Resource->GetDesc().Dimension)
+        switch (dx12Desc.Dimension)
         {
         case D3D12_RESOURCE_DIMENSION_BUFFER:
         {
             FFX_ASSERT(stride > 0);
 
-            const uint32_t actualSize = size > 0 ? size : uint32_t(dx12Resource->GetDesc().Width);
+            const uint32_t actualSize = size > 0 ? size : uint32_t(dx12Desc.Width);
 
             dx12SrvDescription.Format                     = DXGI_FORMAT_UNKNOWN;
             dx12SrvDescription.ViewDimension              = D3D12_SRV_DIMENSION_BUFFER;
@@ -2203,7 +2531,6 @@ FfxErrorCode registerStaticBufferSrv(BackendContext_DX12* backendContext, const 
             dx12SrvDescription.Buffer.NumElements         = actualSize / stride;
             dx12SrvDescription.Buffer.StructureByteStride = stride;
             dx12SrvDescription.Buffer.Flags               = D3D12_BUFFER_SRV_FLAG_NONE;
-            dx12SrvDescription.Shader4ComponentMapping    = ShaderComponentMapping;
             break;
         }
         default:
@@ -2238,14 +2565,15 @@ FfxErrorCode registerStaticTextureUav(BackendContext_DX12* backendContext, const
         return FFX_OK;
 
     // create resource views
-    if (dx12Resource)
     {
+        D3D12_RESOURCE_DESC dx12Desc = dx12Resource->GetDesc();
+        
         D3D12_UNORDERED_ACCESS_VIEW_DESC dx12UavDescription = {};
-        dx12UavDescription.Format                           = convertFormatSrv(dx12Resource->GetDesc().Format);
+        dx12UavDescription.Format                           = convertFormatSrv(dx12Desc.Format);
 
-        uint32_t depthArraySize = dx12Resource->GetDesc().DepthOrArraySize;
+        uint32_t depthArraySize = dx12Desc.DepthOrArraySize;
 
-        switch (dx12Resource->GetDesc().Dimension)
+        switch (dx12Desc.Dimension)
         {
         case D3D12_RESOURCE_DIMENSION_TEXTURE1D:
         {
@@ -2320,17 +2648,18 @@ FfxErrorCode registerStaticBufferUav(BackendContext_DX12* backendContext, const 
         return FFX_OK;
 
     // create resource views
-    if (dx12Resource)
     {
+        D3D12_RESOURCE_DESC dx12Desc = dx12Resource->GetDesc();
+        
         D3D12_UNORDERED_ACCESS_VIEW_DESC dx12UavDescription = {};
 
-        switch (dx12Resource->GetDesc().Dimension)
+        switch (dx12Desc.Dimension)
         {
         case D3D12_RESOURCE_DIMENSION_BUFFER:
         {
             FFX_ASSERT(stride > 0);
 
-            const uint32_t actualSize = size > 0 ? size : uint32_t(dx12Resource->GetDesc().Width);
+            const uint32_t actualSize = size > 0 ? size : uint32_t(dx12Desc.Width);
 
             dx12UavDescription.Format                      = DXGI_FORMAT_UNKNOWN;
             dx12UavDescription.ViewDimension               = D3D12_UAV_DIMENSION_BUFFER;
@@ -2391,6 +2720,103 @@ FfxApiResourceDescription GetResourceDescriptorDX12(
     return resourceDescription;
 }
 
+FfxErrorCode CreateHeapDX12(FfxInterface* backendInterface, const FfxCreateHeapDescription* createHeapDescription, FfxUInt32 effectContextId, FfxResourceHeap* outHeap)
+{
+    FFX_ASSERT(NULL != backendInterface);
+    BackendContext_DX12* backendContext = (BackendContext_DX12*)backendInterface->scratchBuffer;
+    if (!backendContext->resourceHeapsSupported)
+    {
+		FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"Resource heaps are not supported on this device.");
+        return FFX_ERROR_BACKEND_API_ERROR;
+    }
+
+    BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+    ID3D12Device* dx12Device = reinterpret_cast<ID3D12Device*>(backendContext->device);
+
+    const uint64_t alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
+    const bool aliasable = (createHeapDescription->flags & FFX_HEAP_FLAGS_ALIASABLE) > 0;
+
+    D3D12_HEAP_DESC dx12HeapDesc = {};
+    dx12HeapDesc.SizeInBytes = (createHeapDescription->size + (alignment - 1)) & ~(alignment - 1);
+	dx12HeapDesc.Alignment = alignment;
+	dx12HeapDesc.Flags = D3D12_HEAP_FLAG_ALLOW_ALL_BUFFERS_AND_TEXTURES;
+
+    switch (createHeapDescription->heapType)
+    {
+    case FFX_HEAP_TYPE_DEFAULT:
+        dx12HeapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+        break;
+    case FFX_HEAP_TYPE_UPLOAD:
+        dx12HeapDesc.Properties.Type = D3D12_HEAP_TYPE_UPLOAD;
+        break;
+    case FFX_HEAP_TYPE_READBACK:
+        dx12HeapDesc.Properties.Type = D3D12_HEAP_TYPE_READBACK;
+        break;
+    default:
+        dx12HeapDesc.Properties.Type = D3D12_HEAP_TYPE_DEFAULT;
+        break;
+    }
+
+    ID3D12Heap* dx12Heap = nullptr;
+
+    if (s_fpHeapAllocator)
+    {
+        s_fpHeapAllocator(effectContext.effectId, &dx12HeapDesc, aliasable, &dx12Heap, &outHeap->startOffset);
+    }
+    else
+    {
+	    TIF(dx12Device->CreateHeap(&dx12HeapDesc, IID_PPV_ARGS(&dx12Heap)));
+        outHeap->startOffset = 0;
+    }
+
+    outHeap->heap = dx12Heap;
+	outHeap->size = createHeapDescription->size;
+    outHeap->aliasable = aliasable;
+
+    effectContext.vramUsage.totalUsageInBytes -= outHeap->size;
+    if (aliasable)
+    {
+        effectContext.vramUsage.aliasableUsageInBytes -= outHeap->size;
+    }
+
+    return FFX_OK;
+}
+
+FfxErrorCode DestroyHeapDX12(FfxInterface* backendInterface, FfxResourceHeap heap, FfxUInt32 effectContextId)
+{
+    FFX_ASSERT(NULL != backendInterface);
+    BackendContext_DX12* backendContext = (BackendContext_DX12*)backendInterface->scratchBuffer;
+    if (!backendContext->resourceHeapsSupported)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"Resource heaps are not supported on this device.");
+        return FFX_ERROR_BACKEND_API_ERROR;
+    }
+
+    BackendContext_DX12::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
+    ID3D12Device* dx12Device = reinterpret_cast<ID3D12Device*>(backendContext->device);
+
+	ID3D12Heap* dx12Heap = reinterpret_cast<ID3D12Heap*>(heap.heap);
+	if (dx12Heap)
+	{
+        if (s_fpHeapDeallocator)
+        {
+            s_fpHeapDeallocator(effectContext.effectId, dx12Heap, heap.startOffset, heap.size);
+        }
+        else
+        {
+		    dx12Heap->Release();
+        }
+	}
+
+    effectContext.vramUsage.totalUsageInBytes -= heap.size;
+    if (heap.aliasable)
+    {
+        effectContext.vramUsage.aliasableUsageInBytes -= heap.size;
+    }
+
+    return FFX_OK;
+}
+
 FfxErrorCode StageConstantBufferDataDX12(FfxInterface* backendInterface, void* data, FfxUInt32 size, FfxConstantBuffer* constantBuffer)
 {
     FFX_ASSERT(NULL != backendInterface);
@@ -2416,7 +2842,7 @@ FfxErrorCode StageConstantBufferDataDX12(FfxInterface* backendInterface, void* d
         return FFX_ERROR_INVALID_POINTER;
 }
 
-D3D12_TEXTURE_ADDRESS_MODE FfxGetAddressModeDX12(const FfxAddressMode& addressMode)
+D3D12_TEXTURE_ADDRESS_MODE FfxGetAddressModeDX12(FfxAddressMode addressMode)
 {
     switch (addressMode)
     {
@@ -2799,10 +3225,8 @@ FfxErrorCode CreatePipelineDX12(
                 }
 
                 result = dx12Device->CreateRootSignature(0, outBlob->GetBufferPointer(), outBlob->GetBufferSize(), IID_PPV_ARGS(reinterpret_cast<ID3D12RootSignature**>(&outPipeline->rootSignature)));
-                if (outBlob != nullptr) {
-                    
-                    outBlob->Release();
-                }  
+                outBlob->Release();
+
                 if (FAILED(result)) {
 
                     return FFX_ERROR_BACKEND_API_ERROR;
@@ -3115,7 +3539,7 @@ static FfxErrorCode executeGpuJobCompute(BackendContext_DX12*       backendConte
 
                 if((job->computeJobDescriptor.flags & FFX_GPU_JOB_FLAGS_SKIP_BARRIERS) == 0)
                 {
-                    addBarrier(backendContext, &job->computeJobDescriptor.uavTextures[currentPipelineUavIndex].resource, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+                    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->computeJobDescriptor.uavTextures[currentPipelineUavIndex].resource, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
                 }
 
                 const FfxResourceBinding binding = job->computeJobDescriptor.pipeline.uavTextureBindings[currentPipelineUavIndex];
@@ -3147,7 +3571,7 @@ static FfxErrorCode executeGpuJobCompute(BackendContext_DX12*       backendConte
 
                 if((job->computeJobDescriptor.flags & FFX_GPU_JOB_FLAGS_SKIP_BARRIERS) == 0)
                 {
-                    addBarrier(backendContext, &job->computeJobDescriptor.uavBuffers[currentPipelineUavIndex].resource, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+                    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->computeJobDescriptor.uavBuffers[currentPipelineUavIndex].resource, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
                 }
 
                 const FfxResourceBinding binding = job->computeJobDescriptor.pipeline.uavBufferBindings[currentPipelineUavIndex];
@@ -3241,7 +3665,7 @@ static FfxErrorCode executeGpuJobCompute(BackendContext_DX12*       backendConte
 
                 if((job->computeJobDescriptor.flags & FFX_GPU_JOB_FLAGS_SKIP_BARRIERS) == 0)
                 {
-                    addBarrier(backendContext, &job->computeJobDescriptor.srvTextures[currentPipelineSrvIndex].resource, FFX_API_RESOURCE_STATE_COMPUTE_READ);
+                    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->computeJobDescriptor.srvTextures[currentPipelineSrvIndex].resource, FFX_API_RESOURCE_STATE_COMPUTE_READ);
                 }
 
                 const FfxResourceBinding binding = job->computeJobDescriptor.pipeline.srvTextureBindings[currentPipelineSrvIndex];
@@ -3270,7 +3694,7 @@ static FfxErrorCode executeGpuJobCompute(BackendContext_DX12*       backendConte
 
                 if((job->computeJobDescriptor.flags & FFX_GPU_JOB_FLAGS_SKIP_BARRIERS) == 0)
                 {
-                    addBarrier(backendContext, &job->computeJobDescriptor.srvBuffers[currentPipelineSrvIndex].resource, FFX_API_RESOURCE_STATE_COMPUTE_READ);
+                    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->computeJobDescriptor.srvBuffers[currentPipelineSrvIndex].resource, FFX_API_RESOURCE_STATE_COMPUTE_READ);
                 }
 
                 const FfxResourceBinding binding = job->computeJobDescriptor.pipeline.srvBufferBindings[currentPipelineSrvIndex];
@@ -3362,9 +3786,10 @@ static FfxErrorCode executeGpuJobCompute(BackendContext_DX12*       backendConte
     // If we are dispatching indirectly, transition the argument resource to indirect argument
     if (job->computeJobDescriptor.pipeline.cmdSignature)
     {
-        addBarrier(backendContext, &job->computeJobDescriptor.cmdArgument, FFX_API_RESOURCE_STATE_INDIRECT_ARGUMENT);
+        addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->computeJobDescriptor.cmdArgument, FFX_API_RESOURCE_STATE_INDIRECT_ARGUMENT);
     }
 
+    // Flush local and any other barriers we've enqueued up to now
     flushBarriers(backendContext, dx12CommandList);
 
     // bind pipeline
@@ -3376,7 +3801,7 @@ static FfxErrorCode executeGpuJobCompute(BackendContext_DX12*       backendConte
         for (uint32_t currentRootConstantIndex = 0; currentRootConstantIndex < job->computeJobDescriptor.pipeline.constCount; ++currentRootConstantIndex) {
 
             // If we have a constant buffer allocator, use that, otherwise use the default backend allocator
-            FfxConstantAllocation allocation;
+            FfxApiConstantBufferAllocation allocation;
             if (s_fpConstantAllocator)
             {
                 allocation = s_fpConstantAllocator(job->computeJobDescriptor.cbs[currentRootConstantIndex].data, job->computeJobDescriptor.cbs[currentRootConstantIndex].num32BitEntries * sizeof(uint32_t));
@@ -3416,8 +3841,10 @@ static FfxErrorCode executeGpuJobCopy(BackendContext_DX12* backendContext, FfxGp
     D3D12_RESOURCE_DESC dx12ResourceDescriptionDst = dx12ResourceDst->GetDesc();
     D3D12_RESOURCE_DESC dx12ResourceDescriptionSrc = dx12ResourceSrc->GetDesc();
 
-    addBarrier(backendContext, &job->copyJobDescriptor.src, FFX_API_RESOURCE_STATE_COPY_SRC);
-    addBarrier(backendContext, &job->copyJobDescriptor.dst, FFX_API_RESOURCE_STATE_COPY_DEST);
+    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->copyJobDescriptor.src, FFX_API_RESOURCE_STATE_COPY_SRC);
+    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->copyJobDescriptor.dst, FFX_API_RESOURCE_STATE_COPY_DEST);
+
+    // Flush local and any other barriers we've enqueued up to now
     flushBarriers(backendContext, dx12CommandList);
 
     D3D12_PLACED_SUBRESOURCE_FOOTPRINT dx12Footprint = {};
@@ -3469,14 +3896,8 @@ static FfxErrorCode executeGpuJobCopy(BackendContext_DX12* backendContext, FfxGp
 
 static FfxErrorCode executeGpuJobBarrier(BackendContext_DX12* backendContext, FfxGpuJobDescription* job, ID3D12GraphicsCommandList* dx12CommandList)
 {
-    addBarrier(backendContext, &job->barrierDescriptor.resource, job->barrierDescriptor.newState);
-    flushBarriers(backendContext, dx12CommandList);
-
-    return FFX_OK;
-}
-
-static FfxErrorCode executeGpuJobTimestamp(BackendContext_DX12*, FfxGpuJobDescription*, ID3D12GraphicsCommandList*)
-{
+    // Enqueue a barrier, but do not flush (all other GPU jobs have a flush as part of their logic)
+    addBarrier(backendContext, job->barrierDescriptor.barrierType, &job->barrierDescriptor.resource, job->barrierDescriptor.newState);
     return FFX_OK;
 }
 
@@ -3497,7 +3918,9 @@ static FfxErrorCode executeGpuJobClearFloat(BackendContext_DX12* backendContext,
 
     dx12CommandList->SetDescriptorHeaps(1, &backendContext->descHeapUavGpu);
 
-    addBarrier(backendContext, &job->clearJobDescriptor.target, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+    addBarrier(backendContext, FFX_BARRIER_TYPE_TRANSITION, &job->clearJobDescriptor.target, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+    
+    // Flush local and any other barriers we've enqueued up to now
     flushBarriers(backendContext, dx12CommandList);
 
     uint32_t clearColorAsUint[4];
@@ -3517,8 +3940,8 @@ static FfxErrorCode executeGpuJobDiscard(BackendContext_DX12*       backendConte
     uint32_t                            idx           = job->discardJobDescriptor.target.internalIndex;
     BackendContext_DX12::Resource       ffxResource   = backendContext->pResources[idx];
     ID3D12Resource*                     dx12Resource  = reinterpret_cast<ID3D12Resource*>(ffxResource.resourcePtr);
-
-    addBarrier(backendContext, &job->discardJobDescriptor.target, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS);
+        
+    // Flush local and any other barriers we've enqueued up to now
     flushBarriers(backendContext, dx12CommandList);
 
     dx12CommandList->DiscardResource(dx12Resource, nullptr);
@@ -3545,8 +3968,9 @@ FfxErrorCode ExecuteGpuJobsDX12(
         FfxGpuJobDescription* GpuJob = &backendContext->pGpuJobs[currentGpuJobIndex];        
 
         // If we have a label for the job, drop a marker for it
-        if (GpuJob->jobLabel[0]) {
-            beginMarkerDX12(backendContext, dx12CommandList, GpuJob->jobLabel);
+        if (GpuJob->jobLabel[0])
+        {
+            BeginEventDX12(backendContext, effectContextId, dx12CommandList, GpuJob->jobLabel);
         }
 
         switch (GpuJob->jobType) {
@@ -3575,8 +3999,9 @@ FfxErrorCode ExecuteGpuJobsDX12(
                 break;
         }
 
-        if (GpuJob->jobLabel[0]) {
-            endMarkerDX12(backendContext, dx12CommandList);
+        if (GpuJob->jobLabel[0])
+        {
+            EndEventDX12(backendContext, effectContextId, dx12CommandList);
         }
     }
 
@@ -3588,11 +4013,6 @@ FfxErrorCode ExecuteGpuJobsDX12(
     backendContext->gpuJobCount = 0;
 
     return FFX_OK;
-}
-
-void RegisterConstantBufferAllocatorDX12(FfxInterface*, FfxConstantBufferAllocator fpConstantAllocator)
-{
-    s_fpConstantAllocator = fpConstantAllocator;
 }
 
 FfxCommandQueue ffxGetCommandQueueDX12(ID3D12CommandQueue* pCommandQueue)
@@ -3611,3 +4031,29 @@ IDXGISwapChain4* ffxGetDX12SwapchainPtr(FfxSwapchain ffxSwapchain)
 {
     return reinterpret_cast<IDXGISwapChain4*>(ffxSwapchain);
 }
+
+void ffxRegisterConstantBufferAllocatorDX12(FfxApiConstantBufferAllocator fpConstantAllocator)
+{
+    s_fpConstantAllocator = fpConstantAllocator;
+}
+
+void ffxRegisterResourceAllocatorDX12(PfnFfxResourceAllocatorFunc fpResourceAllocator)
+{
+    s_fpResourceAllocator = fpResourceAllocator;
+}
+
+void ffxRegisterResourceDeallocatorDX12(PfnFfxResourceDeallocatorFunc fpResourceDeallocator)
+{
+    s_fpResourceDeallocator = fpResourceDeallocator;
+}
+
+void ffxRegisterHeapAllocatorDX12(PfnFfxHeapAllocatorFunc fpHeapAllocator)
+{
+    s_fpHeapAllocator = fpHeapAllocator;
+}
+
+void ffxRegisterHeapDeallocatorDX12(PfnFfxHeapDeallocatorFunc fpHeapDeallocator)
+{
+    s_fpHeapDeallocator = fpHeapDeallocator;
+}
+

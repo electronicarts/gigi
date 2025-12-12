@@ -80,4 +80,9 @@ struct struct_type<ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2> : st
 
 struct QueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2 : public InitHelper<ffxQueryFrameGenerationSwapChainGetGPUMemoryUsageDX12V2> {};
 
+template<>
+struct struct_type<ffxCreateContextDescFrameGenerationSwapChainVersionDX12> : std::integral_constant<uint64_t, FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_VERSION_DX12> {};
+
+struct CreateContextDescFrameGenerationSwapChainVersionDX12 : public InitHelper<ffxCreateContextDescFrameGenerationSwapChainVersionDX12> {};
+
 }

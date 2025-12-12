@@ -30,6 +30,15 @@
 #if defined(FFX_UPSCALER)
 #include "../../upscalers/include/ffx_upscale.h"
 #endif // defined(FFX_UPSCALER)
+#if defined(FFX_DENOISER)
+#include "../../denoisers/include/ffx_denoiser.h"
+#endif // defined(FFX_DENOISER)
+#if defined(FFX_RADIANCECACHE)
+#include "../../radiancecache/include/ffx_radiancecache.h"
+#endif // defined(FFX_RADIANCECACHE)
+#if defined(FFX_AMBIENTOCCLUSION)
+#include "../../ambientocclusion/include/ffx_ambientocclusion.h"
+#endif // defined(FFX_AMBIENTOCCLUSION)
 
 #include "ffx_dx12.h"
 
@@ -52,6 +61,26 @@ ffxReturnCode_t CreateBackend(const ffxCreateContextDescHeader *desc, bool& back
             void* scratchBuffer = alloc.alloc(scratchBufferSize);
             memset(scratchBuffer, 0, scratchBufferSize);
             TRY2(ffxGetInterfaceDX12(iface, device, scratchBuffer, scratchBufferSize, contexts));
+
+            break;
+        }
+        case FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12_ALLOCATION_CALLBACKS:
+        {
+            const auto* allocationCallbacksDesc = reinterpret_cast<const ffxCreateBackendDX12AllocationCallbacksDesc*>(it);
+			if (allocationCallbacksDesc->pfnFfxResourceAllocator && allocationCallbacksDesc->pfnFfxResourceDeallocator)
+			{
+                ffxRegisterResourceAllocatorDX12(allocationCallbacksDesc->pfnFfxResourceAllocator);
+                ffxRegisterResourceDeallocatorDX12(allocationCallbacksDesc->pfnFfxResourceDeallocator);
+			}
+            if (allocationCallbacksDesc->pfnFfxHeapAllocator && allocationCallbacksDesc->pfnFfxHeapDeallocator)
+            {
+                ffxRegisterHeapAllocatorDX12(allocationCallbacksDesc->pfnFfxHeapAllocator);
+                ffxRegisterHeapDeallocatorDX12(allocationCallbacksDesc->pfnFfxHeapDeallocator);
+            }
+            if (allocationCallbacksDesc->pfnFfxConstantBufferAllocator)
+            {
+                ffxRegisterConstantBufferAllocatorDX12(allocationCallbacksDesc->pfnFfxConstantBufferAllocator);
+            }
             break;
         }
         }
@@ -75,6 +104,26 @@ void* GetDevice(const ffxApiHeader* desc)
             return reinterpret_cast<const ffxQueryDescUpscaleGetGPUMemoryUsageV2*>(it)->device;
         }
 #endif //#if defined(FFX_UPSCALER)
+#if defined(FFX_DENOISER)
+        case FFX_API_QUERY_DESC_TYPE_DENOISER_GPU_MEMORY_USAGE:
+        {
+            return reinterpret_cast<const ffxQueryDescDenoiserGetGPUMemoryUsage*>(it)->device;
+        }
+        case FFX_API_QUERY_DESC_TYPE_DENOISER_GET_VERSION:
+        {
+            return reinterpret_cast<const ffxQueryDescDenoiserGetVersion*>(it)->device;
+        }
+        case FFX_API_QUERY_DESC_TYPE_DENOISER_GET_DEFAULT_SETTINGS:
+        {
+            return reinterpret_cast<const ffxQueryDescDenoiserGetDefaultSettings*>(it)->device;
+        }
+#endif //#if defined(FFX_DENOISER)
+#if defined(FFX_AMBIENTOCCLUSION)
+        case FFX_API_QUERY_DESC_TYPE_AMBIENTOCCLUSION_GPU_MEMORY_USAGE:
+        {
+            return reinterpret_cast<const ffxQueryDescAmbientOcclusionGetGPUMemoryUsage*>(it)->device;
+        }
+#endif //#if defined(FFX_AMBIENTOCCLUSION)
         case FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12:
         {
             return reinterpret_cast<const ffxCreateBackendDX12Desc*>(it)->device;

@@ -35,4 +35,9 @@ struct struct_type<ffxCreateBackendDX12Desc> : std::integral_constant<uint64_t, 
 
 struct CreateBackendDX12Desc : public InitHelper<ffxCreateBackendDX12Desc> {};
 
+template<>
+struct struct_type<ffxCreateBackendDX12AllocationCallbacksDesc> : std::integral_constant<uint64_t, FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12_ALLOCATION_CALLBACKS> {};
+
+struct CreateBackendDX12AllocationCallbacksDesc : public InitHelper<ffxCreateBackendDX12AllocationCallbacksDesc> {};
+
 }

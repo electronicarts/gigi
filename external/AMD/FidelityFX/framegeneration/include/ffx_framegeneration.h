@@ -25,7 +25,12 @@
 #include "../../api/include/ffx_api.h"
 #include "ffx_framegeneration_api_types.h"
 
-#define FFX_API_EFFECT_ID_FRAMEGENERATION 0x00020000u
+#define FFX_FRAMEGENERATION_VERSION_MAJOR 4
+#define FFX_FRAMEGENERATION_VERSION_MINOR 0
+#define FFX_FRAMEGENERATION_VERSION_PATCH 0
+
+#define FFX_FRAMEGENERATION_MAKE_VERSION(major, minor, patch) (((major) << 22) | ((minor) << 12) | (patch))
+#define FFX_FRAMEGENERATION_VERSION FFX_FRAMEGENERATION_MAKE_VERSION(FFX_FRAMEGENERATION_VERSION_MAJOR, FFX_FRAMEGENERATION_VERSION_MINOR, FFX_FRAMEGENERATION_VERSION_PATCH)
 
 #if defined(__cplusplus)
 extern "C" {
@@ -58,7 +63,7 @@ enum FfxApiUiCompositionFlags
     FFX_FRAMEGENERATION_UI_COMPOSITION_FLAG_ENABLE_INTERNAL_UI_DOUBLE_BUFFERING = (1 << 1),  ///< A bit indicating that the swapchain should doublebuffer the UI resource.
 };
 
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION 0x00020001u
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x01)
 struct ffxCreateContextDescFrameGeneration
 {
     ffxCreateContextDescHeader header;
@@ -68,7 +73,7 @@ struct ffxCreateContextDescFrameGeneration
     uint32_t backBufferFormat;                  ///< The surface format for the backbuffer. One of the values from FfxApiSurfaceFormat.
 };
 
-#define FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT 0x00020005u
+#define FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x05)
 typedef struct ffxCallbackDescFrameGenerationPresent
 {
     ffxDispatchDescHeader header;
@@ -81,7 +86,7 @@ typedef struct ffxCallbackDescFrameGenerationPresent
     uint64_t              frameID;                  ///< Identifier used to select internal resources when async support is enabled. Must increment by exactly one (1) for each frame. Any non-exactly-one difference will reset the frame generation logic.
 } ffxCallbackDescFrameGenerationPresent;
 
-#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION 0x00020003u
+#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x03)
 typedef struct ffxDispatchDescFrameGeneration
 {
     ffxDispatchDescHeader header;
@@ -99,7 +104,7 @@ typedef struct ffxDispatchDescFrameGeneration
 typedef ffxReturnCode_t(*FfxApiPresentCallbackFunc)(ffxCallbackDescFrameGenerationPresent* params, void* pUserCtx);
 typedef ffxReturnCode_t(*FfxApiFrameGenerationDispatchFunc)(ffxDispatchDescFrameGeneration* params, void* pUserCtx);
 
-#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION 0x00020002u
+#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x02)
 struct ffxConfigureDescFrameGeneration
 {
     ffxConfigureDescHeader header;
@@ -117,8 +122,11 @@ struct ffxConfigureDescFrameGeneration
     uint64_t frameID;                                           ///< Identifier used to select internal resources when async support is enabled. Must increment by exactly one (1) for each frame. Any non-exactly-one difference will reset the frame generation logic.
 };
 
-#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE 0x00020004u
-struct ffxDispatchDescFrameGenerationPrepare
+#pragma FFX_PRAGMA_WARNING_PUSH
+#pragma FFX_PRAGMA_WARNING_DISABLE_DEPRECATIONS
+
+#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x04)
+struct FFX_DEPRECATION("ffxDispatchDescFrameGenerationPrepare is deprecated, use ffxDispatchDescFrameGenerationPrepareV2") ffxDispatchDescFrameGenerationPrepare
 {
     ffxDispatchDescHeader      header;
     uint64_t                   frameID;            ///< Identifier used to select internal resources when async support is enabled. Must increment by exactly one (1) for each frame. Any non-exactly-one difference will reset the frame generation logic.
@@ -138,7 +146,9 @@ struct ffxDispatchDescFrameGenerationPrepare
     struct FfxApiResource motionVectors;           ///< The motion vector data    
 };
 
-#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION_KEYVALUE 0x00020006u
+#pragma FFX_PRAGMA_WARNING_POP
+
+#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION_KEYVALUE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x06)
 struct ffxConfigureDescFrameGenerationKeyValue
 {
     ffxConfigureDescHeader  header;
@@ -149,24 +159,26 @@ struct ffxConfigureDescFrameGenerationKeyValue
 
 enum FfxApiConfigureFrameGenerationKey
 {
-    // No values.
+    FFX_API_CONFIGURE_FRAMEGENERATION_KEY_DEBUG_VIEW_MODE       = 0,  ///< A key to set a debug view mode of display.
+    FFX_API_CONFIGURE_FRAMEGENERATION_KEY_DEBUG_VIEW_FLOW_SCALE = 1,  ///< A key to set a debug view scale for flow resources.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATION_GPU_MEMORY_USAGE 0x00020007u
+#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATION_GPU_MEMORY_USAGE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x07)
 struct ffxQueryDescFrameGenerationGetGPUMemoryUsage
 {
     ffxQueryDescHeader header;
     struct FfxApiEffectMemoryUsage* gpuMemoryUsageFrameGeneration;
 };
 
-#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION_REGISTERDISTORTIONRESOURCE 0x00020008u
+#define FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION_REGISTERDISTORTIONRESOURCE FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x08)
+//Pass this optional linked struct after ffxConfigureDescFrameGeneration
 struct ffxConfigureDescFrameGenerationRegisterDistortionFieldResource
 {
     ffxConfigureDescHeader header;
-    struct FfxApiResource distortionField;            ///< A resource containing distortion offset data. Needs to be 2-component (ie. RG). Read by FG shaders via Sample. Resource's xy components encodes [UV coordinate of pixel after lens distortion effect- UV coordinate of pixel before lens distortion]. 
+    struct FfxApiResource distortionField;            ///< A resource containing distortion offset data. Needs to be 2-component (ie. RG). Read by FG shaders via Sample. Pixel value encodes [UV coordinate of pixel after lens distortion effect- UV coordinate of pixel before lens distortion]. 
 };
 
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION_HUDLESS 0x00020009u
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION_HUDLESS FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x09)
 //Pass this optional linked struct at FG context creation to enable app to use different hudlessBackBufferformat (IE.RGBA8_UNORM) from backBufferFormat (IE. BGRA8_UNORM)
 struct ffxCreateContextDescFrameGenerationHudless
 {
@@ -174,9 +186,13 @@ struct ffxCreateContextDescFrameGenerationHudless
     uint32_t hudlessBackBufferFormat;           ///< The surface format for the hudless back buffer. One of the values from FfxApiSurfaceFormat.
 };
 
-#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_CAMERAINFO 0x0002000au
-//Link this struct after ffxDispatchDescFrameGenerationPrepare. This is a required input to FSR3.1.4 and onwards for best quality.
-struct ffxDispatchDescFrameGenerationPrepareCameraInfo
+#pragma FFX_PRAGMA_WARNING_PUSH
+#pragma FFX_PRAGMA_WARNING_DISABLE_DEPRECATIONS
+
+#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_CAMERAINFO FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x0a)
+// Link this struct after ffxDispatchDescFrameGenerationPrepare. This is a required input to FSR3.1.4 and FSR3.1.5.
+// These fields are now embedded in ffxDispatchDescFrameGenerationPrepareV2.
+struct FFX_DEPRECATION("ffxDispatchDescFrameGenerationPrepareCameraInfo is deprecated, use ffxDispatchDescFrameGenerationPrepareV2 instead") ffxDispatchDescFrameGenerationPrepareCameraInfo
 {
     ffxConfigureDescHeader header;
     float                  cameraPosition[3];   ///< The camera position in world space
@@ -185,7 +201,9 @@ struct ffxDispatchDescFrameGenerationPrepareCameraInfo
     float                  cameraForward[3];    ///< The camera forward normalized vector in world space.
 };
 
-#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATION_GPU_MEMORY_USAGE_V2 0x0002000bu
+#pragma FFX_PRAGMA_WARNING_POP
+
+#define FFX_API_QUERY_DESC_TYPE_FRAMEGENERATION_GPU_MEMORY_USAGE_V2 FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x0b)
 struct ffxQueryDescFrameGenerationGetGPUMemoryUsageV2
 {
     ffxQueryDescHeader header;
@@ -198,6 +216,74 @@ struct ffxQueryDescFrameGenerationGetGPUMemoryUsageV2
     uint32_t hudlessBackBufferFormat;           ///< The surface format for HUDLessColor if used. Otherwise set value to FFX_API_SURFACE_FORMAT_UNKNOWN(0). App needs to fill out before Query() call.
     struct FfxApiEffectMemoryUsage* gpuMemoryUsageFrameGeneration; ///< Output values by Query() call.
 };
+
+#define FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_V2 FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x0c)
+struct ffxDispatchDescFrameGenerationPrepareV2
+{
+    ffxDispatchDescHeader      header;
+    uint64_t                   frameID;            ///< Identifier used to select internal resources when async support is enabled. Must increment by exactly one (1) for each frame. Any non-exactly-one difference will reset the frame generation logic.
+    uint32_t                   flags;              ///< Zero or combination of values from FfxApiDispatchFrameGenerationFlags.
+    void*                      commandList;        ///< A command list to record frame generation commands into.
+    struct FfxApiDimensions2D  renderSize;         ///< The dimensions used to render game content, dilatedDepth, dilatedMotionVectors are expected to be of ths size.
+    struct FfxApiFloatCoords2D jitterOffset;       ///< The subpixel jitter offset applied to the camera.
+    struct FfxApiFloatCoords2D motionVectorScale;  ///< The scale factor to apply to motion vectors.
+
+    float                 frameTimeDelta;          ///< Time elapsed in milliseconds since the last frame.
+    bool                  reset;                   ///< A boolean value which when set to true, indicates FrameGeneration will be called in reset mode
+    float                 cameraNear;              ///< The distance to the near plane of the camera.
+    float                 cameraFar;               ///< The distance to the far plane of the camera. This is used only used in case of non infinite depth.
+    float                 cameraFovAngleVertical;  ///< The camera angle field of view in the vertical direction (expressed in radians).
+    float                 viewSpaceToMetersFactor; ///< The scale factor to convert view space units to meters
+    struct FfxApiResource depth;                   ///< The depth buffer data
+    struct FfxApiResource motionVectors;           ///< The motion vector data    
+
+    float                  cameraPosition[3];      ///< The camera position in world space
+    float                  cameraUp[3];            ///< The camera up normalized vector in world space
+    float                  cameraRight[3];         ///< The camera right normalized vector in world space
+    float                  cameraForward[3];       ///< The camera forward normalized vector in world space
+};
+
+#define FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT_PREMUL_ALPHA FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x0d)
+// This is a structure that is attached to header.pNext of ffxCallbackDescFrameGenerationPresent
+// Provides whether to use premultiplied alpha blending or not for the UI
+typedef struct ffxCallbackDescFrameGenerationPresentPremulAlpha
+{
+    ffxApiHeader           header;                    ///< Header for versioning & ABI stability
+    bool                   usePremulAlpha;            ///< Toggles whether UI gets premultiplied alpha blending or not
+} ffxCallbackDescFrameGenerationPresentPremulAlpha;
+
+typedef int32_t(*FfxWaitCallbackFunc)(wchar_t* fenceName, uint64_t fenceValueToWaitFor);
+
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION_VERSION FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x0e)
+// Pass this linked struct at FG context creation to enable new API features - omitting this will prevent new APIs from functioning.
+struct ffxCreateContextDescFrameGenerationVersion
+{
+    ffxCreateContextDescHeader header;
+    uint32_t                   version;           ///< The version of the API the application was built against. This must be set to FFX_FRAMEGENERATION_VERSION.
+};
+
+#define FFX_API_FRAME_GENERATION_CONFIG FFX_API_MAKE_EFFECT_SUB_ID(FFX_API_EFFECT_ID_FRAMEGENERATION, 0x0f)
+/// A structure representing the configuration options to pass to FrameInterpolationSwapChain
+///
+/// @ingroup FfxInterface
+typedef struct FfxFrameGenerationConfig
+{
+    ffxApiHeader                        header;                          ///< Header for versioning & ABI stability
+    void*                               swapChain;                       ///< The <c><i>FfxSwapchain</i></c> to use with frame interpolation
+    FfxApiPresentCallbackFunc           presentCallback;                 ///< A UI composition callback to call when finalizing the frame image
+    void*                               presentCallbackContext;          ///< A pointer to be passed to the UI composition callback
+    FfxApiFrameGenerationDispatchFunc   frameGenerationCallback;         ///< The frame generation callback to use to generate the interpolated frame
+    void*                               frameGenerationCallbackContext;  ///< A pointer to be passed to the frame generation callback
+    bool                                frameGenerationEnabled;          ///< Sets the state of frame generation. Set to false to disable frame generation
+    bool                                allowAsyncWorkloads;             ///< Sets the state of async workloads. Set to true to enable interpolation work on async compute
+    bool                                allowAsyncPresent;               ///< Sets the state of async presentation (console only). Set to true to enable present from async command queue
+    struct FfxApiResource               HUDLessColor;                    ///< The hudless back buffer image to use for UI extraction from backbuffer resource
+    uint32_t                            flags;                           ///< Flags
+    bool                                onlyPresentInterpolated;         ///< Set to true to only present interpolated frame
+    struct FfxApiRect2D                 interpolationRect;               ///< Set the area in the backbuffer that will be interpolated 
+    uint64_t                            frameID;                         ///< A frame identifier used to synchronize resource usage in workloads
+    bool                                drawDebugPacingLines;            ///< Sets the state of pacing debug lines. Set to true to display debug lines
+} FfxFrameGenerationConfig;
 
 #if defined(__cplusplus)
 } // extern "C"

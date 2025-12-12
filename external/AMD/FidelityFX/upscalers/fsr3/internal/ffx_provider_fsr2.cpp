@@ -58,15 +58,11 @@ bool ffxProvider_FSR2::CanProvide(uint64_t type) const
 #define STRINGIFY(X) STRINGIFY_(X) 
 #define MAKE_VERSION_STRING(major, minor, patch) STRINGIFY major "." STRINGIFY minor "." STRINGIFY patch
 
-uint64_t ffxProvider_FSR2::GetId() const
+ffxProvider_FSR2::ffxProvider_FSR2()
+    : ffxProvider(0xF5A5'CA1Eui64 << 32 | (FFX_SDK_MAKE_VERSION(FFX_FSR2_VERSION_MAJOR, FFX_FSR2_VERSION_MINOR, FFX_FSR2_VERSION_PATCH) & 0xFFFF'FFFF),
+        FFX_API_EFFECT_ID_UPSCALE,
+        MAKE_VERSION_STRING(FFX_FSR2_VERSION_MAJOR, FFX_FSR2_VERSION_MINOR, FFX_FSR2_VERSION_PATCH))
 {
-    // FSR Scale, version from header
-    return 0xF5A5'CA1Eui64 << 32 | (FFX_SDK_MAKE_VERSION(FFX_FSR2_VERSION_MAJOR, FFX_FSR2_VERSION_MINOR, FFX_FSR2_VERSION_PATCH) & 0xFFFF'FFFF);
-}
-
-const char* ffxProvider_FSR2::GetVersionName() const
-{
-    return MAKE_VERSION_STRING(FFX_FSR2_VERSION_MAJOR, FFX_FSR2_VERSION_MINOR, FFX_FSR2_VERSION_PATCH);
 }
 
 struct InternalFsr2Context
@@ -78,7 +74,7 @@ struct InternalFsr2Context
     uint32_t debugLevel;
 };
 
-ffxReturnCode_t ffxProvider_FSR2::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_FSR2::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc)
 {
     VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(header, FFX_API_RETURN_ERROR_PARAMETER);
@@ -118,7 +114,7 @@ ffxReturnCode_t ffxProvider_FSR2::CreateContext(ffxContext* context, ffxCreateCo
     }
 }
 
-ffxReturnCode_t ffxProvider_FSR2::DestroyContext(ffxContext* context, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_FSR2::DestroyContext(ffxContext* context, Allocator& alloc)
 {
     VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
@@ -340,4 +336,8 @@ ffxReturnCode_t ffxProvider_FSR2::Dispatch(ffxContext* context, const ffxDispatc
     return FFX_API_RETURN_OK;
 }
 
-ffxProvider_FSR2 ffxProvider_FSR2::Instance;
+ffxProvider_FSR2& ffxProvider_FSR2::GetInstance()
+{
+    static ffxProvider_FSR2 instance;
+    return instance;
+}
