@@ -3569,7 +3569,7 @@ struct ShaderDataVisitor
             }
             else if (node._index == RenderGraphNode::c_index_actionWorkGraph)
             {
-                if (node.actionWorkGraph.entryShader.name != shader.name)
+                if (node.actionWorkGraph.entryShader.name == shader.name)
                     nodeVariableAliases = &node.actionWorkGraph.shaderVariableAliases;
             }
             // ray shader
