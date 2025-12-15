@@ -269,12 +269,18 @@ namespace AMDFrameInterpolation
         swapChain->Release();
         swapChain = nullptr;
 
-        // Create the new swap chain
-        createSwapChainDesc.gameQueue = commandQueue;
-        createSwapChainDesc.swapchain = &swapChain;
-        ffx::ReturnCode retCode = ffx::CreateContext(s_state.m_swapChainContext, nullptr, createSwapChainDesc);
-        if (retCode != ffx::ReturnCode::Ok)
-            interpreter.GetLogFn()(LogLevel::Error, "Could not create swap chain context in " __FUNCTION__ "\n");
+    // Create the new swap chain
+    createSwapChainDesc.gameQueue = commandQueue;
+    createSwapChainDesc.swapchain = &swapChain;
+
+    ffx::CreateContextDescFrameGenerationSwapChainVersionDX12 versionDesc{};
+    versionDesc.header.type = FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATIONSWAPCHAIN_VERSION_DX12;
+    versionDesc.version = FFX_FRAMEGENERATION_SWAPCHAIN_DX12_VERSION;
+
+
+    ffx::ReturnCode retCode = ffx::CreateContext(s_state.m_swapChainContext, nullptr, createSwapChainDesc, versionDesc);
+    if (retCode != ffx::ReturnCode::Ok)
+        interpreter.GetLogFn()(LogLevel::Error, "Could not create swap chain context in " __FUNCTION__ "\n");
 
         // Clean up
         createSwapChainDesc.dxgiFactory->Release();
@@ -607,16 +613,19 @@ namespace AMDFrameInterpolation
                 frameGenGetGPUMemoryUsageV2.header.pNext = &versionOverride.header;
             }
 
-            if (overrideVersionId != 0)
-                retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, versionOverride);
-            else
-                retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc);
-            if (retCode != ffx::ReturnCode::Ok)
-            {
-                interpreter.GetLogFn()(LogLevel::Error, "Could not create frame generation context in " __FUNCTION__ "\n");
-                s_state.m_failState = true;
-                return;
-            }
+        ffx::CreateContextDescFrameGenerationVersion headerVersion{};
+        headerVersion.version = FFX_FRAMEGENERATION_VERSION;
+
+        if (overrideVersionId != 0)
+            retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion, versionOverride);
+        else
+            retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion);
+        if (retCode != ffx::ReturnCode::Ok)
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Could not create frame generation context in " __FUNCTION__ "\n");
+            s_state.m_failState = true;
+            return;
+        }
 
             // Get the version created
             ffxQueryGetProviderVersion getVersion = { 0 };
@@ -682,7 +691,7 @@ namespace AMDFrameInterpolation
 
         // Dispatch frame generation
         {
-            ffx::DispatchDescFrameGenerationPrepare dispatchFgPrep{};
+            ffx::DispatchDescFrameGenerationPrepareV2 dispatchFgPrep{};
 
             dispatchFgPrep.frameID = desc.frameIndex;
 
@@ -738,30 +747,29 @@ namespace AMDFrameInterpolation
             SetFfxApiResourceToTexture(s_state.m_depth, dispatchFgPrep.depth, FFX_API_RESOURCE_USAGE_UAV, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
             SetFfxApiResourceToTexture(s_state.m_motionVectors, dispatchFgPrep.motionVectors, FFX_API_RESOURCE_USAGE_UAV, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
-            ffx::DispatchDescFrameGenerationPrepareCameraInfo cameraConfig{};
-            memcpy(&cameraConfig.cameraPosition, cameraState.m_lastPos, sizeof(float) * 3);
+        memcpy(dispatchFgPrep.cameraPosition, cameraState.m_lastPos, sizeof(float) * 3);
 
-            DirectX::XMMATRIX viewMtx = cameraState.GetViewMatrix(cameraState.m_lastPos, cameraState.m_lastAltitudeAzimuth);
-            const float cameraUp[3] = { viewMtx.r[0].m128_f32[1], viewMtx.r[1].m128_f32[1], viewMtx.r[2].m128_f32[1] };
-            const float cameraLeft[3] = { viewMtx.r[0].m128_f32[0] , viewMtx.r[1].m128_f32[0] , viewMtx.r[2].m128_f32[0] };
-            const float cameraFwd[3] = { viewMtx.r[0].m128_f32[2], viewMtx.r[1].m128_f32[2], viewMtx.r[2].m128_f32[2] };
-            memcpy(&cameraConfig.cameraUp, cameraUp, sizeof(float) * 3);
-            memcpy(&cameraConfig.cameraForward, cameraFwd, sizeof(float) * 3);
+        DirectX::XMMATRIX viewMtx = cameraState.GetViewMatrix(cameraState.m_lastPos, cameraState.m_lastAltitudeAzimuth);
+        const float cameraUp[3] = {viewMtx.r[0].m128_f32[1], viewMtx.r[1].m128_f32[1], viewMtx.r[2].m128_f32[1]};
+        const float cameraLeft[3] = {viewMtx.r[0].m128_f32[0] , viewMtx.r[1].m128_f32[0] , viewMtx.r[2].m128_f32[0]};
+        const float cameraFwd[3] = {viewMtx.r[0].m128_f32[2], viewMtx.r[1].m128_f32[2], viewMtx.r[2].m128_f32[2]};
+        memcpy(dispatchFgPrep.cameraUp, cameraUp, sizeof(float) * 3);
+        memcpy(dispatchFgPrep.cameraForward, cameraFwd, sizeof(float) * 3);
 
-            // flip cameraRight since we expose it as cameraLeft
-            memcpy(&cameraConfig.cameraRight, cameraLeft, sizeof(float) * 3);
-            cameraConfig.cameraRight[0] *= -1.0f;
-            cameraConfig.cameraRight[1] *= -1.0f;
-            cameraConfig.cameraRight[2] *= -1.0f;
+        // flip cameraRight since we expose it as cameraLeft
+        memcpy(dispatchFgPrep.cameraRight, cameraLeft, sizeof(float) * 3);
+        dispatchFgPrep.cameraRight[0] *= -1.0f;
+        dispatchFgPrep.cameraRight[1] *= -1.0f;
+        dispatchFgPrep.cameraRight[2] *= -1.0f;
 
-            ffx::ReturnCode retCode = ffx::Dispatch(s_state.m_FrameGenContext, dispatchFgPrep, cameraConfig);
-            if (retCode != ffx::ReturnCode::Ok)
-            {
-                interpreter.GetLogFn()(LogLevel::Error, "Could not dispatch frame generation in " __FUNCTION__ "\n");
-                s_state.m_failState = true;
-                return;
-            }
+        ffx::ReturnCode retCode = ffx::Dispatch(s_state.m_FrameGenContext, dispatchFgPrep);
+        if (retCode != ffx::ReturnCode::Ok)
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Could not dispatch frame generation in " __FUNCTION__ "\n");
+            s_state.m_failState = true;
+            return;
         }
+    }
 
         // Restore the descriptor heaps
         interpreter.SetDescriptorHeaps();

@@ -272,11 +272,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
             return false;
         }
 
+        ffx::CreateContextDescUpscaleVersion headerVersion = {};
+        headerVersion.version = FFX_UPSCALER_VERSION;
+
         // Create the context
         if (overrideVersionId != 0)
-            retCode = ffx::CreateContext(context.m_UpscalingContext, nullptr, createFsrDesc, backendDesc, versionOverride);
+            retCode = ffx::CreateContext(context.m_UpscalingContext, nullptr, createFsrDesc, backendDesc, headerVersion, versionOverride);
         else
-            retCode = ffx::CreateContext(context.m_UpscalingContext, nullptr, createFsrDesc, backendDesc);
+            retCode = ffx::CreateContext(context.m_UpscalingContext, nullptr, createFsrDesc, backendDesc, headerVersion);
         if (retCode != ffx::ReturnCode::Ok)
         {
             m_logFn(LogLevel::Error, "Could not create upscaling context for node \"%s\" in " __FUNCTION__ "\n", node.name.c_str());
