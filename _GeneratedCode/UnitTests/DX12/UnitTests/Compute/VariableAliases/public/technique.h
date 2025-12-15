@@ -53,6 +53,7 @@ namespace VariableAliases
             int variable_Node3Channel = 2;
             const float variable_Node3Value = 0.75f;
             float variable_UnusedFloat = 0.f;  // This is for the unused alias in the shader
+            const float variable_ConstMultiplier = 1.f;
         };
         ContextInput m_input;
 

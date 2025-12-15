@@ -109,8 +109,9 @@
     <ClCompile Include="..\external\nativefiledialog\src\nfd_common.c" />
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\GigiAssert.cpp" />
-    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
+    <ClCompile Include="..\Shared\UI\ImGuiHelper.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="UICache.cpp" />
     <ClCompile Include="ui\builders.cpp" />
     <ClCompile Include="ui\drawing.cpp" />
     <ClCompile Include="ui\RecentFiles.cpp" />
@@ -141,11 +142,13 @@
     <ClInclude Include="..\external\nativefiledialog\src\common.h" />
     <ClInclude Include="..\external\nativefiledialog\src\include\nfd.h" />
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
-    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
+    <ClInclude Include="..\Shared\UI\ImGuiHelper.h" />
+    <ClInclude Include="..\Shared\UI\Shared.h" />
     <ClInclude Include="EditorNodes.h" />
     <ClInclude Include="MakeTypePath.h" />
     <ClInclude Include="MakeUI.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="UICache.h" />
     <ClInclude Include="ui\builders.h" />
     <ClInclude Include="ui\commonUI.h" />
     <ClInclude Include="ui\drawing.h" />

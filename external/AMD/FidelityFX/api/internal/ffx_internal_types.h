@@ -346,7 +346,8 @@ typedef enum FfxHeapType {
 
     FFX_HEAP_TYPE_DEFAULT = 0,                      ///< Local memory.
     FFX_HEAP_TYPE_UPLOAD,                           ///< Heap used for uploading resources.
-    FFX_HEAP_TYPE_READBACK                          ///< Heap used for reading back resources.
+    FFX_HEAP_TYPE_READBACK,                         ///< Heap used for reading back resources.
+    FFX_HEAP_TYPE_CUSTOM,                           ///< Custom heap provided by the user.
 } FfxHeapType;
 
 /// An enumeration for different render job types
@@ -403,18 +404,10 @@ typedef enum FfxBarrierType
 {
     FFX_BARRIER_TYPE_TRANSITION = 0,
     FFX_BARRIER_TYPE_UAV,
+    FFX_BARRIER_TYPE_ALIAS,
 } FfxBarrierType;
 
 typedef void (*ffxMessageCallback)(uint32_t type, const wchar_t* message);
-
-/// An enumeration for message types that can be passed
-///
-/// @ingroup SDKTypes
-typedef enum FfxMsgType {
-    FFX_MESSAGE_TYPE_ERROR      = 0,
-    FFX_MESSAGE_TYPE_WARNING    = 1,
-    FFX_MESSAGE_TYPE_COUNT
-} FfxMsgType;
 
 /// An enumeration of all the effects which constitute the FidelityFX SDK.
 ///
@@ -445,10 +438,35 @@ typedef enum FfxEffect
     FFX_EFFECT_FRAMEINTERPOLATION,     ///< FidelityFX Frame Interpolation, part of FidelityFX Super Resolution v3
     FFX_EFFECT_OPTICALFLOW,            ///< FidelityFX Optical Flow, part of FidelityFX Super Resolution v3
     FFX_EFFECT_FSR4UPSCALER,           ///< FidelityFX Super Resolution v4 (MLSR)
+    FFX_EFFECT_MLFRAMEGENERATION,      ///< FidelityFX Machine Learning Frame Interpolation (MLFI)
+    FFX_EFFECT_MLD,                    ///< FidelityFX Machine Learning Denoiser
+    FFX_EFFECT_NRC,                    ///< FidelityFX Neural Radiance Cache
 
     FFX_EFFECT_SHAREDRESOURCES = 127,  ///< FidelityFX Shared resources effect ID
     FFX_EFFECT_SHAREDAPIBACKEND = 128  ///< FidelityFX Shared backend context used with DLL API
 } FfxEffect;
+
+/// An enumeration of all the ABI versions in FidelityFX SDK.
+///
+/// Dictates what effect shader blobs to fetch for pipeline creation
+///
+/// @ingroup SDKTypes
+typedef enum FfxABIVersion
+{
+    FFX_ABI_INVALID = 0x0,            // Invalid
+    FFX_ABI_OLD     = 0x001000000,    // Prior to FSR 3.1.4 - only supports upscaler replacement
+    FFX_ABI_1_1_4   = 0x001001004,    // FSR 3.1.4 release - first one to support frame-gen replacement
+    FFX_ABI_1_1_5   = 0x001001005,    // Patch release for specific titles
+    FFX_ABI_2_0_0   = 0x002000000,    // FSR4 release
+    FFX_ABI_2_1_0   = 0x002001000,    // Pure-virtual swapchain ABI
+    FFX_ABI_VALID   = FFX_ABI_2_1_0
+} FfxABIVersion;
+
+typedef enum FfxHeapFlags
+{
+	FFX_HEAP_FLAGS_NONE = 0,
+	FFX_HEAP_FLAGS_ALIASABLE = 1 << 0,
+} FfxHeapFlags;
 
 /// A typedef representing the graphics device.
 ///
@@ -478,6 +496,11 @@ typedef void* FfxCommandSignature;
 ///
 /// @ingroup SDKTypes
 typedef void* FfxPipeline;
+
+/// A typedef for a heap object.
+///
+/// @ingroup SDKTypes
+typedef void* FfxHeap;
 
 /// Allocate block of memory.
 ///
@@ -573,29 +596,6 @@ typedef struct FfxIntCoords2D {
     int32_t                         y;                                      ///< The y coordinate of a 2-dimensional point.
 } FfxIntCoords2D;
 
-/// A structure describing a constant buffer allocation.
-///
-/// @ingroup SDKTypes
-typedef struct FfxConstantAllocation
-{
-    FfxApiResource  resource;        ///< The resource representing the constant buffer resource.
-    FfxUInt64       handle;          ///< The binding handle for the constant buffer
-
-} FfxRootConstantAllocation;
-
-/// A function definition for a constant buffer allocation callback
-///
-/// Used to provide a constant buffer allocator to the calling backend
-///
-/// @param [in] data                       The constant buffer data.
-/// @param [in] dataSize                   The size of the constant buffer data.
-///
-///
-/// @ingroup SDKTypes
-typedef FfxConstantAllocation(*FfxConstantBufferAllocator)(
-    void* data,
-    const FfxUInt64 dataSize);
-
 /// A structure describing a static resource.
 ///
 /// @ingroup SDKTypes
@@ -641,7 +641,7 @@ typedef struct FfxResourceInitData
     size_t                  size; ///< The size, in bytes, of the resource that needed be initialized.
     union
     {
-        void*         buffer;  ///< The buffer used to initialize the resource.
+        const void*   buffer;  ///< The buffer used to initialize the resource.
         unsigned char value;   ///< Indicates that the resource will be filled up with this value.
     };
 
@@ -653,7 +653,7 @@ typedef struct FfxResourceInitData
         return initData;
     }
 
-    static FfxResourceInitData FfxResourceInitBuffer(size_t dataSize, void* pInitData)
+    static FfxResourceInitData FfxResourceInitBuffer(size_t dataSize, const void* pInitData)
     {
         FfxResourceInitData initData = { FFX_RESOURCE_INIT_DATA_TYPE_BUFFER };
         initData.size = dataSize;
@@ -741,18 +741,89 @@ typedef struct FfxPipelineState {
     wchar_t                         name[FFX_RESOURCE_NAME_SIZE];                       ///< Pipeline name for debugging/profiling purposes
 } FfxPipelineState;
 
+/// A structure describing how to place a resource in heap memory when creating a resource.
+///
+/// @ingroup SDKTypes
+typedef struct FfxResourceHeapPlacementInfo
+{
+    FfxHeapType                     heapType;                               ///< The heap type to hold the resource, typically <c><i>FFX_HEAP_TYPE_DEFAULT</i></c>.
+    bool                            usePlacementHeap;                       ///< Whether to use a placement heap for resource placement.
+    FfxHeap                         placementHeap;                          ///< Heap to place the resource in. [Only used if <c><i>usePlacementHeap</i></c> is set to <c><i>true</i></c>]
+    uint64_t                        placementHeapOffset;                    ///< Offset into the heap to place the resource at. [Only used if <c><i>usePlacementHeap</i></c> is set to <c><i>true</i></c>]
+
+    static FfxResourceHeapPlacementInfo InitDefault()
+    {
+        FfxResourceHeapPlacementInfo heapPlacementInfo = {};
+        heapPlacementInfo.heapType = FFX_HEAP_TYPE_DEFAULT;
+        heapPlacementInfo.usePlacementHeap = false;
+        heapPlacementInfo.placementHeap = nullptr;
+        heapPlacementInfo.placementHeapOffset = 0;
+        return heapPlacementInfo;
+    }
+
+    static FfxResourceHeapPlacementInfo InitUpload()
+    {
+        FfxResourceHeapPlacementInfo heapPlacementInfo = {};
+        heapPlacementInfo.heapType = FFX_HEAP_TYPE_UPLOAD;
+        heapPlacementInfo.usePlacementHeap = false;
+        heapPlacementInfo.placementHeap = nullptr;
+        heapPlacementInfo.placementHeapOffset = 0;
+        return heapPlacementInfo;
+    }
+
+    static FfxResourceHeapPlacementInfo InitReadback()
+    {
+        FfxResourceHeapPlacementInfo heapPlacementInfo = {};
+        heapPlacementInfo.heapType = FFX_HEAP_TYPE_READBACK;
+        heapPlacementInfo.usePlacementHeap = false;
+        heapPlacementInfo.placementHeap = nullptr;
+        heapPlacementInfo.placementHeapOffset = 0;
+        return heapPlacementInfo;
+    }
+
+    static FfxResourceHeapPlacementInfo InitPlacedDefault(FfxHeap heap, uint64_t offset)
+    {
+        FfxResourceHeapPlacementInfo heapPlacementInfo = {};
+        heapPlacementInfo.heapType = FFX_HEAP_TYPE_DEFAULT;
+        heapPlacementInfo.usePlacementHeap = true;
+        heapPlacementInfo.placementHeap = heap;
+        heapPlacementInfo.placementHeapOffset = offset;
+        return heapPlacementInfo;
+    }
+
+} FfxHeapPlacementInfo;
+
 /// A structure containing the data required to create a resource.
 ///
 /// @ingroup SDKTypes
 typedef struct FfxCreateResourceDescription {
 
-    FfxHeapType                     heapType;                               ///< The heap type to hold the resource, typically <c><i>FFX_HEAP_TYPE_DEFAULT</i></c>.
+    FfxResourceHeapPlacementInfo    heapInfo;                               ///< Description of heap placement for this resource.
     FfxApiResourceDescription       resourceDescription;                    ///< A resource description.
-    FfxApiResourceState             initialState;                            ///< The initial resource state.
+    FfxApiResourceState             initialState;                           ///< The initial resource state.
     const wchar_t*                  name;                                   ///< Name of the resource.
     uint32_t                        id;                                     ///< Internal resource ID.
     FfxResourceInitData             initData;                               ///< A struct used to initialize the resource.
 } FfxCreateResourceDescription;
+
+/// A structure containing the data required to create a heap.
+///
+/// @ingroup SDKTypes
+typedef struct FfxCreateHeapDescription
+{
+	FfxHeapType     heapType;                                               ///< The heap type to create, typically <c><i>FFX_HEAP_TYPE_DEFAULT</i></c>.
+	uint64_t        size;                                                   ///< The size of the heap to create in bytes.
+	const wchar_t*  name;                                                   ///< Name of the heap.
+	uint32_t        flags;  										        ///< A collection of <c><i>FfxHeapFlags</i></c>.
+} FfxCreateHeapDescription;
+
+typedef struct FfxResourceHeap
+{
+	FfxHeap heap;															///< The heap object.
+	uint64_t startOffset;                                                   ///< The offset, from the beginning of the heap, of which this specific allocation starts.
+	uint64_t size;														    ///< The size of the heap in bytes.
+	bool aliasable;                                                         ///< Whether the heap is aliasable.
+} FfxResourceHeap;
 
 /// A structure containing the data required to create sampler mappings
 ///
@@ -786,7 +857,7 @@ typedef struct FfxRootConstantDescription
 /// ancillary API objects (in something like DirectX 11).
 ///
 /// The <c><i>contextFlags</i></c> field contains a copy of the flags passed
-/// to <c><i>ffxContextCreate</i></c> via the <c><i>flags</i></c> field of
+/// to <c><i>ffxCreateContext</i></c> via the <c><i>flags</i></c> field of
 /// the <c><i>Ffx<Effect>InitializationParams</i></c> structure. These flags are
 /// used to determine which permutation of a pipeline for a specific
 /// <c><i>Ffx<Effect>Pass</i></c> should be used to implement the features required
@@ -1066,37 +1137,6 @@ typedef struct FfxShaderBlob {
     const uint32_t* boundRTAccelerationStructureSpaces; ///< Pointer to an array of bound UAV buffer resource spaces
 
 } FfxShaderBlob;
-
-/// A structure describing the parameters passed from the
-/// presentation thread to the ui composition callback function.
-///
-/// @ingroup SDKTypes
-typedef struct FfxPresentCallbackDescription
-{
-    FfxDevice       device;                    ///< The active device
-    FfxCommandList  commandList;               ///< The command list on which to register render commands
-    FfxApiResource  currentBackBuffer;         ///< The backbuffer resource with scene information
-    FfxApiResource  currentUI;                 ///< Optional UI texture (when doing backbuffer + ui blend)
-    FfxApiResource  outputSwapChainBuffer;     ///< The swapchain target into which to render ui composition
-    bool            isInterpolatedFrame;       ///< Whether this is an interpolated or real frame
-    bool            usePremulAlpha;            ///< Toggles whether UI gets premultiplied alpha blending or not
-    uint64_t        frameID;
-} FfxPresentCallbackDescription;
-
-/// A structure describing the parameters to pass to frame generation passes.
-///
-/// @ingroup SDKTypes
-typedef struct FfxFrameGenerationDispatchDescription {
-    FfxCommandList                  commandList;                    ///< The command list on which to register render commands
-    FfxApiResource                  presentColor;                   ///< The current presentation color, this will be used as interpolation source data.
-    FfxApiResource                  outputs[4];                     ///< Interpolation destination targets (1 for each frame in numInterpolatedFrames)
-    uint32_t                        numInterpolatedFrames;          ///< The number of frames to interpolate from the passed in color target
-    bool                            reset;                          ///< A boolean value which when set to true, indicates the camera has moved discontinuously.
-    FfxApiBackbufferTransferFunction   backBufferTransferFunction;     ///< The transfer function use to convert interpolation source color data to linear RGB.
-    float                           minMaxLuminance[2];             ///< Min and max luminance values, used when converting HDR colors to linear RGB
-    FfxApiRect2D                       interpolationRect;              ///< The area of the backbuffer that should be used for interpolation in case only a part of the screen is used e.g. due to movie bars
-    uint64_t                        frameID;
-} FfxFrameGenerationDispatchDescription;
 
 #ifdef __cplusplus
 }

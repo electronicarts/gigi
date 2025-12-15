@@ -24,6 +24,11 @@
 
 #include "ffx_internal_types.h"
 
+#ifdef __cpp_lib_bitops
+// std::popcount
+#include <bit>
+#endif // __cpp_lib_bitops
+
 /// @defgroup Utils Utilities
 /// Utility Macros used by the FidelityFX SDK
 /// 
@@ -174,7 +179,7 @@ const float FFX_EPSILON = 1e-06f;
 /// @ingroup Utils
 inline uint8_t ffxCountBitsSet(uint32_t val) noexcept
 {
-#if __cplusplus >= 202002L
+#if defined(__cpp_lib_bitops)
     return static_cast<uint8_t>(std::popcount(val));
 #elif defined(_MSVC_LANG)
     return static_cast<uint8_t>(__popcnt(val));

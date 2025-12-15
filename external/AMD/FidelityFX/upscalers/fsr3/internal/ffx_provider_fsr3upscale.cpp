@@ -60,15 +60,11 @@ bool ffxProvider_FSR3Upscale::CanProvide(uint64_t type) const
 #define STRINGIFY(X) STRINGIFY_(X) 
 #define MAKE_VERSION_STRING(major, minor, patch) STRINGIFY major "." STRINGIFY minor "." STRINGIFY patch
 
-uint64_t ffxProvider_FSR3Upscale::GetId() const
+ffxProvider_FSR3Upscale::ffxProvider_FSR3Upscale()
+    : ffxProvider(0xF5A5'CA1Eui64 << 32 | (FFX_SDK_MAKE_VERSION(FFX_FSR3UPSCALER_VERSION_MAJOR, FFX_FSR3UPSCALER_VERSION_MINOR, FFX_FSR3UPSCALER_VERSION_PATCH) & 0xFFFF'FFFF),
+        FFX_API_EFFECT_ID_UPSCALE,
+        MAKE_VERSION_STRING(FFX_FSR3UPSCALER_VERSION_MAJOR, FFX_FSR3UPSCALER_VERSION_MINOR, FFX_FSR3UPSCALER_VERSION_PATCH))
 {
-    // FSR Scale, version from header
-    return 0xF5A5'CA1Eui64 << 32 | (FFX_SDK_MAKE_VERSION(FFX_FSR3UPSCALER_VERSION_MAJOR, FFX_FSR3UPSCALER_VERSION_MINOR, FFX_FSR3UPSCALER_VERSION_PATCH) & 0xFFFF'FFFF);
-}
-
-const char* ffxProvider_FSR3Upscale::GetVersionName() const
-{
-    return MAKE_VERSION_STRING(FFX_FSR3UPSCALER_VERSION_MAJOR, FFX_FSR3UPSCALER_VERSION_MINOR, FFX_FSR3UPSCALER_VERSION_PATCH);
 }
 
 struct InternalFsr3UpscalerUContext
@@ -81,7 +77,7 @@ struct InternalFsr3UpscalerUContext
     uint32_t                debugLevel;
 };
 
-ffxReturnCode_t ffxProvider_FSR3Upscale::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_FSR3Upscale::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc)
 {
     VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(header, FFX_API_RETURN_ERROR_PARAMETER);
@@ -111,11 +107,12 @@ ffxReturnCode_t ffxProvider_FSR3Upscale::CreateContext(ffxContext* context, ffxC
 
         // Grab this fp for use in extensions later
         internal_context->fpMessage = desc->fpMessage;
+        internal_context->debugLevel = FFX_API_CONFIGURE_GLOBALDEBUG_LEVEL_WARNINGS;
 
         // Create the FSR3UPSCALER context
         TRY2(ffxFsr3UpscalerContextCreate(&internal_context->context, &initializationParameters));
         
-        ffxFsr3UpscalerSetGlobalDebugMessage(reinterpret_cast<ffxMessageCallback>(desc->fpMessage), 0);
+        ffxFsr3UpscalerSetGlobalDebugMessage(reinterpret_cast<ffxMessageCallback>(desc->fpMessage), internal_context->debugLevel);
 
         // set up FSR3Upscaler "shared" resources (no resource sharing in the upscaler provider though, since providers are fully independent and we can't guarantee all upscale providers will be compatible with other effects)
         //TODO: refactor and move "shared" resources into ffxFsr3UpscalerGetInternalResourceDescriptions
@@ -159,7 +156,7 @@ ffxReturnCode_t ffxProvider_FSR3Upscale::CreateContext(ffxContext* context, ffxC
     }
 }
 
-ffxReturnCode_t ffxProvider_FSR3Upscale::DestroyContext(ffxContext* context, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_FSR3Upscale::DestroyContext(ffxContext* context, Allocator& alloc)
 {
     VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
@@ -319,11 +316,16 @@ ffxReturnCode_t ffxProvider_FSR3Upscale::Query(ffxContext* context, ffxQueryDesc
     }
     case FFX_API_QUERY_DESC_TYPE_UPSCALE_GET_RESOURCE_REQUIREMENTS:
     {
-        auto desc = reinterpret_cast<ffxQueryDescUpscaleGetResourceRequirements*>(header);
+        auto desc = reinterpret_cast<ffxQueryDescUpscaleGetResourceRequirements*>(header);   
+        
+        desc->required_resources = 
+            FFX_API_QUERY_RESOURCE_INPUT_COLOR |
+            FFX_API_QUERY_RESOURCE_INPUT_DEPTH |
+            FFX_API_QUERY_RESOURCE_INPUT_MV    |
+            FFX_API_QUERY_RESOURCE_INPUT_EXPOSURE;
+        desc->optional_resources = FFX_API_QUERY_RESOURCE_INPUT_REACTIVEMASK|
+                                  FFX_API_QUERY_RESOURCE_INPUT_TRANSPARENCYCOMPOSITION;
 
-        // Return defaults
-        desc->required_resources = ~uint64_t(0);
-        desc->optional_resources = ~uint64_t(0);
         break;
     }
     default:
@@ -418,4 +420,8 @@ ffxReturnCode_t ffxProvider_FSR3Upscale::Dispatch(ffxContext* context, const ffx
     return FFX_API_RETURN_OK;
 }
 
-ffxProvider_FSR3Upscale ffxProvider_FSR3Upscale::Instance;
+ffxProvider_FSR3Upscale& ffxProvider_FSR3Upscale::GetInstance()
+{
+    static ffxProvider_FSR3Upscale instance;
+    return instance;
+}

@@ -17,6 +17,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui.h"
 #include <imgui_internal.h>
+#include "Shared/UI/ImGuiHelper.h"
 
 #include "shlobj_core.h"
 
@@ -684,7 +685,7 @@ void Browser::ShowBrowserWindow()
 		GetSearchResults(false);
 
 	ImGui::SameLine();
-	if (ImGui::Button("Refresh Servers"))
+	if (ImGui::Button(ICON_FA_ARROWS_ROTATE))
 	{
 		for (BrowserServerInfo& serverInfo : g_serverList)
 			m_workerThreads.Add<Job_UpdateServer>(serverInfo);

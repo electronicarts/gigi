@@ -40,7 +40,7 @@
 /// FidelityFX Frameinterpolation patch version.
 ///
 /// @ingroup FRAMEINTERPOLATIONFRAMEINTERPOLATION
-#define FFX_FRAMEINTERPOLATION_VERSION_PATCH      (5)
+#define FFX_FRAMEINTERPOLATION_VERSION_PATCH      (6)
 
 /// FidelityFX Frame Interpolation context count
 ///
@@ -361,14 +361,6 @@ FFX_API FfxErrorCode ffxFrameInterpolationDispatch(FfxFrameInterpolationContext*
 ///
 /// @ingroup FRAMEINTERPOLATION
 FFX_API FfxErrorCode ffxFrameInterpolationContextDestroy(FfxFrameInterpolationContext* context);
-
-/// Set global debug message settings
-///
-/// @retval
-/// FFX_OK                              The operation completed successfully.
-///
-/// @ingroup FRAMEINTERPOLATION
-FFX_API FfxErrorCode ffxFrameInterpolationSetGlobalDebugMessage(ffxMessageCallback fpMessage, uint32_t debugLevel);
 
 /// Set global debug message settings
 ///

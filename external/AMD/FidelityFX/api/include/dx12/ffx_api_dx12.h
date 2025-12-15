@@ -27,11 +27,40 @@
 #include <dxgi.h>
 #include <dxgi1_5.h>
 
-#define FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12 0x0000002u
+/// Resource allocation callback function.
+typedef ffxReturnCode_t(*PfnFfxResourceAllocatorFunc)(uint32_t                         effectId,
+                                                      D3D12_RESOURCE_STATES            initialState,
+                                                      const D3D12_HEAP_PROPERTIES*     pHeapProps,
+                                                      const D3D12_RESOURCE_DESC*       pD3DDesc,
+                                                      const struct FfxApiResourceDescription* pFfxDesc,
+                                                      const D3D12_CLEAR_VALUE*         pOptimizedClear,
+                                                      ID3D12Resource**                 ppD3DResource);
+
+/// Resource destruction callback function.
+typedef ffxReturnCode_t(*PfnFfxResourceDeallocatorFunc)(uint32_t effectId, ID3D12Resource* pResource);
+
+// Heap allocation callback function.
+typedef ffxReturnCode_t(*PfnFfxHeapAllocatorFunc)(uint32_t effectId, const D3D12_HEAP_DESC* pHeapDesc, bool aliasable, ID3D12Heap** ppD3DHeap, uint64_t* pHeapStartOffset);
+
+// Heap destruction callback function.
+typedef ffxReturnCode_t(*PfnFfxHeapDeallocatorFunc)(uint32_t effectId, ID3D12Heap* pD3DHeap, uint64_t heapStartOffset, uint64_t heapSize);
+
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12 FFX_API_MAKE_BACKEND_SUB_ID(FFX_API_BACKEND_ID_DX12, 0x02)
 struct ffxCreateBackendDX12Desc
 {
     ffxCreateContextDescHeader header;
-    ID3D12Device              *device;  ///< Device on which the backend will run.
+    ID3D12Device*              device;  ///< Device on which the backend will run.
+};
+
+#define FFX_API_CREATE_CONTEXT_DESC_TYPE_BACKEND_DX12_ALLOCATION_CALLBACKS FFX_API_MAKE_BACKEND_SUB_ID(FFX_API_BACKEND_ID_DX12, 0x03)
+struct ffxCreateBackendDX12AllocationCallbacksDesc
+{
+	ffxCreateContextDescHeader    header;
+    PfnFfxResourceAllocatorFunc   pfnFfxResourceAllocator;        ///< Resource allocation function (can be null)
+    PfnFfxResourceDeallocatorFunc pfnFfxResourceDeallocator;      ///< Resource deallocation function (can be null)
+    PfnFfxHeapAllocatorFunc       pfnFfxHeapAllocator;            ///< Heap allocation function (can be null)
+    PfnFfxHeapDeallocatorFunc     pfnFfxHeapDeallocator;          ///< Heap deallocation function (can be null)
+    FfxApiConstantBufferAllocator pfnFfxConstantBufferAllocator;  ///< Constant buffer allocation function (can be null)
 };
 
 #if defined(__cplusplus)
@@ -155,6 +184,8 @@ static inline uint32_t ffxApiGetSurfaceFormatDX12(DXGI_FORMAT format)
     case DXGI_FORMAT_R8_UNORM:
     case DXGI_FORMAT_A8_UNORM:
         return FFX_API_SURFACE_FORMAT_R8_UNORM;
+    case DXGI_FORMAT_R8_SNORM:
+        return FFX_API_SURFACE_FORMAT_R8_SNORM;
     case DXGI_FORMAT_R8_UINT:
         return FFX_API_SURFACE_FORMAT_R8_UINT;
     //case DXGI_FORMAT_R8_SNORM:

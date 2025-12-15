@@ -28,6 +28,9 @@ namespace simple
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
+        // Variables
+        const uint variable_DummyConstVar = 1;
+
         // Runs the shader
         static ID3D12PipelineState* computeShader_DoSimpleCS_pso;
         static ID3D12RootSignature* computeShader_DoSimpleCS_rootSig;

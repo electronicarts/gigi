@@ -7,6 +7,8 @@
 
 #include "pix3.h"
 
+#include <chrono>
+
 class Profiler
 {
 public:

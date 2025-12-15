@@ -23,7 +23,7 @@
 #pragma once
 #include "../include/gpu/fsr3upscaler/ffx_fsr3upscaler_resources.h"
 #ifndef _GAMING_XBOX
-#include "../../../api/internal/ffx_watermark.h"
+#include "../../../amdinternal/api/internal/ffx_watermark.h"
 #include <optional>
 #endif
 

@@ -6,7 +6,7 @@ sys.path.append('Techniques/UnitTests/')
 m = importlib.import_module("TestLogic")
 
 resources = [
-	[ "Tonemap.SDR: Output_SDR (UAV - After)", True ],
+	[ "RenderUI.Color: Output_SDR (UAV - After)", True ],
 ]
 
 def DoTest():

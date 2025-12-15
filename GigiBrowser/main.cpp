@@ -22,6 +22,8 @@
 #include <dxgi1_4.h>
 #include <tchar.h>
 
+#include "Shared/UI/ImGuiHelper.h"
+
 #ifdef _DEBUG
 #define DX12_ENABLE_DEBUG_LAYER
 #endif
@@ -198,6 +200,17 @@ int main(int argc, char** argv)
     //io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     //ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     //IM_ASSERT(font != nullptr);
+
+    // Load Font Awesome icons
+    {
+        io.Fonts->AddFontDefault();
+        static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+        ImFontConfig icons_config;
+        icons_config.MergeMode = true;
+        icons_config.PixelSnapH = true;
+        icons_config.GlyphMinAdvanceX = 13.0f * 0.8f;  // default font size is 13
+        io.Fonts->AddFontFromFileTTF("external/FontAwesome/Font Awesome 7 Free-Solid-900.otf", icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+    }
 
     // Our state
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);

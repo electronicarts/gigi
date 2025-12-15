@@ -338,6 +338,10 @@
             "name": "RenderSizeFloat",
             "type": "Float2",
             "dflt": "1.000000, 1.000000"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int"
         }
     ],
     "shaders": [
@@ -394,6 +398,17 @@
             "samplers": [
                 {
                     "name": "linearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "RenderUI",
+            "fileName": "ui.hlsl",
+            "resources": [
+                {
+                    "name": "Color",
+                    "access": "UAV",
+                    "type": "Texture"
                 }
             ]
         }
@@ -1104,6 +1119,73 @@
                     "node": {
                         "name": "Color"
                     }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "RenderUI",
+                "editorPos": [
+                    961.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Color",
+                        "dstNode": "Copy No HUD",
+                        "dstPin": "source"
+                    }
+                ],
+                "shader": {
+                    "name": "RenderUI"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Output SDR"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output SDR No HUD",
+                "editorPos": [
+                    655.0,
+                    354.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Output SDR"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Output SDR"
+                    }
+                }
+            }
+        },
+        {
+            "actionCopyResource": {
+                "name": "Copy No HUD",
+                "editorPos": [
+                    821.0,
+                    274.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "source": {
+                    "node": "Tonemap",
+                    "pin": "SDR"
+                },
+                "dest": {
+                    "node": "Output SDR No HUD",
+                    "pin": "resource"
                 }
             }
         }

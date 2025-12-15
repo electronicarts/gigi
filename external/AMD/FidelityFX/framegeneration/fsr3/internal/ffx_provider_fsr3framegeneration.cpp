@@ -25,6 +25,8 @@
 #include "../include/ffx_provider_fsr3framegeneration.h"
 #include "../include/ffx_frameinterpolation.h"
 #include "../include/ffx_opticalflow.h"
+#include "../../internal/ffx_framegeneration_internal.h"
+
 #include "../../../upscalers/fsr3/include/gpu/fsr3/ffx_fsr3_resources.h"
 
 #include <stdlib.h>
@@ -49,13 +51,14 @@ struct InternalFgContext
     uint32_t effectContextIdShared;
     float deltaTime;
     bool asyncWorkloadSupported;
+    bool debugCheckEnabled;
 
     FfxApiResource HUDLessColor;
     FfxApiResource distortionField;
 
     bool frameGenEnabled;
     uint32_t frameGenFlags;
-    ffxDispatchDescFrameGenerationPrepare prepareDescriptions[MAX_QUEUED_FRAMES];
+    ffxDispatchDescFrameGenerationPrepareV2 prepareDescriptions[MAX_QUEUED_FRAMES] = {};
 
     struct Callbacks {
         FfxApiPresentCallbackFunc presentCallback;
@@ -65,26 +68,24 @@ struct InternalFgContext
     } callbacks[MAX_QUEUED_FRAMES];
 
     uint64_t lastConfigureFrameID;
+    uint64_t lastFrameID;
     ffxApiMessage fpMessage;
     uint32_t debugLevel;
+
 };
 
 #define STRINGIFY_(X) #X
 #define STRINGIFY(X) STRINGIFY_(X) 
 #define MAKE_VERSION_STRING(major, minor, patch) STRINGIFY major "." STRINGIFY minor "." STRINGIFY patch
 
-uint64_t ffxProvider_Fsr3FrameGeneration::GetId() const
+ffxProvider_Fsr3FrameGeneration::ffxProvider_Fsr3FrameGeneration() :
+    ffxProvider(0xF600'0000ui64 << 32u | (FFX_SDK_MAKE_VERSION(FFX_FRAMEINTERPOLATION_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_VERSION_MINOR, FFX_FRAMEINTERPOLATION_VERSION_PATCH) & 0xFFFF'FFFF),
+        FFX_API_EFFECT_ID_FRAMEGENERATION,
+        MAKE_VERSION_STRING(FFX_FRAMEINTERPOLATION_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_VERSION_MINOR, FFX_FRAMEINTERPOLATION_VERSION_PATCH))
 {
-    // FG, version from header
-    return 0xF600'0000ui64 << 32u | (FFX_SDK_MAKE_VERSION(FFX_FRAMEINTERPOLATION_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_VERSION_MINOR, FFX_FRAMEINTERPOLATION_VERSION_PATCH) & 0xFFFF'FFFF);
 }
 
-const char* ffxProvider_Fsr3FrameGeneration::GetVersionName() const
-{
-    return MAKE_VERSION_STRING(FFX_FRAMEINTERPOLATION_VERSION_MAJOR, FFX_FRAMEINTERPOLATION_VERSION_MINOR, FFX_FRAMEINTERPOLATION_VERSION_PATCH);
-}
-
-ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::CreateContext(ffxContext* context, ffxCreateContextDescHeader* header, Allocator& alloc)
 {
     if (auto desc = ffx::DynamicCast<ffxCreateContextDescFrameGeneration>(header))
     {
@@ -97,6 +98,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::CreateContext(ffxContext* conte
 
         { // copied from ffxFsr3ContextCreate, simplified.
             internal_context->asyncWorkloadSupported = (desc->flags & FFX_FRAMEGENERATION_ENABLE_ASYNC_WORKLOAD_SUPPORT) != 0;
+            internal_context->debugCheckEnabled = (desc->flags & FFX_FRAMEGENERATION_ENABLE_DEBUG_CHECKING) != 0;
 
             TRY2(internal_context->backendInterfaceShared.fpCreateBackendContext(&internal_context->backendInterfaceShared, FFX_EFFECT_SHAREDAPIBACKEND, nullptr, &internal_context->effectContextIdShared));
         
@@ -186,13 +188,13 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::CreateContext(ffxContext* conte
     }
 }
 
-ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::DestroyContext(ffxContext* context, Allocator& alloc) const
+ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::DestroyContext(ffxContext* context, Allocator& alloc)
 {
     VERIFY(context, FFX_API_RETURN_ERROR_PARAMETER);
     VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
 
     InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(*context);
-    
+
     { // copied from ffxFsr3ContextDestroy, simplified.
         for (FfxUInt32 i = 0; i < FFX_FSR3_RESOURCE_IDENTIFIER_COUNT; i++)
         {
@@ -235,69 +237,175 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
         internal_context->callbacks[callbacksIndex].presentCallbackUserContext = desc->presentCallbackUserContext;
         internal_context->callbacks[callbacksIndex].frameGenerationCallbackUserContext = desc->frameGenerationCallbackUserContext;
 
-        config.frameGenerationCallback = nullptr;
-        config.frameGenerationCallbackContext = nullptr;
-        if (desc->frameGenerationCallback != nullptr)
+        // Skip setting up the callback if no swapchain context notification is requested, this will avoid ABI checks and allow for run configure without swapchain
+        if (!(config.flags & FFX_FRAMEGENERATION_FLAG_NO_SWAPCHAIN_CONTEXT_NOTIFY))
         {
-            config.frameGenerationCallback = [](const FfxFrameGenerationDispatchDescription* desc, void* ctx) -> FfxErrorCode {
-                size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
-                InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
-                auto callbacks = &internal_context->callbacks[callbacksIndex];
-                VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
-                
-                ffx::DispatchDescFrameGeneration dispatchDesc{};
-                
-                dispatchDesc.backbufferTransferFunction = desc->backBufferTransferFunction;
-                dispatchDesc.commandList = desc->commandList;
-                dispatchDesc.minMaxLuminance[0] = desc->minMaxLuminance[0];
-                dispatchDesc.minMaxLuminance[1] = desc->minMaxLuminance[1];
-                dispatchDesc.numGeneratedFrames = desc->numInterpolatedFrames;
-                dispatchDesc.outputs[0] = desc->outputs[0];
-                dispatchDesc.outputs[1] = desc->outputs[1];
-                dispatchDesc.outputs[2] = desc->outputs[2];
-                dispatchDesc.outputs[3] = desc->outputs[3];
-                dispatchDesc.presentColor = desc->presentColor;
-                dispatchDesc.reset = desc->reset;
-                dispatchDesc.generationRect.top = desc->interpolationRect.top;
-                dispatchDesc.generationRect.left = desc->interpolationRect.left;
-                dispatchDesc.generationRect.height = desc->interpolationRect.height;
-                dispatchDesc.generationRect.width = desc->interpolationRect.width;
-                dispatchDesc.frameID = desc->frameID;
-                
-                if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(&dispatchDesc, callbacks->frameGenerationCallbackUserContext))
-                    return FFX_ERROR_BACKEND_API_ERROR;
-                return FFX_OK;
-            };
-            config.frameGenerationCallbackContext = internal_context;
-        }
+            FfxABIVersion version = internal_context->backendInterfaceFi.fpGetSwapchainABI(desc->swapChain);
+            VERIFY(version != FfxABIVersion::FFX_ABI_INVALID && version != FfxABIVersion::FFX_ABI_OLD, FFX_API_RETURN_ERROR_RUNTIME_ERROR);
 
-        config.presentCallback = nullptr;
-        config.presentCallbackContext = nullptr;
-        if (desc->presentCallback != nullptr)
-        {
-            config.presentCallback = [](const FfxPresentCallbackDescription* params, void* ctx) -> FfxErrorCode {
-                size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
-                InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
-                auto callbacks = &internal_context->callbacks[callbacksIndex];
-                VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
-                
-                ffxCallbackDescFrameGenerationPresent cbDesc{};
-                cbDesc.header.pNext = nullptr;
-                cbDesc.header.type = FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT;
+            config.frameGenerationCallback = nullptr;
+            config.frameGenerationCallbackContext = nullptr;
+            if (desc->frameGenerationCallback != nullptr)
+            {
+                if (version == FfxABIVersion::FFX_ABI_1_1_4 || version == FfxABIVersion::FFX_ABI_1_1_5)
+                {
+                    config.frameGenerationCallback = [](ffxDispatchDescFrameGeneration* in_desc, void* ctx) -> ffxReturnCode_t
+                    {
+                        FfxFrameGenerationDispatchDescriptionSDK1 const* desc = (FfxFrameGenerationDispatchDescriptionSDK1 const*)in_desc;
+                        size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
+                        InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
+                        auto callbacks = &internal_context->callbacks[callbacksIndex];
+                        VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        
+                        ffx::DispatchDescFrameGeneration dispatchDesc{};
+                        
+                        dispatchDesc.backbufferTransferFunction = desc->backBufferTransferFunction;
+                        dispatchDesc.commandList = desc->commandList;
+                        dispatchDesc.minMaxLuminance[0] = desc->minMaxLuminance[0];
+                        dispatchDesc.minMaxLuminance[1] = desc->minMaxLuminance[1];
+                        dispatchDesc.numGeneratedFrames = desc->numInterpolatedFrames;
+                        dispatchDesc.outputs[0] = desc->outputs[0];
+                        dispatchDesc.outputs[1] = desc->outputs[1];
+                        dispatchDesc.outputs[2] = desc->outputs[2];
+                        dispatchDesc.outputs[3] = desc->outputs[3];
+                        dispatchDesc.presentColor = desc->presentColor;
+                        dispatchDesc.reset = desc->reset;
+                        dispatchDesc.generationRect.top = desc->interpolationRect.top;
+                        dispatchDesc.generationRect.left = desc->interpolationRect.left;
+                        dispatchDesc.generationRect.height = desc->interpolationRect.height;
+                        dispatchDesc.generationRect.width = desc->interpolationRect.width;
+                        dispatchDesc.frameID = desc->frameID;
+                        
+                        if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(&dispatchDesc, callbacks->frameGenerationCallbackUserContext))
+                            return FFX_ERROR_BACKEND_API_ERROR;
+                        return FFX_OK;
+                    };
+                }
+                else if (version == FfxABIVersion::FFX_ABI_2_0_0)
+                {
+                    config.frameGenerationCallback = [](ffxDispatchDescFrameGeneration* in_desc, void* ctx) -> ffxReturnCode_t
+                    {
+                        FfxFrameGenerationDispatchDescriptionSDK2 const* desc = (FfxFrameGenerationDispatchDescriptionSDK2 const*)in_desc;
+                        size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
+                        InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
+                        auto callbacks = &internal_context->callbacks[callbacksIndex];
+                        VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
 
-                cbDesc.commandList = params->commandList;
-                cbDesc.currentBackBuffer = params->currentBackBuffer;
-                cbDesc.currentUI = params->currentUI;
-                cbDesc.device = params->device;
-                cbDesc.isGeneratedFrame = params->isInterpolatedFrame;
-                cbDesc.outputSwapChainBuffer = params->outputSwapChainBuffer;
-                cbDesc.frameID = params->frameID;
+                        ffx::DispatchDescFrameGeneration dispatchDesc{};
 
-                if (FFX_API_RETURN_OK != callbacks->presentCallback(&cbDesc, callbacks->presentCallbackUserContext))
-                    return FFX_ERROR_BACKEND_API_ERROR;
-                return FFX_OK;
-            };
-            config.presentCallbackContext = internal_context;
+                        dispatchDesc.backbufferTransferFunction = desc->backBufferTransferFunction;
+                        dispatchDesc.commandList = desc->commandList;
+                        dispatchDesc.minMaxLuminance[0] = desc->minMaxLuminance[0];
+                        dispatchDesc.minMaxLuminance[1] = desc->minMaxLuminance[1];
+                        dispatchDesc.numGeneratedFrames = desc->numInterpolatedFrames;
+                        dispatchDesc.outputs[0] = desc->outputs[0];
+                        dispatchDesc.outputs[1] = desc->outputs[1];
+                        dispatchDesc.outputs[2] = desc->outputs[2];
+                        dispatchDesc.outputs[3] = desc->outputs[3];
+                        dispatchDesc.presentColor = desc->presentColor;
+                        dispatchDesc.reset = desc->reset;
+                        dispatchDesc.generationRect.top = desc->interpolationRect.top;
+                        dispatchDesc.generationRect.left = desc->interpolationRect.left;
+                        dispatchDesc.generationRect.height = desc->interpolationRect.height;
+                        dispatchDesc.generationRect.width = desc->interpolationRect.width;
+                        dispatchDesc.frameID = desc->frameID;
+
+                        if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(&dispatchDesc, callbacks->frameGenerationCallbackUserContext))
+                            return FFX_ERROR_BACKEND_API_ERROR;
+                        return FFX_OK;
+                    };
+                }
+                else
+                {
+                    config.frameGenerationCallback = [](ffxDispatchDescFrameGeneration* desc, void* ctx) -> ffxReturnCode_t
+                    {
+                        size_t callbacksIndex = desc->frameID % MAX_QUEUED_FRAMES;
+                        InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
+                        auto callbacks = &internal_context->callbacks[callbacksIndex];
+                        VERIFY(callbacks->frameGenerationCallback, FFX_ERROR_BACKEND_API_ERROR);
+
+                        if (FFX_API_RETURN_OK != callbacks->frameGenerationCallback(desc, callbacks->frameGenerationCallbackUserContext))
+                            return FFX_ERROR_BACKEND_API_ERROR;
+                        return FFX_OK;
+                    };
+                }
+                config.frameGenerationCallbackContext = internal_context;
+            }
+
+            config.presentCallback = nullptr;
+            config.presentCallbackContext = nullptr;
+            if (desc->presentCallback != nullptr)
+            {
+                if (version == FfxABIVersion::FFX_ABI_1_1_4 || version == FfxABIVersion::FFX_ABI_1_1_5)
+                {
+                    config.presentCallback = [](ffxCallbackDescFrameGenerationPresent* in_params, void* ctx) -> ffxReturnCode_t
+                    {
+                        const FfxPresentCallbackDescriptionSDK1* params = reinterpret_cast<const FfxPresentCallbackDescriptionSDK1*>(in_params);
+                        size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
+                        InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
+                        auto callbacks = &internal_context->callbacks[callbacksIndex];
+                        VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
+                        
+                        ffxCallbackDescFrameGenerationPresent cbDesc{};
+                        cbDesc.header.pNext = nullptr;
+                        cbDesc.header.type = FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT;
+
+                        cbDesc.commandList = params->commandList;
+                        cbDesc.currentBackBuffer = params->currentBackBuffer;
+                        cbDesc.currentUI = params->currentUI;
+                        cbDesc.device = params->device;
+                        cbDesc.isGeneratedFrame = params->isInterpolatedFrame;
+                        cbDesc.outputSwapChainBuffer = params->outputSwapChainBuffer;
+                        cbDesc.frameID = params->frameID;
+
+                        if (FFX_API_RETURN_OK != callbacks->presentCallback(&cbDesc, callbacks->presentCallbackUserContext))
+                            return FFX_ERROR_BACKEND_API_ERROR;
+                        return FFX_OK;
+                    };
+                }
+                else if (version == FfxABIVersion::FFX_ABI_2_0_0)
+                {
+                    config.presentCallback = [](ffxCallbackDescFrameGenerationPresent* in_params, void* ctx) -> ffxReturnCode_t
+                    {
+                        const FfxPresentCallbackDescriptionSDK2* params = reinterpret_cast<const FfxPresentCallbackDescriptionSDK2*>(in_params);
+                        size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
+                        InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
+                        auto callbacks = &internal_context->callbacks[callbacksIndex];
+                        VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
+
+                        ffxCallbackDescFrameGenerationPresent cbDesc{};
+                        cbDesc.header.pNext = nullptr;
+                        cbDesc.header.type = FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT;
+
+                        cbDesc.commandList = params->commandList;
+                        cbDesc.currentBackBuffer = params->currentBackBuffer;
+                        cbDesc.currentUI = params->currentUI;
+                        cbDesc.device = params->device;
+                        cbDesc.isGeneratedFrame = params->isInterpolatedFrame;
+                        cbDesc.outputSwapChainBuffer = params->outputSwapChainBuffer;
+                        cbDesc.frameID = params->frameID;
+
+                        if (FFX_API_RETURN_OK != callbacks->presentCallback(&cbDesc, callbacks->presentCallbackUserContext))
+                            return FFX_ERROR_BACKEND_API_ERROR;
+                        return FFX_OK;
+                    };
+                }
+                else
+                {
+                    config.presentCallback = [](ffxCallbackDescFrameGenerationPresent* params, void* ctx) -> ffxReturnCode_t
+                    {
+                        size_t callbacksIndex = params->frameID % MAX_QUEUED_FRAMES;
+                        InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(ctx);
+                        auto callbacks = &internal_context->callbacks[callbacksIndex];
+                        VERIFY(callbacks->presentCallback, FFX_ERROR_BACKEND_API_ERROR);
+
+                        if (FFX_API_RETURN_OK != callbacks->presentCallback(params, callbacks->presentCallbackUserContext))
+                            return FFX_ERROR_BACKEND_API_ERROR;
+                        return FFX_OK;
+                    };
+                }
+                config.presentCallbackContext = internal_context;
+            }
         }
 
         config.drawDebugPacingLines = false;
@@ -344,9 +452,9 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Configure(ffxContext* context, 
                 }
 
                 TRY2(internal_context->backendInterfaceShared.fpSwapChainConfigureFrameGeneration(&config));
-
-                internal_context->lastConfigureFrameID = desc->frameID;
             }
+
+            internal_context->lastConfigureFrameID = desc->frameID;
         }
 
         internal_context->distortionField = FfxApiResource({});
@@ -446,12 +554,22 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
     VERIFY(*context, FFX_API_RETURN_ERROR_PARAMETER);
 
     InternalFgContext* internal_context = reinterpret_cast<InternalFgContext*>(*context);
-    if (auto desc = ffx::DynamicCast<ffxDispatchDescFrameGeneration>(header))
+    switch (header->type)
     {
-        const ffxDispatchDescFrameGenerationPrepare* prepDesc = &internal_context->prepareDescriptions[desc->frameID % MAX_QUEUED_FRAMES];
+    case FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION:
+    {
+        const ffxDispatchDescFrameGeneration* desc = reinterpret_cast<const ffxDispatchDescFrameGeneration*>(header);
+        const ffxDispatchDescFrameGenerationPrepareV2* prepDesc = &internal_context->prepareDescriptions[desc->frameID % MAX_QUEUED_FRAMES];
+
+        // Detect disjoint frameID values
+        const bool bFrameID_Decreased = desc->frameID < internal_context->lastFrameID;
+        const bool bFrameID_Skipped = (desc->frameID - internal_context->lastFrameID) > 1;
+        const bool bDisjointFrameID = bFrameID_Decreased || bFrameID_Skipped || (desc->frameID != internal_context->lastConfigureFrameID);
+        const bool bReset = desc->reset || prepDesc->reset || bDisjointFrameID; // User reset or SwapChain internal reset condition or disjoint frames
 
         // Optical flow
         {
+
             FfxOpticalflowDispatchDescription ofDispatchDesc{};
             ofDispatchDesc.commandList = desc->commandList;
             ofDispatchDesc.color = desc->presentColor;
@@ -459,7 +577,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
             {
                 ofDispatchDesc.color = internal_context->HUDLessColor;
             }
-            ofDispatchDesc.reset = desc->reset;
+            ofDispatchDesc.reset = bReset;
             ofDispatchDesc.backbufferTransferFunction = desc->backbufferTransferFunction;
             ofDispatchDesc.minMaxLuminance.x = desc->minMaxLuminance[0];
             ofDispatchDesc.minMaxLuminance.y = desc->minMaxLuminance[1];
@@ -471,6 +589,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
 
         // Frame interpolation
         {
+
             FfxFrameInterpolationDispatchDescription fiDispatchDesc{0};
 
             // don't dispatch interpolation async for now: use the same commandlist for copy and interpolate
@@ -479,8 +598,7 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
             fiDispatchDesc.displaySize.height = desc->presentColor.description.height;
             fiDispatchDesc.currentBackBuffer = desc->presentColor;
             fiDispatchDesc.currentBackBuffer_HUDLess = internal_context->HUDLessColor;
-            fiDispatchDesc.reset = desc->reset;
-
+            fiDispatchDesc.reset = bReset;
             fiDispatchDesc.renderSize.width  = prepDesc->renderSize.width;
             fiDispatchDesc.renderSize.height = prepDesc->renderSize.height;
             fiDispatchDesc.output = desc->outputs[0];
@@ -493,7 +611,6 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
             fiDispatchDesc.cameraFar = prepDesc->cameraFar;
             fiDispatchDesc.viewSpaceToMetersFactor = prepDesc->viewSpaceToMetersFactor;
             fiDispatchDesc.cameraFovAngleVertical = prepDesc->cameraFovAngleVertical;
-            
             fiDispatchDesc.dilatedDepth = internal_context->backendInterfaceShared.fpGetResource( &internal_context->backendInterfaceShared, internal_context->sharedResources[FFX_FSR3_RESOURCE_IDENTIFIER_DILATED_DEPTH_0 + (internal_context->sharedResoureFrameToggle * FFX_FSR3_RESOURCE_IDENTIFIER_UPSCALED_COUNT)]);
             fiDispatchDesc.dilatedMotionVectors = internal_context->backendInterfaceShared.fpGetResource( &internal_context->backendInterfaceShared, internal_context->sharedResources[FFX_FSR3_RESOURCE_IDENTIFIER_DILATED_MOTION_VECTORS_0 + (internal_context->sharedResoureFrameToggle * FFX_FSR3_RESOURCE_IDENTIFIER_UPSCALED_COUNT)]);
             fiDispatchDesc.reconstructedPrevDepth = internal_context->backendInterfaceShared.fpGetResource( &internal_context->backendInterfaceShared, internal_context->sharedResources[FFX_FSR3_RESOURCE_IDENTIFIER_RECONSTRUCTED_PREVIOUS_NEAREST_DEPTH_0 + (internal_context->sharedResoureFrameToggle * FFX_FSR3_RESOURCE_IDENTIFIER_UPSCALED_COUNT)]);
@@ -517,7 +634,6 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
             {
                 fiDispatchDesc.flags |= FFX_FRAMEINTERPOLATION_DISPATCH_DRAW_DEBUG_TEAR_LINES;
             }
-
             
             if (internal_context->frameGenFlags & FFX_FRAMEGENERATION_FLAG_DRAW_DEBUG_RESET_INDICATORS)
             {
@@ -550,13 +666,65 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
                 fiDispatchDesc.distortionField = internal_context->distortionField;
             }
             TRY2(ffxFrameInterpolationDispatch(&internal_context->fiContext, &fiDispatchDesc));
+
+            internal_context->lastFrameID = desc->frameID;
         }
 
-        return FFX_API_RETURN_OK;
+        break;
     }
-    else if (auto desc = ffx::DynamicCast<ffxDispatchDescFrameGenerationPrepare>(header))
+
+#pragma FFX_PRAGMA_WARNING_PUSH
+#pragma FFX_PRAGMA_WARNING_DISABLE_DEPRECATIONS
+
+    case FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE:
+    case FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_V2:
     {
-        internal_context->prepareDescriptions[desc->frameID % MAX_QUEUED_FRAMES] = *desc;
+        ffxDispatchDescFrameGenerationPrepareV2* desc;
+        if (header->type == FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE)
+        {
+            const ffxDispatchDescFrameGenerationPrepare* desc_v1 = reinterpret_cast<const ffxDispatchDescFrameGenerationPrepare*>(header);
+
+            desc = &internal_context->prepareDescriptions[desc_v1->frameID % MAX_QUEUED_FRAMES];
+
+            memcpy(desc, desc_v1, sizeof(ffxDispatchDescFrameGenerationPrepare));
+            desc->reset = false;
+
+            bool bCameraInfoPresent = false;
+            for (auto it = header; it; it = it->pNext)
+            {
+                if (auto cameraInfoDesc = ffx::DynamicCast<ffxDispatchDescFrameGenerationPrepareCameraInfo>(it))
+                {
+                        memcpy(desc->cameraPosition, &cameraInfoDesc->cameraPosition, sizeof(FfxFloat32x3));
+                        memcpy(desc->cameraUp, &cameraInfoDesc->cameraUp, sizeof(FfxFloat32x3));
+                        memcpy(desc->cameraRight, &cameraInfoDesc->cameraRight, sizeof(FfxFloat32x3));
+                        memcpy(desc->cameraForward, &cameraInfoDesc->cameraForward, sizeof(FfxFloat32x3));
+                        bCameraInfoPresent = true;
+                }
+            }
+
+            if (internal_context->debugCheckEnabled)
+            {
+                FFX_PRINT_MESSAGE_ONCE(FFX_API_MESSAGE_TYPE_WARNING, L"ffxDispatchDescFrameGenerationPrepare is deprecated, update to ffxDispatchDescFrameGenerationPrepareV2.");
+
+                if (desc_v1->unused_reset)
+                {
+                    FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"ffxDispatchDescFrameGenerationPrepare::unused_reset was never implemented and will be ignored, update to ffxDispatchDescFrameGenerationPrepareV2::reset.");
+                }
+                if (!bCameraInfoPresent)
+                {
+                    FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"ffxDispatchDescFrameGenerationPrepareCameraInfo is not linked to ffxDispatchDescFrameGenerationPrepare. Camera view matrix data is a prerequisite for MLFI provider enablement.");
+                }
+            }
+
+#pragma FFX_PRAGMA_WARNING_POP
+
+        }
+        else   
+        {
+            const ffxDispatchDescFrameGenerationPrepareV2* desc_v2 = reinterpret_cast<const ffxDispatchDescFrameGenerationPrepareV2*>(header);
+            memcpy(&internal_context->prepareDescriptions[desc_v2->frameID % MAX_QUEUED_FRAMES], desc_v2, sizeof(ffxDispatchDescFrameGenerationPrepareV2));
+            desc = &internal_context->prepareDescriptions[desc_v2->frameID % MAX_QUEUED_FRAMES];
+        }
 
         internal_context->sharedResoureFrameToggle = (internal_context->sharedResoureFrameToggle + 1) & 1;
 
@@ -582,25 +750,38 @@ ffxReturnCode_t ffxProvider_Fsr3FrameGeneration::Dispatch(ffxContext* context, c
         dispatchDesc.dilatedMotionVectors = internal_context->backendInterfaceShared.fpGetResource( &internal_context->backendInterfaceShared, internal_context->sharedResources[FFX_FSR3_RESOURCE_IDENTIFIER_DILATED_MOTION_VECTORS_0 + (internal_context->sharedResoureFrameToggle * FFX_FSR3_RESOURCE_IDENTIFIER_UPSCALED_COUNT)]);
         dispatchDesc.reconstructedPrevDepth = internal_context->backendInterfaceShared.fpGetResource( &internal_context->backendInterfaceShared, internal_context->sharedResources[FFX_FSR3_RESOURCE_IDENTIFIER_RECONSTRUCTED_PREVIOUS_NEAREST_DEPTH_0 + (internal_context->sharedResoureFrameToggle * FFX_FSR3_RESOURCE_IDENTIFIER_UPSCALED_COUNT)]);
 
-        for (auto it = header; it; it = it->pNext)
+        memcpy(dispatchDesc.cameraPosition, &desc->cameraPosition, sizeof(FfxFloat32x3));
+        memcpy(dispatchDesc.cameraUp, &desc->cameraUp, sizeof(FfxFloat32x3));
+        memcpy(dispatchDesc.cameraRight, &desc->cameraRight, sizeof(FfxFloat32x3));
+        memcpy(dispatchDesc.cameraForward, &desc->cameraForward, sizeof(FfxFloat32x3));
+
+        if (internal_context->debugCheckEnabled)
         {
-            if (auto cameraInfoDesc = ffx::DynamicCast<ffxDispatchDescFrameGenerationPrepareCameraInfo>(it))
+            static const FfxFloat32x3 zeroVector3D = { 0.f,0.f,0.f };
+            if ((memcmp(desc->cameraPosition, zeroVector3D, sizeof(FfxFloat32x3)) == 0) &&
+                (memcmp(desc->cameraUp, zeroVector3D, sizeof(FfxFloat32x3)) == 0) &&
+                (memcmp(desc->cameraRight, zeroVector3D, sizeof(FfxFloat32x3)) == 0) &&
+                (memcmp(desc->cameraForward, zeroVector3D, sizeof(FfxFloat32x3)) == 0))
             {
-                memcpy(dispatchDesc.cameraPosition, &cameraInfoDesc->cameraPosition, sizeof(FfxFloat32x3));
-                memcpy(dispatchDesc.cameraUp, &cameraInfoDesc->cameraUp, sizeof(FfxFloat32x3));
-                memcpy(dispatchDesc.cameraRight, &cameraInfoDesc->cameraRight, sizeof(FfxFloat32x3));
-                memcpy(dispatchDesc.cameraForward, &cameraInfoDesc->cameraForward, sizeof(FfxFloat32x3));
+                FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"Camera view matrix parameters (cameraPosition, cameraUp, cameraRight, cameraForward) are all zero vectors, indicating they remain at their default initialized values. These parameters must be properly set by the application for optimal MLFI quality.");
             }
         }
 
         TRY2(ffxFrameInterpolationPrepare(&internal_context->fiContext, &dispatchDesc));
 
-        return FFX_API_RETURN_OK;
+        break;
     }
-    else
+    default:
     {
         return FFX_API_RETURN_ERROR_PARAMETER;
     }
+    }
+
+    return FFX_API_RETURN_OK;
 }
 
-ffxProvider_Fsr3FrameGeneration ffxProvider_Fsr3FrameGeneration::Instance;
+ffxProvider_Fsr3FrameGeneration& ffxProvider_Fsr3FrameGeneration::GetInstance()
+{
+    static ffxProvider_Fsr3FrameGeneration instance;
+    return instance;
+}
