@@ -195,6 +195,7 @@ STRUCT_BEGIN(GGUserFile_SystemVars, "")
 	STRUCT_FIELD(std::string, CameraFarPlane_varName, "CameraFarPlane", "", 0)
 	STRUCT_FIELD(std::string, ShadingRateImageTileSize_varName, "ShadingRateImageTileSize", "", 0)
 	STRUCT_FIELD(std::string, KeyState_bufferName, "", "256 entries for the keys this frame, and 256 entries for the keys last frame. 512 entries total.", 0)
+    STRUCT_FIELD(float, motionVectorDepthThreshold, 0.1f, "Maximum allowed difference between depth values when comparing pixels for motion vector inlier selection.", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(GGUserFile_SavedVariable, "Saved Variable Values")
