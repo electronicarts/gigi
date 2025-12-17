@@ -107,7 +107,7 @@ bool ShowErrorMessage(const char* msg, ...)
 
 	if (!g_headlessMode)
 	{
-		switch (MessageBoxA(nullptr, buffer, "Gigi GigiAssert", MB_ABORTRETRYIGNORE | MB_DEFBUTTON3 | MB_ICONERROR))
+		switch (MessageBoxA(nullptr, buffer, "Gigi Assert", MB_ABORTRETRYIGNORE | MB_DEFBUTTON3 | MB_ICONERROR))
 		{
 			case IDRETRY:
 			{

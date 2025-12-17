@@ -376,7 +376,7 @@ constexpr bool D3D12IsLayoutOpaque( D3D12_TEXTURE_LAYOUT Layout ) noexcept
 template< typename T >
 inline T D3DX12Align(T uValue, T uAlign)
 {
-    // GigiAssert power of 2 alignment
+    // Assert power of 2 alignment
     D3DX12_ASSERT(0 == (uAlign & (uAlign - 1)));
     T uMask = uAlign - 1;
     T uResult = (uValue + uMask) & ~uMask;

@@ -2839,7 +2839,7 @@ struct ShaderAssertsVisitor
                 };
 
                 std::string_view token(tokenStr);
-                const std::string_view prefix("/*$(GigiAssert:");
+                const std::string_view prefix("/*$(Assert:");
                 const std::string_view suffix(")*/");
 
                 if (!BeginsWith(token.data(), prefix.data()))
@@ -3022,7 +3022,7 @@ struct ShaderAssertsVisitor
             node.actionWorkGraph.connections.push_back(std::move(newConnection));
         else
         {
-            ShowErrorMessage("Shaders GigiAssert: failed to add node connection: unsupported node type '%d'", node._index);
+            ShowErrorMessage("Shaders Assert: failed to add node connection: unsupported node type '%d'", node._index);
             return false;
         }
 

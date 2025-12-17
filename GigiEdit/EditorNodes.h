@@ -532,7 +532,6 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_WorkGraph>(renderGraph, shaderIndex, node, 0, ret);
     node.connections.resize(numNewConnections);
 
-
     // Shading Rate Image
     NodePinInfo pin;
     pin.name = "records";
@@ -540,7 +539,6 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     pin.inputNodePin = &node.records.pin;
     pin.accessLabel = " (R)";
     ret.push_back(pin);
-
 
     return ret;
 }
