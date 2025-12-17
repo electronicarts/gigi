@@ -409,6 +409,11 @@
                     "name": "Color",
                     "access": "UAV",
                     "type": "Texture"
+                },
+                {
+                    "name": "UITexture",
+                    "access": "UAV",
+                    "type": "Texture"
                 }
             ]
         }
@@ -543,6 +548,9 @@
                         "motionVectors": {
                             "node": "Transparent",
                             "pin": "colorTarget2"
+                        },
+                        "exposure": {
+                            "node": "Output Render UI"
                         },
                         "reactive": {
                             "node": "Reactive",
@@ -777,6 +785,7 @@
                     {},
                     {},
                     {},
+                    {},
                     {}
                 ],
                 "vertexShader": {
@@ -824,9 +833,18 @@
                     }
                 ],
                 "frontIsCounterClockwise": false,
+                "shadingRateImage": {
+                    "node": "Output Render UI"
+                },
                 "vertexBuffer": {
                     "node": "vertexBuffer",
                     "pin": "resource"
+                },
+                "indexBuffer": {
+                    "node": "Output Render UI"
+                },
+                "instanceBuffer": {
+                    "node": "Output Render UI"
                 },
                 "colorTargets": [
                     {
@@ -841,7 +859,9 @@
                         "node": "Motion Vectors",
                         "pin": "resource"
                     },
-                    {},
+                    {
+                        "node": "Output Render UI"
+                    },
                     {},
                     {},
                     {},
@@ -896,6 +916,7 @@
                     {},
                     {},
                     {},
+                    {},
                     {}
                 ],
                 "vertexShader": {
@@ -941,9 +962,18 @@
                     }
                 ],
                 "frontIsCounterClockwise": false,
+                "shadingRateImage": {
+                    "node": "Output Render UI"
+                },
                 "vertexBuffer": {
                     "node": "Opaue",
                     "pin": "vertexBuffer"
+                },
+                "indexBuffer": {
+                    "node": "Output Render UI"
+                },
+                "instanceBuffer": {
+                    "node": "Output Render UI"
                 },
                 "colorTargets": [
                     {
@@ -958,7 +988,9 @@
                         "node": "Opaue",
                         "pin": "colorTarget2"
                     },
-                    {},
+                    {
+                        "node": "Output Render UI"
+                    },
                     {},
                     {},
                     {},
@@ -1007,7 +1039,7 @@
             "resourceTexture": {
                 "name": "Output SDR",
                 "editorPos": [
-                    507.0,
+                    491.0,
                     370.0
                 ],
                 "format": {
@@ -1067,6 +1099,7 @@
                 "linkProperties": [
                     {},
                     {},
+                    {},
                     {}
                 ],
                 "connections": [
@@ -1081,7 +1114,11 @@
                         "dstPin": "output"
                     },
                     {
-                        "srcPin": "Pin 2"
+                        "srcPin": "Pin 2",
+                        "dstNode": "Output Render UI"
+                    },
+                    {
+                        "srcPin": "Pin 3"
                     }
                 ]
             }
@@ -1130,6 +1167,7 @@
                     274.0
                 ],
                 "linkProperties": [
+                    {},
                     {}
                 ],
                 "connections": [
@@ -1137,6 +1175,11 @@
                         "srcPin": "Color",
                         "dstNode": "Copy No HUD",
                         "dstPin": "source"
+                    },
+                    {
+                        "srcPin": "UITexture",
+                        "dstNode": "Output Render UI",
+                        "dstPin": "resource"
                     }
                 ],
                 "shader": {
@@ -1186,6 +1229,25 @@
                 "dest": {
                     "node": "Output SDR No HUD",
                     "pin": "resource"
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output Render UI",
+                "editorPos": [
+                    843.0,
+                    418.0
+                ],
+                "format": {
+                    "node": {
+                        "name": "Output SDR"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Color"
+                    }
                 }
             }
         }
