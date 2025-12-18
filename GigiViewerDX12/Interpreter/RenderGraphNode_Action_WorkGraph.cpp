@@ -15,31 +15,33 @@ void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPrev
 
     if (m_stateObject)
     {
-        m_stateObject->Release();
+        interpreter.m_delayedRelease.Add(m_stateObject);
         m_stateObject = nullptr;
     }
 
     if (m_rootSignature)
     {
-        m_rootSignature->Release();
+        interpreter.m_delayedRelease.Add(m_rootSignature);
         m_rootSignature = nullptr;
     }
 
     if (m_backingMemory)
     {
-        m_backingMemory->Release();
+        interpreter.m_delayedRelease.Add(m_backingMemory);
         m_backingMemory = nullptr;
     }
 
     if (m_records)
     {
-        m_records->Release();
+        interpreter.m_delayedRelease.Add(m_records);
         m_records = nullptr;
     }
 }
 
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_WorkGraph& node, RuntimeTypes::RenderGraphNode_Action_WorkGraph& runtimeData, NodeAction nodeAction)
 {
+    ScopeProfiler _p(m_profiler, (node.c_shorterTypeName + ": " + node.name).c_str(), nullptr, nodeAction == NodeAction::Execute, false);
+
     if (nodeAction == NodeAction::Init)
     {
         // check support:
