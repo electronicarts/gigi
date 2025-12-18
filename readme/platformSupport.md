@@ -13,10 +13,10 @@ Below are the details of what is supported on each platform, based on the unit t
 
 | Platform | Supported Tests | Unsupported Tests | Support Rate |
 |----------|----------------|-------------------|--------------|
-| Viewer | 94/94 | 0/94 | 100.0% |
-| DX12 | 68/94 | 26/94 | 72.3% |
-| WebGPU | 50/94 | 44/94 | 53.2% |
-| UE 5.3 | 20/94 | 74/94 | 21.3% |
+| Viewer | 96/96 | 0/96 | 100.0% |
+| DX12 | 68/96 | 28/96 | 70.8% |
+| WebGPU | 50/96 | 46/96 | 52.1% |
+| UE 5.3 | 20/96 | 76/96 | 20.8% |
 
 ## Detailed Test Support by Platform
 
@@ -116,3 +116,5 @@ Below are the details of what is supported on each platform, based on the unit t
 | `Textures\TextureCubeRW_PS` | ✅ | ✅ | ❌ | ❌ |
 | `Textures\TextureCubeRW_RGS` | ✅ | ✅ | ❌ | ❌ |
 | `Textures\TextureFormats` | ✅ | ✅ | ✅ | ❌ |
+| `WorkGraphs\WGRecords` | ✅ | ❌ | ❌ | ❌ |
+| `WorkGraphs\WGSimple` | ✅ | ❌ | ❌ | ❌ |

@@ -291,18 +291,19 @@
   ShaderType:
     Host.ShaderType_FIRST = 0
     Host.ShaderType_Compute = 0
-    Host.ShaderType_RTRayGen = 1
-    Host.ShaderType_RTClosestHit = 2
-    Host.ShaderType_RTAnyHit = 3
-    Host.ShaderType_RTIntersection = 4
-    Host.ShaderType_RTMiss = 5
-    Host.ShaderType_Vertex = 6
-    Host.ShaderType_Pixel = 7
-    Host.ShaderType_Amplification = 8
-    Host.ShaderType_Mesh = 9
-    Host.ShaderType_Count = 10
-    Host.ShaderType_LAST = 10
-    Host.ShaderType_COUNT = 11
+    Host.ShaderType_WorkGraph = 1
+    Host.ShaderType_RTRayGen = 2
+    Host.ShaderType_RTClosestHit = 3
+    Host.ShaderType_RTAnyHit = 4
+    Host.ShaderType_RTIntersection = 5
+    Host.ShaderType_RTMiss = 6
+    Host.ShaderType_Vertex = 7
+    Host.ShaderType_Pixel = 8
+    Host.ShaderType_Amplification = 9
+    Host.ShaderType_Mesh = 10
+    Host.ShaderType_Count = 11
+    Host.ShaderType_LAST = 11
+    Host.ShaderType_COUNT = 12
 
   ShaderLanguage:
     Host.ShaderLanguage_FIRST = 0

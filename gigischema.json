@@ -144,7 +144,7 @@
           "type": {
             "description": "The type of shader it is",
             "type": "string",
-            "enum": ["Compute", "RTRayGen", "RTClosestHit", "RTAnyHit", "RTIntersection", "RTMiss", "Vertex", "Pixel", "Amplification", "Mesh", "Count"]
+            "enum": ["Compute", "WorkGraph", "RTRayGen", "RTClosestHit", "RTAnyHit", "RTIntersection", "RTMiss", "Vertex", "Pixel", "Amplification", "Mesh", "Count"]
           },
           "entryPoint": {
             "description": "The shader entrypoint.",
@@ -2587,6 +2587,261 @@
               }
             }
           },
+          "actionWorkGraph": {
+            "description": "",
+            "type": "object",
+            "properties": {
+              "name": {
+                "description": "The name of the node",
+                "type": "string"
+              },
+              "backends": {
+                "description": "This node can be limited to specific backends",
+                "type": "object",
+                "properties": {
+                  "backends": {
+                    "description": "A list of backends supported. Empty list means all backends",
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                    "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                    }
+                  },
+                  "isWhiteList": {
+                    "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "comment": {
+                "description": "A comment about the node which can appear in generated code",
+                "type": "string"
+              },
+              "editorPos": {
+                "description": "The position of the node in the editor",
+                "type": "array",
+                "minItems": 2,
+                "maxItems": 2,
+                "items": {
+                  "type": "number"
+                }
+              },
+              "condition": {
+                "description": "An optional condition added for the action to happen",
+                "type": "object",
+                "properties": {
+                  "variable1": {
+                    "description": "Value 1",
+                    "type": "string"
+                  },
+                  "comparison": {
+                    "description": "The comparison operator",
+                    "type": "string",
+                    "enum": ["IsFalse", "IsTrue", "Equals", "NotEquals", "LT", "LTE", "GT", "GTE", "Count"]
+                  },
+                  "value2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "variable2": {
+                    "description": "Value 2",
+                    "type": "string"
+                  },
+                  "alwaysFalse": {
+                    "description": "If checked, condition always evaluates to false",
+                    "type": "boolean"
+                  }
+                }
+              },
+              "linkProperties": {
+                "description": "Specify array index / mip level for each pin. Should be same size and order as GetNodePins family of functons.",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "UAVMipIndex": {
+                      "description": "The mip index to use, if this is a UAV connection.",
+                      "type": "integer"
+                    },
+                    "disallowDuplication": {
+                      "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
+                      "type": "boolean"
+                    },
+                    "bufferViewUnits": {
+                      "description": "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.",
+                      "type": "string",
+                      "enum": ["Items", "Bytes"]
+                    },
+                    "bufferViewBegin": {
+                      "description": "Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewBeginVariable": {
+                      "description": "If specified, this variable will control where buffer views begin.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
+                    "bufferViewSize": {
+                      "description": "How big the buffer view is, or 0 for the entire thing, starting from bufferViewBegin. Will use the minimum of this, and the actual size of the buffer.  If items, the count of items in the view of a buffer. For raw buffers, this is the number of uint32s.",
+                      "type": "integer"
+                    },
+                    "bufferViewSizeVariable": {
+                      "description": "If specified, this variable will control the buffer view size.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "connections": {
+                "description": "What is plugged into the pins",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "srcPin": {
+                      "description": "The name of this pin",
+                      "type": "string"
+                    },
+                    "dstNode": {
+                      "description": "The name of the node",
+                      "type": "string"
+                    },
+                    "dstPin": {
+                      "description": "The name of the pin",
+                      "type": "string"
+                    },
+                    "backends": {
+                      "description": "The backends this connection is present for.",
+                      "type": "object",
+                      "properties": {
+                        "backends": {
+                          "description": "A list of backends supported. Empty list means all backends",
+                          "type": "array",
+                          "items": {
+                            "type": "string",
+                          "enum": ["DX12", "UE_5_3", "WebGPU", "Interpreter"]
+                          }
+                        },
+                        "isWhiteList": {
+                          "description": "If true, this is a list of allowed platforms. if false, it's a list of disallowed platforms.",
+                          "type": "boolean"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "hideInViewer": {
+                "description": "Whether this node is only intermediate and should be hidden in a viewer.",
+                "type": "boolean"
+              },
+              "entryShader": {
+                "description": "The work graph entry shader.",
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "description": "The name of the shader",
+                    "type": "string"
+                  }
+                }
+              },
+              "shaderVariableAliases": {
+                "description": "",
+                "type": "object",
+                "properties": {
+                  "aliases": {
+                    "description": "",
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the alias. The name used in the /*$(VariableAlias:name)*/ tag in the shader.",
+                          "type": "string"
+                        },
+                        "variable": {
+                          "description": "",
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "description": "The name of the variable.",
+                              "type": "string"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "entryPoint": {
+                "description": "The shader entrypoint. Overrides the shader entry entryPoint.",
+                "type": "string"
+              },
+              "numRecords": {
+                "description": "how many records the work graph launches with. If a buffer is given, it is calculated from the buffer size divided by shader record stride instead.",
+                "type": "object",
+                "properties": {
+                  "value": {
+                    "description": "The value to use if no variable given",
+                    "type": "integer"
+                  },
+                  "variable": {
+                    "description": "The variable to use",
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "description": "The name of the variable.",
+                        "type": "string"
+                      }
+                    }
+                  }
+                }
+              },
+              "records": {
+                "description": "records to launch the work graph with",
+                "type": "object",
+                "properties": {
+                  "node": {
+                    "description": "The name of the node",
+                    "type": "string"
+                  },
+                  "pin": {
+                    "description": "The name of the pin",
+                    "type": "string"
+                  }
+                }
+              },
+              "defines": {
+                "description": "The defines the shaders ares compiled with, on top of whatever defines the shaders have already",
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "description": "The name of the define.",
+                      "type": "string"
+                    },
+                    "value": {
+                      "description": "The value of the define.",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            }
+          },
           "actionSubGraph": {
             "description": "",
             "type": "object",
@@ -4188,6 +4443,10 @@
             },
             "shaderModelCs": {
               "description": "The default shader model to use for compute shaders",
+              "type": "string"
+            },
+            "shaderModelWg": {
+              "description": "The default shader model to use for compute shader work graphs",
               "type": "string"
             },
             "shaderModelVs": {
