@@ -1113,7 +1113,7 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
     vars.insert(vars.begin(), "");
 
     // Get the longest text width of the server names
-    float comboWidth = 0.0f;
+    float comboWidth = ImGui::CalcTextSize(value.name.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
     for (const std::string& name : vars)
         comboWidth = std::max(comboWidth, ImGui::CalcTextSize(name.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
 

@@ -1907,6 +1907,9 @@ struct Example :
 
     void ShowVariablesWindow()
     {
+        // Make sure we have space for 1 more variable, since you can add a variable from UI within the variable window, which could otherwise invalidate the variable object being viewed, due to reallocation!
+        g_renderGraph.variables.reserve(g_renderGraph.variables.size() + 1);
+
         Variable newItem;
         newItem.name = "NewVariable";
         ShowDataWindow("Variables", g_renderGraph.variables, g_showWindows.Variables, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_variables), newItem, [](size_t index, const Variable& item) { return item.name; });
