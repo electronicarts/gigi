@@ -214,7 +214,7 @@ static bool g_renderDocCaptureNextFrame = false;
 static bool g_renderDocIsCapturing = false;
 static bool g_renderDocLaunchUI = false;
 static bool g_renderDocEnabled = false;
-static bool g_pixCaptureEnabled = false;
+static bool g_pixCaptureEnabled = true;
 static int g_renderDocFrameCaptureCount = 1;
 
 static AgilitySDKChoice g_agilitySDKChoice = AgilitySDKChoice::Retail;

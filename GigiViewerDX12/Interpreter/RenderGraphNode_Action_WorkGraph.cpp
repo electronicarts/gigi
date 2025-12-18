@@ -45,14 +45,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
     if (nodeAction == NodeAction::Init)
     {
         // check support:
-        D3D12_WORK_GRAPHS_TIER tier = D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED;
-        // check if supported: TODO: move to device itself, has some members for this
-        D3D12_FEATURE_DATA_D3D12_OPTIONS21 options = {};
-        if ((m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &options, sizeof(options))) == S_OK) {
-            tier = options.WorkGraphsTier;
-        }
-
-        if (tier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
+        if (m_dx12_options21.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
         {
             m_logFn(LogLevel::Error, "Work Graphs aren't supported on your device");
             return false; 
@@ -314,6 +307,11 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             runtimeData.m_programDesc.WorkGraph.BackingMemory.StartAddress = runtimeData.m_backingMemory->GetGPUVirtualAddress();
             runtimeData.m_programDesc.WorkGraph.BackingMemory.SizeInBytes = runtimeData.m_backingMemory->GetDesc().Width;
         }
+        else
+        {
+            runtimeData.m_programDesc.WorkGraph.BackingMemory.StartAddress = 0;
+            runtimeData.m_programDesc.WorkGraph.BackingMemory.SizeInBytes = 0;
+        }
 
         runtimeData.m_entrypointIndex = workGraphProperties->GetEntrypointIndex(workGraphIndex, { ToWideString(entrypoint.c_str()).c_str(), 0});
 
@@ -567,10 +565,8 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#setprogram
         // https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#dispatchgraph
 
-        auto cmdList = reinterpret_cast<ID3D12GraphicsCommandList10*>(m_commandList);
-
-        cmdList->SetProgram(&runtimeData.m_programDesc);
-        cmdList->DispatchGraph(&dispatchDesc);
+        m_graphicsCommandList10->SetProgram(&runtimeData.m_programDesc);
+        m_graphicsCommandList10->DispatchGraph(&dispatchDesc);
 
         // Clear backing memory initialization flag, as the graph has run at least once now
         // See https://microsoft.github.io/DirectX-Specs/d3d/WorkGraphs.html#d3d12_set_work_graph_flags
