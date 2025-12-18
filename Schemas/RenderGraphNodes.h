@@ -412,11 +412,6 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_Action
     STRUCT_FIELD(NodePinReference, dest, {}, "The resource being copied to.", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
-STRUCT_BEGIN(RenderState, "state to build the fixed pipeline from")
-    STRUCT_FIELD(DrawCullMode, cullMode, DrawCullMode::None, "", 0)
-    STRUCT_FIELD(bool, frontIsCounterClockwise, true, "", 0)
-STRUCT_END()
-
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBase, "Executes a work graph")
     STRUCT_CONST(std::string, c_editorName, "Work Graph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "WGraph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
