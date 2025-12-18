@@ -1,0 +1,20 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewType": 6,
+        "resourceViewNodeIndex": 3,
+        "resourceViewResourceIndex": 2,
+        "importedResources": [
+            {
+                "nodeName": "ImportedRecords",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "WGRecords.csv",
+                    "CSVHeaderRow": false,
+                    "structIndex": 0,
+                    "BLASOpaque": true
+                }
+            }
+        ]
+    }
+}

@@ -30,12 +30,6 @@ void RuntimeTypes::RenderGraphNode_Action_WorkGraph::Release(GigiInterpreterPrev
         interpreter.m_delayedRelease.Add(m_backingMemory);
         m_backingMemory = nullptr;
     }
-
-    if (m_records)
-    {
-        interpreter.m_delayedRelease.Add(m_records);
-        m_records = nullptr;
-    }
 }
 
 bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action_WorkGraph& node, RuntimeTypes::RenderGraphNode_Action_WorkGraph& runtimeData, NodeAction nodeAction)
@@ -285,9 +279,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         workGraphProperties->GetWorkGraphMemoryRequirements(workGraphIndex, &memoryRequirements);
 
         // Work graphs can also request no backing memory (i.e., MaxSizeInBytes = 0)
-        if (memoryRequirements.MaxSizeInBytes > 0) {
+        runtimeData.m_backingMemorySizeBytes = (uint32_t)memoryRequirements.MaxSizeInBytes;
+        if (runtimeData.m_backingMemorySizeBytes > 0) {
             CD3DX12_HEAP_PROPERTIES heapProperties(D3D12_HEAP_TYPE_DEFAULT);
-            CD3DX12_RESOURCE_DESC   resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(memoryRequirements.MaxSizeInBytes,
+            CD3DX12_RESOURCE_DESC   resourceDesc = CD3DX12_RESOURCE_DESC::Buffer(runtimeData.m_backingMemorySizeBytes,
                                                                                D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS);
             m_device->CreateCommittedResource(&heapProperties,
                 D3D12_HEAP_FLAG_NONE,
@@ -314,52 +309,13 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         }
 
         runtimeData.m_entrypointIndex = workGraphProperties->GetEntrypointIndex(workGraphIndex, { ToWideString(entrypoint.c_str()).c_str(), 0});
+        runtimeData.m_recordStrideInBytes = workGraphProperties->GetEntrypointRecordSizeInBytes(workGraphIndex, runtimeData.m_entrypointIndex);
 
-		runtimeData.m_records = CreateBuffer(m_device, sizeof(D3D12_NODE_GPU_INPUT), D3D12_RESOURCE_FLAG_NONE, D3D12_RESOURCE_STATE_GENERIC_READ, D3D12_HEAP_TYPE_UPLOAD, (node.name + " Records Buffer").c_str());
-		runtimeData.m_recordStrideInBytes = workGraphProperties->GetEntrypointRecordSizeInBytes(workGraphIndex, runtimeData.m_entrypointIndex);
-		if (runtimeData.m_recordStrideInBytes == 0)
-		{
-			D3D12_NODE_GPU_INPUT* gpuInput = nullptr;
-			D3D12_RANGE range = { 0, 0 };
-			runtimeData.m_records->Map(0, &range, (void**)&gpuInput);
-			gpuInput->EntrypointIndex = runtimeData.m_entrypointIndex;
-
-            // default to fixed amount of empty records
-            gpuInput->NumRecords = node.numRecords;
-            gpuInput->Records.StartAddress = 0;
-            gpuInput->Records.StrideInBytes = 0;
-			runtimeData.m_records->Unmap(0, nullptr);
-        }
-		else
-		{
-			// guarantee there is a fitting resource connected, otherwise fail 
-			bool valid = false;
-			if (node.records.resourceNodeIndex != -1)
-			{
-				const RenderGraphNode& resourceNode = m_renderGraph.nodes[node.records.resourceNodeIndex];
-				if (resourceNode._index == RenderGraphNode::c_index_resourceBuffer)
-				{
-					bool exists = false;
-					const auto& bufferInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str(), exists);
-					if (exists)
-					{
-						valid = true;
-					}
-				}
-			}
-
-			if (!valid)
-			{
-				m_logFn(LogLevel::Error, "%s, the work graph entry point uses input records with a non-zero size, but no records buffer has been bound to the work graph node. or the buffer that was bound has the wrong stride", node.name.c_str());
-				return false;
-			}
-		}
+        workGraphProperties->Release();
+        stateObjectProperties->Release();
     }
     else if (nodeAction == NodeAction::Execute)
     {
-        if (runtimeData.m_failed)
-            return false;
-
         // If we aren't supposed to do the work graph, exit out
         if (!EvaluateCondition(node.condition))
             return true;
@@ -367,64 +323,63 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         // Queue up transitions, so we only do them if we actually execute the node
         std::vector<TransitionTracker::Item> queuedTransitions;
 
-        // records buffer transition
-        if (node.records.resourceNodeIndex != -1)
+        // Make the GPU input for dispatching the entry point node of the work graph
+        D3D12_NODE_GPU_INPUT gpuInputCPU = {};
         {
-            const RenderGraphNode& resourceNode = m_renderGraph.nodes[node.records.resourceNodeIndex];
-            if (resourceNode._index == RenderGraphNode::c_index_resourceBuffer)
+            gpuInputCPU.EntrypointIndex = runtimeData.m_entrypointIndex;
+
+            // If there is no input record to the entry point node, use node.numRecords
+            if (runtimeData.m_recordStrideInBytes == 0)
             {
-                bool exists = false;
-                const auto& bufferInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str(), exists);
-                if (exists && bufferInfo.m_resource)
+                gpuInputCPU.NumRecords = node.numRecords;
+            }
+            // Otherwise, fill in the dispatch data using the records buffer
+            if (node.records.resourceNodeIndex != -1)
+            {
+                const RenderGraphNode& resourceNode = m_renderGraph.nodes[node.records.resourceNodeIndex];
+                if (resourceNode._index == RenderGraphNode::c_index_resourceBuffer)
                 {
-                    unsigned int bufferViewBegin = 0;
-                    unsigned int bufferViewSize = 0;
-                    bool bufferViewInBytes = false;
-
-                    int pinIdx = node.records.nodePinIndex; // TODO: jan test if works
-                    if (pinIdx < node.linkProperties.size())
+                    bool exists = false;
+                    const auto& bufferInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str(), exists);
+                    if (exists && bufferInfo.m_resource)
                     {
-                        const LinkProperties& linkProperties = node.linkProperties[pinIdx];
-                        bufferViewBegin = linkProperties.bufferViewBegin;
-                        bufferViewSize = linkProperties.bufferViewSize;
-                        bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                        unsigned int bufferViewBegin = 0;
+                        unsigned int bufferViewSize = 0;
+                        bool bufferViewInBytes = false;
+
+                        int pinIdx = node.records.nodePinIndex; // TODO: jan test if works
+                        if (pinIdx < node.linkProperties.size())
+                        {
+                            const LinkProperties& linkProperties = node.linkProperties[pinIdx];
+                            bufferViewBegin = linkProperties.bufferViewBegin;
+                            bufferViewSize = linkProperties.bufferViewSize;
+                            bufferViewInBytes = linkProperties.bufferViewUnits == MemoryUnitOfMeasurement::Bytes;
+                        }
+
+                        const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
+                        runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".recordsBuffer")).c_str()
+                            , resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count
+                            , false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
+
+                        // transition
+                        queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(bufferInfo.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, GetNodeName(resourceNode).c_str()) });
+
+                        if (node.records.resourceNodeIndex != -1 && runtimeData.m_recordStrideInBytes > 0)
+                        {
+                            const RenderGraphNode& resourceNode = m_renderGraph.nodes[node.records.resourceNodeIndex];
+                            if (resourceNode._index == RenderGraphNode::c_index_resourceBuffer)
+                            {
+                                bool exists = false;
+                                const auto& bufferInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str(), exists);
+                                if (exists)
+                                {
+                                    gpuInputCPU.NumRecords = bufferInfo.m_size / runtimeData.m_recordStrideInBytes;
+                                    gpuInputCPU.Records.StrideInBytes = runtimeData.m_recordStrideInBytes;
+                                    gpuInputCPU.Records.StartAddress = bufferInfo.m_resource->GetGPUVirtualAddress();
+                                }
+                            }
+                        }
                     }
-
-                    const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str());
-                    runtimeData.HandleViewableBuffer(*this, (node.name + std::string(".recordsBuffer")).c_str()
-                        , resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count
-                        , false, false, bufferViewBegin, bufferViewSize, bufferViewInBytes);
-
-                    // transition
-                    queuedTransitions.push_back({ TRANSITION_DEBUG_INFO_NAMED(bufferInfo.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, GetNodeName(resourceNode).c_str()) });
-
-					// if a buffer resource is bound: use that
-					// only need to do first time after execute, during execute the m_resource might not be initialized yet.
-					// todo: jan. might want more runtime dynamic updates??
-					if ((runtimeData.m_programDesc.WorkGraph.Flags & D3D12_SET_WORK_GRAPH_FLAG_INITIALIZE) > 0  
-						&& node.records.resourceNodeIndex != -1
-						&& runtimeData.m_recordStrideInBytes > 0)
-					{
-						const RenderGraphNode& resourceNode = m_renderGraph.nodes[node.records.resourceNodeIndex];
-						if (resourceNode._index == RenderGraphNode::c_index_resourceBuffer)
-						{
-							bool exists = false;
-							const auto& bufferInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(resourceNode.resourceBuffer.name.c_str(), exists);
-
-							// what about linkproperties: bufferviewBegin and size in items. could use here todo: jan + maybe more flexibility at runtime
-							D3D12_NODE_GPU_INPUT* gpuInput = nullptr;
-							D3D12_RANGE range = { 0, 0 };
-							runtimeData.m_records->Map(0, &range, (void**)&gpuInput);
-
-							gpuInput->EntrypointIndex = runtimeData.m_entrypointIndex;
-							gpuInput->NumRecords = bufferInfo.m_size;
-							gpuInput->Records.StrideInBytes = bufferInfo.m_stride;
-							gpuInput->Records.StartAddress = bufferInfo.m_resource->GetGPUVirtualAddress();
-
-							runtimeData.m_records->Unmap(0, nullptr);
-						}
-					}
-
                 }
             }
         }
@@ -554,11 +509,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         }
 
         std::ostringstream ss;
-        ss << "DispatchGraph:\n  " << node.name << '\n';
+        ss << "DispatchGraph:\n  " << node.name << "\n  NumRecords: " << gpuInputCPU.NumRecords << "\n  Backing Memory Bytes: " << runtimeData.m_backingMemorySizeBytes << "\n  Record Stride Bytes: " << runtimeData.m_recordStrideInBytes;
+
+        // Make an upload buffer holding the gpu input dispatch information
+        UploadBufferTracker::Buffer* gpuInputGPU = m_uploadBufferTracker.GetBufferT(m_device, false, gpuInputCPU);
 
         D3D12_DISPATCH_GRAPH_DESC dispatchDesc = {};
         dispatchDesc.Mode = D3D12_DISPATCH_MODE_NODE_GPU_INPUT;
-        dispatchDesc.NodeGPUInput = runtimeData.m_records->GetGPUVirtualAddress();
+        dispatchDesc.NodeGPUInput = gpuInputGPU->buffer->GetGPUVirtualAddress();
 
         // Set program and dispatch the work graphs.
         // See

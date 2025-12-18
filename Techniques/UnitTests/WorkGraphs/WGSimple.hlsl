@@ -9,9 +9,7 @@ struct PixelWorkRecord
 // Entry point: Get size of texture and do a dispatch to cover each pixel
 [Shader("node")]
 [NodeIsProgramEntry]
-[NodeLaunch("broadcasting")]
-[NodeDispatchGrid(1, 1, 1)]
-[NumThreads(1, 1, 1)]
+[NodeLaunch("thread")]
 void main(
     [MaxRecords(1)]
     [NodeID("PixelWriter")]
