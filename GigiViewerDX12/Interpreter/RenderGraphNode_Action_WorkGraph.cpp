@@ -331,7 +331,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             // If there is no input record to the entry point node, use node.numRecords
             if (runtimeData.m_recordStrideInBytes == 0)
             {
-                gpuInputCPU.NumRecords = node.numRecords;
+                gpuInputCPU.NumRecords = GetRuntimeVariableValueAllowCast_NoFail<bool>(node.numRecords.variable.variableIndex);
             }
             // Otherwise, fill in the dispatch data using the records buffer
             if (node.records.resourceNodeIndex != -1)

@@ -2477,6 +2477,33 @@ inline UIOverrideResult ShowUIOverride<ValueOrVariable_Float3>(RenderGraph& rend
 }
 
 template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Uint>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Uint& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+        {
+            int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+            renderGraph.variables[variableIndex].comment = tooltip;
+        };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Uint, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%u", value.value);
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
 inline UIOverrideResult ShowUIOverride<ValueOrVariable_Int4>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Int4& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
     auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()

@@ -333,6 +333,28 @@ struct HandleValueOrVariablesVisitor
         return true;
     }
 
+    bool Visit(ValueOrVariable_Uint& v, const std::string& path)
+    {
+        if (!v.variable.name.empty())
+            return true;
+
+        std::ostringstream valueString;
+        valueString << v.value;
+
+        Variable newVar;
+        newVar.name = FrontEndNodesNoCaching::GetUniqueVariableName(renderGraph, "ValOrVar");
+        newVar.comment = "Created for ValueOrVariable";
+        newVar.type = DataFieldType::Uint;
+        newVar.Const = true;
+        newVar.Static = true;
+        newVar.dflt = valueString.str();
+        renderGraph.variables.push_back(newVar);
+
+        v.variable.name = newVar.name;
+
+        return true;
+    }
+
     bool Visit(ValueOrVariable_Int4& v, const std::string& path)
     {
         if (!v.variable.name.empty())

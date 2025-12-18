@@ -422,7 +422,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBas
     STRUCT_FIELD(ShaderVariableAliases, shaderVariableAliases, {}, "", 0)
     STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
 
-    STRUCT_FIELD(int, numRecords, 1, "how many records the work graph launches with. If a buffer is given, it is calculated from the buffer size divided by shader record stride instead.", 0)
+    STRUCT_FIELD(ValueOrVariable_Uint, numRecords, { 1 }, "how many records the work graph launches with. If a buffer is given, it is calculated from the buffer size divided by shader record stride instead.", 0)
     STRUCT_FIELD(NodePinReferenceOptional, records, {}, "records to launch the work graph with", SCHEMA_FLAG_NO_UI)
 
     STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already", SCHEMA_FLAG_UI_COLLAPSABLE)
