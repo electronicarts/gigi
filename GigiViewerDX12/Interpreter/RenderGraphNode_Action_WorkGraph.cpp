@@ -36,15 +36,15 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 {
     ScopeProfiler _p(m_profiler, (node.c_shorterTypeName + ": " + node.name).c_str(), nullptr, nodeAction == NodeAction::Execute, false);
 
-    // check support:
-    if (m_dx12_options21.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED || m_graphicsCommandList10 == nullptr)
-    {
-        m_logFn(LogLevel::Error, "Work Graphs aren't supported on your device");
-        return false;
-    }
-
     if (nodeAction == NodeAction::Init)
     {
+        // check support:
+        if (m_dx12_options21.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED)
+        {
+            m_logFn(LogLevel::Error, "Work Graphs aren't supported on your device");
+            return false;
+        }
+
         // Select shader file name
         const auto shaderFileName = node.entryShader;
 
@@ -316,6 +316,13 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
     }
     else if (nodeAction == NodeAction::Execute)
     {
+        // check support:
+        if (m_dx12_options21.WorkGraphsTier == D3D12_WORK_GRAPHS_TIER_NOT_SUPPORTED || m_graphicsCommandList10 == nullptr)
+        {
+            m_logFn(LogLevel::Error, "Work Graphs aren't supported on your device");
+            return false;
+        }
+
         // If we aren't supposed to do the work graph, exit out
         if (!EvaluateCondition(node.condition))
             return true;

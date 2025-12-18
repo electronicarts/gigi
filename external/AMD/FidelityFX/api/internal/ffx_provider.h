@@ -24,52 +24,39 @@
 #include "../include/ffx_api.hpp"
 #include "../include/ffx_api_types.h"
 #include "ffx_internal_types.h"
+#include "ffx_api_helper.h"
 
-#define VERIFY(_cond, _retcode) \
-    if (!(_cond)) return _retcode
-
-#define TRY(_expr) \
-    if (ffxReturnCode_t _rc = (_expr); _rc != FFX_API_RETURN_OK) return _rc
-
-#define TRY2(_expr) \
-    if (FFX_OK != (_expr)) return FFX_API_RETURN_ERROR_RUNTIME_ERROR
-
-struct Allocator
-{
-    const ffxAllocationCallbacks* cb;
-
-    void* alloc(size_t sz)
-    {
-        if (cb)
-            return cb->alloc(cb->pUserData, static_cast<uint64_t>(sz));
-        else
-            return malloc(sz);
-    }
-
-    void dealloc(void* ptr)
-    {
-        if (cb)
-            cb->dealloc(cb->pUserData, ptr);
-        else
-            free(ptr);
-    }
-
-    template<typename T, typename... Args>
-    T* construct(Args&&... args)
-    {
-        void* addr = alloc(sizeof(T));
-        return ::new(addr) T(std::forward<Args>(args)...);
-    }
-};
+#include <optional>
+#include <span>
 
 class ffxProvider
 {
 public:
+    ffxProvider(uint64_t i_id, uint64_t i_effect_id, const char* i_version_name)
+        : RefCount(1), Id(i_id), EffectId(i_effect_id), VersionName(i_version_name)
+    {
+    }
+
     virtual ~ffxProvider() = default;
 
-    virtual bool CanProvide(uint64_t) const
+    size_t GetRefCount() const
     {
-        return false;
+        return RefCount;
+    }
+
+    uint64_t GetId() const
+    {
+        return Id;
+    }
+
+    const char* GetVersionName() const
+    {
+        return VersionName;
+    }
+
+    virtual bool CanProvide(uint64_t descType) const
+    {
+        return (descType & FFX_API_EFFECT_MASK) == EffectId;
     }
 
     virtual bool IsSupported(void* device) const
@@ -79,42 +66,233 @@ public:
         return true;
     }
 
-    virtual uint64_t GetId() const = 0;
+    virtual ffxReturnCode_t CreateContext(ffxContext* context, ffxCreateContextDescHeader* desc, Allocator& alloc) = 0;
 
-    virtual const char* GetVersionName() const = 0;
-
-    virtual ffxReturnCode_t CreateContext(ffxContext* context, ffxCreateContextDescHeader* desc, Allocator& alloc) const = 0;
-
-    virtual ffxReturnCode_t DestroyContext(ffxContext* context, Allocator& alloc) const = 0;
+    virtual ffxReturnCode_t DestroyContext(ffxContext* context, Allocator& alloc) = 0;
 
     virtual ffxReturnCode_t Configure(ffxContext* context, const ffxConfigureDescHeader* desc) const = 0;
 
     virtual ffxReturnCode_t Query(ffxContext* context, ffxQueryDescHeader* desc) const = 0;
 
     virtual ffxReturnCode_t Dispatch(ffxContext* context, const ffxDispatchDescHeader* desc) const = 0;
+
+protected:
+    size_t RefCount = 0;
+    uint64_t Id;
+    uint64_t EffectId;
+    const char* VersionName;
 };
-
-const ffxProvider* GetffxProvider(ffxStructType_t descType, uint64_t overrideId, void* device);
-
-const ffxProvider* GetAssociatedProvider(ffxContext* context);
-
-uint64_t GetProviderCount(ffxStructType_t descType, void* device);
-
-uint64_t GetProviderVersions(ffxStructType_t descType, void* device, uint64_t capacity, uint64_t* versionIds, const char** versionNames);
 
 struct InternalContextHeader
 {
-    const ffxProvider* provider;
+    ffxProvider* provider;
 };
 
-template<typename T>
-static inline T ConvertEnum(uint32_t enumVal)
+inline ffxProvider* GetAssociatedProvider(ffxContext context)
 {
-    return static_cast<T>(enumVal);
+    return reinterpret_cast<InternalContextHeader*>(context)->provider;
 }
 
-template<typename T>
-static inline uint32_t ReverseConvertEnum(T enumVal)
+#if FFX_BACKEND_DX12
+#include "../../amdinternal/api/internal/dx12/ffx_provider_external.h"
+#else
+typedef char ffxProviderExternal; // fallback type definition for backends without external providers
+#endif
+
+ffxProvider* GetProvider(ffxStructType_t descType, uint64_t overrideId, void* device, std::optional<ffxProviderExternal>& extProviderSlot);
+
+inline ffxProvider* GetProvider(ffxStructType_t descType, uint64_t overrideId, void* device, std::optional<ffxProviderExternal>& extProviderSlot, std::span<ffxProvider* const> providers)
 {
-    return static_cast<T>(enumVal);
+#if FFX_BACKEND_DX12
+    // check driver-side provider
+    extProviderSlot.emplace(reinterpret_cast<ID3D12Device*>(device), descType);
+#else
+    // Unreferenced parameter
+    (void)extProviderSlot;
+#endif
+
+    // If we are overriding, do not make the best provider choice decision.
+    // Also assume that the version id comes from a previous version enumeration call, meaning assume IsSupported returns true on this device.
+    // This is necessary to support queries with a null-context, where device will be null (none of those currently have a device feature requirement).
+    if (overrideId)
+    {
+#if FFX_BACKEND_DX12
+        if (extProviderSlot && extProviderSlot->Valid())
+        {
+            if (extProviderSlot->GetId() == overrideId && extProviderSlot->CanProvide(descType))
+                return &*extProviderSlot;
+        }
+#endif
+
+        for (auto provider : providers)
+        {
+            if (provider->GetId() == overrideId && provider->CanProvide(descType))
+                return provider;
+        }
+    }
+    else
+    {
+        ffxProvider* bestInternalProvider = nullptr;
+        for (auto provider : providers)
+        {
+            if (provider->CanProvide(descType) && provider->IsSupported(device))
+            {
+                bestInternalProvider = provider;
+                break;
+            }
+        }
+
+#if FFX_BACKEND_DX12
+        // we assume that external providers are vetted for hardware support by the driver, so no call to IsSupported.
+        if (extProviderSlot && extProviderSlot->Valid() && extProviderSlot->CanProvide(descType))
+        {
+            if (bestInternalProvider)
+            {
+                // Do a version check, and take the newest version.
+                // Ids have lowest 31b valid - bit32 is reserved for "driver override" indication
+                uint64_t extId = extProviderSlot->GetId() & (0x7FFFFFFFu);
+                uint64_t intId = bestInternalProvider->GetId() & (0x7FFFFFFFu);
+
+                if (extId > intId)
+                {
+                    return &*extProviderSlot;
+                }
+            }
+            else
+            {
+                return &*extProviderSlot;
+            }
+        }
+#endif
+
+        return bestInternalProvider;
+    }
+
+    return nullptr;
+}
+
+uint64_t GetProviderVersions(ffxStructType_t descType, void* device, uint64_t capacity, uint64_t* versionIds, const char** versionNames, std::optional<ffxProviderExternal>& extProviderSlot);
+
+inline uint64_t GetProviderVersions(ffxStructType_t descType, void* device, uint64_t capacity, uint64_t* versionIds, const char** versionNames, std::optional<ffxProviderExternal>& extProviderSlot, std::span<ffxProvider* const> providers)
+{
+    uint64_t count = 0;
+
+#if FFX_BACKEND_DX12
+    // check driver-side provider
+    extProviderSlot.emplace(reinterpret_cast<ID3D12Device*>(device), descType);
+    static char extProviderName[64];
+
+    // In order to eliminate redundant driver versions of each effect, first gather what is in the Game SDK
+    uint64_t* sdk_versions = (uint64_t*)alloca(providers.size() * sizeof(uint64_t));
+    for (uint32_t index = 0; index < providers.size(); index++)
+    {
+        ffxProvider* provider = providers[index];
+        if (provider->CanProvide(descType) && provider->IsSupported(device))
+        {
+            sdk_versions[index] = provider->GetId();
+        }
+        else
+        {
+            sdk_versions[index] = 0;
+        }
+    }
+
+    if (count < capacity)
+    {
+        if (extProviderSlot->Valid() && extProviderSlot->CanProvide(descType))
+        {
+            bool add_to_list = true;
+            auto index = count;
+            uint64_t version = extProviderSlot->GetId();
+
+            // Only show driver versions that are:
+            // - A different effect 
+            // - A different major version
+            // - The same effect & major version, but greater minor.patch.release
+            // This reduces confusion for the user.
+            for (uint32_t i = 0; i < providers.size(); i++)
+            {
+                if (sdk_versions[i])
+                {
+                    uint64_t ext_ident = (version & 0xFFFFFFFF00000000llu);
+                    uint64_t sdk_ident = (sdk_versions[i] & 0xFFFFFFFF00000000llu);
+                    uint32_t ext_major = ((version & 0x7FFFFFFF) >> 22);
+                    uint32_t sdk_major = ((sdk_versions[i] & 0x7FFFFFFF) >> 22);
+                    if ((ext_ident == sdk_ident) && (sdk_major == ext_major))
+                    {
+                        add_to_list = ((version & 0x7FFFFFFF) > (sdk_versions[i] & 0x7FFFFFFF));
+                    }
+                }
+            }
+
+            if (add_to_list)
+            {
+                count++;
+                if (versionIds)
+                    versionIds[index] = extProviderSlot->GetId();
+                if (versionNames)
+                {
+                    // this needs to be copied. points into dll, which may not outlive the caller.
+                    strncpy_s(extProviderName, extProviderSlot->GetVersionName(), sizeof(extProviderName));
+                    versionNames[index] = extProviderName;
+                }
+            }
+        }
+    }
+#else
+    // Unreferenced parameter
+    (void)extProviderSlot;
+#endif
+
+    for (auto provider : providers)
+    {
+        if (count >= capacity) break;
+        if (provider->CanProvide(descType) && provider->IsSupported(device))
+        {
+            auto index = count;
+            count++;
+            if (versionIds)
+                versionIds[index] = provider->GetId();
+            if (versionNames)
+                versionNames[index] = provider->GetVersionName();
+        }
+    }
+
+    // Sort the returned versions by version ids so newest version is at beginning of array.
+    // If same ID, show the internal provider before driver provider.
+    // Can't use std::sort to sort two arrays, so implemented as insertion sort
+    // (most std implementations use this anyway for small arrays, also should be fast since versions are likely to be almost sorted).
+    // Only sort if version ids array is requested. This can result in a different version order when called with only names than with only ids or with both.
+    if (versionIds)
+    {
+        for (uint64_t i = 1; i < count; i++)
+        {
+            uint64_t j = i;
+            while (j > 0 && (versionIds[j] & 0x7FFFFFFF) >= (versionIds[j - 1] & 0x7FFFFFFF))
+            {
+                if (((versionIds[j] & 0x7FFFFFFF) == (versionIds[j - 1] & 0x7FFFFFFF)) && (versionIds[j - 1] & 0x80000000u))
+                {
+                    //if the ids are equal, but the previous one is an driver provider, show the internal provider first
+                    std::swap(versionIds[j], versionIds[j - 1]);
+                    if (versionNames)
+                        std::swap(versionNames[j], versionNames[j - 1]);
+                }
+                else
+                {
+                    // if the current version is newer than the previous one, swap them
+                    std::swap(versionIds[j], versionIds[j - 1]);
+                    if (versionNames)
+                        std::swap(versionNames[j], versionNames[j - 1]);
+                }
+                j--;
+            }
+        }
+    }
+
+    return count;
+}
+
+inline uint64_t GetProviderCount(ffxStructType_t descType, void* device, std::optional<ffxProviderExternal>& extProviderSlot)
+{
+    return GetProviderVersions(descType, device, UINT64_MAX, nullptr, nullptr, extProviderSlot);
 }

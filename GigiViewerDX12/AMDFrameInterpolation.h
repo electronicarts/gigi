@@ -14,7 +14,8 @@ struct IDXGISwapChain4;
 struct ID3D12CommandQueue;
 struct ID3D12Device14;
 struct ID3D12GraphicsCommandList;
-struct GGUserFile_Camera;
+struct GGUserFile_SystemVars;
+
 class Camera;
 
 namespace AMDFrameInterpolation
@@ -41,7 +42,7 @@ namespace AMDFrameInterpolation
     void Init(const GigiInterpreterPreviewWindowDX12& interpreter, ID3D12Device14* device, IDXGISwapChain4*& swapChain, ID3D12CommandQueue* commandQueue);
     void Release();
 
-    void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, GigiInterpreterPreviewWindowDX12& interpreter, IDXGISwapChain4*& swapChain, const GGUserFile_Camera& cameraSettings, const Camera& cameraState, const Desc& desc);
+    void Tick(const GGUserFile_AMD_FidelityFXSDK_FrameInterpolation& settings, const GGUserFile_SystemVars& sysSettigns, GigiInterpreterPreviewWindowDX12& interpreter, IDXGISwapChain4*& swapChain, const Camera& cameraState, const Desc& desc);
 
     const std::vector<Version>& GetVersions(ID3D12Device14* device);
 };

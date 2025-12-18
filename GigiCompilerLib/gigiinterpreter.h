@@ -428,7 +428,7 @@ public:
 				dest = (B != 0) ? A / B : 0;
 				break;
 			}
-			case SetVariableOperator::Modulo: dest = A % B; break;
+			case SetVariableOperator::Modulo: if (B != 0) { dest = A % B; } break;
 
 			case SetVariableOperator::BitwiseOr: dest = A | B; break;
 			case SetVariableOperator::BitwiseAnd: dest = A & B; break;
@@ -1015,6 +1015,7 @@ public:
 	{
 		return m_runtimeVariables[index];
 	}
+
 	RuntimeVariable& GetRuntimeVariable(int index)
 	{
 		return m_runtimeVariables[index];

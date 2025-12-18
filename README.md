@@ -82,6 +82,8 @@ Created by Alan Wolfe
 
 Adam Badke
 
+Alex Lindsay
+
 Alexey Gladkov
 
 Andrew Steadman
@@ -119,6 +121,8 @@ Tristan Calderbank
 Vishnu Sujith Kurup
 
 William Donnelly
+
+Wilson Sun
 
 [Gigi would not be possible without several open sourced libraries](readme/OSS.md)
 

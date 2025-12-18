@@ -124,7 +124,7 @@ typedef enum FfxFsr3UpscalerInitializationFlagBits {
 ///
 /// @ingroup ffxFsr3Upscaler
 typedef void(*FfxFsr3UpscalerMessage)(
-    FfxMsgType type,
+    FfxApiMsgType type,
     const wchar_t* message);
 
 /// A structure encapsulating the parameters required to initialize FidelityFX

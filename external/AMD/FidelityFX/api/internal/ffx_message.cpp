@@ -38,7 +38,7 @@
 #endif // defined(_WINDOWS)
 
 static ffxMessageCallback s_messageCallback;
-static uint32_t s_debugLevel;
+static uint32_t s_debugLevel = FFX_API_CONFIGURE_GLOBALDEBUG_LEVEL_VERBOSE;
 
 // set the printing callback function
 void ffxSetPrintMessageCallback(ffxMessageCallback callback, uint32_t debugLevel)
@@ -51,19 +51,25 @@ void ffxSetPrintMessageCallback(ffxMessageCallback callback, uint32_t debugLevel
 void ffxPrintMessage(uint32_t type, const wchar_t* message)
 {
 #if defined(_GAMING_XBOX) || defined(_WINDOWS)
-    if (!s_messageCallback) {
-        // Format the message string
-        wchar_t buffer[512];
-        if (type == FFX_MESSAGE_TYPE_ERROR) {
-            swprintf_s(buffer, 512, L"FSR_API_DEBUG_ERROR: %ls\n", message);
+    uint32_t msgTypeToDebugLevel = type + 1u;
+    if (s_debugLevel >= msgTypeToDebugLevel)
+    {
+        if (!s_messageCallback) {
+            // Format the message string
+            wchar_t buffer[512];
+            if (type == FFX_API_MESSAGE_TYPE_ERROR) {
+                swprintf_s(buffer, 512, L"FSR_API_DEBUG_ERROR: %ls\n", message);
+            }
+            else if (type == FFX_API_MESSAGE_TYPE_WARNING) {
+                swprintf_s(buffer, 512, L"FSR_API_DEBUG_WARNING: %ls\n", message);
+            }
+            OutputDebugStringW(buffer);
+        } 
+        else {
+            s_messageCallback(type, message);
         }
-        else if (type == FFX_MESSAGE_TYPE_WARNING) {
-            swprintf_s(buffer, 512, L"FSR_API_DEBUG_WARNING: %ls\n", message);
-        }
-        OutputDebugStringW(buffer);
-    } else {
-        s_messageCallback(type, message);
     }
+    
 #else
     FFX_UNUSED(type);
     FFX_UNUSED(message);

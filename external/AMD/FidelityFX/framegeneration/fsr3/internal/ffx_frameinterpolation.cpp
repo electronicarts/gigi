@@ -350,7 +350,7 @@ static FfxErrorCode createPipelineStates(FfxFrameInterpolationContext_Private* c
 // Format precision group for HUDless.
 // Also format needs at least the 3 RGB channels to be valid
 // int formats aren't accepted.
-int GetFormatPrecisionGroup(FfxApiSurfaceFormat format)
+static int GetFormatPrecisionGroup(FfxApiSurfaceFormat format)
 {
     switch (format)
     {
@@ -410,31 +410,50 @@ int GetFormatPrecisionGroup(FfxApiSurfaceFormat format)
 
 static void getInternalResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D* displaySize, FfxApiSurfaceFormat previousInterpolationSourceFormat, FfxFrameInterpolationInternalResourceDescriptions* internalResourceDescriptions)
 {
-    internalResourceDescriptions->reconstructedDepthInterpolatedFrame = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_ReconstructedDepthInterpolatedFrame", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_RECONSTRUCTED_DEPTH_INTERPOLATED_FRAME, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->gameMotionVectorFieldX = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_GameMotionVectorFieldX", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_GAME_MOTION_VECTOR_FIELD_X, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->gameMotionVectorFieldY = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_GameMotionVectorFieldY", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_GAME_MOTION_VECTOR_FIELD_Y, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->inpaintingPyramid = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, displaySize->width / 2, displaySize->height / 2, 1, 0, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_InpaintingPyramid", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_INPAINTING_PYRAMID, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->counters = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_BUFFER, FFX_API_SURFACE_FORMAT_UNKNOWN, 8, 4, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_Counters", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_COUNTERS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->opticalFlowMotionVectorFieldX = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_OpticalFlowMotionVectorFieldX", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_OPTICAL_FLOW_MOTION_VECTOR_FIELD_X, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->opticalFlowMotionVectorFieldY = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_OpticalFlowMotionVectorFieldY", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_OPTICAL_FLOW_MOTION_VECTOR_FIELD_Y, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->previousInterpolationSource = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, (uint32_t)previousInterpolationSourceFormat, displaySize->width, displaySize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_PreviousInterpolationSouce", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_PREVIOUS_INTERPOLATION_SOURCE, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->inpaintingMask = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, displaySize->width, displaySize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_InpaintingMask", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_INPAINTING_MASK, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    internalResourceDescriptions->disocclusionMask = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8G8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_DisocclusionMask", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DISOCCLUSION_MASK, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->reconstructedDepthInterpolatedFrame = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_ReconstructedDepthInterpolatedFrame", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_RECONSTRUCTED_DEPTH_INTERPOLATED_FRAME, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->gameMotionVectorFieldX = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_GameMotionVectorFieldX", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_GAME_MOTION_VECTOR_FIELD_X, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->gameMotionVectorFieldY = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_GameMotionVectorFieldY", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_GAME_MOTION_VECTOR_FIELD_Y, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->inpaintingPyramid = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16B16A16_FLOAT, displaySize->width / 2, displaySize->height / 2, 1, 0, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_InpaintingPyramid", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_INPAINTING_PYRAMID, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->counters = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_BUFFER, FFX_API_SURFACE_FORMAT_UNKNOWN, 8, 4, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_Counters", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_COUNTERS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->opticalFlowMotionVectorFieldX = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_OpticalFlowMotionVectorFieldX", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_OPTICAL_FLOW_MOTION_VECTOR_FIELD_X, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->opticalFlowMotionVectorFieldY = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_OpticalFlowMotionVectorFieldY", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_OPTICAL_FLOW_MOTION_VECTOR_FIELD_Y, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->previousInterpolationSource = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, (uint32_t)previousInterpolationSourceFormat, displaySize->width, displaySize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_PreviousInterpolationSouce", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_PREVIOUS_INTERPOLATION_SOURCE, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->inpaintingMask = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8_UNORM, displaySize->width, displaySize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_InpaintingMask", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_INPAINTING_MASK, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+    internalResourceDescriptions->disocclusionMask = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8G8_UNORM, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_ALIASABLE, FFX_API_RESOURCE_USAGE_UAV }, FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FI_DisocclusionMask", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DISOCCLUSION_MASK, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
 
     // Default data for resources with init data
-    static uint8_t defaultDistortionFieldData[2] = { 0, 0 };
-    internalResourceDescriptions->defaultDistortionField = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8G8_UNORM, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_READ_ONLY }, FFX_API_RESOURCE_STATE_COMPUTE_READ, L"FI_DefaultDistortionField", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DEFAULT_DISTORTION_FIELD, FfxResourceInitData::FfxResourceInitBuffer(sizeof(defaultDistortionFieldData), defaultDistortionFieldData) };
+    static const uint8_t defaultDistortionFieldData[2] = { 0, 0 };
+    internalResourceDescriptions->defaultDistortionField = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R8G8_UNORM, 1, 1, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, FFX_API_RESOURCE_USAGE_READ_ONLY }, FFX_API_RESOURCE_STATE_COMPUTE_READ, L"FI_DefaultDistortionField", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DEFAULT_DISTORTION_FIELD, FfxResourceInitData::FfxResourceInitBuffer(sizeof(defaultDistortionFieldData), defaultDistortionFieldData) };
 
 }
 
 static void getSharedResourceDescriptions(const FfxApiDimensions2D* maxRenderSize, const FfxApiDimensions2D* displaySize, FfxFrameInterpolationSharedResourceDescriptions* sharedResourceDescriptions)
 {
-    sharedResourceDescriptions->dilatedDepth = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    sharedResourceDescriptions->dilatedDepth = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
         FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FISHARED_DilatedDepth", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DILATED_DEPTH, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    sharedResourceDescriptions->dilatedMotionVectors = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
+    sharedResourceDescriptions->dilatedMotionVectors = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R16G16_FLOAT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_RENDERTARGET | FFX_API_RESOURCE_USAGE_UAV | FFX_API_RESOURCE_USAGE_DCC_RENDERTARGET) },
             FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FISHARED_DilatedVelocity", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DILATED_MOTION_VECTORS, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
-    sharedResourceDescriptions->reconstructedPrevNearestDepth = { FFX_HEAP_TYPE_DEFAULT, { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) },
+    sharedResourceDescriptions->reconstructedPrevNearestDepth = { FfxResourceHeapPlacementInfo::InitDefault(), { FFX_API_RESOURCE_TYPE_TEXTURE2D, FFX_API_SURFACE_FORMAT_R32_UINT, maxRenderSize->width, maxRenderSize->height, 1, 1, FFX_API_RESOURCE_FLAGS_NONE, (FFX_API_RESOURCE_USAGE_UAV) },
             FFX_API_RESOURCE_STATE_UNORDERED_ACCESS, L"FISHARED_ReconstructedPrevNearestDepth", FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_RECONSTRUCTED_DEPTH_PREVIOUS_FRAME, {FFX_RESOURCE_INIT_DATA_TYPE_UNINITIALIZED} };
+}
+
+static FfxErrorCode fsr3FrameInterpolationDebugCheckCreate(FfxFrameInterpolationContext_Private* contextPrivate, const FfxFrameInterpolationContextDescription* params)
+{
+    // validate compatibility between backbuffer and hudless formats
+    int backBufferGroup = GetFormatPrecisionGroup(params->backBufferFormat);
+    int previousInterpolationSourceGroup = GetFormatPrecisionGroup(params->previousInterpolationSourceFormat);
+    
+    if (backBufferGroup == -1 || previousInterpolationSourceGroup == -1)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxCreateContextDescFrameGeneration params backBufferFormat or hudlessBackBufferFormat is not a supported format.");
+        return FFX_API_RETURN_ERROR_PARAMETER;
+    }
+    if (backBufferGroup != previousInterpolationSourceGroup)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxCreateContextDescFrameGeneration params backBufferFormat and hudlessBackBufferFormat must belong to the same format precision group. Otherwise, may result in no interpolation. Hudless UI extraction is run instead of interpolation when value difference between backbuffer and HUDLessColor passes a threshold.");
+        return FFX_API_RETURN_ERROR_PARAMETER;
+    }
+    return FFX_OK;
 }
 
 static FfxErrorCode frameinterpolationCreate(FfxFrameInterpolationContext_Private* context, const FfxFrameInterpolationContextDescription* contextDescription)
@@ -442,10 +461,10 @@ static FfxErrorCode frameinterpolationCreate(FfxFrameInterpolationContext_Privat
     FFX_ASSERT(context);
     FFX_ASSERT(contextDescription);
 
-    // validate compatibility between backbuffer and hudless formats
-    int backBufferGroup = GetFormatPrecisionGroup(contextDescription->backBufferFormat);
-    int previousInterpolationSourceGroup = GetFormatPrecisionGroup(contextDescription->previousInterpolationSourceFormat);
-    FFX_RETURN_ON_ERROR(backBufferGroup >= 0 && previousInterpolationSourceGroup >= 0 && backBufferGroup == previousInterpolationSourceGroup, FFX_ERROR_INVALID_ARGUMENT);
+    if ((contextDescription->flags & FFX_FRAMEINTERPOLATION_ENABLE_DEBUG_CHECKING) == FFX_FRAMEINTERPOLATION_ENABLE_DEBUG_CHECKING)
+    {
+        FFX_VALIDATE(fsr3FrameInterpolationDebugCheckCreate(context, contextDescription));
+    }
 
     // Setup the data for implementation.
     memset(context, 0, sizeof(FfxFrameInterpolationContext_Private));
@@ -871,28 +890,33 @@ static const float debugBarColorSequence[] = {
 };
 const size_t debugBarColorSequenceLength = 7;
 
-static void fsr3FrameInterpolationDebugCheckPrepare(FfxFrameInterpolationContext_Private* context, const FfxFrameInterpolationPrepareDescription* params)
+static FfxErrorCode fsr3FrameInterpolationDebugCheckDispatch(FfxFrameInterpolationContext_Private* contextPrivate, const FfxFrameInterpolationDispatchDescription* params)
 {
-    
-    static const FfxFloat32x3 zeroVector3D = { 0.f,0.f,0.f };
-    if ((memcmp(params->cameraPosition, zeroVector3D, sizeof(FfxFloat32x3)) == 0) &&
-        (memcmp(params->cameraUp, zeroVector3D, sizeof(FfxFloat32x3)) == 0) &&
-        (memcmp(params->cameraRight, zeroVector3D, sizeof(FfxFloat32x3)) == 0) &&
-        (memcmp(params->cameraForward, zeroVector3D, sizeof(FfxFloat32x3)) == 0))
+    const bool isUIModeHudless = (params->currentBackBuffer_HUDLess.resource != NULL);
+    if (isUIModeHudless && contextPrivate->contextDescription.previousInterpolationSourceFormat != params->currentBackBuffer_HUDLess.description.format)
     {
-        FFX_PRINT_MESSAGE(FFX_MESSAGE_TYPE_WARNING, L"ffxDispatchDescFrameGenerationPrepareCameraInfo needs to be passed as linked struct. This is a required input to FSR3.1.4 and onwards for best quality.");
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxConfigureDescFrameGeneration::HUDLessColor format have to be same as one of ffxCreateContextDescFrameGeneration::backBufferFormat or ffxCreateContextDescFrameGenerationHudless::hudlessBackBufferFormat. Otherwise, CopyTextureRegion from FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_CURRENT_INTERPOLATION_SOURCE to FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_PREVIOUS_INTERPOLATION_SOURCE would fail.");
+        return FFX_API_RETURN_ERROR_PARAMETER;
     }
+    else if (!isUIModeHudless && contextPrivate->contextDescription.previousInterpolationSourceFormat != params->currentBackBuffer.description.format)
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_ERROR, L"ffxDispatchDescFrameGeneration::presentColor format and ffxCreateContextDescFrameGeneration::backBufferFormat have to be identical. Or ffxConfigureDescFrameGeneration::HUDLessColor have to be valid.");
+        return FFX_API_RETURN_ERROR_PARAMETER;
+    }
+
+    const bool bReset = (contextPrivate->dispatchCount == 0) || params->reset;
+    // Detect disjoint frameID values
+    if (contextPrivate->asyncSupported && !bReset && (params->frameID <= contextPrivate->previousFrameID))
+    {
+        FFX_PRINT_MESSAGE(FFX_API_MESSAGE_TYPE_WARNING, L"When async support is enabled, and the reset flag is not set, frame ID must increment in each dispatch");
+    }
+    return FFX_API_RETURN_OK;
 }
 
 FFX_API FfxErrorCode ffxFrameInterpolationPrepare(FfxFrameInterpolationContext* context,
     const FfxFrameInterpolationPrepareDescription* params)
 {
     FfxFrameInterpolationContext_Private* contextPrivate = (FfxFrameInterpolationContext_Private*)(context);
-
-    if ((contextPrivate->contextDescription.flags & FFX_FRAMEINTERPOLATION_ENABLE_DEBUG_CHECKING) == FFX_FRAMEINTERPOLATION_ENABLE_DEBUG_CHECKING)
-    {
-        fsr3FrameInterpolationDebugCheckPrepare(contextPrivate, params);
-    }
     
     contextPrivate->constants.renderSize[0]         = params->renderSize.width;
     contextPrivate->constants.renderSize[1]         = params->renderSize.height;
@@ -985,12 +1009,12 @@ FFX_API FfxErrorCode ffxFrameInterpolationDispatch(FfxFrameInterpolationContext*
         contextPrivate->refreshPipelineStates = false;
     }
 
+    if ((contextPrivate->contextDescription.flags & FFX_FRAMEINTERPOLATION_ENABLE_DEBUG_CHECKING) == FFX_FRAMEINTERPOLATION_ENABLE_DEBUG_CHECKING)
+    {
+        FFX_VALIDATE(fsr3FrameInterpolationDebugCheckDispatch(contextPrivate, params));
+    }
+
     const bool bReset = (contextPrivate->dispatchCount == 0) || params->reset;
-
-    FFX_ASSERT_MESSAGE(!contextPrivate->asyncSupported || bReset || (params->frameID > contextPrivate->previousFrameID),
-                       "When async support is enabled, and the reset flag is not set, frame ID must increment in each dispatch");
-
-    // Detect disjoint frameID values
     const bool bFrameID_Decreased   = params->frameID < contextPrivate->previousFrameID;
     const bool bFrameID_Skipped     = (params->frameID - contextPrivate->previousFrameID) > 1;
     const bool bDisjointFrameID     = bFrameID_Decreased || bFrameID_Skipped;
@@ -1062,17 +1086,12 @@ FFX_API FfxErrorCode ffxFrameInterpolationDispatch(FfxFrameInterpolationContext*
         sizeof(contextPrivate->constants),
         &contextPrivate->constantBuffers[FFX_FRAMEINTERPOLATION_CONSTANTBUFFER_IDENTIFIER]);
 
-    if (contextPrivate->constants.HUDLessAttachedFactor == 1) {
-
-        FFX_ASSERT_MESSAGE(contextPrivate->contextDescription.previousInterpolationSourceFormat == params->currentBackBuffer_HUDLess.description.format,
-                           "Dispatch FI param currentBackBuffer_HUDLess format and Create FG Context's hudlessBackBufferFormat have to be identical. Otherwise, CopyTextureRegion from FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_CURRENT_INTERPOLATION_SOURCE to FI_PreviousInterpolationSource would fail");
-
+    if (contextPrivate->constants.HUDLessAttachedFactor == 1)
+    {
         contextPrivate->contextDescription.backendInterface.fpRegisterResource(&contextPrivate->contextDescription.backendInterface, &params->currentBackBuffer, contextPrivate->effectContextId, &contextPrivate->srvResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_PRESENT_BACKBUFFER]);
         contextPrivate->contextDescription.backendInterface.fpRegisterResource(&contextPrivate->contextDescription.backendInterface, &params->currentBackBuffer_HUDLess, contextPrivate->effectContextId, &contextPrivate->srvResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_CURRENT_INTERPOLATION_SOURCE]);
     }
     else {
-        FFX_ASSERT_MESSAGE(contextPrivate->contextDescription.previousInterpolationSourceFormat == params->currentBackBuffer.description.format,
-                           "Dispatch FI param currentBackBuffer format and Create FG Context's backBufferFormat have to be identical. This assert can also be triggered if create FG Context with optional hudlessBackBufferFormat that is different from backBufferFormat and Dispatch FI param's currentBackBuffer_HUDLess is null.");
         contextPrivate->contextDescription.backendInterface.fpRegisterResource(&contextPrivate->contextDescription.backendInterface, &params->currentBackBuffer, contextPrivate->effectContextId, &contextPrivate->srvResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_CURRENT_INTERPOLATION_SOURCE]);
         contextPrivate->srvResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_PRESENT_BACKBUFFER] = contextPrivate->srvResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_CURRENT_INTERPOLATION_SOURCE];
     }
@@ -1156,6 +1175,14 @@ FFX_API FfxErrorCode ffxFrameInterpolationDispatch(FfxFrameInterpolationContext*
             contextPrivate->uavResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_INPAINTING_MASK],
             contextPrivate->uavResources[FFX_FRAMEINTERPOLATION_RESOURCE_IDENTIFIER_DISOCCLUSION_MASK]
         };
+        for (int i = 0; i < _countof(aliasableResources); ++i)
+        {
+            FfxGpuJobDescription barrierJob        = {FFX_GPU_JOB_BARRIER};
+            barrierJob.barrierDescriptor.barrierType = FFX_BARRIER_TYPE_TRANSITION;
+            barrierJob.barrierDescriptor.resource = aliasableResources[i];
+            barrierJob.barrierDescriptor.newState = FFX_API_RESOURCE_STATE_UNORDERED_ACCESS;
+            contextPrivate->contextDescription.backendInterface.fpScheduleGpuJob(&contextPrivate->contextDescription.backendInterface, &barrierJob);
+        }
         for (int i = 0; i < _countof(aliasableResources); ++i)
         {
             FfxGpuJobDescription discardJob        = {FFX_GPU_JOB_DISCARD};

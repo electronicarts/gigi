@@ -771,11 +771,7 @@ namespace Defines
             D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = GetDescriptorTable(device, s_srvHeap, descriptors, 1, Context::LogFn);
             commandList->SetComputeRootDescriptorTable(0, descriptorTable);
 
-            unsigned int baseDispatchSize[3] = {
-                context->m_output.texture_Output_size[0],
-                context->m_output.texture_Output_size[1],
-                context->m_output.texture_Output_size[2]
-            };
+            unsigned int baseDispatchSize[3] = { (unsigned int)context->m_internal.variable_RenderSize[0], (unsigned int)context->m_internal.variable_RenderSize[1], (unsigned int)context->m_internal.variable_RenderSize[2] };
 
             unsigned int dispatchSize[3] = {
                 (((baseDispatchSize[0] + 0) * 1) / 1 + 0 + 8 - 1) / 8,
@@ -808,11 +804,12 @@ namespace Defines
 
         // Output
         {
-            unsigned int baseSize[3] = { 1, 1, 1 };
+
+            unsigned int baseSize[3] = { (unsigned int)m_internal.variable_RenderSize[0], (unsigned int)m_internal.variable_RenderSize[1], (unsigned int)m_internal.variable_RenderSize[2] };
 
             unsigned int desiredSize[3] = {
-                ((baseSize[0] + 0) * 64) / 1 + 0,
-                ((baseSize[1] + 0) * 64) / 1 + 0,
+                ((baseSize[0] + 0) * 1) / 1 + 0,
+                ((baseSize[1] + 0) * 1) / 1 + 0,
                 ((baseSize[2] + 0) * 1) / 1 + 0
             };
 

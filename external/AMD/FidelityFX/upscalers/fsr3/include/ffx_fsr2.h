@@ -122,7 +122,7 @@ typedef enum FfxFsr2InitializationFlagBits {
 ///
 /// @ingroup ffxFsr2
 typedef void(*FfxFsr2Message)(
-    FfxMsgType type,
+    FfxApiMsgType type,
     const wchar_t* message);
 
 /// A structure encapsulating the parameters required to initialize FidelityFX

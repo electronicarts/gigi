@@ -349,6 +349,35 @@ typedef FfxErrorCode (*FfxMapResourceFunc)(FfxInterface* backendInterface, FfxRe
 /// @ingroup FfxInterface
 typedef FfxErrorCode (*FfxUnmapResourceFunc)(FfxInterface* backendInterface, FfxResourceInternal resource);
 
+/// Create a heap
+///
+/// @param [in] backendInterface                    A pointer to the backend interface.
+/// @param [in] createHeapDescription               A pointer to a <c><i>FfxCreateHeapDescription</i></c> object.
+/// @param [in] effectContextId                     The context space to be used for the effect in question.
+/// @param [out] outHeap                            A pointer to a <c><i>FfxResourceHeap</i></c> object.
+///
+/// @retval
+/// FFX_OK                                          The operation completed successfully.
+/// @retval
+/// Anything else                                   The operation failed.
+///
+/// @ingroup FfxInterface
+typedef FfxErrorCode (*FfxCreateHeapFunc)(FfxInterface* backendInterface, const FfxCreateHeapDescription* createHeapDescription, FfxUInt32 effectContextId, FfxResourceHeap* outHeap);
+
+/// Destroy a heap
+///
+/// @param [in] backendInterface                    A pointer to the backend interface.
+/// @param [in] heap                                A pointer to a <c><i>FfxResourceHeap</i></c> object.
+/// @param [in] effectContextId                     The context space to be used for the effect in question.
+///
+/// @retval
+/// FFX_OK                                          The operation completed successfully.
+/// @retval
+/// Anything else                                   The operation failed.
+///
+/// @ingroup FfxInterface
+typedef FfxErrorCode (*FfxDestroyHeapFunc)(FfxInterface* backendInterface, FfxResourceHeap heap, FfxUInt32 effectContextId);
+
 /// Destroy a resource
 ///
 /// This callback is intended for the backend to release an internal resource.
@@ -457,47 +486,16 @@ typedef FfxErrorCode (*FfxExecuteGpuJobsFunc)(
     FfxCommandList commandList, 
     FfxUInt32 effectContextId);
 
-typedef enum FfxUiCompositionFlags
-{
-    FFX_UI_COMPOSITION_FLAG_USE_PREMUL_ALPHA                    = (1 << 0),  ///< A bit indicating that we use premultiplied alpha for UI composition
-    FFX_UI_COMPOSITION_FLAG_ENABLE_INTERNAL_UI_DOUBLE_BUFFERING = (1 << 1),  ///< A bit indicating that the swapchain should doublebuffer the UI resource
-} FfxUiCompositionFlags;
-
-typedef FfxErrorCode(*FfxPresentCallbackFunc)(const FfxPresentCallbackDescription* params, void*);
-typedef FfxErrorCode(*FfxFrameGenerationDispatchFunc)(const FfxFrameGenerationDispatchDescription* params, void*);
-typedef FfxErrorCode(*FfxWaitCallbackFunc)(wchar_t* fenceName, uint64_t fenceValueToWaitFor);
-
-/// A structure representing the configuration options to pass to FrameInterpolationSwapChain
-///
-/// @ingroup FfxInterface
-typedef struct FfxFrameGenerationConfig
-{
-    FfxSwapchain                    swapChain;                       ///< The <c><i>FfxSwapchain</i></c> to use with frame interpolation
-    FfxPresentCallbackFunc          presentCallback;                 ///< A UI composition callback to call when finalizing the frame image
-    void*                           presentCallbackContext;          ///< A pointer to be passed to the UI composition callback
-    FfxFrameGenerationDispatchFunc  frameGenerationCallback;         ///< The frame generation callback to use to generate the interpolated frame
-    void*                           frameGenerationCallbackContext;  ///< A pointer to be passed to the frame generation callback
-    bool                            frameGenerationEnabled;          ///< Sets the state of frame generation. Set to false to disable frame generation
-    bool                            allowAsyncWorkloads;             ///< Sets the state of async workloads. Set to true to enable interpolation work on async compute
-    bool                            allowAsyncPresent;               ///< Sets the state of async presentation (console only). Set to true to enable present from async command queue
-    FfxApiResource                  HUDLessColor;                    ///< The hudless back buffer image to use for UI extraction from backbuffer resource
-    FfxUInt32                       flags;                           ///< Flags
-    bool                            onlyPresentInterpolated;         ///< Set to true to only present interpolated frame
-    FfxApiRect2D                       interpolationRect;               ///< Set the area in the backbuffer that will be interpolated 
-    uint64_t                        frameID;                         ///< A frame identifier used to synchronize resource usage in workloads
-    bool                            drawDebugPacingLines;            ///< Sets the state of pacing debug lines. Set to true to display debug lines
-} FfxFrameGenerationConfig;
+typedef struct FfxFrameGenerationConfig FfxFrameGenerationConfig;
 
 typedef FfxErrorCode (*FfxSwapChainConfigureFrameGenerationFunc)(FfxFrameGenerationConfig const* config);
 
-/// Register a <b>Thread Safe</b> constant buffer allocator to be used by the backend.
+/// Query the ABI version of the swapchain.
 ///
-/// @param [in] backendInterface                    A pointer to the backend interface.
-/// @param [in] constantAllocator                   An <c><i>FfxConstantBufferAllocator</i></c> callback to be used by the backend.
+/// @param [in] swapchain                   The <c><i>FfxSwapchain</i></c> to query.
 ///
 /// @ingroup FfxInterface
-typedef void(*FfxRegisterConstantBufferAllocatorFunc)(FfxInterface* backendInterface,
-    FfxConstantBufferAllocator  constantAllocator);
+typedef FfxABIVersion(*FfxGetSwapchainABIFunc)(FfxSwapchain swapchain);
 
 /// A structure encapsulating the interface between the core implementation of
 /// the FfxInterface and any graphics API that it should ultimately call.
@@ -524,6 +522,7 @@ typedef void(*FfxRegisterConstantBufferAllocatorFunc)(FfxInterface* backendInter
 ///   - <c><i>FfxBeginMarkerFunc</i></c>
 ///   - <c><i>FfxEndMarkerFunc</i></c>
 ///   - <c><i>FfxRegisterConstantBufferAllocatorFunc</i></c>
+///   - <c><i>FfxGetSwapchainABIFunc</i></c>
 ///
 /// Depending on the graphics API that is abstracted by the backend, it may be
 /// required that the backend is to some extent stateful. To ensure that
@@ -572,7 +571,10 @@ typedef struct FfxInterface {
     // FidelityFX SDK 1.1 callback handles
     FfxSwapChainConfigureFrameGenerationFunc    fpSwapChainConfigureFrameGeneration;    ///< A callback function to configure swap chain present callback.
 
-    FfxRegisterConstantBufferAllocatorFunc      fpRegisterConstantBufferAllocator;      ///< A callback function to register a custom <b>Thread Safe</b> constant buffer allocator.
+    // FidelityFX SDK 2.1 callback handles
+    FfxGetSwapchainABIFunc             fpGetSwapchainABI;             ///< A callback function to query a swapchain's ABI version.
+	FfxCreateHeapFunc                  fpCreateHeap;                  ///< A callback function to create a heap.
+	FfxDestroyHeapFunc                 fpDestroyHeap;                 ///< A callback function to destroy a heap.
 
     void*                              scratchBuffer;                 ///< A preallocated buffer for memory utilized internally by the backend.
     size_t                             scratchBufferSize;             ///< Size of the buffer pointed to by <c><i>scratchBuffer</i></c>.

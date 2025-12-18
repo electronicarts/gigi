@@ -27,6 +27,9 @@
 #include <cstdint>
 #include <type_traits>
 
+#pragma FFX_PRAGMA_WARNING_PUSH
+#pragma FFX_PRAGMA_WARNING_DISABLE_DEPRECATIONS
+
 namespace ffx
 {
 
@@ -176,5 +179,6 @@ namespace ffx
             return reinterpret_cast<T*>(hdr);
         return nullptr;
     }
-
 }
+
+#pragma FFX_PRAGMA_WARNING_POP

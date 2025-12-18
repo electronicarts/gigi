@@ -243,6 +243,9 @@ variableChanged_Node3Value = false;
 variable_UnusedFloat = 0.;  // This is for the unused alias in the shader
 variableDefault_UnusedFloat = 0.;  // This is for the unused alias in the shader
 variableChanged_UnusedFloat = false;
+variable_ConstMultiplier = 1.;
+variableDefault_ConstMultiplier = 1.;
+variableChanged_ConstMultiplier = false;
 
 // -------------------- Structs
 

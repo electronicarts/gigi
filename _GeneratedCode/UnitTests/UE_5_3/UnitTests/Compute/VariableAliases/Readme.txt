@@ -27,6 +27,7 @@ struct FTechniqueState_VariableAliases
 {
     // Host Variables - feel free to read and write these
     FUintVector2 Var_RenderSize = FUintVector2(32, 32);
+    float Var_ConstMultiplier = float(1.f);
 
     // User Variables - feel free to read and write these
     int32 Var_Node1Channel = int32(0);

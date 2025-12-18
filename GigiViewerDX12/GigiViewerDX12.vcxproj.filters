@@ -112,11 +112,18 @@
     <ClCompile Include="Interpreter\RenderGraphNode_Reroute.cpp">
       <Filter>Interpreter</Filter>
     </ClCompile>
-    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
     <ClCompile Include="Interpreter\RenderGraphNode_Action_External.cpp">
       <Filter>Interpreter</Filter>
     </ClCompile>
     <ClCompile Include="AMDFrameInterpolation.cpp" />
+    <ClCompile Include="Audio.cpp" />
+    <ClCompile Include="..\Shared\UI\ImGuiHelper.cpp">
+      <Filter>Shared\UI</Filter>
+    </ClCompile>
+    <ClCompile Include="DX12Utils\ReadbackObject.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="WebCam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">
@@ -148,6 +155,9 @@
     </Filter>
     <Filter Include="Shared">
       <UniqueIdentifier>{9a3dd963-deaf-4129-bd42-ea1439e6e2f9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shared\UI">
+      <UniqueIdentifier>{11408f3f-3f24-453c-b0fe-4dad08dd7a38}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -253,7 +263,6 @@
     <ClInclude Include="ImageReadback.h" />
     <ClInclude Include="ImageSave.h" />
     <ClInclude Include="BVH.h" />
-    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
     <ClInclude Include="AMDFrameInterpolation.h" />
     <ClInclude Include="..\Shared\HashAll.h">
       <Filter>Shared</Filter>
@@ -262,6 +271,14 @@
     <ClInclude Include="..\Shared\ffx_utils.h">
       <Filter>Shared</Filter>
     </ClInclude>
+    <ClInclude Include="Audio.h" />
+    <ClInclude Include="..\Shared\UI\ImGuiHelper.h">
+      <Filter>Shared\UI</Filter>
+    </ClInclude>
+    <ClInclude Include="DX12Utils\ReadbackObject.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="WebCam.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiViewerDX12.rc" />

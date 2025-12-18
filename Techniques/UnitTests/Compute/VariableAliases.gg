@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "1.0",
+    "version": "1.01",
     "variables": [
         {
             "name": "RenderSize",
@@ -50,6 +50,13 @@
             "comment": "This is for the unused alias in the shader",
             "type": "Float",
             "visibility": "User"
+        },
+        {
+            "name": "ConstMultiplier",
+            "type": "Float",
+            "Const": true,
+            "dflt": "1.0f",
+            "visibility": "Host"
         }
     ],
     "shaders": [
@@ -106,7 +113,6 @@
                     -14.0
                 ],
                 "linkProperties": [
-                    {},
                     {}
                 ],
                 "connections": [
@@ -156,7 +162,6 @@
                     -14.0
                 ],
                 "linkProperties": [
-                    {},
                     {}
                 ],
                 "connections": [
@@ -206,7 +211,6 @@
                     -14.0
                 ],
                 "linkProperties": [
-                    {},
                     {}
                 ],
                 "connections": [

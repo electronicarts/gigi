@@ -25,3 +25,5 @@ Git | https://git-scm.com/downloads | Used by the browser to synchronize local f
 SQLite | https://www.sqlite.org/ | Used by the browser to store and search through known techniques.
 tinybvh | https://github.com/jbikker/tinybvh | Used by the viewer to save vertex data as BVHs.
 FidelityFX-SDK | https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK | Gives the functionality for the AMD nodes.
+IconFontCppHeaders| https://github.com/juliettef/IconFontCppHeaders | Lets us have pretty icons from Font-Awesome in imgui.
+Font-Awesome | https://github.com/FortAwesome/Font-Awesome | Lets us have pretty icons in imgui.

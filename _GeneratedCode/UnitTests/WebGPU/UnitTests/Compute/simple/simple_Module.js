@@ -78,6 +78,11 @@ texture_Input_size = [0, 0, 0];
 texture_Input_format = "";
 texture_Input_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
+// -------------------- Private Variables
+
+variable_DummyConstVar = 1;
+variableDefault_DummyConstVar = 1;
+variableChanged_DummyConstVar = false;
 
 async SetVarsBefore()
 {
@@ -249,6 +254,7 @@ async FillEncoder(device, encoder)
 
     // Run compute shader DoSimpleCS
     // Runs the shader
+    if (this.variable_DummyConstVar == 1)
     {
         const bindGroup = device.createBindGroup({
             label: "Compute Bind Group DoSimpleCS",

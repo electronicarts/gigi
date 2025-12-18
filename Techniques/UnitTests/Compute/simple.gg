@@ -1,7 +1,15 @@
 {
     "$schema": "gigischema.json",
     "name": "simple",
-    "version": "1.0",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "DummyConstVar",
+            "type": "Uint",
+            "Const": true,
+            "dflt": "1"
+        }
+    ],
     "shaders": [
         {
             "name": "Simple",
@@ -10,8 +18,8 @@
             "resources": [
                 {
                     "name": "Input",
-                    "type": "Texture",
                     "access": "UAV",
+                    "type": "Texture",
                     "buffer": {
                         "PODAsStructuredBuffer": false
                     }
@@ -35,8 +43,12 @@
                     111.0,
                     0.0
                 ],
+                "condition": {
+                    "variable1": "DummyConstVar",
+                    "comparison": "Equals",
+                    "value2": "1"
+                },
                 "linkProperties": [
-                    {},
                     {}
                 ],
                 "connections": [

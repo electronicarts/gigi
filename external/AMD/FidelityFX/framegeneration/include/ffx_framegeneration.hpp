@@ -45,10 +45,15 @@ struct struct_type<ffxDispatchDescFrameGeneration> : std::integral_constant<uint
 
 struct DispatchDescFrameGeneration : public InitHelper<ffxDispatchDescFrameGeneration> {};
 
-template<>
-struct struct_type<ffxDispatchDescFrameGenerationPrepare> : std::integral_constant<uint64_t, FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE> {};
+#pragma FFX_PRAGMA_WARNING_PUSH
+#pragma FFX_PRAGMA_WARNING_DISABLE_DEPRECATIONS
 
-struct DispatchDescFrameGenerationPrepare : public InitHelper<ffxDispatchDescFrameGenerationPrepare> {};
+template<>
+struct FFX_DEPRECATION("ffxDispatchDescFrameGenerationPrepare is deprecated, use ffxDispatchDescFrameGenerationPrepareV2") struct_type<ffxDispatchDescFrameGenerationPrepare> : std::integral_constant<uint64_t, FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE> {};
+
+struct FFX_DEPRECATION("DispatchDescFrameGenerationPrepare is deprecated, use DispatchDescFrameGenerationPrepareV2") DispatchDescFrameGenerationPrepare : public InitHelper<ffxDispatchDescFrameGenerationPrepare> {};
+
+#pragma FFX_PRAGMA_WARNING_POP
 
 template<>
 struct struct_type<ffxConfigureDescFrameGenerationKeyValue> : std::integral_constant<uint64_t, FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION_KEYVALUE> {};
@@ -70,14 +75,34 @@ struct struct_type<ffxCreateContextDescFrameGenerationHudless> : std::integral_c
 
 struct CreateContextDescFrameGenerationHudless : public InitHelper<ffxCreateContextDescFrameGenerationHudless> {};
 
-template<>
-struct struct_type<ffxDispatchDescFrameGenerationPrepareCameraInfo> : std::integral_constant<uint64_t, FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_CAMERAINFO> {};
+#pragma FFX_PRAGMA_WARNING_PUSH
+#pragma FFX_PRAGMA_WARNING_DISABLE_DEPRECATIONS
 
-struct DispatchDescFrameGenerationPrepareCameraInfo : public InitHelper<ffxDispatchDescFrameGenerationPrepareCameraInfo> {};
+template<>
+struct FFX_DEPRECATION("ffxDispatchDescFrameGenerationPrepareCameraInfo is deprecated, use ffxDispatchDescFrameGenerationPrepareV2") struct_type<ffxDispatchDescFrameGenerationPrepareCameraInfo> : std::integral_constant<uint64_t, FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_CAMERAINFO> {};
+
+struct FFX_DEPRECATION("DispatchDescFrameGenerationPrepareCameraInfo is deprecated, use DispatchDescFrameGenerationPrepareV2") DispatchDescFrameGenerationPrepareCameraInfo : public InitHelper<ffxDispatchDescFrameGenerationPrepareCameraInfo> {};
+
+#pragma FFX_PRAGMA_WARNING_POP
 
 template<>
 struct struct_type<ffxQueryDescFrameGenerationGetGPUMemoryUsageV2> : std::integral_constant<uint64_t, FFX_API_QUERY_DESC_TYPE_FRAMEGENERATION_GPU_MEMORY_USAGE_V2> {};
 
 struct QueryDescFrameGenerationGetGPUMemoryUsageV2 : public InitHelper<ffxQueryDescFrameGenerationGetGPUMemoryUsageV2> {};
+
+template<>
+struct struct_type<ffxDispatchDescFrameGenerationPrepareV2> : std::integral_constant<uint64_t, FFX_API_DISPATCH_DESC_TYPE_FRAMEGENERATION_PREPARE_V2> {};
+
+struct DispatchDescFrameGenerationPrepareV2 : public InitHelper<ffxDispatchDescFrameGenerationPrepareV2> {};
+
+template<>
+struct struct_type<ffxCallbackDescFrameGenerationPresentPremulAlpha> : std::integral_constant<uint64_t, FFX_API_CALLBACK_DESC_TYPE_FRAMEGENERATION_PRESENT_PREMUL_ALPHA> {};
+
+struct CallbackDescFrameGenerationPresentPremulAlpha : public InitHelper<ffxCallbackDescFrameGenerationPresentPremulAlpha> {};
+
+template<>
+struct struct_type<ffxCreateContextDescFrameGenerationVersion> : std::integral_constant<uint64_t, FFX_API_CREATE_CONTEXT_DESC_TYPE_FRAMEGENERATION_VERSION> {};
+
+struct CreateContextDescFrameGenerationVersion : public InitHelper<ffxCreateContextDescFrameGenerationVersion> {};
 
 }

@@ -1074,7 +1074,8 @@ namespace buffertest_viewOffsetCS_Vars
 
         // OutputStructuredBuffer
         {
-            unsigned int baseCount = m_input.buffer_InputStructuredBuffer_count;
+
+            unsigned int baseCount = (unsigned int)m_internal.variable_BufferSize1;
             unsigned int desiredCount = ((baseCount + 0 ) * 2) / 1 + 0;
             DXGI_FORMAT desiredFormat = m_input.buffer_InputStructuredBuffer_format;
             unsigned int desiredStride = m_input.buffer_InputStructuredBuffer_stride;
@@ -1100,7 +1101,8 @@ namespace buffertest_viewOffsetCS_Vars
         // OutputTypedBufferRaw
         // An internal buffer used during the filtering process.
         {
-            unsigned int baseCount = m_input.buffer_InputTypedBufferRaw_count;
+
+            unsigned int baseCount = (unsigned int)m_internal.variable_BufferSize2;
             unsigned int desiredCount = ((baseCount + 0 ) * 1) / 1 + 0;
             DXGI_FORMAT desiredFormat = m_input.buffer_InputTypedBufferRaw_format;
             unsigned int desiredStride = m_input.buffer_InputTypedBufferRaw_stride;

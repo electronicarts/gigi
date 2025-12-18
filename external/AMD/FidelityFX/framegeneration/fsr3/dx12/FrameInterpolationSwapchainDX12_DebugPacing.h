@@ -27,4 +27,4 @@ void releasePacingDebugGpuResources();
 
 D3D12_RESOURCE_STATES   ffxGetDX12StateFromResourceState(FfxApiResourceState state);
 
-FFX_API FfxErrorCode    ffxFrameInterpolationDebugPacing(const FfxPresentCallbackDescription* params);
+FFX_API FfxErrorCode    ffxFrameInterpolationDebugPacing(const ffxCallbackDescFrameGenerationPresent* params);

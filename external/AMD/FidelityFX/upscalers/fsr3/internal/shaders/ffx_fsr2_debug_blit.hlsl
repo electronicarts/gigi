@@ -20,6 +20,13 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#if defined(FFX_FSR2_EMBED_ROOTSIG)
+    #define DebugBlitFSR2RS \
+        "DescriptorTable(UAV(u0, numDescriptors=1)),"\
+        "DescriptorTable(SRV(t0, numDescriptors=1)),"\
+        "CBV(b0, visibility=SHADER_VISIBILITY_ALL)"
+#endif // defined(FFX_FSR2_EMBED_ROOTSIG)
+
 Texture2D<float4>   r_in            : register(t0);
 RWTexture2D<float4> rw_out          : register(u0);
 
@@ -34,6 +41,9 @@ cbuffer cbBlit0 : register(b0) {
 };
 
 [numthreads(8, 8, 1)]
+#if defined(FFX_FSR2_EMBED_ROOTSIG)
+[RootSignature(DebugBlitFSR2RS)]
+#endif // defined(FFX_FSR2_EMBED_ROOTSIG)
 void CS(uint3 globalID : SV_DispatchThreadID)
 {
     float4 srcColor = r_in[globalID.xy];

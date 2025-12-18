@@ -7,8 +7,8 @@
 	uint2 px = DTid.xy;
 	float3 pixelValue = /*$(RWTextureR:Output)*/[px].rgb;
 
-	// Set the specified channel to the specified value
-	pixelValue[/*$(VariableAlias:Channel)*/] = /*$(VariableAlias:Value)*/;
+    // Set the specified channel to the specified value
+    pixelValue[/*$(VariableAlias:Channel)*/] = /*$(VariableAlias:Value)*/ * /*$(Variable:ConstMultiplier)*/;
 
 	// Write it back
 	Output[px] = float4(pixelValue, 1.0);

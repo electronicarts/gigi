@@ -101,9 +101,11 @@
     <ClCompile Include="..\external\nativefiledialog\src\nfd_win.cpp" />
     <ClCompile Include="..\external\OpenFBX\libdeflate.c" />
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp" />
-    <ClCompile Include="..\GigiCompilerLib\UI\ImGuiHelper.cpp" />
+    <ClCompile Include="..\Shared\UI\ImGuiHelper.cpp" />
     <ClCompile Include="AMDFrameInterpolation.cpp" />
+    <ClCompile Include="Audio.cpp" />
     <ClCompile Include="BVH.cpp" />
+    <ClCompile Include="DX12Utils\ReadbackObject.cpp" />
     <ClCompile Include="ImageReadback.cpp" />
     <ClCompile Include="DX12Utils\Camera.cpp" />
     <ClCompile Include="DX12Utils\FBXCache.cpp" />
@@ -143,6 +145,7 @@
     <ClCompile Include="tinyexr\deps\miniz\miniz.c" />
     <ClCompile Include="ViewerPython.cpp" />
     <ClCompile Include="ViewerPython_GigiArray.cpp" />
+    <ClCompile Include="WebCam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\external\nativefiledialog\src\common.h" />
@@ -150,12 +153,14 @@
     <ClInclude Include="..\external\nativefiledialog\src\nfd_common.h" />
     <ClInclude Include="..\external\OpenFBX\libdeflate.h" />
     <ClInclude Include="..\external\OpenFBX\ofbx.h" />
-    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
     <ClInclude Include="..\Shared\ffx_utils.h" />
     <ClInclude Include="..\Shared\HashAll.h" />
+    <ClInclude Include="..\Shared\UI\ImGuiHelper.h" />
     <ClInclude Include="AMDFrameInterpolation.h" />
+    <ClInclude Include="Audio.h" />
     <ClInclude Include="BVH.h" />
     <ClInclude Include="CopyResizeTextureHLSL.h" />
+    <ClInclude Include="DX12Utils\ReadbackObject.h" />
     <ClInclude Include="ImageReadback.h" />
     <ClInclude Include="DX12Utils\Camera.h" />
     <ClInclude Include="DX12Utils\CompileShaders.h" />
@@ -190,6 +195,7 @@
     <ClInclude Include="tinyexr\deps\miniz\miniz.h" />
     <ClInclude Include="tinyobjloader\tiny_obj_loader.h" />
     <ClInclude Include="ViewerPython.h" />
+    <ClInclude Include="WebCam.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiViewerDX12.rc" />
@@ -203,9 +209,6 @@
     </ProjectReference>
     <ProjectReference Include="..\GigiCompilerLib\GigiCompilerLib.vcxproj">
       <Project>{6a151f4e-efd3-4a58-a6f5-e07ed189a6f5}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\Telemetry\Telemetry.vcxproj">
-      <Project>{905c1f30-a0fb-4fbf-994f-39f2b69d4580}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

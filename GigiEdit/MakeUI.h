@@ -15,6 +15,10 @@
 #include "Shellapi.h"
 
 #include <filesystem>
+
+#include "UICache.h"
+#include "Shared/HashAll.h"
+#include "Shared/UI/Shared.h"
 // clang-format on
 
 #define BASIC_INPUTBOX_WIDTH 75.0f
@@ -26,23 +30,6 @@ enum class ShowUIOverrideContext
     Field,  // for a field
     Type    // for a type (enum or struct)
 };
-
-inline void CaseInsensitiveSort(std::vector<std::string>& strs)
-{
-    std::sort(
-        std::begin(strs),
-        std::end(strs),
-        [](const std::string& str1, const std::string& str2) {
-            return lexicographical_compare(
-                begin(str1), end(str1),
-                begin(str2), end(str2),
-                [](const char& char1, const char& char2) {
-                    return tolower(char1) < tolower(char2);
-                }
-            );
-        }
-    );
-}
 
 enum class UIOverrideResult
 {
@@ -398,117 +385,6 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TS
     return ret;
 }
 
-enum class ArrowButton2Type
-{
-    Arrow,
-    Plus,
-    Dot,
-};
-
-// copied from ImGui, the optional endMarker adds a rectangle to the triangle arrow indicating a stop
-// useful to scroll to beginning or end
-// Adapted to draw more than arrows
-bool ArrowButton2(const char* str_id, ImGuiDir dir, bool smallButton, bool endMarker, ArrowButton2Type type = ArrowButton2Type::Arrow)
-{
-	if (smallButton)
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-
-	ImGuiButtonFlags flags = ImGuiButtonFlags_None;
-	float sz = ImGui::GetFrameHeight();
-	ImVec2 size(sz, sz);
-
-	ImGuiContext& g = *GImGui;
-	ImGuiWindow* window = ImGui::GetCurrentWindow();
-
-	const ImGuiID id = window->GetID(str_id);
-	const ImRect bb(window->DC.CursorPos, ImVec2(window->DC.CursorPos.x + size.x, window->DC.CursorPos.y + size.y));
-	const float default_size = ImGui::GetFrameHeight();
-	ImGui::ItemSize(size, (size.y >= default_size) ? g.Style.FramePadding.y : -1.0f);
-
-	if (window->SkipItems || !ImGui::ItemAdd(bb, id))
-	{
-		if (smallButton)
-			ImGui::PopStyleVar();
-
-		return false;
-	}
-
-	if (g.CurrentItemFlags & ImGuiItemFlags_ButtonRepeat)
-		flags |= ImGuiButtonFlags_Repeat;
-
-	bool hovered, held;
-	bool pressed = ImGui::ButtonBehavior(bb, id, &hovered, &held, flags);
-
-	// Render
-	const ImU32 bg_col = ImGui::GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
-	const ImU32 text_col = ImGui::GetColorU32(ImGuiCol_Text);
-	ImGui::RenderNavHighlight(bb, id);
-	ImGui::RenderFrame(bb.Min, bb.Max, bg_col, true, g.Style.FrameRounding);
-    ImVec2 pos;
-
-    switch (type)
-    {
-        case ArrowButton2Type::Arrow:
-        {
-            pos = bb.Min;
-            pos.x += ImMax(0.0f, (size.x - g.FontSize) * 0.5f);
-            pos.y += ImMax(0.0f, (size.y - g.FontSize) * 0.5f);
-            pos.x = roundf(pos.x);
-            pos.y = roundf(pos.y);
-
-            ImGui::RenderArrow(window->DrawList, pos, text_col, dir);
-            break;
-        }
-        case ArrowButton2Type::Plus:
-        {
-            ImVec2 bbMid = (bb.Min + bb.Max) / 2.0f;
-            pos = bbMid;
-
-            float margin = window->DrawList->_Data->FontSize * 0.2f;
-
-            window->DrawList->AddLine(ImVec2(bbMid.x, bb.Min.y + margin), ImVec2(bbMid.x, bb.Max.y - margin), text_col, 2.0f);
-            window->DrawList->AddLine(ImVec2(bb.Min.x + margin, bbMid.y), ImVec2(bb.Max.x - margin, bbMid.y), text_col, 2.0f);
-            break;
-        }
-        case ArrowButton2Type::Dot:
-        {
-            pos = (bb.Min + bb.Max) / 2.0f;
-
-            window->DrawList->AddCircleFilled(pos, window->DrawList->_Data->FontSize * 0.20f, text_col, 8);
-            break;
-        }
-    }
-
-	if (endMarker)
-	{
-		const float h = roundf(g.FontSize / 8);
-		const float w = roundf(g.FontSize - 2 * h);
-		if (dir == ImGuiDir_Up || dir == ImGuiDir_Down)
-		{
-			pos.x += h;
-			pos.y += h;
-			if (dir == ImGuiDir_Down)
-				pos.y += g.FontSize - 3 * h;
-			window->DrawList->AddRectFilled(pos, ImVec2(pos.x + w, pos.y + h), text_col, 0.0f);
-		}
-		else
-		{
-			pos.x += h;
-			pos.y += h;
-			if (dir == ImGuiDir_Right)
-				pos.x += g.FontSize - 3 * h;
-			window->DrawList->AddRectFilled(pos, ImVec2(pos.x + h, pos.y + w), text_col, 0.0f);
-		}
-	}
-
-	if (smallButton)
-		ImGui::PopStyleVar();
-
-	IMGUI_TEST_ENGINE_ITEM_INFO(id, str_id, g.LastItemData.StatusFlags);
-	return pressed;
-}
-
-
 // Dynamic array UI function
 template <typename T>
 bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TDYNAMICARRAY<T>& value, TypePathEntry path, size_t _FLAGS)
@@ -549,28 +425,28 @@ bool ShowUI(RenderGraph& renderGraph, const char* label, const char* tooltip, TD
             ImGui::SameLine();
             {
                 ImGui_Enabled enabled(index != 0);
-                if (ArrowButton2("Up", ImGuiDir_Up, true, false))
+                if (ImGui::SmallButton(ICON_FA_ANGLE_UP "##Up"))
                     moveUpIndex = index;
                 ShowUIToolTip("Up");
                 ImGui::SameLine();
             }
             {
                 ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
-                if (ArrowButton2("Down", ImGuiDir_Down, true, false))
+                if (ImGui::SmallButton(ICON_FA_ANGLE_DOWN "##Down"))
                     moveDownIndex = index;
                 ShowUIToolTip("Down");
                 ImGui::SameLine();
             }
             {
                 ImGui_Enabled enabled(index != 0);
-                if (ArrowButton2("Up to Top", ImGuiDir_Up, true, true))
+                if (ImGui::SmallButton(ICON_FA_ANGLES_UP "##Up to Top"))
                     moveTopIndex = index;
                 ShowUIToolTip("Up To Top");
                 ImGui::SameLine();
             }
             {
                 ImGui_Enabled enabled(index + 1 != TDYNAMICARRAY_SIZE(value));
-                if (ArrowButton2("Down to Bottom", ImGuiDir_Down, true, true))
+                if (ImGui::SmallButton(ICON_FA_ANGLES_DOWN "##Down to Bottom"))
                     moveBottomIndex = index;
                 ShowUIToolTip("Down to Bottom");
             }
@@ -979,7 +855,7 @@ inline UIOverrideResult ShowShaderReferenceUIOverride(RenderGraph& renderGraph, 
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
         OnGoToShader(value.name.c_str());
     ShowUIToolTip("Go to shader");
 
@@ -1080,54 +956,65 @@ enum ShowUIOverride_ConstRequirement
     NotConst
 };
 
-inline std::vector<std::string> GetListOfVariableNames(RenderGraph& renderGraph, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement)
+inline const UICache::VariableNameList& GetListOfVariableNames(RenderGraph& renderGraph, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement)
 {
-    std::vector<std::string> vars;
-    for (const Variable& var : renderGraph.variables)
-    {
-        bool validVar = true;
-        switch (constRequirement)
+    auto MakeList = [&]()
         {
-            case ShowUIOverride_ConstRequirement::Const: validVar &= (var.Const == true); break;
-            case ShowUIOverride_ConstRequirement::NotConst: validVar &= (var.Const != true); break;
+            UICache::VariableNameList vars;
+            for (const Variable& var : renderGraph.variables)
+            {
+                bool validVar = true;
+                switch (constRequirement)
+                {
+                    case ShowUIOverride_ConstRequirement::Const: validVar &= (var.Const == true); break;
+                    case ShowUIOverride_ConstRequirement::NotConst: validVar &= (var.Const != true); break;
+                }
+                if (dataFieldRequirement != DataFieldType::Count)
+                    validVar &= (var.type == dataFieldRequirement);
+                if (!validVar)
+                    continue;
+                vars.names.push_back(var.name);
+
+                vars.maxTextWidth = std::max(vars.maxTextWidth, ImGui::CalcTextSize(var.name.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+            }
+            CaseInsensitiveSort(vars.names);
+            return vars;
         }
-        if (dataFieldRequirement != DataFieldType::Count)
-            validVar &= (var.type == dataFieldRequirement);
-        if (!validVar)
-            continue;
-        vars.push_back(var.name);
-    }
-    CaseInsensitiveSort(vars);
-    return vars;
+    ;
+
+    return UICache::GetListOfVariableNames(HashAll(constRequirement, dataFieldRequirement), MakeList);
 }
 
-template <typename TReference, typename TOnCreateVarLambda>
-inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, const char* newVarName, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement, TOnCreateVarLambda OnCreateVarLambda)
+inline void VariableDropDownList(RenderGraph& renderGraph, bool& dirtyFlag, const char* label, const char* tooltip, std::string& value, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement)
 {
-    ImGui::PushID(label);
-
     // Get a sorted list of variables
-    std::vector<std::string> vars = GetListOfVariableNames(renderGraph, constRequirement, dataFieldRequirement);
-
-    // add a blank to the beginning
-    vars.insert(vars.begin(), "");
-
-    // Get the longest text width of the server names
-    float comboWidth = ImGui::CalcTextSize(value.name.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f;
-    for (const std::string& name : vars)
-        comboWidth = std::max(comboWidth, ImGui::CalcTextSize(name.c_str()).x + ImGui::GetStyle().FramePadding.x * 2.0f);
+    const UICache::VariableNameList& vars = GetListOfVariableNames(renderGraph, constRequirement, dataFieldRequirement);
 
     // Show a drop down
-    ImGui::SetNextItemWidth(comboWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
-    if (ImGui::BeginCombo(label, value.name.c_str()))
+    ImGui::SetNextItemWidth(vars.maxTextWidth + ImGui::GetTextLineHeightWithSpacing() + 10);
+    if (ImGui::BeginCombo(label, value.c_str()))
     {
-        for (const std::string& label : vars)
+        // Show the blank option
         {
-            bool is_selected = value.name == label;
+            bool is_selected = value == "";
+            std::string safeLabel = "##";
+            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
+            {
+                value = "";
+                dirtyFlag = true;
+            }
+            if (is_selected)
+                ImGui::SetItemDefaultFocus();
+        }
+
+        // Show the variables
+        for (const std::string& label : vars.names)
+        {
+            bool is_selected = value == label;
             std::string safeLabel = label + "##";
             if (ImGui::Selectable(safeLabel.c_str(), is_selected))
             {
-                value.name = label;
+                value = label;
                 dirtyFlag = true;
             }
             if (is_selected)
@@ -1137,17 +1024,27 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
         ImGui::EndCombo();
     }
     ShowUIToolTip(tooltip);
+}
 
+template <typename TReference, typename TOnCreateVarLambda>
+inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, TReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext, const char* newVarName, ShowUIOverride_ConstRequirement constRequirement, DataFieldType dataFieldRequirement, TOnCreateVarLambda OnCreateVarLambda)
+{
+    ImGui::PushID(label);
+
+    // Show the drop down list
+    VariableDropDownList(renderGraph, dirtyFlag, label, tooltip, value.name, constRequirement, dataFieldRequirement);
+
+    // Show go to / create buttons
     ImGui::SameLine();
     if (!value.name.empty())
     {
-        if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+        if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
             OnGoToVariable(value.name.c_str());
         ShowUIToolTip((std::string("Go to Variable: ") + value.name).c_str());
     }
     else
     {
-        if (ArrowButton2("CreateVar", ImGuiDir_Right, true, false, ArrowButton2Type::Plus))
+        if (ImGui::SmallButton(ICON_FA_CIRCLE_PLUS "##CreateVar"))
         {
             value.name = OnCreateVariable(newVarName, dataFieldRequirement);
             OnCreateVarLambda();
@@ -1216,7 +1113,7 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
         OnGoToStruct(value.name.c_str());
     ShowUIToolTip("Go to Struct");
 
@@ -2306,7 +2203,7 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
     {
         bool hasVariable = !value.variable.name.empty();
         ImGui::PushStyleColor(ImGuiCol_Text, hasVariable ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 255, 255, 255));
-        if (ArrowButton2("Variable", ImGuiDir_Right, true, false, ArrowButton2Type::Dot))
+        if (ImGui::SmallButton(ICON_FA_CIRCLE "##Variable"))
         {
             ImGui::OpenPopup("Choose Variable");
         }
@@ -2316,18 +2213,27 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
         if (ImGui::BeginPopupContextItem("Choose Variable"))
         {
             // Get a sorted list of variables
-            std::vector<std::string> vars = GetListOfVariableNames(renderGraph, ShowUIOverride_ConstRequirement::None, dataFieldType);
+            const UICache::VariableNameList& varList = GetListOfVariableNames(renderGraph, ShowUIOverride_ConstRequirement::None, dataFieldType);
 
-            // add a blank to the beginning
-            vars.insert(vars.begin(), "");
-
-            for (size_t labelIndex = 0; labelIndex < vars.size(); ++labelIndex)
+            // Show a blank in the beginning
             {
-                bool checked = labelIndex > 0 && vars[labelIndex] == value.variable.name;
-                ImGui::MenuItem(labelIndex == 0 ? " " : vars[labelIndex].c_str(), nullptr, &checked);
+                bool checked = false;
+                ImGui::MenuItem(" ", nullptr, &checked);
                 if (checked)
                 {
-                    value.variable.name = vars[labelIndex];
+                    value.variable.name = "";
+                    dirtyFlag = true;
+                }
+            }
+
+            // Show the vars
+            for (const std::string& varName : varList.names)
+            {
+                bool checked = varName == value.variable.name;
+                ImGui::MenuItem(varName.c_str(), nullptr, &checked);
+                if (checked)
+                {
+                    value.variable.name = varName;
                     dirtyFlag = true;
                 }
             }
@@ -2340,14 +2246,14 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
         if (hasVariable)
         {
             ImGui::SameLine();
-            if (ArrowButton2("GoToData", ImGuiDir_Right, true, false))
+            if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
                 OnGoToVariable(value.variable.name.c_str());
             ShowUIToolTip((std::string("Go to Variable: ") + value.variable.name).c_str());
         }
         else
         {
             ImGui::SameLine();
-            if (ArrowButton2("CreateVar", ImGuiDir_Right, true, false, ArrowButton2Type::Plus))
+            if (ImGui::SmallButton(ICON_FA_CIRCLE_PLUS "##CreateVar"))
             {
                 value.variable.name = OnCreateVariable(label, dataFieldType);
                 OnCreateVarLambda();

@@ -1609,6 +1609,31 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>GGUserFile_Audio : </b><br/><br/>
+<table>
+<tr><th colspan=3>GGUserFile_Audio</th></tr>
+<tr><td>unsigned int sampleRate</td><td>44100</td><td>The sample rate.</td></tr>
+<tr><td>bool stereo</td><td>true</td><td>Stereo or mono.</td></tr>
+<tr><td>std::string Var_Stereo</td><td>"AudioStereo"</td><td>A boolean variable for whether audio is mono or stereo. Stereo has two floats per sample, mono has 1. Holds the value you set above. Meant to be readable by shaders.</td></tr>
+<tr><td>std::string Var_SampleRate</td><td>"AudioSampleRate"</td><td>A uint variable holding the sample rate. Holds the value you set above. Meant to be readable by shaders.</td></tr>
+<tr><td>BufferNodeReference outputBuffer</td><td>{}</td><td>Must be an imported buffer. Gigi controls the size, and the format is always float.</td></tr>
+<tr><td>float outputVolume</td><td>1.0f</td><td>Output volume.</td></tr>
+<tr><td>unsigned int outputBufferLengthMs</td><td>300</td><td>The length of the audio output buffer in milliseconds. Smaller buffers have less latency but are more prone to starvation when there is bad perf.</td></tr>
+<tr><td>std::string Var_AudioOutSampleWindowCount</td><td>"AudioOutSampleWindowCount"</td><td>The uint variable that says how many audio samples should be generated for output. Stereo has 2 floats per sample, mono has 1. Meant to be readable by shaders</td></tr>
+<tr><td>BufferNodeReference inputBuffer</td><td>{}</td><td>Must be an imported buffer. Gigi controls the size, and the format is always float.</td></tr>
+<tr><td>float inputVolume</td><td>1.0f</td><td>Input volume.</td></tr>
+<tr><td>unsigned int inputBufferLengthMs</td><td>300</td><td>The length of the audio input buffer in milliseconds.</td></tr>
+<tr><td>std::string Var_AudioInSampleWindowCount</td><td>"AudioInSampleWindowCount"</td><td>The uint variable that says how many audio samples should be consumed from input. Stereo has 2 floats per sample, mono has 1. Meant to be readable by shaders</td></tr>
+</table>
+<br/>
+
+<b>GGUserFile_WebCam : </b><br/><br/>
+<table>
+<tr><th colspan=3>GGUserFile_WebCam</th></tr>
+<tr><td>TextureNodeReference outputTexture</td><td>{}</td><td>Must be an imported texture. Gigi controls the size and the format.</td></tr>
+</table>
+<br/>
+
 <b>GGUserFile_AMD_FidelityFXSDK_FrameInterpolation : </b><br/><br/>
 <table>
 <tr><th colspan=3>GGUserFile_AMD_FidelityFXSDK_FrameInterpolation</th></tr>
@@ -1786,6 +1811,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>GGUserFileV2Snapshot snapshot</td><td>{}</td><td></td></tr>
 <tr><td>GGUserFileV2Snapshot snapshots[]</td><td></td><td></td></tr>
 <tr><td>GGUserFile_AMD_FidelityFXSDK_FrameInterpolation AMDFrameInterpolation</td><td>{}</td><td></td></tr>
+<tr><td>GGUserFile_Audio Audio</td><td>{}</td><td></td></tr>
+<tr><td>GGUserFile_WebCam WebCam</td><td>{}</td><td></td></tr>
 </table>
 <br/>
 
@@ -2078,6 +2105,7 @@ See .bat for more info</td></tr>
 <tr><td>std::string BLiteral</td><td>""</td><td>The value to use, if no variable is set</td></tr>
 <tr><td>bool setBefore</td><td>true</td><td>If true, this happens before execution. If false, happens after execution.</td></tr>
 <tr><td>Condition condition</td><td>{}</td><td>An optional condition added for the action to happen</td></tr>
+<tr><td>std::string comment</td><td>""</td><td></td></tr>
 </table>
 <br/>
 

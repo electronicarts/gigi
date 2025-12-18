@@ -663,7 +663,10 @@ namespace simple
         uint64_t* timeStampBuffer = nullptr;
         m_internal.m_TimestampReadbackBuffer->Map(0, &range, (void**)&timeStampBuffer);
 
-        m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // compute shader: DoSimpleCS
+        if(m_internal.variable_DummyConstVar == 1)
+        {
+            m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+2] - timeStampBuffer[numItems*2+1])); numItems++; // compute shader: DoSimpleCS
+        }
         m_profileData[numItems].m_gpu = float(GPUTickDelta * double(timeStampBuffer[numItems*2+1] - timeStampBuffer[0])); numItems++; // GPU total
 
         D3D12_RANGE emptyRange = {};
@@ -770,6 +773,7 @@ namespace simple
 
         // Compute Shader: DoSimpleCS
         // Runs the shader
+        if(context->m_internal.variable_DummyConstVar == 1)
         {
             ScopedPerfEvent scopedPerf("Compute Shader: DoSimpleCS", commandList, 1);
             std::chrono::high_resolution_clock::time_point startPointCPU;

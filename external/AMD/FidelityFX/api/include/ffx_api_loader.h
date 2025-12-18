@@ -35,6 +35,12 @@ typedef struct ffxFunctions {
 // _GAMING_XBOX defined by GDK tools build
 // _WINDOWS defined by MSBuild x64 windows configurations
 // PLATFORM_WINDOWS defined for Unreal Engine build processes
+#if defined(_WINDOWS) || defined(PLATFORM_WINDOWS)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif //WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#endif // defined(_WINDOWS) || defined(PLATFORM_WINDOWS)
 #if defined(_GAMING_XBOX) || defined(_WINDOWS) || defined(PLATFORM_WINDOWS)
 #include <libloaderapi.h>
 #else
