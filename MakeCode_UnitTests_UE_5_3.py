@@ -88,6 +88,8 @@ unsupportedTests = [
     "Compute\\OutputToMultipleInputs",
     "SubGraph\\SetVarNode",
     "Buffers\\bufferViewDescriptorTable",
+    "WorkGraphs\\WGSimple",
+    "WorkGraphs\\WGRecords",
 
     # Just need to make work
     "RayTrace\\simpleRTDynamic",

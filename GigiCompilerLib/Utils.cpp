@@ -22,3 +22,11 @@ std::string FromWideString(const wchar_t* string)
 	WideCharToMultiByte(CP_ACP, 0, string, -1, result.data(), size, nullptr, nullptr);
 	return result;
 }
+
+std::string FromWideStringUTF8(const wchar_t* string)
+{
+	int size = WideCharToMultiByte(CP_UTF8, 0, string, -1, nullptr, 0, nullptr, nullptr);
+	std::string result(size, 0);
+	WideCharToMultiByte(CP_UTF8, 0, string, -1, result.data(), size, nullptr, nullptr);
+	return result;
+}

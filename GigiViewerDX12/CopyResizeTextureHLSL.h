@@ -16,7 +16,7 @@ struct CopyResizeTexture_CBStruct
     int32_t mode;
     // depth comparison threshold (in same depth units as depth buffer)
     float depthThreshold;
-    int32_t _pad0;
+    int32_t _pad0[2];
 };
 
 static const char* s_CopyResizeTextureHLSL = R"<<<<<(
@@ -29,7 +29,7 @@ struct CBStruct
     int2 imageClipMax;
     int mode;              // 0 = depth, 1 = motion vectors
     float depthThreshold;  // depth compare threshold
-    int2 _pad;
+    int2 _pad0;
 };
 
 SamplerState linearClampSampler : register(s0);

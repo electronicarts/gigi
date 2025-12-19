@@ -119,7 +119,7 @@ void Application::SetStyleAndTheme(bool dark)
 	style->TabMinWidthForCloseButton = 0.1f;
 	style->CellPadding = ImVec2(8.0f, 4.0f);
 	style->ItemSpacing = ImVec2(8.0f, 3.0f);
-	style->ItemInnerSpacing = ImVec2(2.0f, 4.0f);
+	style->ItemInnerSpacing = ImVec2(4.0f, 4.0f);
 	style->TouchExtraPadding = ImVec2(0.0f, 0.0f);
 	style->IndentSpacing = 12;
 	style->ScrollbarSize = 14;
@@ -282,7 +282,8 @@ void Application::RecreateFontAtlas()
 
     // Gigi change Begin
 
-	float fontSize = 16.0f;
+	float fontSize = 16.0f;     // quite small
+//	float fontSize = 21.0f;
 
 	ImFontConfig iconsConfig;
 	iconsConfig.MergeMode = false;
@@ -301,7 +302,7 @@ void Application::RecreateFontAtlas()
 		fontPath = fontPath / "external" / "fonts" / "OpenSans-Regular.ttf";
 	}
 
-	m_DefaultFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), 16.0f, &iconsConfig);
+	m_DefaultFont = io.Fonts->AddFontFromFileTTF(fontPath.string().c_str(), fontSize, &iconsConfig);
 
     // Load Font Awesome icons
     {
@@ -310,8 +311,21 @@ void Application::RecreateFontAtlas()
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
-        icons_config.GlyphMinAdvanceX = 16.0f * 0.8f;  // font size above is 16
-        io.Fonts->AddFontFromFileTTF("external/FontAwesome/Font Awesome 7 Free-Solid-900.otf", icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+        icons_config.GlyphMinAdvanceX = fontSize;
+
+        // Font Awesome 7 free, less needed icons
+//        icons_config.GlyphMinAdvanceX = 16.0f * 0.8f;  // font size above is 16
+//        const char* fontName = "external/FontAwesome/Font Awesome 7 Free-Solid-900.otf";
+
+        // Font Awesome 4 (before it was commercialized), more useful icons
+        const char* fontName = "external/FontAwesome/fontawesome-webfont.ttf";
+        
+        io.Fonts->AddFontFromFileTTF(fontName, icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+        // startup time might be ever so slightly faster without this and we only show the UI in Debug
+#ifdef _DEBUG
+        icons_config.MergeMode = false;
+        m_LargeIconFont = io.Fonts->AddFontFromFileTTF(fontName, fontSize * 2, &icons_config, icons_ranges);
+#endif
     }
 
 	m_HeaderFont = m_DefaultFont;// io.Fonts->AddFontFromFileTTF("external/fonts/OpenSans-Regular.ttf", 20.0f, &iconsConfig);

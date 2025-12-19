@@ -194,3 +194,148 @@ bool ImGui_File(const char* label, std::string& inOutName, const char* filterLis
 
 	return ret;
 }
+
+bool ImGuiIconButton(const char* label, const char* icon)
+{
+    // classic BeginMenu in comparison
+//    return ImGui::Button(label);
+
+    ImVec4 hideColor = ImVec4(0, 0, 0, 0);
+
+    ImGui::PushStyleColor(ImGuiCol_Border, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_BorderShadow, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
+    bool ret = ImGui::Button(icon);
+    ImGui::PopStyleColor(5);
+
+    return ret;
+}
+
+bool ImGuiMenuItem(const char* label, const char* icon, const char* shortcut, bool* p_checked, bool enabled)
+{
+    // classic MenuItem in comparison
+//	return ImGui::MenuItem(label, shortcut, p_checked, enabled);
+
+    ImGui::PushID(label);
+
+    // useful for tooltips
+    ImGui::BeginGroup();
+
+    ImVec4 hideColor = ImVec4(0, 0, 0, 0);
+    ImVec4 disabledColor = ImGui::GetStyle().Colors[ImGuiCol_TextDisabled];
+    ImVec4 normalColor = ImGui::GetStyle().Colors[ImGuiCol_Text];
+
+    if (!enabled)
+        ImGui::PushStyleColor(ImGuiCol_Text, disabledColor);
+
+    const char* checkIcon = "\xef\x80\x8c";
+
+    ImVec4 color = enabled ? normalColor : disabledColor;
+
+    // to be consistent
+    if (p_checked)
+        icon = 0;
+
+    bool ret = false;
+
+    ImGui::PushStyleColor(ImGuiCol_Border, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_BorderShadow, hideColor);
+    if (p_checked)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, *p_checked ? color : hideColor);
+
+        if (ImGui::SmallButton(checkIcon) && enabled)
+            *p_checked = !*p_checked;
+
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+    }
+    else if (icon)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, color);
+        ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
+
+        if (ImGui::SmallButton(icon))
+            ret = true;
+
+        ImGui::PopStyleColor(4);
+        ImGui::SameLine();
+    }
+    else
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, hideColor);
+        ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
+        ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
+        ImGui::SmallButton(checkIcon);
+        ImGui::PopStyleColor(4);
+        ImGui::SameLine();
+    }
+    ImGui::PopStyleColor(2);
+
+    // Use Selectable for the main logic of a menu item
+    // Pass 'p_checked' state to ImGui::Selectable to handle selection logic, 
+    // but we won't let it draw the built-in checkmark (by manually handling the bool state)
+    bool selected = false;
+
+    ImGuiSelectableFlags flags = ImGuiSelectableFlags_AllowItemOverlap | ImGuiSelectableFlags_DontClosePopups;
+
+    //    if (!icon)
+    //    flags |= ImGuiSelectableFlags_SpanAllColumns;
+
+    if (ImGui::Selectable(label, &selected, flags))
+    {
+        // Toggle the checkbox state when the item is clicked
+        if (p_checked)
+            *p_checked = !*p_checked;
+        ret = true;
+    }
+
+    // uncomment to test
+//	shortcut = "ABCDEF";
+
+    if (shortcut)
+    {
+        ImGui::SameLine();
+        // see https://github.com/ocornut/imgui/issues/7805
+        ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImMax(0.0f, ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(shortcut).x));
+        ImGui::TextDisabled("%s", shortcut);
+    }
+
+    if (!enabled)
+        ImGui::PopStyleColor();
+
+    ImGui::EndGroup();
+
+    ImGui::PopID();
+
+    return ret;
+}
+
+bool ImGuiBeginMenu(const char* label, bool enabled)
+{
+    // classic BeginMenu in comparison
+//    return ImGui::BeginMenu(label, enabled);
+
+    ImVec4 hideColor = ImVec4(0, 0, 0, 0);
+
+    const char* checkIcon = "\xef\x80\x8c";
+
+    ImGui::PushStyleColor(ImGuiCol_Border, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_BorderShadow, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_Text, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
+    ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
+    ImGui::SmallButton(checkIcon);
+    ImGui::PopStyleColor(6);
+
+    ImGui::SameLine();
+
+    return ImGui::BeginMenu(label, enabled);
+}

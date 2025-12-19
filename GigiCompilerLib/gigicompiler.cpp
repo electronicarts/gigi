@@ -555,6 +555,21 @@ bool RemoveBackendData(RenderGraph& renderGraph)
                 );
                 break;
             }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                RenderGraphNode_Action_WorkGraph& node = node_.actionWorkGraph;
+
+                node.connections.erase(
+                    std::remove_if(node.connections.begin(), node.connections.end(),
+                        [&](NodePinConnection& connection)
+                        {
+                            return (connection.backends.backendFlags & (1 << (unsigned int)renderGraph.backend)) == 0;
+                        }
+                    ),
+                    node.connections.end()
+                );
+                break;
+            }
             case RenderGraphNode::c_index_actionRayShader:
             {
                 RenderGraphNode_Action_RayShader& node = node_.actionRayShader;

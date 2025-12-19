@@ -461,6 +461,8 @@
     <ClInclude Include="..\NodesStatic\all_nodes.h">
       <Filter>NodesStatic</Filter>
     </ClInclude>
+    <ClInclude Include="..\Nodes\action_workgraph.h" />
+    <ClInclude Include="Backends\UE_5_3\nodes\node_action_workGraph.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="schemas">
@@ -802,6 +804,14 @@
     </None>
     <None Include="Backends\DX12\nodes\node_action_external.inl">
       <Filter>Backends\DX12\nodes</Filter>
+    </None>
+    <None Include="Backends\DX12\nodes\node_action_workGraph.inl" />
+    <None Include="Backends\WebGPU\nodes\node_action_workGraph.inl" />
+    <None Include="Backends\Halcyon\nodes\node_action_workgraph.inl">
+      <Filter>Backends\Halcyon\nodes</Filter>
+    </None>
+    <None Include="Backends\Frostbite\nodes\node_action_workgraphs.inl">
+      <Filter>Backends\Frostbite\nodes</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>

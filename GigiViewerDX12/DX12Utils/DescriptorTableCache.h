@@ -340,7 +340,7 @@ public:
 					}
 					case ResourceType::Texture2DMS:
 					{
-						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DMS;
+                        GigiAssert(false, "Cannot create a UAV of a texture resource with multisampling enabled");
 						break;
 					}
 				}

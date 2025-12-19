@@ -134,6 +134,11 @@ STRUCT_BEGIN(ValueOrVariable_Float3, "ValueOrVariable<float3>")
     STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
 STRUCT_END()
 
+STRUCT_BEGIN(ValueOrVariable_Uint, "ValueOrVariable<uint>")
+    STRUCT_FIELD(uint32_t, value, 0, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT)
+    STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)
+STRUCT_END()
+
 STRUCT_BEGIN(ValueOrVariable_Int4, "ValueOrVariable<int4>")
     STRUCT_STATIC_ARRAY(int, value, 4, { 0 COMMA 0 COMMA 0 COMMA 0 }, "The value to use if no variable given", SCHEMA_FLAG_SERIALIZE_DFLT | SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
     STRUCT_FIELD(VariableReference, variable, {}, "The variable to use", 0)

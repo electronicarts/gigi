@@ -1,0 +1,189 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.01",
+    "shaders": [
+        {
+            "name": "WG1",
+            "fileName": "WGRecords.hlsl",
+            "type": "WorkGraph",
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Int3"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "CS",
+            "fileName": "WGRecordsCS.hlsl",
+            "resources": [
+                {
+                    "name": "records",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Int3"
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "WorkGraphRecord",
+            "fields": [
+                {
+                    "name": "A",
+                    "type": "Int"
+                },
+                {
+                    "name": "B",
+                    "type": "Int"
+                },
+                {
+                    "name": "C",
+                    "type": "Int"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionWorkGraph": {
+                "name": "WGImported",
+                "editorPos": [
+                    -11.0,
+                    -1.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "entryShader": {
+                    "name": "WG1"
+                },
+                "records": {
+                    "node": "ImportedRecords",
+                    "pin": "resource"
+                },
+                "defines": [
+                    {
+                        "name": "OUTPUT_INDEX",
+                        "value": "0"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "ImportedRecords",
+                "editorPos": [
+                    -163.0,
+                    50.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Output",
+                "editorPos": [
+                    -133.0,
+                    -30.0
+                ],
+                "format": {
+                    "type": "Int3"
+                },
+                "count": {
+                    "multiply": 2
+                }
+            }
+        },
+        {
+            "actionWorkGraph": {
+                "name": "WGComputed",
+                "editorPos": [
+                    133.0,
+                    -1.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "WGImported",
+                        "dstPin": "Output"
+                    }
+                ],
+                "entryShader": {
+                    "name": "WG1"
+                },
+                "records": {
+                    "node": "ComputeRecords",
+                    "pin": "records"
+                },
+                "defines": [
+                    {
+                        "name": "OUTPUT_INDEX",
+                        "value": "1"
+                    }
+                ]
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "ComputedRecords",
+                "editorPos": [
+                    -168.0,
+                    114.0
+                ],
+                "format": {
+                    "type": "Int3"
+                },
+                "count": {
+                    "multiply": 4
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ComputeRecords",
+                "editorPos": [
+                    -11.0,
+                    82.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "records",
+                        "dstNode": "ComputedRecords",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "CS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "ComputedRecords"
+                    }
+                }
+            }
+        }
+    ]
+}
