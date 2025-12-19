@@ -71,6 +71,8 @@ protected:
     ImGuiContext*               m_Context = nullptr;
     ImFont*                     m_DefaultFont = nullptr;
     ImFont*                     m_HeaderFont = nullptr;
+    // 0 if not loaded
+    ImFont*                     m_LargeIconFont = nullptr;
 
     // Gigi change begin
     std::string                 m_dragFile;

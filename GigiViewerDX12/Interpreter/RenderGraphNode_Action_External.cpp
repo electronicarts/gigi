@@ -136,7 +136,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
 #undef HandleTexture
 
     if (!textureExists_color)
-    { 
+    {
         m_logFn(LogLevel::Error, "No color texture is connected for node \"%s\"\n", node.name.c_str());
         return true;
     }
@@ -359,9 +359,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction_External_AMD_FidelityFXSDK_U
             uint64_t optional = reqResourceReq.optional_resources;
 
             // Interpret the bitmask using values from ffx_upscale.h (FFX_API_QUERY_RESOURCE_*)
-            
+
             // We have checked the existence of color texture already at the start of this function
-            //bool requiresColor = (required & FFX_API_QUERY_RESOURCE_INPUT_COLOR) != 0; 
+            //bool requiresColor = (required & FFX_API_QUERY_RESOURCE_INPUT_COLOR) != 0;
             bool requiresDepth = (required & FFX_API_QUERY_RESOURCE_INPUT_DEPTH) != 0;
             bool requiresMV = (required & FFX_API_QUERY_RESOURCE_INPUT_MV) != 0;
             // Disable exposure texture check for now as there is bug in ffxQueryDescUpscaleGetResourceRequirements

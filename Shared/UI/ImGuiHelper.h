@@ -41,3 +41,13 @@ bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index);
 // like MenuItem but prints the path differently from the filename for better user experience
 // first file, then path
 bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index);
+
+bool ImGuiIconButton(const char* label, const char* icon);
+
+// @param icon can be 0 e.g. "\xef\x80\x84" for Heart
+// @param p_checked not 0 for checkbox
+// @param shortcut only visually working, like ImGui
+bool ImGuiMenuItem(const char* label, const char* icon, const char* shortcut, bool* p_checked = NULL, bool enabled = true);
+inline bool ImGuiMenuItem(const char* label) { return ImGuiMenuItem(label, 0, 0, 0, true); }
+
+bool ImGuiBeginMenu(const char* label, bool enabled = true);

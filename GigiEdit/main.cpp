@@ -42,6 +42,7 @@ void OnShaderResourceAdd(const Shader& shader, const std::string& resourceName);
 void OnShaderResourceDelete(const Shader& shader, const std::string& resourceName);
 void OnShaderResourceRename(const Shader& shader, const std::string& oldName, const std::string& newName);
 void OnNodeRename(const std::string& oldName, const std::string& newName);
+void OnStructRename(const std::string& oldName, const std::string& newName);
 void OnGoToShader(const char* name);
 void OnGoToVariable(const char* name);
 std::string OnCreateVariable(const char* name, DataFieldType type);
@@ -207,6 +208,14 @@ void OnShaderResourceDelete(const Shader& shader, const std::string& resourceNam
                 shaderNodes.push_back(node.actionComputeShader.name);
                 break;
             }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                if (node.actionWorkGraph.entryShader.name != shader.name)
+                    continue;
+
+                shaderNodes.push_back(node.actionWorkGraph.name);
+                break;
+            }
             case RenderGraphNode::c_index_actionRayShader:
             {
                 if (node.actionRayShader.shader.name != shader.name)
@@ -275,6 +284,19 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
                 }
                 break;
             }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                if (node.actionWorkGraph.entryShader.name != shader.name)
+                    continue;
+                shaderNodes.push_back(shader.name);
+
+                for (NodePinConnection& connection : node.actionWorkGraph.connections)
+                {
+                    if (connection.srcPin == oldName)
+                        connection.srcPin = newName;
+                }
+                break;
+            }
             case RenderGraphNode::c_index_actionRayShader:
             {
                 if (node.actionRayShader.shader.name != shader.name)
@@ -324,6 +346,12 @@ void OnShaderResourceRename(const Shader& shader, const std::string& oldName, co
             }
         }
     }
+}
+
+void OnStructRename(const std::string& oldName, const std::string& newName)
+{
+    OnStructRenameVisitor visitor(g_renderGraph, oldName, newName);
+    Visit(g_renderGraph, visitor, "renderGraph");
 }
 
 void OnNodeRename(const std::string& oldName, const std::string& newName)
@@ -791,6 +819,7 @@ struct Example :
         auto& io = ImGui::GetIO();
 
 		static bool imguiDemoOpen = false;
+		static bool imguiIconsOpen = false;
 		static bool structParserTest = false;
 
 		ImGuiStyle& style = ImGui::GetStyle();
@@ -800,19 +829,19 @@ struct Example :
         {
             if (ImGui::BeginMenu("File"))
             {
-                if (ImGui::MenuItem("New", "Ctrl+N"))
+                if (ImGuiMenuItem("New", "\xef\x81\xa7", "Ctrl+N"))
                 {
                     CreateGraph();
                 }
-                if (ImGui::MenuItem("Open", "Ctrl+O"))
+                if (ImGuiMenuItem("Open", "\xef\x81\xbc", "Ctrl+O"))
                 {
                     OpenGraph();
                 }
-                if (ImGui::MenuItem("Save", "Ctrl+S", false, !g_renderGraphFileName.empty()))
+                if (ImGuiMenuItem("Save", "\xef\x80\x99", "Ctrl+S", 0, !g_renderGraphFileName.empty()))
                 {
                     SaveGraph(g_renderGraphFileName.c_str());
                 }
-                if (ImGui::MenuItem("Save As", "Ctrl+Shift+S"))
+                if (ImGuiMenuItem("Save As", "\xef\x80\x99", "Ctrl+Shift+S"))
                 {
                     SaveGraph(nullptr);
                 }
@@ -820,7 +849,10 @@ struct Example :
 
                 ImGui::Separator();
 
-				if (ImGui::MenuItem("Build", "Ctrl+B"))
+                if (ImGuiMenuItem("Build", 
+//                    "\xef\x81\xb2", // plane
+                    "\xef\x82\xad",      // wrench
+                    "Ctrl+B"))
 					BuildGraph();
 
 				ImGui::Separator();
@@ -828,12 +860,13 @@ struct Example :
                 // very useful during development (e.g. find examples, find style name or tweak theme),
                 // could be compiled out in Release
                 #ifdef _DEBUG
-                ImGui::MenuItem("ImGui Demo", nullptr, &imguiDemoOpen);
-				ImGui::MenuItem("Struct Parser Test", nullptr, &structParserTest);
+                ImGuiMenuItem("ImGui Demo", 0, nullptr, &imguiDemoOpen);
+                ImGuiMenuItem("ImGui Icons", 0, nullptr, &imguiIconsOpen);
+				ImGuiMenuItem("Struct Parser Test", 0, nullptr, &structParserTest);
 				ImGui::Separator();
                 #endif
 
-                if (ImGui::MenuItem("Exit"))
+                if (ImGuiMenuItem("Exit", "\xef\x80\x91", "Alt+F4"))
                 {
                     if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to exit?"))
                         this->Close();
@@ -844,23 +877,24 @@ struct Example :
 
             if (ImGui::BeginMenu("View"))
             {
-                if (ImGui::MenuItem("Reset Layout", "", &g_resetLayout))
+                if(ImGuiMenuItem("Reset Layout"))
                 {
+                    g_resetLayout = true;
                     g_showWindows = ShowWindowsState();
                 }
 
                 ImGui::Separator();
 
-                ImGui::MenuItem("Graph Properties", "", &g_showWindows.GraphProperties);
-                ImGui::MenuItem("Nodes", "", &g_showWindows.Nodes);
-                ImGui::MenuItem("Build Log", "", &g_showWindows.BuildLog);
-                ImGui::MenuItem("Variables", "", &g_showWindows.Variables.show);
-                ImGui::MenuItem("Shaders", "", &g_showWindows.Shaders.show);
-                ImGui::MenuItem("Structs", "", &g_showWindows.Structs.show);
-                ImGui::MenuItem("FileCopies", "", &g_showWindows.FileCopies.show);
-                ImGui::MenuItem("Enums", "", &g_showWindows.Enums.show);
-                ImGui::MenuItem("SetVariables", "", &g_showWindows.SetVariables.show);
-                ImGui::MenuItem("RTHitGroups", "", &g_showWindows.RTHitGroups.show);
+                ImGuiMenuItem("Graph Properties", 0, "", &g_showWindows.GraphProperties);
+                ImGuiMenuItem("Nodes", 0, "", &g_showWindows.Nodes);
+                ImGuiMenuItem("Build Log", 0, "", &g_showWindows.BuildLog);
+                ImGuiMenuItem("Variables", 0, "", &g_showWindows.Variables.show);
+                ImGuiMenuItem("Shaders", 0, "", &g_showWindows.Shaders.show);
+                ImGuiMenuItem("Structs", 0, "", &g_showWindows.Structs.show);
+                ImGuiMenuItem("FileCopies", 0, "", &g_showWindows.FileCopies.show);
+                ImGuiMenuItem("Enums", 0, "", &g_showWindows.Enums.show);
+                ImGuiMenuItem("SetVariables", 0, "", &g_showWindows.SetVariables.show);
+                ImGuiMenuItem("RTHitGroups", 0, "", &g_showWindows.RTHitGroups.show);
 
                 ImGui::EndMenu();
             }
@@ -907,7 +941,7 @@ struct Example :
                     for (size_t labelIndex = 0; labelIndex < labels.size(); ++labelIndex)
                     {
                         bool checked = (int)g_gigiBuildFlavor == labelIndex;
-                        ImGui::MenuItem(labels[labelIndex], nullptr, &checked);
+                        ImGuiMenuItem(labels[labelIndex], 0, nullptr, &checked);
                         if (checked)
                             g_gigiBuildFlavor = labelFlavors[labelIndex];
                     }
@@ -1108,6 +1142,11 @@ struct Example :
         {
             ImGui::SetNextWindowPos(ImVec2(650, 20), ImGuiCond_FirstUseEver);
             ImGui::ShowDemoWindow(&imguiDemoOpen);
+        }
+        if (imguiIconsOpen)
+        {
+            ImGui::SetNextWindowPos(ImVec2(850, 100), ImGuiCond_FirstUseEver);
+            ax::Widgets::ImGuiShowIconsWindow(m_LargeIconFont, imguiIconsOpen);
         }
 
         if (structParserTest)
@@ -1342,7 +1381,10 @@ struct Example :
             constexpr float searchBarHeight = 32.f;
             ImGui::BeginChild("##nodesSearchBar", { ImGui::GetContentRegionAvail().x, searchBarHeight });
             ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().WindowPadding.x);
-            ImGui::InputTextWithHint("##searchInputStr", "Search...", &searchQuery);
+
+//            ImGui::InputTextWithHint("##searchInputStr", "Search...", &searchQuery);
+            ax::Widgets::ImGuiSearch("##searchInputStr", &searchQuery);
+
             ImGui::PopItemWidth();
             ImGui::EndChild();
         }
@@ -1729,8 +1771,11 @@ struct Example :
 
 			ImGui::BeginChild(childId.c_str(), {ImGui::GetContentRegionAvail().x, searchBarHeight});
 			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - ImGui::GetStyle().WindowPadding.x);
-			ImGui::InputTextWithHint(inputId.c_str(), "Search...", &windowState.searchQuery);
-			ImGui::PopItemWidth();
+
+//            ImGui::InputTextWithHint(inputId.c_str(), "Search...", &windowState.searchQuery);
+            ax::Widgets::ImGuiSearch(inputId.c_str(), &windowState.searchQuery);
+
+            ImGui::PopItemWidth();
 			ImGui::EndChild();
         }
 
@@ -1750,6 +1795,10 @@ struct Example :
             {
                 dataName = "<empty>";
             }
+
+            char indexStr[64];
+            sprintf_s(indexStr, "[%i] ", (int)index);
+            dataName = indexStr + dataName;
 
             if (!windowState.searchQuery.empty() && StringFindForceLowercase(dataName, windowState.searchQuery) == std::string::npos)
             {
@@ -1886,6 +1935,9 @@ struct Example :
 
     void ShowVariablesWindow()
     {
+        // Make sure we have space for 1 more variable, since you can add a variable from UI within the variable window, which could otherwise invalidate the variable object being viewed, due to reallocation!
+        g_renderGraph.variables.reserve(g_renderGraph.variables.size() + 1);
+
         Variable newItem;
         newItem.name = "NewVariable";
         ShowDataWindow("Variables", g_renderGraph.variables, g_showWindows.Variables, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_variables), newItem, [](size_t index, const Variable& item) { return item.name; });
@@ -1944,7 +1996,7 @@ struct Example :
             if (!item.comment.empty())
                 name << item.comment << "\n";
 
-            name << index << ") " << item.destination.name;
+            name << item.destination.name;
             if (item.destinationIndex != -1)
                 name << "[" << item.destinationIndex << "]";
             name << "=";
@@ -2237,6 +2289,21 @@ struct Example :
                 for (const Shader& shader : g_renderGraph.shaders)
                 {
                     if (shader.name == node.shader.name)
+                    {
+                        std::filesystem::path fullFileName = (defaultPath / std::filesystem::path(shader.fileName));
+                        ShellExecuteA(NULL, "open", fullFileName.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                        return;
+                    }
+                }
+                break;
+            }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                const RenderGraphNode_Action_WorkGraph& node = nodeBase.actionWorkGraph;
+
+                for (const Shader& shader : g_renderGraph.shaders)
+                {
+                    if (shader.name == node.entryShader.name)
                     {
                         std::filesystem::path fullFileName = (defaultPath / std::filesystem::path(shader.fileName));
                         ShellExecuteA(NULL, "open", fullFileName.string().c_str(), NULL, NULL, SW_SHOWDEFAULT);
@@ -3071,7 +3138,7 @@ struct Example :
                     {
                         if (!node.condition.alwaysFalse)
                         {
-                            if (ImGui::MenuItem("Disable Node"))
+                            if (ImGuiMenuItem("Disable Node"))
                             {
                                 node.condition.alwaysFalse = !node.condition.alwaysFalse;
                                 g_renderGraphDirty = true;
@@ -3079,7 +3146,7 @@ struct Example :
                         }
                         else
                         {
-                            if (ImGui::MenuItem("Enable Node"))
+                            if (ImGuiMenuItem("Enable Node"))
                             {
                                 node.condition.alwaysFalse = !node.condition.alwaysFalse;
                                 g_renderGraphDirty = true;
@@ -3088,7 +3155,7 @@ struct Example :
                     }
                 );
 
-                if (ImGui::MenuItem("Duplicate"))
+                if (ImGuiMenuItem("Duplicate"))
                 {
                     // make a unique name for the node
                     char newNodeName[64];
@@ -3144,7 +3211,7 @@ struct Example :
                     g_renderGraphDirty = true;
                 }
 
-                if (ImGui::MenuItem("Delete"))
+                if (ImGuiMenuItem("Delete"))
                 {
                     ed::ClearSelection();
                     
@@ -3168,7 +3235,7 @@ struct Example :
 
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 0, 255));
 
-            if (ImGui::MenuItem("Delete"))
+            if (ImGuiMenuItem("Delete"))
             {
                 ed::ClearSelection();
 
@@ -3196,7 +3263,7 @@ struct Example :
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 255, 255)); \
                 else \
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 128, 64, 255)); \
-                if (_TYPE::c_showInEditor && ImGui::MenuItem(_TYPE::c_editorName.c_str())) \
+                if (_TYPE::c_showInEditor && ImGuiMenuItem(_TYPE::c_editorName.c_str())) \
                 { \
                     RenderGraphNode newNode; \
                     newNode._index = RenderGraphNode::c_index_##_NAME; \
@@ -3236,14 +3303,14 @@ struct Example :
                         if (externalNodeInfo.subfolderColor != 0)
                             ImGui::PushStyleColor(ImGuiCol_Text, externalNodeInfo.subfolderColor);
 
-                        showSubfolderContents = ImGui::BeginMenu(lastSubfolder.c_str());
+                        showSubfolderContents = ImGuiMenuItem(lastSubfolder.c_str());
 
                         if (externalNodeInfo.subfolderColor != 0)
                             ImGui::PopStyleColor();
                     }
                 }
 
-                if (showSubfolderContents && ImGui::MenuItem(externalNodeInfo.name.c_str()))
+                if (showSubfolderContents && ImGuiMenuItem(externalNodeInfo.name.c_str()))
                 {
                     std::string nodeName = externalNodeInfo.subfolder + std::string(" ") + externalNodeInfo.name;
                     std::string newNodeName = GetUniqueNodeName(g_renderGraph, nodeName.c_str());
@@ -3264,7 +3331,7 @@ struct Example :
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Group"))
+            if (ImGuiMenuItem("Group"))
             {
                 const ImVec2 defaultSize = ImVec2(380, 154);
 
@@ -3325,7 +3392,7 @@ struct Example :
 	{
 		if (!m_recentFiles.GetEntries().empty())
 		{
-			if (ImGui::BeginMenu("Recent Files"))
+			if (ImGuiBeginMenu("Recent Files"))
 			{
 				int index = 0;
 				for (const auto& el : m_recentFiles.GetEntries())

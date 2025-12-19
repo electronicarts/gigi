@@ -522,6 +522,27 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     return ret;
 }
 
+inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_WorkGraph& node)
+{
+    std::vector<NodePinInfo> ret;
+
+    // Get the entry shader
+    int shaderIndex = GetShaderIndexByName(renderGraph, ShaderType::WorkGraph, node.entryShader.name.c_str());
+
+    size_t numNewConnections = RebuildShaderNodePins<RenderGraphNode_Action_WorkGraph>(renderGraph, shaderIndex, node, 0, ret);
+    node.connections.resize(numNewConnections);
+
+    // Shading Rate Image
+    NodePinInfo pin;
+    pin.name = "records";
+    pin.inputNode = &node.records.node;
+    pin.inputNodePin = &node.records.pin;
+    pin.accessLabel = " (R)";
+    ret.push_back(pin);
+
+    return ret;
+}
+
 inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, RenderGraphNode_Action_DrawCall& node)
 {
     std::vector<NodePinInfo> ret;

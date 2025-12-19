@@ -94,7 +94,9 @@ extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\externa
 static const UUID ExperimentalFeaturesEnabled[] =
 {
     D3D12ExperimentalShaderModels,
-    D3D12CooperativeVectorExperiment
+    D3D12CooperativeVectorExperiment,
+    D3D12ExperimentalShaderModels,
+    D3D12StateObjectsExperiment,
 };
 
 #include "Interpreter/GigiInterpreterPreviewWindowDX12.h"
@@ -545,6 +547,7 @@ int g_syncInterval = 1;
 bool g_debugLayerOn = DX12_VALIDATION_ON_BY_DEFAULT();
 bool g_debugLayerShown = DX12_VALIDATION_LOG_ON_BY_DEFAULT();
 bool g_GPUValidation = DX12_GPUVALIDATION_ON_BY_DEFAULT();
+bool g_dredOn = false;
 bool g_stablePowerState = false;
 bool g_resetLayout = true;
 bool g_profileMode = false;
@@ -570,7 +573,6 @@ struct ShowWindowsState
 ShowWindowsState g_showWindows;
 
 // Our state
-bool show_demo_window = false;
 ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 ImVec2 g_contentRegionSize = ImVec2(1.0f, 1.0f);
 
@@ -1399,7 +1401,7 @@ void ImGuiRecentFiles()
 {
     if (!g_recentFiles.GetEntries().empty())
     {
-        if (ImGui::BeginMenu("Recent Files"))
+        if (ImGuiBeginMenu("Recent Files"))
         {
             int index = 0;
             for (const auto& el : g_recentFiles.GetEntries())
@@ -1421,7 +1423,7 @@ void ImGuiRecentPythonScripts()
 {
     if (!g_recentPythonScripts.GetEntries().empty())
     {
-        if (ImGui::BeginMenu("Recent Python Scripts"))
+        if (ImGuiBeginMenu("Recent Python Scripts"))
         {
             int index = 0;
             for (const auto& el : g_recentPythonScripts.GetEntries())
@@ -1462,7 +1464,7 @@ void HandleMainMenu()
             g_menuOpen = true;
             if (!g_isForEditor)
             {
-                if (ImGui::MenuItem("Open", "Ctrl+O"))
+                if (ImGuiMenuItem("Open", "\xef\x81\xbc", "Ctrl+O"))
                 {
                     nfdchar_t* outPath = nullptr;
                     if (NFD_OpenDialog("gg", "", &outPath) == NFD_OKAY)
@@ -1474,18 +1476,18 @@ void HandleMainMenu()
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Reload", "Ctrl+R"))
+            if (ImGuiMenuItem("Reload", "\xef\x80\xa1", "Ctrl+R"))
             {
                 ReloadGGFile(false);
             }
-            if (ImGui::MenuItem("Reload + Clear Cache", "Ctrl+C"))
+            if (ImGuiMenuItem("Reload + Clear Cache", "\xef\x80\xa1", "Ctrl+C"))
             {
                 ReloadGGFile(true);
             }
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Run Python Script"))
+            if (ImGuiMenuItem("Run Python Script", "\xef\x81\x8b", 0))
             {
                 nfdchar_t* outPath = nullptr;
                 if (NFD_OpenDialog("py", "", &outPath) == NFD_OKAY)
@@ -1499,11 +1501,11 @@ void HandleMainMenu()
 
 #ifdef _DEBUG
             ImGui::Separator();
-            ImGui::MenuItem("ImGui Demo", nullptr, &imguiDemoOpen);
+            ImGuiMenuItem("ImGui Demo", 0, nullptr, &imguiDemoOpen);
 #endif
 
             ImGui::Separator();
-            if (ImGui::MenuItem("Exit"))
+            if (ImGuiMenuItem("Exit"))
             {
                 PostQuitMessage(0);
             }
@@ -1514,30 +1516,31 @@ void HandleMainMenu()
         if (ImGui::BeginMenu("View"))
         {
             g_menuOpen = true;
-            ImGui::MenuItem("Hide UI", "Ctrl+U", &g_hideUI);
+            if (ImGuiMenuItem("Hide UI", 0, "Ctrl+U"))
+                g_hideUI = true;
 
-            if (ImGui::MenuItem("Fullscreen", "Ctrl+F", &g_fullscreen))
+            if (ImGuiMenuItem("Fullscreen", 0, "Ctrl+F", &g_fullscreen))
             {
                 SetFullscreenMode(g_fullscreen);
             }
 
             ImGui::Separator();
 
-            ImGui::MenuItem("Variables", "", &g_interpreter.m_showVariablesUI);
-            ImGui::MenuItem("Imported Resources", "", &g_showWindows.ImportedResources);
-            ImGui::MenuItem("Shaders", "", &g_showWindows.Shaders);
-            ImGui::MenuItem("System Variables", "", &g_showWindows.SystemVariables);
-            ImGui::MenuItem("Interpreter State", "", &g_showWindows.InternalVariables);
-            ImGui::MenuItem("Log", "", &g_showWindows.Log);
-            ImGui::MenuItem("Render Graph", "", &g_showWindows.RenderGraph);
-            ImGui::MenuItem("Profiler", "", &g_showWindows.Profiler);
+            ImGuiMenuItem("Variables", 0, "", &g_interpreter.m_showVariablesUI);
+            ImGuiMenuItem("Imported Resources", 0, "", &g_showWindows.ImportedResources);
+            ImGuiMenuItem("Shaders", 0, "", &g_showWindows.Shaders);
+            ImGuiMenuItem("System Variables", 0, "", &g_showWindows.SystemVariables);
+            ImGuiMenuItem("Interpreter State", 0, "", &g_showWindows.InternalVariables);
+            ImGuiMenuItem("Log", 0, "", &g_showWindows.Log);
+            ImGuiMenuItem("Render Graph", 0, "", &g_showWindows.RenderGraph);
+            ImGuiMenuItem("Profiler", 0, "", &g_showWindows.Profiler);
 
             if (!g_allowAMDFrameInterpolation)
             {
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             }
-            ImGui::MenuItem("AMD Frame Interpolation", "", &g_showWindows.AMDFrameInterpolation);
+            ImGuiMenuItem("AMD Frame Interpolation", 0, "", &g_showWindows.AMDFrameInterpolation);
             if (!g_allowAMDFrameInterpolation)
             {
                 ImGui::PopStyleVar();
@@ -1549,7 +1552,7 @@ void HandleMainMenu()
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             }
-            ImGui::MenuItem("Audio Settings", "", &g_showWindows.Audio);
+            ImGuiMenuItem("Audio Settings", 0, "", &g_showWindows.Audio);
             if (!g_allowAudio)
             {
                 ImGui::PopStyleVar();
@@ -1561,7 +1564,7 @@ void HandleMainMenu()
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             }
-            ImGui::MenuItem("WebCam Settings", "", &g_showWindows.WebCam);
+            ImGuiMenuItem("WebCam Settings", 0, "", &g_showWindows.WebCam);
             if (!g_allowWebCam)
             {
                 ImGui::PopStyleVar();
@@ -1570,20 +1573,16 @@ void HandleMainMenu()
 
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Reset Layout", "", &g_resetLayout))
+            if (ImGuiMenuItem("Reset Layout", 0, ""))
             {
+                g_resetLayout = true;
                 g_interpreter.m_showVariablesUI = true;
                 g_showWindows = ShowWindowsState();
             }
 
             ImGui::Separator();
 
-            ImGui::MenuItem("DX12 Capabilities", "", &g_showCapsWindow);
-
-            #ifdef _DEBUG
-            ImGui::Separator();
-            ImGui::MenuItem("ImGui Demo Window", "", &show_demo_window);
-            #endif
+            ImGuiMenuItem("DX12 Capabilities", 0, "", &g_showCapsWindow);
 
             ImGui::EndMenu();
         }
@@ -1591,28 +1590,21 @@ void HandleMainMenu()
         if (ImGui::BeginMenu("Settings"))
         {
             g_menuOpen = true;
-            if (ImGui::BeginMenu("Sync Interval"))
+            if (ImGuiBeginMenu("Sync Interval"))
             {
-                bool selected = false;
-
-                selected = (g_syncInterval == 0);
-                if (ImGui::MenuItem("0 (VSync Off)", "", &selected))
+                if (ImGui::Selectable("0 (VSync Off)", g_syncInterval == 0))
                     g_syncInterval = 0;
 
-                selected = (g_syncInterval == 1);
-                if (ImGui::MenuItem("1 (Full FPS)", "", &selected))
+                if (ImGui::Selectable("1 (Full FPS)", g_syncInterval == 1))
                     g_syncInterval = 1;
 
-                selected = (g_syncInterval == 2);
-                if (ImGui::MenuItem("2 (1/2 FPS)", "", &selected))
+                if (ImGui::Selectable("2 (1/2 FPS)", g_syncInterval == 2))
                     g_syncInterval = 2;
 
-                selected = (g_syncInterval == 3);
-                if (ImGui::MenuItem("3 (1/3 FPS)", "", &selected))
+                if (ImGui::Selectable("3 (1/3 FPS)", g_syncInterval == 3))
                     g_syncInterval = 3;
 
-                selected = (g_syncInterval == 4);
-                if (ImGui::MenuItem("4 (1/4 FPS)", "", &selected))
+                if (ImGui::Selectable("4 (1/4 FPS)", g_syncInterval == 4))
                     g_syncInterval = 4;
 
                 ImGui::EndMenu();
@@ -1623,34 +1615,34 @@ void HandleMainMenu()
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
                 ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
             }
-            ImGui::MenuItem("Log DX12 Debug Layer", "", &g_debugLayerShown);
+            ImGuiMenuItem("Log DX12 Debug Layer", 0, "", &g_debugLayerShown);
             if (!g_debugLayerOn)
             {
                 ImGui::PopStyleVar();
                 ImGui::PopItemFlag();
             }
 
-            if (ImGui::MenuItem("Stable Power State", "", &g_stablePowerState))
+            if (ImGuiMenuItem("Stable Power State", 0, "", &g_stablePowerState))
                 g_pd3dDevice->SetStablePowerState(g_stablePowerState);
             ShowToolTip("'Stable Power State' allows for more consistent GPU performance / profiling", true);
 
-            ImGui::MenuItem("Profile mode", "", &g_profileMode);
+            ImGuiMenuItem("Profile mode", 0, "", &g_profileMode);
 
-            ImGui::MenuItem("Readback All Resources", "", &g_readbackAll);
+            ImGuiMenuItem("Readback All Resources", 0, "", &g_readbackAll);
 
             // Reload the file when these options are changed
             {
-                if (ImGui::MenuItem("Allow Raytracing", "", &g_interpreter.m_allowRaytracing))
+                if (ImGuiMenuItem("Allow Raytracing", 0, "", &g_interpreter.m_allowRaytracing))
                     ReloadGGFile(false);
 
-                if (ImGui::MenuItem("Compile Shaders For Debug", "", &g_interpreter.m_compileShadersForDebug))
+                if (ImGuiMenuItem("Compile Shaders For Debug", 0, "", &g_interpreter.m_compileShadersForDebug))
                     ReloadGGFile(false);
 
-                if (ImGui::MenuItem("WireFrame (DrawCalls only)", "", &g_interpreter.m_drawWireframe))
+                if (ImGuiMenuItem("WireFrame (DrawCalls only)", 0, "", &g_interpreter.m_drawWireframe))
                     ReloadGGFile(false);
             }
 
-            ImGui::MenuItem("Viewer Settings", "", &g_showViewerSettings);
+            ImGuiMenuItem("Viewer Settings", 0, "", &g_showViewerSettings);
 
             ImGui::EndMenu();
         }
@@ -4285,10 +4277,6 @@ void ShowImGuiWindows()
 
         ImGui::End();
     }
-
-    // 1. Show the big demo window (Most of the sample code is in ImGui::ShowDemoWindow()! You can browse its code to learn more about Dear ImGui!).
-    if (show_demo_window)
-        ImGui::ShowDemoWindow(&show_demo_window);
 }
 
 // @param index e.g. ImGuiCol_Header
@@ -4450,18 +4438,18 @@ void ShowLog()
     // Right-click context menu
     if (ImGui::BeginPopupContextWindow("RightClickAnywhere", ImGuiPopupFlags_MouseButtonRight))
     {
-        if (ImGui::MenuItem("Copy Selection", "Ctrl+C"))
+        if (ImGuiMenuItem("Copy Selection", 0, "Ctrl+C"))
             CopyToClipboard(false, false);
 
-        if (ImGui::MenuItem("Copy Selection with message type"))
+        if (ImGuiMenuItem("Copy Selection with message type"))
             CopyToClipboard(false, true);
 
         ImGui::Separator();
 
-        if (ImGui::MenuItem("Copy All with message type"))
+        if (ImGuiMenuItem("Copy All with message type"))
             CopyToClipboard(true, true);
 
-        if (ImGui::MenuItem("Clear All"))
+        if (ImGuiMenuItem("Clear All"))
             g_log.clear();
 
         ImGui::EndPopup();
@@ -6193,7 +6181,7 @@ void ShowResourceView()
                                     for (size_t optionIndex = 0; optionIndex < options.size(); ++optionIndex)
                                     {
                                         bool checked = saveAsOptionIndex == optionIndex;
-                                        if (ImGui::MenuItem(c_saveAsTypeInfo[(int)options[optionIndex]].label, nullptr, &checked))
+                                        if (ImGuiMenuItem(c_saveAsTypeInfo[(int)options[optionIndex]].label, 0, nullptr, &checked))
                                             s_saveOptionStr = c_saveAsTypeInfo[(int)options[optionIndex]].label;
                                     }
 
@@ -8421,6 +8409,247 @@ public:
 
 Python g_python;
 
+std::wstring TranslateOperationType(D3D12_AUTO_BREADCRUMB_OP op)
+{
+    std::wstring ret;
+
+    #define HANDLE_CASE(CMD) case CMD: ret = L#CMD; break;
+
+    switch(op)
+    {
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_SETMARKER)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_ENDEVENT)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DRAWINSTANCED)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DRAWINDEXEDINSTANCED)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_EXECUTEINDIRECT)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DISPATCH)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_COPYBUFFERREGION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_COPYTEXTUREREGION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_COPYRESOURCE)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_COPYTILES)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_RESOLVESUBRESOURCE)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_CLEARRENDERTARGETVIEW)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_CLEARUNORDEREDACCESSVIEW)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_CLEARDEPTHSTENCILVIEW)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_RESOURCEBARRIER)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_EXECUTEBUNDLE)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_PRESENT)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_RESOLVEQUERYDATA)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_BEGINSUBMISSION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_ENDSUBMISSION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_ATOMICCOPYBUFFERUINT)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_ATOMICCOPYBUFFERUINT64)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_RESOLVESUBRESOURCEREGION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_WRITEBUFFERIMMEDIATE)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME1)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_SETPROTECTEDRESOURCESESSION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DECODEFRAME2)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES1)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_BUILDRAYTRACINGACCELERATIONSTRUCTURE)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_EMITRAYTRACINGACCELERATIONSTRUCTUREPOSTBUILDINFO)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_COPYRAYTRACINGACCELERATIONSTRUCTURE)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DISPATCHRAYS)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_INITIALIZEMETACOMMAND)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_EXECUTEMETACOMMAND)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_ESTIMATEMOTION)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_RESOLVEMOTIONVECTORHEAP)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_SETPIPELINESTATE1)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_INITIALIZEEXTENSIONCOMMAND)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_EXECUTEEXTENSIONCOMMAND)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DISPATCHMESH)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_ENCODEFRAME)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_RESOLVEENCODEROUTPUTMETADATA)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_BARRIER)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_BEGIN_COMMAND_LIST)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_DISPATCHGRAPH)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_SETPROGRAM)
+        HANDLE_CASE(D3D12_AUTO_BREADCRUMB_OP_PROCESSFRAMES2)
+        default: return L"Unknown";
+    }
+
+    #undef HANDLE_CASE
+
+    // remove "D3D12_AUTO_BREADCRUMB_OP_" prefix
+    return ret.erase(0, 25);
+}
+
+void LogDredInfo()
+{
+    if (!g_dredOn)
+        return;
+
+    FILE* dredLog = nullptr;
+    fopen_s(&dredLog, "DredLog.txt", "w");
+
+    auto DredLog = [&](const wchar_t* msg)
+        {
+            OutputDebugStringW(msg);
+            if (dredLog)
+                fwprintf_s(dredLog, L"%s", msg);
+        };
+
+    DredLog(L"Device removed, DRED information below\n\n");
+
+    ID3D12DeviceRemovedExtendedData2* pDred = nullptr;
+    if (FAILED(g_pd3dDevice->QueryInterface(IID_PPV_ARGS(&pDred))))
+    {
+        DredLog(L"Failed to get DRED interface\n");
+        if (dredLog)
+            fclose(dredLog);
+        return;
+    }
+
+    // Print bread crumbs
+    DredLog(L"\n==== GPU Breadcrumb Trail ====\n");
+    D3D12_DRED_AUTO_BREADCRUMBS_OUTPUT1 breadcrumbs;
+    if (FAILED(pDred->GetAutoBreadcrumbsOutput1(&breadcrumbs)))
+    {
+        DredLog(L"Failed to get DRED auto breadcrumbs output\n");
+    }
+    else
+    {
+        auto* currentNode = breadcrumbs.pHeadAutoBreadcrumbNode;
+        int listNumber = 0;
+
+        while (currentNode)
+        {
+            wchar_t buffer[1024];
+            swprintf_s(buffer, L"\nCommandList #%d: %s\n",
+                      listNumber++,
+                      currentNode->pCommandListDebugNameW ?
+                          currentNode->pCommandListDebugNameW : L"[No Name]");
+            DredLog(buffer);
+
+            swprintf_s(buffer, L"  Queue: %s\n",
+                      currentNode->pCommandQueueDebugNameW ?
+                          currentNode->pCommandQueueDebugNameW : L"[No Name]");
+            DredLog(buffer);
+
+            UINT totalOps = currentNode->BreadcrumbCount;
+            UINT lastFinished = *currentNode->pLastBreadcrumbValue;
+
+            swprintf_s(buffer, L"  Operations: %u total, %u completed\n",
+                     totalOps, lastFinished);
+            DredLog(buffer);
+
+            // Track event nesting
+            unsigned int eventStackCount = 0;
+
+            // Show each operation's status
+            for (UINT opIdx = 0; opIdx < totalOps; ++opIdx)
+            {
+                D3D12_AUTO_BREADCRUMB_OP operation = currentNode->pCommandHistory[opIdx];
+                const wchar_t* status = (opIdx < lastFinished) ? L"" : L"HUNG ";
+                std::wstring opDescriptionStr = TranslateOperationType(operation);
+                const wchar_t* opDescription = opDescriptionStr.c_str();
+
+                // Check for context data (available for PIX events and render passes)
+                std::wstring contextStr = L"";
+                if (currentNode->pBreadcrumbContexts)
+                {
+                    struct CompareById {
+                        bool operator()(const D3D12_DRED_BREADCRUMB_CONTEXT& s, UINT value) const {
+                            return s.BreadcrumbIndex < value;
+                        }
+                        bool operator()(UINT value, const D3D12_DRED_BREADCRUMB_CONTEXT& s) const {
+                            return value < s.BreadcrumbIndex;
+                        }
+                    };
+
+                    D3D12_DRED_BREADCRUMB_CONTEXT* lower = std::lower_bound(currentNode->pBreadcrumbContexts, currentNode->pBreadcrumbContexts + currentNode->BreadcrumbCount, opIdx, CompareById{});
+                    size_t index = lower - currentNode->pBreadcrumbContexts;
+                    while (index < currentNode->BreadcrumbCount && currentNode->pBreadcrumbContexts[index].BreadcrumbIndex == opIdx)
+                    {
+                        //contextStr = contextStr + std::wstring(L" | ") + std::wstring(currentNode->pBreadcrumbContexts[index].pContextString);
+                        contextStr = std::wstring(currentNode->pBreadcrumbContexts[index].pContextString);
+                        index++;
+                    }
+
+                    if (!contextStr.empty())
+                    {
+                        //contextStr.erase(0, 3);
+                        contextStr = std::wstring(L" -> \"") + contextStr + std::wstring(L"\"");
+                    }
+                }
+
+                // Build indentation based on event depth
+                std::wstring indent(eventStackCount * 2, ' ');
+                if (operation == D3D12_AUTO_BREADCRUMB_OP_BEGINEVENT)
+                    eventStackCount++;
+                else if (operation == D3D12_AUTO_BREADCRUMB_OP_ENDEVENT && eventStackCount > 0)
+                    eventStackCount--;
+
+                swprintf_s(buffer, L"    %s[%s%u] %s%s\n",
+                            indent.c_str(), status, opIdx, opDescription, contextStr.c_str());
+
+                DredLog(buffer);
+            }
+
+            currentNode = currentNode->pNext;
+        }
+    }
+
+    // Print page fault
+    DredLog(L"\n==== Memory Page Fault ====\n");
+    D3D12_DRED_PAGE_FAULT_OUTPUT pageFault;
+    if (FAILED(pDred->GetPageFaultAllocationOutput(&pageFault)))
+    {
+        DredLog(L"Failed to get DRED page fault output\n");
+    }
+    else
+    {
+        wchar_t buffer[256];
+        swprintf_s(buffer, L"Fault Address: 0x%016llX\n", pageFault.PageFaultVA);
+        DredLog(buffer);
+
+        // Show active allocations
+        auto* allocNode = pageFault.pHeadExistingAllocationNode;
+        if (allocNode)
+        {
+            DredLog(L"\nActive Resources:\n");
+            int count = 0;
+            while (allocNode && count < 15)
+            {
+                swprintf_s(buffer, L"  [%d] %s (Type=%d)\n",
+                          count,
+                          allocNode->ObjectNameW ? allocNode->ObjectNameW : L"[Unnamed]",
+                          allocNode->AllocationType);
+                DredLog(buffer);
+
+                allocNode = allocNode->pNext;
+                count++;
+            }
+        }
+
+        // Show recently destroyed allocations
+        allocNode = pageFault.pHeadRecentFreedAllocationNode;
+        if (allocNode)
+        {
+            DredLog(L"\nRecently Destroyed:\n");
+            int count = 0;
+            while (allocNode && count < 15)
+            {
+                wchar_t wbuffer[512];
+                swprintf_s(wbuffer, L"  [%d] %s (Type=%d)\n",
+                          count,
+                          allocNode->ObjectNameW ? allocNode->ObjectNameW : L"[Unnamed]",
+                          allocNode->AllocationType);
+                DredLog(wbuffer);
+
+                allocNode = allocNode->pNext;
+                count++;
+            }
+        }
+    }
+
+    if (dredLog)
+        fclose(dredLog);
+    pDred->Release();
+}
+
 void RenderFrame(bool forceExecute)
 {
 	TryBeginRenderDocCapture();
@@ -8545,7 +8774,8 @@ void RenderFrame(bool forceExecute)
 
     UINT syncInterval = (!g_profileMode) ? g_syncInterval : 0;
     UINT presentFlags = (syncInterval == 0) ? DXGI_PRESENT_ALLOW_TEARING : 0;
-    g_pSwapChain->Present(syncInterval, presentFlags);
+    if (g_pSwapChain->Present(syncInterval, presentFlags) == DXGI_ERROR_DEVICE_REMOVED)
+        LogDredInfo();
 
     UINT64 fenceValue = g_fenceLastSignaledValue + 1;
     g_pd3dCommandQueue->Signal(g_fence, fenceValue);
@@ -8656,6 +8886,11 @@ int main(int argc, char** argv)
         else if (!_stricmp(argv[argIndex], "-nodebuglayer"))
         {
             g_debugLayerOn = false;
+            argIndex++;
+        }
+        else if (!_stricmp(argv[argIndex], "-dred"))
+        {
+            g_dredOn = true;
             argIndex++;
         }
         else if (!_stricmp(argv[argIndex], "-gpuvalidation"))
@@ -8861,13 +9096,24 @@ int main(int argc, char** argv)
 
     // Load Font Awesome icons
     {
+        float fontSize = 13.0f;
+
         io.Fonts->AddFontDefault();
         static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
-        icons_config.GlyphMinAdvanceX = 13.0f * 0.8f;  // default font size is 13
-        io.Fonts->AddFontFromFileTTF("external/FontAwesome/Font Awesome 7 Free-Solid-900.otf", icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+
+        icons_config.GlyphMinAdvanceX = fontSize;
+
+        // Font Awesome 7 free, less needed icons
+//        icons_config.GlyphMinAdvanceX = 13.0f * 0.8f;  // default font size is 13
+//        const char* fontName = "external/FontAwesome/Font Awesome 7 Free-Solid-900.otf";
+
+        // Font Awesome 4 (before it was commercialized), more useful icons
+        const char* fontName = "external/FontAwesome/fontawesome-webfont.ttf";
+
+        io.Fonts->AddFontFromFileTTF(fontName, icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
     }
 
     // just to have something in the log making it clear where the content is located
@@ -9124,6 +9370,7 @@ bool CreateDeviceD3D(HWND hWnd)
     ID3D12Debug* pdx12Debug = NULL;
     if (g_debugLayerOn)
     {
+        // Enable debug layer
         if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pdx12Debug))))
         {
             pdx12Debug->EnableDebugLayer();
@@ -9133,6 +9380,24 @@ bool CreateDeviceD3D(HWND hWnd)
             {
                 pdx12Debug1->SetEnableGPUBasedValidation(true);
                 pdx12Debug1->Release();
+            }
+        }
+
+        // Enable Dred
+        if (g_dredOn)
+        {
+            ID3D12DeviceRemovedExtendedDataSettings1* pDredSettings = NULL;
+            if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&pDredSettings))))
+            {
+                // Enable automatic breadcrumbs and page fault reporting
+                pDredSettings->SetAutoBreadcrumbsEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+                pDredSettings->SetBreadcrumbContextEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+                pDredSettings->SetPageFaultEnablement(D3D12_DRED_ENABLEMENT_FORCED_ON);
+                pDredSettings->Release();
+            }
+            else
+            {
+                g_dredOn = false;
             }
         }
     }
@@ -9214,8 +9479,6 @@ bool CreateDeviceD3D(HWND hWnd)
         }
     }
     adapter->Release();
-
-
 
     // [DEBUG] Setup debug interface to break on any warnings/errors
     if (pdx12Debug != NULL)

@@ -389,6 +389,23 @@ struct RenameReferencesVisitor
 
                 return true;
             }
+            case RenderGraphNode::c_index_actionWorkGraph:
+            {
+                RenderGraphNode_Action_WorkGraph& node = nodeBase.actionWorkGraph;
+
+                m_renameData.UpdateShaderName(node.entryShader.name);
+
+                m_renameData.UpdateNodePin(node.records.node, node.records.pin);
+                m_renameData.UpdateNodeName(node.records.node);
+
+                for (NodePinConnection& connection : node.connections)
+                {
+                    m_renameData.UpdateNodePin(connection.dstNode, connection.dstPin);
+                    m_renameData.UpdateNodeName(connection.dstNode);
+                }
+
+                return true;
+            }
             case RenderGraphNode::c_index_reroute:
             {
                 RenderGraphNode_Reroute& node = nodeBase.reroute;
