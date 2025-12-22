@@ -96,7 +96,8 @@ static ID3DBlob* CompileShaderToByteCode_Private(
 
     if (allFiles)
     {
-        allFiles->push_back(fileNameStr);
+        allFiles->push_back((std::filesystem::path(shaderInfo.rootDirectory) / shaderInfo.sourceFileName).string());
+        allFiles->push_back(shaderInfo.fileName.string());
         for (const std::string& fileName : include.m_includeFiles)
             allFiles->push_back(fileName);
     }

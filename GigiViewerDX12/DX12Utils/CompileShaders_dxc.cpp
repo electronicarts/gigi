@@ -167,8 +167,8 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     if (allFiles)
     {
-        std::filesystem::path p = std::filesystem::path(shaderInfo.rootDirectory) / shaderInfo.sourceFileName;
-        allFiles->push_back(p.string());
+        allFiles->push_back((std::filesystem::path(shaderInfo.rootDirectory) / shaderInfo.sourceFileName).string());
+        allFiles->push_back(shaderInfo.fileName.string());
         for (const std::string& fileName : include.m_includeFiles)
             allFiles->push_back(fileName);
     }
