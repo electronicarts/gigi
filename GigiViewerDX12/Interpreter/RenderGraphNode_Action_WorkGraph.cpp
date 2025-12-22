@@ -180,6 +180,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
         std::string entrypoint = node.entryPoint.empty() ? node.entryShader.shader->entryPoint : node.entryPoint;
 
         ShaderCompilationInfo shaderCompilationInfo;
+
+        shaderCompilationInfo.sourceFileName = node.entryShader.shader->fileName;
+
+        shaderCompilationInfo.rootDirectory = m_renderGraph.baseDirectory;
+        StringReplaceAll(shaderCompilationInfo.rootDirectory, "\\", "/");
+        if (!shaderCompilationInfo.rootDirectory.empty() && shaderCompilationInfo.rootDirectory.back() == '/')
+            shaderCompilationInfo.rootDirectory.pop_back();
+
         shaderCompilationInfo.fileName = fullFileName;
         shaderCompilationInfo.entryPoint = entrypoint;
         shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelWg;

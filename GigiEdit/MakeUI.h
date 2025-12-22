@@ -69,11 +69,12 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         { \
             const char* name; \
             EnumType value; \
+            const char* desc; \
         }; \
         const ShowUIEnumEntry enumItems[] = {
 
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
-            { #_NAME, EnumType::_NAME },
+            { #_NAME, EnumType::_NAME, _DESCRIPTION },
 
 #define ENUM_END() \
         }; \
@@ -93,6 +94,9 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
                 { \
                     value = enumItems[enumItemIndex].value; \
                     ret = true; \
+                } \
+                if (ImGui::IsItemHovered()) { \
+                    ImGui::SetTooltip("%s", enumItems[enumItemIndex].desc); \
                 } \
                 if (is_selected) \
                     ImGui::SetItemDefaultFocus(); \
@@ -855,7 +859,7 @@ inline UIOverrideResult ShowShaderReferenceUIOverride(RenderGraph& renderGraph, 
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+    if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
         OnGoToShader(value.name.c_str());
     ShowUIToolTip("Go to shader");
 
@@ -1038,13 +1042,13 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
     ImGui::SameLine();
     if (!value.name.empty())
     {
-        if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+        if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
             OnGoToVariable(value.name.c_str());
         ShowUIToolTip((std::string("Go to Variable: ") + value.name).c_str());
     }
     else
     {
-        if (ImGui::SmallButton(ICON_FA_CIRCLE_PLUS "##CreateVar"))
+        if (ImGuiIconButton("##CreateVar", ICON_FA_CIRCLE_PLUS))
         {
             value.name = OnCreateVariable(newVarName, dataFieldRequirement);
             OnCreateVarLambda();
@@ -1113,7 +1117,7 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+    if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
         OnGoToStruct(value.name.c_str());
     ShowUIToolTip("Go to Struct");
 
@@ -2203,7 +2207,7 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
     {
         bool hasVariable = !value.variable.name.empty();
         ImGui::PushStyleColor(ImGuiCol_Text, hasVariable ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 255, 255, 255));
-        if (ImGui::SmallButton(ICON_FA_CIRCLE "##Variable"))
+        if (ImGuiIconButton("##Variable", ICON_FA_CIRCLE))
         {
             ImGui::OpenPopup("Choose Variable");
         }
@@ -2246,14 +2250,14 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
         if (hasVariable)
         {
             ImGui::SameLine();
-            if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+            if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
                 OnGoToVariable(value.variable.name.c_str());
             ShowUIToolTip((std::string("Go to Variable: ") + value.variable.name).c_str());
         }
         else
         {
             ImGui::SameLine();
-            if (ImGui::SmallButton(ICON_FA_CIRCLE_PLUS "##CreateVar"))
+            if (ImGuiIconButton("##CreateVar", ICON_FA_CIRCLE_PLUS))
             {
                 value.variable.name = OnCreateVariable(label, dataFieldType);
                 OnCreateVarLambda();

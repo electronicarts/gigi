@@ -76,18 +76,28 @@ void RecentFiles::SaveAllEntries()
 	if (res != ERROR_SUCCESS)
 		return;
 
-	uint32_t i = 0;
-	for (const auto& el : m_Entries)
-	{
-		char key[80];
-		sprintf_s(key, sizeof(key), "MRU_%d", i++);
+    for (int i = 0; i < m_Entries.size() + 1; ++i)
+    {
+        char key[80];
 
-		const char* value = el.c_str();
-		res = RegSetValueExA(hkey, (LPCSTR)key, 0, REG_SZ, (const BYTE*)value, (DWORD)strlen(value) + 1);
-		assert(res == ERROR_SUCCESS);
-		if (res != ERROR_SUCCESS)
-			break;
-	}
+        if (i >= m_Entries.size())
+        {
+            // end marker
+            sprintf_s(key, sizeof(key), "MRU_%d", i);
+            res = RegSetValueExA(hkey, (LPCSTR)key, 0, REG_SZ, (const BYTE*)"", (DWORD)1);
+            break;
+        }
+
+        const auto& el = m_Entries[i];
+
+        sprintf_s(key, sizeof(key), "MRU_%d", i);
+
+        const char* value = el.c_str();
+        res = RegSetValueExA(hkey, (LPCSTR)key, 0, REG_SZ, (const BYTE*)value, (DWORD)strlen(value) + 1);
+        assert(res == ERROR_SUCCESS);
+        if (res != ERROR_SUCCESS)
+            break;
+    }
 
 	RegCloseKey(hkey);
 }
@@ -97,6 +107,16 @@ void RecentFiles::EnsureMaxSize()
 	// limit size assuming the important data is in the front
 	if (m_Entries.size() > maxSize)
 		m_Entries.resize(maxSize);
+}
+
+void RecentFiles::RemoveEntry(int index)
+{
+    if ((uint32_t)index < m_Entries.size())
+    {
+        m_Entries.erase(m_Entries.begin() + index);
+    }
+    // Save right away so if app crashes / gets killed / quits, we have the data stored.
+    SaveAllEntries();
 }
 
 void RecentFiles::AddEntry(const char* fileName)

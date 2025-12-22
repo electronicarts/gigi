@@ -6,6 +6,8 @@
 // Portions of this software were based on https://simoncoenen.com/blog/programming/graphics/DxcCompiling
 
 #include "CompileShaders.h"
+#include "ShaderErrorParse.h"
+//#include "Parse.h"
 
 #include <d3d12.h>
 
@@ -102,7 +104,8 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     std::vector<LPCWSTR> arguments;
 
-    arguments.push_back(fullFileName.c_str()); // 1st positional argument is the source file name
+    // without this the file name is "hlsl.hlsl" which makes parsing easier
+//    arguments.push_back(fullFileName.c_str()); // 1st positional argument is the source file name
 
     std::wstring entryPointW = ToWideString(shaderInfo.entryPoint.c_str());
     std::wstring shaderModelW = ToWideString(shaderInfo.shaderModel.c_str());
@@ -164,6 +167,7 @@ static IDxcBlob* CompileShaderToByteCode_Private(
 
     if (allFiles)
     {
+        allFiles->push_back((std::filesystem::path(shaderInfo.rootDirectory) / shaderInfo.sourceFileName).string());
         allFiles->push_back(shaderInfo.fileName.string());
         for (const std::string& fileName : include.m_includeFiles)
             allFiles->push_back(fileName);
@@ -181,7 +185,25 @@ static IDxcBlob* CompileShaderToByteCode_Private(
             if (SUCCEEDED(hr) && errorsBlob)
             {
                 const char* errorText = (const char*)errorsBlob->GetBufferPointer();
-                logFn(LogLevel::Error, "Shader %ls failed to compile with errors:\n%s\n", fullFileName.c_str(), errorText);
+
+                OutputDebugStringA("\nDXC shader compile error =======================================================");
+
+                if ((shaderInfo.flags & ShaderCompilationFlags::BetterShaderErrors) != ShaderCompilationFlags::None)
+                {
+                    OutputDebugStringA(" BetterShaderErrors=1:\n");
+                    // If Visual Studio or some other tool is attached we can double click on the line to jump to the error.
+                    std::string errorString = fixupHLSLErrors((const Char*)errorText, shaderInfo.sourceFileName.c_str(), shaderInfo.rootDirectory, shaderInfo.sourceFileName);
+                    OutputDebugStringA(errorString.c_str());
+                    logFn(LogLevel::Error, "Shader %ls failed to compile with errors:\n%s\n", fullFileName.c_str(), errorString.c_str());
+                }
+                else
+                {
+                    logFn(LogLevel::Error, "Shader %ls failed to compile with errors:\n%s\n", fullFileName.c_str(), errorText);
+                    OutputDebugStringA(" BetterShaderErrors=0:\n");
+                    OutputDebugStringA(errorText);
+                }
+
+                OutputDebugStringA("\n");
             }
         }
         else
@@ -407,4 +429,71 @@ std::vector<unsigned char> CompileShaderToByteCode_dxc(
 
     code->Release();
     return ret;
+}
+
+void RunShaderUnitTest()
+{
+    // can be improved
+    assert(testFixupHLSLErrors());
+}
+
+bool parseUInt(const Char*& p, uint32_t &outValue)
+{
+	if (*p < '0' || *p > '9')
+	{
+		return false;
+	}
+
+	outValue = 0;
+
+	while (*p >= '0' && *p <= '9')
+	{
+		outValue = outValue * 10 + (*p - '0');
+
+		++p;
+	}
+
+	return true;
+}
+
+bool ParseVisualStudioErrorLine(const char* inputLine, std::string& outFileName, uint32_t &outLine, uint32_t &outColumn)
+{
+    assert(inputLine);
+
+    outFileName.clear();
+    outLine = 0;
+    outColumn = 0;
+
+    const Char* p = (const Char*)inputLine;
+
+    // usually the path start from beginning unless this is in front 
+    parseStartsWith(p, "In file included from ");
+
+    const Char* pFileNameStart = p;
+
+    while (*p != 0 && *p != '(')
+        ++p;
+
+    if (*p != '(')
+        return false;
+
+    outFileName = std::string((const char *)pFileNameStart, p - pFileNameStart);
+
+    // jump over '('
+    ++p;
+
+    if(!parseUInt(p, outLine))
+        return false;
+
+    if (*p == ',')
+    {
+        // jump over ','
+        ++p;
+        if (!parseUInt(p, outColumn))
+            return false;
+    }
+    if (*p != ')')
+        return false;
+
+    return true;
 }
