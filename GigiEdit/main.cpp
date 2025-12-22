@@ -3395,16 +3395,24 @@ struct Example :
 			if (ImGuiBeginMenu("Recent Files"))
 			{
 				int index = 0;
+                int removeIndex = -1;
 				for (const auto& el : m_recentFiles.GetEntries())
 				{
-					if (ImGui_FilePathMenuItem(el.c_str(), index++))
-					{
-						// make a copy so we don't point to data we might change
-						std::string fileName = el;
-						LoadJSONFile(fileName.c_str());
-						break;
-					}
+                    int action = ImGui_FilePathMenuItem(el.c_str(), index++);
+
+                    if (action == 1)
+                    {
+                        // make a copy so we don't point to data we might change
+                        std::string fileName = el;
+                        LoadJSONFile(fileName.c_str());
+                        break;
+                    }
+                    else if (action == -1)
+                    {
+                        removeIndex = index - 1;
+                    }
 				}
+                m_recentFiles.RemoveEntry(removeIndex);
 				ImGui::EndMenu();
 			}
 		}

@@ -283,6 +283,7 @@ STRUCT_BEGIN(GGViewerConfig, "The config file for the viewer settings file Viewe
     STRUCT_FIELD(std::string, keyCameraDown, "Q", "Camera down key", 0)
     STRUCT_FIELD(std::string, keyCameraFast, "Shift", "Camera fast key", 0)
     STRUCT_FIELD(std::string, keyCameraSlow, "Control", "Camera slow key", 0)
+    STRUCT_FIELD(bool, betterShaderError, false, "Double click shader errors with an attached debugger.", 0)
 STRUCT_END()
 
 #define GGUserFileLatest GGUserFileV2

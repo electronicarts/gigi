@@ -253,6 +253,7 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
 
     // Non serialized things below
 
+    // e.g. "C:\\gitlab\\gigiexperiments\\IntersectExperiment\\" includes trailing [back]slash
     STRUCT_FIELD(std::string, baseDirectory, "", "The relative location of the render graph file.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, outputDirectory, "", "Where the render graph output should go (this field used by the compiler).", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::vector<int>, flattenedNodeList, {}, "The flattened list of nodes, in the order they should be executed in. Calculated before being given to back end code.", SCHEMA_FLAG_NO_SERIALIZE)

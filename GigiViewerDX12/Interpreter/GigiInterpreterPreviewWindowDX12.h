@@ -842,6 +842,23 @@ public:
     const TransitionTracker& GetTransitions() const { return m_transitions; }
     TransitionTracker& GetTransitionsNonConst() { return m_transitions; }
 
+public: // access for CompileShader()
+
+    // DX12 Capabilities
+    D3D12_FEATURE_DATA_D3D12_OPTIONS m_dx12_options = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS7 m_dx12_options7 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS8 m_dx12_options8 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS9 m_dx12_options9 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS21 m_dx12_options21 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
+
+    std::vector<ShaderDefine> m_envDefines;
+
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
 	// clang-format off
@@ -943,21 +960,7 @@ private:
 	ID3D12CommandSignature* m_commandSignatureDraw = nullptr;
 	ID3D12CommandSignature* m_commandSignatureDrawIndexed = nullptr;
 
-	// DX12 Capabilities
-	D3D12_FEATURE_DATA_D3D12_OPTIONS m_dx12_options = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS7 m_dx12_options7 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS8 m_dx12_options8 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS9 m_dx12_options9 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
-    D3D12_FEATURE_DATA_D3D12_OPTIONS21 m_dx12_options21 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
-
     static GigiInterpreterPreviewWindowDX12* s_interpreter;
-    std::vector<ShaderDefine> m_envDefines;
 };
 
 inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)

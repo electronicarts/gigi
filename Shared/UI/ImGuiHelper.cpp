@@ -10,6 +10,25 @@
 #include "imgui_internal.h"
 #include <nfd.h>
 
+ImGuiEnable::ImGuiEnable(bool enabled)
+    : m_enabled(enabled)
+{
+    if (!m_enabled)
+    {
+        ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
+        ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.25f);
+    }
+}
+
+ImGuiEnable::~ImGuiEnable()
+{
+    if (!m_enabled)
+    {
+        ImGui::PopItemFlag();
+        ImGui::PopStyleVar();
+    }
+}
+
 bool ImGui_Checkbox(const char* label, bool* value) 
 {
 	//	return ImGui::Checkbox(label, value);
@@ -62,7 +81,8 @@ bool ImGui_CheckboxButton(const char* label, bool* value, ImVec4 color)
 	return ret;
 }
 
-bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
+/*
+int ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
 {
     assert(fileNameWithPath);
 
@@ -70,6 +90,7 @@ bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
         return false;
 
     ImGui::PushID(index);
+    ImGui::BeginGroup();
 
     const char* str = fileNameWithPath;
     // end of path, beginning of filename
@@ -85,7 +106,8 @@ bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
     x += ImGui::GetStyle().ItemSpacing.x / 2;
     ImGui::SetCursorPosX(x + ImGui::CalcTextSize(str, end).x);  // like MenuItem() behaves, inner padding
     bool selected = false;
-    bool activated = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
+    //    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
+    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_AllowItemOverlap) ? 1 : 0;
     bool hovered = ImGui::IsItemHovered();
     ImGui::SameLine();
     ImGui::Dummy(ImVec2(ImGui::GetStyle().ItemSpacing.x / 2, 0.0f));  // like MenuItem() behaves, inner padding
@@ -99,12 +121,32 @@ bool ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
     if (!hovered)
         ImGui::PopStyleColor();
 
+    //        const char* icon = "\xef\x81\x97"; // disk with cross inside
+    //        const char* icon = "\xef\x80\x8d"; // cross
+    const char* icon = "\xef\x80\x94"; // trashcan
+
+    // see https://github.com/ocornut/imgui/issues/7805
+    float button_width = ImGui::CalcTextSize(icon).x; // Button text + style padding
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(button_width, 0));
+
+    {
+        ImGui::SameLine();
+        float x = ImGui::GetContentRegionMax().x - button_width - ImGui::GetStyle().ItemSpacing.x;
+
+        ImGui::SetCursorPosX(x);
+        if (ImGuiIconButton("Delete", icon, hovered, true))
+            ret = -1;
+    }
+
+    ImGui::EndGroup();
     ImGui::PopID();
 
     return activated;
 }
+*/
 
-bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
+int ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
 {
     assert(fileNameWithPath);
 
@@ -112,6 +154,7 @@ bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
         return false;
 
     ImGui::PushID(index);
+    ImGui::BeginGroup();
 
     const char* str = fileNameWithPath;
     // end of path, beginning of filename
@@ -124,7 +167,8 @@ bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
         end = here + 1;
 
     bool selected = false;
-    bool activated = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
+//    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
+    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_AllowItemOverlap) ? 1 : 0;
     bool hovered = ImGui::IsItemHovered();
     ImGui::SameLine();
 
@@ -139,9 +183,28 @@ bool ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
     if (!hovered)
         ImGui::PopStyleColor();
 
+//        const char* icon = "\xef\x81\x97"; // disk with cross inside
+//        const char* icon = "\xef\x80\x8d"; // cross
+    const char* icon = "\xef\x80\x94"; // trashcan
+
+    // see https://github.com/ocornut/imgui/issues/7805
+    float button_width = ImGui::CalcTextSize(icon).x; // Button text + style padding
+    ImGui::SameLine();
+    ImGui::Dummy(ImVec2(button_width, 0));
+
+    {
+        ImGui::SameLine();
+        float x = ImGui::GetContentRegionMax().x - button_width - ImGui::GetStyle().ItemSpacing.x;
+
+        ImGui::SetCursorPosX(x);
+        if (ImGuiIconButton("Delete", icon, hovered, true))
+            ret = -1;
+    }
+
+    ImGui::EndGroup();
     ImGui::PopID();
 
-    return activated;
+    return ret;
 }
 
 bool ImGui_File(const char* label, std::string& inOutName, const char* filterList)
@@ -195,20 +258,23 @@ bool ImGui_File(const char* label, std::string& inOutName, const char* filterLis
 	return ret;
 }
 
-bool ImGuiIconButton(const char* label, const char* icon)
+bool ImGuiIconButton(const char* label, const char* icon, bool enabled, bool bSmall)
 {
     // classic BeginMenu in comparison
 //    return ImGui::Button(label);
 
     ImVec4 hideColor = ImVec4(0, 0, 0, 0);
 
+    ImGui::PushStyleColor(ImGuiCol_Text, enabled ? ImGui::GetStyle().Colors[ImGuiCol_Text] : hideColor);
     ImGui::PushStyleColor(ImGuiCol_Border, hideColor);
     ImGui::PushStyleColor(ImGuiCol_BorderShadow, hideColor);
     ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
-    bool ret = ImGui::Button(icon);
-    ImGui::PopStyleColor(5);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));  // make icon square
+    bool ret = bSmall ? ImGui::SmallButton(icon) : ImGui::Button(icon);
+    ImGui::PopStyleVar();
+    ImGui::PopStyleColor(6);
 
     return ret;
 }
@@ -242,6 +308,7 @@ bool ImGuiMenuItem(const char* label, const char* icon, const char* shortcut, bo
 
     ImGui::PushStyleColor(ImGuiCol_Border, hideColor);
     ImGui::PushStyleColor(ImGuiCol_BorderShadow, hideColor);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));  // make icon square
     if (p_checked)
     {
         ImGui::PushStyleColor(ImGuiCol_Text, *p_checked ? color : hideColor);
@@ -276,6 +343,7 @@ bool ImGuiMenuItem(const char* label, const char* icon, const char* shortcut, bo
         ImGui::PopStyleColor(4);
         ImGui::SameLine();
     }
+    ImGui::PopStyleVar();
     ImGui::PopStyleColor(2);
 
     // Use Selectable for the main logic of a menu item
@@ -332,7 +400,9 @@ bool ImGuiBeginMenu(const char* label, bool enabled)
     ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
+    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));  // make icon square
     ImGui::SmallButton(checkIcon);
+    ImGui::PopStyleVar();
     ImGui::PopStyleColor(6);
 
     ImGui::SameLine();

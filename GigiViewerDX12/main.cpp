@@ -91,6 +91,8 @@ static const UINT D3D12SDKVersion_Retail = 616;
 extern "C" { __declspec(dllexport) extern const UINT D3D12SDKVersion = D3D12SDKVersion_Retail; }
 extern "C" { __declspec(dllexport) extern const char* D3D12SDKPath = ".\\external\\AgilitySDK\\Retail\\bin\\"; }
 
+extern bool ParseVisualStudioErrorLine(const char* inputLine, std::string& fileName, uint32_t& line, uint32_t& column);
+
 static const UUID ExperimentalFeaturesEnabled[] =
 {
     D3D12ExperimentalShaderModels,
@@ -201,6 +203,8 @@ static GGViewerConfig g_viewerConfig;
 
 RecentFiles g_recentFiles("Software\\GigiViewer");
 RecentFiles g_recentPythonScripts("Software\\GigiViewerPy");
+
+static bool g_runTests = false;
 
 // We always compile against external/AgilitySDK/Preview/include as a superset of all choices.
 // The DLL's we choose at runtime can come from different places though.
@@ -1404,16 +1408,24 @@ void ImGuiRecentFiles()
         if (ImGuiBeginMenu("Recent Files"))
         {
             int index = 0;
+            int removeIndex = -1;
             for (const auto& el : g_recentFiles.GetEntries())
             {
-                if(ImGui_FilePathMenuItem(el.c_str(), index++))
+                int action = ImGui_FilePathMenuItem(el.c_str(), index++);
+
+                if(action == 1)
                 {
                     // make a copy so we don't point to data we might change
                     std::string fileName = el;
                     LoadGGFile(fileName.c_str(), false, true);
                     break;
                 }
+                else if (action == -1)
+                {
+                    removeIndex = index - 1;
+                }
             }
+            g_recentFiles.RemoveEntry(removeIndex);
             ImGui::EndMenu();
         }
     }
@@ -1426,9 +1438,12 @@ void ImGuiRecentPythonScripts()
         if (ImGuiBeginMenu("Recent Python Scripts"))
         {
             int index = 0;
+            int removeIndex = -1;
             for (const auto& el : g_recentPythonScripts.GetEntries())
             {
-                if (ImGui_FilePathMenuItem(el.c_str(), index++))
+                int action = ImGui_FilePathMenuItem(el.c_str(), index++);
+
+                if (action == 1)
                 {
                     // make a copy so we don't point to data we might change
                     std::string fileName = el;
@@ -1436,7 +1451,12 @@ void ImGuiRecentPythonScripts()
                     g_runPyArgs.clear();
                     break;
                 }
+                else if (action == -1)
+                {
+                    removeIndex = index - 1;
+                }
             }
+            g_recentPythonScripts.RemoveEntry(removeIndex);
             ImGui::EndMenu();
         }
     }
@@ -4135,6 +4155,12 @@ void ShowImGuiWindows()
             changed |= KeyBindingDropDown("Fast", g_viewerConfig.keyCameraFast);
             changed |= KeyBindingDropDown("Slow", g_viewerConfig.keyCameraSlow);
 
+            ImGui::SeparatorText("Experimental");
+
+            changed |= ImGui::Checkbox("Better Shader Errors", &g_viewerConfig.betterShaderError);
+//            ImGuiMenuItem("Better Shader Errors", 0, "", &g_interpreter.m_betterShaderErrors);
+            ShowToolTip("Experimental: This allows to double click shader errors with an attached debugger (see Debug output in VisualStudio)");
+
             if (changed)
             {
                 std::filesystem::path dir = GetLocalAppDataPath();
@@ -4292,6 +4318,30 @@ void PushStyleColorFade(uint32_t index, float fade)
     ImGui::PushStyleColor(index, color);
 }
 
+// O(n) with number of lines
+// @return -1 if there is no single selection
+int GetSingleSelection()
+{
+    // no selection
+    int ret = -1;
+
+    int index = 0;
+    for (const auto& msg : g_log)
+    {
+        if (msg.selected)
+        {
+            if (ret != -1)
+                return -1; // multiple selection
+
+            // single selection
+            ret = index;
+        }
+        ++index;
+   }
+
+   return ret;
+}
+
 void CopyToClipboard(bool copyAll, bool withType)
 {
     std::ostringstream text;
@@ -4372,6 +4422,9 @@ void ShowLog()
     PushStyleColorFade(ImGuiCol_HeaderHovered, fade);
     PushStyleColorFade(ImGuiCol_HeaderActive, fade);
 
+    // -1 if not double clicked
+    int jumpToErrorIndex = -1;
+
     // todo: this can be optimized to only render the visible range
     for (size_t index = 0, count = g_log.size(); index < count; ++index)
     {
@@ -4428,6 +4481,21 @@ void ShowLog()
         }
         ImGui::PopID();
 
+        if (ImGui::IsItemHovered())
+        {
+            if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                jumpToErrorIndex = (int)index;
+            }
+            if (!msg.selected && ImGui::IsMouseReleased(ImGuiMouseButton_Right))   // open context menu on not selected line
+            {
+                // Single select
+                for (auto& msg2 : g_log)
+                    msg2.selected = false;
+                msg.selected = true;
+            }
+        }
+
         // Autoscroll
         if (ImGui::GetScrollY() >= ImGui::GetScrollMaxY())
             ImGui::SetScrollHereY(1.0f);
@@ -4438,7 +4506,36 @@ void ShowLog()
     // Right-click context menu
     if (ImGui::BeginPopupContextWindow("RightClickAnywhere", ImGuiPopupFlags_MouseButtonRight))
     {
-        if (ImGuiMenuItem("Copy Selection", 0, "Ctrl+C"))
+        if(g_viewerConfig.betterShaderError)
+        {
+            // can be optimized
+            const int singleSelectionIndex = GetSingleSelection();
+            bool enabled = false;
+
+            if (singleSelectionIndex >= 0)
+            {
+                const auto& msg = g_log[singleSelectionIndex];
+
+                std::string jumpToErrorFileName;
+                uint32_t line = 0, column = 0;
+                if (ParseVisualStudioErrorLine(msg.msg.c_str(), jumpToErrorFileName, line, column))
+                    enabled = true;
+            }
+
+            ImGuiEnable enable(enabled);
+
+            if (ImGuiMenuItem("Jump to error", ICON_FA_CIRCLE_ARROW_RIGHT, "double click"))
+                jumpToErrorIndex = singleSelectionIndex;
+
+            ShowToolTip(
+                "If possible, this opens the file at the specific line in a text editor (currently only VSCode).\n"
+                "You also can attach a debugger or start with a debugger attached (e.g. Visual Studio)",
+                true);
+
+            ImGui::Separator();
+        }
+
+        if (ImGuiMenuItem("Copy Selection", ICON_FA_COPY, "Ctrl+C"))
             CopyToClipboard(false, false);
 
         if (ImGuiMenuItem("Copy Selection with message type"))
@@ -4453,6 +4550,58 @@ void ShowLog()
             g_log.clear();
 
         ImGui::EndPopup();
+    }
+
+    if(jumpToErrorIndex != -1)
+    {
+        std::string jumpToErrorFileName;
+
+        const auto& msg = g_log[jumpToErrorIndex];
+
+        uint32_t line = 0, column = 0;
+        if (ParseVisualStudioErrorLine(msg.msg.c_str(), jumpToErrorFileName, line, column))
+        {
+            {
+                // VSCode (opens a terminal window, works, jumps to line)
+                // Note: 'code' command must be in the system's PATH environment variable
+                const char* devenvPath = "code";
+                std::string parameters = "-g \"" + jumpToErrorFileName + ":" + std::to_string(line) + "\"";
+                ShellExecuteA(NULL, "open", devenvPath, parameters.c_str(), NULL, SW_HIDE);
+            }
+/* Experiments:
+*
+            // system() from #include <cstdlib> is much slower in startup than ShellExecuteA()
+            // SW_SHOWNORMAL or SW_SHOWDEFAULT open a terminal window. SW_HIDE is good. Alternative: CreateProcess
+            //
+            // This should work (We can make combo box or a string to customize which application should be used.):
+            // * VisualStudio      /edit "file" /command "edit.goto line"
+            // * VSCode            code -g file:line
+            // * Notepad++         notepad++ file -nLine
+            // * Sublime Text      subl file:line
+            // * Vim               vim +line file
+
+//              if (std::filesystem::path(fileName).is_relative())
+//                  fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+            {
+                // VSCode (works, takes seconds, opens a terminal window)
+                std::string command = "code --goto " + fileName + ":" + std::to_string(line);
+                // Note: 'code' command must be in the system's PATH environment variable
+                system(command.c_str());
+            }
+            {
+                // VisualStudio (fast, opens the right file but does not jump to line)
+                const char* devenvPath = "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional\\Common7\\IDE\\devenv.exe";
+                std::string parameters = "/edit \"" + fileName+ "\" /command \"Edit.GoTo " + std::to_string(line) + "\"";
+                ShellExecuteA(NULL, "open", devenvPath, parameters.c_str(), NULL, SW_SHOWDEFAULT);
+            }
+            {
+                // Notepad++ (does not work, takes seconds, opens a terminal window)
+                std::string command = "notepad++ " + fileName + " -n" + std::to_string(line);
+                // Note: 'notepad++' command must be in the system's PATH
+                system(command.c_str());
+            }
+*/
+        }
     }
 
 
@@ -6379,7 +6528,8 @@ void ShowResourceView()
                             ImGui::SameLine();
                             ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
                             ImGui::SameLine();
-                            ImGui::Checkbox("Linear Filter", &g_imageLinearFilter);
+                            ImGui::Checkbox("Bilinear", &g_imageLinearFilter);
+                            ShowToolTip("If true, uses bilinear sampling when zooming into a texture.\nElse uses nearest neighbor point sampling.");
 
                             // sRGB
                             {
@@ -6411,6 +6561,8 @@ void ShowResourceView()
                                     }
                                     ImGui::EndCombo();
                                 }
+
+                                ShowToolTip("Controls how the pixel data is interpreted.\nAuto: Controlled by texture format (*_sRGB formats will be sRGB, others will be linear).\nsRGB: show the texture as if it has sRGB encoded data in it.\nLinear: show it as if it has linear data.");
                             }
                         }
 
@@ -8898,6 +9050,11 @@ int main(int argc, char** argv)
             g_GPUValidation = true;
             argIndex++;
         }
+        else if (!_stricmp(argv[argIndex], "-tests"))
+        {
+            g_runTests = true;
+            argIndex++;
+        }
         else if (!_stricmp(argv[argIndex], "-renderdoc"))
         {
             g_renderDocEnabled = true;
@@ -9123,6 +9280,12 @@ int main(int argc, char** argv)
         g_interpreter.SupportsRaytracing() ? "Yes" : "No"
     );
     Log(LogLevel::Info, "CPU: '%s'", GetCPUName().c_str());
+
+    if (g_runTests)
+    {
+        extern void RunShaderUnitTest();
+        RunShaderUnitTest();
+    }
 
     // Main loop
     int mainRet = 0;
@@ -9734,4 +9897,9 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+}
+
+bool getBetterShaderErrors()
+{
+    return g_viewerConfig.betterShaderError;
 }

@@ -256,6 +256,21 @@ namespace Audio
 
     void ReinitAsNeeded(const GGUserFile_Audio& audioSettings, GigiInterpreterPreviewWindowDX12& interpreter)
     {
+        // If no audio going on, release and don't allow re-init.
+        // Some people report that Gigi audio being initialized messes with the other audio on their system
+        // so we are only keeping it initialized when it is asked for.
+        {
+            int varOutSampleWindowCountIndex = interpreter.GetRuntimeVariableIndex(audioSettings.Var_AudioOutSampleWindowCount.c_str());
+            int varInSampleWindowCountIndex = interpreter.GetRuntimeVariableIndex(audioSettings.Var_AudioInSampleWindowCount.c_str());
+
+            if (varOutSampleWindowCountIndex == -1 && varInSampleWindowCountIndex == -1)
+            {
+                ReleaseAudio(interpreter);
+                s_state.lastSettingsHash = 0;
+                return;
+            }
+        }
+
         // If same settings as last time, do nothing
         size_t hash = HashAll(audioSettings.sampleRate, audioSettings.stereo, audioSettings.outputBufferLengthMs, audioSettings.inputBufferLengthMs);
         if (s_state.lastSettingsHash == hash)

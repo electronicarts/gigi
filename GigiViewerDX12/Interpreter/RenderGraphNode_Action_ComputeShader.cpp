@@ -223,6 +223,14 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
 			// Shader compilation depends on which shader compiler they opted to use for this technique
 			ShaderCompilationInfo shaderCompilationInfo;
+            
+            shaderCompilationInfo.sourceFileName = node.shader.shader->fileName;
+
+            shaderCompilationInfo.rootDirectory = m_renderGraph.baseDirectory;
+            StringReplaceAll(shaderCompilationInfo.rootDirectory, "\\", "/");
+            if(!shaderCompilationInfo.rootDirectory.empty() && shaderCompilationInfo.rootDirectory.back() == '/')
+                shaderCompilationInfo.rootDirectory.pop_back();
+
 			shaderCompilationInfo.fileName = fullFileName;
 			shaderCompilationInfo.entryPoint = node.shader.shader->entryPoint;
 			shaderCompilationInfo.shaderModel = m_renderGraph.settings.dx12.shaderModelCs;
@@ -253,6 +261,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 			{
 				shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
 			}
+
+            extern bool getBetterShaderErrors();
+            if(getBetterShaderErrors())
+            {
+                shaderCompilationInfo.flags |= ShaderCompilationFlags::BetterShaderErrors;
+            }
 
 			std::vector<std::string> allShaderFiles;
 			switch (m_renderGraph.settings.dx12.shaderCompiler)

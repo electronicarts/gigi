@@ -279,6 +279,12 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 				shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
 			}
 
+            extern bool getBetterShaderErrors();
+            if (getBetterShaderErrors())
+            {
+                shaderCompilationInfo.flags |= ShaderCompilationFlags::BetterShaderErrors;
+            }
+
 			// Ray tracing shader compilation must use dxc
 			for (const ShaderExport& shaderExport : shaderExports)
 			{

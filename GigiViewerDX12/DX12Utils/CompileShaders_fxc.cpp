@@ -4,6 +4,7 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 #include "CompileShaders.h"
+#include "ShaderErrorParse.h"
 
 #include <d3d12.h>
 #include <D3Dcompiler.h>
@@ -105,8 +106,30 @@ static ID3DBlob* CompileShaderToByteCode_Private(
         _com_error err(hr);
         if (error)
         {
-            const char* errorMsg = (const char*)error->GetBufferPointer();
-            logFn(LogLevel::Error, "Could not compile shader %s:\n%s\n%s", fileNameStr.c_str(), FromWideString(err.ErrorMessage()).c_str(), errorMsg);
+            // fxc.exe error output is already like VisualStudio wants it with line number in round brackets but the path is to the temp file.
+            const char* errorText = (const char*)error->GetBufferPointer();
+
+            // If Visual Studio or some other tool is attached we can double click on the line to jump to the error.
+
+            OutputDebugStringA("\nFXC shader compile error: =======================================================");
+
+            if ((shaderInfo.flags & ShaderCompilationFlags::BetterShaderErrors) != ShaderCompilationFlags::None)
+            {
+                OutputDebugStringA(" BetterShaderErrors=1:\n");
+                // If Visual Studio or some other tool is attached we can double click on the line to jump to the error.
+                std::string errorString = fixupHLSLErrors((const Char*)errorText, fileNameStr.c_str(), shaderInfo.rootDirectory, shaderInfo.sourceFileName);
+                OutputDebugStringA(errorString.c_str());
+                logFn(LogLevel::Error, "Could not compile shader %s:\n%s\n%s", fileNameStr.c_str(), FromWideString(err.ErrorMessage()).c_str(), errorString.c_str());
+            }
+            else
+            {
+                logFn(LogLevel::Error, "Could not compile shader %s:\n%s\n%s", fileNameStr.c_str(), FromWideString(err.ErrorMessage()).c_str(), errorText);
+                OutputDebugStringA(" BetterShaderErrors=0:\n");
+                OutputDebugStringA(errorText);
+            }
+
+            OutputDebugStringA("\n");
+
             error->Release();
             error = nullptr;
         }
