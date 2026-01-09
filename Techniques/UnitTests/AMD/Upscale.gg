@@ -550,7 +550,7 @@
                             "pin": "colorTarget2"
                         },
                         "exposure": {
-                            "node": "Output Render UI"
+                            "node": "UI_Layer"
                         },
                         "reactive": {
                             "node": "Reactive",
@@ -834,17 +834,17 @@
                 ],
                 "frontIsCounterClockwise": false,
                 "shadingRateImage": {
-                    "node": "Output Render UI"
+                    "node": "UI_Layer"
                 },
                 "vertexBuffer": {
                     "node": "vertexBuffer",
                     "pin": "resource"
                 },
                 "indexBuffer": {
-                    "node": "Output Render UI"
+                    "node": "UI_Layer"
                 },
                 "instanceBuffer": {
-                    "node": "Output Render UI"
+                    "node": "UI_Layer"
                 },
                 "colorTargets": [
                     {
@@ -860,7 +860,7 @@
                         "pin": "resource"
                     },
                     {
-                        "node": "Output Render UI"
+                        "node": "UI_Layer"
                     },
                     {},
                     {},
@@ -963,17 +963,17 @@
                 ],
                 "frontIsCounterClockwise": false,
                 "shadingRateImage": {
-                    "node": "Output Render UI"
+                    "node": "UI_Layer"
                 },
                 "vertexBuffer": {
                     "node": "Opaue",
                     "pin": "vertexBuffer"
                 },
                 "indexBuffer": {
-                    "node": "Output Render UI"
+                    "node": "UI_Layer"
                 },
                 "instanceBuffer": {
-                    "node": "Output Render UI"
+                    "node": "UI_Layer"
                 },
                 "colorTargets": [
                     {
@@ -989,7 +989,7 @@
                         "pin": "colorTarget2"
                     },
                     {
-                        "node": "Output Render UI"
+                        "node": "UI_Layer"
                     },
                     {},
                     {},
@@ -1115,7 +1115,7 @@
                     },
                     {
                         "srcPin": "Pin 2",
-                        "dstNode": "Output Render UI"
+                        "dstNode": "UI_Layer"
                     },
                     {
                         "srcPin": "Pin 3"
@@ -1178,7 +1178,7 @@
                     },
                     {
                         "srcPin": "UITexture",
-                        "dstNode": "Output Render UI",
+                        "dstNode": "UI_Layer",
                         "dstPin": "resource"
                     }
                 ],
@@ -1234,7 +1234,7 @@
         },
         {
             "resourceTexture": {
-                "name": "Output Render UI",
+                "name": "UI_Layer",
                 "editorPos": [
                     843.0,
                     418.0

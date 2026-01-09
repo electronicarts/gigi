@@ -21,7 +21,7 @@
     },
     "snapshot": {
         "resourceViewNodeIndex": 15,
-        "resourceViewResourceIndex": 2,
+        "resourceViewResourceIndex": 3,
         "cameraPos": [
             -14.159412384033204,
             9.192329406738282,
@@ -46,6 +46,7 @@
     "AMDFrameInterpolation": {
         "ENABLE_DEBUG_CHECKING": false,
         "depth": "Depth",
-        "motionVectors": "Motion_Vectors"
+        "motionVectors": "Motion_Vectors",
+        "uiTexture": "UI_Layer"
     }
 }

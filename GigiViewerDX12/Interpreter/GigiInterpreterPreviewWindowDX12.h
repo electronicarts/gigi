@@ -825,7 +825,7 @@ public:
 
     const TransitionTracker& GetTransitions() const { return m_transitions; }
     TransitionTracker& GetTransitionsNonConst() { return m_transitions; }
-
+    ID3D12DescriptorHeap* getSRVHeap() const { return m_SRVHeap; }
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
 	// clang-format off

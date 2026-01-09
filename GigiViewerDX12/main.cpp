@@ -2822,6 +2822,8 @@ void ShowAMDFrameInterpolation()
     ShowToolTip("The depth buffer data");
     ShowNodeDropDown("motionVectors", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.motionVectors);
     ShowToolTip("The motion vector data");
+    ShowNodeDropDown("uiTexture", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.uiTexture);
+    ShowToolTip("The ui layer");
 
     // FfxApiCreateContextFramegenerationFlags
     ImGui::Text("FfxApiCreateContextFramegenerationFlags:");
