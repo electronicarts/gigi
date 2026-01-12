@@ -1108,7 +1108,7 @@ namespace AMDFrameInterpolation
             interpreter.GetLogFn()(LogLevel::Info, "Initialized AMD FidelityFXSDK frame generation context\nversionid 0x%016llx, %s\ntotalUsageInBytes %f MB aliasableUsageInBytes %f MB", getVersion.versionId, getVersion.versionName, gpuMemoryUsageFrameGenerationV2.totalUsageInBytes / 1048576.f, gpuMemoryUsageFrameGenerationV2.aliasableUsageInBytes / 1048576.f);
         }
 
-        int uiRenderMode = 2;
+        int uiRenderMode = settings.fsrUIRenderMode;
 
         // Configure frame generation
         {
