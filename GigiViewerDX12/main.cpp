@@ -2834,6 +2834,12 @@ void ShowAMDFrameInterpolation()
     ShowToolTip("The depth buffer data");
     ShowNodeDropDown("motionVectors", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.motionVectors);
     ShowToolTip("The motion vector data");
+    ShowNodeDropDown("uiTexture", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.uiTexture);
+    ShowToolTip("The ui layer");
+
+    const char* uiRenderModeItems[] = { "Standard", "Swapchain", "Callback", "Hudless" };
+    ImGui::Combo("UI Render Mode", &g_AMDFrameInterpolation.fsrUIRenderMode, uiRenderModeItems, IM_ARRAYSIZE(uiRenderModeItems));
+    ShowToolTip("Control how the UI is composited with frame generation");
 
     // FfxApiCreateContextFramegenerationFlags
     ImGui::Text("FfxApiCreateContextFramegenerationFlags:");

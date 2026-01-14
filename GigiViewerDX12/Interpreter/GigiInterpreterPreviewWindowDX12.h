@@ -859,6 +859,7 @@ public: // access for CompileShader()
 
     std::vector<ShaderDefine> m_envDefines;
 
+    ID3D12DescriptorHeap* getSRVHeap() const { return m_SRVHeap; }
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
 	// clang-format off

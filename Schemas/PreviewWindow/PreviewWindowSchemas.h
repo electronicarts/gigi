@@ -82,6 +82,8 @@ STRUCT_BEGIN(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, "")
 
     STRUCT_FIELD(std::string, version, "default", "The version used", SCHEMA_FLAG_NO_SERIALIZE)
 
+    STRUCT_FIELD(int, fsrUIRenderMode, 2, "UI Render Mode: 0=Standard, 1=Swapchain, 2=Callback, 3=Hudless", 0)
+
     // FfxApiCreateContextFramegenerationFlags
     STRUCT_FIELD(bool, ENABLE_ASYNC_WORKLOAD_SUPPORT, { true }, "", 0)
     STRUCT_FIELD(bool, ENABLE_MOTION_VECTORS_JITTER_CANCELLATION, { false }, "A bit indicating that the motion vectors have the jittering pattern applied to them.", 0)
@@ -96,6 +98,7 @@ STRUCT_BEGIN(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, "")
 
     STRUCT_FIELD(std::string, depth, "", "The depth buffer data", SCHEMA_FLAG_NO_UI)
     STRUCT_FIELD(std::string, motionVectors, "", "The motion vector data", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(std::string, uiTexture, "", "The UI texture data", SCHEMA_FLAG_NO_UI)
 
     STRUCT_FIELD(bool, allowAsyncWorkloads, { true }, "Sets the state of async workloads. Set to true to enable generation work on async compute.", 0)
     STRUCT_FIELD(bool, onlyPresentGenerated, { false }, "Set to true to only present generated frames.", 0)
