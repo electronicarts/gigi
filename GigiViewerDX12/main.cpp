@@ -8874,6 +8874,7 @@ void RenderFrame(bool forceExecute)
         Audio::PostRender(g_Audio, g_interpreter, g_pd3dCommandList, NUM_FRAMES_IN_FLIGHT, !(g_executeTechnique || forceExecute));
 
     // Frame interpolation
+    if (g_executeTechnique || forceExecute)
     {
         POINT upperLeft = { 0, 0 };
         ClientToScreen(g_hwnd, &upperLeft);

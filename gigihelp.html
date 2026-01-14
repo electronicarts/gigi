@@ -1674,6 +1674,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool enabled</td><td>{ false }</td><td></td></tr>
 <tr><td>unsigned int sleepMS</td><td>0</td><td>The number of milliseconds to sleep every frame. Useful for artificially slowing down the rendering to see frame interpolation in action.</td></tr>
 <tr><td><i>std::string version</i></td><td>"default"</td><td>The version used</td></tr>
+<tr><td>int fsrUIRenderMode</td><td>2</td><td>UI Render Mode: 0=Standard, 1=Swapchain, 2=Callback, 3=Hudless</td></tr>
 <tr><td>bool ENABLE_ASYNC_WORKLOAD_SUPPORT</td><td>{ true }</td><td></td></tr>
 <tr><td>bool ENABLE_MOTION_VECTORS_JITTER_CANCELLATION</td><td>{ false }</td><td>A bit indicating that the motion vectors have the jittering pattern applied to them.</td></tr>
 <tr><td>bool ENABLE_HIGH_DYNAMIC_RANGE</td><td>{ false }</td><td>A bit indicating if the input color data provided to all inputs is using a high-dynamic range.</td></tr>
@@ -1684,6 +1685,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>bool DRAW_DEBUG_PACING_LINES</td><td>{ false }</td><td>A bit indicating that the debug pacing lines will be drawn to the generated output.</td></tr>
 <tr><td>std::string depth</td><td>""</td><td>The depth buffer data</td></tr>
 <tr><td>std::string motionVectors</td><td>""</td><td>The motion vector data</td></tr>
+<tr><td>std::string uiTexture</td><td>""</td><td>The UI texture data</td></tr>
 <tr><td>bool allowAsyncWorkloads</td><td>{ true }</td><td>Sets the state of async workloads. Set to true to enable generation work on async compute.</td></tr>
 <tr><td>bool onlyPresentGenerated</td><td>{ false }</td><td>Set to true to only present generated frames.</td></tr>
 <tr><td>bool constrainToRectangle</td><td>{ false }</td><td>If true, constrains frame generation to the texture being viewed.</td></tr>
