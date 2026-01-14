@@ -191,6 +191,7 @@ table, th, td, tr
 <table>
 <tr><th colspan=2>ShaderType</th></tr>
 <tr><td>Compute</td><td>Compute shader</td></tr>
+<tr><td>WorkGraph</td><td>WorkGraph Entry shader</td></tr>
 <tr><td>RTRayGen</td><td>Ray generation shader</td></tr>
 <tr><td>RTClosestHit</td><td>Closest hit shader</td></tr>
 <tr><td>RTAnyHit</td><td>Any hit shader</td></tr>
@@ -673,6 +674,14 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 </table>
 <br/>
 
+<b>ValueOrVariable_Uint : ValueOrVariable<uint></b><br/><br/>
+<table>
+<tr><th colspan=3>ValueOrVariable_Uint</th></tr>
+<tr><td>uint32_t value</td><td>0</td><td>The value to use if no variable given</td></tr>
+<tr><td>VariableReference variable</td><td>{}</td><td>The variable to use</td></tr>
+</table>
+<br/>
+
 <b>ValueOrVariable_Int4 : ValueOrVariable<int4></b><br/><br/>
 <table>
 <tr><th colspan=3>ValueOrVariable_Int4</th></tr>
@@ -705,6 +714,15 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <b>ComputeShaderReference : A reference to a shader</b><br/><br/>
 <table>
 <tr><th colspan=3>ComputeShaderReference</th></tr>
+<tr><td>std::string name</td><td>""</td><td>The name of the shader</td></tr>
+<tr><td><i>int shaderIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
+<tr><td><i>struct Shader* shader</i></td><td>nullptr</td><td>Calculated for convenience.</td></tr>
+</table>
+<br/>
+
+<b>WorkGraphShaderReference : A reference to a work graph entry shader</b><br/><br/>
+<table>
+<tr><th colspan=3>WorkGraphShaderReference</th></tr>
 <tr><td>std::string name</td><td>""</td><td>The name of the shader</td></tr>
 <tr><td><i>int shaderIndex</i></td><td>-1</td><td>Calculated for convenience.</td></tr>
 <tr><td><i>struct Shader* shader</i></td><td>nullptr</td><td>Calculated for convenience.</td></tr>
@@ -1302,7 +1320,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>ValueOrVariable_Bool ENABLE_MOTION_VECTORS_JITTER_CANCELLATION</td><td>{ false }</td><td>A bit indicating that the motion vectors have the jittering pattern applied to them.</td></tr>
 <tr><td>ValueOrVariable_Bool ENABLE_DEPTH_INVERTED</td><td>{ true }</td><td>A bit indicating that the input depth buffer data provided is inverted [1..0].</td></tr>
 <tr><td>ValueOrVariable_Bool ENABLE_DEPTH_INFINITE</td><td>{ false }</td><td>A bit indicating that the input depth buffer data provided is using an infinite far plane.</td></tr>
-<tr><td>ValueOrVariable_Bool ENABLE_AUTO_EXPOSURE</td><td>{ false }</td><td>A bit indicating if automatic exposure should be applied to input color data.</td></tr>
+<tr><td>ValueOrVariable_Bool ENABLE_AUTO_EXPOSURE</td><td>{ true }</td><td>A bit indicating if automatic exposure should be applied to input color data.</td></tr>
 <tr><td>ValueOrVariable_Bool ENABLE_DYNAMIC_RESOLUTION</td><td>{ false }</td><td>A bit indicating that the application uses dynamic resolution scaling.</td></tr>
 <tr><td>ValueOrVariable_Bool ENABLE_DEBUG_CHECKING</td><td>{ false }</td><td>A bit indicating that the runtime should check some API values and report issues.</td></tr>
 <tr><td>ValueOrVariable_Bool ENABLE_NON_LINEAR_COLORSPACE</td><td>{ false }</td><td>A bit indicating that the color resource contains perceptual (gamma corrected) colors</td></tr>
@@ -1464,6 +1482,22 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>CopyResource_BufferToBuffer bufferToBuffer</td><td>{}</td><td>Settings when copying from a buffer to another buffer.</td></tr>
 <tr><td>NodePinReference source</td><td>{}</td><td>The resource being copied from.</td></tr>
 <tr><td>NodePinReference dest</td><td>{}</td><td>The resource being copied to.</td></tr>
+</table>
+<br/>
+
+<b>RenderGraphNode_Action_WorkGraph : Executes a work graph</b><br/><br/>
+<table>
+<tr><th colspan=3>RenderGraphNode_Action_WorkGraph - Inherits from RenderGraphNode_ActionBase</th></tr>
+<tr><td><b>inline static const std::string c_editorName</b></td><td>"Work Graph"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const std::string c_shortTypeName</b></td><td>"WGraph"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const std::string c_shorterTypeName</b></td><td>"WG"</td><td>Used by the editor.</td></tr>
+<tr><td><b>inline static const bool c_showInEditor</b></td><td>true</td><td>Used by the editor.</td></tr>
+<tr><td>WorkGraphShaderReference entryShader</td><td>{}</td><td>The work graph entry shader.</td></tr>
+<tr><td>ShaderVariableAliases shaderVariableAliases</td><td>{}</td><td></td></tr>
+<tr><td>std::string entryPoint</td><td>""</td><td>The shader entrypoint. Overrides the shader entry entryPoint.</td></tr>
+<tr><td>ValueOrVariable_Uint numRecords</td><td>{ 1 }</td><td>how many records the work graph launches with. If a buffer is given, it is calculated from the buffer size divided by shader record stride instead.</td></tr>
+<tr><td>NodePinReferenceOptional records</td><td>{}</td><td>records to launch the work graph with</td></tr>
+<tr><td>ShaderDefine defines[]</td><td></td><td>The defines the shaders ares compiled with, on top of whatever defines the shaders have already</td></tr>
 </table>
 <br/>
 
@@ -1759,6 +1793,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string CameraFarPlane_varName</td><td>"CameraFarPlane"</td><td></td></tr>
 <tr><td>std::string ShadingRateImageTileSize_varName</td><td>"ShadingRateImageTileSize"</td><td></td></tr>
 <tr><td>std::string KeyState_bufferName</td><td>""</td><td>256 entries for the keys this frame, and 256 entries for the keys last frame. 512 entries total.</td></tr>
+<tr><td>float motionVectorDepthThreshold</td><td>0.1f</td><td>Maximum allowed difference between depth values when comparing pixels for motion vector inlier selection.</td></tr>
 </table>
 <br/>
 
@@ -1835,6 +1870,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string keyCameraDown</td><td>"Q"</td><td>Camera down key</td></tr>
 <tr><td>std::string keyCameraFast</td><td>"Shift"</td><td>Camera fast key</td></tr>
 <tr><td>std::string keyCameraSlow</td><td>"Control"</td><td>Camera slow key</td></tr>
+<tr><td>bool betterShaderError</td><td>false</td><td>Double click shader errors with an attached debugger.</td></tr>
 </table>
 <br/>
 
@@ -1953,6 +1989,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>int numDSVDescriptors</td><td>256</td><td>The number of descriptors in the internal DSV heap</td></tr>
 <tr><td>DXShaderCompiler shaderCompiler</td><td>DXShaderCompiler::DXC</td><td>The shader compiler to use</td></tr>
 <tr><td>std::string shaderModelCs</td><td>"cs_6_1"</td><td>The default shader model to use for compute shaders</td></tr>
+<tr><td>std::string shaderModelWg</td><td>"lib_6_8"</td><td>The default shader model to use for compute shader work graphs</td></tr>
 <tr><td>std::string shaderModelVs</td><td>"vs_6_1"</td><td>The default shader model to use for vertex shaders</td></tr>
 <tr><td>std::string shaderModelPs</td><td>"ps_6_1"</td><td>The default shader model to use for pixel shaders</td></tr>
 <tr><td>std::string shaderModelRayShaders</td><td>"lib_6_3"</td><td>The default shader model to use for ray shaders</td></tr>
@@ -2199,6 +2236,7 @@ See .bat for more info</td></tr>
 <tr><td>RenderGraphNode_Action_RayShader actionRayShader</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_CopyResource actionCopyResource</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_DrawCall actionDrawCall</td><td>{}</td><td></td></tr>
+<tr><td>RenderGraphNode_Action_WorkGraph actionWorkGraph</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_SubGraph actionSubGraph</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_Barrier actionBarrier</td><td>{}</td><td></td></tr>
 <tr><td>RenderGraphNode_Action_External actionExternal</td><td>{}</td><td></td></tr>

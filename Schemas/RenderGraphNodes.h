@@ -412,6 +412,22 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_CopyResource, RenderGraphNode_Action
     STRUCT_FIELD(NodePinReference, dest, {}, "The resource being copied to.", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
+STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_WorkGraph, RenderGraphNode_ActionBase, "Executes a work graph")
+    STRUCT_CONST(std::string, c_editorName, "Work Graph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shortTypeName, "WGraph", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(std::string, c_shorterTypeName, "WG", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_CONST(bool, c_showInEditor, true, "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_FIELD(WorkGraphShaderReference, entryShader, {}, "The work graph entry shader.", 0)
+    STRUCT_FIELD(ShaderVariableAliases, shaderVariableAliases, {}, "", 0)
+    STRUCT_FIELD(std::string, entryPoint, "", "The shader entrypoint. Overrides the shader entry entryPoint.", 0)
+
+    STRUCT_FIELD(ValueOrVariable_Uint, numRecords, { 1 }, "how many records the work graph launches with. If a buffer is given, it is calculated from the buffer size divided by shader record stride instead.", 0)
+    STRUCT_FIELD(NodePinReferenceOptional, records, {}, "records to launch the work graph with", SCHEMA_FLAG_NO_UI)
+
+    STRUCT_DYNAMIC_ARRAY(ShaderDefine, defines, "The defines the shaders ares compiled with, on top of whatever defines the shaders have already", SCHEMA_FLAG_UI_COLLAPSABLE)
+STRUCT_END()
+
 STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase, "Rasterization")
     STRUCT_CONST(std::string, c_editorName, "Draw Call", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_CONST(std::string, c_shortTypeName, "Draw", "Used by the editor.", SCHEMA_FLAG_NO_SERIALIZE)

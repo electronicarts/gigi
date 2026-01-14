@@ -1,0 +1,62 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.01",
+    "shaders": [
+        {
+            "name": "WG1",
+            "fileName": "WGSimple.hlsl",
+            "type": "WorkGraph",
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "actionWorkGraph": {
+                "name": "WorkGraph1",
+                "editorPos": [
+                    5.0,
+                    2.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Output",
+                        "dstPin": "resource"
+                    }
+                ],
+                "entryShader": {
+                    "name": "WG1"
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Output",
+                "editorPos": [
+                    -117.0,
+                    2.0
+                ],
+                "format": {
+                    "format": "RGBA8_Unorm"
+                },
+                "size": {
+                    "multiply": [
+                        32,
+                        64,
+                        1
+                    ]
+                }
+            }
+        }
+    ]
+}

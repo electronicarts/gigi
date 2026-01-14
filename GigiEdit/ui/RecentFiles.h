@@ -36,5 +36,8 @@ public:
 	// @param fileName must not be 0
 	void AddEntry(const char* fileName);
 
+    // does nothing if outside range
+    void RemoveEntry(int index);
+
 	void EnsureMaxSize();
 };

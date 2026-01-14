@@ -203,13 +203,23 @@ int main(int argc, char** argv)
 
     // Load Font Awesome icons
     {
+        float fontSize = 13.0f;
+
         io.Fonts->AddFontDefault();
         static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
-        icons_config.GlyphMinAdvanceX = 13.0f * 0.8f;  // default font size is 13
-        io.Fonts->AddFontFromFileTTF("external/FontAwesome/Font Awesome 7 Free-Solid-900.otf", icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
+        icons_config.GlyphMinAdvanceX = fontSize;
+
+        // Font Awesome 7 free, less needed icons
+//        icons_config.GlyphMinAdvanceX = 13.0f * 0.8f;  // default font size is 13
+//        const char* fontName = "external/FontAwesome/Font Awesome 7 Free-Solid-900.otf";
+
+        // Font Awesome 4 (before it was commercialized), more useful icons
+        const char* fontName = "external/FontAwesome/fontawesome-webfont.ttf";
+
+        io.Fonts->AddFontFromFileTTF(fontName, icons_config.GlyphMinAdvanceX, &icons_config, icons_ranges);
     }
 
     // Our state

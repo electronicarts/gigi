@@ -5,10 +5,30 @@
 
 #pragma once
 
+#include <type_traits>
+
 // This creates a function that takes a templated type and will vall visit on that type,
 // passing the render graph and data structure for each type visited.
 
 #include "external/df_serialize/_common.h"
+
+// SFINAE to detect if T has a static member 'name'
+template<typename T, typename = void>
+struct has_name : std::false_type {};
+
+template<typename T>
+struct has_name<T, std::void_t<decltype(std::declval<T>().name)>> : std::true_type {};
+
+template <typename T>
+std::string MakePathBufferIndexAndName(const T& object, const char* fieldName, int index)
+{
+    char pathBuffer[256];
+    if constexpr (has_name<T>::value)
+        sprintf_s(pathBuffer, ".%s[%i](\"%s\")", fieldName, index, object.name.c_str());
+    else
+        sprintf_s(pathBuffer, ".%s[%i]", fieldName, index);
+    return std::string(pathBuffer);
+}
 
 // catch all for pods
 template <typename TDATA, typename TVISITOR>
@@ -46,9 +66,7 @@ bool Visit(TDATA& data, TVISITOR& visitor, const std::string& path)
             return false; \
         for(int i = 0; i < (int)TDYNAMICARRAY_SIZE(data._NAME); ++i) \
         { \
-            char pathBuffer[256]; \
-            sprintf_s(pathBuffer, "." #_NAME "[%i]", i); \
-            if (!Visit(data._NAME[i], visitor, path + pathBuffer)) \
+            if (!Visit(data._NAME[i], visitor, path + MakePathBufferIndexAndName(data._NAME[i], #_NAME, i))) \
                 return false; \
         }
 
@@ -57,9 +75,7 @@ bool Visit(TDATA& data, TVISITOR& visitor, const std::string& path)
             return false; \
         for(int i = 0; i < (int)_SIZE; ++i) \
         { \
-            char pathBuffer[256]; \
-            sprintf_s(pathBuffer, "." #_NAME "[%i]", i); \
-            if (!Visit(data._NAME[i], visitor, path + pathBuffer)) \
+            if (!Visit(data._NAME[i], visitor, path + MakePathBufferIndexAndName(data._NAME[i], #_NAME, i))) \
                 return false; \
         }
 

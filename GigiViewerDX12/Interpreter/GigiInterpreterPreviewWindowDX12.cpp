@@ -417,9 +417,11 @@ void RuntimeTypes::RenderGraphNode_Base::HandleViewableResource(GigiInterpreterP
 
 			interpreter.m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
 		}
+        // Else is a buffer
 		else
 		{
-			interpreter.m_commandList->CopyResource(resource, uploadBuffer->buffer);
+            size_t bytesToCopy = min(resource->GetDesc().Width, uploadBufferSize);
+            interpreter.m_commandList->CopyBufferRegion(resource, 0, uploadBuffer->buffer, 0, bytesToCopy);
 		}
 	}
 }

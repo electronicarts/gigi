@@ -1,0 +1,1 @@
+GigiViewerDX12.exe -tests -run Techniques/UnitTests/RunTests.py

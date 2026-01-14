@@ -69,11 +69,12 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         { \
             const char* name; \
             EnumType value; \
+            const char* desc; \
         }; \
         const ShowUIEnumEntry enumItems[] = {
 
 #define ENUM_ITEM(_NAME, _DESCRIPTION) \
-            { #_NAME, EnumType::_NAME },
+            { #_NAME, EnumType::_NAME, _DESCRIPTION },
 
 #define ENUM_END() \
         }; \
@@ -93,6 +94,9 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
                 { \
                     value = enumItems[enumItemIndex].value; \
                     ret = true; \
+                } \
+                if (ImGui::IsItemHovered()) { \
+                    ImGui::SetTooltip("%s", enumItems[enumItemIndex].desc); \
                 } \
                 if (is_selected) \
                     ImGui::SetItemDefaultFocus(); \
@@ -824,7 +828,8 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     return UIOverrideResult::Finished;
 }
 
-inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ComputeShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+template<ShaderType TYPE, typename SHADER_REF>
+inline UIOverrideResult ShowShaderReferenceUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, SHADER_REF& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
     ImGui::PushID(label);
 
@@ -833,7 +838,7 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     {
         for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
         {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Compute)
+            if (index > 0 && renderGraph.shaders[index - 1].type != TYPE)
                 continue;
 
             std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
@@ -854,598 +859,98 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+    if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
         OnGoToShader(value.name.c_str());
     ShowUIToolTip("Go to shader");
 
     ImGui::PopID();
 
     return UIOverrideResult::Finished;
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, WorkGraphShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return ShowShaderReferenceUIOverride<ShaderType::WorkGraph>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
+}
+
+inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ComputeShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    return ShowShaderReferenceUIOverride<ShaderType::Compute>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RayGenShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTRayGen)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTRayGen>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RTAnyHitShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTAnyHit)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTAnyHit>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RTClosestHitShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTClosestHit)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTClosestHit>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RTIntersectionShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTIntersection)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTIntersection>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RTAnyHitShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTAnyHit)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTAnyHit>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RTClosestHitShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTClosestHit)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTClosestHit>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, RTIntersectionShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::RTIntersection)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::RTIntersection>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VertexShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Vertex)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Vertex>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, VertexShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Vertex)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Vertex>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, PixelShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Pixel)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Pixel>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, PixelShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Pixel)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Pixel>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, AmplificationShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Amplification)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Amplification>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, AmplificationShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Amplification)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Amplification>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, MeshShaderReference& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Mesh)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Mesh>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, MeshShaderReferenceOptional& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
 {
-    ImGui::PushID(label);
-
-    // Ray gen shader drop down
-    if (ImGui::BeginCombo(label, value.name.c_str()))
-    {
-        for (int index = 0; index < renderGraph.shaders.size() + 1; ++index)
-        {
-            if (index > 0 && renderGraph.shaders[index - 1].type != ShaderType::Mesh)
-                continue;
-
-            std::string label = (index == 0) ? " " : renderGraph.shaders[index - 1].name.c_str();
-
-            bool is_selected = value.name == label;
-            std::string safeLabel = label + "##";
-            if (ImGui::Selectable(safeLabel.c_str(), is_selected))
-            {
-                value.name = (index == 0) ? "" : label;
-                dirtyFlag = true;
-            }
-            if (is_selected)
-                ImGui::SetItemDefaultFocus();
-        }
-
-        ImGui::EndCombo();
-    }
-    ShowUIToolTip(tooltip);
-
-    ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
-        OnGoToShader(value.name.c_str());
-    ShowUIToolTip("Go to shader");
-
-    ImGui::PopID();
-
-    return UIOverrideResult::Finished;
+    return ShowShaderReferenceUIOverride<ShaderType::Mesh>(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext);
 }
 
 enum ShowUIOverride_ConstRequirement
@@ -1537,13 +1042,13 @@ inline UIOverrideResult ShowUIOverride_VariableRef_Constraints(RenderGraph& rend
     ImGui::SameLine();
     if (!value.name.empty())
     {
-        if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+        if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
             OnGoToVariable(value.name.c_str());
         ShowUIToolTip((std::string("Go to Variable: ") + value.name).c_str());
     }
     else
     {
-        if (ImGui::SmallButton(ICON_FA_CIRCLE_PLUS "##CreateVar"))
+        if (ImGuiIconButton("##CreateVar", ICON_FA_CIRCLE_PLUS))
         {
             value.name = OnCreateVariable(newVarName, dataFieldRequirement);
             OnCreateVarLambda();
@@ -1612,7 +1117,7 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
     ShowUIToolTip(tooltip);
 
     ImGui::SameLine();
-    if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+    if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
         OnGoToStruct(value.name.c_str());
     ShowUIToolTip("Go to Struct");
 
@@ -1843,6 +1348,8 @@ inline UIOverrideResult ShowUIOverride(RenderGraph& renderGraph, uint64_t _FLAGS
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionCopyResource, TypePaths::RenderGraphNode_Action_CopyResource::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionDrawCall, TypePaths::RenderGraphNode_Action_DrawCall::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable1)() :
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionDrawCall, TypePaths::RenderGraphNode_Action_DrawCall::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionWorkGraph, TypePaths::RenderGraphNode_Action_WorkGraph::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable1)() :
+        case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionWorkGraph, TypePaths::RenderGraphNode_Action_WorkGraph::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionExternal, TypePaths::RenderGraphNode_Action_External::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable1)() :
         case TypePaths::Get(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_nodes, TypePaths::RenderGraphNode::cVariant, TypePaths::RenderGraphNode::c_actionExternal, TypePaths::RenderGraphNode_Action_External::cStruct, TypePaths::RenderGraphNode_ActionBase::cStruct, TypePaths::RenderGraphNode_ActionBase::c_condition, TypePaths::Condition::cStruct, TypePaths::Condition::c_variable2)() :
         {
@@ -1944,6 +1451,17 @@ struct ShaderTypeCodeGenerator
     void Function_Compute() const
     {
         fprintf(m_file, "/*$(_compute:%s)*/(uint3 DTid : SV_DispatchThreadID)\n{\n}\n", m_shader.entryPoint.c_str());
+    }
+
+    void Function_WorkGraph() const
+    {
+        fprintf(m_file,
+            "[Shader(\"node\")]\n"
+            "[NodeIsProgramEntry]\n"
+            "[NodeLaunch(\"thread\")]\n"
+        );
+
+        fprintf(m_file, "/*$(_workgraph:%s)*/()\n{\n}\n", m_shader.entryPoint.c_str());
     }
 
     void Function_RTRayGen()
@@ -2689,7 +2207,7 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
     {
         bool hasVariable = !value.variable.name.empty();
         ImGui::PushStyleColor(ImGuiCol_Text, hasVariable ? IM_COL32(0, 255, 0, 255) : IM_COL32(255, 255, 255, 255));
-        if (ImGui::SmallButton(ICON_FA_CIRCLE "##Variable"))
+        if (ImGuiIconButton("##Variable", ICON_FA_CIRCLE))
         {
             ImGui::OpenPopup("Choose Variable");
         }
@@ -2732,14 +2250,14 @@ UIOverrideResult ShowUIOverride_ValueOrVariable(RenderGraph& renderGraph, uint64
         if (hasVariable)
         {
             ImGui::SameLine();
-            if (ImGui::SmallButton(ICON_FA_CIRCLE_ARROW_RIGHT "##GoToData"))
+            if (ImGuiIconButton("##GoToData", ICON_FA_CIRCLE_ARROW_RIGHT))
                 OnGoToVariable(value.variable.name.c_str());
             ShowUIToolTip((std::string("Go to Variable: ") + value.variable.name).c_str());
         }
         else
         {
             ImGui::SameLine();
-            if (ImGui::SmallButton(ICON_FA_CIRCLE_PLUS "##CreateVar"))
+            if (ImGuiIconButton("##CreateVar", ICON_FA_CIRCLE_PLUS))
             {
                 value.variable.name = OnCreateVariable(label, dataFieldType);
                 OnCreateVarLambda();
@@ -2858,6 +2376,33 @@ inline UIOverrideResult ShowUIOverride<ValueOrVariable_Float3>(RenderGraph& rend
         {
             char defaultString[256];
             sprintf_s(defaultString, "%f, %f, %f", value.value[0], value.value[1], value.value[2]);
+            if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
+            {
+                dirtyFlag = true;
+                renderGraph.variables[variableIndex].dflt = defaultString;
+            }
+        }
+    }
+    return ret;
+}
+
+template <>
+inline UIOverrideResult ShowUIOverride<ValueOrVariable_Uint>(RenderGraph& renderGraph, uint64_t _FLAGS, bool& dirtyFlag, const char* label, const char* tooltip, ValueOrVariable_Uint& value, TypePathEntry path, ShowUIOverrideContext showUIOverrideContext)
+{
+    auto OnCreateVarLambda = [&renderGraph, &value, &tooltip]()
+        {
+            int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+            renderGraph.variables[variableIndex].comment = tooltip;
+        };
+
+    UIOverrideResult ret = ShowUIOverride_ValueOrVariable(renderGraph, _FLAGS, dirtyFlag, label, tooltip, value, path, showUIOverrideContext, DataFieldType::Uint, OnCreateVarLambda);
+    if (!value.variable.name.empty())
+    {
+        int variableIndex = GetVariableIndexByName(renderGraph, value.variable.name.c_str());
+        if (variableIndex != -1)
+        {
+            char defaultString[256];
+            sprintf_s(defaultString, "%u", value.value);
             if (strcmp(defaultString, renderGraph.variables[variableIndex].dflt.c_str()))
             {
                 dirtyFlag = true;

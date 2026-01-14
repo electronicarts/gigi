@@ -57,6 +57,7 @@ STRUCT_BEGIN(BackendSettings_DX12, "DX12 Settings")
     STRUCT_FIELD(int, numDSVDescriptors, 256, "The number of descriptors in the internal DSV heap", 0)
     STRUCT_FIELD(DXShaderCompiler, shaderCompiler, DXShaderCompiler::DXC, "The shader compiler to use", 0)
     STRUCT_FIELD(std::string, shaderModelCs, "cs_6_1", "The default shader model to use for compute shaders", 0)
+    STRUCT_FIELD(std::string, shaderModelWg, "lib_6_8", "The default shader model to use for compute shader work graphs", 0)
     STRUCT_FIELD(std::string, shaderModelVs, "vs_6_1", "The default shader model to use for vertex shaders", 0)
     STRUCT_FIELD(std::string, shaderModelPs, "ps_6_1", "The default shader model to use for pixel shaders", 0)
     STRUCT_FIELD(std::string, shaderModelRayShaders, "lib_6_3", "The default shader model to use for ray shaders", 0)
@@ -252,6 +253,7 @@ STRUCT_BEGIN(RenderGraph, "The root type of the render graph")
 
     // Non serialized things below
 
+    // e.g. "C:\\gitlab\\gigiexperiments\\IntersectExperiment\\" includes trailing [back]slash
     STRUCT_FIELD(std::string, baseDirectory, "", "The relative location of the render graph file.", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::string, outputDirectory, "", "Where the render graph output should go (this field used by the compiler).", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_FIELD(std::vector<int>, flattenedNodeList, {}, "The flattened list of nodes, in the order they should be executed in. Calculated before being given to back end code.", SCHEMA_FLAG_NO_SERIALIZE)

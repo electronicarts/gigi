@@ -70,6 +70,8 @@ unsupportedTests = [
     "Compute\\OutputToMultipleInputs",
     "SubGraph\\SetVarNode",
     "Buffers\\bufferViewDescriptorTable",
+    "WorkGraphs\\WGSimple",
+    "WorkGraphs\\WGRecords",
 
     # Frostbite only
     "CopyResource\\CopyResourceTest_FB",

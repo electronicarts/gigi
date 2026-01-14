@@ -7,6 +7,33 @@
 
 #include "Schemas/Types.h"
 
+struct OnStructRenameVisitor
+{
+    OnStructRenameVisitor(RenderGraph& renderGraph_, const std::string& oldName_, const std::string& newName_)
+        : renderGraph(renderGraph_)
+        , oldName(oldName_)
+        , newName(newName_)
+    {
+    }
+
+    template <typename TDATA>
+    bool Visit(TDATA& data, const std::string& path)
+    {
+        return true;
+    }
+
+    bool Visit(StructReference& data, const std::string& path)
+    {
+        if (data.name == oldName)
+            data.name = newName;
+        return true;
+    }
+
+    RenderGraph& renderGraph;
+    const std::string& oldName;
+    const std::string& newName;
+};
+
 struct OnNodeRenameVisitor
 {
     OnNodeRenameVisitor(RenderGraph& renderGraph_, const std::string& oldName_, const std::string& newName_)

@@ -164,6 +164,9 @@ public:
 		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS11, &m_dx12_options11, sizeof(m_dx12_options11))))
 			return false;
 
+        if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS21, &m_dx12_options21, sizeof(m_dx12_options21))))
+            return false;
+
 		// Note: this can fail, and that's just fine.
 		HRESULT hr = m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS_EXPERIMENTAL, &m_dx12_options_experimental, sizeof(m_dx12_options_experimental));
 
@@ -480,6 +483,8 @@ public:
 			}
 		}
 
+        m_commandList->QueryInterface(IID_PPV_ARGS(&m_graphicsCommandList10));
+
 		// give the profiler the first OnNewFrame since we profile the scope of everything else getting their OnNewFrame
 		m_profiler.OnNewFrame(m_commandList, m_enableProfiling);
 
@@ -541,6 +546,12 @@ public:
 			m_dxrCommandList->Release();
 			m_dxrCommandList = nullptr;
 		}
+
+        if (m_graphicsCommandList10)
+        {
+            m_graphicsCommandList10->Release();
+            m_graphicsCommandList10 = nullptr;
+        }
 
 		if (m_previewCommandList)
 		{
@@ -737,6 +748,11 @@ public:
 		return m_dx12_options11;
 	}
 
+    const D3D12_FEATURE_DATA_D3D12_OPTIONS21& GetOptions21() const
+    {
+        return m_dx12_options21;
+    }
+
 	const D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL& GetOptionsExperimental() const
 	{
 		return m_dx12_options_experimental;
@@ -825,6 +841,24 @@ public:
 
     const TransitionTracker& GetTransitions() const { return m_transitions; }
     TransitionTracker& GetTransitionsNonConst() { return m_transitions; }
+
+public: // access for CompileShader()
+
+    // DX12 Capabilities
+    D3D12_FEATURE_DATA_D3D12_OPTIONS m_dx12_options = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS7 m_dx12_options7 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS8 m_dx12_options8 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS9 m_dx12_options9 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS21 m_dx12_options21 = {};
+    D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
+
+    std::vector<ShaderDefine> m_envDefines;
+
     ID3D12DescriptorHeap* getSRVHeap() const { return m_SRVHeap; }
 private:
 	// there is an "OnNodeAction()" function defined for each node type, for initialization and execution.
@@ -850,6 +884,7 @@ private:
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node, const ImportedResourceDesc& resourceDesc, RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData);
 	bool MakeAccelerationStructures(const RenderGraphNode_Resource_Buffer& node);
 	bool DrawCall_MakeRootSignature(const RenderGraphNode_Action_DrawCall& node, RuntimeTypes::RenderGraphNode_Action_DrawCall& runtimeData);
+
     bool MakeDescriptorTableDesc(
         std::vector<DescriptorTableCache::ResourceDescriptor>& descs,
         struct RuntimeTypes::RenderGraphNode_Base& runtimeData,
@@ -898,6 +933,8 @@ private:
 	ID3D12Device5* m_dxrDevice = nullptr;
 	ID3D12GraphicsCommandList4* m_dxrCommandList = nullptr;
 
+    ID3D12GraphicsCommandList10* m_graphicsCommandList10 = nullptr;
+
 	// Preview features
 	ID3D12DevicePreview* m_previewDevice = nullptr;
 	ID3D12GraphicsCommandListPreview* m_previewCommandList = nullptr;
@@ -924,20 +961,7 @@ private:
 	ID3D12CommandSignature* m_commandSignatureDraw = nullptr;
 	ID3D12CommandSignature* m_commandSignatureDrawIndexed = nullptr;
 
-	// DX12 Capabilities
-	D3D12_FEATURE_DATA_D3D12_OPTIONS m_dx12_options = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS4 m_dx12_options4 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS5 m_dx12_options5 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS6 m_dx12_options6 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS7 m_dx12_options7 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS8 m_dx12_options8 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS9 m_dx12_options9 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS10 m_dx12_options10 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS11 m_dx12_options11 = {};
-	D3D12_FEATURE_DATA_D3D12_OPTIONS_EXPERIMENTAL m_dx12_options_experimental = {};
-
     static GigiInterpreterPreviewWindowDX12* s_interpreter;
-    std::vector<ShaderDefine> m_envDefines;
 };
 
 inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner e)

@@ -259,8 +259,6 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 		OnRootSignature(sig, node.vertexShader.shader);
 		OnRootSignature(sig, node.pixelShader.shader);
 
-
-
 		char* sigptr = (char*)sig->GetBufferPointer();
 		auto sigsize = sig->GetBufferSize();
 
@@ -721,18 +719,37 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 	return true;
 }
 
-static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader& shader, const char* shaderModel, const std::string& directory, std::vector<std::string>& allShaderFiles, const RenderGraph& renderGraph, bool compileShadersForDebug, bool native16BitShaderOpsSupported, LogFn& logFn, const std::vector<ShaderDefine> &envDefines )
+static bool CompileShader(
+    GigiInterpreterPreviewWindowDX12* This,
+    std::vector<unsigned char>& shaderBytes,
+    const Shader& shader,
+    const char* shaderModel,
+    const std::string& directory,
+    std::vector<std::string>& allShaderFiles,
+    const RenderGraph& renderGraph)
 {
+    LogFn logFn = This->GetLogFn();
+
+    bool native16BitShaderOpsSupported = This->m_dx12_options4.Native16BitShaderOpsSupported;
+
 	std::string fullFileName = (std::filesystem::path(directory) / "shaders" / shader.destFileName).string();
 
 	ShaderCompilationInfo shaderCompilationInfo;
+    
+    shaderCompilationInfo.sourceFileName = shader.fileName;
+
+    shaderCompilationInfo.rootDirectory = renderGraph.baseDirectory;
+    StringReplaceAll(shaderCompilationInfo.rootDirectory, "\\", "/");
+    if (!shaderCompilationInfo.rootDirectory.empty() && shaderCompilationInfo.rootDirectory.back() == '/')
+        shaderCompilationInfo.rootDirectory.pop_back();
+
 	shaderCompilationInfo.fileName = fullFileName;
 	shaderCompilationInfo.entryPoint = shader.entryPoint;
 	shaderCompilationInfo.shaderModel = shaderModel;
 	shaderCompilationInfo.defines = shader.defines;
-	shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), envDefines.begin(), envDefines.end());
+	shaderCompilationInfo.defines.insert(shaderCompilationInfo.defines.end(), This->m_envDefines.begin(), This->m_envDefines.end());
 
-	if (compileShadersForDebug)
+	if (This->m_compileShadersForDebug)
 	{
 		shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
 	}
@@ -753,7 +770,13 @@ static bool CompileShader(std::vector<unsigned char>& shaderBytes, const Shader&
 	if (renderGraph.settings.common.createPDBsAndBinaries)
 	{
 		shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
-	}
+    }
+
+    extern bool getBetterShaderErrors();
+    if (getBetterShaderErrors())
+    {
+        shaderCompilationInfo.flags |= ShaderCompilationFlags::BetterShaderErrors;
+    }
 
 	switch (renderGraph.settings.dx12.shaderCompiler)
 	{
@@ -792,16 +815,16 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		bool compiledOK = true;
 
 		if (node.vertexShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
+			compiledOK &= CompileShader(this, runtimeData.m_vertexShaderBytes, *node.vertexShader.shader, m_renderGraph.settings.dx12.shaderModelVs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph);
 
 		if (node.pixelShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
+			compiledOK &= CompileShader(this, runtimeData.m_pixelShaderBytes, *node.pixelShader.shader, m_renderGraph.settings.dx12.shaderModelPs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph);
 
 		if (node.amplificationShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
+			compiledOK &= CompileShader(this, runtimeData.m_amplificationShaderBytes, *node.amplificationShader.shader, m_renderGraph.settings.dx12.shaderModelAs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph);
 
 		if (node.meshShader.shader)
-			compiledOK &= CompileShader(runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph, m_compileShadersForDebug, m_dx12_options4.Native16BitShaderOpsSupported, m_logFn, m_envDefines);
+			compiledOK &= CompileShader(this, runtimeData.m_meshShaderBytes, *node.meshShader.shader, m_renderGraph.settings.dx12.shaderModelMs.c_str(), GetTempDirectory(), allShaderFiles, m_renderGraph);
 
 		// Watch the shader file source for file changes, even if it failed compilation, so we can detect when it's edited and try again
 		for (const std::string& fileName : allShaderFiles)

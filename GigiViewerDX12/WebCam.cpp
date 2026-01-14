@@ -393,6 +393,7 @@ namespace WebCam
 
 struct State
 {
+    bool initalized = false;
     int width = 0;
     int height = 0;
     std::vector<unsigned char> pixels;
@@ -402,12 +403,15 @@ static State s_state;
 
 void Init()
 {
-	webcam::Init();
 }
 
 void Shutdown()
 {
-	webcam::Release();
+    if (s_state.initalized)
+    {
+        webcam::Release();
+        s_state.initalized = false;
+    }
 }
 
 std::string GetDeviceName()
@@ -417,6 +421,20 @@ std::string GetDeviceName()
 
 bool PreRender(const GGUserFile_WebCam& settings, GigiInterpreterPreviewWindowDX12& interpreter, ID3D12GraphicsCommandList* commandList)
 {
+    // If no output texture, make sure the web cam isn't running
+    if (settings.outputTexture.name.empty())
+    {
+        Shutdown();
+        return true;
+    }
+
+    // Otherwise we have a texture, so make sure it is initialized
+    if (!s_state.initalized)
+    {
+        webcam::Init();
+        s_state.initalized = true;
+    }
+
 	if (!webcam::GetWidthHeight(&s_state.width, &s_state.height))
 		return false;
 
