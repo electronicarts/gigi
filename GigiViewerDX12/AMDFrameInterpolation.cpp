@@ -823,7 +823,22 @@ namespace AMDFrameInterpolation
         HANDLE_TEXTURE(uiTexture);
 
         if (!textureExists_depth || !textureExists_motionVectors)
+        {
+            // If we have a context, we need to make sure we don't have a stale callback registered
+            if (s_state.m_FrameGenContext)
+            {
+                ffx::ConfigureDescFrameGeneration frameGenerationConfigDesc = {};
+                frameGenerationConfigDesc.header.type = FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION;
+                frameGenerationConfigDesc.swapChain = swapChain;
+                frameGenerationConfigDesc.frameGenerationEnabled = false;
+                frameGenerationConfigDesc.presentCallback = nullptr;
+                frameGenerationConfigDesc.presentCallbackUserContext = nullptr;
+                frameGenerationConfigDesc.frameID = desc.frameIndex;
+
+                ffx::Configure(s_state.m_FrameGenContext, frameGenerationConfigDesc);
+            }
             return;
+        }
 
 #undef HANDLE_TEXTURE
 
