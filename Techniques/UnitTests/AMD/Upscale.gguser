@@ -28,8 +28,8 @@
             25.312963485717775
         ],
         "cameraAltitudeAzimuth": [
-            -0.07036004960536957,
-            3.4973931312561037
+            -0.1335679292678833,
+            3.9215381145477297
         ],
         "importedResources": [
             {
@@ -44,10 +44,11 @@
         ]
     },
     "AMDFrameInterpolation": {
-        "fsrUIRenderMode": 0,
-        "ENABLE_DEBUG_CHECKING": false,
+        "fsrUIRenderMode": 3,
         "depth": "Depth",
         "motionVectors": "Motion_Vectors",
-        "uiTexture": "UI_Layer"
+        "uiTexture": "UI_Layer",
+        "hudlessTexture": "Output_SDR_No_HUD",
+        "backBufferTexture": "Output_SDR"
     }
 }

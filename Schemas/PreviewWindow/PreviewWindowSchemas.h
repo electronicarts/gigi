@@ -99,6 +99,7 @@ STRUCT_BEGIN(GGUserFile_AMD_FidelityFXSDK_FrameInterpolation, "")
     STRUCT_FIELD(std::string, depth, "", "The depth buffer data", SCHEMA_FLAG_NO_UI)
     STRUCT_FIELD(std::string, motionVectors, "", "The motion vector data", SCHEMA_FLAG_NO_UI)
     STRUCT_FIELD(std::string, uiTexture, "", "The UI texture data", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(std::string, hudlessTexture, "", "The hudless texture (Scene only)", SCHEMA_FLAG_NO_UI)
 
     STRUCT_FIELD(bool, allowAsyncWorkloads, { true }, "Sets the state of async workloads. Set to true to enable generation work on async compute.", 0)
     STRUCT_FIELD(bool, onlyPresentGenerated, { false }, "Set to true to only present generated frames.", 0)

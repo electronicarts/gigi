@@ -2836,6 +2836,8 @@ void ShowAMDFrameInterpolation()
     ShowToolTip("The motion vector data");
     ShowNodeDropDown("uiTexture", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.uiTexture);
     ShowToolTip("The ui layer");
+    ShowNodeDropDown("hudlessTexture", RenderGraphNode::c_index_resourceTexture, g_AMDFrameInterpolation.hudlessTexture);
+    ShowToolTip("The hudlessTexture");
 
     const char* uiRenderModeItems[] = { "Standard", "Swapchain", "Callback", "Hudless" };
     ImGui::Combo("UI Render Mode", &g_AMDFrameInterpolation.fsrUIRenderMode, uiRenderModeItems, IM_ARRAYSIZE(uiRenderModeItems));
@@ -8874,6 +8876,7 @@ void RenderFrame(bool forceExecute)
         Audio::PostRender(g_Audio, g_interpreter, g_pd3dCommandList, NUM_FRAMES_IN_FLIGHT, !(g_executeTechnique || forceExecute));
 
     // Frame interpolation
+    if (g_executeTechnique || forceExecute)
     {
         POINT upperLeft = { 0, 0 };
         ClientToScreen(g_hwnd, &upperLeft);
