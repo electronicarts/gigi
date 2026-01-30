@@ -28,8 +28,8 @@
             25.312963485717775
         ],
         "cameraAltitudeAzimuth": [
-            -0.1335679292678833,
-            3.9215381145477297
+            -0.062136825174093249,
+            3.5304555892944338
         ],
         "importedResources": [
             {
@@ -48,7 +48,6 @@
         "depth": "Depth",
         "motionVectors": "Motion_Vectors",
         "uiTexture": "UI_Layer",
-        "hudlessTexture": "Output_SDR_No_HUD",
-        "backBufferTexture": "Output_SDR"
+        "hudlessTexture": "Output_SDR_No_HUD"
     }
 }

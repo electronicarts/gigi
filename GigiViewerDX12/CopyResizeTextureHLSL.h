@@ -13,6 +13,7 @@ struct CopyResizeTexture_CBStruct
     int32_t imageClipMin[2];
     int32_t imageClipMax[2];
     // mode: 0 = depth pass, 1 = motion-vector pass
+    // mode: 2 = color copy (hudless / scene color)
     int32_t mode;
     // depth comparison threshold (in same depth units as depth buffer)
     float depthThreshold;
@@ -27,7 +28,7 @@ struct CBStruct
     int2 imageSize;
     int2 imageClipMin;
     int2 imageClipMax;
-    int mode;              // 0 = depth, 1 = motion vectors
+    int mode;              // 0 = depth, 1 = motion vectors, 2 = color copy
     float depthThreshold;  // depth compare threshold
     int2 _pad0;
 };
@@ -48,7 +49,13 @@ void HandleZoomingIn(int2 px)
     // Select output based on mode, no branch
     float4 outDepth = float4(d, d, d, 1.0f);
     float4 outMV    = float4(v.xy, 0.0f, 1.0f);
-    Output[px] = (CB.mode == 0) ? outDepth : outMV;
+    float4 outColor = float4(v.rgb, 1.0f);
+    if (CB.mode == 0)
+        Output[px] = outDepth;
+    else if (CB.mode == 1)
+        Output[px] = outMV;
+    else
+        Output[px] = outColor;
 }
 
 void HandleZoomingOut(int2 px, uint2 InputDims)
@@ -69,8 +76,7 @@ void HandleZoomingOut(int2 px, uint2 InputDims)
     float2 centerUV = (inputUVStart + inputUVEnd) * 0.5f;
     float centerDepth = InputDepth.SampleLevel(linearClampSampler, centerUV, 0);
 
-    bool isDepth = (CB.mode == 0);
-
+    int mode = CB.mode;
     for (int iy = inputPXStart.y; iy <= inputPXEnd.y; ++iy)
     {
         for (int ix = inputPXStart.x; ix <= inputPXEnd.x; ++ix)
@@ -78,37 +84,60 @@ void HandleZoomingOut(int2 px, uint2 InputDims)
             float weight = 1.0f;
             float sampleDepth = InputDepth.Load(int3(ix, iy, 0));
 
-            if (isDepth)
+            if (mode == 0)
             {
+                // accumulate depth as greyscale
                 accumColor += float3(sampleDepth, sampleDepth, sampleDepth);
                 totalWeight += weight;
             }
-            else
+            else if (mode == 1)
             {
+                // motion vectors: depth-aware inliers
                 float inlier = (abs(sampleDepth - centerDepth) <= CB.depthThreshold) ? 1.0f : 0.0f;
                 float4 mv = Input0.Load(int3(ix, iy, 0));
                 accumMV += mv.xy * weight * inlier;
                 totalWeight += weight * inlier;
+            }
+            else
+            {
+                // color copy: average color values (no depth gating)
+                float4 col = Input0.Load(int3(ix, iy, 0));
+                accumColor += col.rgb * weight;
+                totalWeight += weight;
             }
         }
     }
 
     // Fallback: sample center
     float dCenter = InputDepth.SampleLevel(linearClampSampler, centerUV, 0);
-    float4 outDepth = float4(dCenter, dCenter, dCenter, 1.0f); // <-- fixed
-    float4 outMV    = float4(Input0.SampleLevel(linearClampSampler, centerUV, 0).xy, 0.0f, 1.0f);
+    float4 outDepth = float4(dCenter, dCenter, dCenter, 1.0f);
+    float4 sampled = Input0.SampleLevel(linearClampSampler, centerUV, 0);
+    float4 outMV    = float4(sampled.xy, 0.0f, 1.0f);
+    float4 outColor = float4(sampled.rgb, 1.0f);
 
     if (totalWeight <= 0.0f)
     {
-        Output[px] = isDepth ? outDepth : outMV;
+        if (mode == 0)
+            Output[px] = outDepth;
+        else if (mode == 1)
+            Output[px] = outMV;
+        else
+            Output[px] = outColor;
         return;
     }
 
-    float4 result = isDepth
-        ? float4(accumColor / totalWeight, 1.0f)
-        : float4(accumMV / totalWeight, 0.0f, 1.0f);
-
-    Output[px] = result;
+    if (mode == 0)
+    {
+        Output[px] = float4(accumColor / totalWeight, 1.0f);
+    }
+    else if (mode == 1)
+    {
+        Output[px] = float4(accumMV / totalWeight, 0.0f, 1.0f);
+    }
+    else
+    {
+        Output[px] = float4(accumColor / totalWeight, 1.0f);
+    }
 }
 
 [numthreads(8, 8, 1)]
