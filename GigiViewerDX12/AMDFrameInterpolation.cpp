@@ -652,19 +652,6 @@ namespace AMDFrameInterpolation
             barriers[barrierCount++] = InitTransition(backBuffer, ffxBackBufferState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
 
-        // UI Texture: Current State -> PIXEL_SHADER_RESOURCE
-        D3D12_RESOURCE_STATES uiOriginalState = D3D12_RESOURCE_STATE_COMMON;
-        if (hasUI)
-        {
-            if (interpreter->GetTransitionsNonConst().IsTracked(uiTextureInfo.m_resource))
-                uiOriginalState = interpreter->GetTransitionsNonConst().GetCurrentState(uiTextureInfo.m_resource);
-
-            if ((uiOriginalState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) == 0)
-            {
-                barriers[barrierCount++] = InitTransition(uiTextureInfo.m_resource, uiOriginalState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            }
-        }
-
         if (barrierCount > 0)
             commandList->ResourceBarrier(barrierCount, barriers);
 
@@ -693,8 +680,6 @@ namespace AMDFrameInterpolation
                 barriers[barrierCount++] = InitTransition(outputBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, ffxOutputState);
             if (backBufferNeedsRestore)
                 barriers[barrierCount++] = InitTransition(backBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, ffxBackBufferState);
-            if (hasUI && (uiOriginalState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) == 0)
-                barriers[barrierCount++] = InitTransition(uiTextureInfo.m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, uiOriginalState);
 
             if (barrierCount > 0) commandList->ResourceBarrier(barrierCount, barriers);
 
@@ -782,12 +767,6 @@ namespace AMDFrameInterpolation
         if (backBufferNeedsRestore)
         {
             barriers[barrierCount++] = InitTransition(backBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, ffxBackBufferState);
-        }
-
-        // UI: SRV -> Original
-        if (hasUI && (uiOriginalState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) == 0)
-        {
-            barriers[barrierCount++] = InitTransition(uiTextureInfo.m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, uiOriginalState);
         }
 
         if (barrierCount > 0)
@@ -1350,7 +1329,7 @@ namespace AMDFrameInterpolation
             frameGenerationConfigDesc.frameGenerationCallbackUserContext = &s_state.m_FrameGenContext;
 
             frameGenerationConfigDesc.frameGenerationEnabled = settings.enabled;
-            frameGenerationConfigDesc.allowAsyncWorkloads = uiRenderMode== 3? false : settings.allowAsyncWorkloads;
+            frameGenerationConfigDesc.allowAsyncWorkloads = (uiRenderMode == 3) ? false : settings.allowAsyncWorkloads;
             frameGenerationConfigDesc.onlyPresentGenerated = settings.onlyPresentGenerated;
 
             frameGenerationConfigDesc.generationRect.left = 0;
