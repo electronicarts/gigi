@@ -20,16 +20,16 @@
         "ProjMtx_textureName": "Color"
     },
     "snapshot": {
-        "resourceViewNodeIndex": 17,
-        "resourceViewResourceIndex": 2,
+        "resourceViewNodeIndex": 15,
+        "resourceViewResourceIndex": 3,
         "cameraPos": [
             -14.159412384033204,
             9.192329406738282,
             25.312963485717775
         ],
         "cameraAltitudeAzimuth": [
-            -0.062136825174093249,
-            3.5304555892944338
+            -0.07036004960536957,
+            3.4973931312561037
         ],
         "importedResources": [
             {
@@ -44,6 +44,7 @@
         ]
     },
     "AMDFrameInterpolation": {
+        "enabled": true,
         "fsrUIRenderMode": 3,
         "depth": "Depth",
         "motionVectors": "Motion_Vectors",

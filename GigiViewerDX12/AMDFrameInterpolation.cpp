@@ -880,17 +880,23 @@ namespace AMDFrameInterpolation
             }
 
             if (!s_state.m_depth)
+            {
                 s_state.m_depth = CreateTexture(desc.device, renderSize, 1, texture_depth.m_format, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Depth - AMD Frame Interpolation");
+                interpreter.GetTransitionsNonConst().Track(s_state.m_depth, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Depth - AMD Frame Interpolation");
+            }
 
             if (!s_state.m_motionVectors)
+            {
                 s_state.m_motionVectors = CreateTexture(desc.device, renderSize, 1, texture_motionVectors.m_format, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Motion - AMD Frame Interpolation");
+                interpreter.GetTransitionsNonConst().Track(s_state.m_motionVectors, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Motion - AMD Frame Interpolation");
+            }
 
             if (settings.fsrUIRenderMode == 3 && textureExists_hudlessTexture)
             {
                 if (s_state.m_hudlessTexture)
                 {
                     D3D12_RESOURCE_DESC existingDesc = s_state.m_hudlessTexture->GetDesc();
-                    if (existingDesc.Format != texture_hudlessTexture.m_format || existingDesc.Width != renderSize[0] || existingDesc.Height != renderSize[1])
+                    if (existingDesc.Format != s_state.m_swapChainFormat || existingDesc.Width != renderSize[0] || existingDesc.Height != renderSize[1])
                     {
                         interpreter.getDelayedReleaseTracker().Add(s_state.m_hudlessTexture);
                         s_state.m_hudlessTexture = nullptr;
@@ -898,14 +904,12 @@ namespace AMDFrameInterpolation
                 }
 
                 if (!s_state.m_hudlessTexture)
-                    s_state.m_hudlessTexture = CreateTexture(desc.device, renderSize, 1, texture_hudlessTexture.m_format, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Hudless - AMD Frame Interpolation");
-            }
-            else
-            {
-                if (s_state.m_hudlessTexture)
                 {
-                    interpreter.getDelayedReleaseTracker().Add(s_state.m_hudlessTexture);
-                    s_state.m_hudlessTexture = nullptr;
+                    s_state.m_hudlessTexture = CreateTexture(desc.device, renderSize, 1, s_state.m_swapChainFormat, 1, 
+                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
+                        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Hudless - AMD Frame Interpolation");
+                    
+                    interpreter.GetTransitionsNonConst().Track(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Hudless - AMD Frame Interpolation");
                 }
             }
         }
@@ -1050,6 +1054,47 @@ namespace AMDFrameInterpolation
             // Hudless Texture
             if (s_state.m_hudlessTexture)
             {
+                // 1. Copy BackBuffer to HudlessTexture (Full Screen)
+                ID3D12Resource* backBuffer = nullptr;
+                if (SUCCEEDED(swapChain->GetBuffer(swapChain->GetCurrentBackBufferIndex(), IID_PPV_ARGS(&backBuffer))))
+                {
+                    // Transition hudless texture to COPY_DEST
+                    transitions.Transition(TRANSITION_DEBUG_INFO(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_COPY_DEST));
+                    transitions.Flush(desc.commandList);
+
+                    // Manually transition back buffer - bypass your helper
+                    D3D12_RESOURCE_BARRIER barrier = {};
+                    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    barrier.Transition.pResource = backBuffer;
+                    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // Or COMMON
+                    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+
+                    desc.commandList->ResourceBarrier(1, &barrier);
+
+                    // Copy using CopyTextureRegion for more control
+                    D3D12_TEXTURE_COPY_LOCATION dst = {};
+                    dst.pResource = s_state.m_hudlessTexture;
+                    dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                    dst.SubresourceIndex = 0;
+
+                    D3D12_TEXTURE_COPY_LOCATION src = {};
+                    src.pResource = backBuffer;
+                    src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                    src.SubresourceIndex = 0;
+
+                    desc.commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+                    // Transition back buffer back to PRESENT
+                    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+                    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+                    desc.commandList->ResourceBarrier(1, &barrier);
+
+                    backBuffer->Release();
+                }
+
+                // 2. Copy UI (texture_hudlessTexture) to ViewWindow inside HudlessTexture
                 // Make a constant buffer
                 CopyResizeTexture_CBStruct cb;
                 memcpy(cb.imagePosition, desc.imagePosition, sizeof(desc.imagePosition));
@@ -1114,6 +1159,9 @@ namespace AMDFrameInterpolation
                 unsigned int dispatchX = (unsigned int)(outputDesc.Width + 7) / 8;
                 unsigned int dispatchY = (unsigned int)(outputDesc.Height + 7) / 8;
                 desc.commandList->Dispatch(dispatchX, dispatchY, 1);
+
+                transitions.Transition(TRANSITION_DEBUG_INFO(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+                transitions.Flush(desc.commandList);
             }
         }
         // Fill out the frame generation context desc
@@ -1274,19 +1322,19 @@ namespace AMDFrameInterpolation
                 frameGenerationConfigDesc.HUDLessColor = FfxApiResource({});
                 break;
 
-            case 3:
-                if (textureExists_hudlessTexture && s_state.m_hudlessTexture)
+            case 3:                
+                if (s_state.m_hudlessTexture)
                 {
-                    TransitionTracker& transitions = interpreter.GetTransitionsNonConst();
-                    transitions.Transition(TRANSITION_DEBUG_INFO(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
-                    transitions.Flush(desc.commandList);
-
-                    SetFfxApiResourceToTexture(s_state.m_hudlessTexture, frameGenerationConfigDesc.HUDLessColor, 0, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                    {
+                        s_state.m_hudlessTexture->SetName(L"FSR Hudless Texture");
+                        SetFfxApiResourceToTexture(s_state.m_hudlessTexture, frameGenerationConfigDesc.HUDLessColor, 0, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                    }
                 }
                 else
                 {
-                    frameGenerationConfigDesc.HUDLessColor = FfxApiResource({}); 
+                    frameGenerationConfigDesc.HUDLessColor = FfxApiResource({});
                 }
+
                 frameGenerationConfigDesc.presentCallback = nullptr;
                 frameGenerationConfigDesc.presentCallbackUserContext = nullptr;
                 break;
@@ -1302,7 +1350,7 @@ namespace AMDFrameInterpolation
             frameGenerationConfigDesc.frameGenerationCallbackUserContext = &s_state.m_FrameGenContext;
 
             frameGenerationConfigDesc.frameGenerationEnabled = settings.enabled;
-            frameGenerationConfigDesc.allowAsyncWorkloads = settings.allowAsyncWorkloads;
+            frameGenerationConfigDesc.allowAsyncWorkloads = uiRenderMode== 3? false : settings.allowAsyncWorkloads;
             frameGenerationConfigDesc.onlyPresentGenerated = settings.onlyPresentGenerated;
 
             frameGenerationConfigDesc.generationRect.left = 0;

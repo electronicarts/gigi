@@ -150,7 +150,8 @@ void main(uint3 DTid : SV_DispatchThreadID)
 
     if (px.x < pxStart.x || px.y < pxStart.y || px.x >= pxEnd.x || px.y >= pxEnd.y)
     {
-        Output[px] = float4(0.0f, 0.0f, 0.0f, 0.0f);
+        if (CB.mode != 2)
+            Output[px] = float4(0.0f, 0.0f, 0.0f, 0.0f);
         return;
     }
 
