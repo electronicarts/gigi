@@ -21,15 +21,15 @@
     },
     "snapshot": {
         "resourceViewNodeIndex": 15,
-        "resourceViewResourceIndex": 3,
+        "resourceViewResourceIndex": 4,
         "cameraPos": [
             -14.159412384033204,
             9.192329406738282,
             25.312963485717775
         ],
         "cameraAltitudeAzimuth": [
-            -0.07036004960536957,
-            3.4973931312561037
+            0.2257191389799118,
+            3.906273365020752
         ],
         "importedResources": [
             {
@@ -45,7 +45,7 @@
     },
     "AMDFrameInterpolation": {
         "enabled": true,
-        "fsrUIRenderMode": 3,
+        "fsrUIRenderMode": 0,
         "depth": "Depth",
         "motionVectors": "Motion_Vectors",
         "uiTexture": "UI_Layer",

@@ -1241,7 +1241,7 @@
                 ],
                 "format": {
                     "node": {
-                        "name": "Output SDR"
+                        "name": "Output HDR"
                     }
                 },
                 "size": {
