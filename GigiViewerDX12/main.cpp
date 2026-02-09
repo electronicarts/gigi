@@ -1846,11 +1846,12 @@ void HandleMainMenu()
             float stableValue = stableSample.getStableAverage();
             if (stableValue != FLT_MAX)
             {
+                float multiplier = g_AMDFrameInterpolation.enabled ? 2.0f : 1.0f;
                 ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(0, 255, 0, 255));
                 // option 1
 //					ImGui::Text("        FPS: %.2f (%.2gms)", 1.0f / stableValue, 1000.0f * stableValue);
                     // option 2 
-                ImGui::Text("FPS: %.2f (%.2g .. %.2g ms)", 1.0f / stableValue, 1000.0f * stableSample.getStableMin(), 1000.0f * stableSample.getStableMax());
+                ImGui::Text("FPS: %.2f (%.2g .. %.2g ms)", 1.0f / stableValue * multiplier, 1000.0f * stableSample.getStableMin() / multiplier, 1000.0f * stableSample.getStableMax() / multiplier);
                 ImGui::PopStyleColor();
             }
         }
