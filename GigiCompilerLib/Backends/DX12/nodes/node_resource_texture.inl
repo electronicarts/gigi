@@ -6,8 +6,8 @@
 static std::string SanitizeFilenameForCpp(const std::string& fileName)
 {
     std::string ret = fileName;
-    StringReplaceAll(ret, "\\\\", "\\"); // This is a bit ugly, but trying to prevent double escaping
-    StringReplaceAll(ret, "\\", "\\\\");
+    //StringReplaceAll(ret, "\\\\", "\\"); // This is a bit ugly, but trying to prevent double escaping
+    StringReplaceAll(ret, "\\", "/");
     return ret;
 }
 

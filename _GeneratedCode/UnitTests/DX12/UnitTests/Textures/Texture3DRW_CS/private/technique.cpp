@@ -976,7 +976,7 @@ namespace Texture3DRW_CS
                 {
                     textureIndex++;
                     char indexedFileName[1024];
-                    sprintf_s(indexedFileName, "%lsassets/ImageB%i.png", s_techniqueLocation.c_str(), textureIndex);
+                    sprintf_s(indexedFileName, "%lsassets/imageb%i.png", s_techniqueLocation.c_str(), textureIndex);
                     DX12Utils::TextureCache::Texture loadedTextureSlice = DX12Utils::TextureCache::GetAs(indexedFileName, false, desiredType, formatInfo.sRGB, formatInfo.channelCount);
 
                     if(!loadedTextureSlice.Valid())

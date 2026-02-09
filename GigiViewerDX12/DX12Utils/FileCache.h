@@ -33,11 +33,18 @@ public:
 			return bytes.data();
 		}
 
+        const char* GetFileName() const
+        {
+            return fileName.c_str();
+        }
+
 	private:
 		friend class FileCache;
 
 		// Hidden away because we add an extra character for a null terminator for text files
 		std::vector<char> bytes;
+
+        std::string fileName;
 	};
 
 	File& Get(const char* fileName);

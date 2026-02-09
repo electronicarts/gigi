@@ -75,7 +75,7 @@
     <ClCompile Include="Interpreter\RenderGraphNode_Action_DrawCall.cpp">
       <Filter>Interpreter</Filter>
     </ClCompile>
-    <ClCompile Include="DX12Utils\ObjCache.cpp">
+    <ClCompile Include="DX12Utils\SceneDataCache_OBJ.cpp">
       <Filter>DX12Utils</Filter>
     </ClCompile>
     <ClCompile Include="tinyexr\deps\miniz\miniz.c">
@@ -86,7 +86,7 @@
     <ClCompile Include="..\external\OpenFBX\ofbx.cpp">
       <Filter>external\OpenFBX</Filter>
     </ClCompile>
-    <ClCompile Include="DX12Utils\FBXCache.cpp">
+    <ClCompile Include="DX12Utils\SceneDataCache_FBX.cpp">
       <Filter>DX12Utils</Filter>
     </ClCompile>
     <ClCompile Include="Interpreter\RenderGraphNode_Action_SubGraph.cpp">
@@ -126,6 +126,13 @@
       <Filter>DX12Utils</Filter>
     </ClCompile>
     <ClCompile Include="WebCam.cpp" />
+    <ClCompile Include="DX12Utils\SceneDataCache_GLTF.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="DX12Utils\SceneDataCache.cpp">
+      <Filter>DX12Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Shared\UI\WindowPersist.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="DX12Utils">
@@ -160,6 +167,9 @@
     </Filter>
     <Filter Include="Shared\UI">
       <UniqueIdentifier>{11408f3f-3f24-453c-b0fe-4dad08dd7a38}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\tinygltf">
+      <UniqueIdentifier>{0e6375fb-615d-410e-a7a2-45c17e026ccd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -231,21 +241,12 @@
     <ClInclude Include="DX12Utils\FileWatcher.h">
       <Filter>DX12Utils</Filter>
     </ClInclude>
-    <ClInclude Include="DX12Utils\ObjCache.h">
-      <Filter>DX12Utils</Filter>
-    </ClInclude>
     <ClInclude Include="tinyexr\deps\miniz\miniz.h">
       <Filter>external\miniz</Filter>
     </ClInclude>
     <ClInclude Include="ViewerPython.h" />
     <ClInclude Include="..\external\OpenFBX\ofbx.h">
       <Filter>external\OpenFBX</Filter>
-    </ClInclude>
-    <ClInclude Include="DX12Utils\FBXCache.h">
-      <Filter>DX12Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="DX12Utils\FlattenedVertex.h">
-      <Filter>DX12Utils</Filter>
     </ClInclude>
     <ClInclude Include="prng.h" />
     <ClInclude Include="f16.h" />
@@ -281,10 +282,22 @@
       <Filter>DX12Utils</Filter>
     </ClInclude>
     <ClInclude Include="WebCam.h" />
-    <ClInclude Include="..\GigiCompilerLib\UI\ImGuiHelper.h" />
     <ClInclude Include="DX12Utils\ShaderErrorParse.h">
       <Filter>DX12Utils</Filter>
     </ClInclude>
+    <ClInclude Include="DX12Utils\SceneDataCache.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\tinygltf\json.hpp">
+      <Filter>external\tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="..\external\tinygltf\tiny_gltf.h">
+      <Filter>external\tinygltf</Filter>
+    </ClInclude>
+    <ClInclude Include="DX12Utils\VectorMath.h">
+      <Filter>DX12Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Shared\UI\WindowPersist.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="GigiViewerDX12.rc" />

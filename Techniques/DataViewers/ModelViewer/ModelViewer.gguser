@@ -3,30 +3,51 @@
     "systemVars": {
         "camera": {
             "startingCameraPos": [
-                -2.2799999713897707,
-                0.5389999747276306,
-                2.5490000247955324
+                1.5724594593048096,
+                1.570000410079956,
+                3.9463493824005129
             ],
             "startingCameraAltitudeAzimuth": [
-                0.05900000035762787,
-                3.752000093460083
+                -0.13211873173713685,
+                2.6631546020507814
             ]
         },
         "ProjMtx_textureName": "ColorF32"
     },
     "snapshot": {
-        "resourceViewNodeIndex": 6,
+        "resourceViewNodeIndex": 5,
         "resourceViewResourceIndex": 4,
         "cameraPos": [
-            -2.2799999713897707,
-            0.5389999747276306,
-            2.5490000247955324
+            0.2265898883342743,
+            1.8571138381958008,
+            3.1201486587524416
         ],
         "cameraAltitudeAzimuth": [
-            0.05900000035762787,
-            3.752000093460083
+            -0.30342981219291689,
+            2.8151488304138185
         ],
         "importedResources": [
+            {
+                "nodeName": "LightBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\..\\UnitTests\\ObjAssets\\bunny.obj",
+                    "dataStream": "Lights",
+                    "structIndex": 1,
+                    "BLASOpaque": true
+                }
+            },
+            {
+                "nodeName": "MaterialBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\..\\UnitTests\\ObjAssets\\bunny.obj",
+                    "dataStream": "Materials",
+                    "materialShaderFile": "_material.hlsli",
+                    "structIndex": 2,
+                    "BLASOpaque": true
+                }
+            },
             {
                 "nodeName": "VertexBuffer",
                 "isATexture": false,
@@ -35,24 +56,6 @@
                     "structIndex": 0,
                     "BLASOpaque": true
                 }
-            }
-        ],
-        "savedVariables": [
-            {
-                "name": "RenderSize",
-                "value": "1024,768"
-            },
-            {
-                "name": "ViewMode",
-                "value": "11"
-            },
-            {
-                "name": "ViewerColor",
-                "value": "1.000000,10.019608,1.000000,1.000000"
-            },
-            {
-                "name": "Skybox",
-                "value": "true"
             }
         ]
     }

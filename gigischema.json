@@ -345,12 +345,12 @@
                 "filter": {
                   "description": "The type of filtering to do",
                   "type": "string",
-                  "enum": ["MinMagMipPoint", "MinMagLinear_MipPoint", "MinMagMipLinear", "Count"]
+                  "enum": ["MinMagMipPoint", "MinMagPoint_MipLinear", "MinPoint_MagLinear_MipPoint", "MinPoint_MagMipLinear", "MinLinear_MagMipPoint", "MinLinear_MagPoint_MipLinear", "MinMagLinear_MipPoint", "MinMagMipLinear", "Count"]
                 },
                 "addressMode": {
                   "description": "The sampling address mode",
                   "type": "string",
-                  "enum": ["Clamp", "Wrap", "Border", "Count"]
+                  "enum": ["Clamp", "Wrap", "Border", "Mirror", "Count"]
                 }
               }
             }
@@ -446,7 +446,7 @@
                 "semantic": {
                   "description": "Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer. If none is given, it shows up in shaders as an autonumbering text coordinate.",
                   "type": "string",
-                  "enum": ["Position", "Color", "Normal", "Tangent", "UV", "MaterialID", "ShapeID", "Count"]
+                  "enum": ["Position", "Color", "Normal", "Tangent", "UV", "MaterialID", "ShapeID", "Light_PosDir", "Light_ColorIntensity", "Light_Range", "Light_SpotInnerOuterRad", "Material_BaseColor", "Material_Emissive", "Material_Metallic", "Material_Roughness", "Material_AlphaMode", "Material_AlphaCutoff", "Material_DoubleSided", "Count"]
                 },
                 "semanticIndex": {
                   "description": "Some semantics can have multiple channels, like UVs and colors",

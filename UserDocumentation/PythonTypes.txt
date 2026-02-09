@@ -33,6 +33,9 @@
   SamplerFilterFromString()
   SamplerFilterToString()
 
+  SamplerFilterComponentFromString()
+  SamplerFilterComponentToString()
+
   SamplerAddressModeFromString()
   SamplerAddressModeToString()
 
@@ -95,6 +98,9 @@
 
   GGUserFile_TLASBuildFlagsFromString()
   GGUserFile_TLASBuildFlagsToString()
+
+  GGUserFile_SceneDataStreamFromString()
+  GGUserFile_SceneDataStreamToString()
 
   GGUserFile_BLASCullModeFromString()
   GGUserFile_BLASCullModeToString()
@@ -263,20 +269,33 @@
   SamplerFilter:
     Host.SamplerFilter_FIRST = 0
     Host.SamplerFilter_MinMagMipPoint = 0
-    Host.SamplerFilter_MinMagLinear_MipPoint = 1
-    Host.SamplerFilter_MinMagMipLinear = 2
-    Host.SamplerFilter_Count = 3
-    Host.SamplerFilter_LAST = 3
-    Host.SamplerFilter_COUNT = 4
+    Host.SamplerFilter_MinMagPoint_MipLinear = 1
+    Host.SamplerFilter_MinPoint_MagLinear_MipPoint = 2
+    Host.SamplerFilter_MinPoint_MagMipLinear = 3
+    Host.SamplerFilter_MinLinear_MagMipPoint = 4
+    Host.SamplerFilter_MinLinear_MagPoint_MipLinear = 5
+    Host.SamplerFilter_MinMagLinear_MipPoint = 6
+    Host.SamplerFilter_MinMagMipLinear = 7
+    Host.SamplerFilter_Count = 8
+    Host.SamplerFilter_LAST = 8
+    Host.SamplerFilter_COUNT = 9
+
+  SamplerFilterComponent:
+    Host.SamplerFilterComponent_FIRST = 0
+    Host.SamplerFilterComponent_Point = 0
+    Host.SamplerFilterComponent_Linear = 1
+    Host.SamplerFilterComponent_LAST = 1
+    Host.SamplerFilterComponent_COUNT = 2
 
   SamplerAddressMode:
     Host.SamplerAddressMode_FIRST = 0
     Host.SamplerAddressMode_Clamp = 0
     Host.SamplerAddressMode_Wrap = 1
     Host.SamplerAddressMode_Border = 2
-    Host.SamplerAddressMode_Count = 3
-    Host.SamplerAddressMode_LAST = 3
-    Host.SamplerAddressMode_COUNT = 4
+    Host.SamplerAddressMode_Mirror = 3
+    Host.SamplerAddressMode_Count = 4
+    Host.SamplerAddressMode_LAST = 4
+    Host.SamplerAddressMode_COUNT = 5
 
   TextureDimensionType:
     Host.TextureDimensionType_FIRST = 0
@@ -322,9 +341,20 @@
     Host.StructFieldSemantic_UV = 4
     Host.StructFieldSemantic_MaterialID = 5
     Host.StructFieldSemantic_ShapeID = 6
-    Host.StructFieldSemantic_Count = 7
-    Host.StructFieldSemantic_LAST = 7
-    Host.StructFieldSemantic_COUNT = 8
+    Host.StructFieldSemantic_Light_PosDir = 7
+    Host.StructFieldSemantic_Light_ColorIntensity = 8
+    Host.StructFieldSemantic_Light_Range = 9
+    Host.StructFieldSemantic_Light_SpotInnerOuterRad = 10
+    Host.StructFieldSemantic_Material_BaseColor = 11
+    Host.StructFieldSemantic_Material_Emissive = 12
+    Host.StructFieldSemantic_Material_Metallic = 13
+    Host.StructFieldSemantic_Material_Roughness = 14
+    Host.StructFieldSemantic_Material_AlphaMode = 15
+    Host.StructFieldSemantic_Material_AlphaCutoff = 16
+    Host.StructFieldSemantic_Material_DoubleSided = 17
+    Host.StructFieldSemantic_Count = 18
+    Host.StructFieldSemantic_LAST = 18
+    Host.StructFieldSemantic_COUNT = 19
 
   GigiSlangOptimizationLevel:
     Host.GigiSlangOptimizationLevel_FIRST = 0
@@ -518,6 +548,14 @@
     Host.GGUserFile_TLASBuildFlags_MinimizeMemory = 5
     Host.GGUserFile_TLASBuildFlags_LAST = 5
     Host.GGUserFile_TLASBuildFlags_COUNT = 6
+
+  GGUserFile_SceneDataStream:
+    Host.GGUserFile_SceneDataStream_FIRST = 0
+    Host.GGUserFile_SceneDataStream_GeometryFlat = 0
+    Host.GGUserFile_SceneDataStream_Lights = 1
+    Host.GGUserFile_SceneDataStream_Materials = 2
+    Host.GGUserFile_SceneDataStream_LAST = 2
+    Host.GGUserFile_SceneDataStream_COUNT = 3
 
   GGUserFile_BLASCullMode:
     Host.GGUserFile_BLASCullMode_FIRST = 0

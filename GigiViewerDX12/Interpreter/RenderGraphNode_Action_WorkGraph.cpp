@@ -230,6 +230,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		{
 			std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 			m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
+
+            for (const std::string& embeddedFileName : node.entryShader.shader->embeddedFiles)
+                m_fileWatcher.Add(embeddedFileName.c_str(), FileWatchOwner::Shaders);
 		}
 
 		if (blob.data() == nullptr)

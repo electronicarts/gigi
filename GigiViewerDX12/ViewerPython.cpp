@@ -508,6 +508,19 @@ static PyObject* Python_PixCaptureNextFrames(PyObject* self, PyObject* args)
     return Py_None;
 }
 
+static PyObject* Python_SetImportedBufferMaterialShaderFile(PyObject* self, PyObject* args)
+{
+    const char* bufferName = nullptr;
+    const char* fileName = nullptr;
+    if (!PyArg_ParseTuple(args, "ss:Python_SetImportedBufferMaterialShaderFile", &bufferName, &fileName))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetImportedBufferMaterialShaderFile(bufferName, fileName);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject* Python_SetImportedBufferFile(PyObject* self, PyObject* args)
 {
     const char* bufferName = nullptr;
@@ -1153,6 +1166,7 @@ void PythonInit(PythonInterface* interface)
         {"Pause", Python_Pause, METH_VARARGS, "Can pause or unpause viewer execution. Does not affect RunTechnique(), but useful for pausing then exiting the script to return user control at a specific frame to investigate."},
         {"PixCaptureNextFrames", Python_PixCaptureNextFrames, METH_VARARGS, "Do a pix capture for the next N frames rendered."},
         {"SetImportedBufferFile", Python_SetImportedBufferFile, METH_VARARGS, "Set the file name of an imported buffer"},
+        {"SetImportedBufferMaterialShaderFile", Python_SetImportedBufferMaterialShaderFile, METH_VARARGS, "Set the file name of an imported buffer material shader file"},
         {"SetImportedBufferStruct", Python_SetImportedBufferStruct, METH_VARARGS, "Set the struct type of an imported buffer"},
         {"SetImportedBufferType", Python_SetImportedBufferType, METH_VARARGS, "Set the type of an imported buffer"},
         {"SetImportedBufferCount", Python_SetImportedBufferCount, METH_VARARGS, "Set the count of an imported buffer"},

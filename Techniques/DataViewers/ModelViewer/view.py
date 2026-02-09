@@ -4,7 +4,6 @@ import sys
 import os
 import numpy
 
-ImportedResourceName = "VertexBuffer"
 RGResourceName = "VertexBuffer.resource"
 
 #Host.Print("Argc: " + str(len(sys.argv)))
@@ -13,7 +12,10 @@ RGResourceName = "VertexBuffer.resource"
 Host.LoadGG("ModelViewer.gg")
 
 fileName = sys.argv[0]
-Host.SetImportedBufferFile(ImportedResourceName, fileName)
+Host.SetImportedBufferFile("VertexBuffer", fileName)
+Host.SetImportedBufferFile("LightBuffer", fileName)
+Host.SetImportedBufferFile("MaterialBuffer", fileName)
+Host.SetImportedBufferMaterialShaderFile("MaterialBuffer", "_material.hlsli")
 
 Host.SetCameraPos(0,0,0)
 Host.SetCameraAltitudeAzimuth(0, 3.14)

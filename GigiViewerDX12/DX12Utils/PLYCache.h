@@ -12,7 +12,6 @@
 #include <array>
 
 #include "FileCache.h"
-#include "FlattenedVertex.h"
 // clang-format on
 
 class PLYCache

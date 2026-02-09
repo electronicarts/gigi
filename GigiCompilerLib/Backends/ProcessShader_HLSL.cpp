@@ -311,8 +311,9 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
     }
 
     std::string srcFileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
-    std::vector<unsigned char> shaderFile;
-    if (!LoadFile(srcFileName, shaderFile))
+    std::vector<char> shaderFile;
+    std::vector<std::string> embeddedFiles;
+    if (!LoadAndPreprocessTextFile(srcFileName, shaderFile, renderGraph, embeddedFiles))
     {
         GigiAssert(false, "Could not load file %s", srcFileName.c_str());
         return false;

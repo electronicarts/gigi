@@ -51,6 +51,7 @@ public:
 
 		// Used by textures
 		UINT m_UAVMipIndex = 0;
+        UINT m_UAVFirstArraySlice = 0; // for cube maps and 2d texture arrays
 
 		// used by buffers, constant buffers, texture2darrays and texture3ds
 		UINT m_stride = 0;
@@ -316,8 +317,8 @@ public:
 					{
 						uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
 						uavDesc.Texture2DArray.MipSlice = descriptor.m_UAVMipIndex;
-						uavDesc.Texture2DArray.FirstArraySlice = 0;
-						uavDesc.Texture2DArray.ArraySize = (descriptor.m_resourceType == ResourceType::TextureCube) ? 6 : descriptor.m_count;
+						uavDesc.Texture2DArray.FirstArraySlice = descriptor.m_UAVFirstArraySlice;
+						uavDesc.Texture2DArray.ArraySize = ((descriptor.m_resourceType == ResourceType::TextureCube) ? 6 : descriptor.m_count) - uavDesc.Texture2DArray.FirstArraySlice;
 
 						DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format);
 						uavDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
@@ -427,17 +428,19 @@ private:
 		size_t hash6 = std::hash<size_t>()(static_cast<size_t>(v.m_resourceType));
 		size_t hash7 = std::hash<size_t>()(static_cast<size_t>(v.m_raw));
 		size_t hash8 = std::hash<size_t>()(static_cast<size_t>(v.m_UAVMipIndex));
-        size_t hash9 = std::hash<size_t>()(static_cast<size_t>(v.m_firstElement));
+        size_t hash9 = std::hash<size_t>()(static_cast<size_t>(v.m_UAVFirstArraySlice));
+        size_t hash10 = std::hash<size_t>()(static_cast<size_t>(v.m_firstElement));
 
 		size_t hash12 = HashCombine(hash1, hash2);
 		size_t hash34 = HashCombine(hash3, hash4);
 		size_t hash56 = HashCombine(hash5, hash6);
 		size_t hash78 = HashCombine(hash7, hash8);
+        size_t hash910 = HashCombine(hash9, hash10);
 
 		size_t hash1234 = HashCombine(hash12, hash34);
 		size_t hash5678 = HashCombine(hash56, hash78);
 
-        return HashCombine(HashCombine(hash1234, hash5678), hash9);
+        return HashCombine(HashCombine(hash1234, hash5678), hash910);
 	}
 
 	struct Entry

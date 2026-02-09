@@ -33,141 +33,147 @@ RWTexture2D<float4 > Output_0 : register(u0);
 
 
 #line 3
+int GetRadius_0()
+{
+    return _BoxBlur_0CB_0.radius_0;
+}
+
+
 float3 LinearToSRGB_0(float3 linearCol_0)
 {
     float3 sRGBLo_0 = linearCol_0 * 12.92000007629394531f;
     float3 sRGBHi_0 = pow(abs(linearCol_0), float3(0.4166666567325592f, 0.4166666567325592f, 0.4166666567325592f)) * 1.0549999475479126f - 0.05499999970197678f;
     float3 sRGB_1;
 
-#line 7
+#line 13
     float _S1;
     if((linearCol_0.x) <= 0.00313080009073019f)
     {
 
-#line 8
+#line 14
         _S1 = sRGBLo_0.x;
 
-#line 8
+#line 14
     }
     else
     {
 
-#line 8
+#line 14
         _S1 = sRGBHi_0.x;
 
-#line 8
+#line 14
     }
 
-#line 8
+#line 14
     sRGB_1[int(0)] = _S1;
     if((linearCol_0.y) <= 0.00313080009073019f)
     {
 
-#line 9
+#line 15
         _S1 = sRGBLo_0.y;
 
-#line 9
+#line 15
     }
     else
     {
 
-#line 9
+#line 15
         _S1 = sRGBHi_0.y;
 
-#line 9
+#line 15
     }
 
-#line 9
+#line 15
     sRGB_1[int(1)] = _S1;
     if((linearCol_0.z) <= 0.00313080009073019f)
     {
 
-#line 10
+#line 16
         _S1 = sRGBLo_0.z;
 
-#line 10
+#line 16
     }
     else
     {
 
-#line 10
+#line 16
         _S1 = sRGBHi_0.z;
 
-#line 10
+#line 16
     }
 
-#line 10
+#line 16
     sRGB_1[int(2)] = _S1;
     return sRGB_1;
 }
 
 
-#line 25
+#line 31
 [shader("compute")][numthreads(8, 8, 1)]
 void BlurH(uint3 DTid_0 : SV_DispatchThreadID)
 {
 
-#line 25
+#line 31
     uint3 _S2 = DTid_0;
 
-    int radius_1 = _BoxBlur_0CB_0.radius_0;
+    int radius_1 = GetRadius_0();
     uint w_0;
 
-#line 28
+#line 34
     uint h_0;
     Input_0.GetDimensions(w_0, h_0);
 
     float4 _S3 = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-#line 31
+#line 37
     int i_0 = - radius_1;
 
-#line 31
+#line 37
     float4 result_0 = _S3;
 
     for(;;)
     {
 
-#line 33
+#line 39
         if(i_0 <= radius_1)
         {
         }
         else
         {
 
-#line 33
+#line 39
             break;
         }
 
-#line 34
+#line 40
         uint2 _S4 = (_S2.xy + uint2(int2(i_0, int(0)))) % uint2(int2(int(w_0), int(h_0)));
 
-#line 34
+#line 40
         float4 result_1 = result_0 + Input_0.Load(int3(int2(_S4), int(0))) / (float(radius_1) * 2.0f + 1.0f);
 
-#line 33
+#line 39
         i_0 = i_0 + int(1);
 
-#line 33
+#line 39
         result_0 = result_1;
 
-#line 33
+#line 39
     }
 
 
     if(bool(_BoxBlur_0CB_0.sRGB_0))
     {
 
-#line 37
+#line 43
         Output_0[_S2.xy] = float4(LinearToSRGB_0(result_0.xyz), result_0.w);
 
-#line 36
+#line 42
     }
     else
     {
         Output_0[_S2.xy] = result_0;
 
-#line 36
+#line 42
     }
 
 

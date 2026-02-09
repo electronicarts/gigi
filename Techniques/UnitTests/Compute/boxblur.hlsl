@@ -1,5 +1,7 @@
 // Box Blur Shader/*$(ShaderResources)*/
 
+/*$(Embed:boxblur_embed.hlsl)*/
+
 float3 LinearToSRGB(float3 linearCol)
 {
 	float3 sRGBLo = linearCol * 12.92;
@@ -24,7 +26,7 @@ float3 SRGBToLinear(in float3 sRGBCol)
 
 /*$(_compute:BlurH)*/(uint3 DTid : SV_DispatchThreadID)
 {
-    int radius = /*$(Variable:radius)*/;
+    int radius = GetRadius();
     uint w, h;
     Input.GetDimensions(w, h);
 
@@ -41,7 +43,7 @@ float3 SRGBToLinear(in float3 sRGBCol)
 
 /*$(_compute:BlurV)*/(uint3 DTid : SV_DispatchThreadID)
 {
-    int radius = /*$(Variable:radius)*/;
+    int radius = GetRadius();
     uint w, h;
     Input.GetDimensions(w, h);
 

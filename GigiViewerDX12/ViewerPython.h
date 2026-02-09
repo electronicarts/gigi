@@ -58,6 +58,7 @@ public:
 	virtual void SetImportedBufferCSVHeaderRow(const char* bufferName, bool CSVHeaderRow) = 0;
 	virtual void SetImportedBufferCount(const char* bufferName, int count) = 0;
 	virtual void SetImportedBufferFile(const char* bufferName, const char* fileName) = 0;
+    virtual void SetImportedBufferMaterialShaderFile(const char* bufferName, const char* fileName) = 0;
 	virtual void SetImportedBufferStruct(const char* bufferName, const char* structName) = 0;
 	virtual void SetImportedBufferType(const char* bufferName, DataFieldType type) = 0;
 	virtual void SetImportedTextureFile(const char* textureName, const char* fileName) = 0;

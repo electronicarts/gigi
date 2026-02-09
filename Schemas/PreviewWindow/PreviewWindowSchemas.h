@@ -114,6 +114,12 @@ ENUM_BEGIN(GGUserFile_TLASBuildFlags, "D3D12_RAYTRACING_ACCELERATION_STRUCTURE_B
 	ENUM_ITEM(MinimizeMemory, "")
 ENUM_END()
 
+ENUM_BEGIN(GGUserFile_SceneDataStream, "Which type of data to load from a scene")
+	ENUM_ITEM(GeometryFlat, "De-indexed and de-instanced geometry as a flattened vertex buffer.")
+	ENUM_ITEM(Lights, "Point and directional lights")
+    ENUM_ITEM(Materials, "material constant values like albedo and roughness.")
+ENUM_END()
+
 ENUM_BEGIN(GGUserFile_BLASCullMode, "controls D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_CULL_DISABLE and D3D12_RAYTRACING_INSTANCE_FLAG_TRIANGLE_FRONT_COUNTERCLOCKWISE")
 	ENUM_ITEM(CullNone, "")
 	ENUM_ITEM(FrontIsClockwise, "")
@@ -135,6 +141,8 @@ STRUCT_END()
 STRUCT_BEGIN(GGUserFile_ImportedBuffer, "The details of an imported buffer")
 	STRUCT_FIELD(std::string, fileName, "", "The file loaded", 0)
 	STRUCT_FIELD(bool, CSVHeaderRow, true, "If reading a CSV, and this is true, it will skip everything up to the first newline, to ignore a header row.", 0)
+    STRUCT_FIELD(GGUserFile_SceneDataStream, dataStream, GGUserFile_SceneDataStream::GeometryFlat, "What type of data to load", 0)
+    STRUCT_FIELD(std::string, materialShaderFile, "", "The name of the shader file to generate for reading the material from a shader.", 0)
 	STRUCT_FIELD(int, structIndex, -1, "the index of the struct if a structured buffer", 0)
 	STRUCT_FIELD(DataFieldType, type, DataFieldType::Count, "The data field type, if not a structured buffer", 0)
 	STRUCT_FIELD(int, count, 1, "how many items are stored", 0)
@@ -286,7 +294,8 @@ STRUCT_BEGIN(GGViewerConfig, "The config file for the viewer settings file Viewe
     STRUCT_FIELD(std::string, keyCameraDown, "Q", "Camera down key", 0)
     STRUCT_FIELD(std::string, keyCameraFast, "Shift", "Camera fast key", 0)
     STRUCT_FIELD(std::string, keyCameraSlow, "Control", "Camera slow key", 0)
-    STRUCT_FIELD(bool, betterShaderError, false, "Double click shader errors with an attached debugger.", 0)
+    STRUCT_FIELD(bool, betterShaderError, true, "Double click shader errors with an attached debugger.", 0)
+    STRUCT_FIELD(std::string, windowPersist, "", "", SCHEMA_FLAG_NO_UI)
 STRUCT_END()
 
 #define GGUserFileLatest GGUserFileV2

@@ -37,141 +37,147 @@ cbuffer globalParams_0 : register(b0)
 }
 
 #line 17
+int GetRadius_0()
+{
+    return globalParams_0.cb_BoxBlur_0CB_radius_0;
+}
+
+
 float3 LinearToSRGB_0(float3 linearCol_0)
 {
     float3 sRGBLo_0 = linearCol_0 * 12.92000007629394531f;
     float3 sRGBHi_0 = pow(abs(linearCol_0), float3(0.4166666567325592f, 0.4166666567325592f, 0.4166666567325592f)) * 1.0549999475479126f - 0.05499999970197678f;
     float3 sRGB_0;
 
-#line 21
+#line 27
     float _S1;
     if((linearCol_0.x) <= 0.00313080009073019f)
     {
 
-#line 22
+#line 28
         _S1 = sRGBLo_0.x;
 
-#line 22
+#line 28
     }
     else
     {
 
-#line 22
+#line 28
         _S1 = sRGBHi_0.x;
 
-#line 22
+#line 28
     }
 
-#line 22
+#line 28
     sRGB_0[int(0)] = _S1;
     if((linearCol_0.y) <= 0.00313080009073019f)
     {
 
-#line 23
+#line 29
         _S1 = sRGBLo_0.y;
 
-#line 23
+#line 29
     }
     else
     {
 
-#line 23
+#line 29
         _S1 = sRGBHi_0.y;
 
-#line 23
+#line 29
     }
 
-#line 23
+#line 29
     sRGB_0[int(1)] = _S1;
     if((linearCol_0.z) <= 0.00313080009073019f)
     {
 
-#line 24
+#line 30
         _S1 = sRGBLo_0.z;
 
-#line 24
+#line 30
     }
     else
     {
 
-#line 24
+#line 30
         _S1 = sRGBHi_0.z;
 
-#line 24
+#line 30
     }
 
-#line 24
+#line 30
     sRGB_0[int(2)] = _S1;
     return sRGB_0;
 }
 
 
-#line 40
+#line 46
 [shader("compute")][numthreads(8, 8, 1)]
 void BlurH(uint3 DTid_0 : SV_DispatchThreadID)
 {
 
-#line 40
+#line 46
     uint3 _S2 = DTid_0;
 
-
+    int radius_0 = GetRadius_0();
     uint w_0;
 
-#line 43
+#line 49
     uint h_0;
     Input_0.GetDimensions(w_0, h_0);
 
     float4 _S3 = float4(0.0f, 0.0f, 0.0f, 0.0f);
 
-#line 46
-    int i_0 = - globalParams_0.cb_BoxBlur_0CB_radius_0;
+#line 52
+    int i_0 = - radius_0;
 
-#line 46
+#line 52
     float4 result_0 = _S3;
 
     for(;;)
     {
 
-#line 48
-        if(i_0 <= (globalParams_0.cb_BoxBlur_0CB_radius_0))
+#line 54
+        if(i_0 <= radius_0)
         {
         }
         else
         {
 
-#line 48
+#line 54
             break;
         }
 
-#line 49
+#line 55
         uint2 _S4 = (_S2.xy + uint2(int2(i_0, int(0)))) % uint2(int2(int(w_0), int(h_0)));
 
-#line 49
-        float4 result_1 = result_0 + Input_0.Load(int3(int2(_S4), int(0))) / (float(globalParams_0.cb_BoxBlur_0CB_radius_0) * 2.0f + 1.0f);
+#line 55
+        float4 result_1 = result_0 + Input_0.Load(int3(int2(_S4), int(0))) / (float(radius_0) * 2.0f + 1.0f);
 
-#line 48
+#line 54
         i_0 = i_0 + int(1);
 
-#line 48
+#line 54
         result_0 = result_1;
 
-#line 48
+#line 54
     }
 
 
     if(bool(globalParams_0.cb_BoxBlur_0CB_sRGB_0))
     {
 
-#line 52
+#line 58
         Output_0[_S2.xy] = float4(LinearToSRGB_0(result_0.xyz), result_0.w);
 
-#line 51
+#line 57
     }
     else
     {
         Output_0[_S2.xy] = result_0;
 
-#line 51
+#line 57
     }
 
 

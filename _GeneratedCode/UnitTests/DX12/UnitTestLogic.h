@@ -197,7 +197,10 @@ public:
                                     textures.pop_back();
 
                                 if (textures.empty())
+                                {
+                                    stbi_write_png(readback.fileName, readbackWidth, readbackHeight, 4, data.data(), 0);
                                     Fail("Could not load gold image %s", readback.fileName);
+                                }
 
                                 // compare dimensions
                                 else if (textures[0].width != readbackWidth || textures[0].height != readbackHeight || textures.size() != readbackDepth || textures[0].channels != formatInfo.channelCount || totalLoadedTextureSize != data.size())
@@ -3960,7 +3963,7 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 {
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_2D\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Output, context->m_output.c_texture_Output_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_2D\\0.png");
     }
 }
 
@@ -3978,8 +3981,8 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 {
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_Cube\\0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_Cube\\1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_Cube\\0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 3, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_Cube\\1.png");
     }
 }
 
@@ -3987,16 +3990,16 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
 {
     if (testContext.IsFirstPostExecute(event))
     {
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.2.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.3.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.4.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\0.5.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\1.0.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 1, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\1.1.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\1.2.png");
-        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Textures\\Mips_ShaderToken_3D\\2.0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\0.0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 1, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\0.1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\0.2.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 3, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\0.3.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 4, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\0.4.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 5, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\0.5.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\1.0.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 1, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\1.1.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 2, 1, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\1.2.png");
+        testContext.VerifyReadbackPNG(device, commandList, context->m_internal.texture__loadedTexture_0, context->m_internal.c_texture__loadedTexture_0_endingState, 0, 2, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages_DX12\\Textures\\Mips_ShaderToken_3D\\2.0.png");
     }
 }
 

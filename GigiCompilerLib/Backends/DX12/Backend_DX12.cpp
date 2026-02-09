@@ -1691,10 +1691,21 @@ void RunBackend_DX12(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GGUs
     for (const FileCopy& fileCopy : renderGraph.fileCopies)
     {
         // load the file into memory
-        std::vector<unsigned char> data;
-        if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
+        std::vector<char> data;
+        if (fileCopy.binary)
         {
-            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
+        }
+        else
+        {
+            std::vector<std::string> embeddedFiles;
+            if (!LoadAndPreprocessTextFile(renderGraph.baseDirectory + fileCopy.fileName, data, renderGraph, embeddedFiles))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
         }
 
         // get the folder to copy to

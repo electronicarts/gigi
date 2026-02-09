@@ -135,7 +135,7 @@ int ImGui_PathFileMenuItem(const char* fileNameWithPath, int index)
         float x = ImGui::GetContentRegionMax().x - button_width - ImGui::GetStyle().ItemSpacing.x;
 
         ImGui::SetCursorPosX(x);
-        if (ImGuiIconButton("Delete", icon, hovered, true))
+        if (ImGuiIconButton("Delete", icon, true, true))
             ret = -1;
     }
 
@@ -167,39 +167,72 @@ int ImGui_FilePathMenuItem(const char* fileNameWithPath, int index)
         end = here + 1;
 
     bool selected = false;
-//    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_SpanAllColumns);
-    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_AllowItemOverlap) ? 1 : 0;
-    bool hovered = ImGui::IsItemHovered();
+    // flag is needed to make delete icon behind it working
+
+    const float menuWidth = ImGui::GetFontSize() * 30;
+//    const float menuWidth = 400;
+
+    // BeginChild is needed to not highlight the delete icon, sadly it clips characters at the bottom
+//    ImGui::BeginChild("##", ImVec2(menuWidth, ImGui::GetFontSize()), false, ImGuiWindowFlags_NoBackground);
+    // BeginChild is needed to not highlight the delete icon
+    ImGui::BeginChild("##", ImVec2(menuWidth, ImGui::GetFontSize() + 2 * 1), false, ImGuiWindowFlags_NoBackground);
+
+    // Selectable in menu has no FramePadding so we fix this
+    ImGui::SetCursorPosX(ImGui::GetStyle().FramePadding.x);
+
+    const char* iconDoc = "\xef\x85\x9b"; // Icon: filled document, right top corner fold
+
+    ImGui::TextUnformatted(iconDoc);
     ImGui::SameLine();
 
-    if (!hovered)
-        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 50));
+    // file name
+    int ret = ImGui::Selectable(end, &selected, ImGuiSelectableFlags_None) ? 1 : 0;
+    bool hovered = ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+    ImGui::SameLine();
+
+    ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 50));
 
     // omit last \ or /
     if (end != str)
         --end;
 
-    ImGui::TextEx(str, end);
-    if (!hovered)
-        ImGui::PopStyleColor();
+    float fileNameWidth = ImGui::CalcTextSize(iconDoc).x + ImGui::GetStyle().ItemSpacing.x + ImGui::CalcTextSize(end).x;
+    ImGui::SetCursorPosX(fileNameWidth + ImGui::GetStyle().ItemSpacing.x);
 
-//        const char* icon = "\xef\x81\x97"; // disk with cross inside
-//        const char* icon = "\xef\x80\x8d"; // cross
-    const char* icon = "\xef\x80\x94"; // trashcan
+   const char* iconDelete = "\xef\x81\x97"; // disk with cross inside
+//        const char* iconDelete = "\xef\x80\x8d"; // cross
+//    const char* iconDelete = "\xef\x80\x94"; // trashcan  too busy when small
 
-    // see https://github.com/ocornut/imgui/issues/7805
-    float button_width = ImGui::CalcTextSize(icon).x; // Button text + style padding
-    ImGui::SameLine();
-    ImGui::Dummy(ImVec2(button_width, 0));
+
+    // path, clipped in rectangle, ideally we show "...", maybe right side
+    ImVec2 clipSize = ImVec2(menuWidth - fileNameWidth - ImGui::GetStyle().WindowPadding.x - 2 * ImGui::GetStyle().FramePadding.x, ImGui::GetFontSize());
+    {
+        ImVec2 clip_min = ImGui::GetCursorScreenPos();
+        ImVec2 clip_max = ImVec2(clip_min.x + clipSize.x, clip_min.y + clipSize.y);
+
+        // Push the clip rect. 
+        // Set the third parameter to 'true' to intersect with the current clip rect.
+        ImGui::PushClipRect(clip_min, clip_max, true);
+
+        ImGui::TextEx(str, end);
+
+        ImGui::PopClipRect();
+    }
+
+
+    ImGui::PopStyleColor();
+
+    ImGui::EndChild();
 
     {
         ImGui::SameLine();
-        float x = ImGui::GetContentRegionMax().x - button_width - ImGui::GetStyle().ItemSpacing.x;
 
-        ImGui::SetCursorPosX(x);
-        if (ImGuiIconButton("Delete", icon, hovered, true))
+        ImGui::SetCursorPosX(menuWidth + ImGui::GetStyle().WindowPadding.x + ImGui::GetStyle().ItemSpacing.x);
+
+        if (ImGuiIconButton("Delete", iconDelete))
             ret = -1;
     }
+
 
     ImGui::EndGroup();
     ImGui::PopID();
@@ -258,21 +291,29 @@ bool ImGui_File(const char* label, std::string& inOutName, const char* filterLis
 	return ret;
 }
 
-bool ImGuiIconButton(const char* label, const char* icon, bool enabled, bool bSmall)
+bool ImGuiIconButton(const char* label, const char* icon)
 {
     // classic BeginMenu in comparison
-//    return ImGui::Button(label);
+//    return ImGui::SmallButton(label);
+
+    // we need a InvisibleButton to know in advance if we are hovered
+    float backup = ImGui::GetCursorPosX();
+    bool ret = ImGui::InvisibleButton(label, ImGui::CalcTextSize(icon));
+    ImGui::SameLine();
+    ImGui::SetCursorPosX(backup);
+    bool hovered = ImGui::IsItemHovered();
 
     ImVec4 hideColor = ImVec4(0, 0, 0, 0);
+    ImVec4 textColor = ImGui::GetStyle().Colors[ImGuiCol_Text];
 
-    ImGui::PushStyleColor(ImGuiCol_Text, enabled ? ImGui::GetStyle().Colors[ImGuiCol_Text] : hideColor);
+    ImGui::PushStyleColor(ImGuiCol_Text, hovered ? textColor : ImVec4(textColor.x, textColor.y, textColor.z, textColor.w * 0.5f));
     ImGui::PushStyleColor(ImGuiCol_Border, hideColor);
     ImGui::PushStyleColor(ImGuiCol_BorderShadow, hideColor);
     ImGui::PushStyleColor(ImGuiCol_Button, hideColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, hideColor);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, hideColor);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(2, 2));  // make icon square
-    bool ret = bSmall ? ImGui::SmallButton(icon) : ImGui::Button(icon);
+    ImGui::TextUnformatted(icon);
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(6);
 
@@ -383,6 +424,32 @@ bool ImGuiMenuItem(const char* label, const char* icon, const char* shortcut, bo
     ImGui::PopID();
 
     return ret;
+}
+
+void ImGuiRightAlign(const char* text)
+{
+    assert(text);
+
+    // 1. Calculate the position of the right edge of the current column
+    float rightEdge = ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x;
+
+    // 2. Calculate the width of the text to be displayed
+    float textWidth = ImGui::CalcTextSize(text).x;
+
+    // 3. Calculate the new X position for the text to be right-aligned
+    // Subtract text width from the right edge. Adjust for any desired padding (e.g., style.ItemSpacing.x) if needed.
+    float posX = rightEdge - textWidth - ImGui::GetStyle().ItemSpacing.x;
+
+    // Optional: Ensure the text doesn't overlap with the left side if the column is too narrow
+    if (posX > ImGui::GetCursorPosX())
+        ImGui::SetCursorPosX(posX);
+}
+
+void ImGuiKeyValueString(const char* key, const char* value)
+{
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 1.0f, 0.7f), "%s = ", key);
+    ImGui::SameLine();
+    ImGui::TextColored(ImVec4(1.0f, 1.0f, 0.3f, 1.0f), "\"%s\"", value);
 }
 
 bool ImGuiBeginMenu(const char* label, bool enabled)

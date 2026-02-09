@@ -30,7 +30,7 @@ using JobProcessor = void (*)(JobFunction, void*, void*, u32, u32);
 enum class LoadFlags : u16
 {
 	NONE = 0,
-	UNUSED = 1 << 0, // can be reused
+	KEEP_MATERIAL_MAP = 1 << 0, // keep material map even if IGNORE_GEOMETRY is used
 	IGNORE_GEOMETRY = 1 << 1,
 	IGNORE_BLEND_SHAPES = 1 << 2,
 	IGNORE_CAMERAS = 1 << 3,
@@ -394,6 +394,7 @@ struct Camera : Object
 
 	virtual double getNearPlane() const = 0;
 	virtual double getFarPlane() const = 0;
+	virtual double getOrthoZoom() const = 0;
 	virtual bool doesAutoComputeClipPanes() const = 0;
 
 	virtual GateFit getGateFit() const = 0;
@@ -425,6 +426,8 @@ struct Material : Object
     virtual double getAmbientFactor() const = 0;
     virtual double getBumpFactor() const = 0;
     virtual double getEmissiveFactor() const = 0;
+	virtual double getOpacity() const = 0;
+	virtual DataView getShadingModel() const = 0;
 
 	virtual const Texture* getTexture(Texture::TextureType type) const = 0;
 };
@@ -536,9 +539,10 @@ struct GeometryPartition {
 	const int triangles_count; // number of triangles after polygon triangulation, can be used for preallocation
 };
 
+// if we use LoadFlags::IGNORE_GEOMETRY, values here are empty/invalid, with a few exceptions
 struct GeometryData {
 	virtual ~GeometryData() {}
-
+	
 	virtual Vec3Attributes getPositions() const = 0;
 	virtual Vec3Attributes getNormals() const = 0;
 	virtual Vec2Attributes getUVs(int index = 0) const = 0;
@@ -546,6 +550,14 @@ struct GeometryData {
 	virtual Vec3Attributes getTangents() const = 0;
 	virtual int getPartitionCount() const = 0;
 	virtual GeometryPartition getPartition(int partition_index) const = 0;
+	
+	// if we use LoadFlags::KEEP_MATERIAL_MAP, following is valid even if we use IGNORE_GEOMETRY
+	virtual const int getMaterialMapSize() const = 0;
+	virtual const int* getMaterialMap() const = 0;
+
+	// returns true if there are vertices in the geometry
+	// this has valid value even if we use LoadFlags::IGNORE_GEOMETRY
+	virtual bool hasVertices() const = 0;
 };
 
 
@@ -708,6 +720,31 @@ struct GlobalSettings
 	float CustomFrameRate = -1.0f;
 };
 
+struct Headers
+{
+	int fbxHeaderVersion = 0;
+	int fbxVersion = 0;
+	int encryptionType = 0;
+	char* creator;
+	char* creationTime;
+
+	char* documentUrl;
+	char* srcDocumentUrl;
+	char* originalApplicationVendor;
+	char* originalApplicationName;
+	char* originalApplicationVersion;
+
+	char* originalDateTimeGMT;
+
+	char* originalFilename;
+	char* originalApplicationActiveProject;
+	char* originalApplicationNativeFile;
+
+	char* lastSavedApplicationVendor;
+	char* lastSavedApplicationName;
+	char* lastSavedApplicationVersion;
+	char* lastSavedDateTimeGMT;
+};
 
 struct IScene
 {
@@ -753,6 +790,9 @@ struct IScene
 	virtual const TakeInfo* getTakeInfo(const char* name) const = 0;
 	virtual float getSceneFrameRate() const = 0;
 	virtual const GlobalSettings* getGlobalSettings() const = 0;
+	
+	// Headers
+	virtual const Headers* getHeaders() const = 0;
 
 protected:
 	virtual ~IScene() {}
@@ -764,34 +804,11 @@ const char* getError();
 double fbxTimeToSeconds(i64 value);
 i64 secondsToFbxTime(double value);
 
-// TODO nonconvex
-inline u32 triangulate(const GeometryData& geom, const GeometryPartition::Polygon& polygon, int* tri_indices) {
-	if (polygon.vertex_count < 3) return 0;
-	if (polygon.vertex_count == 3) {
-		tri_indices[0] = polygon.from_vertex;
-		tri_indices[1] = polygon.from_vertex + 1;
-		tri_indices[2] = polygon.from_vertex + 2;
-		return 3;
-	}
-	else if (polygon.vertex_count == 4) {
-		tri_indices[0] = polygon.from_vertex + 0;
-		tri_indices[1] = polygon.from_vertex + 1;
-		tri_indices[2] = polygon.from_vertex + 2;
-
-		tri_indices[3] = polygon.from_vertex + 0;
-		tri_indices[4] = polygon.from_vertex + 2;
-		tri_indices[5] = polygon.from_vertex + 3;
-		return 6;
-	}
-
-	for (int tri = 0; tri < polygon.vertex_count - 2; ++tri) {
-		tri_indices[tri * 3 + 0] = polygon.from_vertex;
-		tri_indices[tri * 3 + 1] = polygon.from_vertex + 1 + tri;
-		tri_indices[tri * 3 + 2] = polygon.from_vertex + 2 + tri;
-	}
-	return 3 * (polygon.vertex_count - 2);
-}
-
+// You can pass temporary memory in `tmp` (must be at least as large as polygon.vertex_count)
+// If `tmp` is null, only concave polygons with polygon.vertex_count <= 128 are supported
+// `tri_indices` contains indices of triangles
+// Returns number of resulting indices
+u32 triangulate(const GeometryData& geom, const GeometryPartition::Polygon& polygon, int* tri_indices, int* tmp = nullptr);
 
 } // namespace ofbx
 

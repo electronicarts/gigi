@@ -1,6 +1,6 @@
 {
     "$schema": "gigischema.json",
-    "version": "1.0",
+    "version": "1.01",
     "variables": [
         {
             "name": "RenderSize",
@@ -11,7 +11,7 @@
         {
             "name": "ViewMode",
             "type": "Int",
-            "dflt": "PlasticShaded",
+            "dflt": "Shaded",
             "visibility": "User",
             "Enum": "ViewModes"
         },
@@ -50,8 +50,56 @@
             "visibility": "User"
         },
         {
+            "name": "ForceDefaultLights",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User"
+        },
+        {
+            "name": "AmbientColor",
+            "type": "Float3",
+            "dflt": "1, 1, 1",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "AmbientPower",
+            "type": "Float",
+            "dflt": "0",
+            "visibility": "User"
+        },
+        {
+            "name": "DirectionalLightDir",
+            "type": "Float3",
+            "dflt": "0.724, 0.384, 0.553",
+            "visibility": "User"
+        },
+        {
+            "name": "DirectionalLightColor",
+            "type": "Float3",
+            "dflt": "1, 1, 1",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Color"
+            }
+        },
+        {
+            "name": "DirectionalLightPower",
+            "type": "Float",
+            "dflt": "1",
+            "visibility": "User"
+        },
+        {
             "name": "InvViewMtx",
             "type": "Float4x4"
+        },
+        {
+            "name": "LightIsLocal",
+            "comment": "If true, the light direction is local to the camera",
+            "type": "Bool",
+            "visibility": "User"
         }
     ],
     "shaders": [
@@ -65,7 +113,29 @@
             "name": "ModelViewerPS",
             "fileName": "ModelViewerPS.hlsl",
             "type": "Pixel",
-            "entryPoint": "psmain"
+            "entryPoint": "psmain",
+            "resources": [
+                {
+                    "name": "Lights",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Lights"
+                        }
+                    }
+                },
+                {
+                    "name": "Materials",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Materials"
+                        }
+                    }
+                }
+            ]
         },
         {
             "name": "ModelViewerCS",
@@ -79,8 +149,8 @@
             "resources": [
                 {
                     "name": "VertexBuffer",
-                    "type": "Buffer",
                     "access": "UAV",
+                    "type": "Buffer",
                     "buffer": {
                         "typeStruct": {
                             "name": "VB"
@@ -96,13 +166,13 @@
             "resources": [
                 {
                     "name": "Depth",
-                    "type": "Texture",
-                    "access": "SRV"
+                    "access": "SRV",
+                    "type": "Texture"
                 },
                 {
                     "name": "Color",
-                    "type": "Texture",
-                    "access": "UAV"
+                    "access": "UAV",
+                    "type": "Texture"
                 }
             ],
             "samplers": [
@@ -138,9 +208,27 @@
                     "semantic": "Tangent"
                 },
                 {
-                    "name": "UV",
+                    "name": "UV0",
                     "type": "Float2",
                     "semantic": "UV"
+                },
+                {
+                    "name": "UV1",
+                    "type": "Float2",
+                    "semantic": "UV",
+                    "semanticIndex": 1
+                },
+                {
+                    "name": "UV2",
+                    "type": "Float2",
+                    "semantic": "UV",
+                    "semanticIndex": 2
+                },
+                {
+                    "name": "UV3",
+                    "type": "Float2",
+                    "semantic": "UV",
+                    "semanticIndex": 3
                 },
                 {
                     "name": "MaterialID",
@@ -153,6 +241,74 @@
                     "semantic": "ShapeID"
                 }
             ]
+        },
+        {
+            "name": "Lights",
+            "fields": [
+                {
+                    "name": "PosDir",
+                    "type": "Float4",
+                    "semantic": "Light_PosDir"
+                },
+                {
+                    "name": "ColorIntensity",
+                    "type": "Float4",
+                    "semantic": "Light_ColorIntensity"
+                },
+                {
+                    "name": "Range",
+                    "type": "Float",
+                    "semantic": "Light_Range"
+                },
+                {
+                    "name": "SpotInnerOuterRad",
+                    "type": "Float2",
+                    "semantic": "Light_SpotInnerOuterRad"
+                }
+            ]
+        },
+        {
+            "name": "Materials",
+            "fields": [
+                {
+                    "name": "baseColor",
+                    "type": "Float4",
+                    "dflt": "1, 1, 1",
+                    "semantic": "Material_BaseColor"
+                },
+                {
+                    "name": "emissive",
+                    "type": "Float3",
+                    "semantic": "Material_Emissive"
+                },
+                {
+                    "name": "metallic",
+                    "type": "Float",
+                    "semantic": "Material_Metallic"
+                },
+                {
+                    "name": "roughness",
+                    "type": "Float",
+                    "dflt": "1.0f",
+                    "semantic": "Material_Roughness"
+                },
+                {
+                    "name": "alphaMode",
+                    "type": "Int",
+                    "semantic": "Material_AlphaMode"
+                },
+                {
+                    "name": "alphaCutoff",
+                    "type": "Float",
+                    "semantic": "Material_AlphaCutoff"
+                },
+                {
+                    "name": "doubleSided",
+                    "type": "Int",
+                    "dflt": "1",
+                    "semantic": "Material_DoubleSided"
+                }
+            ]
         }
     ],
     "nodes": [
@@ -160,8 +316,8 @@
             "resourceBuffer": {
                 "name": "VertexBuffer",
                 "editorPos": [
-                    -217.0,
-                    -158.0
+                    55.0,
+                    -126.0
                 ],
                 "visibility": "Imported"
             }
@@ -204,8 +360,8 @@
             "actionDrawCall": {
                 "name": "Rasterize",
                 "editorPos": [
-                    213.0,
-                    -125.0
+                    210.0,
+                    -183.0
                 ],
                 "linkProperties": [
                     {},
@@ -215,7 +371,21 @@
                     {},
                     {},
                     {},
+                    {},
+                    {},
                     {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Lights",
+                        "dstNode": "LightBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Materials",
+                        "dstNode": "MaterialBuffer",
+                        "dstPin": "resource"
+                    }
                 ],
                 "vertexShader": {
                     "name": "ModelViewerVS"
@@ -247,8 +417,8 @@
                 ],
                 "frontIsCounterClockwise": false,
                 "vertexBuffer": {
-                    "node": "ModelViewerCS",
-                    "pin": "VertexBuffer"
+                    "node": "VertexBuffer",
+                    "pin": "resource"
                 },
                 "colorTargets": [
                     {
@@ -291,41 +461,12 @@
         },
         {
             "actionComputeShader": {
-                "name": "ModelViewerCS",
-                "editorPos": [
-                    37.0,
-                    -158.0
-                ],
-                "linkProperties": [
-                    {},
-                    {}
-                ],
-                "connections": [
-                    {
-                        "srcPin": "VertexBuffer",
-                        "dstNode": "VertexBuffer",
-                        "dstPin": "resource"
-                    }
-                ],
-                "shader": {
-                    "name": "ModelViewerCS"
-                },
-                "dispatchSize": {
-                    "node": {
-                        "name": "VertexBuffer"
-                    }
-                }
-            }
-        },
-        {
-            "actionComputeShader": {
                 "name": "Skybox",
                 "editorPos": [
                     437.0,
                     -52.0
                 ],
                 "linkProperties": [
-                    {},
                     {},
                     {}
                 ],
@@ -349,6 +490,26 @@
                         "name": "ColorF32"
                     }
                 }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "LightBuffer",
+                "editorPos": [
+                    75.0,
+                    -222.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "MaterialBuffer",
+                "editorPos": [
+                    42.0,
+                    -174.0
+                ],
+                "visibility": "Imported"
             }
         }
     ],
@@ -378,7 +539,16 @@
                     "label": "Tangent"
                 },
                 {
-                    "label": "UV"
+                    "label": "UV0"
+                },
+                {
+                    "label": "UV1"
+                },
+                {
+                    "label": "UV2"
+                },
+                {
+                    "label": "UV3"
                 },
                 {
                     "label": "MaterialID"
@@ -387,10 +557,25 @@
                     "label": "ShapeID"
                 },
                 {
-                    "label": "ViewerColor"
+                    "label": "MaterialOcclusion"
                 },
                 {
-                    "label": "PlasticShaded"
+                    "label": "MaterialNormal"
+                },
+                {
+                    "label": "MaterialColor"
+                },
+                {
+                    "label": "MaterialEmissive"
+                },
+                {
+                    "label": "MaterialMetallic"
+                },
+                {
+                    "label": "MaterialRoughness"
+                },
+                {
+                    "label": "Shaded"
                 }
             ]
         }

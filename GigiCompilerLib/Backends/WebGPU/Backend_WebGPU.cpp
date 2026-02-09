@@ -289,7 +289,7 @@ struct BackendWebGPU : public BackendBase
 
             if (condition.variable1Index != -1 && renderGraph.variables[condition.variable1Index].enumIndex != -1)
             {
-                std::string enumValueScope = renderGraph.enums[renderGraph.variables[condition.variable1Index].enumIndex].name + "::";
+                std::string enumValueScope = "this.constructor.Enum_" + renderGraph.enums[renderGraph.variables[condition.variable1Index].enumIndex].name + std::string(".");
                 if (!StringBeginsWith(value2.c_str(), enumValueScope.c_str()))
                     value2 = enumValueScope + value2;
             }
@@ -2428,10 +2428,21 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             continue;
 
         // load the file into memory
-        std::vector<unsigned char> data;
-        if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
+        std::vector<char> data;
+        if (fileCopy.binary)
         {
-            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
+        }
+        else
+        {
+            std::vector<std::string> embeddedFiles;
+            if (!LoadAndPreprocessTextFile(renderGraph.baseDirectory + fileCopy.fileName, data, renderGraph, embeddedFiles))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
         }
         data.push_back(0);
 
@@ -2463,8 +2474,10 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             continue;
 
         // load the file into memory
-        std::vector<unsigned char> fileContents;
-        if (!LoadFile(internalTemplateFile.absoluteFileName, fileContents))
+        std::vector<char> fileContents;
+        std::vector<std::string> embeddedFiles;
+        //if (!LoadFile(internalTemplateFile.absoluteFileName, fileContents))
+        if (!LoadAndPreprocessTextFile(internalTemplateFile.absoluteFileName, fileContents, renderGraph, embeddedFiles))
         {
             GigiAssert(false, "Could not read file %s", internalTemplateFile.absoluteFileName.c_str());
         }
@@ -2569,10 +2582,21 @@ void RunBackend_WebGPU(GigiBuildFlavor buildFlavor, RenderGraph& renderGraph, GG
             continue;
 
         // load the file into memory
-        std::vector<unsigned char> data;
-        if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
+        std::vector<char> data;
+        if (fileCopy.binary)
         {
-            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            if (!LoadFile(renderGraph.baseDirectory + fileCopy.fileName, data))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
+        }
+        else
+        {
+            std::vector<std::string> embeddedFiles;
+            if (!LoadAndPreprocessTextFile(renderGraph.baseDirectory + fileCopy.fileName, data, renderGraph, embeddedFiles))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
         }
 
         // get the folder to copy to
