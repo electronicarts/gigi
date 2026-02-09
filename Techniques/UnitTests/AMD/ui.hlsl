@@ -35,12 +35,13 @@ float SDFLineSegment(float2 p, float2 a, float2 b)
     return length(pa - ba * h);
 }
 
-// Front-to-back compositing for the UI-only layer
+// Standard Back-to-Front compositing ("Over" operator)
 void BlendUI(inout float3 layer, inout float a, float3 color, float alpha)
 {
-    float added = alpha * (1.0f - a);
-    layer += color * added;
-    a += added;
+    // Accumulate color: layer * (1 - alpha) + color * alpha
+    layer = lerp(layer, color, alpha);
+    // Accumulate alpha
+    a = a + alpha * (1.0f - a);
 }
 
 /*$(_compute:main)*/(uint3 DTid : SV_DispatchThreadID)

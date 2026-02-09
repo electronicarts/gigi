@@ -176,6 +176,7 @@ struct State
 
     ID3D12Resource* m_motionVectors = nullptr;
     ID3D12Resource* m_depth = nullptr;
+    ID3D12Resource* m_hudlessTexture = nullptr;
 
     // for resize texture shader
     ID3D12RootSignature* m_rootSignature = nullptr;
@@ -556,6 +557,12 @@ namespace AMDFrameInterpolation
             s_state.m_depth = nullptr;
         }
 
+        if (s_state.m_hudlessTexture)
+        {
+            s_state.m_hudlessTexture->Release();
+            s_state.m_hudlessTexture = nullptr;
+        }
+
         if (s_state.m_motionVectors)
         {
             s_state.m_motionVectors->Release();
@@ -645,19 +652,6 @@ namespace AMDFrameInterpolation
             barriers[barrierCount++] = InitTransition(backBuffer, ffxBackBufferState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
         }
 
-        // UI Texture: Current State -> PIXEL_SHADER_RESOURCE
-        D3D12_RESOURCE_STATES uiOriginalState = D3D12_RESOURCE_STATE_COMMON;
-        if (hasUI)
-        {
-            if (interpreter->GetTransitionsNonConst().IsTracked(uiTextureInfo.m_resource))
-                uiOriginalState = interpreter->GetTransitionsNonConst().GetCurrentState(uiTextureInfo.m_resource);
-
-            if ((uiOriginalState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) == 0)
-            {
-                barriers[barrierCount++] = InitTransition(uiTextureInfo.m_resource, uiOriginalState, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-            }
-        }
-
         if (barrierCount > 0)
             commandList->ResourceBarrier(barrierCount, barriers);
 
@@ -686,8 +680,6 @@ namespace AMDFrameInterpolation
                 barriers[barrierCount++] = InitTransition(outputBuffer, D3D12_RESOURCE_STATE_RENDER_TARGET, ffxOutputState);
             if (backBufferNeedsRestore)
                 barriers[barrierCount++] = InitTransition(backBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, ffxBackBufferState);
-            if (hasUI && (uiOriginalState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) == 0)
-                barriers[barrierCount++] = InitTransition(uiTextureInfo.m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, uiOriginalState);
 
             if (barrierCount > 0) commandList->ResourceBarrier(barrierCount, barriers);
 
@@ -777,12 +769,6 @@ namespace AMDFrameInterpolation
             barriers[barrierCount++] = InitTransition(backBuffer, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, ffxBackBufferState);
         }
 
-        // UI: SRV -> Original
-        if (hasUI && (uiOriginalState & D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE) == 0)
-        {
-            barriers[barrierCount++] = InitTransition(uiTextureInfo.m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, uiOriginalState);
-        }
-
         if (barrierCount > 0)
             commandList->ResourceBarrier(barrierCount, barriers);
 
@@ -821,6 +807,7 @@ namespace AMDFrameInterpolation
         HANDLE_TEXTURE(depth);
         HANDLE_TEXTURE(motionVectors);
         HANDLE_TEXTURE(uiTexture);
+        HANDLE_TEXTURE(hudlessTexture);
 
         if (!textureExists_depth || !textureExists_motionVectors)
         {
@@ -872,10 +859,38 @@ namespace AMDFrameInterpolation
             }
 
             if (!s_state.m_depth)
+            {
                 s_state.m_depth = CreateTexture(desc.device, renderSize, 1, texture_depth.m_format, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Depth - AMD Frame Interpolation");
+                interpreter.GetTransitionsNonConst().Track(s_state.m_depth, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Depth - AMD Frame Interpolation");
+            }
 
             if (!s_state.m_motionVectors)
+            {
                 s_state.m_motionVectors = CreateTexture(desc.device, renderSize, 1, texture_motionVectors.m_format, 1, D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Motion - AMD Frame Interpolation");
+                interpreter.GetTransitionsNonConst().Track(s_state.m_motionVectors, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Motion - AMD Frame Interpolation");
+            }
+
+            if (settings.fsrUIRenderMode == 3 && textureExists_hudlessTexture)
+            {
+                if (s_state.m_hudlessTexture)
+                {
+                    D3D12_RESOURCE_DESC existingDesc = s_state.m_hudlessTexture->GetDesc();
+                    if (existingDesc.Format != s_state.m_swapChainFormat || existingDesc.Width != renderSize[0] || existingDesc.Height != renderSize[1])
+                    {
+                        interpreter.getDelayedReleaseTracker().Add(s_state.m_hudlessTexture);
+                        s_state.m_hudlessTexture = nullptr;
+                    }
+                }
+
+                if (!s_state.m_hudlessTexture)
+                {
+                    s_state.m_hudlessTexture = CreateTexture(desc.device, renderSize, 1, s_state.m_swapChainFormat, 1, 
+                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
+                        D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Hudless - AMD Frame Interpolation");
+                    
+                    interpreter.GetTransitionsNonConst().Track(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Hudless - AMD Frame Interpolation");
+                }
+            }
         }
 
         // Make full screen depth and motion vectors by pasting the input ones into them, handling scaling and clipping
@@ -944,7 +959,7 @@ namespace AMDFrameInterpolation
 
                 // dispatch
                 unsigned int dispatchX = (unsigned int)(outputDesc.Width + 7) / 8;
-                unsigned int dispatchY = (outputDesc.Height + 7) / 8;
+                unsigned int dispatchY = (unsigned int)(outputDesc.Height + 7) / 8;
                 desc.commandList->Dispatch(dispatchX, dispatchY, 1);
             }
 
@@ -1011,8 +1026,121 @@ namespace AMDFrameInterpolation
 
                 // dispatch
                 unsigned int dispatchX = (unsigned int)(outputDesc.Width + 7) / 8;
-                unsigned int dispatchY = (outputDesc.Height + 7) / 8;
+                unsigned int dispatchY = (unsigned int)(outputDesc.Height + 7) / 8;
                 desc.commandList->Dispatch(dispatchX, dispatchY, 1);
+            }
+
+            // Hudless Texture
+            if (s_state.m_hudlessTexture)
+            {
+                // 1. Copy BackBuffer to HudlessTexture (Full Screen)
+                ID3D12Resource* backBuffer = nullptr;
+                if (SUCCEEDED(swapChain->GetBuffer(swapChain->GetCurrentBackBufferIndex(), IID_PPV_ARGS(&backBuffer))))
+                {
+                    // Transition hudless texture to COPY_DEST
+                    transitions.Transition(TRANSITION_DEBUG_INFO(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_COPY_DEST));
+                    transitions.Flush(desc.commandList);
+
+                    // Manually transition back buffer - bypass your helper
+                    D3D12_RESOURCE_BARRIER barrier = {};
+                    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+                    barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+                    barrier.Transition.pResource = backBuffer;
+                    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+                    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PRESENT; // Or COMMON
+                    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+
+                    desc.commandList->ResourceBarrier(1, &barrier);
+
+                    // Copy using CopyTextureRegion for more control
+                    D3D12_TEXTURE_COPY_LOCATION dst = {};
+                    dst.pResource = s_state.m_hudlessTexture;
+                    dst.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                    dst.SubresourceIndex = 0;
+
+                    D3D12_TEXTURE_COPY_LOCATION src = {};
+                    src.pResource = backBuffer;
+                    src.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                    src.SubresourceIndex = 0;
+
+                    desc.commandList->CopyTextureRegion(&dst, 0, 0, 0, &src, nullptr);
+
+                    // Transition back buffer back to PRESENT
+                    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+                    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PRESENT;
+                    desc.commandList->ResourceBarrier(1, &barrier);
+
+                    backBuffer->Release();
+                }
+
+                // 2. Copy UI (texture_hudlessTexture) to ViewWindow inside HudlessTexture
+                // Make a constant buffer
+                CopyResizeTexture_CBStruct cb;
+                memcpy(cb.imagePosition, desc.imagePosition, sizeof(desc.imagePosition));
+                memcpy(cb.imageSize, desc.imageSize, sizeof(desc.imageSize));
+                memcpy(cb.imageClipMin, desc.imageClipMin, sizeof(desc.imageClipMin));
+                memcpy(cb.imageClipMax, desc.imageClipMax, sizeof(desc.imageClipMax));
+
+                // hudless copy pass
+                cb.mode = 2; // Color copy
+                cb.depthThreshold = 0.0f;
+
+                UploadBufferTracker::Buffer* cbBuffer = interpreter.getUploadBufferTracker().GetBufferT(desc.device, true, cb);
+
+                // Descriptor table: SRV0 = hudless, SRV1 = depth (unused but needed), UAV = output, CBV = cb
+                DescriptorTableCache::ResourceDescriptor descriptors[4] = {};
+
+                D3D12_RESOURCE_DESC inputDesc = texture_hudlessTexture.m_resource->GetDesc();
+                D3D12_RESOURCE_DESC outputDesc = s_state.m_hudlessTexture->GetDesc();
+
+                descriptors[0].m_resource = texture_hudlessTexture.m_resource;
+                descriptors[0].m_format = inputDesc.Format;
+                descriptors[0].m_access = DescriptorTableCache::AccessType::SRV;
+                descriptors[0].m_resourceType = DescriptorTableCache::ResourceType::Texture2D;
+
+                descriptors[1].m_resource = texture_depth.m_resource; // t1 : depth (required by shader)
+                descriptors[1].m_format = texture_depth.m_format;
+                descriptors[1].m_access = DescriptorTableCache::AccessType::SRV;
+                descriptors[1].m_resourceType = DescriptorTableCache::ResourceType::Texture2D;
+
+                descriptors[2].m_resource = s_state.m_hudlessTexture;
+                descriptors[2].m_format = s_state.m_hudlessTexture->GetDesc().Format;
+                descriptors[2].m_access = DescriptorTableCache::AccessType::UAV;
+                descriptors[2].m_resourceType = DescriptorTableCache::ResourceType::Texture2D;
+
+                descriptors[3].m_resource = cbBuffer->buffer;
+                descriptors[3].m_format = DXGI_FORMAT_UNKNOWN;
+                descriptors[3].m_access = DescriptorTableCache::AccessType::CBV;
+                descriptors[3].m_stride = (UINT)cbBuffer->size;
+                descriptors[3].m_count = 1;
+
+                // Do transitions before making descriptor table
+                transitions.Transition(TRANSITION_DEBUG_INFO(texture_hudlessTexture.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+                transitions.Transition(TRANSITION_DEBUG_INFO(texture_depth.m_resource, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+                transitions.Transition(TRANSITION_DEBUG_INFO(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS));
+                transitions.Flush(desc.commandList);
+
+                // Make the descriptor table
+                D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable;
+                std::string error;
+                if (!interpreter.getDescriptorTableCache().GetDescriptorTable(desc.device, interpreter.getSRVHeapAllocationTracker(), descriptors, _countof(descriptors), descriptorTable, error, HEAP_DEBUG_TEXT()))
+                {
+                    interpreter.GetLogFn()(LogLevel::Error, "Could not allocate a descriptor table in " __FUNCTION__ ": %s", error.c_str());
+                    return;
+                }
+
+                // set the root signature, PSO and descriptor table
+                desc.commandList->SetComputeRootSignature(s_state.m_rootSignature);
+                desc.commandList->SetPipelineState(s_state.m_pso);
+                desc.commandList->SetComputeRootDescriptorTable(0, descriptorTable);
+
+                // dispatch
+                unsigned int dispatchX = (unsigned int)(outputDesc.Width + 7) / 8;
+                unsigned int dispatchY = (unsigned int)(outputDesc.Height + 7) / 8;
+                desc.commandList->Dispatch(dispatchX, dispatchY, 1);
+
+                transitions.Transition(TRANSITION_DEBUG_INFO(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE));
+                transitions.Flush(desc.commandList);
             }
         }
         // Fill out the frame generation context desc
@@ -1066,6 +1194,13 @@ namespace AMDFrameInterpolation
             frameGenGetGPUMemoryUsageV2.backBufferFormat = createFgDesc.backBufferFormat;
             frameGenGetGPUMemoryUsageV2.gpuMemoryUsageFrameGeneration = &gpuMemoryUsageFrameGenerationV2;
             frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat = FFX_API_SURFACE_FORMAT_UNKNOWN;
+            
+            if (settings.fsrUIRenderMode == 3 && textureExists_hudlessTexture)
+            {
+                frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat = ffxApiGetSurfaceFormatDX12(texture_hudlessTexture.m_format);
+                if (frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat == FFX_API_SURFACE_FORMAT_R8G8B8A8_SRGB)
+                    frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat = FFX_API_SURFACE_FORMAT_R8G8B8A8_UNORM;
+            }
             ffx::ReturnCode retCode = ffx::Query(frameGenGetGPUMemoryUsageV2);
             if (retCode != ffx::ReturnCode::Ok)
             {
@@ -1097,10 +1232,23 @@ namespace AMDFrameInterpolation
         ffx::CreateContextDescFrameGenerationVersion headerVersion{};
         headerVersion.version = FFX_FRAMEGENERATION_VERSION;
 
-        if (overrideVersionId != 0)
-            retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion, versionOverride);
+        if (settings.fsrUIRenderMode == 3 && textureExists_hudlessTexture)
+        {
+            ffx::CreateContextDescFrameGenerationHudless createFgHudless{};
+            createFgHudless.hudlessBackBufferFormat = frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat;
+
+            if (overrideVersionId != 0)
+                retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion, createFgHudless, versionOverride);
+            else
+                retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion, createFgHudless);
+        }
         else
-            retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion);
+        {
+            if (overrideVersionId != 0)
+                retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion, versionOverride);
+            else
+                retCode = ffx::CreateContext(s_state.m_FrameGenContext, nullptr, createFgDesc, backendDesc, headerVersion);
+        }
         if (retCode != ffx::ReturnCode::Ok)
         {
             interpreter.GetLogFn()(LogLevel::Error, "Could not create frame generation context in " __FUNCTION__ "\n");
@@ -1153,22 +1301,22 @@ namespace AMDFrameInterpolation
                 frameGenerationConfigDesc.HUDLessColor = FfxApiResource({});
                 break;
 
-                /*
-            case 3:
-                // Mode 3: PreUI Backbuffer (Hudless) - Register hudless texture for frame generation
-                // The backbuffer does not include UI. A separate hudless texture is used for frame generation,
-                // and UI is composed after frame generation is complete.
-                if (hudLessBackBuffer)
+            case 3:                
+                if (s_state.m_hudlessTexture)
                 {
-                    // Get the hudless backbuffer texture resource
-                    FfxApiResource hudLessResource = FfxApiResource({});
-                    // Set the hudless color resource for frame generation
-                    frameGenerationConfigDesc.HUDLessColor = hudLessResource;
+                    {
+                        s_state.m_hudlessTexture->SetName(L"FSR Hudless Texture");
+                        SetFfxApiResourceToTexture(s_state.m_hudlessTexture, frameGenerationConfigDesc.HUDLessColor, 0, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+                    }
                 }
+                else
+                {
+                    frameGenerationConfigDesc.HUDLessColor = FfxApiResource({});
+                }
+
                 frameGenerationConfigDesc.presentCallback = nullptr;
                 frameGenerationConfigDesc.presentCallbackUserContext = nullptr;
                 break;
-                */
             }
 
             // The frame generation callback to use to generate a frame.
@@ -1178,10 +1326,10 @@ namespace AMDFrameInterpolation
                     // params->outputs[0] is the interpolation output
                     return ffxDispatch(reinterpret_cast<ffxContext*>(pUserCtx), &params->header);
                 };
-
             frameGenerationConfigDesc.frameGenerationCallbackUserContext = &s_state.m_FrameGenContext;
+
             frameGenerationConfigDesc.frameGenerationEnabled = settings.enabled;
-            frameGenerationConfigDesc.allowAsyncWorkloads = settings.allowAsyncWorkloads;
+            frameGenerationConfigDesc.allowAsyncWorkloads = (uiRenderMode == 3) ? false : settings.allowAsyncWorkloads;
             frameGenerationConfigDesc.onlyPresentGenerated = settings.onlyPresentGenerated;
 
             frameGenerationConfigDesc.generationRect.left = 0;
@@ -1289,19 +1437,18 @@ namespace AMDFrameInterpolation
                 s_state.m_failState = true;
                 return;
             }
-
+            ffx::ConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12 uiConfig{};
             if (textureExists_uiTexture && uiRenderMode == 1)
             {
-                ffx::ConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12 uiConfig{};
+                
                 TransitionTracker& transitions = interpreter.GetTransitionsNonConst();
                 transitions.Transition(TRANSITION_DEBUG_INFO(texture_uiTexture.m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
                 transitions.Flush(desc.commandList);
 
                 SetFfxApiResourceToTexture(texture_uiTexture.m_resource, uiConfig.uiResource, 0, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-                uiConfig.flags = FFX_FRAMEGENERATION_UI_COMPOSITION_FLAG_ENABLE_INTERNAL_UI_DOUBLE_BUFFERING;
-                ffx::Configure(s_state.m_swapChainContext, uiConfig);
             }
+            uiConfig.flags = FFX_FRAMEGENERATION_UI_COMPOSITION_FLAG_ENABLE_INTERNAL_UI_DOUBLE_BUFFERING;
+            ffx::Configure(s_state.m_swapChainContext, uiConfig);
         }
 
         // Restore the descriptor heaps

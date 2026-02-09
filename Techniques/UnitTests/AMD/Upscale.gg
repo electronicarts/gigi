@@ -1241,12 +1241,32 @@
                 ],
                 "format": {
                     "node": {
-                        "name": "Output SDR"
+                        "name": "Output HDR"
                     }
                 },
                 "size": {
                     "node": {
                         "name": "Color"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Node 2",
+                "editorPos": [
+                    763.0,
+                    130.0
+                ],
+                "transient": false,
+                "format": {
+                    "node": {
+                        "name": "Output SDR"
+                    }
+                },
+                "size": {
+                    "node": {
+                        "name": "Output SDR"
                     }
                 }
             }
