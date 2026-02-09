@@ -69,16 +69,28 @@ ENUM_BEGIN(TextureViewType, "The type that a texture is actually viewed as, in a
 ENUM_END()
 
 ENUM_BEGIN(SamplerFilter, "The type of filter a sampler uses")
-    ENUM_ITEM(MinMagMipPoint, "Point")
-    ENUM_ITEM(MinMagLinear_MipPoint, "Bilinear")
-    ENUM_ITEM(MinMagMipLinear, "Trilinear")
+    ENUM_ITEM(MinMagMipPoint, "")               // 000
+    ENUM_ITEM(MinMagPoint_MipLinear, "")        // 001
+    ENUM_ITEM(MinPoint_MagLinear_MipPoint, "")  // 010
+    ENUM_ITEM(MinPoint_MagMipLinear, "")        // 011
+    ENUM_ITEM(MinLinear_MagMipPoint, "")        // 100
+    ENUM_ITEM(MinLinear_MagPoint_MipLinear, "") // 101
+    ENUM_ITEM(MinMagLinear_MipPoint, "")        // 110
+    ENUM_ITEM(MinMagMipLinear, "")              // 111
+
     ENUM_ITEM(Count, "")
+ENUM_END()
+
+ENUM_BEGIN(SamplerFilterComponent, "A component of sampler filtering")
+    ENUM_ITEM(Point, "Point")
+    ENUM_ITEM(Linear, "Linear")
 ENUM_END()
 
 ENUM_BEGIN(SamplerAddressMode, "The sampler address mode")
     ENUM_ITEM(Clamp, "Clamp")
     ENUM_ITEM(Wrap, "Wrap")
 	ENUM_ITEM(Border, "Border")
+    ENUM_ITEM(Mirror, "Mirror")
     ENUM_ITEM(Count, "")
 ENUM_END()
 
@@ -112,6 +124,8 @@ ENUM_BEGIN(ShaderLanguage, "A shader source code language")
 ENUM_END()
 
 ENUM_BEGIN(StructFieldSemantic, "Used to specify if the struct field has special meaning, such as a vertex position in a vertex buffer.")
+
+    // Vertex data
     ENUM_ITEM(Position, "float3")
     ENUM_ITEM(Color, "float4")
     ENUM_ITEM(Normal, "float3")
@@ -119,6 +133,22 @@ ENUM_BEGIN(StructFieldSemantic, "Used to specify if the struct field has special
     ENUM_ITEM(UV, "float2")
     ENUM_ITEM(MaterialID, "int")
     ENUM_ITEM(ShapeID, "int")
+
+    // Light data
+    ENUM_ITEM(Light_PosDir, "float4. w = 1 for positional lights, 0 for directional lights.")
+    ENUM_ITEM(Light_ColorIntensity, "float4")
+    ENUM_ITEM(Light_Range, "float")
+    ENUM_ITEM(Light_SpotInnerOuterRad, "float2")
+
+    // Material data
+    ENUM_ITEM(Material_BaseColor, "float4")
+    ENUM_ITEM(Material_Emissive, "float3")
+    ENUM_ITEM(Material_Metallic, "float")
+    ENUM_ITEM(Material_Roughness, "float")
+    ENUM_ITEM(Material_AlphaMode, "int")
+    ENUM_ITEM(Material_AlphaCutoff, "float")
+    ENUM_ITEM(Material_DoubleSided, "int")
+
     ENUM_ITEM(Count, "")
 ENUM_END()
 
@@ -440,6 +470,8 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 
     STRUCT_DYNAMIC_ARRAY(std::string, Used_RTHitGroupIndex, "All RTHitGroupIndex names used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
     STRUCT_DYNAMIC_ARRAY(std::string, Used_RTMissIndex, "All RTMissIndex names used in the shader", SCHEMA_FLAG_NO_SERIALIZE)
+
+    STRUCT_DYNAMIC_ARRAY(std::string, embeddedFiles, "The names of files embedded in this shader, to put file watching on. Used by the interpreter, set at runtime", SCHEMA_FLAG_NO_SERIALIZE)
 
     // deprecated in 0.95b
     // replaced by NumThreads

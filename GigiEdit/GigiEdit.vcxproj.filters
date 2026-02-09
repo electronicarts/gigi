@@ -76,6 +76,7 @@
       <Filter>Shared\UI</Filter>
     </ClCompile>
     <ClCompile Include="UICache.cpp" />
+    <ClCompile Include="..\Shared\UI\WindowPersist.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="imgui">
@@ -209,6 +210,7 @@
     <ClInclude Include="..\Shared\UI\Shared.h">
       <Filter>Shared\UI</Filter>
     </ClInclude>
+    <ClInclude Include="..\Shared\UI\WindowPersist.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\external\imgui-node-editor\imgui_bezier_math.inl">

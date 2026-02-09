@@ -883,7 +883,7 @@ namespace Mips_ShaderToken_3D
                         "Back"
                     };
 
-                    sprintf_s(indexedFileName, "%lsassets/..\\skyboxes\\Test_%s.png", s_techniqueLocation.c_str(), c_cubeMapNames[textureIndex]);
+                    sprintf_s(indexedFileName, "%lsassets/../skyboxes/test_%s.png", s_techniqueLocation.c_str(), c_cubeMapNames[textureIndex]);
                     DX12Utils::TextureCache::Texture loadedTextureSlice = DX12Utils::TextureCache::GetAs(indexedFileName, true, desiredType, formatInfo.sRGB, formatInfo.channelCount);
 
                     if(!loadedTextureSlice.Valid())

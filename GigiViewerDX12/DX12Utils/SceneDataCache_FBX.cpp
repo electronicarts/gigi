@@ -3,7 +3,7 @@
 //        Copyright (c) 2024 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
-#include "FBXCache.h"
+#include "SceneDataCache.h"
 
 #include "../external/OpenFBX/ofbx.h"
 
@@ -27,25 +27,8 @@ static Vec3 ToVec3(const ofbx::Vec3& v)
 	return ret;
 }
 
-FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
+bool SceneDataCache::LoadFBX(FileCache::File& fileData, SceneData& sceneData)
 {
-	// normalize the string by making it canonical and making it lower case
-	std::string s = std::filesystem::weakly_canonical(fileName_).string();
-	std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
-	const char* fileName = s.c_str();
-
-	if (m_cache.count(fileName) != 0)
-		return m_cache[fileName];
-
-	FileCache::File fileData = fileCache.Get(fileName);
-	FBXData fbxData;
-	if (!fileData.Valid())
-	{
-		fbxData.valid = false;
-		m_cache[fileName] = fbxData;
-		return m_cache[fileName];
-	}
-
 	// Ignoring certain nodes will only stop them from being processed not tokenised (i.e. they will still be in the tree)
 	ofbx::LoadFlags loadFlags =
 		//		ofbx::LoadFlags::IGNORE_MODELS |
@@ -65,12 +48,8 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 		ofbx::LoadFlags::IGNORE_ANIMATIONS;
 
 	ofbx::IScene* fbxScene = ofbx::load((ofbx::u8*)fileData.GetBytes(), (int)fileData.GetSize(), (ofbx::u16)loadFlags);
-	if (!fbxScene)
-	{
-		fbxData.valid = false;
-		m_cache[fileName] = fbxData;
-		return m_cache[fileName];
-	}
+    if (!fbxScene)
+        return false;
 
 	struct ImportMeshData
 	{
@@ -82,25 +61,75 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 	int meshCount = fbxScene->getMeshCount();
 
 	// Find mesh partitions by material index
+    // Also get the material IDs
 	std::vector<ImportMeshData> importMeshes;
 	{
+        int materialIndexOffset = 0;
 		for (int meshIndex = 0; meshIndex < meshCount; ++meshIndex)
 		{
 			const ofbx::Mesh* mesh = fbxScene->getMesh(meshIndex);
 			const int materialCount = mesh->getMaterialCount();
 
+            sceneData.materials.resize(materialIndexOffset + materialCount);
+
 			for (int matIndex = 0; matIndex < materialCount; ++matIndex)
 			{
 				auto& importMesh = importMeshes.emplace_back();
 				importMesh.fbxMesh = mesh;
-				importMesh.materialID = matIndex;
+				importMesh.materialID = materialIndexOffset + matIndex;
 				importMesh.submeshIndex = matIndex;
+
+                SceneData::Material& destMaterial = sceneData.materials[materialIndexOffset + matIndex];
+                const ofbx::Material* srcMaterial_ = mesh->getMaterial(matIndex);
+                if (!srcMaterial_)
+                    continue;
+                const ofbx::Material& srcMaterial = *srcMaterial_;
+
+                destMaterial.name = srcMaterial.name;
+
+                const ofbx::Color& emissiveColor = srcMaterial.getEmissiveColor();
+                float emissiveFactor = (float)srcMaterial.getEmissiveFactor();
+                destMaterial.emissiveFactor[0] = emissiveColor.r * emissiveFactor;
+                destMaterial.emissiveFactor[1] = emissiveColor.g * emissiveFactor;
+                destMaterial.emissiveFactor[2] = emissiveColor.b * emissiveFactor;
+                const ofbx::Texture* emissiveTexture = srcMaterial.getTexture(ofbx::Texture::EMISSIVE);
+                if (emissiveTexture)
+                {
+                    char fileName[1024];
+                    emissiveTexture->getRelativeFileName().toString(fileName);
+                    destMaterial.emissiveTexture.fileName = fileName;
+                    destMaterial.emissiveTexture.channels = ".rgb";
+                }
+
+                const ofbx::Color& diffuseColor = srcMaterial.getDiffuseColor();
+                float diffuseColorFactor = (float)srcMaterial.getDiffuseFactor();
+                destMaterial.baseColorFactor[0] = diffuseColor.r * diffuseColorFactor;
+                destMaterial.baseColorFactor[1] = diffuseColor.g * diffuseColorFactor;
+                destMaterial.baseColorFactor[2] = diffuseColor.b * diffuseColorFactor;
+                const ofbx::Texture* diffuseTexture = srcMaterial.getTexture(ofbx::Texture::DIFFUSE);
+                if (diffuseTexture)
+                {
+                    char fileName[1024];
+                    diffuseTexture->getRelativeFileName().toString(fileName);
+                    destMaterial.baseColorTexture.fileName = fileName;
+                    destMaterial.baseColorTexture.channels = ".rgba";
+                }
+
+                const ofbx::Texture* normalTexture = srcMaterial.getTexture(ofbx::Texture::NORMAL);
+                if (normalTexture)
+                {
+                    char fileName[1024];
+                    normalTexture->getRelativeFileName().toString(fileName);
+                    destMaterial.normalTexture.fileName = fileName;
+                    destMaterial.normalTexture.channels = ".rgb";
+                }
 			}
+            materialIndexOffset += materialCount;
 		}
 	}
 
 	// Flatten the fbx so that it doesn't use indices
-	std::vector<FlattenedVertex>& geometry = fbxData.flattenedVertices;
+	std::vector<SceneData::Vertex>& geometry = sceneData.flattenedVertices;
 	{
 		std::vector<int> tmpTriIndices;
 
@@ -136,7 +165,7 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 				{
 					size_t nextGeometryIndex = geometry.size();
 					geometry.resize(nextGeometryIndex + 1);
-					FlattenedVertex& newVertex = geometry[nextGeometryIndex];
+					SceneData::Vertex& newVertex = geometry[nextGeometryIndex];
 					newVertex.shapeIndex = static_cast<int>(meshIndex);
 
 					int vertexIndex = tmpTriIndices[i];
@@ -188,9 +217,9 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 		std::vector<Vec3> bitangents(geometry.size(), Vec3{ 0.0f, 0.0f, 0.0f });
 		for (size_t vertexIndex = 0; vertexIndex < geometry.size(); vertexIndex += 3)
 		{
-			FlattenedVertex& v1 = geometry[vertexIndex + 0];
-			FlattenedVertex& v2 = geometry[vertexIndex + 1];
-			FlattenedVertex& v3 = geometry[vertexIndex + 2];
+			SceneData::Vertex& v1 = geometry[vertexIndex + 0];
+            SceneData::Vertex& v2 = geometry[vertexIndex + 1];
+            SceneData::Vertex& v3 = geometry[vertexIndex + 2];
 
 			Vec3 pos1 = v1.position;
 			Vec3 pos2 = v2.position;
@@ -225,7 +254,7 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 
 		for (size_t vertexIndex = 0; vertexIndex < geometry.size(); ++vertexIndex)
 		{
-			FlattenedVertex& v = geometry[vertexIndex];
+            SceneData::Vertex& v = geometry[vertexIndex];
 
 			const Vec3& normal = v.normal;
 			const Vec3& tangent = tangents[vertexIndex];
@@ -253,7 +282,5 @@ FBXCache::FBXData& FBXCache::Get(FileCache& fileCache, const char* fileName_)
 		}
 	}
 
-	fbxData.valid = geometry.size() > 0;
-	m_cache[fileName] = fbxData;
-	return m_cache[fileName];
+    return geometry.size() > 0;;
 }

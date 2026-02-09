@@ -18,6 +18,225 @@
 #include <DirectXMathMatrix.inl>
 // clang-format on
 
+static std::string MakeDefaultMaterial(const Struct& structDesc, const char* indent)
+{
+    std::ostringstream out;
+
+    // zero initialize the struct
+    out <<
+        indent << "Struct_" << structDesc.name << " ret = (Struct_" << structDesc.name << ")0;\n"
+        ;
+
+    // set each field to the default value
+    for (const StructField& field : structDesc.fields)
+        out << indent << "ret." << field.name << " = " << DataFieldTypeToShaderType(field.type) << "(" << field.dflt << ");\n";
+
+    return out.str();
+}
+
+static void WriteDummyMaterialShaderFile(const RenderGraph& renderGraph, const RenderGraphNode_Resource_Buffer& node, const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, LogFn& logFn)
+{
+    if (desc.buffer.dataStream != GGUserFile_SceneDataStream::Materials || desc.buffer.materialShaderFile.empty())
+        return;
+
+    if (desc.buffer.structIndex < 0)
+    {
+        logFn(LogLevel::Error, "Node \"%s\" doesn't use a struct, but it is required\n", node.name.c_str());
+        return;
+    }
+
+    const Struct& structDesc = renderGraph.structs[desc.buffer.structIndex];
+
+    std::ostringstream out;
+
+    out <<
+        "Struct_" << structDesc.name << " Material_" << node.name << "(StructuredBuffer<Struct_" << structDesc.name << "> MaterialsBuffer, int materialID, float2 uv0, float2 uv1, float2 uv2, float2 uv3, out float3 normal, out float occlusion,\n"
+        "    float2 uv0ddx = float2(0.0f, 0.0f), float2 uv0ddy = float2(0.0f, 0.0f), float2 uv1ddx = float2(0.0f, 0.0f), float2 uv1ddy = float2(0.0f, 0.0f),\n"
+        "    float2 uv2ddx = float2(0.0f, 0.0f), float2 uv2ddy = float2(0.0f, 0.0f), float2 uv3ddx = float2(0.0f, 0.0f), float2 uv3ddy = float2(0.0f, 0.0f))\n"
+        "{\n"
+        << MakeDefaultMaterial(structDesc, "    ") <<
+        "\n"
+        "    normal = float3(0.0f, 0.0f, 1.0f);\n"
+        "    occlusion = 1.0f;\n"
+        "    return ret;\n"
+        "}\n"
+        ;
+
+    // Only write the file if it doesn't exist
+    std::string filePath(desc.buffer.materialShaderFile);
+    if (std::filesystem::path(filePath).is_relative())
+        filePath = std::filesystem::weakly_canonical(renderGraph.baseDirectory + desc.buffer.materialShaderFile).string();
+    if(!FileExists(filePath))
+        WriteFileIfDifferent(filePath, out.str());
+}
+
+static void WriteMaterialShaderFile(const RenderGraph& renderGraph, const RenderGraphNode_Resource_Buffer& node, const SceneData& sceneData, const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, LogFn& logFn)
+{
+    if (desc.buffer.dataStream != GGUserFile_SceneDataStream::Materials || desc.buffer.materialShaderFile.empty())
+        return;
+
+    if (desc.buffer.structIndex < 0)
+    {
+        logFn(LogLevel::Error, "Node \"%s\" doesn't use a struct, but it is required\n", node.name.c_str());
+        return;
+    }
+
+    const Struct& structDesc = renderGraph.structs[desc.buffer.structIndex];
+
+    std::ostringstream out;
+
+    // Declare the function
+    out <<
+        "Struct_" << structDesc.name << " Material_" << node.name << "(StructuredBuffer<Struct_" << structDesc.name << "> MaterialsBuffer, int materialID, float2 uv0, float2 uv1, float2 uv2, float2 uv3, out float3 normal, out float occlusion,\n"
+        "    float2 uv0ddx = float2(0.0f, 0.0f), float2 uv0ddy = float2(0.0f, 0.0f), float2 uv1ddx = float2(0.0f, 0.0f), float2 uv1ddy = float2(0.0f, 0.0f),\n"
+        "    float2 uv2ddx = float2(0.0f, 0.0f), float2 uv2ddy = float2(0.0f, 0.0f), float2 uv3ddx = float2(0.0f, 0.0f), float2 uv3ddy = float2(0.0f, 0.0f))\n"
+        "{\n"
+        << MakeDefaultMaterial(structDesc, "    ") <<
+        "\n"
+        "    normal = float3(0.0f, 0.0f, 1.0f);\n"
+        "    occlusion = 1.0f;\n"
+        "\n"
+        "    float normalScale = 1.0f;\n"
+        "    float occlusionStrength = 1.0f;\n"
+        "\n"
+        "    uint materialCount, materialStride;\n"
+        "    MaterialsBuffer.GetDimensions(materialCount, materialStride);\n"
+        "\n"
+        "    if (materialID < 0 || materialID >= materialCount)\n"
+        "        return ret;\n"
+        "\n"
+        "    // Read material data from the buffer\n"
+        "    ret = MaterialsBuffer[materialID];\n"
+        ;
+
+    enum class TextureOperation
+    {
+        Multiply,
+        Assign
+    };
+
+    auto WriteTextureSample = [&sceneData, &renderGraph](std::ostringstream& out, const char* objectName, const std::string& fieldName, TextureOperation textureOperation, const SceneData::Material::Texture& textureInfo, const char* options, const char* textureReadSuffix = "") -> bool
+        {
+            if (textureInfo.fileName.empty())
+                return false;
+
+            std::filesystem::path filePath = std::filesystem::proximate(std::filesystem::path(sceneData.filename).remove_filename() / textureInfo.fileName, renderGraph.baseDirectory);
+
+            const char* operation = nullptr;
+            switch(textureOperation)
+            {
+                case TextureOperation::Multiply: operation = "*="; break;
+                case TextureOperation::Assign: operation = "="; break;
+            }
+
+            out << "            " << objectName << fieldName << " " << operation << " /*$(Image2D:\"" << filePath.string() << "\"" << options << ")*/.SampleGrad(/*$(Sampler:linear:linear:linear:wrap)*/, uv" << textureInfo.texCoordIndex << ", uv" << textureInfo.texCoordIndex << "ddx, uv" << textureInfo.texCoordIndex << "ddy)" << textureInfo.channels << textureReadSuffix << ";\n";
+
+            return true;
+        }
+    ;
+
+    std::ostringstream outSwitch;
+    outSwitch <<
+        "\n"
+        "    // Sample the textures\n"
+        "    switch(materialID)\n"
+        "    {\n"
+        ;
+
+    int caseCount = 0;
+    for (size_t materialIndex = 0; materialIndex < sceneData.materials.size(); ++materialIndex)
+    {
+        const SceneData::Material& material = sceneData.materials[materialIndex];
+
+        std::ostringstream outSwitchCase;
+
+        if (!material.name.empty())
+            outSwitchCase << "        // " << material.name << "\n";
+
+        outSwitchCase <<
+            "        case " << materialIndex << ":\n"
+            "        {\n"
+            ;
+
+        bool wroteInCase = false;
+        if (material.normalScale != 1.0f)
+        {
+            wroteInCase = true;
+            outSwitchCase << "            normalScale = (float)" << material.normalScale << ";\n";
+        }
+        if (material.occlusionStrength != 1.0f)
+        {
+            wroteInCase = true;
+            outSwitchCase << "            occlusionStrength = (float)" << material.occlusionStrength << ";\n";
+        }
+
+        for (const StructField& field : structDesc.fields)
+        {
+            switch (field.semantic)
+            {
+                case StructFieldSemantic::Material_BaseColor:
+                {
+                    wroteInCase |= WriteTextureSample(outSwitchCase, "ret.", field.name, TextureOperation::Multiply, material.baseColorTexture, ":Any:float4:true:true");
+                    break;
+                }
+                case StructFieldSemantic::Material_Emissive:
+                {
+                    wroteInCase |= WriteTextureSample(outSwitchCase, "ret.", field.name, TextureOperation::Multiply, material.emissiveTexture, ":Any:float4:true:true");
+                    break;
+                }
+                case StructFieldSemantic::Material_Metallic:
+                {
+                    wroteInCase |= WriteTextureSample(outSwitchCase, "ret.", field.name, TextureOperation::Multiply, material.metallicTexture, ":Any:float4:false:true");
+                    break;
+                }
+                case StructFieldSemantic::Material_Roughness:
+                {
+                    wroteInCase |= WriteTextureSample(outSwitchCase, "ret.", field.name, TextureOperation::Multiply, material.roughnessTexture, ":Any:float4:false:true");
+                    break;
+                }
+            }
+        }
+
+        wroteInCase |= WriteTextureSample(outSwitchCase, "", "normal", TextureOperation::Assign, material.normalTexture, ":Any:float4:false:true", " * 2.0f - 1.0f");
+        wroteInCase |= WriteTextureSample(outSwitchCase, "", "occlusion", TextureOperation::Assign, material.occlusionTexture, ":Any:float4:false:true");
+
+        outSwitchCase <<
+            "            break;\n"
+            "        }\n"
+            ;
+
+        if (wroteInCase)
+        {
+            if (caseCount > 0)
+                outSwitch << "\n";
+            outSwitch << outSwitchCase.str();
+            caseCount++;
+        }
+    }
+
+    outSwitch <<
+        "    }\n"
+        ;
+
+    if (caseCount > 0)
+        out << outSwitch.str();
+
+    // Close the function
+    out <<
+        "\n"
+        "    normal = normalize((normal * 2.0f - 1.0f) * float3(normalScale, normalScale, 1.0f));\n"
+        "    ret.baseColor.rgb = lerp(ret.baseColor.rgb, ret.baseColor.rgb * occlusion, occlusionStrength);\n"
+        "\n"
+        "    return ret;\n"
+        "};\n";
+
+    // Only write the file if it has changed.
+    std::string filePath(desc.buffer.materialShaderFile);
+    if (std::filesystem::path(filePath).is_relative())
+        filePath = std::filesystem::weakly_canonical(renderGraph.baseDirectory + desc.buffer.materialShaderFile).string();
+    WriteFileIfDifferent(filePath, out.str());
+}
+
 void RuntimeTypes::RenderGraphNode_Resource_Buffer::Release(GigiInterpreterPreviewWindowDX12& interpreter)
 {
 	RenderGraphNode_Base::Release(interpreter);
@@ -499,7 +718,7 @@ static std::vector<char> LoadStructuredBufferPly(const GigiInterpreterPreviewWin
 	return ret;
 }
 
-static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const RenderGraph &renderGraph, const std::vector<FlattenedVertex>& flattenedVertices)
+static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const RenderGraph &renderGraph, const SceneData& sceneData)
 {
     // Get the transforms
     DirectX::XMMATRIX transform, transformInverseTranspose;
@@ -556,9 +775,17 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 
 	// Allocate space to hold the results
 	const Struct& structDesc = renderGraph.structs[desc.buffer.structIndex];
-	size_t vertexCount = flattenedVertices.size();
-	size_t destVertexSize = structDesc.sizeInBytes;
-	std::vector<char> ret(destVertexSize * vertexCount, 0);
+    std::vector<char> ret;
+	size_t vertexCount = sceneData.flattenedVertices.size();
+    size_t lightCount = sceneData.lights.size();
+    size_t materialCount = sceneData.materials.size();
+	size_t destStructSize = structDesc.sizeInBytes;
+    switch (desc.buffer.dataStream)
+    {
+        case GGUserFile_SceneDataStream::GeometryFlat: ret.resize(destStructSize * vertexCount, 0); break;
+        case GGUserFile_SceneDataStream::Lights: ret.resize(destStructSize * lightCount, 0); break;
+        case GGUserFile_SceneDataStream::Materials: ret.resize(destStructSize * materialCount, 0); break;
+    }
 
 	// gather the data
 	size_t offset = 0;
@@ -566,179 +793,137 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 	{
 		DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(field.type);
 
-		// Note: There are two loops in each case.
-		// 1) The first loop copies data from flattenedVertices into the structured buffer "ret".  If ret doesn't have enough channels, it only takes as many values as it can.
-		// 2) If ret had more channels than it should, it fills it with zeros to ensure initialization.
-		switch (field.semantic)
-		{
-			case StructFieldSemantic::Position:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-				{
-                    Vec3 position = flattenedVertices[vertexIndex].position;
-                    if (needsTransformation)
-                        transformPosition(position.data());
+        auto CopyField = [destStructSize, typeInfo]<typename T>(const T* src, size_t srcCount, char* dest)
+            {
+                int index = 0;
 
-					int index = 0;
-					while (index < min(3, typeInfo.componentCount))
-					{
-                        AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, position.data());
-                        index++;
-					}
+                // Copy the available data from source
+                while (index < min(srcCount, typeInfo.componentCount))
+                {
+                    AssignWithCast(dest, index, typeInfo.componentType, src);
+                    index++;
+                }
 
-					while (index < typeInfo.componentCount)
-					{
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-						index++;
-					}
-				}
-				break;
-			}
-			case StructFieldSemantic::Color:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-				{
-					int index = 0;
-					while (index < min(4, typeInfo.componentCount))
-					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].albedo.data());
-						index++;
-					}
+                // If source didn't have enough components, zero the rest
+                while (index < typeInfo.componentCount)
+                {
+                    SetToZero(dest, index, typeInfo.componentType);
+                    index++;
+                }
+            }
+        ;
 
-					while (index < typeInfo.componentCount)
-					{
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-						index++;
-					}
-				}
-				break;
-			}
-			case StructFieldSemantic::Normal:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-				{
-                    Vec3 normal = flattenedVertices[vertexIndex].normal;
-                    if (needsTransformation)
-                        transformNormal(normal.data());
+        auto CopyFieldArray = [CopyField]<typename T, size_t N>(const std::array<T, N>& src, char* dest)
+            {
+                CopyField(src.data(), N, dest);
+            }
+        ;
 
-					int index = 0;
-					while (index < min(3, typeInfo.componentCount))
-					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, normal.data());
-						index++;
-					}
+        auto CopyFieldScalar = [CopyField]<typename T>(const T& src, char* dest)
+            {
+                CopyField(&src, 1, dest);
+            }
+        ;
 
-					while (index < typeInfo.componentCount)
-					{
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-						index++;
-					}
-				}
-				break;
-			}
-			case StructFieldSemantic::Tangent:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-				{
-                    Vec4 tangent = flattenedVertices[vertexIndex].tangent;
-                    if (needsTransformation)
-                        transformTangent(tangent.data());
+        // Geometry data stream
+        switch (desc.buffer.dataStream)
+        {
+            // Material data stream
+            case GGUserFile_SceneDataStream::Materials:
+            {
+                for (size_t materialIndex = 0; materialIndex < materialCount; ++materialIndex)
+                {
+                    char* dest = &ret[materialIndex * destStructSize + offset];
+                    switch (field.semantic)
+                    {
+                        case StructFieldSemantic::Material_BaseColor: CopyFieldArray(sceneData.materials[materialIndex].baseColorFactor, dest); break;
+                        case StructFieldSemantic::Material_Emissive: CopyFieldArray(sceneData.materials[materialIndex].emissiveFactor, dest); break;
+                        case StructFieldSemantic::Material_Metallic: CopyFieldScalar(sceneData.materials[materialIndex].metallicFactor, dest); break;
+                        case StructFieldSemantic::Material_Roughness: CopyFieldScalar(sceneData.materials[materialIndex].roughnessFactor, dest); break;
+                        case StructFieldSemantic::Material_AlphaMode: CopyFieldScalar(sceneData.materials[materialIndex].alphaMode, dest); break;
+                        case StructFieldSemantic::Material_AlphaCutoff: CopyFieldScalar(sceneData.materials[materialIndex].alphaCutoff, dest); break;
+                        case StructFieldSemantic::Material_DoubleSided: CopyFieldScalar(sceneData.materials[materialIndex].doubleSided, dest); break;
 
-					int index = 0;
-					while (index < min(4, typeInfo.componentCount))
-					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, tangent.data());
-						index++;
-					}
+                        // unknown semantics are zeroed out
+                        default:
+                        {
+                            for (int index = 0; index < typeInfo.componentCount; ++index)
+                                SetToZero(&ret[materialIndex * destStructSize + offset], index, typeInfo.componentType);
+                        }
+                    }
+                }
+                break;
+            }
+            // Light data stream
+            case GGUserFile_SceneDataStream::Lights:
+            {
+                for (size_t lightIndex = 0; lightIndex < lightCount; ++lightIndex)
+                {
+                    char* dest = &ret[lightIndex * destStructSize + offset];
+                    switch (field.semantic)
+                    {
+                        case StructFieldSemantic::Light_PosDir: CopyFieldArray(sceneData.lights[lightIndex].posDir, dest); break;
+                        case StructFieldSemantic::Light_ColorIntensity: CopyFieldArray(sceneData.lights[lightIndex].colorIntensity, dest); break;
+                        case StructFieldSemantic::Light_Range: CopyFieldScalar(sceneData.lights[lightIndex].range, dest); break;
+                        case StructFieldSemantic::Light_SpotInnerOuterRad: CopyFieldArray(sceneData.lights[lightIndex].spotInnerOuterRad, dest); break;
 
-					while (index < typeInfo.componentCount)
-					{
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-						index++;
-					}
-				}
-				break;
-			}
-			case StructFieldSemantic::UV:
-			{
-				if (field.semanticIndex < _countof(FlattenedVertex::uvs))
-				{
-					for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-					{
-						int index = 0;
-						while (index < min(2, typeInfo.componentCount))
-						{
-							AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, flattenedVertices[vertexIndex].uvs[field.semanticIndex].data());
-							index++;
-						}
+                        // unknown semantics are zeroed out
+                        default:
+                        {
+                            for (int index = 0; index < typeInfo.componentCount; ++index)
+                                SetToZero(&ret[lightIndex * destStructSize + offset], index, typeInfo.componentType);
+                        }
+                    }
+                }
+                break;
+            }
+            // Geometry data stream
+            case GGUserFile_SceneDataStream::GeometryFlat:
+            {
+                for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
+                {
+                    char* dest = &ret[vertexIndex * destStructSize + offset];
+                    switch (field.semantic)
+                    {
+                        case StructFieldSemantic::Position: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].position, dest); break;
+                        case StructFieldSemantic::Color: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].albedo, dest); break;
+                        case StructFieldSemantic::Normal: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].normal, dest); break;
+                        case StructFieldSemantic::Tangent: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].tangent, dest); break;
+                        case StructFieldSemantic::UV:
+                        {
+                            if (field.semanticIndex < _countof(SceneData::Vertex::uvs))
+                            {
+                                CopyFieldArray(sceneData.flattenedVertices[vertexIndex].uvs[field.semanticIndex], dest);
+                            }
+                            else
+                            {
+                                // invalid UVs are zeroed out
+                                for (int index = 0; index < typeInfo.componentCount; ++index)
+                                    SetToZero(&ret[vertexIndex * destStructSize + offset], index, typeInfo.componentType);
+                            }
+                            break;
+                        }
+                        case StructFieldSemantic::MaterialID: CopyFieldScalar(sceneData.flattenedVertices[vertexIndex].materialID, dest); break;
+                        case StructFieldSemantic::ShapeID: CopyFieldScalar(sceneData.flattenedVertices[vertexIndex].shapeIndex, dest); break;
 
-						while (index < typeInfo.componentCount)
-						{
-							SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-							index++;
-						}
-					}
-				}
-				else
-				{
-					// invalid semantic index gets all zeros
-					for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-					{
-						int index = 0;
-						while (index < typeInfo.componentCount)
-						{
-							SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-							index++;
-						}
-					}
-				}
-				break;
-			}
-			case StructFieldSemantic::MaterialID:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-				{
-					int index = 0;
-					while (index < min(1, typeInfo.componentCount))
-					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, &flattenedVertices[vertexIndex].materialID);
-						index++;
-					}
+                        // unknown semantics are zeroed out
+                        default:
+                        {
+                            for (int index = 0; index < typeInfo.componentCount; ++index)
+                                SetToZero(&ret[vertexIndex * destStructSize + offset], index, typeInfo.componentType);
+                        }
+                    }
+                }
 
-					while (index < typeInfo.componentCount)
-					{
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-						index++;
-					}
-				}
-				break;
-			}
-			case StructFieldSemantic::ShapeID:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-				{
-					int index = 0;
-					while (index < min(1, typeInfo.componentCount))
-					{
-						AssignWithCast(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType, &flattenedVertices[vertexIndex].shapeIndex);
-						index++;
-					}
-
-					while (index < typeInfo.componentCount)
-					{
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-						index++;
-					}
-				}
-				break;
-			}
-			default:
-			{
-				for (size_t vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
-					for (int index = 0; index < typeInfo.componentCount; ++index)
-						SetToZero(&ret[vertexIndex * destVertexSize + offset], index, typeInfo.componentType);
-			}
-		}
+                break;
+            }
+            // unknown data stream
+            default:
+            {
+                memset(ret.data(), 0, ret.size());
+                break;
+            }
+        }
 
 		offset += field.sizeInBytes;
 	}
@@ -746,7 +931,7 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
 	return ret;
 }
 
-static std::vector<char> LoadTypedBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const std::vector<FlattenedVertex>& flattenedVertices)
+static std::vector<char> LoadTypedBuffer(const GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc, const std::vector<SceneData::Vertex>& flattenedVertices)
 {
     // Get the transforms
     DirectX::XMMATRIX transform, transformInverseTranspose;
@@ -1109,6 +1294,10 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 		m_importedResources[node.name].stale = false;
 		m_importedResources[node.name].nodeIndex = node.nodeIndex;
 		m_importedResources[node.name].resourceIndex = 0; // corresponds to the initial state resource being the first viewable resource
+
+        // make a material shader file which will pass shader compilation, even though the material data isn't loaded enough to fill it out.
+        WriteDummyMaterialShaderFile(m_renderGraph, node, m_importedResources[node.name], m_logFn);
+
 		return true;
 	}
 
@@ -1148,24 +1337,60 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			{
 				std::filesystem::path p(desc.buffer.fileName);
 				FileWatchOwner fileWatchOwner = FileWatchOwner::FileCache;
-				if (p.extension() == ".obj")
-					fileWatchOwner = FileWatchOwner::ObjCache;
-				else if (p.extension() == ".fbx")
-					fileWatchOwner = FileWatchOwner::FBXCache;
+				if (p.extension() == ".obj" || p.extension() == ".fbx" || p.extension() == ".gltf" || p.extension() == ".glb")
+					fileWatchOwner = FileWatchOwner::SceneCache;
 				else if (p.extension() == ".ply")
 					fileWatchOwner = FileWatchOwner::PLYCache;
 
 				m_fileWatcher.Add(desc.buffer.fileName.c_str(), fileWatchOwner);
 
-				if (p.extension() == ".ply")
+                if (fileWatchOwner == FileWatchOwner::SceneCache)
+                {
+                    // Load the scene data
+                    std::vector<char> ret;
+                    SceneData& sceneData = m_scenes.Get(m_files, desc.buffer.fileName.c_str());
+                    if (!sceneData.warn.empty())
+                        m_logFn(LogLevel::Warn, "Loading scene for buffer \"%s\": %s", node.name.c_str(), sceneData.warn.c_str());
+                    if (!sceneData.error.empty())
+                        m_logFn(LogLevel::Warn, "Loading scene for buffer \"%s\": %s", node.name.c_str(), sceneData.error.c_str());
+
+                    if (sceneData.valid)
+                    {
+                        // Can't make empty buffers, so make sure there's at least 1 light
+                        if (sceneData.lights.empty())
+                        {
+                            SceneData::Light blackLight;
+                            blackLight.colorIntensity = Vec4{ 0.0f, 0.0f, 0.0f, 0.0f };
+                            sceneData.lights.push_back(blackLight);
+                        }
+
+                        // Can't make empty buffers, so make sure there's at least 1 material
+                        if (sceneData.materials.empty())
+                        {
+                            SceneData::Material whiteMaterial;
+                            sceneData.materials.push_back(whiteMaterial);
+                        }
+
+                        if (desc.buffer.dataStream == GGUserFile_SceneDataStream::Materials && !desc.buffer.materialShaderFile.empty())
+                            WriteMaterialShaderFile(m_renderGraph, node, sceneData, desc, m_logFn);
+
+                        // Load a typed buffer
+                        if (desc.buffer.type != DataFieldType::Count)
+                            rawBytes = LoadTypedBuffer(desc, sceneData.flattenedVertices);
+                        // Load a structured buffer
+                        else
+                            rawBytes = LoadStructuredBuffer(desc, m_renderGraph, sceneData);
+                    }
+                }
+                else if (fileWatchOwner == FileWatchOwner::PLYCache)
 				{
 					// Load the ply data
 					PLYCache::PLYData plyData = m_plys.GetFlattened(m_files, desc.buffer.fileName.c_str());
 
 					if (!plyData.warn.empty())
-						m_logFn(LogLevel::Warn, "Loading Obj for buffer \"%s\": %s", node.name.c_str(), plyData.warn.c_str());
+						m_logFn(LogLevel::Warn, "Loading Ply for buffer \"%s\": %s", node.name.c_str(), plyData.warn.c_str());
 					if (!plyData.error.empty())
-						m_logFn(LogLevel::Warn, "Loading Obj for buffer \"%s\": %s", node.name.c_str(), plyData.error.c_str());
+						m_logFn(LogLevel::Warn, "Loading Ply for buffer \"%s\": %s", node.name.c_str(), plyData.error.c_str());
 
 					// load the data if it's valid
 					if (plyData.valid)
@@ -1176,67 +1401,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 						// Load a structured buffer
 						else
 							rawBytes = LoadStructuredBufferPly(desc, m_renderGraph, plyData);
-					}
-				}
-				else if (p.extension() == ".obj")
-				{
-					// Load the obj data
-					std::vector<char> ret;
-					const ObjCache::OBJData& objData = m_objs.Get(m_files, desc.buffer.fileName.c_str());
-					if (!objData.warn.empty())
-						m_logFn(LogLevel::Warn, "Loading Obj for buffer \"%s\": %s", node.name.c_str(), objData.warn.c_str());
-					if (!objData.error.empty())
-						m_logFn(LogLevel::Warn, "Loading Obj for buffer \"%s\": %s", node.name.c_str(), objData.error.c_str());
-
-					if (objData.valid)
-					{
-						// store which shapes are in the mesh
-						runtimeData.shapes.clear();
-						for (auto shape : objData.shapes)
-							runtimeData.shapes.push_back(shape.name);
-
-						// find out which materials are used.
-						std::unordered_set<int> materialsUsed;
-						for (const auto& vertex : objData.flattenedVertices)
-							materialsUsed.insert(vertex.materialID);
-
-						// store which materials are referenced by the mesh, and which are actually used.
-						runtimeData.materials.clear();
-						for (int materialIndex = 0; materialIndex < (int)objData.materials.size(); ++materialIndex)
-						{
-							const tinyobj::material_t& material = objData.materials[materialIndex];
-
-							bool used = (materialsUsed.count(materialIndex) > 0);
-
-							runtimeData.materials.push_back(RuntimeTypes::RenderGraphNode_Resource_Buffer::MaterialInfo(material.name, used));
-						}
-
-						// Load a typed buffer
-						if (desc.buffer.type != DataFieldType::Count)
-							rawBytes = LoadTypedBuffer(desc, objData.flattenedVertices);
-						// Load a structured buffer
-						else
-							rawBytes = LoadStructuredBuffer(desc, m_renderGraph, objData.flattenedVertices);
-					}
-				}
-				else if (p.extension() == ".fbx")
-				{
-					// Load the fbx data
-					std::vector<char> ret;
-					const FBXCache::FBXData& fbxData = m_fbxs.Get(m_files, desc.buffer.fileName.c_str());
-					if (!fbxData.warn.empty())
-						m_logFn(LogLevel::Warn, "Loading fbx for buffer \"%s\": %s", node.name.c_str(), fbxData.warn.c_str());
-					if (!fbxData.error.empty())
-						m_logFn(LogLevel::Warn, "Loading fbx for buffer \"%s\": %s", node.name.c_str(), fbxData.error.c_str());
-
-					if (fbxData.valid)
-					{
-						// Load a typed buffer
-						if (desc.buffer.type != DataFieldType::Count)
-							rawBytes = LoadTypedBuffer(desc, fbxData.flattenedVertices);
-						// Load a structured buffer
-						else
-							rawBytes = LoadStructuredBuffer(desc, m_renderGraph, fbxData.flattenedVertices);
 					}
 				}
 				else if (p.extension() == ".csv")
@@ -1260,7 +1424,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 
 				if (rawBytes.size() == 0)
 				{
-					m_logFn(LogLevel::Error, "Could not load file \"%s\", or it was empty", desc.buffer.fileName.c_str());
+					m_logFn(LogLevel::Error, "Could not load file \"%s\" for buffer \"%s\", or it was empty", desc.buffer.fileName.c_str(), node.name.c_str());
 					desc.state = ImportedResourceState::failed;
 					return false;
 				}
@@ -1283,7 +1447,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 			{
 				int structSizeBytes = (int)m_renderGraph.structs[desc.buffer.structIndex].sizeInBytes;
 
-				int bufferCount = (rawBytes.size() > 0) ? ((int)rawBytes.size() / structSizeBytes) : desc.buffer.count;
+                int bufferCount = hasFileName ? ((int)rawBytes.size() / structSizeBytes) : desc.buffer.count;
 
 				runtimeData.m_format = DXGI_FORMAT_UNKNOWN;
 				runtimeData.m_formatCount = 1;

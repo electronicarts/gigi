@@ -51,6 +51,11 @@ struct Struct_BoxBlur_0CB_std140_0
 
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
+fn GetRadius_0() -> i32
+{
+    return _BoxBlur_0CB.radius_0;
+}
+
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
 {
     var sRGBLo_0 : vec3<f32> = linearCol_0 * vec3<f32>(12.92000007629394531f);
@@ -91,7 +96,7 @@ fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
 @workgroup_size(8, 8, 1)
 fn BlurH(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
-    var radius_1 : i32 = _BoxBlur_0CB.radius_0;
+    var radius_1 : i32 = GetRadius_0();
     var w_0 : u32;
     var h_0 : u32;
     {var dim = textureDimensions((Input));((w_0)) = dim.x;((h_0)) = dim.y;};
@@ -141,6 +146,11 @@ struct Struct_BoxBlur_1CB_std140_0
 
 @binding(1) @group(0) var Output : texture_storage_2d</*(Output_format)*/, write>;
 
+fn GetRadius_0() -> i32
+{
+    return _BoxBlur_1CB.radius_0;
+}
+
 fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
 {
     var sRGBLo_0 : vec3<f32> = linearCol_0 * vec3<f32>(12.92000007629394531f);
@@ -181,7 +191,7 @@ fn LinearToSRGB_0( linearCol_0 : vec3<f32>) -> vec3<f32>
 @workgroup_size(8, 8, 1)
 fn BlurV(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
 {
-    var radius_1 : i32 = _BoxBlur_1CB.radius_0;
+    var radius_1 : i32 = GetRadius_0();
     var w_0 : u32;
     var h_0 : u32;
     {var dim = textureDimensions((Input));((w_0)) = dim.x;((h_0)) = dim.y;};

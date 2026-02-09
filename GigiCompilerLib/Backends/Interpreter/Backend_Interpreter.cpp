@@ -58,10 +58,21 @@ void RunBackend_Interpreter(GigiBuildFlavor buildFlavor, RenderGraph& renderGrap
     for (const FileCopy& fileCopy : renderGraph.fileCopies)
     {
         // load the file into memory
-        std::vector<unsigned char> data;
-        if (!LoadFile((std::filesystem::path(renderGraph.baseDirectory) / fileCopy.fileName).string(), data))
+        std::vector<char> data;
+        if (fileCopy.binary)
         {
-            GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            if (!LoadFile((std::filesystem::path(renderGraph.baseDirectory) / fileCopy.fileName).string(), data))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
+        }
+        else
+        {
+            std::vector<std::string> embeddedFiles;
+            if (!LoadAndPreprocessTextFile((std::filesystem::path(renderGraph.baseDirectory) / fileCopy.fileName).string(), data, renderGraph, embeddedFiles))
+            {
+                GigiAssert(false, "Could not read file %s", fileCopy.fileName.c_str());
+            }
         }
 
         // get the folder to copy to

@@ -58,7 +58,7 @@ int ImGui_PathFileMenuItem(const char* fileNameWithPath, int index);
 // @return -1:delete, 0:nothing, 1:activate
 int ImGui_FilePathMenuItem(const char* fileNameWithPath, int index);
 
-bool ImGuiIconButton(const char* label, const char* icon, bool enabled = true, bool bSmall = false);
+bool ImGuiIconButton(const char* label, const char* icon);
 
 // @param icon can be 0 e.g. "\xef\x80\x84" for Heart
 // @param p_checked not 0 for checkbox
@@ -67,3 +67,8 @@ bool ImGuiMenuItem(const char* label, const char* icon, const char* shortcut, bo
 inline bool ImGuiMenuItem(const char* label) { return ImGuiMenuItem(label, 0, 0, 0, true); }
 
 bool ImGuiBeginMenu(const char* label, bool enabled = true);
+
+void ImGuiRightAlign(const char* text);
+
+// todo: use table? copy to clipboard
+void ImGuiKeyValueString(const char* key, const char* value);

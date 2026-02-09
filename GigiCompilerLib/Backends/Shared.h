@@ -18,6 +18,8 @@
 
 #define ALIGN(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
 
+bool LoadAndPreprocessTextFile(const std::string& fileName, std::vector<char>& fileContents, const RenderGraph& renderGraph, std::vector<std::string>& embeddedFiles);
+
 struct BackendBase
 {
     static void MakeStringReplacementGlobal(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph, GGUserFileLatest& ggUserFile)
@@ -326,6 +328,22 @@ inline bool LoadFile(const std::string& fileName, std::vector<unsigned char>& da
     return true;
 }
 
+inline bool LoadFile(const std::string& fileName, std::vector<char>& data)
+{
+    FILE* file = nullptr;
+    fopen_s(&file, fileName.c_str(), "rb");
+    if (!file)
+        return false;
+
+    fseek(file, 0, SEEK_END);
+    data.resize(ftell(file));
+    fseek(file, 0, SEEK_SET);
+    fread(data.data(), data.size(), 1, file);
+
+    fclose(file);
+    return true;
+}
+
 inline void WriteFileIfDifferent(const std::string& fileName, const std::string& contents)
 {
     // make sure the directory exists
@@ -406,89 +424,48 @@ inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<
     }
 }
 
-inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph)
+inline void WriteFileIfDifferent(const std::string& fileName, const std::vector<char>& contents)
 {
-    // Gigi preprocessor
-    size_t offset = 0;
-    while (1)
+    // make sure the directory exists
+    std::filesystem::create_directories(std::filesystem::path(fileName).remove_filename());
+
+    // If the file already exists and is the same, don't do anything
+    FILE* file = nullptr;
+    fopen_s(&file, fileName.c_str(), "rb");
+    if (file)
     {
-        // Get the next conditional
-        size_t conditionBeginStart = 0;
-        size_t conditionBeginEnd = 0;
-        std::string condition, value;
+        fseek(file, 0, SEEK_END);
+        std::vector<unsigned char> oldFileContents(ftell(file));
+        fseek(file, 0, SEEK_SET);
+        fread(oldFileContents.data(), oldFileContents.size(), 1, file);
+        fclose(file);
+        if (contents.size() == oldFileContents.size())
         {
-            offset = StringFindCaseInsensitive(str, "/*$(if:", offset);
-            if (offset == std::string::npos)
-                break;
-            conditionBeginStart = offset;
-            offset += 7;
-
-            size_t conditionIndex = offset;
-
-            size_t valueIndex = StringFindCaseInsensitive(str, ":", conditionIndex);
-            if (valueIndex == std::string::npos)
-                break;
-            condition = str.substr(conditionIndex, valueIndex - conditionIndex);
-            valueIndex++;
-
-            offset = StringFindCaseInsensitive(str, ")*/", valueIndex);
-            if (offset == std::string::npos)
-                break;
-            value = str.substr(valueIndex, offset - valueIndex);
-            offset += 3;
-            conditionBeginEnd = offset;
+            bool different = false;
+            for (size_t i = 0; i < oldFileContents.size(); ++i)
+            {
+                if (contents[i] != oldFileContents[i])
+                {
+                    different = true;
+                    break;
+                }
+            }
+            if (!different)
+                return;
         }
-
-        // find the endif corresponding to this conditional
-        size_t conditionEndStart = 0;
-        size_t conditionEndEnd = 0;
-        {
-            offset = StringFindCaseInsensitive(str, "/*$(Endif)*/", offset);
-            if (offset == std::string::npos)
-                break;
-            conditionEndStart = offset;
-            offset += 12;
-            conditionEndEnd = offset;
-        }
-
-        // Evaluate the condition
-        bool conditionIsTrue = false;
-        if (!_stricmp(condition.c_str(), "Platform"))
-        {
-            Backend backend;
-            StringToEnum(value.c_str(), backend);
-            conditionIsTrue = (backend == renderGraph.backend);
-        }
-        else if (!_stricmp(condition.c_str(), "PlatformNot"))
-        {
-            Backend backend;
-            StringToEnum(value.c_str(), backend);
-            conditionIsTrue = (backend != renderGraph.backend);
-        }
-        else if (!_stricmp(condition.c_str(), "DX12.AgilitySDKRequired"))
-        {
-            bool compareValue = false;
-            if (!_stricmp(value.c_str(), "true"))
-                compareValue = true;
-            conditionIsTrue = (compareValue == renderGraph.settings.dx12.AgilitySDKRequired);
-        }
-
-        // if the condition is true, we want to remove the conditional statements
-        if (conditionIsTrue)
-        {
-            str.erase(conditionEndStart, conditionEndEnd - conditionEndStart);
-            str.erase(conditionBeginStart, conditionBeginEnd - conditionBeginStart);
-        }
-        // else we want to remove the conditional statements and everything in between them
-        else
-        {
-            str.erase(conditionBeginStart, conditionEndEnd - conditionBeginStart);
-        }
-
-        // continue searching the string where we removed stuff
-        offset = conditionBeginStart;
     }
 
+    // write the file
+    fopen_s(&file, fileName.c_str(), "wb");
+    if (file)
+    {
+        fwrite(contents.data(), contents.size(), 1, file);
+        fclose(file);
+    }
+}
+
+inline void ProcessStringReplacement(std::string& str, std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, const RenderGraph& renderGraph)
+{
     EnsureAllTokensEaten(str, stringReplacementMap);
     for (std::pair<const std::string, std::ostringstream>& replacement : stringReplacementMap)
         StringReplaceAll(str, replacement.first, replacement.second.str());
@@ -1026,11 +1003,24 @@ inline std::vector<InternalTemplateFile> ProcessTemplateFolder(RenderGraph& rend
             continue;
 
         // Load the file data up
-        std::vector<unsigned char> fileData;
-        if (!LoadFile(it.path().string().c_str(), fileData))
+        std::vector<char> fileData;
+
+        if (isBinary)
         {
-            GigiAssert(false, "Could not load template file %s", it.path().string().c_str());
-            return ret;
+            if (!LoadFile(it.path().string().c_str(), fileData))
+            {
+                GigiAssert(false, "Could not load template file %s", it.path().string().c_str());
+                return ret;
+            }
+        }
+        else
+        {
+            std::vector<std::string> embeddedFiles;
+            if (!LoadAndPreprocessTextFile(it.path().string(), fileData, renderGraph, embeddedFiles))
+            {
+                GigiAssert(false, "Could not load template file %s", it.path().string().c_str());
+                return ret;
+            }
         }
 
         // Binary files get copied to the outFolder without modification

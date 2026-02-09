@@ -60,6 +60,7 @@
 #include "Audio.h"
 #include "WebCam.h"
 #include "Shared/UI/Shared.h"
+#include "Shared/UI/WindowPersist.h"
 
 #include <nv-api/nvapi.h>
 #pragma comment(lib, "amd64/nvapi64.lib")
@@ -140,6 +141,8 @@ static UINT                         g_frameIndex = 0;
 
 static bool g_useWarpAdapter = false;
 
+static WindowPersist g_windowPersist;
+
 HWND g_hwnd = NULL;
 static int const                    NUM_BACK_BUFFERS = 3;
 static ID3D12Device14* g_pd3dDevice = NULL;
@@ -196,12 +199,13 @@ static float g_forcedFrameDeltaTime = 0.0f;
 
 static bool g_forceEnableProfiling = false;
 
-static bool g_meshInfoOpenPopup = false;
-static std::string g_meshInfoName = "";
-
 static GGViewerConfig g_viewerConfig;
 
-RecentFiles g_recentFiles("Software\\GigiViewer");
+// GigiEdit and GigiViewer use different recent files
+//RecentFiles g_recentFiles("Software\\GigiViewer");
+// GigiEdit and GigiViewer use the same recent files
+RecentFiles g_recentFiles("Software\\GigiEdit");
+
 RecentFiles g_recentPythonScripts("Software\\GigiViewerPy");
 
 static bool g_runTests = false;
@@ -633,34 +637,11 @@ HANDLE SetClipboardDataEx(UINT uFormat, void *pvData, DWORD cbData)
         return NULL;
 }
 
-WINDOWPLACEMENT g_wpPrev = { sizeof(g_wpPrev) };
-void SetFullscreenMode(bool fullscreen)
+void SetFullscreenMode()
 {
-    DWORD dwStyle = GetWindowLong(g_hwnd, GWL_STYLE);
-    if (g_fullscreen)
-    {
-        MONITORINFO mi = { sizeof(mi) };
-        if (GetWindowPlacement(g_hwnd, &g_wpPrev) &&
-            GetMonitorInfo(MonitorFromWindow(g_hwnd,
-                MONITOR_DEFAULTTOPRIMARY), &mi)) {
-            SetWindowLong(g_hwnd, GWL_STYLE,
-                dwStyle & ~WS_OVERLAPPEDWINDOW);
-            SetWindowPos(g_hwnd, HWND_TOP,
-                mi.rcMonitor.left, mi.rcMonitor.top,
-                mi.rcMonitor.right - mi.rcMonitor.left,
-                mi.rcMonitor.bottom - mi.rcMonitor.top,
-                SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-        }
-    } 
-    else 
-    {
-        SetWindowLong(g_hwnd, GWL_STYLE,
-            dwStyle | WS_OVERLAPPEDWINDOW);
-        SetWindowPlacement(g_hwnd, &g_wpPrev);
-        SetWindowPos(g_hwnd, NULL, 0, 0, 0, 0,
-            SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER |
-            SWP_NOOWNERZORDER | SWP_FRAMECHANGED);
-    }
+    g_windowPersist.fullscreen = g_fullscreen;
+    g_windowPersist.ApplyState(g_hwnd);
+    ShowWindow(g_hwnd, SW_RESTORE);
 }
 
 struct LogEntry
@@ -825,6 +806,8 @@ GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResour
         outDesc.buffer.fileName = std::filesystem::weakly_canonical(outDesc.buffer.fileName).string();
 
         outDesc.buffer.CSVHeaderRow = inDesc.buffer.CSVHeaderRow;
+        outDesc.buffer.dataStream = inDesc.buffer.dataStream;
+        outDesc.buffer.materialShaderFile = inDesc.buffer.materialShaderFile;
         outDesc.buffer.structIndex = inDesc.buffer.structIndex;
         outDesc.buffer.type = inDesc.buffer.type;
         outDesc.buffer.count = inDesc.buffer.count;
@@ -879,6 +862,8 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
         outDesc.buffer.fileName = relativeFileName;
 
         outDesc.buffer.CSVHeaderRow = inDesc.buffer.CSVHeaderRow;
+        outDesc.buffer.dataStream = inDesc.buffer.dataStream;
+        outDesc.buffer.materialShaderFile = inDesc.buffer.materialShaderFile;
         outDesc.buffer.structIndex = inDesc.buffer.structIndex;
         outDesc.buffer.type = inDesc.buffer.type;
         outDesc.buffer.count = inDesc.buffer.count;
@@ -1183,6 +1168,8 @@ bool HandleOpenNonGGFile(const char* fileName)
 
         {".obj", Viewer::Model},
         {".fbx", Viewer::Model},
+        {".gltf", Viewer::Model},
+        {".glb", Viewer::Model},
 
         {".ply", Viewer::Ply},
     };
@@ -1468,6 +1455,25 @@ bool MenuOpen()
     return g_menuOpen;
 }
 
+void SaveViewerConfig()
+{
+    std::filesystem::path dir = GetLocalAppDataPath();
+    std::filesystem::create_directories(dir);
+    WriteToJSONFile(g_viewerConfig, (dir / "ViewerConfig.json").string().c_str());
+}
+
+void SaveWindowPersist()
+{
+    g_windowPersist.SaveState(g_hwnd);
+    g_viewerConfig.windowPersist = g_windowPersist.getAsString();
+    SaveViewerConfig();
+}
+
+void AppQuit() 
+{
+    SaveWindowPersist();
+    PostQuitMessage(0);
+}
 void HandleMainMenu()
 {
     g_menuOpen = false;
@@ -1484,7 +1490,7 @@ void HandleMainMenu()
             g_menuOpen = true;
             if (!g_isForEditor)
             {
-                if (ImGuiMenuItem("Open", "\xef\x81\xbc", "Ctrl+O"))
+                if (ImGuiMenuItem("Open...", "\xef\x81\xbc", "Ctrl+O"))
                 {
                     nfdchar_t* outPath = nullptr;
                     if (NFD_OpenDialog("gg", "", &outPath) == NFD_OKAY)
@@ -1507,7 +1513,7 @@ void HandleMainMenu()
 
             ImGui::Separator();
 
-            if (ImGuiMenuItem("Run Python Script", "\xef\x81\x8b", 0))
+            if (ImGuiMenuItem("Run Python Script...", "\xef\x81\x8b", 0))
             {
                 nfdchar_t* outPath = nullptr;
                 if (NFD_OpenDialog("py", "", &outPath) == NFD_OKAY)
@@ -1525,7 +1531,7 @@ void HandleMainMenu()
 #endif
 
             ImGui::Separator();
-            if (ImGuiMenuItem("Exit"))
+            if (ImGuiMenuItem("Exit", "\xef\x80\x91", "Alt+F4"))
             {
                 PostQuitMessage(0);
             }
@@ -1536,12 +1542,12 @@ void HandleMainMenu()
         if (ImGui::BeginMenu("View"))
         {
             g_menuOpen = true;
-            if (ImGuiMenuItem("Hide UI", 0, "Ctrl+U"))
+            if (ImGuiMenuItem("Hide UI", "\xef\x81\xb0", "Ctrl+U")) // Icon: Eye crossed out
                 g_hideUI = true;
 
             if (ImGuiMenuItem("Fullscreen", 0, "Ctrl+F", &g_fullscreen))
             {
-                SetFullscreenMode(g_fullscreen);
+                SetFullscreenMode();
             }
 
             ImGui::Separator();
@@ -1555,54 +1561,40 @@ void HandleMainMenu()
             ImGuiMenuItem("Render Graph", 0, "", &g_showWindows.RenderGraph);
             ImGuiMenuItem("Profiler", 0, "", &g_showWindows.Profiler);
 
-            if (!g_allowAMDFrameInterpolation)
             {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
-            ImGuiMenuItem("AMD Frame Interpolation", 0, "", &g_showWindows.AMDFrameInterpolation);
-            if (!g_allowAMDFrameInterpolation)
-            {
-                ImGui::PopStyleVar();
-                ImGui::PopItemFlag();
+                ImGuiEnable enable(g_allowAMDFrameInterpolation);
+                ImGuiMenuItem("AMD Frame Interpolation", 0, "", &g_showWindows.AMDFrameInterpolation);
             }
 
-            if (!g_allowAudio)
-            {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
-            ImGuiMenuItem("Audio Settings", 0, "", &g_showWindows.Audio);
-            if (!g_allowAudio)
-            {
-                ImGui::PopStyleVar();
-                ImGui::PopItemFlag();
-            }
+            ImGuiMenuItem("DX12 Capabilities", 0, "", &g_showCapsWindow);
 
-            if (!g_allowWebCam)
+            ImGui::Separator();
+
+            // Settings
             {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
-            ImGuiMenuItem("WebCam Settings", 0, "", &g_showWindows.WebCam);
-            if (!g_allowWebCam)
-            {
-                ImGui::PopStyleVar();
-                ImGui::PopItemFlag();
+                {
+                    ImGuiEnable enable(g_allowAudio);
+                    ImGuiMenuItem("Audio Settings", 0, "", &g_showWindows.Audio);
+                }
+
+                {
+                    ImGuiEnable enable(g_allowWebCam);
+                    ImGuiMenuItem("WebCam Settings", 0, "", &g_showWindows.WebCam);
+                }
+
+                ImGuiMenuItem("Viewer Settings", 0, "", &g_showViewerSettings);
             }
 
             ImGui::Separator();
 
-            if (ImGuiMenuItem("Reset Layout", 0, ""))
+            if (ImGuiMenuItem("Reset Layout", "\xef\x80\x9e", ""))  // Icon: Arrow circle 
             {
                 g_resetLayout = true;
                 g_interpreter.m_showVariablesUI = true;
+                g_showCapsWindow = false;
+                g_showViewerSettings = false;
                 g_showWindows = ShowWindowsState();
             }
-
-            ImGui::Separator();
-
-            ImGuiMenuItem("DX12 Capabilities", 0, "", &g_showCapsWindow);
 
             ImGui::EndMenu();
         }
@@ -1630,16 +1622,9 @@ void HandleMainMenu()
                 ImGui::EndMenu();
             }
 
-            if (!g_debugLayerOn)
             {
-                ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true);
-                ImGui::PushStyleVar(ImGuiStyleVar_Alpha, ImGui::GetStyle().Alpha * 0.5f);
-            }
-            ImGuiMenuItem("Log DX12 Debug Layer", 0, "", &g_debugLayerShown);
-            if (!g_debugLayerOn)
-            {
-                ImGui::PopStyleVar();
-                ImGui::PopItemFlag();
+                ImGuiEnable enable(g_debugLayerOn);
+                ImGuiMenuItem("Log DX12 Debug Layer", 0, "", &g_debugLayerShown);
             }
 
             if (ImGuiMenuItem("Stable Power State", 0, "", &g_stablePowerState))
@@ -1661,8 +1646,6 @@ void HandleMainMenu()
                 if (ImGuiMenuItem("WireFrame (DrawCalls only)", 0, "", &g_interpreter.m_drawWireframe))
                     ReloadGGFile(false);
             }
-
-            ImGuiMenuItem("Viewer Settings", 0, "", &g_showViewerSettings);
 
             ImGui::EndMenu();
         }
@@ -2891,8 +2874,7 @@ void ShowInternalVariables()
     //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
     static timer t; // note: static
     static size_t c_texture_cache_val; //m_textures
-    static size_t c_obj_cache_val; //m_objs
-    static size_t c_fbx_cache_val; //m_fbxs
+    static size_t c_scene_cache_val; //m_scenes
     static size_t c_ply_cache_val; //m_plys
     static size_t c_upload_buffer_in_use_val; //m_uploadBufferTracker
     static size_t c_upload_buffer_free_size_val; //m_uploadBufferTracker
@@ -2912,11 +2894,8 @@ void ShowInternalVariables()
     if (c_texture_cache_val <= 0 || has_elapsed) {
         c_texture_cache_val = g_interpreter.getTextureCache().getCache().size();
     }
-    if (c_obj_cache_val <= 0 || has_elapsed) {
-        c_obj_cache_val = g_interpreter.getObjCache().getCache().size();
-    }
-    if (c_fbx_cache_val <= 0 || has_elapsed) {
-        c_fbx_cache_val = g_interpreter.getFBXCache().getCache().size();
+    if (c_scene_cache_val <= 0 || has_elapsed) {
+        c_scene_cache_val = g_interpreter.getSceneDataCache().getCache().size();
     }
     if (c_ply_cache_val <= 0 || has_elapsed) {
         c_ply_cache_val = g_interpreter.getPLYCache().getCache().size();
@@ -2970,14 +2949,9 @@ void ShowInternalVariables()
         ImGui::Text("%d", c_texture_cache_val);
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
-        ImGui::TextUnformatted("Object Cache (m_objs)");
+        ImGui::TextUnformatted("Scene Data Cache (m_scenes)");
         ImGui::TableNextColumn();
-        ImGui::Text("%d", c_obj_cache_val);
-        ImGui::TableNextRow();
-        ImGui::TableNextColumn();
-        ImGui::TextUnformatted("FBX Cache (m_fbxs)");
-        ImGui::TableNextColumn();
-        ImGui::Text("%d", c_fbx_cache_val);
+        ImGui::Text("%d", c_scene_cache_val);
         ImGui::TableNextRow();
         ImGui::TableNextColumn();
         ImGui::TextUnformatted("PLY Cache (m_plys)");
@@ -3108,90 +3082,50 @@ void ShowInternalVariables()
         }
     }
 
-    if (ImGui::CollapsingHeader("OBJ Cache"))
+    if (ImGui::CollapsingHeader("Scene Data Cache"))
     {
         //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
-        static std::vector<std::string> c_obj_cache_details_file_display;
-        static std::vector<size_t> c_obj_cache_details_shapes;
-        static std::vector<size_t> c_obj_cache_details_materials;
-        static std::vector<size_t> c_obj_cache_details_vertices;
-        if (has_elapsed || c_obj_cache_details_file_display.size() == 0) {
-            c_obj_cache_details_file_display = {};
-            c_obj_cache_details_shapes = {};
-            c_obj_cache_details_materials = {};
-            c_obj_cache_details_vertices = {};
-            for (auto const& ent1 : g_interpreter.getObjCache().getCache()) {
+        static std::vector<std::string> c_scene_cache_details_file_display;
+        static std::vector<size_t> c_scene_cache_details_vertices;
+        static std::vector<size_t> c_scene_cache_details_lights;
+        static std::vector<size_t> c_scene_cache_details_materials;
+        if (has_elapsed || c_scene_cache_details_file_display.size() == 0) {
+            c_scene_cache_details_file_display = {};
+            c_scene_cache_details_vertices = {};
+            c_scene_cache_details_lights = {};
+            c_scene_cache_details_materials = {};
+            for (auto const& ent1 : g_interpreter.getSceneDataCache().getCache()) {
                 auto const& key = ent1.first;
                 auto const& val = ent1.second;
                 std::string base_filename = key.substr(key.find_last_of("/\\") + 1);
                 const char* for_display = base_filename.c_str();
-                c_obj_cache_details_file_display.push_back(for_display);
-                c_obj_cache_details_shapes.push_back(val.shapes.size());
-                c_obj_cache_details_materials.push_back(val.materials.size());
-                c_obj_cache_details_vertices.push_back(val.flattenedVertices.size());
+                c_scene_cache_details_file_display.push_back(for_display);
+                c_scene_cache_details_vertices.push_back(val.flattenedVertices.size());
+                c_scene_cache_details_lights.push_back(val.lights.size());
+                c_scene_cache_details_materials.push_back(val.materials.size());
             }
         }
-        if (ImGui::BeginTable("object cache details", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+        if (ImGui::BeginTable("Scene cache details", 5, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
         {
             ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
         	ImGui::TableSetupColumn("File", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Shapes", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Flattened Vertices", ImGuiTableColumnFlags_WidthFixed);
+            ImGui::TableSetupColumn("Lights", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableSetupColumn("Materials", ImGuiTableColumnFlags_WidthFixed);
-            ImGui::TableSetupColumn("Flattened Vertices", ImGuiTableColumnFlags_WidthFixed);
             ImGui::TableHeadersRow();
             ImGui::TableNextRow();
             ImGui::TableNextColumn();
-            for (int rowCtr = 0; rowCtr < c_obj_cache_val; rowCtr++) {
+            for (int rowCtr = 0; rowCtr < c_scene_cache_val; rowCtr++) {
                 ImGui::Text("%d", rowCtr + 1);
                 ImGui::TableNextColumn();
-                const char* full_display = c_obj_cache_details_file_display[rowCtr].c_str();
+                const char* full_display = c_scene_cache_details_file_display[rowCtr].c_str();
                 ImGui::TextUnformatted(full_display);
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", c_obj_cache_details_shapes[rowCtr]);
+                ImGui::Text("%d", c_scene_cache_details_vertices[rowCtr]);
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", c_obj_cache_details_materials[rowCtr]);
+                ImGui::Text("%d", c_scene_cache_details_lights[rowCtr]);
                 ImGui::TableNextColumn();
-                ImGui::Text("%d", c_obj_cache_details_vertices[rowCtr]);
-                ImGui::TableNextRow();
-                ImGui::TableNextColumn();
-            }
-            ImGui::EndTable();
-        }
-    }
-
-    if (ImGui::CollapsingHeader("FBX Cache"))
-    {
-        //hold values as they don't change that often to reduce CPU usage when vieweing interpreter states (internal variables)
-        static std::vector<std::string> c_fbx_cache_details_file_display;
-        static std::vector<size_t> c_fbx_cache_details_vertices;
-        if (has_elapsed || c_fbx_cache_details_file_display.size() == 0) {
-            c_fbx_cache_details_file_display = {};
-            c_fbx_cache_details_vertices = {};
-            for (auto const& ent1 : g_interpreter.getFBXCache().getCache()) {
-                auto const& key = ent1.first;
-                auto const& val = ent1.second;
-                std::string base_filename = key.substr(key.find_last_of("/\\") + 1);
-                const char* for_display = base_filename.c_str();
-                c_fbx_cache_details_file_display.push_back(for_display);
-                c_fbx_cache_details_vertices.push_back(val.flattenedVertices.size());
-            }
-        }
-        if (ImGui::BeginTable("FBX cache details", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
-        {
-            ImGui::TableSetupColumn("#", ImGuiTableColumnFlags_WidthFixed);
-            ImGui::TableSetupColumn("File", ImGuiTableColumnFlags_WidthStretch);
-            ImGui::TableSetupColumn("Flattened Vertices", ImGuiTableColumnFlags_WidthFixed);
-            ImGui::TableHeadersRow();
-            ImGui::TableNextRow();
-            ImGui::TableNextColumn();
-            int rowCtr = 0;
-            for (int rowCtr = 0; rowCtr < c_fbx_cache_val; rowCtr++) {
-                ImGui::Text("%d", rowCtr + 1);
-                ImGui::TableNextColumn();
-                const char* full_display = c_fbx_cache_details_file_display[rowCtr].c_str();
-                ImGui::TextUnformatted(full_display);
-                ImGui::TableNextColumn();
-                ImGui::Text("%d", c_fbx_cache_details_vertices[rowCtr]);
+                ImGui::Text("%d", c_scene_cache_details_materials[rowCtr]);
                 ImGui::TableNextRow();
                 ImGui::TableNextColumn();
             }
@@ -3449,6 +3383,129 @@ void ShowSystemVariables()
     ImGui::End();
 }
 
+std::string_view ExtractPath(std::string_view filePath)
+{
+    const size_t pos = filePath.find_last_of("/\\");
+    return (pos == std::string_view::npos) ? std::string_view{} : filePath.substr(0, pos);
+}
+const char* ExtractFileName(std::string_view filePath)
+{
+    const size_t pos = filePath.find_last_of("/\\");
+    return (pos == std::string_view::npos) ? &filePath[0] : &filePath[pos + 1];
+}
+
+enum class ShaderTableEntryColumnID
+{
+    // Compute, Pixel, FileCopy, .. 
+    Type,
+    // without path, with extension, no back slashes, can be relative or absolute
+    FileName,
+    // from shader->EntryPoint
+    EntryPoint,
+    // / or \\ slashes 
+    Path,
+    // from shader->scope
+    Scope,
+};
+// sort shader OR FileCopy
+// see ImGuiDemo on tables with sorting
+struct ShaderTableEntry
+{
+    // only one of these will be non-null, or not empty
+    const Shader* shader = {};
+    const FileCopy* fileCopy = {};
+    std::string embededFileName;
+
+    ShaderTableEntry(const Shader* inValue) : shader(inValue) {}
+    ShaderTableEntry(const FileCopy* inValue) : fileCopy(inValue) {}
+    ShaderTableEntry(const char* fileName) : embededFileName(fileName) {}
+
+    static const ImGuiTableSortSpecs* s_current_sort_specs;
+
+    int GetTypeIndex() const
+    {
+        if (!shader)
+            return 0xffffff;    // sort to last
+        return (int)shader->type;
+    }
+    const char* GetTypeStr() const
+    {
+        if (fileCopy)
+            return "Include";
+        else if (shader)
+            return EnumToString(shader->type);
+        else
+            return "Embed";
+    }
+    std::string_view GetFilePath() const
+    {
+        if (fileCopy)
+            return fileCopy->fileName;
+        else if (shader)
+            return shader->fileName;
+        else
+            return embededFileName;
+    }
+    const char* GetFileName() const
+    {
+        return ExtractFileName(GetFilePath());
+    }
+    std::string_view GetPath() const
+    {
+        return ExtractPath(GetFilePath());
+    }
+    const char* GetScope() const
+    {
+        if (!shader)
+            return "";
+        return shader->scope.c_str();
+    }
+
+    const char* GetEntryPoint() const
+    {
+        return shader ? shader->entryPoint.c_str() : "";
+    }
+
+    // see ImGui demo for tables with sorting
+    static int IMGUI_CDECL CompareWithSortSpecs(const void* lhs, const void* rhs)
+    {
+        const ShaderTableEntry* a = (const ShaderTableEntry*)lhs;
+        const ShaderTableEntry* b = (const ShaderTableEntry*)rhs;
+
+        const char* aTypeStr = "FileCopy";
+        const char* bTypeStr = "FileCopy";
+
+        for (int n = 0; n < s_current_sort_specs->SpecsCount; n++)
+        {
+            // Here we identify columns using the ColumnUserID value that we ourselves passed to TableSetupColumn()
+            // We could also choose to identify columns based on their index (sort_spec->ColumnIndex), which is simpler!
+            const ImGuiTableColumnSortSpecs* sort_spec = &s_current_sort_specs->Specs[n];
+            int delta = 0;
+            switch ((ShaderTableEntryColumnID)sort_spec->ColumnUserID)
+            {
+                // Note: stricmp() can be slow because it needs to consider the cureent locale
+                case ShaderTableEntryColumnID::Type:        delta = a->GetTypeIndex() - b->GetTypeIndex(); break;
+                case ShaderTableEntryColumnID::FileName:    delta = _stricmp(a->GetFileName(), b->GetFileName()); break;
+                case ShaderTableEntryColumnID::Path:        delta = a->GetPath().compare(b->GetPath()); break;
+                case ShaderTableEntryColumnID::EntryPoint:  delta = _stricmp(a->GetEntryPoint(), b->GetEntryPoint()); break;
+                case ShaderTableEntryColumnID::Scope:       delta = _stricmp(a->GetScope(), b->GetScope()); break;
+                default: IM_ASSERT(0); break;
+            }
+            if (delta > 0)
+                return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? +1 : -1;
+            if (delta < 0)
+                return (sort_spec->SortDirection == ImGuiSortDirection_Ascending) ? -1 : +1;
+        }
+
+        // qsort() is instable so always return a way to differenciate items
+        __int64 d = (const char*)lhs - (const char*)rhs;
+        if (d < 0)return -1;
+        else if (d > 0) return 1;
+        return 0;
+    }
+};
+const ImGuiTableSortSpecs* ShaderTableEntry::s_current_sort_specs = NULL;
+
 void ShowShaders()
 {
     if (!g_showWindows.Shaders || g_hideUI)
@@ -3462,141 +3519,154 @@ void ShowShaders()
 
     const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
 
-	ImGui::Text("Shaders:");
-	ImGui::PushID("Shaders:");
-	ImGui::Indent();
+    bool showScopeColumn = false;
+    for (const auto& entry : renderGraph.shaders)
+        if (!entry.scope.empty())
+            showScopeColumn = true;
 
-	// get a sorted list of scopes
-	std::vector<std::string> scopesSorted;
+    std::vector<ShaderTableEntry> shaderTableEntries;
+    {
+        for (const auto& entry : renderGraph.shaders)
+        {
+            shaderTableEntries.push_back(&entry);
+            for (const std::string& embeddedFile : entry.embeddedFiles)
+                shaderTableEntries.push_back(ShaderTableEntry(embeddedFile.c_str()));
+        }
+        for (const auto& entry : renderGraph.fileCopies)
+        {
+            if (entry.type == FileCopyType::Shader)
+                shaderTableEntries.push_back(&entry);
+        }
+    }
+
+    ImGui::PushID("Shaders:");
+
+    ImGuiTableFlags flags =
+        ImGuiTableFlags_Resizable |
+        ImGuiTableFlags_SizingFixedFit |
+        ImGuiTableFlags_BordersOuter |
+        ImGuiTableFlags_Reorderable |
+        ImGuiTableFlags_Sortable |
+        ImGuiTableFlags_SortMulti |
+        ImGuiTableFlags_RowBg;
+
+    ImGui::BeginChild("Shaders"); // darker inside
+    if (ImGui::BeginTable("ShadersTable", showScopeColumn ? 5 : 4, flags, ImVec2(0.0f, 0.0f)))
 	{
-		// find unique scopes
-		std::unordered_set<std::string> scopes;
-		for (const Shader& shader : renderGraph.shaders)
-			scopes.insert(shader.scope);
+        ImGui::TableSetupColumn("Type", ImGuiTableColumnFlags_DefaultSort, 0.0f, (ImGuiID)ShaderTableEntryColumnID::Type);
+        ImGui::TableSetupColumn("FileName", ImGuiTableColumnFlags_DefaultSort, 0.0f, (ImGuiID)ShaderTableEntryColumnID::FileName);
+        ImGui::TableSetupColumn("EntryPoint", ImGuiTableColumnFlags_DefaultSort, 0.0f, (ImGuiID)ShaderTableEntryColumnID::EntryPoint);
+        ImGui::TableSetupColumn("Path", ImGuiTableColumnFlags_DefaultSort, 0.0f, (ImGuiID)ShaderTableEntryColumnID::Path);
+        if(showScopeColumn)
+            ImGui::TableSetupColumn("Scope", ImGuiTableColumnFlags_DefaultSort | ImGuiTableColumnFlags_WidthStretch, 0.0f, (ImGuiID)ShaderTableEntryColumnID::Scope);
+        ImGui::TableHeadersRow();
 
-		// sort
-		for (const std::string& scope : scopes)
-			scopesSorted.push_back(scope);
-		std::sort(scopesSorted.begin(), scopesSorted.end());
-	}
+        // Sort our data if sort specs have been changed!
+        if (ImGuiTableSortSpecs* sort_specs = ImGui::TableGetSortSpecs())
+        {
+            ShaderTableEntry::s_current_sort_specs = sort_specs; // Store in variable accessible by the sort function.
+            if (!shaderTableEntries.empty())
+                qsort(shaderTableEntries.data(), (size_t)shaderTableEntries.size(), sizeof(ShaderTableEntry), ShaderTableEntry::CompareWithSortSpecs);
+            ShaderTableEntry::s_current_sort_specs = NULL;
+        }
 
-	// The list of unique shader file copies (shader includes)
-	std::map<std::string, const FileCopy*> uniqueShaderFileCopies;
-	for (const FileCopy& fileCopy : renderGraph.fileCopies)
-	{
-		if (fileCopy.type != FileCopyType::Shader)
-			continue;
-		uniqueShaderFileCopies.insert({ fileCopy.fileName, &fileCopy });
-	}
+        static int selectedItemIndex = -1;
+        int currentItemIndex = 0;
+        for (const auto& el : shaderTableEntries)
+        {
+            // todo: consider hand picked colors FileCopy not having color makes sense as it's not a shader
+//            const ImVec4 color = el.shader ? ImGui::GetStyle().Colors[ImGuiCol_Text] : ImVec4(1, 1, 1, 0.6f);
+            const ImVec4 color = el.shader ? (ImVec4)ImColor::HSV(el.GetTypeIndex() / 12.0f, 0.6f, 1.0f) : ImVec4(1, 1, 1, 0.6f);
 
-	for (const std::string& scope : scopesSorted)
-	{
-		// get a sorted list of shaders in this scope
-		std::vector<const Shader*> sortedShaders;
-		for (const Shader& shader : renderGraph.shaders)
-		{
-			if (shader.scope == scope)
-				sortedShaders.push_back(&shader);
-		}
-		std::sort(sortedShaders.begin(), sortedShaders.end(),
-			[](const Shader* A, const Shader* B)
-			{
-				return A->originalName < B->originalName;
-			}
-		);
-		if (sortedShaders.size() == 0)
-			continue;
+            ImGui::TableNextRow();
 
-		if (!scope.empty())
-		{
-			std::string scopeLabel = scope.substr(0, scope.length() - 1);
-			if (!ImGui::CollapsingHeader(scopeLabel.c_str()))
-				continue;
+            ImGui::PushID(currentItemIndex);
 
-			ImGui::Indent();
-			ImGui::PushID(scope.c_str());
-		}
+            int columnId = 0;
+            ImGui::TableSetColumnIndex(columnId++);
+            ImGui::TextColored(color, "%s", el.GetTypeStr());
 
-		if (ImGui::BeginTable("ShadersTable", 4, ImGuiTableFlags_Borders | ImGuiTableFlags_SizingFixedFit))
-		{
-			for (const Shader* shader : sortedShaders)
-			{
-				const char* name = shader->originalName.c_str();
-				ImGui::PushID(name);
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-                if (ImGui::SmallButton("Source"))
+            ImGui::TableSetColumnIndex(columnId++);
+            bool isSelected = selectedItemIndex == currentItemIndex;
+            if (ImGui::Selectable(el.GetFileName(), &isSelected, ImGuiSelectableFlags_SpanAllColumns))
+            {
+                // toggle selection
+                selectedItemIndex = (selectedItemIndex == currentItemIndex) ? -1 : currentItemIndex;
+            }
+
+            bool openSource = ImGui::IsItemActive() && ImGui::IsMouseDoubleClicked(0);
+
+            if (ImGui::BeginPopupContextItem("RightClickAnywhere", ImGuiPopupFlags_MouseButtonRight))
+            {
+                selectedItemIndex = currentItemIndex;
+
+                if (ImGuiMenuItem("Open source", ICON_FA_CIRCLE_ARROW_RIGHT, "double click"))
+                    openSource = true;
+
                 {
-                    std::string fileName = shader->fileName;
-                    if (std::filesystem::path(fileName).is_relative())
-                        fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
-                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                    ImGuiEnable enable(el.shader);
+                    if (ImGuiMenuItem("Open source after preprocessing (Post)", ICON_FA_CIRCLE_ARROW_RIGHT, 0))
+                    {
+                        std::string fileName = el.shader->destFileName.empty() ? el.shader->fileName : el.shader->destFileName;
+                        if (std::filesystem::path(fileName).is_relative())
+                            fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
+                        ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                    }
                 }
-				ImGui::TableSetColumnIndex(1);
-                if (ImGui::SmallButton("Post"))
+                ImGui::Separator();
+
+                // internals, useful for debugging, todo: copy to clipboard
                 {
-                    std::string fileName = shader->destFileName.empty() ? shader->fileName : shader->destFileName;
-                    if (std::filesystem::path(fileName).is_relative())
-                        fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
-                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-                }
-				ImGui::TableSetColumnIndex(2);
-				ImGui::Text(EnumToString(shader->type));
-				ImGui::TableSetColumnIndex(3);
-				ImGui::Text("%s", name);
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("fileName: \"%s\"\n\ndestFileName: \"%s\"",
-						shader->fileName.c_str(),
-						shader->destFileName.c_str());
-
-				ImGui::PopID();
-			}
-
-			for (const auto& el : uniqueShaderFileCopies)
-			{
-				const char* name = el.first.c_str();
-				const FileCopy& fileCopy = *el.second;
-
-				ImGui::PushID(name);
-				ImGui::TableNextRow();
-				ImGui::TableSetColumnIndex(0);
-                if (ImGui::SmallButton("Source"))
-                {
-                    std::string fileName = fileCopy.fileName;
-                    if (std::filesystem::path(fileName).is_relative())
-                        fileName = std::filesystem::weakly_canonical(renderGraph.baseDirectory + fileName).string();
+                    if (el.shader)
+                    {
+                        ImGuiKeyValueString("name (node)", el.shader->name.c_str());
+                        ImGuiKeyValueString("fileName", el.shader->fileName.c_str());
+                        ImGuiKeyValueString("destFileName", el.shader->destFileName.c_str());
+                        ImGuiKeyValueString("entryPoint", el.shader->entryPoint.c_str());
+                    }
+                    else if (el.fileCopy)
+                    {
+                        ImGuiKeyValueString("fileName", el.fileCopy->fileName.c_str());
+                        ImGuiKeyValueString("destFileName", el.fileCopy->destFileName.c_str());
+                    }
                     else
-                        fileName = std::filesystem::weakly_canonical(fileName).string();
-                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+                    {
+                        ImGuiKeyValueString("fileName", el.embededFileName.c_str());
+                    }
                 }
-				ImGui::TableSetColumnIndex(1);
-                if (ImGui::SmallButton("Post"))
-                {
-                    std::string fileName = fileCopy.destFileName.empty() ? fileCopy.fileName : fileCopy.destFileName;
-                    if (std::filesystem::path(fileName).is_relative())
-                        fileName = std::filesystem::weakly_canonical(g_interpreter.GetTempDirectory() + "shaders\\" + fileName).string();
-                    ShellExecuteA(NULL, "open", fileName.c_str(), NULL, NULL, SW_SHOWDEFAULT);
-                }
-				ImGui::TableSetColumnIndex(2);
-				ImGui::Text("FileCopy");
-				ImGui::TableSetColumnIndex(3);
-				ImGui::Text("%s", name);
-				if (ImGui::IsItemHovered())
-					ImGui::SetTooltip("destFileName: \"%s\"", fileCopy.destFileName.empty() ? fileCopy.fileName.c_str() : fileCopy.destFileName.c_str());
 
-				ImGui::PopID();
-			}
+                ImGui::EndPopup();
+            }
 
-			ImGui::EndTable();
-		}
-		if (!scope.empty())
-		{
-			ImGui::PopID();
-			ImGui::Unindent();
-		}
+            ImGui::TableSetColumnIndex(columnId++);
+            ImGui::TextUnformatted(el.GetEntryPoint());
+
+            ImGui::TableSetColumnIndex(columnId++);
+            std::string_view path = el.GetPath();
+            ImGui::TextUnformatted(path.data(), path.data() + path.size());
+
+            if (showScopeColumn)
+            {
+                ImGui::TableSetColumnIndex(columnId++);
+                ImGui::TextUnformatted(el.GetScope());
+            }
+            ImGui::PopID();
+
+            if (openSource)
+            {
+                std::string filePath(el.GetFilePath());
+                if (std::filesystem::path(filePath).is_relative())
+                    filePath = std::filesystem::weakly_canonical(renderGraph.baseDirectory + filePath).string();
+                ShellExecuteA(NULL, "open", filePath.c_str(), NULL, NULL, SW_SHOWDEFAULT);
+            }
+
+            ++currentItemIndex;
+        }
+
+		ImGui::EndTable();
 	}
+    ImGui::EndChild();
 
-	ImGui::Unindent();
 	ImGui::PopID();
 
 	ImGui::End();
@@ -3809,6 +3879,19 @@ void ShowImportedResources()
                 "In the file up to the first newline character."
             );
 
+            if (ShowGigiEnumDropDown(desc.buffer.dataStream, "Data Stream", "Which data to load"))
+                desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+
+            // Material Shader File
+            if (desc.buffer.dataStream == GGUserFile_SceneDataStream::Materials)
+            {
+                if (ImGui_File("Material Shader File", desc.buffer.materialShaderFile, ""))
+                {
+                    desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+                }
+                ShowToolTip("For material data stream buffers, this is the name of the shader file to generate the material function in. Relative to the .gg file");
+            }
+
             const RenderGraphNode_Resource_Buffer& bufferNode = g_interpreter.GetRenderGraph().nodes[desc.nodeIndex].resourceBuffer;
 
             // Ray tracing specific stuff
@@ -4014,25 +4097,6 @@ void ShowImportedResources()
                 ImGui::Unindent();
             }
 
-            // Mesh Details
-            {
-                bool exists = false;
-                RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(importedResourceInfo.originalName.c_str(), exists);
-                if (exists)
-                {
-                    if (runtimeData.materials.size() > 0)
-                    {
-                        if (ImGui::Button("Mesh Info"))
-                        {
-                            g_meshInfoOpenPopup = true;
-                            g_meshInfoName = importedResourceInfo.originalName;
-                        }
-
-                        ImGui::SameLine();
-                    }
-                }
-            }
-
             if (ImGui::Button(importedResourceInfo.originalName.c_str()))
                 g_resourceView.Buffer(desc.nodeIndex, desc.resourceIndex);
         }
@@ -4045,62 +4109,6 @@ void ShowImportedResources()
 
 void ShowImGuiWindows()
 {
-    if (g_meshInfoOpenPopup)
-    {
-        ImGui::OpenPopup("Mesh Info Popup");
-        g_meshInfoOpenPopup = false;
-    }
-
-    if (ImGui::BeginPopup("Mesh Info Popup", ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        bool exists = false;
-        RuntimeTypes::RenderGraphNode_Resource_Buffer& runtimeData = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(g_meshInfoName.c_str(), exists);
-        if (exists)
-        {
-            ImGui::Text("%s", g_meshInfoName.c_str());
-
-            ImGui::Text("Materials: %i", (int)runtimeData.materials.size());
-            if (ImGui::BeginTable("Materials", 2, ImGuiTableFlags_Borders))
-            {
-                for (size_t i = 0; i < runtimeData.materials.size(); ++i)
-                {
-                    const auto& materialInfo = runtimeData.materials[i];
-
-                    if (!materialInfo.used)
-                        ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 255, 255, 128));
-
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%i", (int)i);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", materialInfo.name.c_str());
-
-                    if (!materialInfo.used)
-                        ImGui::PopStyleColor();
-                }
-                ImGui::EndTable();
-            }
-        }
-        if (ImGui::Button("Copy"))
-        {
-            std::ostringstream text;
-            for (size_t i = 0; i < runtimeData.materials.size(); ++i)
-            {
-                const auto& materialInfo = runtimeData.materials[i];
-                text << i << " " << materialInfo.name;
-                if (!materialInfo.used)
-                    text << " (unused)";
-                text << "\n";
-
-            }
-            std::string textStr = text.str();
-            SetClipboardDataEx(CF_TEXT, (void*)textStr.c_str(), (DWORD)textStr.length() + 1);
-        }
-        //if (ImGui::Button("OK"))
-            //ImGui::CloseCurrentPopup();
-
-        ImGui::EndPopup();
-    }
-
     if (g_showViewerSettings)
     {
         if (ImGui::Begin("Viewer Settings", &g_showViewerSettings, 0))
@@ -4168,11 +4176,7 @@ void ShowImGuiWindows()
             ShowToolTip("Experimental: This allows to double click shader errors with an attached debugger (see Debug output in VisualStudio)");
 
             if (changed)
-            {
-                std::filesystem::path dir = GetLocalAppDataPath();
-                std::filesystem::create_directories(dir);
-                WriteToJSONFile(g_viewerConfig, (dir / "ViewerConfig.json").string().c_str());
-            }
+                SaveViewerConfig();
         }
 
         ImGui::End();
@@ -7339,7 +7343,7 @@ void ShowRenderGraphWindow()
                 ImGui::PushStyleColor(ImGuiCol_Header, ImVec4(0.5f, 0.5f, 0.5f, 0.5f));
 
             char nodeLabel[512];
-            sprintf_s(nodeLabel, "%s: %s%s", nodeTypeName.c_str(), nodeName.c_str(), 
+            sprintf_s(nodeLabel, "%s: \"%s\"%s", nodeTypeName.c_str(), nodeName.c_str(), 
                 hideInViewer ? " (hideInViewer)" : "");
             bool collapsingHeaderOpen = ImGui::CollapsingHeader(nodeLabel);
 
@@ -8007,6 +8011,31 @@ public:
             desc.buffer.fileName = (renderGraphDir / fileName).string();
         else
             desc.buffer.fileName = fileName;
+
+        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+    }
+
+    void SetImportedBufferMaterialShaderFile(const char* bufferName, const char* fileName) override final
+    {
+        if (g_interpreter.m_importedResources.count(bufferName) == 0)
+        {
+            Log(LogLevel::Error, "Python: SetImportedBufferMaterialShaderFile could not find imported buffer %s", bufferName);
+            return;
+        }
+
+        GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc = g_interpreter.m_importedResources[bufferName];
+        if (desc.isATexture)
+        {
+            Log(LogLevel::Error, "Python: SetImportedBufferMaterialShaderFile called for %s which is not a buffer", bufferName);
+            return;
+        }
+
+        std::filesystem::path renderGraphDir = std::filesystem::path(g_renderGraphFileName).remove_filename();
+
+        if (std::filesystem::path(fileName).is_relative())
+            desc.buffer.materialShaderFile = (renderGraphDir / fileName).string();
+        else
+            desc.buffer.materialShaderFile = fileName;
 
         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
     }
@@ -9157,7 +9186,15 @@ int main(int argc, char** argv)
 	}
 
     g_hwnd = ::CreateWindowW(wc.lpszClassName, L"Gigi Viewer - DX12 (Gigi v" GIGI_VERSION() ")", WS_OVERLAPPEDWINDOW, x, y, width, height, NULL, NULL, wc.hInstance, NULL);
+
+    {
+        g_windowPersist.SaveState(g_hwnd);
+        g_windowPersist.setFromString(g_viewerConfig.windowPersist.c_str());
+        g_fullscreen = g_windowPersist.fullscreen;
+        g_windowPersist.ApplyState(g_hwnd);
+    }
     DragAcceptFiles(g_hwnd, true);
+
 
     g_interpreter.SetLogFn(&Log);
 	Log(LogLevel::Info, "Gigi Viewer " GIGI_VERSION_WITH_BUILD_NUMBER() " DX12 " BUILD_FLAVOR);
@@ -9180,7 +9217,8 @@ int main(int argc, char** argv)
         WebCam::Init();
 
     // Show the window
-    ::ShowWindow(g_hwnd, SW_SHOWDEFAULT);
+//    ::ShowWindow(g_hwnd, SW_SHOWDEFAULT);
+    ::ShowWindow(g_hwnd, SW_SHOW);
     ::UpdateWindow(g_hwnd);
 
     // Setup Dear ImGui context
@@ -9197,17 +9235,17 @@ int main(int argc, char** argv)
     // Setup Dear ImGui style
     ImGui::StyleColorsDark();
 
+    ImGuiStyle& style = ImGui::GetStyle();
+
     // adjustment to make log scroll revision more recognizable
-    {
-        ImGuiStyle* style = &ImGui::GetStyle();
-        ImVec4* colors = style->Colors;
-        colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
-    }
+    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.50f);
+
+    // make shader table alternative lines more faints
+    style.Colors[ImGuiCol_TableRowBgAlt].w = 4 / 255.0f;
 
     //ImGui::StyleColorsLight();
 
     // When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
-    ImGuiStyle& style = ImGui::GetStyle();
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         style.WindowRounding = 0.0f;
@@ -9389,7 +9427,7 @@ int main(int argc, char** argv)
             else if (ImGui::IsKeyReleased(ImGui::GetKeyIndex(ImGuiKey_F)))
             {
                 g_fullscreen = !g_fullscreen;
-                SetFullscreenMode(g_fullscreen);
+                SetFullscreenMode();
             }
         }
 
@@ -9468,6 +9506,7 @@ int main(int argc, char** argv)
     ImGui::DestroyContext();
 
     CleanupDeviceD3D();
+
     ::DestroyWindow(g_hwnd);
     ::UnregisterClassW(wc.lpszClassName, wc.hInstance);
 
@@ -9574,8 +9613,9 @@ bool CreateDeviceD3D(HWND hWnd)
 
     // Create the factory as debug if possible
     IDXGIFactory6* dxgiFactory = NULL;
-    if (FAILED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgiFactory))) &&
-        FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory))))
+//    if (FAILED(CreateDXGIFactory2(DXGI_CREATE_FACTORY_DEBUG, IID_PPV_ARGS(&dxgiFactory))) &&
+//        FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory))))
+    if (FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory))))
     {
         return false;
     }
@@ -9878,6 +9918,15 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 
     switch (msg)
     {
+    case WM_GETMINMAXINFO:
+        {
+            LPMINMAXINFO lpMMI = (LPMINMAXINFO)lParam;
+
+            // Set smallest size the user can resize the window to
+            lpMMI->ptMinTrackSize.x = 300;
+            lpMMI->ptMinTrackSize.y = 200;
+        }
+        break;
     case WM_DROPFILES:
     {
         unsigned int dropFileNameLen = DragQueryFileA((HDROP)wParam, 0, nullptr, 0);
@@ -9900,7 +9949,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             return 0;
         break;
     case WM_DESTROY:
-        ::PostQuitMessage(0);
+        AppQuit();
         return 0;
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);

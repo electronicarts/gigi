@@ -32,6 +32,7 @@ void RuntimeTypes::RenderGraphNode_Action_DrawCall::Release(GigiInterpreterPrevi
 
 struct SemanticEnumToString
 {
+    // Vertex data
 	void Function_Position() { m_string = "POSITION"; m_semanticIndex = (int)StructFieldSemantic::Position; }
 	void Function_Color() { m_string = "COLOR"; m_semanticIndex = (int)StructFieldSemantic::Color; }
 	void Function_Normal() { m_string = "NORMAL"; m_semanticIndex = (int)StructFieldSemantic::Normal; }
@@ -40,6 +41,22 @@ struct SemanticEnumToString
 	void Function_MaterialID() { m_string = "TEXCOORD"; m_semanticIndex = (int)StructFieldSemantic::UV; }
 	void Function_ShapeID() { m_string = "TEXCOORD"; m_semanticIndex = (int)StructFieldSemantic::UV; }
 	void Function_Count() { m_string = "TEXCOORD"; m_semanticIndex = (int)StructFieldSemantic::UV; } // If no semantic given, use auto incrementing texture coordinates
+
+    // Light data
+    void Function_Light_PosDir() { Function_Count(); }
+    void Function_Light_ColorIntensity() { Function_Count(); }
+    void Function_Light_Range() { Function_Count(); }
+    void Function_Light_SpotInnerOuterRad() { Function_Count(); }
+
+    // Material data
+    void Function_Material_BaseColor() { Function_Count(); }
+    void Function_Material_Emissive() { Function_Count(); }
+    void Function_Material_Metallic() { Function_Count(); }
+    void Function_Material_Roughness() { Function_Count(); }
+    void Function_Material_AlphaMode() { Function_Count(); }
+    void Function_Material_AlphaCutoff() { Function_Count(); }
+    void Function_Material_DoubleSided() { Function_Count(); }
+
 	const char* m_string = "";
 	int m_semanticIndex = -1;
 };
@@ -831,6 +848,30 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		{
 			std::string sourceFileName = (std::filesystem::path(m_renderGraph.baseDirectory) / std::filesystem::proximate(fileName, std::filesystem::path(GetTempDirectory()) / "shaders")).string();
 			m_fileWatcher.Add(sourceFileName.c_str(), FileWatchOwner::Shaders);
+
+            if (node.vertexShader.shader)
+            {
+                for (const std::string& embeddedFileName : node.vertexShader.shader->embeddedFiles)
+                    m_fileWatcher.Add(embeddedFileName.c_str(), FileWatchOwner::Shaders);
+            }
+
+            if (node.pixelShader.shader)
+            {
+                for (const std::string& embeddedFileName : node.pixelShader.shader->embeddedFiles)
+                    m_fileWatcher.Add(embeddedFileName.c_str(), FileWatchOwner::Shaders);
+            }
+
+            if (node.amplificationShader.shader)
+            {
+                for (const std::string& embeddedFileName : node.amplificationShader.shader->embeddedFiles)
+                    m_fileWatcher.Add(embeddedFileName.c_str(), FileWatchOwner::Shaders);
+            }
+
+            if (node.meshShader.shader)
+            {
+                for (const std::string& embeddedFileName : node.meshShader.shader->embeddedFiles)
+                    m_fileWatcher.Add(embeddedFileName.c_str(), FileWatchOwner::Shaders);
+            }
 		}
 
 		if (!compiledOK)

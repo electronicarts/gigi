@@ -2754,8 +2754,9 @@ struct ShaderAssertsVisitor
     {
         std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
 
-        std::vector<unsigned char> fileContents;
-        if (!LoadFile(fileName, fileContents))
+        std::vector<char> fileContents;
+        std::vector<std::string> embeddedFiles;
+        if (!LoadAndPreprocessTextFile(fileName, fileContents, renderGraph, embeddedFiles))
         {
             GigiAssert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
             return {};
@@ -3074,8 +3075,9 @@ struct ShaderDataVisitor
     {
         // Load the file
         std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
-        std::vector<unsigned char> fileContents;
-        if (!LoadFile(fileName, fileContents))
+        std::vector<char> fileContents;
+        std::vector<std::string> embeddedFiles;
+        if (!LoadAndPreprocessTextFile(fileName, fileContents, renderGraph, embeddedFiles))
         {
             GigiAssert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
             return false;
@@ -3136,15 +3138,18 @@ struct ShaderDataVisitor
         }
 
         // Gather the variables referenced in this shader
-        std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
-
-        std::vector<unsigned char> fileContents;
-        if (!LoadFile(fileName, fileContents))
+        std::string shaderFileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
+        std::vector<std::string> embeddedFiles;
+        std::vector<char> fileContents;
+        if (!LoadAndPreprocessTextFile(shaderFileName, fileContents, renderGraph, embeddedFiles))
         {
-            GigiAssert(false, "Could not load file %s\nIn %s\n", fileName.c_str(), path.c_str());
+            GigiAssert(false, "Could not load file %s\nIn %s\n", shaderFileName.c_str(), path.c_str());
             return false;
         }
         fileContents.push_back(0);
+
+        // Store off the embedded files for watching
+        shader.embeddedFiles = embeddedFiles;
 
         auto BeginsWith = [](const char* haystack, int& index, const char* needle) -> bool
         {
@@ -3157,6 +3162,7 @@ struct ShaderDataVisitor
 
         std::unordered_set<std::string> variablesAccessedUnsorted;
         std::unordered_set<std::string> variableAliasesAccessedUnsorted;
+        bool failed = false;
         ForEachToken((char*)fileContents.data(),
             [&](const std::string& tokenStr, const char* stringStart, const char* cursor)
             {
@@ -3175,6 +3181,7 @@ struct ShaderDataVisitor
                     if (variableIndex == -1)
                     {
                         GigiAssert(false, "Could not find variable \"%s\" referenced in shader file \"%s\".\nIn %s\n", variableName.c_str(), shader.fileName.c_str(), path.c_str());
+                        failed = true;
                         return;
                     }
 
@@ -3192,10 +3199,96 @@ struct ShaderDataVisitor
                     if (aliasIndex == -1)
                     {
                         GigiAssert(false, "Could not find variable alias \"%s\" referenced in shader file \"%s\".\nIn %s\n", aliasName.c_str(), shader.fileName.c_str(), path.c_str());
+                        failed = true;
                         return;
                     }
 
                     variableAliasesAccessedUnsorted.insert(aliasName);
+                }
+                else if (BeginsWith(token, tokenIndex, "Sampler:"))
+                {
+                    // min
+                    const char* minBegin = &token[tokenIndex];
+                    const char* minEnd = minBegin;
+                    while (*minEnd && *minEnd != ':' && *minEnd != ')')
+                        minEnd++;
+                    std::string minStr(minBegin, minEnd);
+
+                    // mag
+                    const char* magBegin = (*minEnd == ':') ? minEnd + 1 : minEnd;
+                    const char* magEnd = magBegin;
+                    while (*magEnd && *magEnd != ':' && *magEnd != ')')
+                        magEnd++;
+                    std::string magStr(magBegin, magEnd);
+
+                    // mip
+                    const char* mipBegin = (*magEnd == ':') ? magEnd + 1 : magEnd;
+                    const char* mipEnd = mipBegin;
+                    while (*mipEnd && *mipEnd != ':' && *mipEnd != ')')
+                        mipEnd++;
+                    std::string mipStr(mipBegin, mipEnd);
+
+                    // Address Mode
+                    const char* addressBegin = (*mipEnd == ':') ? mipEnd + 1 : mipEnd;
+                    const char* addressEnd = addressBegin;
+                    while (*addressEnd && *addressEnd != ':' && *addressEnd != ')')
+                        addressEnd++;
+                    std::string addressStr(addressBegin, addressEnd);
+
+                    SamplerFilterComponent min, mag, mip;
+                    SamplerAddressMode address;
+                    if (!StringToEnum(minStr.c_str(), min) || !StringToEnum(magStr.c_str(), mag) || !StringToEnum(mipStr.c_str(), mip) || !StringToEnum(addressStr.c_str(), address))
+                    {
+                        GigiAssert(false, "Could not read sampler definition (min, mag, mip, addressMode) : (%s, %s, %s, %s)\nIn %s\n", minStr.c_str(), magStr.c_str(), mipStr.c_str(), addressStr.c_str(), path.c_str());
+                    }
+
+                    SamplerFilter samplerFilter = SamplerFilter(
+                            int(SamplerFilter::MinMagMipPoint) +
+                            ((min == SamplerFilterComponent::Linear) ? 1 : 0) +
+                            ((mag == SamplerFilterComponent::Linear) ? 2 : 0) +
+                            ((mip == SamplerFilterComponent::Linear) ? 4 : 0));
+
+                    // see if a suitable sampler already exists that we can re-use
+                    bool samplerExists = false;
+                    std::string samplerName;
+                    for (const ShaderSampler& sampler : shader.samplers)
+                    {
+                        if (sampler.addressMode == address && sampler.filter == samplerFilter)
+                        {
+                            samplerExists = true;
+                            samplerName = sampler.name;
+                            break;
+                        }
+                    }
+
+                    // add a new sampler if it doesn't exist
+                    if (!samplerExists)
+                    {
+                        samplerName = FrontEndNodesNoCaching::GetUniqueShaderSamplerName(shader, "_sampler");
+                        ShaderSampler newSampler;
+                        newSampler.name = samplerName;
+                        newSampler.filter = samplerFilter;
+                        newSampler.addressMode = address;
+                        shader.samplers.push_back(newSampler);
+                    }
+
+                    // put this into token replacements so it uses the sampler in the shader
+                    TokenReplacement newReplacement;
+                    newReplacement.name = tokenStr;
+                    newReplacement.value = samplerName;
+
+                    bool tokenReplacementExsts = false;
+                    for (const TokenReplacement& tokenReplacement : shader.tokenReplacements)
+                    {
+                        if (tokenReplacement.name == newReplacement.name || tokenReplacement.value == newReplacement.value)
+                        {
+                            tokenReplacementExsts = true;
+                            break;
+                        }
+                    }
+
+                    if (!tokenReplacementExsts)
+                        shader.tokenReplacements.push_back(std::move(newReplacement));
                 }
                 else if (
                     BeginsWith(token, tokenIndex, "Image:") || BeginsWith(token, tokenIndex, "Image2D:") ||
@@ -3214,10 +3307,45 @@ struct ShaderDataVisitor
                     // Get the file name string
                     const char* fileNameBegin = &token[tokenIndex];
                     const char* fileNameEnd = fileNameBegin;
+
+                    // quoted filename - go until other quote
+                    if (*fileNameBegin == '\"')
+                    {
+                        fileNameEnd++;
+                        while (*fileNameEnd && *fileNameEnd != '\"')
+                            fileNameEnd++;
+                    }
+
+                    // continue until end of string, next parameter, or end of tag
                     while (*fileNameEnd && *fileNameEnd != ':' && *fileNameEnd != ')')
                         fileNameEnd++;
-                    std::string fileName(fileNameBegin, fileNameEnd);
-                    if (fileName.empty())
+
+                    // get the imageFileName
+                    std::string imageFileName;
+                    bool imageFileNameRelative = true;
+                    {
+                        // take off the quotes if they are there
+                        if (*fileNameBegin == '\"')
+                            imageFileName = std::string(fileNameBegin + 1, fileNameEnd - 1);
+                        else
+                            imageFileName = std::string(fileNameBegin, fileNameEnd);
+
+                        // make it a canonical filename
+                        imageFileNameRelative = std::filesystem::path(imageFileName).is_relative();
+                        if (imageFileNameRelative)
+                        {
+                            imageFileName = (std::filesystem::path(renderGraph.baseDirectory) / imageFileName).string();
+                            imageFileName = std::filesystem::weakly_canonical(imageFileName).string();
+                            imageFileName = std::filesystem::proximate(imageFileName, renderGraph.baseDirectory).string();
+                        }
+                        else
+                        {
+                            imageFileName = std::filesystem::weakly_canonical(imageFileName).string();
+                        }
+                        std::transform(imageFileName.begin(), imageFileName.end(), imageFileName.begin(), [](unsigned char c) { return std::tolower(c); });
+                    }
+
+                    if (imageFileName.empty())
                     {
                         GigiAssert(false, "filename is empty.\nIn %s\n", path.c_str());
                         return;
@@ -3304,6 +3432,10 @@ struct ShaderDataVisitor
                         }
                     }
 
+                    std::string imageFileNameDest = imageFileName;
+                    if (!imageFileNameRelative)
+                        imageFileNameDest = std::filesystem::path(imageFileName).filename().string();
+
                     // see if we've already made a load texture node for this texture in this format, so we can use that node if so
                     char textureLoadNodeName[256];
                     bool createNewTexture = true;
@@ -3315,7 +3447,7 @@ struct ShaderDataVisitor
                         int desiredMips = makeMips ? 0 : 1;
 
                         const RenderGraphNode_Resource_Texture& textureNode = node.resourceTexture;
-                        if (textureNode.loadFileName == fileName && textureNode.format.format == textureFormat && textureNode.dimension == dimensionType && textureNode.loadFileNameAsSRGB == loadFileNameAsSRGB && textureNode.numMips == desiredMips)
+                        if (textureNode.loadFileName == imageFileNameDest && textureNode.format.format == textureFormat && textureNode.dimension == dimensionType && textureNode.loadFileNameAsSRGB == loadFileNameAsSRGB && textureNode.numMips == desiredMips)
                         {
                             strcpy_s(textureLoadNodeName, textureNode.name.c_str());
                             createNewTexture = false;
@@ -3337,7 +3469,7 @@ struct ShaderDataVisitor
                             newTextureNode.resourceTexture.visibility = ResourceVisibility::Internal;
                             newTextureNode.resourceTexture.format.format = textureFormat;
                             newTextureNode.resourceTexture.dimension = dimensionType;
-                            newTextureNode.resourceTexture.loadFileName = fileName.c_str();
+                            newTextureNode.resourceTexture.loadFileName = imageFileNameDest;
                             newTextureNode.resourceTexture.loadFileNameAsSRGB = loadFileNameAsSRGB;
                             newTextureNode.resourceTexture.numMips = makeMips ? 0 : 1;
                             newTextureNode.resourceTexture.name = textureLoadNodeName;
@@ -3349,7 +3481,9 @@ struct ShaderDataVisitor
                         // make asset file copies
                         {
                             FileCopy newFileCopy;
-                            newFileCopy.fileName = fileName;
+                            newFileCopy.fileName = imageFileName;
+                            if (!imageFileNameRelative)
+                                newFileCopy.destFileName = imageFileNameDest;
                             newFileCopy.type = FileCopyType::Asset;
                             newFileCopy.binary = true;
                             newFileCopy.plural = (dimensionType != TextureDimensionType::Texture2D);
@@ -3430,7 +3564,9 @@ struct ShaderDataVisitor
                                 {
                                     RenderGraphNode_Action_DrawCall& shaderNode = node.actionDrawCall;
                                     if (shaderNode.vertexShader.name != shader.name
-                                        && shaderNode.pixelShader.name != shader.name)
+                                        && shaderNode.pixelShader.name != shader.name
+                                        && shaderNode.meshShader.name != shader.name
+                                        && shaderNode.amplificationShader.name != shader.name)
                                         continue;
 
                                     NodePinConnection newConnection;
@@ -3454,6 +3590,9 @@ struct ShaderDataVisitor
                 }
             }
         );
+
+        if (failed)
+            return false;
 
         // On WebGPU, RTRayGen shaders  need extra variables.
         if (shader.type == ShaderType::RTRayGen && backend == Backend::WebGPU)
@@ -3682,15 +3821,15 @@ struct ShaderDataVisitor
             return true;
 
         std::string fileName = (std::filesystem::path(renderGraph.baseDirectory) / shader.fileName).string();
-
-        std::vector<unsigned char> fileContents_;
-        if (!LoadFile(fileName, fileContents_))
+        std::vector<std::string> embeddedFiles;
+        std::vector<char> fileContents_;
+        if (!LoadAndPreprocessTextFile(fileName, fileContents_, renderGraph, embeddedFiles))
         {
             GigiAssert(false, "Could not load file %s.\nIn %s\n", fileName.c_str(), path.c_str());
             return false;
         }
         fileContents_.push_back(0);
-        std::string fileContents = (char*)fileContents_.data();
+        std::string fileContents = fileContents_.data();
 
         for (const ShaderResource& resource : shader.resources)
         {

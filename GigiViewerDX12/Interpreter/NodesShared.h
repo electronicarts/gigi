@@ -347,6 +347,23 @@ inline DataFieldTypeInfoStructDX12 DataFieldTypeInfoDX12(DataFieldType type)
     }
 }
 
+// Returns true if the node really wants "Any" format
+inline bool IsDesiredFormatAny(const GigiInterpreterPreviewWindowDX12& interpreter, const RenderGraphNode_Resource_Texture& node, int rootNodeId = -1)
+{
+    // protect against dependency loops
+    if (rootNodeId == -1)
+        rootNodeId = node.nodeIndex;
+    else if (rootNodeId == node.nodeIndex)
+        return false;
+
+	if (node.format.variable.variableIndex != -1)
+        return false;
+	else if (node.format.node.textureNode)
+		return IsDesiredFormatAny(interpreter, *node.format.node.textureNode, rootNodeId);
+	else
+        return node.format.format == TextureFormat::Any;
+}
+
 inline DXGI_FORMAT GetDesiredFormat(const GigiInterpreterPreviewWindowDX12& interpreter, const RenderGraphNode_Resource_Texture& node, int rootNodeId = -1)
 {
 	// protect against dependency loops

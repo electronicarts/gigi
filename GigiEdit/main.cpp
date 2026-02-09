@@ -79,6 +79,7 @@ RenderGraph g_renderGraph;
 std::string g_renderGraphFileName = "";
 bool g_renderGraphDirty = false;
 bool g_renderGraphFirstFrame = false;
+int g_renderGraphLoadFocusCountdown = 0;
 std::string g_currentWindowTitle;
 GigiBuildFlavor g_gigiBuildFlavor = GigiBuildFlavor::DX12_Module;
 
@@ -877,14 +878,6 @@ struct Example :
 
             if (ImGui::BeginMenu("View"))
             {
-                if(ImGuiMenuItem("Reset Layout"))
-                {
-                    g_resetLayout = true;
-                    g_showWindows = ShowWindowsState();
-                }
-
-                ImGui::Separator();
-
                 ImGuiMenuItem("Graph Properties", 0, "", &g_showWindows.GraphProperties);
                 ImGuiMenuItem("Nodes", 0, "", &g_showWindows.Nodes);
                 ImGuiMenuItem("Build Log", 0, "", &g_showWindows.BuildLog);
@@ -895,6 +888,14 @@ struct Example :
                 ImGuiMenuItem("Enums", 0, "", &g_showWindows.Enums.show);
                 ImGuiMenuItem("SetVariables", 0, "", &g_showWindows.SetVariables.show);
                 ImGuiMenuItem("RTHitGroups", 0, "", &g_showWindows.RTHitGroups.show);
+
+                ImGui::Separator();
+
+                if(ImGuiMenuItem("Reset Layout", "\xef\x80\x9e", ""))  // Icon: Arrow circle 
+                {
+                    g_resetLayout = true;
+                    g_showWindows = ShowWindowsState();
+                }
 
                 ImGui::EndMenu();
             }
@@ -1795,10 +1796,6 @@ struct Example :
             {
                 dataName = "<empty>";
             }
-
-            char indexStr[64];
-            sprintf_s(indexStr, "[%i] ", (int)index);
-            dataName = indexStr + dataName;
 
             if (!windowState.searchQuery.empty() && StringFindForceLowercase(dataName, windowState.searchQuery) == std::string::npos)
             {
@@ -3353,8 +3350,16 @@ struct Example :
 
         ed::End();
 
+        // When loading via command line (like, from a button from another app), it isn't ready to NavigateToContent
+        // on ths first frame, so delay doing that for a few frames.  Works fine for opening from the menu as well.
         if (g_renderGraphFirstFrame)
-            ed::NavigateToContent();
+            g_renderGraphLoadFocusCountdown = 5;
+        if (g_renderGraphLoadFocusCountdown > 0)
+        {
+            g_renderGraphLoadFocusCountdown--;
+            if (g_renderGraphLoadFocusCountdown == 0)
+                ed::NavigateToContent(0.0f);
+        }
 
         ed::SetCurrentEditor(nullptr);
 

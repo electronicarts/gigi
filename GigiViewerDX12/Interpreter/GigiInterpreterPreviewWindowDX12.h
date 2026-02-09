@@ -21,8 +21,7 @@
 #include "DX12Utils/Profiler.h"
 #include "DX12Utils/FileCache.h"
 #include "DX12Utils/FileWatcher.h"
-#include "DX12Utils/ObjCache.h"
-#include "DX12Utils/FBXCache.h"
+#include "DX12Utils/SceneDataCache.h"
 #include "DX12Utils/PLYCache.h"
 
 #include "pix3.h"
@@ -198,8 +197,8 @@ public:
 	{
 		m_files.ClearCache();
 		m_textures.ClearCache();
-		m_objs.ClearCache();
-		m_fbxs.ClearCache();
+		m_scenes.ClearCache();
+        m_plys.ClearCache();
 	}
 
 	// This assumes that there are no more frames in flight and that it's safe to immediately release everything
@@ -428,16 +427,10 @@ public:
 							m_logFn(LogLevel::Error, "Tried to remove modifiled file from the texture cache, but it wasn't there! \"%s\"", fileName.c_str());
 						break;
 					}
-					case FileWatchOwner::ObjCache:
+					case FileWatchOwner::SceneCache:
 					{
-						if (!m_objs.Remove(fileName.c_str()))
-							m_logFn(LogLevel::Error, "Tried to remove modifiled file from the object cache, but it wasn't there! \"%s\"", fileName.c_str());
-						break;
-					}
-					case FileWatchOwner::FBXCache:
-					{
-						if (!m_fbxs.Remove(fileName.c_str()))
-							m_logFn(LogLevel::Error, "Tried to remove modifiled file from the FBX cache, but it wasn't there! \"%s\"", fileName.c_str());
+						if (!m_scenes.Remove(fileName.c_str()))
+							m_logFn(LogLevel::Error, "Tried to remove modifiled file from the scene cache, but it wasn't there! \"%s\"", fileName.c_str());
 						break;
 					}
 					case FileWatchOwner::PLYCache:
@@ -636,6 +629,8 @@ public:
 	{
 		std::string fileName;
 		bool CSVHeaderRow = true; // If reading a CSV, and this is true, it will skip everything up to the first newline, to ignore a header row.
+        GGUserFile_SceneDataStream dataStream = GGUserFile_SceneDataStream::GeometryFlat;
+        std::string materialShaderFile;
 		int structIndex = -1;
 		DataFieldType type = DataFieldType::Count;
 		int count = 1;
@@ -791,12 +786,8 @@ public:
 		return m_files;
 	}
 
-	ObjCache& getObjCache() {
-		return m_objs;
-	}
-
-	FBXCache& getFBXCache() {
-		return m_fbxs;
+	SceneDataCache& getSceneDataCache() {
+		return m_scenes;
 	}
 
 	PLYCache& getPLYCache() {
@@ -820,8 +811,7 @@ public:
 		FileCache = 0,
 		Shaders,
 		TextureCache,
-		ObjCache,
-		FBXCache,
+        SceneCache,
 		PLYCache,
 		GGFile,
 
@@ -912,8 +902,7 @@ private:
 	TransitionTracker m_transitions;
 	TextureCache m_textures;
 	FileCache m_files;
-	ObjCache m_objs;
-	FBXCache m_fbxs;
+    SceneDataCache m_scenes;
 	PLYCache m_plys;
 	DelayedReleaseTracker m_delayedRelease;
 	Profiler m_profiler;
@@ -971,8 +960,7 @@ inline const char* EnumToString(GigiInterpreterPreviewWindowDX12::FileWatchOwner
 		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::FileCache: return "FileCache";
 		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::Shaders: return "Shaders";
 		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::TextureCache: return "TextureCache";
-		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::ObjCache: return "ObjCache";
-		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::FBXCache: return "FBXCache";
+		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::SceneCache: return "SceneCache";
 		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::PLYCache: return "PLYCache";
 		case GigiInterpreterPreviewWindowDX12::FileWatchOwner::GGFile: return "GGFile";
 		default: return "<unknown>";

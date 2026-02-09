@@ -143,22 +143,6 @@ struct RuntimeTypes
         int m_stride = 0;
         int m_size = 0;
         int m_count = 0;
-
-        struct MaterialInfo
-        {
-            MaterialInfo(std::string name_, bool used_)
-                : name(name_)
-                , used(used_)
-            {
-            }
-
-            std::string name;
-            bool used;
-        };
-
-        // From mesh data
-        std::vector<std::string> shapes;
-        std::vector<MaterialInfo> materials;
     };
 
     struct RenderGraphNode_Resource_ShaderConstants : public RenderGraphNode_Base
@@ -183,6 +167,11 @@ struct RuntimeTypes
 
         ID3D12Resource* m_resourceInitialState = nullptr;
         ID3D12Resource* m_resource = nullptr;
+
+        //for mip compute shader
+        ID3D12RootSignature* m_rootSignature = nullptr;
+        ID3D12PipelineState* m_pso2d = nullptr;
+        ID3D12PipelineState* m_pso3d = nullptr;
 
 		bool m_resourceWantsReset = false;
 		DXGI_FORMAT m_format = DXGI_FORMAT_FORCE_UINT;

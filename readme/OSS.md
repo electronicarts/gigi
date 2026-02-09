@@ -27,3 +27,4 @@ tinybvh | https://github.com/jbikker/tinybvh | Used by the viewer to save vertex
 FidelityFX-SDK | https://github.com/GPUOpen-LibrariesAndSDKs/FidelityFX-SDK | Gives the functionality for the AMD nodes.
 IconFontCppHeaders| https://github.com/juliettef/IconFontCppHeaders | Lets us have pretty icons from Font-Awesome in imgui.
 Font-Awesome | https://github.com/FortAwesome/Font-Awesome | Lets us have pretty icons in imgui.
+tinygltf | https://github.com/syoyo/tinygltf/ | GLTF file loading

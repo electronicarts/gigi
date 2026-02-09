@@ -19,6 +19,7 @@ FileCache::File& FileCache::Get(const char* fileName)
 	if (m_cache.count(s) == 0)
 	{
 		File newFile;
+        newFile.fileName = s;
 
 		FILE* file = nullptr;
 		fopen_s(&file, s.c_str(), "rb");

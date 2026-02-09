@@ -3,6 +3,14 @@
 //        Copyright (c) 2025 Electronic Arts Inc. All rights reserved.       //
 ///////////////////////////////////////////////////////////////////////////////
 
+static std::string SanitizeFilenameForJS(const std::string& fileName)
+{
+    std::string ret = fileName;
+    //StringReplaceAll(ret, "\\\\", "\\"); // This is a bit ugly, but trying to prevent double escaping
+    StringReplaceAll(ret, "\\", "/");
+    return ret;
+}
+
 static void MakeStringReplacementForNode(std::unordered_map<std::string, std::ostringstream>& stringReplacementMap, RenderGraph& renderGraph, RenderGraphNode_Resource_Texture& node)
 {
 	const char* storageToken = nullptr;
@@ -92,10 +100,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 	else if (!node.loadFileName.empty())
 	{
 		stringReplacementMap["/*$(ExecuteInit)*/"] <<
-			"    // Load texture " << node.name << " from \"" << node.loadFileName << "\"\n"
+			"    // Load texture " << node.name << " from \"" << SanitizeFilenameForJS(node.loadFileName) << "\"\n"
 			"    if (this.texture_" << node.name << " === null)\n"
 			"    {\n"
-			"        const loadedTex = await Shared.CreateTextureWithPNG(device, \"./assets/" << node.loadFileName << "\", this.texture_" << node.name << "_usageFlags, " << ((node.dimension == TextureDimensionType::Texture3D) ? "\"3d\"" : "\"2d\"") << ");\n"
+			"        const loadedTex = await Shared.CreateTextureWithPNG(device, \"./assets/" << SanitizeFilenameForJS(node.loadFileName) << "\", this.texture_" << node.name << "_usageFlags, " << ((node.dimension == TextureDimensionType::Texture3D) ? "\"3d\"" : "\"2d\"") << ");\n"
 			"        this.texture_" << node.name << " = loadedTex.texture;\n"
 			"        this.texture_" << node.name << "_size = loadedTex.size;\n"
 			"        this.texture_" << node.name << "_format = \"" << (node.loadFileNameAsSRGB ? "rgba8unorm-srgb" : "rgba8unorm") << "\";\n"

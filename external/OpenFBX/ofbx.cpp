@@ -1,24 +1,273 @@
 #include "ofbx.h"
 #include "libdeflate.h"
-#include <cassert>
+
+#include <assert.h>
 #include <math.h>
 #include <ctype.h>
-#include <memory>
-#include <numeric>
-#include <string>
-#include <unordered_map>
-#include <vector>
-#include <mutex>
-#include <inttypes.h>
 #include <string.h>
+#include <stdlib.h>
 
 #if __cplusplus >= 202002L && defined(__cpp_lib_bit_cast)
 #include <bit> // for std::bit_cast (C++20 and later)
 #endif
-#include <map>
 
-namespace ofbx
-{
+// placement new without the need to include any headers
+namespace ofbx { struct PlacementNewHelper {}; }
+inline void* operator new(size_t, ofbx::PlacementNewHelper, void* where) { return where; }
+inline void operator delete(void*, ofbx::PlacementNewHelper,  void*) { } 
+
+#define OFBX_PLACEMENT_NEW(x) new (ofbx::PlacementNewHelper(), x)
+
+namespace ofbx {
+
+template <typename T>
+struct Array {
+	size_t size() const { return m_size; };
+	
+	T* data() const { return m_data; }
+	bool empty() const { return m_size == 0; }
+	T& operator[](const size_t index) const { return m_data[index]; }
+	T& back() const { return m_data[m_size - 1]; }
+	T* begin() const { return m_data; }
+	T* end() const { return m_data + m_size; }
+	
+	void resize(size_t new_size) {
+		if (new_size > m_capacity) reserve(new_size);
+		for (size_t i = m_size; i < new_size; ++i) {
+			OFBX_PLACEMENT_NEW(m_data + i) T();
+		}
+		for (size_t i = new_size; i < m_size; ++i) {
+			m_data[i].~T();
+		}
+		m_size = new_size;
+	}
+
+	void reserve(size_t new_capacity) {
+		if (new_capacity <= m_capacity) return;
+
+		T* new_data = (T*)malloc(new_capacity * sizeof(T));
+		for (size_t i = 0; i < m_size; ++i) {
+			OFBX_PLACEMENT_NEW(new_data + i) T(static_cast<T&&>(m_data[i]));
+			m_data[i].~T();
+		}
+		free(m_data);
+		m_data = new_data;
+		m_capacity = new_capacity;
+	}
+
+	void grow() {
+		reserve(m_capacity < 4 ? 4 : m_capacity * 2);
+	}
+
+	void push_back(const T& value) {
+		if (m_size == m_capacity) grow();
+		OFBX_PLACEMENT_NEW(m_data + m_size) T(value);
+		++m_size;
+	}
+
+	void push_back(T&& value) {
+		if (m_size == m_capacity) grow();
+		OFBX_PLACEMENT_NEW(m_data + m_size) T(static_cast<T&&>(value));
+		++m_size;
+	}
+	
+	T& emplace_back() {
+		if (m_size == m_capacity) grow();
+		OFBX_PLACEMENT_NEW(m_data + m_size) T();
+		++m_size;
+		return m_data[m_size - 1];
+	}
+	
+	void clear() {
+		for (size_t i = 0; i < m_size; ++i) {
+			m_data[i].~T();
+		}
+		free(m_data);
+		m_data = nullptr;
+		m_size = 0;
+		m_capacity = 0;
+	}
+
+	T* m_data = nullptr;
+	size_t m_size = 0;
+	size_t m_capacity = 0;
+};
+
+template <typename Key, typename Value, typename Hasher>
+struct HashMap {
+	static_assert(alignof(Key) <= 16, "Unsupported alignment");
+	static_assert(alignof(Value) <= 16, "Unsupported alignment");
+
+	Value& operator[](const Key& key) { 
+		Value* v = find(key);
+		if (v) return *v;
+
+		return emplace(Key(key), Value());
+	}
+	
+	Value* find(const Key& key) const {
+		if (m_capacity == 0) return nullptr;
+
+		size_t h = Hasher()(key) % m_capacity;
+		while (m_slots[h].valid) {
+			const Key* slot_key = (const Key*)m_slots[h].key_mem;
+			if (*slot_key == key) {
+				return (Value*)m_slots[h].value_mem;
+			}
+			h = (h + 1) % m_capacity;
+		}
+
+		return nullptr;
+	}
+
+	Value& emplace(Key key, Value value) {
+		if (m_size * 4 >= m_capacity * 3) grow();
+		if (m_capacity == 0) grow();
+
+		size_t h = Hasher()(key) % m_capacity;
+		while (m_slots[h].valid) {
+			h = (h + 1) % m_capacity;
+		}
+
+		OFBX_PLACEMENT_NEW(&m_slots[h].key_mem) Key(key);
+		OFBX_PLACEMENT_NEW(&m_slots[h].value_mem) Value(value);
+		m_slots[h].valid = true;
+		++m_size;
+		return *(Value*)m_slots[h].value_mem;
+	}
+
+	size_t size() { return m_size; }
+
+	void grow() {
+		size_t new_capacity = m_capacity < 4 ? 4 : m_capacity * 2;
+		Slot* new_slots = (Slot*)malloc(new_capacity * sizeof(Slot));
+		for (size_t i = 0; i < new_capacity; ++i) {
+			new_slots[i].valid = false;
+		}
+
+		for (size_t i = 0; i < m_capacity; ++i) {
+			if (m_slots[i].valid) {
+				Key* key = (Key*)m_slots[i].key_mem;
+				Value* value = (Value*)m_slots[i].value_mem;
+				
+				size_t h = Hasher()(*key) % new_capacity;
+				while (new_slots[h].valid) {
+					h = (h + 1) % new_capacity;
+				}
+				
+				OFBX_PLACEMENT_NEW(&new_slots[h].key_mem) Key(static_cast<Key&&>(*key));
+				OFBX_PLACEMENT_NEW(&new_slots[h].value_mem) Value(static_cast<Value&&>(*value));
+				new_slots[h].valid = true;
+
+				key->~Key();
+				value->~Value();
+			}
+		}
+
+		free(m_slots);
+		m_slots = new_slots;
+		m_capacity = new_capacity;
+	}
+
+	struct Pair {
+		Key& first;
+		Value& second;
+	};
+
+	struct Iter {
+		bool operator !=(const Iter& rhs) const {
+			return hash_map != rhs.hash_map || idx != rhs.idx;
+		}
+
+		void operator++()  {
+			++idx;
+			while (idx < hash_map->m_capacity && !hash_map->m_slots[idx].valid) {
+				++idx;
+			}
+		}
+		
+		Pair operator*() {
+			Slot& s = hash_map->m_slots[idx];
+			return {*(Key*)s.key_mem, *(Value*)s.value_mem};
+		}
+
+		HashMap<Key, Value, Hasher>* hash_map;
+		u32 idx;
+	};
+
+	Iter begin() { 
+		Iter iter = {this, 0};
+		while (iter.idx < m_capacity && !m_slots[iter.idx].valid) {
+			++iter.idx;
+		}
+		return iter;
+	}
+
+	Iter end() { 
+		return {this, (u32)m_capacity};
+	}
+
+	void clear() {
+		for (size_t i = 0; i < m_capacity; ++i) {
+			if (m_slots[i].valid) {
+				((Key*)m_slots[i].key_mem)->~Key();
+				((Value*)m_slots[i].value_mem)->~Value();
+			}
+		}
+		free(m_slots);
+		m_slots = nullptr;
+		m_size = 0;
+		m_capacity = 0;
+	}
+
+	struct Slot {
+		alignas(Key) u8 key_mem[sizeof(Key)];
+		alignas(Value) u8 value_mem[sizeof(Value)];
+		bool valid = false;
+	};
+
+	Slot* m_slots = nullptr;
+	size_t m_size = 0;
+	size_t m_capacity = 0;
+};
+
+struct StringView {
+	const char* value;
+	const char* end;
+
+	StringView(const char* v, const char* e)
+	{
+		value = v;
+		end = e;
+	}
+
+	bool operator ==(StringView rhs) const {
+		const size_t len = end - value;
+		if (len != (size_t)(rhs.end - rhs.value)) return false;
+		if (len == 0) return true;
+		return memcmp(value, rhs.value, len) == 0;
+	}
+};
+
+struct StringViewHash {
+	size_t operator()(const StringView& str) const {
+		size_t hash = 0;
+		for (const char* c = str.value; c < str.end; ++c) {
+			hash = hash * 31 + static_cast<size_t>(*c);
+		}
+		return hash;
+	}
+};
+
+struct U64Hash {
+	size_t operator()(u64 value) const {
+		size_t hash = value;
+		hash = (hash ^ (hash >> 30)) * 0xbf58476d1ce4e5b9;
+		hash = (hash ^ (hash >> 27)) * 0x94d049bb133111eb;
+		hash = hash ^ (hash >> 31);
+		return hash;
+	}
+};
 
 template<typename T> static T read_value(const u8* value_ptr) {
 	T value;
@@ -34,12 +283,6 @@ static int decodeIndex(int idx)
 static int codeIndex(int idx, bool last)
 {
 	return last ? (-idx - 1) : idx;
-}
-
-template <typename T>
-static T& emplace_back(std::vector<T>& vec) {
-	vec.emplace_back();
-	return vec.back();
 }
 
 struct Allocator {
@@ -77,7 +320,7 @@ struct Allocator {
 			p->header.next = first;
 			first = p;
 		}
-		T* res = new (p->data + p->header.offset) T(args...);
+		T* res = OFBX_PLACEMENT_NEW(p->data + p->header.offset) T(args...);
 		p->header.offset += sizeof(T);
 		return res;
 	}
@@ -94,26 +337,12 @@ struct Video
 };
 
 
-struct Error
-{
+struct Error {
 	Error() {}
-	Error(const char* msg)
-	{
-		s_message = msg;
-	}
-
-	// Format a message with printf-style arguments.
-	template <typename... Args>
-	Error(const char* fmt, Args... args) 
-	{
-		char buf[1024];
-		std::snprintf(buf, sizeof(buf), fmt, args...);
-		s_message = buf;
-	}
+	Error(const char* msg) { s_message = msg; }
 
 	static const char* s_message;
 };
-
 
 const char* Error::s_message = "";
 
@@ -431,8 +660,8 @@ struct Property;
 struct Element;
 
 template <typename T> static bool parseMemory(const Property& property, T* out, int max_size_bytes);
-template <typename T> static bool parseVecData(Property& property, std::vector<T>* out_vec);
-template <typename T> static bool parseVertexData(const Element& element, const char* name, const char* index_name, T& out, std::vector<struct ParseDataJob>& jobs);
+template <typename T> static bool parseVecData(Property& property, Array<T>* out_vec);
+template <typename T> static bool parseVertexData(const Element& element, const char* name, const char* index_name, T& out, Array<struct ParseDataJob>& jobs);
 static bool parseDouble(Property& property, double* out);
 
 struct ParseDataJob {
@@ -443,11 +672,11 @@ struct ParseDataJob {
 	F f;
 };
 
-template <typename T> [[nodiscard]] bool pushJob(std::vector<ParseDataJob>& jobs, Property& prop, std::vector<T>& data) {
-	ParseDataJob& job = emplace_back(jobs);
+template <typename T> [[nodiscard]] bool pushJob(Array<ParseDataJob>& jobs, Property& prop, Array<T>& data) {
+	ParseDataJob& job = jobs.emplace_back();
 	job.property = &prop;
 	job.data = (void*)&data;
-	job.f = [](Property* prop, void* data){ return parseVecData(*prop, (std::vector<T>*)data); };
+	job.f = [](Property* prop, void* data){ return parseVecData(*prop, (Array<T>*)data); };
 	return true;
 }
 
@@ -694,8 +923,11 @@ static OptionalError<Property*> readProperty(Cursor* cursor, Allocator& allocato
 		}
 		default:
 		{
-			char str[32];
-			snprintf(str, sizeof(str), "Unknown property type: %c", prop->type);
+			char str[64] = "Unknown property type: '";
+			size_t s = strlen(str);
+			str[s] = prop->type;
+			str[s + 1] = '\'';
+			str[s + 2] = '\0';
 			return Error(str);
 		}
 	}
@@ -782,7 +1014,7 @@ static OptionalError<Element*> readElement(Cursor* cursor, u32 version, Allocato
 static bool isEndLine(const Cursor& cursor)
 {
 	return (*cursor.current == '\n')
-	|| (*cursor.current == '\r' && cursor.current + 1 < cursor.end && *(cursor.current + 1) != '\n');
+		|| (*cursor.current == '\r' && cursor.current + 1 < cursor.end && *(cursor.current + 1) != '\n');
 }
 
 
@@ -1084,36 +1316,6 @@ static OptionalError<Element*> tokenize(const u8* data, size_t size, u32& versio
 	}
 }
 
-static void parseTemplates(const Element& root)
-{
-	const Element* defs = findChild(root, "Definitions");
-	if (!defs) return;
-
-	std::unordered_map<std::string, Element*> templates;
-	Element* def = defs->child;
-	while (def)
-	{
-		if (def->id == "ObjectType")
-		{
-			Element* subdef = def->child;
-			while (subdef)
-			{
-				if (subdef->id == "PropertyTemplate")
-				{
-					DataView prop1 = def->first_property->value;
-					DataView prop2 = subdef->first_property->value;
-					std::string key((const char*)prop1.begin, prop1.end - prop1.begin);
-					key += std::string((const char*)prop1.begin, prop1.end - prop1.begin);
-					templates[key] = subdef;
-				}
-				subdef = subdef->sibling;
-			}
-		}
-		def = def->sibling;
-	}
-	// TODO
-}
-
 
 struct Scene;
 
@@ -1124,8 +1326,8 @@ enum class VertexDataMapping {
 };
 
 struct Vec2AttributesImpl {
-	std::vector<Vec2> values;
-	std::vector<int> indices;
+	Array<Vec2> values;
+	Array<int> indices;
 	VertexDataMapping mapping;
 	operator Vec2Attributes() const {
 		return { values.data(), indices.data(), int(indices.empty() ? values.size() : indices.size()) };
@@ -1133,8 +1335,8 @@ struct Vec2AttributesImpl {
 };
 
 struct Vec3AttributesImpl {
-	std::vector<Vec3> values;
-	std::vector<int> indices;
+	Array<Vec3> values;
+	Array<int> indices;
 	VertexDataMapping mapping;
 	operator Vec3Attributes() const {
 		return { values.data(), indices.data(), int(indices.empty() ? values.size() : indices.size()), int(values.size()) };
@@ -1142,8 +1344,8 @@ struct Vec3AttributesImpl {
 };
 
 struct Vec4AttributesImpl {
-	std::vector<Vec4> values;
-	std::vector<int> indices;
+	Array<Vec4> values;
+	Array<int> indices;
 	VertexDataMapping mapping;
 	operator Vec4Attributes() const {
 		return { values.data(), indices.data(), int(indices.empty() ? values.size() : indices.size()) };
@@ -1151,20 +1353,21 @@ struct Vec4AttributesImpl {
 };
 
 struct GeometryPartitionImpl {
-	std::vector<GeometryPartition::Polygon> polygons;
+	Array<GeometryPartition::Polygon> polygons;
 	int max_polygon_triangles = 0;
 	int triangles_count = 0;
 };
 
 struct GeometryDataImpl : GeometryData {
+	bool has_vertices = false;
 	Vec3AttributesImpl positions;
 	Vec3AttributesImpl normals;
 	Vec3AttributesImpl tangents;
 	Vec4AttributesImpl colors;
 	Vec2AttributesImpl uvs[Geometry::s_uvs_max];
-	std::vector<GeometryPartitionImpl> partitions;
-
-	std::vector<int> materials;
+	Array<GeometryPartitionImpl> partitions;
+	
+	Array<int> materials;
 
 	template <typename T, typename S>
 	T patchAttributes(const S& attr) const {
@@ -1176,6 +1379,8 @@ struct GeometryDataImpl : GeometryData {
 		return res;
 	}
 
+	bool hasVertices() const override { return has_vertices; }
+
 	Vec3Attributes getPositions() const override { return positions; }
 	Vec3Attributes getNormals() const override { return patchAttributes<Vec3Attributes>(normals); }
 	Vec2Attributes getUVs(int index) const override { return patchAttributes<Vec2Attributes>(uvs[index]); }
@@ -1183,7 +1388,10 @@ struct GeometryDataImpl : GeometryData {
 	Vec3Attributes getTangents() const override { return patchAttributes<Vec3Attributes>(tangents); }
 	int getPartitionCount() const override { return (int)partitions.size(); }
 
-	GeometryPartition getPartition(int index) const override {
+	const int getMaterialMapSize() const override { return (int)materials.size(); }
+	const int* getMaterialMap() const override { return materials.empty() ? nullptr : &materials[0]; }
+
+	GeometryPartition getPartition(int index) const override { 
 		if (index >= partitions.size()) return {nullptr, 0, 0, 0};
 		return {
 			partitions[index].polygons.data(),
@@ -1199,7 +1407,7 @@ struct GeometryDataImpl : GeometryData {
 		if (attr.mapping == VertexDataMapping::BY_VERTEX && !attr.indices.empty()) {
 			if (positions.indices.empty()) return false; // not supported
 
-			std::vector<int> remapped;
+			Array<int> remapped;
 			attr.mapping = VertexDataMapping::BY_POLYGON_VERTEX;
 			remapped.resize(positions.indices.size());
 			for (int i = 0; i < remapped.size(); ++i) {
@@ -1212,7 +1420,7 @@ struct GeometryDataImpl : GeometryData {
 			if (partitions.size() != 1) return false; // not supported
 			if (partitions[0].polygons.size() != attr.values.size()) return false; // invalid
 
-			std::vector<int> remapped;
+			Array<int> remapped;
 			attr.mapping = VertexDataMapping::BY_POLYGON_VERTEX;
 			remapped.resize(positions.indices.size());
 
@@ -1229,7 +1437,7 @@ struct GeometryDataImpl : GeometryData {
 
 	bool postprocess() {
 		if (materials.empty()) {
-			GeometryPartitionImpl& partition = emplace_back(partitions);
+			GeometryPartitionImpl& partition = partitions.emplace_back();
 			int polygon_count = 0;
 			for (int i : positions.indices) {
 				if (i < 0) ++polygon_count;
@@ -1276,7 +1484,7 @@ struct GeometryDataImpl : GeometryData {
 					int triangles = num_polygon_vertices - 2;
 					partition.triangles_count += triangles;
 					if (triangles > partition.max_polygon_triangles) partition.max_polygon_triangles = triangles;
-
+					
 					indices[i] = -indices[i] - 1;
 
 					polygon_start = i + 1;
@@ -1354,7 +1562,7 @@ struct MeshImpl : Mesh
 
 	const Pose* pose = nullptr;
 	const GeometryImpl* geometry = nullptr;
-	std::vector<const Material*> materials;
+	Array<const Material*> materials;
 	const Skin* skin = nullptr;
 	const BlendShape* blendShape = nullptr;
 
@@ -1394,22 +1602,26 @@ struct MaterialImpl : Material
 	double getAmbientFactor() const override { return ambient_factor; };
 	double getBumpFactor() const override { return bump_factor; };
 	double getEmissiveFactor() const override { return emissive_factor; };
+	double getOpacity() const override { return opacity; };
+	DataView getShadingModel() const override { return shading_model; }
 
 	const Texture* textures[Texture::TextureType::COUNT];
-	Color diffuse_color;
-	Color specular_color;
-	Color reflection_color;
-	Color ambient_color;
-	Color emissive_color;
+	DataView shading_model;
+	Color diffuse_color = {1, 1, 1};
+	Color specular_color = {1, 1, 1};
+	Color reflection_color = {1, 1, 1};
+	Color ambient_color = {1, 1, 1};
+	Color emissive_color = {0, 0, 0};
 
-	double diffuse_factor;
-	double specular_factor;
-	double reflection_factor;
-	double shininess;
-	double shininess_exponent;
-	double ambient_factor;
-	double bump_factor;
-	double emissive_factor;
+	double diffuse_factor = 1;
+	double specular_factor = 1;
+	double reflection_factor = 1;
+	double shininess = 1;
+	double shininess_exponent = 1;
+	double ambient_factor = 1;
+	double bump_factor = 1;
+	double emissive_factor = 1;
+	double opacity = 1;
  };
 
 
@@ -1468,9 +1680,9 @@ Shape::Shape(const Scene& _scene, const IElement& _element)
 
 
 struct ShapeImpl : Shape {
-	std::vector<Vec3> vertices;
-	std::vector<Vec3> normals;
-	std::vector<int> indices;
+	Array<Vec3> vertices;
+	Array<Vec3> normals;
+	Array<int> indices;
 
 	ShapeImpl(const Scene& _scene, const IElement& _element)
 		: Shape(_scene, _element)
@@ -1511,13 +1723,6 @@ struct ClusterImpl : Cluster
 	bool postprocess() {
 		assert(skin);
 
-		GeometryDataImpl* geom = static_cast<GeometryDataImpl*>(static_cast<GeometryImpl*>(skin->resolveObjectLinkReverse(Object::Type::GEOMETRY)));
-		if (!geom) {
-			MeshImpl* mesh = (MeshImpl*)skin->resolveObjectLinkReverse(Object::Type::MESH);
-			if(!mesh) return false;
-			geom = &mesh->geometry_data;
-		}
-
 		const Element* indexes = findChild((const Element&)element, "Indexes");
 		if (indexes && indexes->first_property)
 		{
@@ -1536,8 +1741,8 @@ struct ClusterImpl : Cluster
 
 	Object* link = nullptr;
 	Skin* skin = nullptr;
-	std::vector<int> indices;
-	std::vector<double> weights;
+	Array<int> indices;
+	Array<double> weights;
 	DMatrix transform_matrix;
 	DMatrix transform_link_matrix;
 	Type getType() const override { return Type::CLUSTER; }
@@ -1597,8 +1802,8 @@ struct AnimationCurveImpl : AnimationCurve
 	const i64* getKeyTime() const override { return &times[0]; }
 	const float* getKeyValue() const override { return &values[0]; }
 
-	std::vector<i64> times;
-	std::vector<float> values;
+	Array<i64> times;
+	Array<float> values;
 	Type getType() const override { return Type::ANIMATION_CURVE; }
 };
 
@@ -1621,7 +1826,7 @@ struct SkinImpl : Skin
 
 	Type getType() const override { return Type::SKIN; }
 
-	std::vector<Cluster*> clusters;
+	Array<Cluster*> clusters;
 };
 
 
@@ -1674,8 +1879,8 @@ struct BlendShapeChannelImpl : BlendShapeChannel
 
 	BlendShape* blendShape = nullptr;
 	double deformPercent = 0;
-	std::vector<double> fullWeights;
-	std::vector<Shape*> shapes;
+	Array<double> fullWeights;
+	Array<Shape*> shapes;
 };
 
 
@@ -1697,7 +1902,7 @@ struct BlendShapeImpl : BlendShape
 
 	Type getType() const override { return Type::BLEND_SHAPE; }
 
-	std::vector<BlendShapeChannel*> blendShapeChannels;
+	Array<BlendShapeChannel*> blendShapeChannels;
 };
 
 
@@ -1849,6 +2054,7 @@ struct CameraImpl : public Camera
 
 	double nearPlane = 0.1;
 	double farPlane = 1000.0;
+	double orthoZoom = 1.f;
 	bool autoComputeClipPanes = true;
 	
 	GateFit gateFit = GateFit::HORIZONTAL;
@@ -1873,6 +2079,7 @@ struct CameraImpl : public Camera
 
 	double getNearPlane() const override { return nearPlane; }
 	double getFarPlane() const override { return farPlane; }
+	double getOrthoZoom() const override { return orthoZoom; }
 	bool doesAutoComputeClipPanes() const override { return autoComputeClipPanes; }
 
 	GateFit getGateFit() const override { return gateFit; }
@@ -1948,6 +2155,7 @@ struct Scene : IScene
 	int getMeshCount() const override { return (int)m_meshes.size(); }
 	float getSceneFrameRate() const override { return m_scene_frame_rate; }
 	const GlobalSettings* getGlobalSettings() const override { return &m_settings; }
+	const Headers* getHeaders() const override { return &m_headers; }
 
 	const Object* const* getAllObjects() const override { return m_all_objects.empty() ? nullptr : &m_all_objects[0]; }
 
@@ -2051,19 +2259,20 @@ struct Scene : IScene
 	Root* m_root = nullptr;
 	float m_scene_frame_rate = -1;
 	GlobalSettings m_settings;
+	Headers m_headers;
 
-	std::unordered_map<std::string, u64> m_fake_ids;
-	std::unordered_map<u64, ObjectPair> m_object_map;
-	std::vector<Object*> m_all_objects;
-	std::vector<Mesh*> m_meshes;
-	std::vector<Geometry*> m_geometries;
-	std::vector<AnimationStack*> m_animation_stacks;
-	std::vector<Camera*> m_cameras;
-	std::vector<Light*> m_lights;
-	std::vector<Connection> m_connections;
-	std::vector<u8> m_data;
-	std::vector<TakeInfo> m_take_infos;
-	std::vector<Video> m_videos;
+	HashMap<StringView, u64, StringViewHash> m_fake_ids;
+	HashMap<u64, ObjectPair, U64Hash> m_object_map;
+	Array<Object*> m_all_objects;
+	Array<Mesh*> m_meshes;
+	Array<Geometry*> m_geometries;
+	Array<AnimationStack*> m_animation_stacks;
+	Array<Camera*> m_cameras;
+	Array<Light*> m_lights;
+	Array<Connection> m_connections;
+	Array<u8> m_data;
+	Array<TakeInfo> m_take_infos;
+	Array<Video> m_videos;
 	Allocator m_allocator;
 	u32 version = 0;
 };
@@ -2226,33 +2435,7 @@ struct AnimationLayerImpl : AnimationLayer
 	}
 
 
-	std::vector<AnimationCurveNodeImpl*> curve_nodes;
-};
-
-/*
-	DEBUGGING ONLY (but im not your boss so do what you want)
-	- maps the contents of the given node for viewing in the debugger
-	
-	std::map<std::string, ofbx::IElementProperty*, std::less<>> allProperties;
-	mapProperties(element, allProperties);
-*/
-void mapProperties(const ofbx::IElement& parent, std::map<std::string, ofbx::IElementProperty*, std::less<std::string>>& propMap)
-{
-	for (const ofbx::IElement* element = parent.getFirstChild(); element; element = element->getSibling())
-	{
-		char key[32];
-
-		if (element->getFirstProperty())
-			element->getFirstProperty()->getValue().toString(key);
-		else
-			element->getID().toString(key);
-
-
-		ofbx::IElementProperty* prop = element->getFirstProperty();
-		propMap.insert({key, prop});
-
-		if (element->getFirstChild()) mapProperties(*element, propMap);
-	}
+	Array<AnimationCurveNodeImpl*> curve_nodes;
 };
 
 
@@ -2286,7 +2469,7 @@ void parseVideo(Scene& scene, const Element& element, Allocator& allocator)
 	scene.m_videos.push_back(video);
 }
 
-static bool parseGeometryMaterials(GeometryDataImpl& geom, const Element& element, std::vector<ParseDataJob> &jobs)
+static bool parseGeometryMaterials(GeometryDataImpl& geom, const Element& element, Array<ParseDataJob> &jobs)
 {
 	const Element* layer_material_element = findChild(element, "LayerElementMaterial");
 	if (!layer_material_element) return true;
@@ -2311,7 +2494,7 @@ static bool parseGeometryMaterials(GeometryDataImpl& geom, const Element& elemen
 	return true;
 }
 
-static bool parseGeometryUVs(GeometryDataImpl& geom, const Element& element, std::vector<ParseDataJob> &jobs) {
+static bool parseGeometryUVs(GeometryDataImpl& geom, const Element& element, Array<ParseDataJob> &jobs) {
 	const Element* layer_uv_element = findChild(element, "LayerElementUV");
 	while (layer_uv_element) {
 		const int uv_index = layer_uv_element->first_property ? layer_uv_element->first_property->getValue().toInt() : 0;
@@ -2327,7 +2510,7 @@ static bool parseGeometryUVs(GeometryDataImpl& geom, const Element& element, std
 	return true;
 }
 
-static bool parseGeometryTangents(GeometryDataImpl& geom, const Element& element, std::vector<ParseDataJob> &jobs) {
+static bool parseGeometryTangents(GeometryDataImpl& geom, const Element& element, Array<ParseDataJob> &jobs) {
 	const Element* layer_tangent_element = findChild(element, "LayerElementTangents");
 	if (!layer_tangent_element) layer_tangent_element = findChild(element, "LayerElementTangent");
 	if (!layer_tangent_element) return true;
@@ -2339,19 +2522,19 @@ static bool parseGeometryTangents(GeometryDataImpl& geom, const Element& element
 	return parseVertexData(*layer_tangent_element, "Tangent", "TangentIndex", geom.tangents, jobs);
 }
 
-static bool parseGeometryColors(GeometryDataImpl& geom, const Element& element, std::vector<ParseDataJob> &jobs) {
+static bool parseGeometryColors(GeometryDataImpl& geom, const Element& element, Array<ParseDataJob> &jobs) {
 	const Element* layer_color_element = findChild(element, "LayerElementColor");
 	if (!layer_color_element) return true;
 	return parseVertexData(*layer_color_element, "Colors", "ColorIndex", geom.colors, jobs);
 }
 
-static bool parseGeometryNormals(GeometryDataImpl& geom, const Element& element, std::vector<ParseDataJob> &jobs) {
+static bool parseGeometryNormals(GeometryDataImpl& geom, const Element& element, Array<ParseDataJob> &jobs) {
 	const Element* layer_normal_element = findChild(element, "LayerElementNormal");
 	if (!layer_normal_element) return true;
 	return parseVertexData(*layer_normal_element, "Normals", "NormalsIndex", geom.normals, jobs);
 }
 
-struct OptionalError<Object*> parseMesh(const Scene& scene, const Element& element, std::vector<ParseDataJob> &jobs, Allocator& allocator) {
+struct OptionalError<Object*> parseMesh(const Scene& scene, const Element& element, Array<ParseDataJob> &jobs, Allocator& allocator) {
 	MeshImpl* mesh = allocator.allocate<MeshImpl>(scene, element);
 
 	if (!element.first_property) return Error("Invalid mesh");
@@ -2451,6 +2634,9 @@ struct OptionalError<Object*> parseCamera(Scene& scene, const Element& element, 
 	CameraImpl* camera = allocator.allocate<CameraImpl>(scene, element);
 
 	camera->projectionType = static_cast<Camera::ProjectionType>(resolveEnumProperty(*camera, "ProjectionType", (int)Camera::ProjectionType::PERSPECTIVE));
+	// try "CameraProjectionType" too, see https://github.com/nem0/OpenFBX/issues/105
+	camera->projectionType = static_cast<Camera::ProjectionType>(resolveEnumProperty(*camera, "CameraProjectionType", (int)camera->projectionType));
+
 	camera->apertureMode = static_cast<Camera::ApertureMode>(resolveEnumProperty(*camera, "ApertureMode", (int)Camera::ApertureMode::HORIZANDVERT));
 	camera->gateFit = static_cast<Camera::GateFit>(resolveEnumProperty(*camera, "GateFit", (int)Camera::GateFit::HORIZONTAL));
 
@@ -2513,6 +2699,10 @@ struct OptionalError<Object*> parseCamera(Scene& scene, const Element& element, 
 			{
 				camera->farPlane = prop->getProperty(4)->getValue().toDouble();
 			}
+			else if (prop->first_property->value == "OrthoZoom" || prop->first_property->value == "CameraOrthoZoom")
+			{
+				camera->orthoZoom = prop->getProperty(4)->getValue().toDouble();
+			}
 		}
 		prop = prop->sibling;
 	}
@@ -2526,10 +2716,10 @@ static bool toObjectID(const Scene& scene, const Property* property, u64* out) {
 	if (!property) return false;
 	if (isString(property)) {
 		if (property->value == "Scene") return 0;
-		std::string tmp((const char*)property->value.begin, property->value.end - property->value.begin);
+		StringView tmp((const char*)property->value.begin, (const char*)property->value.end);
 		auto iter = scene.m_fake_ids.find(tmp);
-		if (iter != scene.m_fake_ids.end()) {
-			*out = iter->second;
+		if (iter) {
+			*out = *iter;
 			return true;
 		}
 
@@ -2544,11 +2734,11 @@ static bool toObjectID(const Scene& scene, const Property* property, u64* out) {
 static u64 toObjectID(Scene& scene, const Property* property) {
 	if (isString(property)) {
 		if (property->value == "Scene") return 0;
-		std::string tmp((const char*)property->value.begin, property->value.end - property->value.begin);
-		auto iter = scene.m_fake_ids.find(tmp);
-		if (iter != scene.m_fake_ids.end()) return iter->second;
+		StringView tmp((const char*)property->value.begin, (const char*)property->value.end);
+		auto* iter = scene.m_fake_ids.find(tmp);
+		if (iter) return *iter;
 
-		scene.m_fake_ids.emplace(std::move(tmp), scene.m_fake_ids.size() + 1); // ID 0 is reserved for root
+		scene.m_fake_ids.emplace(tmp, scene.m_fake_ids.size() + 1); // ID 0 is reserved for root
 		return scene.m_fake_ids.size();
 	}
 
@@ -2627,7 +2817,10 @@ static OptionalError<Object*> parseMaterial(const Scene& scene, const Element& e
 	{
 		if (prop->id == property_id && prop->first_property)
 		{
-			if (prop->first_property->value == "DiffuseColor")
+			if (prop->first_property->value == "ShadingModel") {
+				material->shading_model = prop->getProperty(property_offset)->getValue();
+			}
+			else if (prop->first_property->value == "DiffuseColor")
 			{
 				material->diffuse_color.r = (float)prop->getProperty(property_offset + 0)->getValue().toDouble();
 				material->diffuse_color.g = (float)prop->getProperty(property_offset + 1)->getValue().toDouble();
@@ -2659,7 +2852,7 @@ static OptionalError<Object*> parseMaterial(const Scene& scene, const Element& e
 				material->ambient_color.g = (float)prop->getProperty(property_offset + 1)->getValue().toDouble();
 				material->ambient_color.b = (float)prop->getProperty(property_offset + 2)->getValue().toDouble();
 			}
-			else if (prop->first_property->value == "EmissiveColor")
+			else if (prop->first_property->value == "EmissiveColor" || prop->first_property->value == "Emissive")
 			{
 				material->emissive_color.r = (float)prop->getProperty(property_offset + 0)->getValue().toDouble();
 				material->emissive_color.g = (float)prop->getProperty(property_offset + 1)->getValue().toDouble();
@@ -2688,6 +2881,10 @@ static OptionalError<Object*> parseMaterial(const Scene& scene, const Element& e
 			else if (prop->first_property->value == "EmissiveFactor")
 			{
 				material->emissive_factor = (float)prop->getProperty(property_offset)->getValue().toDouble();
+			}
+			else if (prop->first_property->value == "Opacity")
+			{
+				material->opacity = (float)prop->getProperty(property_offset)->getValue().toDouble();
 			}
 		}
 		prop = prop->sibling;
@@ -2901,7 +3098,7 @@ static bool parseMemory(const Property& property, T* out, int max_size_bytes) {
 		case 'D':
 		case 'F':
 		case 'I':
-			return parseMemoryLinked(property, out, max_size_bytes);
+			return parseMemoryLinked(property, out, max_size_bytes); 
 		default: return false;
 	}
 	if (count * elem_size != max_size_bytes) return false;
@@ -2927,7 +3124,7 @@ static bool parseMemory(const Property& property, T* out, int max_size_bytes) {
 	return false;
 }
 
-template <typename T> static void parseTextArray(const Property& property, std::vector<T>* out)
+template <typename T> static void parseTextArray(const Property& property, Array<T>* out)
 {
 	out->clear();
 	const u8* iter = property.value.begin;
@@ -2939,7 +3136,7 @@ template <typename T> static void parseTextArray(const Property& property, std::
 	}
 }
 
-template <typename T> static bool parseBinaryArrayLinked(const Property& property, std::vector<T>* out)
+template <typename T> static bool parseBinaryArrayLinked(const Property& property, Array<T>* out)
 {
 	assert(out);
 	assert(property.value.is_binary);
@@ -2972,7 +3169,7 @@ template <typename T> static bool parseBinaryArrayLinked(const Property& propert
 	return true;
 }
 
-template <typename T> static bool parseArray(const Property& property, std::vector<T>* out) {
+template <typename T> static bool parseArray(const Property& property, Array<T>* out) {
 	assert(out);
 	if (!property.value.is_binary) {
 		parseTextArray(property, out);
@@ -2992,7 +3189,7 @@ template <typename T> static bool parseArray(const Property& property, std::vect
 		case 'D':
 		case 'F':
 		case 'I':
-			return parseBinaryArrayLinked(property, out);
+			return parseBinaryArrayLinked(property, out); 
 		default: return false;
 	}
 	u32 count = property.getCount();
@@ -3002,7 +3199,7 @@ template <typename T> static bool parseArray(const Property& property, std::vect
 	return parseMemory(property, out->data(), int(sizeof((*out)[0]) * out->size()));
 }
 
-template <typename T> static bool parseVecData(Property& property, std::vector<T>* out_vec) {
+template <typename T> static bool parseVecData(Property& property, Array<T>* out_vec) {
 	using ElemType = typename TElemType<T>::Type;
 	assert(out_vec);
 	if (!property.value.is_binary) {
@@ -3013,7 +3210,7 @@ template <typename T> static bool parseVecData(Property& property, std::vector<T
 	if (typeMatch<ElemType>(property.type)) return parseArray(property, out_vec);
 
 	if (property.type == 'f' || property.type == 'F') {
-		std::vector<float> tmp;
+		Array<float> tmp;
 		if (!parseArray(property, &tmp)) return false;
 		int elem_count = sizeof((*out_vec)[0]) / sizeof(ElemType);
 		out_vec->resize(tmp.size() / elem_count);
@@ -3025,7 +3222,7 @@ template <typename T> static bool parseVecData(Property& property, std::vector<T
 	}
 
 	if (property.type == 'd' || property.type == 'D') {
-		std::vector<double> tmp;
+		Array<double> tmp;
 		if (!parseArray(property, &tmp)) return false;
 		int elem_count = sizeof((*out_vec)[0]) / sizeof(ElemType);
 		out_vec->resize(tmp.size() / elem_count);
@@ -3039,7 +3236,7 @@ template <typename T> static bool parseVecData(Property& property, std::vector<T
 	return false;
 }
 
-template <typename T> static bool parseVertexData(const Element& element, const char* name, const char* index_name, T& out, std::vector<ParseDataJob>& jobs) {
+template <typename T> static bool parseVertexData(const Element& element, const char* name, const char* index_name, T& out, Array<ParseDataJob>& jobs) {
 	const Element* data_element = findChild(element, name);
 	if (!data_element || !data_element->first_property) return false;
 
@@ -3123,26 +3320,34 @@ static OptionalError<Object*> parseAnimationCurve(const Scene& scene, const Elem
 	return curve;
 }
 
-static OptionalError<Object*> parseGeometry(const Element& element, GeometryImpl& geom, std::vector<ParseDataJob> &jobs, Allocator& allocator) {
+static OptionalError<Object*> parseGeometry(const Element& element, GeometryImpl& geom, Array<ParseDataJob> &jobs, u16 flags, Allocator& allocator) {
 	assert(element.first_property);
 
+	const bool ignore_geometry = (flags & (u16)LoadFlags::IGNORE_GEOMETRY) != 0;
+	const bool keep_matertial_map = (flags & (u16)LoadFlags::KEEP_MATERIAL_MAP) != 0;
+
+	if (keep_matertial_map || !ignore_geometry) {
+		if (!parseGeometryMaterials(geom, element, jobs)) return Error("Invalid materials");
+	}
+	
 	const Element* vertices_element = findChild(element, "Vertices");
-	if (!vertices_element || !vertices_element->first_property)
-	{
+	if (!vertices_element || !vertices_element->first_property) {
 		return &geom;
 	}
 
+	geom.has_vertices = true;
 	const Element* polys_element = findChild(element, "PolygonVertexIndex");
 	if (!polys_element || !polys_element->first_property) return Error("Indices missing");
 
-	if (!pushJob(jobs, *vertices_element->first_property, geom.positions.values)) return Error("Invalid vertices");
-	if (!pushJob(jobs, *polys_element->first_property, geom.positions.indices)) return Error("Invalid vertices");
+	if (!ignore_geometry) {
+		if (!pushJob(jobs, *vertices_element->first_property, geom.positions.values)) return Error("Invalid vertices");
+		if (!pushJob(jobs, *polys_element->first_property, geom.positions.indices)) return Error("Invalid vertices");
 
-	if (!parseGeometryMaterials(geom, element, jobs)) return Error("Invalid materials");
-	if (!parseGeometryUVs(geom, element, jobs)) return Error("Invalid vertex attributes");
-	if (!parseGeometryTangents(geom, element, jobs)) return Error("Invalid vertex attributes");
-	if (!parseGeometryColors(geom, element, jobs)) return Error("Invalid vertex attributes");
-	if (!parseGeometryNormals(geom, element, jobs)) return Error("Invalid vertex attributes");
+		if (!parseGeometryUVs(geom, element, jobs)) return Error("Invalid vertex attributes");
+		if (!parseGeometryTangents(geom, element, jobs)) return Error("Invalid vertex attributes");
+		if (!parseGeometryColors(geom, element, jobs)) return Error("Invalid vertex attributes");
+		if (!parseGeometryNormals(geom, element, jobs)) return Error("Invalid vertex attributes");
+	}
 
 	return &geom;
 }
@@ -3380,6 +3585,100 @@ static void parseGlobalSettings(const Element& root, Scene* scene)
 	}
 }
 
+static void parseHeaders(const Element& root, Scene* scene)
+{
+	const Element* headers = findChild(root, "FBXHeaderExtension");
+	if (!headers) return;
+
+	const Element* sceneInfo = findChild(*headers, "SceneInfo");
+	if (sceneInfo)
+	{
+		bool is_p60 = false;
+		const Element* props = findChild(*sceneInfo, "Properties70");
+		if (!props)
+		{
+			is_p60 = true;
+			props = findChild(*sceneInfo, "Properties60");
+			if (!props) return;
+		}
+
+		for (Element* node = props->child; node; node = node->sibling)
+		{
+			if (!node->first_property) continue;
+
+			#define get_string_property(name, field) if (node->first_property->value == name) \
+			{ \
+				IElementProperty* prop = node->getProperty(scene->version <= 6100 ? 3 : 4); \
+				if (prop) \
+				{ \
+					DataView value = prop->getValue(); \
+					char tmp[255]; \
+					value.toString(tmp); \
+					tmp[sizeof(tmp) - 1] = '\0'; \
+					size_t len = strlen(tmp) + 1; \
+					scene->m_headers.field = new char[len]; \
+					memcpy(scene->m_headers.field, tmp, len); \
+				} \
+			}
+
+			get_string_property("DocumentUrl", documentUrl);
+			get_string_property("SrcDocumentUrl", srcDocumentUrl);
+			get_string_property("Original|ApplicationVendor", originalApplicationVendor);
+			get_string_property("Original|ApplicationName", originalApplicationName);
+			get_string_property("Original|ApplicationVersion", originalApplicationVersion);
+			get_string_property("Original|DateTime_GMT", originalDateTimeGMT); // datetime stored as string using local culture, dirty, could be improved
+			get_string_property("Original|Filename", originalFilename);
+			get_string_property("Original|ApplicationActiveProject", originalApplicationActiveProject);
+			get_string_property("Original|ApplicationNativeFile", originalApplicationNativeFile); // Blender FBX export only
+			get_string_property("LastSaved|ApplicationVendor", lastSavedApplicationVendor);
+			get_string_property("LastSaved|ApplicationName", lastSavedApplicationName);
+			get_string_property("LastSaved|ApplicationVersion", lastSavedApplicationVersion);
+			get_string_property("LastSaved|DateTime_GMT", lastSavedDateTimeGMT); // datetime stored as string using local culture, dirty, could be improved
+
+			#undef get_string_property
+		}
+	}
+
+	for (Element* node = headers->child; node; node = node->sibling)
+	{
+		if (!node->first_property) continue;
+
+		#define get_property(name, field, type, getter) if (node->id == name) \
+		{ \
+			IElementProperty* prop = node->getProperty(0); \
+			if (prop) \
+			{ \
+				DataView value = prop->getValue(); \
+				scene->m_headers.field = (type)value.getter(); \
+			} \
+		}
+
+		#define get_string_property(name, field) if (node->id == name) \
+		{ \
+			IElementProperty* prop = node->getProperty(0); \
+			if (prop) \
+			{ \
+				DataView value = prop->getValue(); \
+				char tmp[255]; \
+				value.toString(tmp); \
+				tmp[sizeof(tmp) - 1] = '\0'; \
+				size_t len = strlen(tmp) + 1; \
+				scene->m_headers.field = new char[len]; \
+				memcpy(scene->m_headers.field, tmp, len); \
+			} \
+		}
+
+		get_property("FBXHeaderVersion", fbxHeaderVersion, int, toInt);
+		get_property("FBXVersion", fbxVersion, int, toInt);
+		get_property("EncryptionType", encryptionType, int, toInt);
+		get_string_property("Creator", creator);
+		get_string_property("CreationTime", creationTime); // in Blender exports, not in 3ds max exports
+
+		#undef get_property
+		#undef get_string_property
+	}
+}
+
 void sync_job_processor(JobFunction fn, void*, void* data, u32 size, u32 count) {
 	u8* ptr = (u8*)data;
 	for(u32 i = 0; i < count; ++i) {
@@ -3406,6 +3705,7 @@ static bool parseObjects(const Element& root, Scene& scene, u16 flags, Allocator
 	const bool ignore_limbs = (flags & (u16)LoadFlags::IGNORE_LIMBS) != 0;
 	const bool ignore_meshes = (flags & (u16)LoadFlags::IGNORE_MESHES) != 0;
 	const bool ignore_models = (flags & (u16)LoadFlags::IGNORE_MODELS) != 0;
+	const bool keep_matertial_map = (flags & (u16)LoadFlags::KEEP_MATERIAL_MAP) != 0;
 
 	const Element* objs = findChild(root, "Objects");
 	if (!objs) return true;
@@ -3430,7 +3730,7 @@ static bool parseObjects(const Element& root, Scene& scene, u16 flags, Allocator
 		object = object->sibling;
 	}
 
-	std::vector<ParseDataJob> jobs;
+	Array<ParseDataJob> jobs;
 
 	for (auto iter : scene.m_object_map)
 	{
@@ -3438,18 +3738,18 @@ static bool parseObjects(const Element& root, Scene& scene, u16 flags, Allocator
 
 		if (iter.second.object == scene.m_root) continue;
 
-		if (iter.second.element->id == "Geometry" && !ignore_geometry)
+		if (iter.second.element->id == "Geometry")
 		{
 			Property* last_prop = iter.second.element->first_property;
 			while (last_prop->next) last_prop = last_prop->next;
 			if (last_prop && last_prop->value == "Mesh")
 			{
 				GeometryImpl* geom = allocator.allocate<GeometryImpl>(scene, *iter.second.element);
-				parseGeometry(*iter.second.element, *geom, jobs, allocator);
+				parseGeometry(*iter.second.element, *geom, jobs, flags, allocator);
 				obj = geom;
 				scene.m_geometries.push_back(geom);
 			}
-			else if (last_prop && last_prop->value == "Shape")
+			else if (last_prop && last_prop->value == "Shape" && !ignore_geometry)
 			{
 				obj = allocator.allocate<ShapeImpl>(scene, *iter.second.element);
 			}
@@ -3771,7 +4071,7 @@ static bool parseObjects(const Element& root, Scene& scene, u16 flags, Allocator
 			bool error = false;
 			PostprocessJob(Object* o) : obj(o) {}
 		};
-		std::vector<PostprocessJob> postprocess_jobs;
+		Array<PostprocessJob> postprocess_jobs;
 		for (auto iter : scene.m_object_map)
 		{
 			Object* obj = iter.second.object;
@@ -3950,7 +4250,7 @@ Object* Object::resolveObjectLinkReverse(Object::Type type) const
 	{
 		if (connection.from_object == id && connection.to_object != 0)
 		{
-			const Scene::ObjectPair& pair = scene.m_object_map.find(connection.to_object)->second;
+			const Scene::ObjectPair& pair = *scene.m_object_map.find(connection.to_object);
 			Object* obj = pair.object;
 			if (obj && obj->getType() == type) return obj;
 		}
@@ -3973,7 +4273,7 @@ Object* Object::resolveObjectLink(int idx) const
 	{
 		if (connection.to_object == id && connection.from_object != 0)
 		{
-			Object* obj = scene.m_object_map.find(connection.from_object)->second.object;
+			Object* obj = scene.m_object_map.find(connection.from_object)->object;
 			if (obj)
 			{
 				if (idx == 0) return obj;
@@ -3993,7 +4293,7 @@ Object* Object::resolveObjectLink(Object::Type type, const char* property, int i
 	{
 		if (connection.to_object == id && connection.from_object != 0)
 		{
-			Object* obj = scene.m_object_map.find(connection.from_object)->second.object;
+			Object* obj = scene.m_object_map.find(connection.from_object)->object;
 			if (obj && obj->getType() == type)
 			{
 				if (property == nullptr || connection.to_property == property)
@@ -4011,8 +4311,8 @@ Object* Object::resolveObjectLink(Object::Type type, const char* property, int i
 bool Scene::finalize() {
 	for (const Connection& connection : m_connections) {
 		if (connection.type != Connection::OBJECT_OBJECT) continue;
-		Object* to_obj = m_object_map.find(connection.to_object)->second.object;
-		Object* from_obj = m_object_map.find(connection.from_object)->second.object;
+		Object* to_obj = m_object_map.find(connection.to_object)->object;
+		Object* from_obj = m_object_map.find(connection.from_object)->object;
 		if (!from_obj) continue;
 		if (!to_obj) continue;
 		if (!to_obj->is_node) continue;
@@ -4031,7 +4331,7 @@ bool Scene::finalize() {
 		}
 
 		object->depth = 0;
-
+		
 		Object* parent = object->parent;
 		while (parent) {
 			if (parent == object) {
@@ -4055,7 +4355,20 @@ bool Scene::finalize() {
 
 IScene* load(const u8* data, usize size, u16 flags, JobProcessor job_processor, void* job_user_ptr)
 {
-	std::unique_ptr<Scene> scene(new Scene());
+	struct SceneHolder {
+		~SceneHolder() { delete scene; }
+		Scene* release() {
+			Scene* tmp = scene;
+			scene = nullptr;
+			return tmp;
+		}
+		Scene* get() { return scene; }
+		Scene* operator->() { return scene; }
+		Scene* scene;
+	} scene {
+		new Scene
+	};
+
 	scene->m_data.resize(size);
 	memcpy(&scene->m_data[0], data, size);
 
@@ -4091,11 +4404,11 @@ IScene* load(const u8* data, usize size, u16 flags, JobProcessor job_processor, 
 	scene->m_root_element = root.getValue();
 	assert(scene->m_root_element);
 
-	// if (parseTemplates(*root.getValue()).isError()) return nullptr;
 	if (!parseConnections(*root.getValue(), *scene.get())) return nullptr;
 	if (!parseTakes(*scene.get())) return nullptr;
 	if (!parseObjects(*root.getValue(), *scene.get(), flags, scene->m_allocator, job_processor, job_user_ptr)) return nullptr;
 	parseGlobalSettings(*root.getValue(), scene.get());
+	parseHeaders(*root.getValue(), scene.get());
 	if (!scene->finalize()) return nullptr;
 
 	return scene.release();
@@ -4107,5 +4420,224 @@ const char* getError()
 	return Error::s_message;
 }
 
+static bool isConvex(const GeometryData& geom, const GeometryPartition::Polygon& polygon) {
+	if (polygon.vertex_count < 3) return false;
+	if (polygon.vertex_count == 3) return true;
+	
+	const Vec3Attributes positions = geom.getPositions();
+	if (!positions.values) return false;
+	
+	Vec3 normal = {0, 0, 0};
+	// Compute polygon normal using Newell's method for robustness
+	// https://www.khronos.org/opengl/wiki/Calculating_a_Surface_Normal
+	for (int i = 0; i < polygon.vertex_count; ++i) {
+		int curr_idx = polygon.from_vertex + i;
+		int next_idx = polygon.from_vertex + ((i + 1) % polygon.vertex_count);
+		
+		Vec3 v_curr = positions.get(curr_idx);
+		Vec3 v_next = positions.get(next_idx);
+		
+		normal.x += (v_curr.y - v_next.y) * (v_curr.z + v_next.z);
+		normal.y += (v_curr.z - v_next.z) * (v_curr.x + v_next.x);
+		normal.z += (v_curr.x - v_next.x) * (v_curr.y + v_next.y);
+	}
+	
+	float normal_lensq = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
+	if (normal_lensq < 1e-6f) return false;
+	
+	bool sign_positive = false;
+	bool sign_negative = false;
+	
+	for (int i = 0; i < polygon.vertex_count; ++i) {
+		int prev_idx = polygon.from_vertex + ((i - 1 + polygon.vertex_count) % polygon.vertex_count);
+		int curr_idx = polygon.from_vertex + i;
+		int next_idx = polygon.from_vertex + ((i + 1) % polygon.vertex_count);
+		
+		Vec3 v_prev = positions.get(prev_idx);
+		Vec3 v_curr = positions.get(curr_idx);
+		Vec3 v_next = positions.get(next_idx);
+		
+		// Vectors from current vertex to adjacent vertices
+		Vec3 edge1 = {v_prev.x - v_curr.x, v_prev.y - v_curr.y, v_prev.z - v_curr.z};
+		Vec3 edge2 = {v_next.x - v_curr.x, v_next.y - v_curr.y, v_next.z - v_curr.z};
+		
+		// Cross product to get turn direction
+		Vec3 cross = {
+			edge1.y * edge2.z - edge1.z * edge2.y,
+			edge1.z * edge2.x - edge1.x * edge2.z,
+			edge1.x * edge2.y - edge1.y * edge2.x
+		};
+		
+		float dot = cross.x * normal.x + cross.y * normal.y + cross.z * normal.z;
+		
+		if (dot > 1e-6f) sign_positive = true;
+		else if (dot < -1e-6f) sign_negative = true;
+		
+		if (sign_positive && sign_negative) return false;
+	}
+	
+	return true;
+}
+
+u32 triangulate(const GeometryData& geom, const GeometryPartition::Polygon& polygon, int* tri_indices, int* tmp) {
+	if (polygon.vertex_count < 3) return 0;
+	if (polygon.vertex_count == 3) {
+		tri_indices[0] = polygon.from_vertex;
+		tri_indices[1] = polygon.from_vertex + 1;
+		tri_indices[2] = polygon.from_vertex + 2;
+		return 3;
+	}
+	
+	if (isConvex(geom, polygon)) {
+		for (int tri = 0; tri < polygon.vertex_count - 2; ++tri) {
+			tri_indices[tri * 3 + 0] = polygon.from_vertex;
+			tri_indices[tri * 3 + 1] = polygon.from_vertex + 1 + tri;
+			tri_indices[tri * 3 + 2] = polygon.from_vertex + 2 + tri;
+		}
+		return 3 * (polygon.vertex_count - 2);
+	}
+
+	// ear clipping - the simplest (and not the most efficient) implementation
+	int tmp_mem[128]; // temporary memory if user did not pass any in `tmp`
+	int* vertices = tmp ? tmp : tmp_mem;
+	
+	if (!tmp && polygon.vertex_count > 128) {
+		// user should provide enough memory in `tmp`
+		assert(false);
+		return 0;
+	}
+	
+	for (int i = 0; i < polygon.vertex_count; ++i) {
+		vertices[i] = polygon.from_vertex + i;
+	}
+	
+	int num_vertices = polygon.vertex_count;
+	int tri_count = 0;
+	
+	const Vec3Attributes positions = geom.getPositions();
+	if (!positions.values) return 0;
+	
+	Vec3 v0 = positions.get(vertices[0]);
+	Vec3 v1 = positions.get(vertices[1]);
+	Vec3 v2 = positions.get(vertices[2]);
+	
+	Vec3 edge1 = {v1.x - v0.x, v1.y - v0.y, v1.z - v0.z};
+	Vec3 edge2 = {v2.x - v0.x, v2.y - v0.y, v2.z - v0.z};
+	
+	Vec3 normal = {
+		edge1.y * edge2.z - edge1.z * edge2.y,
+		edge1.z * edge2.x - edge1.x * edge2.z,
+		edge1.x * edge2.y - edge1.y * edge2.x
+	};
+	
+	float normal_len_sq = normal.x * normal.x + normal.y * normal.y + normal.z * normal.z;
+	if (normal_len_sq < 1e-12f) {
+		// Degenerate polygon, handle it like a convex polygon
+		for (int tri = 0; tri < polygon.vertex_count - 2; ++tri) {
+			tri_indices[tri * 3 + 0] = polygon.from_vertex;
+			tri_indices[tri * 3 + 1] = polygon.from_vertex + 1 + tri;
+			tri_indices[tri * 3 + 2] = polygon.from_vertex + 2 + tri;
+		}
+		return 3 * (polygon.vertex_count - 2);
+	}
+	
+	while (num_vertices > 3) {
+		bool ear_found = false;
+		
+		for (int i = 0; i < num_vertices; ++i) {
+			const int prev = (i - 1 + num_vertices) % num_vertices;
+			const int curr = i;
+			const int next = (i + 1) % num_vertices;
+			
+			const Vec3 vp = positions.get(vertices[prev]);
+			const Vec3 vc = positions.get(vertices[curr]);
+			const Vec3 vn = positions.get(vertices[next]);
+			
+			const Vec3 e1 = {vc.x - vp.x, vc.y - vp.y, vc.z - vp.z};
+			const Vec3 e2 = {vn.x - vc.x, vn.y - vc.y, vn.z - vc.z};
+			
+			const Vec3 cross = {
+				e1.y * e2.z - e1.z * e2.y,
+				e1.z * e2.x - e1.x * e2.z,
+				e1.x * e2.y - e1.y * e2.x
+			};
+			
+			const float dot = cross.x * normal.x + cross.y * normal.y + cross.z * normal.z;
+			
+			// Check if this forms a convex vertex (same orientation as polygon normal)
+			if (dot <= 0) continue;
+			
+			// Check if any other vertex is inside this triangle
+			bool is_ear = true;
+			for (int j = 0; j < num_vertices; ++j) {
+				if (j == prev || j == curr || j == next) continue;
+				
+				Vec3 vt = positions.get(vertices[j]);
+				
+				// Use point-in-triangle test with proper edge function
+				// Check if point is on the same side of all three edges
+				Vec3 edge0 = {vc.x - vp.x, vc.y - vp.y, vc.z - vp.z};
+				Vec3 edge1 = {vn.x - vc.x, vn.y - vc.y, vn.z - vc.z};
+				Vec3 edge2 = {vp.x - vn.x, vp.y - vn.y, vp.z - vn.z};
+				
+				Vec3 toPoint0 = {vt.x - vp.x, vt.y - vp.y, vt.z - vp.z};
+				Vec3 toPoint1 = {vt.x - vc.x, vt.y - vc.y, vt.z - vc.z};
+				Vec3 toPoint2 = {vt.x - vn.x, vt.y - vn.y, vt.z - vn.z};
+				
+				Vec3 cross0 = {edge0.y * toPoint0.z - edge0.z * toPoint0.y,
+							   edge0.z * toPoint0.x - edge0.x * toPoint0.z,
+							   edge0.x * toPoint0.y - edge0.y * toPoint0.x};
+				Vec3 cross1 = {edge1.y * toPoint1.z - edge1.z * toPoint1.y,
+							   edge1.z * toPoint1.x - edge1.x * toPoint1.z,
+							   edge1.x * toPoint1.y - edge1.y * toPoint1.x};
+				Vec3 cross2 = {edge2.y * toPoint2.z - edge2.z * toPoint2.y,
+							   edge2.z * toPoint2.x - edge2.x * toPoint2.z,
+							   edge2.x * toPoint2.y - edge2.y * toPoint2.x};
+				
+				float dot0 = cross0.x * normal.x + cross0.y * normal.y + cross0.z * normal.z;
+				float dot1 = cross1.x * normal.x + cross1.y * normal.y + cross1.z * normal.z;
+				float dot2 = cross2.x * normal.x + cross2.y * normal.y + cross2.z * normal.z;
+				
+				// Point is inside if all cross products have the same sign as the normal
+				if (dot0 >= 0 && dot1 >= 0 && dot2 >= 0) {
+					is_ear = false;
+					break;
+				}
+			}
+			
+			if (is_ear) {
+				tri_indices[tri_count * 3 + 0] = vertices[prev];
+				tri_indices[tri_count * 3 + 1] = vertices[curr];
+				tri_indices[tri_count * 3 + 2] = vertices[next];
+				tri_count++;
+				
+				// Remove current vertex from polygon
+				for (int k = curr; k < num_vertices - 1; ++k) {
+					vertices[k] = vertices[k + 1];
+				}
+				num_vertices--;
+				ear_found = true;
+				break;
+			}
+		}
+		
+		if (!ear_found) break;
+	}
+	
+	if (num_vertices >= 3) {
+		// Add remaining triangles
+		// There can be more than 1 triangle in some cases, e.g., degenerate triangles
+		// We output those triangles so the output size matches what the user would expect based on polygon.vertex_count
+		for (int i = 1; i < num_vertices - 1; ++i) {
+			tri_indices[tri_count * 3 + 0] = vertices[0];
+			tri_indices[tri_count * 3 + 1] = vertices[i];
+			tri_indices[tri_count * 3 + 2] = vertices[i + 1];
+			tri_count++;
+		}
+	}
+	
+	assert(tri_count == polygon.vertex_count - 2);
+	return tri_count * 3;
+}
 
 } // namespace ofbx

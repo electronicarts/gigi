@@ -159,10 +159,23 @@ table, th, td, tr
 <b>SamplerFilter : The type of filter a sampler uses</b><br/><br/>
 <table>
 <tr><th colspan=2>SamplerFilter</th></tr>
-<tr><td>MinMagMipPoint</td><td>Point</td></tr>
-<tr><td>MinMagLinear_MipPoint</td><td>Bilinear</td></tr>
-<tr><td>MinMagMipLinear</td><td>Trilinear</td></tr>
+<tr><td>MinMagMipPoint</td><td></td></tr>
+<tr><td>MinMagPoint_MipLinear</td><td></td></tr>
+<tr><td>MinPoint_MagLinear_MipPoint</td><td></td></tr>
+<tr><td>MinPoint_MagMipLinear</td><td></td></tr>
+<tr><td>MinLinear_MagMipPoint</td><td></td></tr>
+<tr><td>MinLinear_MagPoint_MipLinear</td><td></td></tr>
+<tr><td>MinMagLinear_MipPoint</td><td></td></tr>
+<tr><td>MinMagMipLinear</td><td></td></tr>
 <tr><td>Count</td><td></td></tr>
+</table>
+<br/>
+
+<b>SamplerFilterComponent : A component of sampler filtering</b><br/><br/>
+<table>
+<tr><th colspan=2>SamplerFilterComponent</th></tr>
+<tr><td>Point</td><td>Point</td></tr>
+<tr><td>Linear</td><td>Linear</td></tr>
 </table>
 <br/>
 
@@ -172,6 +185,7 @@ table, th, td, tr
 <tr><td>Clamp</td><td>Clamp</td></tr>
 <tr><td>Wrap</td><td>Wrap</td></tr>
 <tr><td>Border</td><td>Border</td></tr>
+<tr><td>Mirror</td><td>Mirror</td></tr>
 <tr><td>Count</td><td></td></tr>
 </table>
 <br/>
@@ -224,6 +238,17 @@ table, th, td, tr
 <tr><td>UV</td><td>float2</td></tr>
 <tr><td>MaterialID</td><td>int</td></tr>
 <tr><td>ShapeID</td><td>int</td></tr>
+<tr><td>Light_PosDir</td><td>float4. w = 1 for positional lights, 0 for directional lights.</td></tr>
+<tr><td>Light_ColorIntensity</td><td>float4</td></tr>
+<tr><td>Light_Range</td><td>float</td></tr>
+<tr><td>Light_SpotInnerOuterRad</td><td>float2</td></tr>
+<tr><td>Material_BaseColor</td><td>float4</td></tr>
+<tr><td>Material_Emissive</td><td>float3</td></tr>
+<tr><td>Material_Metallic</td><td>float</td></tr>
+<tr><td>Material_Roughness</td><td>float</td></tr>
+<tr><td>Material_AlphaMode</td><td>int</td></tr>
+<tr><td>Material_AlphaCutoff</td><td>float</td></tr>
+<tr><td>Material_DoubleSided</td><td>int</td></tr>
 <tr><td>Count</td><td></td></tr>
 </table>
 <br/>
@@ -434,6 +459,15 @@ table, th, td, tr
 <tr><td>PreferFastTrace</td><td></td></tr>
 <tr><td>PreferFastBuild</td><td></td></tr>
 <tr><td>MinimizeMemory</td><td></td></tr>
+</table>
+<br/>
+
+<b>GGUserFile_SceneDataStream : Which type of data to load from a scene</b><br/><br/>
+<table>
+<tr><th colspan=2>GGUserFile_SceneDataStream</th></tr>
+<tr><td>GeometryFlat</td><td>De-indexed and de-instanced geometry as a flattened vertex buffer.</td></tr>
+<tr><td>Lights</td><td>Point and directional lights</td></tr>
+<tr><td>Materials</td><td>material constant values like albedo and roughness.</td></tr>
 </table>
 <br/>
 
@@ -1038,6 +1072,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td><i>std::string scope</i></td><td>""</td><td>The scope that the node lives in. A possibly nested list of subgraph node names, seperated by a dot.</td></tr>
 <tr><td><i>std::string Used_RTHitGroupIndex[]</i></td><td></td><td>All RTHitGroupIndex names used in the shader</td></tr>
 <tr><td><i>std::string Used_RTMissIndex[]</i></td><td></td><td>All RTMissIndex names used in the shader</td></tr>
+<tr><td><i>std::string embeddedFiles[]</i></td><td></td><td>The names of files embedded in this shader, to put file watching on. Used by the interpreter, set at runtime</td></tr>
 <tr><td>int CSNumThreads[3]</td><td>{ 8 , 8 , 1 }</td><td>For compute shaders only, the number of threads each dispatch has. 64,1,1 suggested for 1d. 8,8,1 for 2d. 4,4,4 for 3d.</td></tr>
 </table>
 <br/>
@@ -1711,6 +1746,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>GGUserFile_ImportedBuffer</th></tr>
 <tr><td>std::string fileName</td><td>""</td><td>The file loaded</td></tr>
 <tr><td>bool CSVHeaderRow</td><td>true</td><td>If reading a CSV, and this is true, it will skip everything up to the first newline, to ignore a header row.</td></tr>
+<tr><td>GGUserFile_SceneDataStream dataStream</td><td>GGUserFile_SceneDataStream::GeometryFlat</td><td>What type of data to load</td></tr>
+<tr><td>std::string materialShaderFile</td><td>""</td><td>The name of the shader file to generate for reading the material from a shader.</td></tr>
 <tr><td>int structIndex</td><td>-1</td><td>the index of the struct if a structured buffer</td></tr>
 <tr><td>DataFieldType type</td><td>DataFieldType::Count</td><td>The data field type, if not a structured buffer</td></tr>
 <tr><td>int count</td><td>1</td><td>how many items are stored</td></tr>
@@ -1872,7 +1909,8 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><td>std::string keyCameraDown</td><td>"Q"</td><td>Camera down key</td></tr>
 <tr><td>std::string keyCameraFast</td><td>"Shift"</td><td>Camera fast key</td></tr>
 <tr><td>std::string keyCameraSlow</td><td>"Control"</td><td>Camera slow key</td></tr>
-<tr><td>bool betterShaderError</td><td>false</td><td>Double click shader errors with an attached debugger.</td></tr>
+<tr><td>bool betterShaderError</td><td>true</td><td>Double click shader errors with an attached debugger.</td></tr>
+<tr><td>std::string windowPersist</td><td>""</td><td></td></tr>
 </table>
 <br/>
 

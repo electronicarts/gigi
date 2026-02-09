@@ -10,6 +10,11 @@
 #include "DX12Utils/Utils.h"
 #include "DX12Utils/SRGB.h"
 #include <d3dx12/d3dx12.h>
+
+//shader
+#include "MipComputeHLSL.h"
+#include <DX12Utils/ShaderCompilerCommon.h>
+#include <DX12Utils/CompileShaders.h>
 // clang-format on
 
 static const char* c_cubeMapNames[] =
@@ -212,6 +217,24 @@ void RuntimeTypes::RenderGraphNode_Resource_Texture::Release(GigiInterpreterPrev
 		m_resource = nullptr;
 	}
 
+    if (m_rootSignature)
+    {
+        interpreter.m_delayedRelease.Add(m_rootSignature);
+        m_rootSignature = nullptr;
+    }
+
+    if (m_pso2d)
+    {
+        interpreter.m_delayedRelease.Add(m_pso2d);
+        m_pso2d = nullptr;
+    }
+
+    if (m_pso3d)
+    {
+        interpreter.m_delayedRelease.Add(m_pso3d);
+        m_pso3d = nullptr;
+    }
+
 	for (auto it : m_dsvIndices)
 		interpreter.m_DSVHeapAllocationTracker.Free(it.second);
 	m_dsvIndices.clear();
@@ -226,7 +249,7 @@ void RuntimeTypes::RenderGraphNode_Resource_Texture::Release(GigiInterpreterPrev
 bool ConvertPixelData(TextureCache::Texture& texture, DXGI_FORMAT newFormat)
 {
 	// If same format, nothing to do
-	if (texture.format == newFormat)
+	if (texture.format == newFormat || newFormat == DXGI_FORMAT_FORCE_UINT)
 		return true;
 
     DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(texture.format);
@@ -416,72 +439,257 @@ static void TrilinearSample(const unsigned char* src, const DXGI_FORMAT_Info& fo
 	ConvertFromDoubles(result, formatInfo.channelType, dest);
 }
 
-static void MakeMip(const std::vector<unsigned char>& src, std::vector<unsigned char>& dest, const DXGI_FORMAT_Info& formatInfo, TextureDimensionType dimension, const int srcDims[3])
+static void MakeMip(GigiInterpreterPreviewWindowDX12& interpreter, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, TextureDimensionType dimension)
 {
-	// calculate the size of the destination dims
-	bool is3D = (dimension == TextureDimensionType::Texture3D);
-	int destDims[3] = { max(srcDims[0] / 2, 1), max(srcDims[1] / 2, 1), is3D ? max(srcDims[2] / 2, 1) : srcDims[2] };
+    const int srcDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
 
-	// Allocate space for the mip
-	dest.resize(destDims[0] * destDims[1] * destDims[2] * formatInfo.bytesPerPixel, 0);
+    //make root sig
+    if (!runtimeData.m_rootSignature)
+    {
+        // Descriptor table
+        //[0] = input(u0), [1] = output(u1), [2] = CB(b0)
+        D3D12_DESCRIPTOR_RANGE ranges[3] = {};
 
-	int srcUnalignedPitch = srcDims[0] * formatInfo.bytesPerPixel;
-	int destUnalignedPitch = destDims[0] * formatInfo.bytesPerPixel;
+        ranges[0].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+        ranges[0].NumDescriptors = 1;
+        ranges[0].BaseShaderRegister = 0;
+        ranges[0].RegisterSpace = 0;
+        ranges[0].OffsetInDescriptorsFromTableStart = 0;
 
-	if (is3D)
-	{
-		// For each z slize
-		for (size_t destZ = 0; destZ < destDims[2]; ++destZ)
-		{
-			float W = (float(destZ) + 0.5f) / float(destDims[2]);
+        ranges[1].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_UAV;
+        ranges[1].NumDescriptors = 1;
+        ranges[1].BaseShaderRegister = 1;
+        ranges[1].RegisterSpace = 0;
+        ranges[1].OffsetInDescriptorsFromTableStart = 1;
 
-			size_t destArrayOffset = destZ * destDims[1] * destUnalignedPitch;
+        ranges[2].RangeType = D3D12_DESCRIPTOR_RANGE_TYPE_CBV;
+        ranges[2].NumDescriptors = 1;
+        ranges[2].BaseShaderRegister = 0;
+        ranges[2].RegisterSpace = 0;
+        ranges[2].OffsetInDescriptorsFromTableStart = 2;
 
-			// for each pixel
-			for (size_t destY = 0; destY < destDims[1]; ++destY)
-			{
-				float V = (float(destY) + 0.5f) / float(destDims[1]);
+        // Root parameter
+        D3D12_ROOT_PARAMETER rootParam;
+        rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParam.DescriptorTable.NumDescriptorRanges = 3;
+        rootParam.DescriptorTable.pDescriptorRanges = ranges;
 
-				size_t destOffset = destArrayOffset + destY * destUnalignedPitch;
+        D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
+        rootDesc.NumParameters = 1;
+        rootDesc.pParameters = &rootParam;
+        rootDesc.NumStaticSamplers = 0;
+        rootDesc.pStaticSamplers = nullptr;
+        rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
 
-				for (size_t destX = 0; destX < destDims[0]; ++destX)
-				{
-					float U = (float(destX) + 0.5f) / float(destDims[0]);
+        // Create it
+        ID3DBlob* sig = nullptr;
+        ID3DBlob* error = nullptr;
+        HRESULT hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &sig, &error);
+        if (FAILED(hr))
+        {
+            const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
+            if (errorMsg)
+                interpreter.GetLogFn()(LogLevel::Error, "Could not serialize root signature: %s", errorMsg);
+            if (sig) sig->Release();
+            if (error) error->Release();
+            return;
+        }
 
-					unsigned char* destPx = &dest[destOffset + destX * formatInfo.bytesPerPixel];
+        hr = device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(&runtimeData.m_rootSignature));
+        if (FAILED(hr))
+        {
+            const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
+            if (errorMsg)
+                interpreter.GetLogFn()(LogLevel::Error, "Could not create root signature: %s", errorMsg);
+            if (sig) sig->Release();
+            if (error) error->Release();
+            return;
+        }
 
-					// trilinear sample src[U, V, W] and write to dest
-					TrilinearSample(src.data(), formatInfo, srcDims, U, V, W, destPx);
-				}
-			}
-		}
-	}
-	else
-	{
-		size_t iZ = 0;
-		{
-			size_t srcArrayOffset = iZ * srcDims[1] * srcUnalignedPitch;
-			size_t destArrayOffset = iZ * destDims[1] * destUnalignedPitch;
+        if (sig)
+            sig->Release();
 
-			// for each pixel
-			for (size_t destY = 0; destY < destDims[1]; ++destY)
-			{
-				float V = (float(destY) + 0.5f) / float(destDims[1]);
+        if (error)
+            error->Release();
 
-				size_t destOffset = destArrayOffset + destY * destUnalignedPitch;
+        runtimeData.m_rootSignature->SetName(L"MipCompute Root Signature");
+    }
 
-				for (size_t destX = 0; destX < destDims[0]; ++destX)
-				{
-					float U = (float(destX) + 0.5f) / float(destDims[0]);
+    //make pso2d
+    if (!runtimeData.m_pso2d)
+    {
+        std::string fullFileName = (std::filesystem::path(interpreter.GetTempDirectory()) / "__GIGI__" / "MipCompute.hlsl").string();
 
-					unsigned char* destPx = &dest[destOffset + destX * formatInfo.bytesPerPixel];
+        // write the shader to a temporary file, since we don't have an interface to compile a string yet
+        std::filesystem::create_directories(std::filesystem::path(fullFileName).remove_filename());
+        FILE* file = nullptr;
+        fopen_s(&file, fullFileName.c_str(), "wb");
+        if (!file)
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Could not open file for writing: \"%s\"", fullFileName.c_str());
+            return;
+        }
+        fwrite(s_MipComputeHLSL, 1, strlen(s_MipComputeHLSL), file);
+        fclose(file);
 
-					// bilinear sample src[U, V] and write to dest
-					BilinearSample(&src[srcArrayOffset], formatInfo, srcDims, U, V, destPx);
-				}
-			}
-		}
-	}
+        // Shader compilation depends on which shader compiler they opted to use for this technique
+        ShaderCompilationInfo shaderCompilationInfo;
+        shaderCompilationInfo.fileName = fullFileName;
+        shaderCompilationInfo.entryPoint = "main2D";
+        shaderCompilationInfo.shaderModel = "cs_6_1";
+        shaderCompilationInfo.debugName = "__FUNCTION__";
+
+        shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+
+        // Turn on for debugging
+        if (false)
+        {
+            shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+        }
+
+        MakeComputePSO_dxc(device, shaderCompilationInfo, runtimeData.m_rootSignature, &runtimeData.m_pso2d, interpreter.GetLogFn());
+
+        if (!runtimeData.m_pso2d)
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Could not create PSO2D in " __FUNCTION__);
+            return;
+        }
+
+        runtimeData.m_pso2d->SetName(L"MipCompute PSO2D");
+    }
+
+    //make pso3d
+    if (!runtimeData.m_pso3d)
+    {
+        std::string fullFileName = (std::filesystem::path(interpreter.GetTempDirectory()) / "__GIGI__" / "MipCompute.hlsl").string();
+
+        // write the shader to a temporary file, since we don't have an interface to compile a string yet
+        std::filesystem::create_directories(std::filesystem::path(fullFileName).remove_filename());
+        FILE* file = nullptr;
+        fopen_s(&file, fullFileName.c_str(), "wb");
+        if (!file)
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Could not open file for writing: \"%s\"", fullFileName.c_str());
+            return;
+        }
+        fwrite(s_MipComputeHLSL, 1, strlen(s_MipComputeHLSL), file);
+        fclose(file);
+
+        // Shader compilation depends on which shader compiler they opted to use for this technique
+        ShaderCompilationInfo shaderCompilationInfo;
+        shaderCompilationInfo.fileName = fullFileName;
+        shaderCompilationInfo.entryPoint = "main3D";
+        shaderCompilationInfo.shaderModel = "cs_6_1";
+        shaderCompilationInfo.debugName = "__FUNCTION__";
+
+        shaderCompilationInfo.flags |= ShaderCompilationFlags::WarningsAsErrors;
+
+        // Turn on for debugging
+        if (false)
+        {
+            shaderCompilationInfo.flags |= ShaderCompilationFlags::Debug;
+            shaderCompilationInfo.flags |= ShaderCompilationFlags::CreatePDBsAndBinaries;
+        }
+
+        MakeComputePSO_dxc(device, shaderCompilationInfo, runtimeData.m_rootSignature, &runtimeData.m_pso3d, interpreter.GetLogFn());
+
+        if (!runtimeData.m_pso3d)
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Could not create PSO3D in " __FUNCTION__);
+            return;
+        }
+
+        runtimeData.m_pso3d->SetName(L"MipCompute PSO3D");
+    }
+
+    // Convert from TextureDimensionType to ResourceType
+    DescriptorTableCache::ResourceType resourceType = DescriptorTableCache::ResourceType::Texture2D;
+    switch (dimension)
+    {
+        case TextureDimensionType::Texture2D: resourceType = DescriptorTableCache::ResourceType::Texture2D; break;
+        case TextureDimensionType::Texture2DArray: resourceType = DescriptorTableCache::ResourceType::Texture2DArray; break;
+        case TextureDimensionType::Texture3D: resourceType = DescriptorTableCache::ResourceType::Texture3D; break;
+        case TextureDimensionType::TextureCube: resourceType = DescriptorTableCache::ResourceType::TextureCube; break;
+        case TextureDimensionType::Texture2DMS: resourceType = DescriptorTableCache::ResourceType::Texture2DMS; break;
+        default:
+        {
+            interpreter.GetLogFn()(LogLevel::Error, "Unhandled texture dimension type \"%s\" in " __FUNCTION__, EnumToString(dimension));
+            return;
+        }
+    }
+
+    bool is3D = (dimension == TextureDimensionType::Texture3D);
+
+    TransitionTracker& transitionTracker = interpreter.GetTransitionsNonConst();
+    MipCompute_CBStruct cb;
+    size_t numArrayIndices = is3D ? 1 : runtimeData.m_size[2];
+    for (size_t arrayIndex = 0; arrayIndex < numArrayIndices; arrayIndex++)
+    {
+        for (uint8_t mipLevel = 1; mipLevel < runtimeData.m_numMips; mipLevel++)
+        {
+            transitionTracker.Transition(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "MakeMip m_resourceInitialState");
+            transitionTracker.Flush(commandList);
+
+            cb.isSRGBFormat = Get_DXGI_FORMAT_Info(runtimeData.m_format).sRGB;
+
+            UploadBufferTracker::Buffer* cbBuffer = interpreter.getUploadBufferTracker().GetBufferT<MipCompute_CBStruct>(device, true, cb);
+
+            DescriptorTableCache::ResourceDescriptor descriptors[3] = {};
+
+            descriptors[0].m_resource = runtimeData.m_resourceInitialState;
+            descriptors[0].m_format = runtimeData.m_format;
+            descriptors[0].m_access = DescriptorTableCache::AccessType::UAV;
+            descriptors[0].m_resourceType = resourceType;
+            descriptors[0].m_UAVMipIndex = mipLevel - 1;
+            descriptors[0].m_UAVFirstArraySlice = (UINT)arrayIndex;
+            descriptors[0].m_count = runtimeData.m_size[2]; //3d
+
+            descriptors[1].m_resource = runtimeData.m_resourceInitialState;
+            descriptors[1].m_format = runtimeData.m_format;
+            descriptors[1].m_access = DescriptorTableCache::AccessType::UAV;
+            descriptors[1].m_resourceType = resourceType;
+            descriptors[1].m_UAVMipIndex = mipLevel;
+            descriptors[1].m_UAVFirstArraySlice = (UINT)arrayIndex;
+            descriptors[1].m_count = runtimeData.m_size[2]; //3d
+
+            descriptors[2].m_resource = cbBuffer->buffer;
+            descriptors[2].m_format = DXGI_FORMAT_UNKNOWN;
+            descriptors[2].m_access = DescriptorTableCache::AccessType::CBV;
+            descriptors[2].m_resourceType = DescriptorTableCache::ResourceType::Buffer;
+            descriptors[2].m_stride = (UINT)cbBuffer->size;
+            descriptors[2].m_count = 1;
+
+            //descriptor table
+            D3D12_GPU_DESCRIPTOR_HANDLE descriptorTable = {};
+            std::string error;
+            if (!interpreter.getDescriptorTableCache().GetDescriptorTable(device, interpreter.getSRVHeapAllocationTracker(), descriptors, _countof(descriptors), descriptorTable, error, HEAP_DEBUG_TEXT()))
+            {
+                interpreter.GetLogFn()(LogLevel::Error, "Could not allocate descriptor table in MakeMip : %s", error.c_str());
+                return;
+            }
+
+            //setup pipeline and table
+            commandList->SetComputeRootSignature(runtimeData.m_rootSignature);
+            commandList->SetPipelineState(is3D ? runtimeData.m_pso3d : runtimeData.m_pso2d);
+            commandList->SetComputeRootDescriptorTable(0, descriptorTable);
+
+            //dispatch based on dst size
+            uint32_t dstW = max(1, runtimeData.m_size[0] >> mipLevel);
+            uint32_t dstH = max(1, runtimeData.m_size[1] >> mipLevel);
+            uint32_t dstD = max(1, runtimeData.m_size[2] >> mipLevel);
+
+            auto ceilDiv = [](uint32_t a, uint32_t b) { return (a + b - 1u) / b; };
+            uint32_t dispatchX = ceilDiv(dstW, 8);
+            uint32_t dispatchY = ceilDiv(dstH, 8);
+            uint32_t dispatchZ = is3D ? dstD : 1; // because numthreads.z = 1
+
+            commandList->Dispatch(dispatchX, dispatchY, dispatchZ);
+        }
+    }
+
+    transitionTracker.Transition(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, "MakeMip m_resourceInitialState");
 }
 
 static TextureCache::Texture LoadTextureFromBinaryFile(FileCache& fileCache, const char* fileName_, TextureDimensionType dimension, int width, int height, int depth, TextureFormat textureFormat)
@@ -753,7 +961,7 @@ bool GigiInterpreterPreviewWindowDX12::LoadTexture(std::vector<TextureCache::Tex
         {
             DXGI_FORMAT_Info textureFormatInfo = Get_DXGI_FORMAT_Info(texture.format);
             DXGI_FORMAT_Info newFormatInfo = Get_DXGI_FORMAT_Info(desiredFormat);
-            m_logFn(LogLevel::Error, "Could not load convert texture from format \"%s\" to \"%s\"", textureFormatInfo.name, newFormatInfo.name);
+            m_logFn(LogLevel::Error, "Could not convert texture from format \"%s\" to \"%s\"", textureFormatInfo.name, newFormatInfo.name);
             
             return false;
         }
@@ -790,10 +998,12 @@ bool GigiInterpreterPreviewWindowDX12::LoadTexture(std::vector<TextureCache::Tex
 
 bool GigiInterpreterPreviewWindowDX12::CreateAndUploadTextures(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, std::vector<TextureCache::Texture>& loadedTextures)
 {
+    bool imageLoadedFromDisk = (node.visibility == ResourceVisibility::Imported || !node.loadFileName.empty());
+
 	// Validate texture usage
 	bool hasMips = loadedTextures[0].images.size() > 1;
 	bool wantsMips = runtimeData.m_numMips > 1;
-	bool wantsToMakeMips = wantsMips && !hasMips;
+	bool wantsToMakeMips = wantsMips && !hasMips && imageLoadedFromDisk;
 	{
 		DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
 
@@ -837,6 +1047,9 @@ bool GigiInterpreterPreviewWindowDX12::CreateAndUploadTextures(const RenderGraph
 
 	// Make a resource for the "live" texture which may be modified during running, and also for the initial state.
 	D3D12_RESOURCE_FLAGS resourceFlags = ShaderResourceAccessToD3D12_RESOURCE_FLAGs(node.accessedAs);
+
+    if (wantsToMakeMips) resourceFlags |= D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
 	unsigned int size[3] = { (unsigned int)runtimeData.m_size[0], (unsigned int)runtimeData.m_size[1], (unsigned int)runtimeData.m_size[2] };
 	std::string nodeNameInitialState = node.name + " Initial State";
     
@@ -849,117 +1062,97 @@ bool GigiInterpreterPreviewWindowDX12::CreateAndUploadTextures(const RenderGraph
 	m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resourceInitialState, D3D12_RESOURCE_STATE_COPY_DEST));
 	m_transitions.Track(TRANSITION_DEBUG_INFO(runtimeData.m_resource, D3D12_RESOURCE_STATE_COPY_DEST));
 
-	// Make the mips if we should
-	if (wantsToMakeMips)
-	{
-		DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(runtimeData.m_format);
+    if (!runtimeData.m_resource)
+        return false;
 
-		int mipDims[3] = { runtimeData.m_size[0], runtimeData.m_size[1], runtimeData.m_size[2] };
+    // copy everything to GPU
+    {
+        D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resource->GetDesc();
 
-		for (TextureCache::Texture& texture : loadedTextures)
-			texture.images.resize(runtimeData.m_numMips);
-
-		for (int mipIndex = 0; mipIndex < runtimeData.m_numMips - 1; ++mipIndex)
-		{
-			for (TextureCache::Texture& texture : loadedTextures)
-				MakeMip(texture.images[mipIndex].pixels, texture.images[mipIndex + 1].pixels, formatInfo, node.dimension, mipDims);
-
-			mipDims[0] = max(mipDims[0] / 2, 1);
-			mipDims[1] = max(mipDims[1] / 2, 1);
-			if (node.dimension == TextureDimensionType::Texture3D)
-				mipDims[2] = max(mipDims[2] / 2, 1);
-		}
-
-		for (TextureCache::Texture& texture : loadedTextures)
-			texture.mips = runtimeData.m_numMips;
-	}
-
-	if (!runtimeData.m_resource)
-		return false;
-
-	// copy everything to GPU
-	{
-		D3D12_RESOURCE_DESC resourceDesc = runtimeData.m_resource->GetDesc();
-
-		// MSAA preview is not implemented yet.
-		// In DX12 CopyTextureRegion does not work on MSAA textures
+        // MSAA preview is not implemented yet.
+        // In DX12 CopyTextureRegion does not work on MSAA textures
         const bool MSAA = (node.dimension == TextureDimensionType::Texture2DMS);
 
-		if (!MSAA)
-		{
-			int arrayCount = (int)loadedTextures.size();
-			int mipCount = (int)loadedTextures[0].mips;
+        if (!MSAA)
+        {
+            int arrayCount = (int)loadedTextures.size();
+            int loadedMipCount = (int)loadedTextures[0].mips;
+            int resourceMipCount = (int)runtimeData.m_numMips;
 
-			for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
-			{
-				for (int mipIndex = 0; mipIndex < mipCount; ++mipIndex)
-				{
-					// Calculate the subresource index
-					unsigned int subResourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, mipCount, arrayCount);
+            for (int arrayIndex = 0; arrayIndex < arrayCount; ++arrayIndex)
+            {
+                for (int mipIndex = 0; mipIndex < loadedMipCount; ++mipIndex)
+                {
+                    // Calculate the subresource index
+                    unsigned int subResourceIndex = D3D12CalcSubresource(mipIndex, arrayIndex, 0, resourceMipCount, arrayCount);
 
-					// gather stats about the current sub resource
-					std::vector<unsigned char> layoutsMem((sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)));
-					D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutsMem.data();
-					unsigned int numRows = 0;
-					size_t unalignedPitch = 0;
-					size_t totalSize = 0;
-					m_device->GetCopyableFootprints(&resourceDesc, subResourceIndex, 1, 0, layout, &numRows, &unalignedPitch, &totalSize);
-					size_t alignedPitch = layout->Footprint.RowPitch;
-					size_t bufferSize = numRows * alignedPitch * layout->Footprint.Depth;
+                    // gather stats about the current sub resource
+                    std::vector<unsigned char> layoutsMem((sizeof(D3D12_PLACED_SUBRESOURCE_FOOTPRINT) + sizeof(UINT) + sizeof(UINT64)));
+                    D3D12_PLACED_SUBRESOURCE_FOOTPRINT* layout = (D3D12_PLACED_SUBRESOURCE_FOOTPRINT*)layoutsMem.data();
+                    unsigned int numRows = 0;
+                    size_t unalignedPitch = 0;
+                    size_t totalSize = 0;
+                    m_device->GetCopyableFootprints(&resourceDesc, subResourceIndex, 1, 0, layout, &numRows, &unalignedPitch, &totalSize);
+                    size_t alignedPitch = layout->Footprint.RowPitch;
+                    size_t bufferSize = numRows * alignedPitch * layout->Footprint.Depth;
 
 
-					// Allocate an upload buffer
-					UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, bufferSize, false);
+                    // Allocate an upload buffer
+                    UploadBufferTracker::Buffer* uploadBuffer = m_uploadBufferTracker.GetBuffer(m_device, bufferSize, false);
 
-					// map the memory
-					D3D12_RANGE readRange;
-					readRange.Begin = 1;
-					readRange.End = 0;
-					unsigned char* destPixels = nullptr;
-					HRESULT hr = uploadBuffer->buffer->Map(0, &readRange, reinterpret_cast<void**>(&destPixels));
-					if (FAILED(hr))
-						return false;
+                    // map the memory
+                    D3D12_RANGE readRange;
+                    readRange.Begin = 1;
+                    readRange.End = 0;
+                    unsigned char* destPixels = nullptr;
+                    HRESULT hr = uploadBuffer->buffer->Map(0, &readRange, reinterpret_cast<void**>(&destPixels));
+                    if (FAILED(hr))
+                        return false;
 
-					// Copy the texture data
-					for (unsigned int iz = 0; iz < layout->Footprint.Depth; ++iz)
-					{
-						for (unsigned int iy = 0; iy < numRows; ++iy)
-						{
-							size_t srcBegin = (iz * numRows + iy) * unalignedPitch;
-							size_t srcEnd = srcBegin + unalignedPitch;
+                    // Copy the texture data
+                    for (unsigned int iz = 0; iz < layout->Footprint.Depth; ++iz)
+                    {
+                        for (unsigned int iy = 0; iy < numRows; ++iy)
+                        {
+                            size_t srcBegin = (iz * numRows + iy) * unalignedPitch;
+                            size_t srcEnd = srcBegin + unalignedPitch;
 
-							if (loadedTextures[arrayIndex].images[mipIndex].pixels.size() < srcEnd)
-								return false;
+                            if (loadedTextures[arrayIndex].images[mipIndex].pixels.size() < srcEnd)
+                                return false;
 
-							const unsigned char* src = &loadedTextures[arrayIndex].images[mipIndex].pixels[srcBegin];
-							unsigned char* dest = &destPixels[(iz * numRows + iy) * alignedPitch];
-							memcpy(dest, src, unalignedPitch);
-						}
-					}
+                            const unsigned char* src = &loadedTextures[arrayIndex].images[mipIndex].pixels[srcBegin];
+                            unsigned char* dest = &destPixels[(iz * numRows + iy) * alignedPitch];
+                            memcpy(dest, src, unalignedPitch);
+                        }
+                    }
 
-					// unmap the memory
-					uploadBuffer->buffer->Unmap(0, nullptr);
+                    // unmap the memory
+                    uploadBuffer->buffer->Unmap(0, nullptr);
 
-					// Copy the upload buffer into m_resourceInitialState
-					{
-						D3D12_TEXTURE_COPY_LOCATION src = {};
-						src.pResource = uploadBuffer->buffer;
-						src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
-						src.PlacedFootprint = *layout;
+                    // Copy the upload buffer into m_resourceInitialState
+                    {
+                        D3D12_TEXTURE_COPY_LOCATION src = {};
+                        src.pResource = uploadBuffer->buffer;
+                        src.Type = D3D12_TEXTURE_COPY_TYPE_PLACED_FOOTPRINT;
+                        src.PlacedFootprint = *layout;
 
-						D3D12_TEXTURE_COPY_LOCATION dest = {};
-						dest.pResource = runtimeData.m_resourceInitialState;
-						dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
-						dest.SubresourceIndex = subResourceIndex;
+                        D3D12_TEXTURE_COPY_LOCATION dest = {};
+                        dest.pResource = runtimeData.m_resourceInitialState;
+                        dest.Type = D3D12_TEXTURE_COPY_TYPE_SUBRESOURCE_INDEX;
+                        dest.SubresourceIndex = subResourceIndex;
 
-						m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
-					}
-				}
-			}
-		}
-	}
+                        m_commandList->CopyTextureRegion(&dest, 0, 0, 0, &src, nullptr);
+                    }
+                }
+            }
+        }
+    }
 
-	return true;
+    // Make the mips if we should
+    if (wantsToMakeMips)
+        MakeMip(*s_interpreter, m_device, m_commandList, runtimeData, node.dimension);
+
+    return true;
 }
 
 bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNode_Resource_Texture& node, RuntimeTypes::RenderGraphNode_Resource_Texture& runtimeData, NodeAction nodeAction)
@@ -1129,6 +1322,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 	if (nodeAction == NodeAction::Execute)
 	{
 		// failing to get the format and size could be a transient problem
+        bool wantsAutoFormat = IsDesiredFormatAny(*this, node);
 		DXGI_FORMAT desiredFormat = GetDesiredFormat(*this, node);
 		IVec3 desiredSize = GetDesiredSize(*this, node);
 
@@ -1136,7 +1330,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 		bool hasFileName = !node.loadFileName.empty() && FileNameSafe(node.loadFileName.c_str());
 		std::string fullLoadFileName = GetTempDirectory() + "assets\\" + node.loadFileName;
 
-		if (!(desiredFormat != DXGI_FORMAT_FORCE_UINT && (hasSize || hasFileName) && !runtimeData.m_failed))
+        bool formatOK = (desiredFormat != DXGI_FORMAT_FORCE_UINT) || wantsAutoFormat;
+
+		if (!(formatOK && (hasSize || hasFileName) && !runtimeData.m_failed))
 		{
 			std::ostringstream ss;
 			ss << "Texture can't be created:";
@@ -1189,6 +1385,9 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
                     runtimeData.m_inErrorState = true;
                     return true;
                 }
+
+                if (desiredFormat == DXGI_FORMAT_FORCE_UINT)
+                    desiredFormat = loadedTextures[0].format;
 
 				// Set the desired size, now that we know it
 				desiredSize[0] = loadedTextures[0].width;
@@ -1273,6 +1472,13 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionNotImported(const RenderGraph
 			// Note that the resource wants to be reset to the initial state.
 			runtimeData.m_resourceWantsReset = true;
 		}
+
+        if (!node.loadFileName.empty())
+        {
+            std::ostringstream ss;
+            ss << "Loaded from \"" << node.loadFileName << "\"";
+            runtimeData.m_renderGraphText = ss.str();
+        }
 	}
 
 	return true;

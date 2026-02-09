@@ -270,10 +270,10 @@ async Init(device, encoder, useBlockingAPIs)
         }
     }
 
-    // Load texture _loadedTexture_0 from "ImageB%i.png"
+    // Load texture _loadedTexture_0 from "imageb%i.png"
     if (this.texture__loadedTexture_0 === null)
     {
-        const loadedTex = await Shared.CreateTextureWithPNG(device, "./assets/ImageB%i.png", this.texture__loadedTexture_0_usageFlags, "2d");
+        const loadedTex = await Shared.CreateTextureWithPNG(device, "./assets/imageb%i.png", this.texture__loadedTexture_0_usageFlags, "2d");
         this.texture__loadedTexture_0 = loadedTex.texture;
         this.texture__loadedTexture_0_size = loadedTex.size;
         this.texture__loadedTexture_0_format = "rgba8unorm";
