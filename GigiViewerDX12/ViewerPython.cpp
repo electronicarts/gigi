@@ -985,6 +985,40 @@ static PyObject* Python_GetAppCommandLine(PyObject* self, PyObject* args)
     return Py_BuildValue("s", g_interface->GetAppCommandLine().c_str());
 }
 
+static PyObject* Python_SetWindowSize(PyObject* self, PyObject* args)
+{
+    int width = 0;
+    int height = 0;
+    if (!PyArg_ParseTuple(args, "ii:Python_SetWindowSize", &width, &height))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetWindowSize(width, height);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_MinimizeWindow(PyObject* self, PyObject* args)
+{
+    g_interface->MinimizeWindow();
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_MaximizeWindow(PyObject* self, PyObject* args)
+{
+    g_interface->MaximizeWindow();
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_RestoreWindow(PyObject* self, PyObject* args)
+{
+    g_interface->RestoreWindow();
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 #define MAKE_GETTER_SETTER_BOOL(NAME) \
     static PyObject* Python_##NAME(PyObject* self, PyObject* args) \
     { \
@@ -1203,6 +1237,10 @@ void PythonInit(PythonInterface* interface)
         {"GetShaderAssertDisplayName", Python_GetShaderAssertDisplayName, METH_VARARGS, "Returns the display name of the specified shader assert."},
         {"GetShaderAssertMsg", Python_GetShaderAssertMsg, METH_VARARGS, "Returns the message of the specified assert."},
         {"GetAppCommandLine", Python_GetAppCommandLine, METH_VARARGS, "Returns the command line arguments without the executable name."},
+        {"SetWindowSize", Python_SetWindowSize, METH_VARARGS, "Sets the window size of the viewer."},
+        {"MinimizeWindow", Python_MinimizeWindow, METH_VARARGS, "Minimizes the viewer window."},
+        {"MaximizeWindow", Python_MaximizeWindow, METH_VARARGS, "Maximizes the viewer window."},
+        {"RestoreWindow", Python_RestoreWindow, METH_VARARGS, "Restores the viewer window."},
         {"AMDFrameGen_Enabled", Python_AMDFrameGen_Enabled, METH_VARARGS, ""},
         {"AMDFrameGen_SleepMS", Python_AMDFrameGen_SleepMS, METH_VARARGS, ""},
         {"AMDFrameGen_Depth", Python_AMDFrameGen_Depth, METH_VARARGS, ""},

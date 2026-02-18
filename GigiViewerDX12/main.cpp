@@ -8499,6 +8499,38 @@ public:
         return m_scriptLocation;
     }
 
+    void SetWindowSize(int width, int height) override final
+    {
+        if (g_hwnd)
+        {
+            SetWindowPos(g_hwnd, NULL, 0, 0, width, height, SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE);
+        }
+    }
+
+    void MinimizeWindow() override final
+    {
+        if (g_hwnd)
+        {
+            ShowWindow(g_hwnd, SW_MINIMIZE);
+        }
+    }
+
+    void MaximizeWindow() override final
+    {
+        if (g_hwnd)
+        {
+            ShowWindow(g_hwnd, SW_MAXIMIZE);
+        }
+    }
+
+    void RestoreWindow() override final
+    {
+        if (g_hwnd)
+        {
+            ShowWindow(g_hwnd, SW_RESTORE);
+        }
+    }
+
     #define MAKE_GETTER_SETTER_BOOL(FUNC, FIELD) \
         bool FUNC(bool value, bool wantToSet) override final \
         { \
