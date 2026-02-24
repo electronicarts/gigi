@@ -9,6 +9,7 @@
 
 UploadBufferTracker::Buffer* UploadBufferTracker::GetBuffer(ID3D12Device* device, size_t size, bool forConstantBuffer)
 {
+    std::lock_guard<std::mutex> lock(m_mutex);
     size_t unalignedSize = size;
 
     // align size to the proper size, for constant buffers
@@ -27,7 +28,8 @@ UploadBufferTracker::Buffer* UploadBufferTracker::GetBuffer(ID3D12Device* device
     // otherwise create a new one
     else
     {
-        uploadBuffer = new UploadBufferTracker::Buffer;
+        uploadBuffer = new UploadBufferTracker::Buffer();
+        uploadBuffer->buffer = nullptr;
         uploadBuffer->size = size;
         uploadBuffer->unalignedSize = unalignedSize;
 

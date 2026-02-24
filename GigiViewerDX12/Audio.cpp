@@ -559,7 +559,7 @@ namespace Audio
                     transitionTracker.Transition(TRANSITION_DEBUG_INFO(destResource, D3D12_RESOURCE_STATE_COPY_DEST));
                     transitionTracker.Flush(commandList);
 
-                    UploadBufferTracker uploadBufferTracker = interpreter.getUploadBufferTracker();
+                    UploadBufferTracker& uploadBufferTracker = interpreter.getUploadBufferTracker();
                     UploadBufferTracker::Buffer* uploadBuffer = uploadBufferTracker.GetBuffer(interpreter.GetDevice(), s_state.input.samples.size() * sizeof(float), false);
                     if (!uploadBuffer)
                         return false;
