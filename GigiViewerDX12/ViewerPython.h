@@ -100,7 +100,12 @@ public:
 
 	virtual std::string GetGPUString() = 0;
     virtual std::string GetAppCommandLine() = 0;
-	virtual std::string GetScriptLocation() = 0;
+    virtual std::string GetScriptLocation() = 0;
+
+    virtual void SetWindowSize(int width, int height) = 0;
+    virtual void MinimizeWindow() = 0;
+    virtual void MaximizeWindow() = 0;
+    virtual void RestoreWindow() = 0;
 
     virtual bool AMDFrameGen_Enabled(bool value, bool wantToSet) = 0;
     virtual unsigned int AMDFrameGen_SleepMS(unsigned int value, bool wantToSet) = 0;

@@ -7,6 +7,7 @@
 
 #include <vector>
 #include <d3d12.h>
+#include <mutex>
 
 #define ALIGN(_alignment, _val) (((_val + _alignment - 1) / _alignment) * _alignment)
 
@@ -20,8 +21,11 @@ struct UploadBufferTracker
         size_t age = 0;
     };
 
+    std::mutex m_mutex;
+
     void OnNewFrame(int maxFramesInFlight)
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         // advance the age of each in use buffer. Put them in the free list when it's safe to do so
         inUse.erase(
             std::remove_if(inUse.begin(), inUse.end(),
@@ -43,6 +47,7 @@ struct UploadBufferTracker
 
     void Release()
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         for (Buffer* b : inUse)
             b->buffer->Release();
         inUse.clear();
@@ -77,13 +82,14 @@ struct UploadBufferTracker
 
     size_t getInUseSize()
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         return inUse.size();
     }
 
     size_t getFreeSize()
     {
+        std::lock_guard<std::mutex> lock(m_mutex);
         return free.size();
-
     }
 
 };
