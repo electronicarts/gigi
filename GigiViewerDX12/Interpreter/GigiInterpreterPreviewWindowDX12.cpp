@@ -702,8 +702,10 @@ const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResou
 						desc.m_format = DXGI_FORMAT_UNKNOWN;
 						if (shaderResourceBuffer.typeStruct.structIndex != -1)
 							desc.m_stride = (UINT)m_renderGraph.structs[shaderResourceBuffer.typeStruct.structIndex].sizeInBytes;
-						else
+						else if (shaderResourceBuffer.type != DataFieldType::Count)
 							desc.m_stride = DataFieldTypeInfo(shaderResourceBuffer.type).typeBytes;
+						else
+							desc.m_stride = 4;
 						desc.m_count = resourceInfo.m_size / desc.m_stride;
 					}
 					else
