@@ -99,6 +99,9 @@
   GGUserFile_TLASBuildFlagsFromString()
   GGUserFile_TLASBuildFlagsToString()
 
+  GGUserFile_LoadBufferAsFromString()
+  GGUserFile_LoadBufferAsToString()
+
   GGUserFile_SceneDataStreamFromString()
   GGUserFile_SceneDataStreamToString()
 
@@ -548,6 +551,13 @@
     Host.GGUserFile_TLASBuildFlags_MinimizeMemory = 5
     Host.GGUserFile_TLASBuildFlags_LAST = 5
     Host.GGUserFile_TLASBuildFlags_COUNT = 6
+
+  GGUserFile_LoadBufferAs:
+    Host.GGUserFile_LoadBufferAs_FIRST = 0
+    Host.GGUserFile_LoadBufferAs_Auto = 0
+    Host.GGUserFile_LoadBufferAs_Binary = 1
+    Host.GGUserFile_LoadBufferAs_LAST = 1
+    Host.GGUserFile_LoadBufferAs_COUNT = 2
 
   GGUserFile_SceneDataStream:
     Host.GGUserFile_SceneDataStream_FIRST = 0

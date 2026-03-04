@@ -62,6 +62,7 @@ unsupportedTests = [
     "MeshShaders\\Mesh",
     "MeshShaders\\MeshAmplification",
     "MeshShaders\\MeshAmplificationLines",
+    "MeshShaders\\MeshIndirect",
 
     "Raster\\VRS",
 

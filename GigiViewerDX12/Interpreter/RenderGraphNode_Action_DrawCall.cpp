@@ -1504,109 +1504,142 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 		// If using a mesh shader, do a DispatchMesh call
 		if (node.meshShader.shader)
 		{
-			// calculate dispatch size
-			unsigned int dispatchSize[3] = { 1, 1, 1 };
-			if (node.meshShaderDispatchSize.node.textureNode)
-			{
-				IVec3 size = GetDesiredSize(*this, *node.meshShaderDispatchSize.node.textureNode);
-				dispatchSize[0] = size[0];
-				dispatchSize[1] = size[1];
-				dispatchSize[2] = size[2];
-			}
-			else if (node.meshShaderDispatchSize.node.bufferNode)
-			{
-				dispatchSize[0] = GetDesiredCount(*this, *node.meshShaderDispatchSize.node.bufferNode);
-				dispatchSize[1] = 1;
-				dispatchSize[2] = 1;
-			}
-			else if (node.meshShaderDispatchSize.variable.variableIndex != -1)
-			{
-				Variable& var = m_renderGraph.variables[node.meshShaderDispatchSize.variable.variableIndex];
-				const RuntimeVariable& rtVar = GetRuntimeVariable(node.meshShaderDispatchSize.variable.variableIndex);
+            if (node.enableIndirect && node.indirectBuffer.resourceNodeIndex != -1)
+            {
+                ss << "Draw: Indirect";
+                const std::string& indirectBufferName = m_renderGraph.nodes[node.indirectBuffer.resourceNodeIndex].resourceBuffer.name;
+                bool exists = false;
+                const RuntimeTypes::RenderGraphNode_Resource_Buffer& resourceInfo = GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(indirectBufferName.c_str(), exists);
+                if (!exists)
+                    return true;
 
-				DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(var.type);
-				if (typeInfo.componentCount < 1 || typeInfo.componentCount > 3)
-				{
-					m_logFn(LogLevel::Error, "Draw call node \"%s\" wants to use variable \"%s\" for dispatch size, but has the wrong number of components", node.name.c_str(), var.name.c_str());
-					return false;
-				}
+                std::string label = node.name + std::string(".indirectBuffer") + std::string(": ") + indirectBufferName;
+                runtimeData.HandleViewableBuffer(*this, label.c_str(), resourceInfo.m_resource, resourceInfo.m_format, resourceInfo.m_formatCount, resourceInfo.m_structIndex, resourceInfo.m_size, resourceInfo.m_stride, resourceInfo.m_count, false, false, 0, 0, false);
 
-				switch (typeInfo.componentType)
-				{
-					case DataFieldComponentType::_int:
-					{
-						for (int i = 0; i < typeInfo.componentCount; ++i)
-							dispatchSize[i] = ((int*)rtVar.storage.value)[i];
-						break;
-					}
-					case DataFieldComponentType::_uint16_t:
-					{
-						for (int i = 0; i < typeInfo.componentCount; ++i)
-							dispatchSize[i] = ((uint16_t*)rtVar.storage.value)[i];
-						break;
-					}
-					case DataFieldComponentType::_uint32_t:
-					{
-						for (int i = 0; i < typeInfo.componentCount; ++i)
-							dispatchSize[i] = ((uint32_t*)rtVar.storage.value)[i];
-						break;
-					}
-					case DataFieldComponentType::_float:
-					{
-						for (int i = 0; i < typeInfo.componentCount; ++i)
-							dispatchSize[i] = (unsigned int)((float*)rtVar.storage.value)[i];
-						break;
-					}
-					default:
-					{
-						m_logFn(LogLevel::Error, "Draw call node \"%s\" wants to use variable \"%s\" for dispatch size, but it is an unsupported type", node.name.c_str(), var.name.c_str());
-						return false;
-					}
-				}
-			}
+                // This could be a temporary thing, but we can't indirect dispatch if the buffer doesn't exist
+                if (!resourceInfo.m_resource)
+                    return true;
 
-			// Do fixed function calculations on dispatch size
-			for (int i = 0; i < 3; ++i)
-				dispatchSize[i] = ((dispatchSize[i] + node.meshShaderDispatchSize.preAdd[i]) * node.meshShaderDispatchSize.multiply[i]) / node.meshShaderDispatchSize.divide[i] + node.meshShaderDispatchSize.postAdd[i];
+                // Note: maybe this could move earlier, so there isn't an extra transition call here. like in the descriptor table logic even though it doesn't go in the descriptor table?
+                m_transitions.Transition(TRANSITION_DEBUG_INFO(resourceInfo.m_resource, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT));
+                m_transitions.Flush(m_commandList);
 
-			if (dispatchSize[0] == 0 || dispatchSize[1] == 0 || dispatchSize[2] == 0)
-			{
-				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to do a dispatch of size 0.  dispatchSize = (%u, %u, %u)", node.name.c_str(), dispatchSize[0], dispatchSize[1], dispatchSize[2]);
-				return false;
-			}
+                ss << "Indirect Dispatch " << (node.amplificationShader.shader ? "Amplification" : "Mesh");
 
-			// Verify numthreads for amplication shader if it exists
-			if (node.amplificationShader.shader && (node.amplificationShader.shader->NumThreads[0] == 0 || node.amplificationShader.shader->NumThreads[1] == 0 || node.amplificationShader.shader->NumThreads[2] == 0))
-			{
-				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run amplification shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.amplificationShader.shader->NumThreads[0], node.amplificationShader.shader->NumThreads[1], node.amplificationShader.shader->NumThreads[2]);
-				return false;
-			}
+                m_commandList->ExecuteIndirect(
+                    m_commandSignatureDispatchMesh,
+                    1,
+                    resourceInfo.m_resource,
+                    0,
+                    nullptr,
+                    0);
+            }
+            else
+            {
+                // calculate dispatch size
+                unsigned int dispatchSize[3] = { 1, 1, 1 };
+                if (node.meshShaderDispatchSize.node.textureNode)
+                {
+                    IVec3 size = GetDesiredSize(*this, *node.meshShaderDispatchSize.node.textureNode);
+                    dispatchSize[0] = size[0];
+                    dispatchSize[1] = size[1];
+                    dispatchSize[2] = size[2];
+                }
+                else if (node.meshShaderDispatchSize.node.bufferNode)
+                {
+                    dispatchSize[0] = GetDesiredCount(*this, *node.meshShaderDispatchSize.node.bufferNode);
+                    dispatchSize[1] = 1;
+                    dispatchSize[2] = 1;
+                }
+                else if (node.meshShaderDispatchSize.variable.variableIndex != -1)
+                {
+                    Variable& var = m_renderGraph.variables[node.meshShaderDispatchSize.variable.variableIndex];
+                    const RuntimeVariable& rtVar = GetRuntimeVariable(node.meshShaderDispatchSize.variable.variableIndex);
 
-			// Verify numthreads for mesh shader if it exists
-			if (node.meshShader.shader && (node.meshShader.shader->NumThreads[0] == 0 || node.meshShader.shader->NumThreads[1] == 0 || node.meshShader.shader->NumThreads[2] == 0))
-			{
-				m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run mesh shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.meshShader.shader->NumThreads[0], node.meshShader.shader->NumThreads[1], node.meshShader.shader->NumThreads[2]);
-				return false;
-			}
+                    DataFieldTypeInfoStruct typeInfo = DataFieldTypeInfo(var.type);
+                    if (typeInfo.componentCount < 1 || typeInfo.componentCount > 3)
+                    {
+                        m_logFn(LogLevel::Error, "Draw call node \"%s\" wants to use variable \"%s\" for dispatch size, but has the wrong number of components", node.name.c_str(), var.name.c_str());
+                        return false;
+                    }
 
-			// do numThreads calculations. Divide by numThreads but round up.
-			const std::array<int, 3>& numThreads = node.amplificationShader.shader ? node.amplificationShader.shader->NumThreads : node.meshShader.shader->NumThreads;
-			for (int i = 0; i < 3; ++i)
-				dispatchSize[i] = (dispatchSize[i] + numThreads[i] - 1) / numThreads[i];
+                    switch (typeInfo.componentType)
+                    {
+                        case DataFieldComponentType::_int:
+                        {
+                            for (int i = 0; i < typeInfo.componentCount; ++i)
+                                dispatchSize[i] = ((int*)rtVar.storage.value)[i];
+                            break;
+                        }
+                        case DataFieldComponentType::_uint16_t:
+                        {
+                            for (int i = 0; i < typeInfo.componentCount; ++i)
+                                dispatchSize[i] = ((uint16_t*)rtVar.storage.value)[i];
+                            break;
+                        }
+                        case DataFieldComponentType::_uint32_t:
+                        {
+                            for (int i = 0; i < typeInfo.componentCount; ++i)
+                                dispatchSize[i] = ((uint32_t*)rtVar.storage.value)[i];
+                            break;
+                        }
+                        case DataFieldComponentType::_float:
+                        {
+                            for (int i = 0; i < typeInfo.componentCount; ++i)
+                                dispatchSize[i] = (unsigned int)((float*)rtVar.storage.value)[i];
+                            break;
+                        }
+                        default:
+                        {
+                            m_logFn(LogLevel::Error, "Draw call node \"%s\" wants to use variable \"%s\" for dispatch size, but it is an unsupported type", node.name.c_str(), var.name.c_str());
+                            return false;
+                        }
+                    }
+                }
 
-			ID3D12GraphicsCommandList6* meshCommandList = nullptr;
-			if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&meshCommandList))))
-			{
-				m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList6*", node.name.c_str());
-				return false;
-			}
+                // Do fixed function calculations on dispatch size
+                for (int i = 0; i < 3; ++i)
+                    dispatchSize[i] = ((dispatchSize[i] + node.meshShaderDispatchSize.preAdd[i]) * node.meshShaderDispatchSize.multiply[i]) / node.meshShaderDispatchSize.divide[i] + node.meshShaderDispatchSize.postAdd[i];
 
-			meshCommandList->DispatchMesh(dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+                if (dispatchSize[0] == 0 || dispatchSize[1] == 0 || dispatchSize[2] == 0)
+                {
+                    m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to do a dispatch of size 0.  dispatchSize = (%u, %u, %u)", node.name.c_str(), dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+                    return false;
+                }
 
-			meshCommandList->Release();
+                // Verify numthreads for amplication shader if it exists
+                if (node.amplificationShader.shader && (node.amplificationShader.shader->NumThreads[0] == 0 || node.amplificationShader.shader->NumThreads[1] == 0 || node.amplificationShader.shader->NumThreads[2] == 0))
+                {
+                    m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run amplification shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.amplificationShader.shader->NumThreads[0], node.amplificationShader.shader->NumThreads[1], node.amplificationShader.shader->NumThreads[2]);
+                    return false;
+                }
 
-			ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
-			ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
+                // Verify numthreads for mesh shader if it exists
+                if (node.meshShader.shader && (node.meshShader.shader->NumThreads[0] == 0 || node.meshShader.shader->NumThreads[1] == 0 || node.meshShader.shader->NumThreads[2] == 0))
+                {
+                    m_logFn(LogLevel::Error, "Draw call node \"%s\" wanted to run mesh shader with 0 threads.  NumThreads = (%u, %u, %u)", node.name.c_str(), node.meshShader.shader->NumThreads[0], node.meshShader.shader->NumThreads[1], node.meshShader.shader->NumThreads[2]);
+                    return false;
+                }
+
+                // do numThreads calculations. Divide by numThreads but round up.
+                const std::array<int, 3>& numThreads = node.amplificationShader.shader ? node.amplificationShader.shader->NumThreads : node.meshShader.shader->NumThreads;
+                for (int i = 0; i < 3; ++i)
+                    dispatchSize[i] = (dispatchSize[i] + numThreads[i] - 1) / numThreads[i];
+
+                ID3D12GraphicsCommandList6* meshCommandList = nullptr;
+                if (FAILED(m_commandList->QueryInterface(IID_PPV_ARGS(&meshCommandList))))
+                {
+                    m_logFn(LogLevel::Error, "Draw call node \"%s\" couldn't get a ID3D12GraphicsCommandList6*", node.name.c_str());
+                    return false;
+                }
+
+                meshCommandList->DispatchMesh(dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+
+                meshCommandList->Release();
+
+                ss << "Dispatch: (" << dispatchSize[0] << ", " << dispatchSize[1] << ", " << dispatchSize[2] << ")";
+                ss << "\n" << (node.amplificationShader.shader ? "Amplification" : "Mesh") << " NumThreads: (" << numThreads[0] << ", " << numThreads[1] << ", " << numThreads[2] << ")";
+            }
 		}
 		// else if we have an indirect buffer, do indirect
 		else if (node.enableIndirect && node.indirectBuffer.resourceNodeIndex != -1)

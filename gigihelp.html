@@ -462,6 +462,14 @@ table, th, td, tr
 </table>
 <br/>
 
+<b>GGUserFile_LoadBufferAs : How to load a file into a buffer</b><br/><br/>
+<table>
+<tr><th colspan=2>GGUserFile_LoadBufferAs</th></tr>
+<tr><td>Auto</td><td></td></tr>
+<tr><td>Binary</td><td></td></tr>
+</table>
+<br/>
+
 <b>GGUserFile_SceneDataStream : Which type of data to load from a scene</b><br/><br/>
 <table>
 <tr><th colspan=2>GGUserFile_SceneDataStream</th></tr>
@@ -1747,6 +1755,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <tr><th colspan=3>GGUserFile_ImportedBuffer</th></tr>
 <tr><td>std::string fileName</td><td>""</td><td>The file loaded</td></tr>
 <tr><td>bool CSVHeaderRow</td><td>true</td><td>If reading a CSV, and this is true, it will skip everything up to the first newline, to ignore a header row.</td></tr>
+<tr><td>GGUserFile_LoadBufferAs loadBufferAs</td><td>GGUserFile_LoadBufferAs::Auto</td><td>How to load data</td></tr>
 <tr><td>GGUserFile_SceneDataStream dataStream</td><td>GGUserFile_SceneDataStream::GeometryFlat</td><td>What type of data to load</td></tr>
 <tr><td>std::string materialShaderFile</td><td>""</td><td>The name of the shader file to generate for reading the material from a shader.</td></tr>
 <tr><td>int structIndex</td><td>-1</td><td>the index of the struct if a structured buffer</td></tr>

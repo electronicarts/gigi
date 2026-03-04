@@ -13,10 +13,10 @@ Below are the details of what is supported on each platform, based on the unit t
 
 | Platform | Supported Tests | Unsupported Tests | Support Rate |
 |----------|----------------|-------------------|--------------|
-| Viewer | 96/96 | 0/96 | 100.0% |
-| DX12 | 68/96 | 28/96 | 70.8% |
-| WebGPU | 50/96 | 46/96 | 52.1% |
-| UE 5.3 | 20/96 | 76/96 | 20.8% |
+| Viewer | 97/97 | 0/97 | 100.0% |
+| DX12 | 68/97 | 29/97 | 70.1% |
+| WebGPU | 50/97 | 47/97 | 51.5% |
+| UE 5.3 | 20/97 | 77/97 | 20.6% |
 
 ## Detailed Test Support by Platform
 
@@ -53,6 +53,7 @@ Below are the details of what is supported on each platform, based on the unit t
 | `MeshShaders\Mesh` | ✅ | ✅ | ❌ | ❌ |
 | `MeshShaders\MeshAmplification` | ✅ | ✅ | ❌ | ❌ |
 | `MeshShaders\MeshAmplificationLines` | ✅ | ✅ | ❌ | ❌ |
+| `MeshShaders\MeshIndirect` | ✅ | ❌ | ❌ | ❌ |
 | `Python\GPUWrite` | ✅ | ❌ | ❌ | ❌ |
 | `Python\profiling` | ✅ | ❌ | ❌ | ❌ |
 | `Raster\IndirectDraw` | ✅ | ❌ | ❌ | ❌ |

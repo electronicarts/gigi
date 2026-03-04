@@ -884,10 +884,10 @@ namespace AMDFrameInterpolation
 
                 if (!s_state.m_hudlessTexture)
                 {
-                    s_state.m_hudlessTexture = CreateTexture(desc.device, renderSize, 1, s_state.m_swapChainFormat, 1, 
-                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS, 
+                    s_state.m_hudlessTexture = CreateTexture(desc.device, renderSize, 1, s_state.m_swapChainFormat, 1,
+                        D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS,
                         D3D12_RESOURCE_STATE_UNORDERED_ACCESS, ResourceType::Texture2D, "Hudless - AMD Frame Interpolation");
-                    
+
                     interpreter.GetTransitionsNonConst().Track(s_state.m_hudlessTexture, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, "Hudless - AMD Frame Interpolation");
                 }
             }
@@ -1194,7 +1194,7 @@ namespace AMDFrameInterpolation
             frameGenGetGPUMemoryUsageV2.backBufferFormat = createFgDesc.backBufferFormat;
             frameGenGetGPUMemoryUsageV2.gpuMemoryUsageFrameGeneration = &gpuMemoryUsageFrameGenerationV2;
             frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat = FFX_API_SURFACE_FORMAT_UNKNOWN;
-            
+
             if (settings.fsrUIRenderMode == 3 && textureExists_hudlessTexture)
             {
                 frameGenGetGPUMemoryUsageV2.hudlessBackBufferFormat = ffxApiGetSurfaceFormatDX12(texture_hudlessTexture.m_format);
@@ -1301,7 +1301,7 @@ namespace AMDFrameInterpolation
                 frameGenerationConfigDesc.HUDLessColor = FfxApiResource({});
                 break;
 
-            case 3:                
+            case 3:
                 if (s_state.m_hudlessTexture)
                 {
                     {
@@ -1440,7 +1440,7 @@ namespace AMDFrameInterpolation
             ffx::ConfigureDescFrameGenerationSwapChainRegisterUiResourceDX12 uiConfig{};
             if (textureExists_uiTexture && uiRenderMode == 1)
             {
-                
+
                 TransitionTracker& transitions = interpreter.GetTransitionsNonConst();
                 transitions.Transition(TRANSITION_DEBUG_INFO(texture_uiTexture.m_resource, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE));
                 transitions.Flush(desc.commandList);

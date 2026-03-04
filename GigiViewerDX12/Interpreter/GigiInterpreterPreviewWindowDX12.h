@@ -134,6 +134,19 @@ public:
 
 			device->CreateCommandSignature(&dispatchDesc, nullptr, IID_PPV_ARGS(&m_commandSignatureDrawIndexed));
 		}
+        // DispatchMesh
+        {
+            D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
+            dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH;
+
+            D3D12_COMMAND_SIGNATURE_DESC dispatchDesc = {};
+            dispatchDesc.ByteStride = sizeof(uint32_t) * 5;
+            dispatchDesc.NumArgumentDescs = 1;
+            dispatchDesc.pArgumentDescs = &dispatchArg;
+            dispatchDesc.NodeMask = 0x0;
+
+            device->CreateCommandSignature(&dispatchDesc, nullptr, IID_PPV_ARGS(&m_commandSignatureDispatchMesh));
+        }
 
 		// DX12 capabilities
 		if (FAILED(m_device->CheckFeatureSupport(D3D12_FEATURE_D3D12_OPTIONS, &m_dx12_options, sizeof(m_dx12_options))))
@@ -290,6 +303,11 @@ public:
             m_commandSignatureDrawIndexed = nullptr;
         }
 
+        if (m_commandSignatureDispatchMesh)
+        {
+            m_commandSignatureDispatchMesh->Release();
+            m_commandSignatureDispatchMesh = nullptr;
+        }
 
 		if (m_dxrDevice)
 		{
@@ -629,6 +647,7 @@ public:
 	{
 		std::string fileName;
 		bool CSVHeaderRow = true; // If reading a CSV, and this is true, it will skip everything up to the first newline, to ignore a header row.
+        GGUserFile_LoadBufferAs loadBufferAs = GGUserFile_LoadBufferAs::Auto;
         GGUserFile_SceneDataStream dataStream = GGUserFile_SceneDataStream::GeometryFlat;
         std::string materialShaderFile;
 		int structIndex = -1;
@@ -949,6 +968,7 @@ private:
 	ID3D12CommandSignature* m_commandSignatureDispatch = nullptr;
 	ID3D12CommandSignature* m_commandSignatureDraw = nullptr;
 	ID3D12CommandSignature* m_commandSignatureDrawIndexed = nullptr;
+    ID3D12CommandSignature* m_commandSignatureDispatchMesh = nullptr;
 
     static GigiInterpreterPreviewWindowDX12* s_interpreter;
 };
