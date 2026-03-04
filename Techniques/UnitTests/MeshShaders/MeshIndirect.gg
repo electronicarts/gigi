@@ -1,0 +1,363 @@
+{
+    "$schema": "gigischema.json",
+    "name": "Mesh",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host"
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "ViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "InvViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host"
+        },
+        {
+            "name": "CameraPos",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "PixelShader",
+            "fileName": "Mesh_PS.hlsl",
+            "type": "Pixel",
+            "entryPoint": "PSMain"
+        },
+        {
+            "name": "MeshShader",
+            "fileName": "Mesh_MS.hlsl",
+            "type": "Mesh",
+            "entryPoint": "MSMain",
+            "NumThreads": [
+                126,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "VB",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexFormat"
+                        },
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                126,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "FillIndirectBuffer",
+            "fileName": "FillIndirect.hlsl",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "VertexBuffer",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VertexFormat"
+                        }
+                    }
+                },
+                {
+                    "name": "Indirect",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Uint3"
+                    }
+                }
+            ]
+        }
+    ],
+    "structs": [
+        {
+            "name": "VertexFormat",
+            "forceHostVisible": true,
+            "fields": [
+                {
+                    "name": "Position",
+                    "type": "Float3",
+                    "dflt": "0, 0, 0",
+                    "semantic": "Position"
+                },
+                {
+                    "name": "Normal",
+                    "type": "Float3",
+                    "semantic": "Normal"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "Mesh_Shared.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "actionDrawCall": {
+                "name": "Rasterize",
+                "editorPos": [
+                    499.0,
+                    434.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "VB",
+                        "dstNode": "FillIndirect",
+                        "dstPin": "VertexBuffer"
+                    }
+                ],
+                "meshShader": {
+                    "name": "MeshShader"
+                },
+                "pixelShader": {
+                    "name": "PixelShader"
+                },
+                "indirectBuffer": {
+                    "node": "FillIndirect",
+                    "pin": "Indirect"
+                },
+                "depthTargetClear": true,
+                "depthTest": "Greater",
+                "colorTargetSettings": [
+                    {
+                        "clear": true,
+                        "clearColor": [
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            0.20000000298023225,
+                            1.0
+                        ],
+                        "writeChannels": [
+                            true,
+                            true,
+                            true,
+                            false
+                        ],
+                        "enableBlending": true,
+                        "srcBlend": "SrcAlpha",
+                        "destBlend": "InvSrcAlpha"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "frontIsCounterClockwise": false,
+                "colorTargets": [
+                    {
+                        "node": "Color Buffer",
+                        "pin": "resource"
+                    },
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "depthTarget": {
+                    "node": "Depth Buffer",
+                    "pin": "resource"
+                },
+                "enableIndirect": true
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "VertexBuffer",
+                "editorPos": [
+                    183.0,
+                    418.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Color Buffer",
+                "editorPos": [
+                    331.0,
+                    578.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        512,
+                        512,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Depth Buffer",
+                "editorPos": [
+                    329.0,
+                    530.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "D32_Float"
+                },
+                "size": {
+                    "node": {
+                        "name": "Color Buffer"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Indirect",
+                "editorPos": [
+                    187.0,
+                    482.0
+                ],
+                "format": {
+                    "type": "Uint3"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "FillIndirect",
+                "editorPos": [
+                    325.0,
+                    447.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "VertexBuffer",
+                        "dstNode": "VertexBuffer",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Indirect",
+                        "dstNode": "Indirect",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "FillIndirectBuffer"
+                }
+            }
+        }
+    ]
+}

@@ -43,6 +43,7 @@ unsupportedTests = [
     "MeshShaders\\Mesh",
     "MeshShaders\\MeshAmplification",
     "MeshShaders\\MeshAmplificationLines",
+    "MeshShaders\\MeshIndirect",
 
     # Writing to cube maps from shaders is not supported in webgpu
     "Textures\\TextureCubeRW_CS",

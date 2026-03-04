@@ -825,7 +825,6 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
             }
         ;
 
-        // Geometry data stream
         switch (desc.buffer.dataStream)
         {
             // Material data stream
@@ -885,10 +884,40 @@ static std::vector<char> LoadStructuredBuffer(const GigiInterpreterPreviewWindow
                     char* dest = &ret[vertexIndex * destStructSize + offset];
                     switch (field.semantic)
                     {
-                        case StructFieldSemantic::Position: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].position, dest); break;
+                        case StructFieldSemantic::Position:
+                        {
+                            Vec3 position = sceneData.flattenedVertices[vertexIndex].position;
+
+                            if (needsTransformation)
+                                transformPosition(position.data());
+
+                            CopyFieldArray(position, dest);
+
+                            break;
+                        }
                         case StructFieldSemantic::Color: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].albedo, dest); break;
-                        case StructFieldSemantic::Normal: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].normal, dest); break;
-                        case StructFieldSemantic::Tangent: CopyFieldArray(sceneData.flattenedVertices[vertexIndex].tangent, dest); break;
+                        case StructFieldSemantic::Normal:
+                        {
+                            Vec3 normal = sceneData.flattenedVertices[vertexIndex].normal;
+
+                            if (needsTransformation)
+                                transformNormal(normal.data());
+
+                            CopyFieldArray(normal, dest);
+
+                            break;
+                        }
+                        case StructFieldSemantic::Tangent:
+                        {
+                            Vec4 tangent = sceneData.flattenedVertices[vertexIndex].tangent;
+
+                            if (needsTransformation)
+                                transformTangent(tangent.data());
+
+                            CopyFieldArray(tangent, dest);
+
+                            break;
+                        }
                         case StructFieldSemantic::UV:
                         {
                             if (field.semanticIndex < _countof(SceneData::Vertex::uvs))
@@ -1344,7 +1373,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 
 				m_fileWatcher.Add(desc.buffer.fileName.c_str(), fileWatchOwner);
 
-                if (fileWatchOwner == FileWatchOwner::SceneCache)
+                if (fileWatchOwner == FileWatchOwner::SceneCache && desc.buffer.loadBufferAs == GGUserFile_LoadBufferAs::Auto)
                 {
                     // Load the scene data
                     std::vector<char> ret;
@@ -1382,7 +1411,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
                             rawBytes = LoadStructuredBuffer(desc, m_renderGraph, sceneData);
                     }
                 }
-                else if (fileWatchOwner == FileWatchOwner::PLYCache)
+                else if (fileWatchOwner == FileWatchOwner::PLYCache && desc.buffer.loadBufferAs == GGUserFile_LoadBufferAs::Auto)
 				{
 					// Load the ply data
 					PLYCache::PLYData plyData = m_plys.GetFlattened(m_files, desc.buffer.fileName.c_str());
@@ -1403,7 +1432,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeActionImported(const RenderGraphNod
 							rawBytes = LoadStructuredBufferPly(desc, m_renderGraph, plyData);
 					}
 				}
-				else if (p.extension() == ".csv")
+				else if (p.extension() == ".csv" && desc.buffer.loadBufferAs == GGUserFile_LoadBufferAs::Auto)
 				{
 					const FileCache::File& file = m_files.Get(desc.buffer.fileName.c_str());
 

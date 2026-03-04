@@ -1,0 +1,27 @@
+{
+    "version": "2.0",
+    "snapshot": {
+        "resourceViewNodeIndex": 0,
+        "resourceViewResourceIndex": 5,
+        "cameraPos": [
+            -3.9383411407470705,
+            0.40142595767974856,
+            1.349370002746582
+        ],
+        "cameraAltitudeAzimuth": [
+            0.11591076105833054,
+            4.418658256530762
+        ],
+        "importedResources": [
+            {
+                "nodeName": "VertexBuffer",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\Raster\\simpleRasterVB.bin",
+                    "structIndex": 1,
+                    "BLASOpaque": true
+                }
+            }
+        ]
+    }
+}

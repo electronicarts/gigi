@@ -643,6 +643,22 @@ struct Example :
         ed::DestroyEditor(m_Context);
     }
 
+    bool ForceAskForConfirmation(const char* msg, ...)
+    {
+        char buffer[4096];
+        va_list args;
+        va_start(args, msg);
+        vsprintf_s(buffer, msg, args);
+        va_end(args);
+
+        return MessageBoxA(nullptr, buffer, "Gigi", MB_OKCANCEL) == IDOK;
+    }
+
+    bool CanClose() override
+    {
+        return !g_renderGraphDirty || ForceAskForConfirmation("You have unsaved changes, are you sure you want to exit?");
+    }
+
     void UpdateWindowTitle()
     {
         std::string newWindowTitle;
@@ -725,6 +741,11 @@ struct Example :
         }
         else
         {
+            // Show the build log window
+            g_showWindows.BuildLog = true;
+            ImGui::SetWindowCollapsed("Build Log", false);
+            ImGui::SetWindowFocus("Build Log");
+
             //m_BuildOutputBuffer.clear();
             Backend backend;
             GigiBuildFlavorBackend(g_gigiBuildFlavor, backend);
@@ -746,7 +767,7 @@ struct Example :
 
     void CreateGraph()
     {
-		if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
+		if (!g_renderGraphDirty || ForceAskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
 		{
 			g_renderGraph = RenderGraph();
 			g_renderGraphDirty = false;
@@ -760,7 +781,7 @@ struct Example :
 
     void OpenGraph()
     {
-		if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
+		if (!g_renderGraphDirty || ForceAskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
 		{
 			// e.g. "C:\\gitlab\\gigi"
 			std::filesystem::path defaultPath = std::filesystem::current_path();
@@ -869,8 +890,7 @@ struct Example :
 
                 if (ImGuiMenuItem("Exit", "\xef\x80\x91", "Alt+F4"))
                 {
-                    if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to exit?"))
-                        this->Close();
+                    this->Close();
                 }
 
                 ImGui::EndMenu();
@@ -1200,7 +1220,7 @@ struct Example :
         }
     }
 
-    void EnsureVariableExists(const std::string& name, VariableVisibility visibility, DataFieldType type, std::string dflt)
+    void EnsureSystemVariableExists(const std::string& name, VariableVisibility visibility, DataFieldType type, std::string dflt)
     {
         g_renderGraphDirty = true;
 
@@ -1208,21 +1228,15 @@ struct Example :
         while (index < g_renderGraph.variables.size() && g_renderGraph.variables[index].name != name)
             index++;
 
-        if (index < g_renderGraph.variables.size())
-        {
-            Variable& variable = g_renderGraph.variables[index];
-            variable.visibility = visibility;
-            variable.type = type;
-            variable.dflt = dflt;
-            return;
-        }
+        if (index == g_renderGraph.variables.size())
+            g_renderGraph.variables.resize(index + 1);
 
-        Variable variable;
+        Variable& variable = g_renderGraph.variables[index];
         variable.name = name;
         variable.visibility = visibility;
         variable.type = type;
         variable.dflt = dflt;
-        g_renderGraph.variables.push_back(variable);
+        variable.transient = true;
     }
 
 	int32_t LevenshteinDistance(const std::string& str1, const std::string& str2)
@@ -1448,9 +1462,6 @@ struct Example :
 
         if (ImGui::Button("Copy"))
         {
-            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "what's up?");
-            Example::s_thisExample->m_BuildOutputBuffer.emplace_back(MessageType::Warn, "bro.");
-
             constexpr const char* msgType[3] = { "[Info] ", "[Warning] ", "[Error] " };
 
             std::ostringstream fullText;
@@ -1686,8 +1697,10 @@ struct Example :
             dest.name = name;
     }
 
+    using THeaderFn = void(*)(void);
+
     template <typename T, typename LAMBDA>
-    void ShowDataWindow(const char* dataName, std::vector<T>& dataList, DataWindowState& windowState, TypePathEntry path, T& newItem, const LAMBDA& NameLambda)
+    void ShowDataWindow(const char* dataName, std::vector<T>& dataList, DataWindowState& windowState, TypePathEntry path, T& newItem, const LAMBDA& NameLambda, const THeaderFn& HeaderFn = []() {})
     {
         bool& showWindow = windowState.show;
 
@@ -1713,6 +1726,8 @@ struct Example :
         ImGui::TableNextColumn();
 
         ImGui::Text(dataName);
+
+        HeaderFn();
 
         // New button
         bool wantsNew = false;
@@ -1935,9 +1950,52 @@ struct Example :
         // Make sure we have space for 1 more variable, since you can add a variable from UI within the variable window, which could otherwise invalidate the variable object being viewed, due to reallocation!
         g_renderGraph.variables.reserve(g_renderGraph.variables.size() + 1);
 
+        // A button for adding the system variables
+        auto AddSystemVarsButton = []()
+            {
+                ImGui::SameLine();
+                if (ImGui::SmallButton("Add System Vars"))
+                {
+                    Example::s_thisExample->EnsureSystemVariableExists("MouseState", VariableVisibility::Host, DataFieldType::Float4, "0.0f, 0.0f, 0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("MouseStateLastFrame", VariableVisibility::Host, DataFieldType::Float4, "0.0f, 0.0f, 0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("iResolution", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("iTime", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("iTimeDelta", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("iFrameRate", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("iFrame", VariableVisibility::Host, DataFieldType::Int, "0");
+                    Example::s_thisExample->EnsureSystemVariableExists("iMouse", VariableVisibility::Host, DataFieldType::Float4, "0.0f, 0.0f, 0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("ViewMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("InvViewMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("ProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("InvProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("JitteredProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("InvJitteredProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("ViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("InvViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("JitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("InvJitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraPos", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraUp", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 1.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraLeft", VariableVisibility::Host, DataFieldType::Float3, "-1.0f, 0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraForward", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 1.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraFOV", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraAltitudeAzimuth", VariableVisibility::Host, DataFieldType::Float2, "0.0f, 0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraChanged", VariableVisibility::Host, DataFieldType::Bool, "false");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraJitter", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraJitterRaw", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraNearPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("CameraFarPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
+                    Example::s_thisExample->EnsureSystemVariableExists("ShadingRateImageTileSize", VariableVisibility::Host, DataFieldType::Uint, "16");
+                    Example::s_thisExample->EnsureSystemVariableExists("WindowSize", VariableVisibility::Host, DataFieldType::Float2, "1.0f, 1.0f");
+                }
+
+                ShowUIToolTip("Add all the system variables that the viewer can use.");
+            }
+        ;
+
         Variable newItem;
         newItem.name = "NewVariable";
-        ShowDataWindow("Variables", g_renderGraph.variables, g_showWindows.Variables, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_variables), newItem, [](size_t index, const Variable& item) { return item.name; });
+        ShowDataWindow("Variables", g_renderGraph.variables, g_showWindows.Variables, TypePaths::Make(TypePaths::cEmpty, TypePaths::RenderGraph::cStruct, TypePaths::RenderGraph::c_variables), newItem, [](size_t index, const Variable& item) { return item.name; }, AddSystemVarsButton);
     }
 
     void ShowShadersWindow()
@@ -2122,37 +2180,6 @@ struct Example :
         bool keypressesAllowed = !ImGui::GetIO().WantTextInput;
         if (ImGui::Button("Zoom to Content (F)") || (keypressesAllowed && ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_F))))
             ed::NavigateToContent();
-
-        ImGui::SameLine();
-        if (ImGui::Button("Add System Vars"))
-        {
-            EnsureVariableExists("MouseState", VariableVisibility::Host, DataFieldType::Float4, "0.0f, 0.0f, 0.0f, 0.0f");
-            EnsureVariableExists("MouseStateLastFrame", VariableVisibility::Host, DataFieldType::Float4, "0.0f, 0.0f, 0.0f, 0.0f");
-            EnsureVariableExists("iResolution", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
-            EnsureVariableExists("iTime", VariableVisibility::Host, DataFieldType::Float, "0.0f");
-            EnsureVariableExists("iTimeDelta", VariableVisibility::Host, DataFieldType::Float, "0.0f");
-            EnsureVariableExists("iFrameRate", VariableVisibility::Host, DataFieldType::Float, "0.0f");
-            EnsureVariableExists("iFrame", VariableVisibility::Host, DataFieldType::Int, "0");
-            EnsureVariableExists("iMouse", VariableVisibility::Host, DataFieldType::Float4, "0.0f, 0.0f, 0.0f, 0.0f");
-            EnsureVariableExists("ViewMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("InvViewMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("ProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("InvProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("JitteredProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("InvJitteredProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("ViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("InvViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("JitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("InvJitteredViewProjMtx", VariableVisibility::Host, DataFieldType::Float4x4, "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f");
-            EnsureVariableExists("CameraPos", VariableVisibility::Host, DataFieldType::Float3, "0.0f, 0.0f, 0.0f");
-            EnsureVariableExists("CameraAltitudeAzimuth", VariableVisibility::Host, DataFieldType::Float2, "0.0f, 0.0f");
-            EnsureVariableExists("CameraChanged", VariableVisibility::Host, DataFieldType::Bool, "false");
-            EnsureVariableExists("CameraJitter", VariableVisibility::Host, DataFieldType::Float2, "0.5f, 0.5f");
-            EnsureVariableExists("CameraNearPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
-            EnsureVariableExists("CameraFarPlane", VariableVisibility::Host, DataFieldType::Float, "0.0f");
-            EnsureVariableExists("ShadingRateImageTileSize", VariableVisibility::Host, DataFieldType::Uint, "16");
-            EnsureVariableExists("WindowSize", VariableVisibility::Host, DataFieldType::Float2, "1.0f, 1.0f");
-        }
 
         // Global property editing
         g_renderGraphDirty |= ShowUI(g_renderGraph, nullptr, nullptr, g_renderGraph, TypePaths::cEmpty);
@@ -2663,7 +2690,7 @@ struct Example :
             std::string dragFileName = GetAndClearDragFile();
             if (!dragFileName.empty())
             {
-                if (!g_renderGraphDirty || AskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
+                if (!g_renderGraphDirty || ForceAskForConfirmation("You have unsaved changes, are you sure you want to proceed?"))
                     LoadJSONFile(dragFileName.c_str());
             }
         }
@@ -3260,7 +3287,7 @@ struct Example :
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(128, 128, 255, 255)); \
                 else \
                     ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 128, 64, 255)); \
-                if (_TYPE::c_showInEditor && ImGuiMenuItem(_TYPE::c_editorName.c_str())) \
+                if (_TYPE::c_showInEditor && ImGui::MenuItem(_TYPE::c_editorName.c_str())) \
                 { \
                     RenderGraphNode newNode; \
                     newNode._index = RenderGraphNode::c_index_##_NAME; \
@@ -3300,14 +3327,14 @@ struct Example :
                         if (externalNodeInfo.subfolderColor != 0)
                             ImGui::PushStyleColor(ImGuiCol_Text, externalNodeInfo.subfolderColor);
 
-                        showSubfolderContents = ImGuiMenuItem(lastSubfolder.c_str());
+                        showSubfolderContents = ImGui::BeginMenu(lastSubfolder.c_str());
 
                         if (externalNodeInfo.subfolderColor != 0)
                             ImGui::PopStyleColor();
                     }
                 }
 
-                if (showSubfolderContents && ImGuiMenuItem(externalNodeInfo.name.c_str()))
+                if (showSubfolderContents && ImGui::MenuItem(externalNodeInfo.name.c_str()))
                 {
                     std::string nodeName = externalNodeInfo.subfolder + std::string(" ") + externalNodeInfo.name;
                     std::string newNodeName = GetUniqueNodeName(g_renderGraph, nodeName.c_str());
@@ -3328,7 +3355,7 @@ struct Example :
 
             ImGui::Separator();
 
-            if (ImGuiMenuItem("Group"))
+            if (ImGui::MenuItem("Group"))
             {
                 const ImVec2 defaultSize = ImVec2(380, 154);
 

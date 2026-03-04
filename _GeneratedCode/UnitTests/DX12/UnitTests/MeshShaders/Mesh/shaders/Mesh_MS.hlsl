@@ -19,9 +19,6 @@ ConstantBuffer<Struct__MeshShaderCB> _MeshShaderCB : register(b0);
 
 #include "Mesh_Shared.hlsli"
 
-#define NUM_VERTS 126
-#define NUM_TRIS NUM_VERTS / 3
-
 uint wang_hash_init(uint3 seed)
 {
 	return uint(seed.x * uint(1973) + seed.y * uint(9277) + seed.z * uint(26699)) | uint(1);
@@ -43,7 +40,7 @@ float wang_hash_float01(inout uint state)
 
 [numthreads(126, 1, 1)]
 [OutputTopology("triangle")]
-#line 27
+#line 24
 void MSMain(uint dtid : SV_DispatchThreadID, uint gtid : SV_GroupIndex, uint3 gid : SV_GroupID, out vertices ProcessedVertex verts[NUM_VERTS], out indices uint3 tris[NUM_TRIS])
 {
     int numVerts = NUM_VERTS;

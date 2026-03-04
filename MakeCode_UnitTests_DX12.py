@@ -51,6 +51,7 @@ unsupportedTests = [
     # Unsupported
     "AMD\\Upscale",    
     "HLSLTime\\HLSLTime",
+    "MeshShaders\\MeshIndirect",
 ]
 
 # ==================== GENERATE CODE FOR TECHNIQUES

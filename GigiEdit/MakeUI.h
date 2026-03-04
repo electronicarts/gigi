@@ -143,24 +143,24 @@ inline void ShowUIToolTip(const char* tooltip, bool sameline = true)
         ret |= ShowUI(renderGraph, nullptr, nullptr, *(_BASE*)&value, path);
 
 #define STRUCT_FIELD(_TYPE, _NAME, _DEFAULT, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, ((_FLAGS) & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
         { \
-            if (_FLAGS & SCHEMA_FLAG_UI_CONST) \
+            if ((_FLAGS) & SCHEMA_FLAG_UI_CONST) \
                 ImGui::PushItemFlag(ImGuiItemFlags_Disabled, true); \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME))); \
-            if (_FLAGS & SCHEMA_FLAG_UI_CONST) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, ((_FLAGS) & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME))); \
+            if ((_FLAGS) & SCHEMA_FLAG_UI_CONST) \
                 ImGui::PopItemFlag(); \
         }
 
 #define STRUCT_CONST(_TYPE, _NAME, _DEFAULT, _DESCRIPTION, _FLAGS)
 
 #define STRUCT_DYNAMIC_ARRAY(_TYPE, _NAME, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, ((_FLAGS) & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, ((_FLAGS) & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
 
 #define STRUCT_STATIC_ARRAY(_TYPE, _NAME, _SIZE, _DEFAULT, _DESCRIPTION, _FLAGS) \
-        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
-            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, (_FLAGS & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
+        if (ShowUIOverrideBase(renderGraph, _FLAGS, ret, PrettyLabel(#_NAME, ((_FLAGS) & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value.##_NAME, TypePathEntry(path, TypePathEntry(#_NAME)), ShowUIOverrideContext::Field) == UIOverrideResult::Continue) \
+            ret |= ShowUI(renderGraph, PrettyLabel(#_NAME, ((_FLAGS) & SCHEMA_FLAG_UI_NO_PRETTY_LABEL) == 0).c_str(), _DESCRIPTION, value._NAME, TypePathEntry(path, TypePathEntry(#_NAME)), _FLAGS); \
 
 #define STRUCT_END() \
         if (label && label[0]) \

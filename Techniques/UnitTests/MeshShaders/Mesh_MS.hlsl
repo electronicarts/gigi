@@ -2,9 +2,6 @@
 /*$(ShaderResources)*/
 #include "Mesh_Shared.hlsli"
 
-#define NUM_VERTS 126
-#define NUM_TRIS NUM_VERTS / 3
-
 uint wang_hash_init(uint3 seed)
 {
 	return uint(seed.x * uint(1973) + seed.y * uint(9277) + seed.z * uint(26699)) | uint(1);

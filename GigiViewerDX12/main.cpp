@@ -806,6 +806,7 @@ GigiInterpreterPreviewWindowDX12::ImportedResourceDesc GGUserFile_ImportedResour
         outDesc.buffer.fileName = std::filesystem::weakly_canonical(outDesc.buffer.fileName).string();
 
         outDesc.buffer.CSVHeaderRow = inDesc.buffer.CSVHeaderRow;
+        outDesc.buffer.loadBufferAs = inDesc.buffer.loadBufferAs;
         outDesc.buffer.dataStream = inDesc.buffer.dataStream;
         outDesc.buffer.materialShaderFile = inDesc.buffer.materialShaderFile;
         outDesc.buffer.structIndex = inDesc.buffer.structIndex;
@@ -862,6 +863,7 @@ GGUserFile_ImportedResource ImportedResourceDesc_To_GGUserFile_ImportedResource(
         outDesc.buffer.fileName = relativeFileName;
 
         outDesc.buffer.CSVHeaderRow = inDesc.buffer.CSVHeaderRow;
+        outDesc.buffer.loadBufferAs = inDesc.buffer.loadBufferAs;
         outDesc.buffer.dataStream = inDesc.buffer.dataStream;
         outDesc.buffer.materialShaderFile = inDesc.buffer.materialShaderFile;
         outDesc.buffer.structIndex = inDesc.buffer.structIndex;
@@ -3874,6 +3876,10 @@ void ShowImportedResources()
                 desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
             }
             ShowToolTip("This file is saved and loaded as relative to the .gg file");
+
+            if (ShowGigiEnumDropDown(desc.buffer.loadBufferAs, "Load As", "How to load the data from the file into the buffer"))
+                desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+            ImGui::SameLine();
 
             if (ImGui::Checkbox("CSV Header Row", &desc.buffer.CSVHeaderRow))
                 desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
@@ -7081,6 +7087,20 @@ void ShowResourceView()
     ImGui::End();
 }
 
+char* BytesToString(size_t bytes)
+{
+    static char buffer[1024];
+
+    if (bytes < 4096)
+        sprintf_s(buffer, "%zu B", bytes);
+    else if (bytes < 1024 * 1024)
+        sprintf_s(buffer, "%0.2f KB", float(bytes) / 1024.0f);
+    else
+        sprintf_s(buffer, "%0.2f MB", float(bytes) / (1024.0f * 1024.0f));
+
+    return buffer;
+}
+
 void ShowProfilerWindow()
 {
     g_interpreter.m_enableProfiling = g_forceEnableProfiling;
@@ -7260,6 +7280,81 @@ void ShowProfilerWindow()
             ImGui::TextWrapped("\nThe DX12 debug layer is enabled which affects performance. You can disable it by running the viewer with the -nodebuglayer command line option.");
             ImGui::PopStyleColor();
         }
+    }
+
+    if (ImGui::BeginTable("Memory", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg))
+    {
+        ImGui::TableSetupColumn("Resource", ImGuiTableColumnFlags_WidthStretch);
+        ImGui::TableSetupColumn("Bytes", ImGuiTableColumnFlags_WidthFixed);
+        ImGui::TableHeadersRow();
+
+        size_t totalBytes = 0;
+
+        for (const RenderGraphNode& nodeBase : g_interpreter.GetRenderGraph().nodes)
+        {
+            if (!GetNodeIsResourceNode(nodeBase))
+                continue;
+
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+
+			ExecuteOnNode(nodeBase,
+				[](const auto& node)
+				{
+					ImGui::Text("%s: %s", node.c_shorterTypeName.c_str(), node.name.c_str());
+				}
+			);
+
+            size_t bytes = 0;
+            switch (nodeBase._index)
+            {
+                case RenderGraphNode::c_index_resourceBuffer:
+                {
+                    bool exists = false;
+                    const RuntimeTypes::RenderGraphNode_Resource_Buffer& info = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_Buffer(nodeBase.resourceBuffer.name.c_str(), exists);
+                    if (exists && info.m_resource)
+                    {
+                        D3D12_RESOURCE_DESC desc = info.m_resource->GetDesc();
+                        D3D12_RESOURCE_ALLOCATION_INFO allocInfo = g_pd3dDevice->GetResourceAllocationInfo(0, 1, &desc);
+                        bytes = allocInfo.SizeInBytes;
+                    }
+                    break;
+                }
+                case RenderGraphNode::c_index_resourceTexture:
+                {
+                    bool exists = false;
+                    const RuntimeTypes::RenderGraphNode_Resource_Texture& info = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_Texture(nodeBase.resourceTexture.name.c_str(), exists);
+                    if (exists && info.m_resource)
+                    {
+                        D3D12_RESOURCE_DESC desc = info.m_resource->GetDesc();
+                        D3D12_RESOURCE_ALLOCATION_INFO allocInfo = g_pd3dDevice->GetResourceAllocationInfo(0, 1, &desc);
+                        bytes = allocInfo.SizeInBytes;
+                    }
+                    break;
+                }
+                case RenderGraphNode::c_index_resourceShaderConstants:
+                {
+                    bool exists = false;
+                    const RuntimeTypes::RenderGraphNode_Resource_ShaderConstants& info = g_interpreter.GetRuntimeNodeData_RenderGraphNode_Resource_ShaderConstants(nodeBase.resourceShaderConstants.name.c_str(), exists);
+                    if (exists)
+                        bytes = info.m_cpuData.size();
+                    break;
+                }
+            }
+
+            ImGui::TableNextColumn();
+            ImGui::TextUnformatted(BytesToString(bytes));
+
+            totalBytes += bytes;
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted("Total");
+        ImGui::TableNextColumn();
+        ImGui::TextUnformatted(BytesToString(totalBytes));
+
+        ImGui::EndTable();
     }
 
     ImGui::End();
@@ -8446,12 +8541,15 @@ public:
         const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
         for (const Enum& e : renderGraph.enums)
         {
-            for (int index = 0; index < (int)e.items.size(); ++index)
+            if (!_stricmp(e.name.c_str(), enumName))
             {
-                if (!_stricmp(e.items[index].label.c_str(), enumLabel))
-                    return index;
+                for (int index = 0; index < (int)e.items.size(); ++index)
+                {
+                    if (!_stricmp(e.items[index].label.c_str(), enumLabel))
+                        return index;
+                }
+                return -2;
             }
-            return -2;
         }
         return -1;
     }
@@ -8461,10 +8559,13 @@ public:
         const RenderGraph& renderGraph = g_interpreter.GetRenderGraph();
         for (const Enum& e : renderGraph.enums)
         {
-            if (value >= 0 && value < e.items.size())
-                return e.items[value].label;
+            if (!_stricmp(e.name.c_str(), enumName))
+            {
+                if (value >= 0 && value < e.items.size())
+                    return e.items[value].label;
 
-            return "";
+                return "";
+            }
         }
         return "";
     }
