@@ -78,7 +78,7 @@ bool g_nvInitialized = false;
 #define DX12_VALIDATION_ON_BY_DEFAULT() true
 #define DX12_GPUVALIDATION_ON_BY_DEFAULT() false
 
-#define DX12_BREAK_ON_WARN() false
+#define DX12_BREAK_ON_WARN() false 
 #define DX12_BREAK_ON_CORRUPTION() false
 #define DX12_BREAK_ON_ERROR() false
 
