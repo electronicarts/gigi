@@ -77,7 +77,7 @@ bool g_nvInitialized = false;
 #define DX12_VALIDATION_ON_BY_DEFAULT() true
 #define DX12_GPUVALIDATION_ON_BY_DEFAULT() false
 
-#define DX12_BREAK_ON_WARN() false
+#define DX12_BREAK_ON_WARN() false 
 #define DX12_BREAK_ON_CORRUPTION() false
 #define DX12_BREAK_ON_ERROR() false
 
@@ -8909,7 +8909,7 @@ void RenderFrame(bool forceExecute)
         Audio::PostRender(g_Audio, g_interpreter, g_pd3dCommandList, NUM_FRAMES_IN_FLIGHT, !(g_executeTechnique || forceExecute));
 
     // Frame interpolation
-    if (g_executeTechnique || forceExecute)
+    if ((g_executeTechnique || forceExecute) && g_AMDFrameInterpolation.enabled)
     {
         POINT upperLeft = { 0, 0 };
         ClientToScreen(g_hwnd, &upperLeft);
