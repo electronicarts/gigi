@@ -797,6 +797,23 @@ namespace AMDFrameInterpolation
         memcpy(s_state.imageClipMin, desc.imageClipMin, sizeof(desc.imageClipMin));
         memcpy(s_state.imageClipMax, desc.imageClipMax, sizeof(desc.imageClipMax));
 
+        if (!settings.enabled)
+        {
+            if (s_state.m_FrameGenContext)
+            {
+                ffx::ConfigureDescFrameGeneration frameGenerationConfigDesc = {};
+                frameGenerationConfigDesc.header.type = FFX_API_CONFIGURE_DESC_TYPE_FRAMEGENERATION;
+                frameGenerationConfigDesc.swapChain = swapChain;
+                frameGenerationConfigDesc.frameGenerationEnabled = false;
+                frameGenerationConfigDesc.presentCallback = nullptr;
+                frameGenerationConfigDesc.presentCallbackUserContext = nullptr;
+                frameGenerationConfigDesc.frameID = desc.frameIndex;
+
+                ffx::Configure(s_state.m_FrameGenContext, frameGenerationConfigDesc);
+            }
+            return;
+        }
+
 #define HANDLE_TEXTURE(NAME) \
         int nodeIndex_##NAME = FrontEndNodesNoCaching::GetNodeIndexByName(renderGraph, settings.##NAME.c_str()); \
         bool textureExists_##NAME = false; \
