@@ -646,10 +646,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
             int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
+            int UIAVMipIndexVarIndex = -1;
             if (dep.pinIndex < node.linkProperties.size())
             {
                 const LinkProperties& linkProperties = node.linkProperties[dep.pinIndex];
                 UAVMipIndex = linkProperties.UAVMipIndex;
+                UIAVMipIndexVarIndex = linkProperties.UAVMipIndexVariable.variableIndex;
                 bufferViewBegin = linkProperties.bufferViewBegin;
                 bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                 bufferViewSize = linkProperties.bufferViewSize;
@@ -751,7 +753,10 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 }
             }
 
-            stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
+            if (UIAVMipIndexVarIndex != -1)
+                stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << "(UINT)" << VariableToString(renderGraph.variables[UIAVMipIndexVarIndex], renderGraph) << ", ";
+            else
+                stringReplacementMap["/*$(Execute)*/"] << accessType << resourceTypeString << rawAndStrideAndCount.str() << ", " << UAVMipIndex << ", ";
 
             if (bufferViewBeginVarIndex != -1)
                 stringReplacementMap["/*$(Execute)*/"] << "(UINT)" << VariableToString(renderGraph.variables[bufferViewBeginVarIndex], renderGraph);

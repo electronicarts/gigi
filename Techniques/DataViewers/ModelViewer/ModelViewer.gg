@@ -3,10 +3,97 @@
     "version": "1.01",
     "variables": [
         {
+            "name": "RebakeIBL",
+            "type": "Bool",
+            "visibility": "User",
+            "transient": true,
+            "UISettings": {
+                "UIHint": "Button"
+            },
+            "UIGroup": "IBL"
+        },
+        {
             "name": "RenderSize",
             "type": "Uint2",
             "dflt": "1024, 768",
             "visibility": "User"
+        },
+        {
+            "name": "MaxIBLValue",
+            "type": "Float",
+            "dflt": "10.0f",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "SkyboxFaceSize",
+            "comment": "The skybox is a cube map with 6 faces. This is the width and height of one face.",
+            "type": "Uint2",
+            "dflt": "512, 512",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "DiffuseIBLFaceSize",
+            "comment": "Diffuse IBL is a cube map with 6 faces. This is the width and height of one face.",
+            "type": "Uint2",
+            "dflt": "64, 64",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "NumDiffuseIBLSamples",
+            "type": "Uint",
+            "dflt": "10000",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "IBLDirty",
+            "type": "Bool",
+            "dflt": "true"
+        },
+        {
+            "name": "SpecularBakeLevelCount",
+            "type": "Int",
+            "Const": true,
+            "dflt": "8",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "SpecularBakeLevelCountMinus1",
+            "type": "Int",
+            "dflt": "0"
+        },
+        {
+            "name": "NumSpecularIBLSamples",
+            "type": "Int",
+            "dflt": "10000",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "NumSpecularBRDFSamples",
+            "type": "Int",
+            "dflt": "1024",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "SpecularBRDFLUTSize",
+            "type": "Uint2",
+            "dflt": "256, 256",
+            "visibility": "User",
+            "UIGroup": "IBL"
+        },
+        {
+            "name": "SpecularIBLFaceSize",
+            "type": "Int"
+        },
+        {
+            "name": "SpecularIBLFaceSize2D",
+            "type": "Int2"
         },
         {
             "name": "ViewMode",
@@ -23,83 +110,472 @@
             "visibility": "User"
         },
         {
-            "name": "ViewerColor",
-            "type": "Float4",
-            "dflt": "1, 1, 1, 1",
-            "visibility": "User",
-            "UISettings": {
-                "UIHint": "Color"
-            }
-        },
-        {
             "name": "ViewProjMtx",
-            "type": "Float4x4"
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
         },
         {
             "name": "InvViewProjMtx",
-            "type": "Float4x4"
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
         },
         {
             "name": "CameraPos",
-            "type": "Float3"
-        },
-        {
-            "name": "Skybox",
-            "type": "Bool",
-            "dflt": "true",
-            "visibility": "User"
-        },
-        {
-            "name": "ForceDefaultLights",
-            "type": "Bool",
-            "dflt": "false",
-            "visibility": "User"
-        },
-        {
-            "name": "AmbientColor",
             "type": "Float3",
-            "dflt": "1, 1, 1",
-            "visibility": "User",
-            "UISettings": {
-                "UIHint": "Color"
-            }
-        },
-        {
-            "name": "AmbientPower",
-            "type": "Float",
-            "dflt": "0",
-            "visibility": "User"
-        },
-        {
-            "name": "DirectionalLightDir",
-            "type": "Float3",
-            "dflt": "0.724, 0.384, 0.553",
-            "visibility": "User"
-        },
-        {
-            "name": "DirectionalLightColor",
-            "type": "Float3",
-            "dflt": "1, 1, 1",
-            "visibility": "User",
-            "UISettings": {
-                "UIHint": "Color"
-            }
-        },
-        {
-            "name": "DirectionalLightPower",
-            "type": "Float",
-            "dflt": "1",
-            "visibility": "User"
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
         },
         {
             "name": "InvViewMtx",
-            "type": "Float4x4"
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
         },
         {
-            "name": "LightIsLocal",
-            "comment": "If true, the light direction is local to the camera",
+            "name": "MatBaseColor",
+            "type": "Float4",
+            "dflt": "1, 1, 1, 1",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UISettings": {
+                "UIHint": "Color"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatBaseColorOverride",
             "type": "Bool",
-            "visibility": "User"
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatEmissive",
+            "type": "Float3",
+            "dflt": "0, 0, 0",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UISettings": {
+                "UIHint": "Color"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatEmissiveOverride",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatMetallic",
+            "type": "Float",
+            "dflt": "0",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatMetallicOverride",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatRoughness",
+            "type": "Float",
+            "dflt": "1",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatRoughnessOverride",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatAlphaMode",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatAlphaModeOverride",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatAlphaCutoff",
+            "type": "Float",
+            "dflt": "0.5",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatAlphaCutoffOverride",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatDoubleSided",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "MatDoubleSidedOverride",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "Material"
+        },
+        {
+            "name": "FrameIndex",
+            "type": "Int",
+            "dflt": "0",
+            "transient": true
+        },
+        {
+            "name": "CameraChanged",
+            "type": "Bool",
+            "dflt": "false",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "InvJitteredViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "MouseState",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "MouseStateLastFrame",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iResolution",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iTime",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iTimeDelta",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iFrameRate",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iFrame",
+            "type": "Int",
+            "dflt": "0",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "iMouse",
+            "type": "Float4",
+            "dflt": "0.0f, 0.0f, 0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "ViewMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "ProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "InvProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "JitteredProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "InvJitteredProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "JitteredViewProjMtx",
+            "type": "Float4x4",
+            "dflt": "1.0f, 0.0f, 0.0f, 0.0f,   0.0f, 1.0f, 0.0f, 0.0f,   0.0f, 0.0f, 1.0f, 0.0f,   0.0f, 0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraUp",
+            "type": "Float3",
+            "dflt": "0.0f, 1.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraLeft",
+            "type": "Float3",
+            "dflt": "-1.0f, 0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraForward",
+            "type": "Float3",
+            "dflt": "0.0f, 0.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraFOV",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraAltitudeAzimuth",
+            "type": "Float2",
+            "dflt": "0.0f, 0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraJitter",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraJitterRaw",
+            "type": "Float2",
+            "dflt": "0.5f, 0.5f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraNearPlane",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "CameraFarPlane",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "ShadingRateImageTileSize",
+            "type": "Uint",
+            "dflt": "16",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "WindowSize",
+            "type": "Float2",
+            "dflt": "1.0f, 1.0f",
+            "visibility": "Host",
+            "transient": true
+        },
+        {
+            "name": "ResetPT",
+            "type": "Bool",
+            "visibility": "User",
+            "UISettings": {
+                "UIHint": "Button"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "RaysPerFramePT",
+            "comment": "The number of rays rendered per pixel per frame",
+            "type": "Int",
+            "dflt": "16",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "NumBouncesPT",
+            "comment": "The maximum number of bounces a ray can have",
+            "type": "Int",
+            "dflt": "10",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "RRMinBouncesRT",
+            "comment": "The number of bounces before russian roulette starts",
+            "type": "Int",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "MipLevelPT",
+            "comment": "The mip level textures are read at",
+            "type": "Int",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "RayPosNormalNudgePT",
+            "comment": "Intersection points are moved this much along the surface normal to avoid intersecting the same surface again",
+            "type": "Float",
+            "dflt": "0.01f",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "DirectLightingMultiplier",
+            "comment": "A multiplier for direct lighting",
+            "type": "Float",
+            "dflt": "0.0f",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            }
+        },
+        {
+            "name": "DirectLightCountPT",
+            "comment": "How many direct lights to evaluate each ray, for next event estimation",
+            "type": "Int",
+            "dflt": "1",
+            "visibility": "User",
+            "onUserChange": {
+                "name": "ResetPT"
+            },
+            "UIGroup": "PathTracing"
+        },
+        {
+            "name": "ExposureFStops",
+            "comment": "+1 doubles the brightness, -1 halves the brightness, and so on",
+            "type": "Float",
+            "visibility": "User",
+            "UIGroup": "Tonemapping"
+        },
+        {
+            "name": "ToneMapper",
+            "comment": "The tone mapper to use to convert from HDR to SDR",
+            "type": "Int",
+            "dflt": "None",
+            "visibility": "User",
+            "Enum": "ToneMappingOperation",
+            "UIGroup": "Tonemapping"
         }
     ],
     "shaders": [
@@ -115,6 +591,27 @@
             "type": "Pixel",
             "entryPoint": "psmain",
             "resources": [
+                {
+                    "name": "DiffuseIBL",
+                    "access": "SRV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "SpecularIBL",
+                    "access": "SRV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "SpecularBRDFLUT",
+                    "access": "SRV",
+                    "type": "Texture"
+                },
                 {
                     "name": "Lights",
                     "access": "SRV",
@@ -135,27 +632,14 @@
                         }
                     }
                 }
-            ]
-        },
-        {
-            "name": "ModelViewerCS",
-            "fileName": "ModelViewerCS.hlsl",
-            "entryPoint": "csmain",
-            "NumThreads": [
-                64,
-                1,
-                1
             ],
-            "resources": [
+            "samplers": [
                 {
-                    "name": "VertexBuffer",
-                    "access": "UAV",
-                    "type": "Buffer",
-                    "buffer": {
-                        "typeStruct": {
-                            "name": "VB"
-                        }
-                    }
+                    "name": "LinearWrapSampler"
+                },
+                {
+                    "name": "LinearClampSampler",
+                    "addressMode": "Clamp"
                 }
             ]
         },
@@ -164,6 +648,14 @@
             "fileName": "ModelViewerSkyboxCS.hlsl",
             "entryPoint": "csmain",
             "resources": [
+                {
+                    "name": "SkyboxCubeMap",
+                    "access": "SRV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
                 {
                     "name": "Depth",
                     "access": "SRV",
@@ -177,8 +669,144 @@
             ],
             "samplers": [
                 {
-                    "name": "texSampler",
-                    "addressMode": "Clamp"
+                    "name": "LinearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "ModelViewerPathTraceCS",
+            "fileName": "ModelViewerPathTraceCS.hlsl",
+            "resources": [
+                {
+                    "name": "Scene",
+                    "access": "RTScene",
+                    "type": "Buffer"
+                },
+                {
+                    "name": "AccumPT",
+                    "access": "UAV",
+                    "type": "Texture"
+                },
+                {
+                    "name": "Lights",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Lights"
+                        }
+                    }
+                },
+                {
+                    "name": "Materials",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "Materials"
+                        }
+                    }
+                },
+                {
+                    "name": "VertexBuffer",
+                    "access": "SRV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "typeStruct": {
+                            "name": "VB"
+                        }
+                    }
+                },
+                {
+                    "name": "SkyboxCubeMap",
+                    "access": "SRV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "ModelViewerResetPTCS",
+            "fileName": "ModelViewerResetPTCS.hlsl",
+            "resources": [
+                {
+                    "name": "AccumPT",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ]
+        },
+        {
+            "name": "MakeSkyboxCubeMap",
+            "fileName": "EquirectangularToCubeMap.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "access": "SRV",
+                    "type": "Texture"
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "BakeDiffuseIBL",
+            "fileName": "BakeDiffuseIBL.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "access": "SRV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrapSampler"
+                }
+            ]
+        },
+        {
+            "name": "BakeSpecularBRDF",
+            "fileName": "BakeSpecularBRDF.hlsl",
+            "resources": [
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture"
                 }
             ]
         }
@@ -273,7 +901,7 @@
                 {
                     "name": "baseColor",
                     "type": "Float4",
-                    "dflt": "1, 1, 1",
+                    "dflt": "1, 1, 1, 1",
                     "semantic": "Material_BaseColor"
                 },
                 {
@@ -289,7 +917,7 @@
                 {
                     "name": "roughness",
                     "type": "Float",
-                    "dflt": "1.0f",
+                    "dflt": "0.0f",
                     "semantic": "Material_Roughness"
                 },
                 {
@@ -311,6 +939,28 @@
             ]
         }
     ],
+    "fileCopies": [
+        {
+            "fileName": "PBR.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "PCG.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "SRGB.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "tonemap.hlsl",
+            "type": "Shader"
+        },
+        {
+            "fileName": "CubeMap.hlsli",
+            "type": "Shader"
+        }
+    ],
     "nodes": [
         {
             "resourceBuffer": {
@@ -320,6 +970,64 @@
                     -126.0
                 ],
                 "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "Skybox2D",
+                "editorPos": [
+                    -312.0,
+                    -491.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SkyboxCubeMap",
+                "editorPos": [
+                    -332.0,
+                    -427.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "SkyboxFaceSize"
+                    },
+                    "multiply": [
+                        1,
+                        1,
+                        6
+                    ]
+                },
+                "dimension": "TextureCube"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "DiffuseIBL",
+                "editorPos": [
+                    -152.0,
+                    -363.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "DiffuseIBLFaceSize"
+                    },
+                    "multiply": [
+                        1,
+                        1,
+                        6
+                    ]
+                },
+                "dimension": "TextureCube"
             }
         },
         {
@@ -360,10 +1068,18 @@
             "actionDrawCall": {
                 "name": "Rasterize",
                 "editorPos": [
-                    210.0,
-                    -183.0
+                    242.0,
+                    -249.0
                 ],
+                "condition": {
+                    "variable1": "ViewMode",
+                    "comparison": "NotEquals",
+                    "value2": "PathTraced"
+                },
                 "linkProperties": [
+                    {},
+                    {},
+                    {},
                     {},
                     {},
                     {},
@@ -376,6 +1092,21 @@
                     {}
                 ],
                 "connections": [
+                    {
+                        "srcPin": "DiffuseIBL",
+                        "dstNode": "BakeDiffuseIBL",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "SpecularIBL",
+                        "dstNode": "BakeSpecularIBL",
+                        "dstPin": "SpecularIBL"
+                    },
+                    {
+                        "srcPin": "SpecularBRDFLUT",
+                        "dstNode": "BakeSpecularBRDF",
+                        "dstPin": "Output"
+                    },
                     {
                         "srcPin": "Lights",
                         "dstNode": "LightBuffer",
@@ -463,14 +1194,25 @@
             "actionComputeShader": {
                 "name": "Skybox",
                 "editorPos": [
-                    437.0,
-                    -52.0
+                    495.0,
+                    -238.0
                 ],
+                "condition": {
+                    "variable1": "ViewMode",
+                    "comparison": "NotEquals",
+                    "value2": "PathTraced"
+                },
                 "linkProperties": [
+                    {},
                     {},
                     {}
                 ],
                 "connections": [
+                    {
+                        "srcPin": "SkyboxCubeMap",
+                        "dstNode": "BakeDiffuseIBL",
+                        "dstPin": "Input"
+                    },
                     {
                         "srcPin": "Depth",
                         "dstNode": "Rasterize",
@@ -496,7 +1238,7 @@
             "resourceBuffer": {
                 "name": "LightBuffer",
                 "editorPos": [
-                    75.0,
+                    43.0,
                     -222.0
                 ],
                 "visibility": "Imported"
@@ -510,6 +1252,356 @@
                     -174.0
                 ],
                 "visibility": "Imported"
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "BVH",
+                "editorPos": [
+                    547.0,
+                    -350.0
+                ],
+                "visibility": "Imported"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "PathTrace",
+                "editorPos": [
+                    751.0,
+                    -192.0
+                ],
+                "condition": {
+                    "variable1": "ViewMode",
+                    "comparison": "Equals",
+                    "value2": "PathTraced"
+                },
+                "linkProperties": [
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Scene",
+                        "dstNode": "BVH",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "AccumPT",
+                        "dstNode": "ResetPT",
+                        "dstPin": "AccumPT"
+                    },
+                    {
+                        "srcPin": "Lights",
+                        "dstNode": "Rasterize",
+                        "dstPin": "Lights"
+                    },
+                    {
+                        "srcPin": "Materials",
+                        "dstNode": "Rasterize",
+                        "dstPin": "Materials"
+                    },
+                    {
+                        "srcPin": "VertexBuffer",
+                        "dstNode": "Rasterize",
+                        "dstPin": "vertexBuffer"
+                    },
+                    {
+                        "srcPin": "SkyboxCubeMap",
+                        "dstNode": "Skybox",
+                        "dstPin": "SkyboxCubeMap"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "Skybox",
+                        "dstPin": "Color"
+                    }
+                ],
+                "shader": {
+                    "name": "ModelViewerPathTraceCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "AccumPT"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "AccumPT",
+                "editorPos": [
+                    403.0,
+                    -302.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "RenderSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "ResetPT",
+                "editorPos": [
+                    517.0,
+                    -302.0
+                ],
+                "condition": {
+                    "variable1": "FrameIndex",
+                    "comparison": "LT",
+                    "value2": "4"
+                },
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "AccumPT",
+                        "dstNode": "AccumPT",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "ModelViewerResetPTCS"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "AccumPT"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "MakeSkyboxCubeMap",
+                "editorPos": [
+                    -181.0,
+                    -459.0
+                ],
+                "condition": {
+                    "variable1": "IBLDirty",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Skybox2D",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "SkyboxCubeMap",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "MakeSkyboxCubeMap"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "SkyboxCubeMap"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BakeDiffuseIBL",
+                "editorPos": [
+                    34.0,
+                    -459.0
+                ],
+                "condition": {
+                    "variable1": "IBLDirty",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "MakeSkyboxCubeMap",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "DiffuseIBL",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BakeDiffuseIBL"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "DiffuseIBL"
+                    }
+                }
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SpecularIBL",
+                "editorPos": [
+                    -152.0,
+                    -299.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RGBA32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "SpecularIBLFaceSize2D"
+                    },
+                    "multiply": [
+                        1,
+                        1,
+                        6
+                    ]
+                },
+                "numMips": 0,
+                "dimension": "TextureCube"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SpecularBRDFLUT",
+                "editorPos": [
+                    -178.0,
+                    -238.0
+                ],
+                "transient": false,
+                "format": {
+                    "format": "RG32_Float"
+                },
+                "size": {
+                    "variable": {
+                        "name": "SpecularBRDFLUTSize"
+                    }
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BakeSpecularBRDF",
+                "editorPos": [
+                    29.0,
+                    -286.0
+                ],
+                "condition": {
+                    "variable1": "IBLDirty",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "SpecularBRDFLUT",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BakeSpecularBRDF"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "SpecularBRDFLUT"
+                    }
+                }
+            }
+        },
+        {
+            "actionSubGraph": {
+                "name": "BakeSpecularIBL",
+                "editorPos": [
+                    21.0,
+                    -366.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Skybox",
+                        "dstNode": "MakeSkyboxCubeMap",
+                        "dstPin": "Output"
+                    },
+                    {
+                        "srcPin": "SpecularIBL",
+                        "dstNode": "SpecularIBL",
+                        "dstPin": "resource"
+                    }
+                ],
+                "fileName": "BakeSpecularIBL.gg",
+                "subGraphData": {
+                    "importedResources": [
+                        "Skybox",
+                        "SpecularIBL"
+                    ],
+                    "variables": [
+                        {
+                            "name": "BakeSpecularIBL",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "LevelToBake",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "NumSamples",
+                            "visibility": "User"
+                        },
+                        {
+                            "name": "SpecularBakeLevelCountMinus1",
+                            "visibility": "User"
+                        }
+                    ]
+                },
+                "variableSettings": [
+                    {
+                        "name": "BakeSpecularIBL",
+                        "visibility": "User",
+                        "replaceWithStr": "IBLDirty"
+                    },
+                    {
+                        "name": "LevelToBake",
+                        "isLoopIndex": true
+                    },
+                    {
+                        "name": "NumSamples",
+                        "visibility": "User",
+                        "replaceWithStr": "NumSpecularIBLSamples"
+                    },
+                    {
+                        "name": "SpecularBakeLevelCountMinus1",
+                        "visibility": "User",
+                        "replaceWithStr": "SpecularBakeLevelCountMinus1"
+                    }
+                ],
+                "loopCountVariable": {
+                    "name": "SpecularBakeLevelCount"
+                }
             }
         }
     ],
@@ -576,10 +1668,128 @@
                 },
                 {
                     "label": "Shaded"
+                },
+                {
+                    "label": "PathTraced"
+                }
+            ]
+        },
+        {
+            "name": "ToneMappingOperation",
+            "items": [
+                {
+                    "label": "None"
+                },
+                {
+                    "label": "Reinhard"
+                },
+                {
+                    "label": "ACES_Luminance"
+                },
+                {
+                    "label": "ACES"
                 }
             ]
         }
     ],
+    "setVars": [
+        {
+            "destination": {
+                "name": "IBLDirty"
+            },
+            "ALiteral": "false",
+            "op": "Noop",
+            "setBefore": false
+        },
+        {
+            "destination": {
+                "name": "IBLDirty"
+            },
+            "ALiteral": "true",
+            "op": "Noop",
+            "setBefore": false,
+            "condition": {
+                "variable1": "RebakeIBL",
+                "comparison": "IsTrue"
+            }
+        },
+        {
+            "destination": {
+                "name": "SpecularBakeLevelCountMinus1"
+            },
+            "AVar": {
+                "name": "SpecularBakeLevelCount"
+            },
+            "op": "Subtract",
+            "BLiteral": "1"
+        },
+        {
+            "destination": {
+                "name": "SpecularIBLFaceSize"
+            },
+            "ALiteral": "2",
+            "op": "Pow",
+            "BVar": {
+                "name": "SpecularBakeLevelCountMinus1"
+            }
+        },
+        {
+            "destination": {
+                "name": "SpecularIBLFaceSize2D"
+            },
+            "destinationIndex": 0,
+            "AVar": {
+                "name": "SpecularIBLFaceSize"
+            },
+            "op": "Noop"
+        },
+        {
+            "destination": {
+                "name": "SpecularIBLFaceSize2D"
+            },
+            "destinationIndex": 1,
+            "AVar": {
+                "name": "SpecularIBLFaceSize"
+            },
+            "op": "Noop"
+        },
+        {
+            "destination": {
+                "name": "FrameIndex"
+            },
+            "AVar": {
+                "name": "FrameIndex"
+            },
+            "BLiteral": "1"
+        },
+        {
+            "destination": {
+                "name": "FrameIndex"
+            },
+            "ALiteral": "0",
+            "op": "Noop",
+            "condition": {
+                "variable1": "CameraChanged",
+                "comparison": "IsTrue"
+            }
+        },
+        {
+            "destination": {
+                "name": "FrameIndex"
+            },
+            "ALiteral": "0",
+            "op": "Noop",
+            "condition": {
+                "variable1": "ResetPT",
+                "comparison": "IsTrue"
+            }
+        }
+    ],
+    "settings": {
+        "dx12": {
+            "shaderModelCs": "cs_6_5"
+        }
+    },
     "PrimaryOutput": {
         "name": "ColorU8sRGB"
     }

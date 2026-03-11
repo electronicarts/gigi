@@ -168,6 +168,8 @@ ENUM_BEGIN(SetVariableOperator, "")
     ENUM_ITEM(Divide, "/")
     ENUM_ITEM(Modulo, "%")
 
+    ENUM_ITEM(Pow, "pow(A, B)")
+
     ENUM_ITEM(PowerOf2GE, "The next power of two, greater or equal to the current value")
 
     ENUM_ITEM(Minimum, "min(A,B)")

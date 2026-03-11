@@ -28,6 +28,9 @@ namespace SubGraphTest
 
         static ID3D12CommandSignature* s_commandSignatureDispatch;
 
+        // Variables
+        const int variable___loopIndexValue_0 = 0;
+
         static ID3D12PipelineState* computeShader_Swap_Colors_pso;
         static ID3D12RootSignature* computeShader_Swap_Colors_rootSig;
 

@@ -25,6 +25,9 @@ To set that up, put this struct into Engine\Source\Runtime\Renderer\Private\Scen
 
 struct FTechniqueState_TwoRayGensSubgraph
 {
+    // Internal Variables - do not modify these
+    int32 Var___loopIndexValue_0 = int32(0);
+
     // Host Variables - feel free to read and write these
     FMatrix44f Var_clipToWorld = FMatrix44f(FPlane4f(0.000000000f, 0.000000000f, 0.000000000f, 0.000000000f), FPlane4f(0.000000000f, 0.000000000f, 0.000000000f, 0.000000000f), FPlane4f(0.000000000f, 0.000000000f, 0.000000000f, 0.000000000f), FPlane4f(0.000000000f, 0.000000000f, 0.000000000f, 0.000000000f));
     FVector3f Var_cameraPos = FVector3f(0.f, 0.f, 0.f);

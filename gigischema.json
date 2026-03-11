@@ -959,6 +959,16 @@
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
                     },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
                       "type": "boolean"
@@ -1119,6 +1129,16 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
@@ -1435,6 +1455,16 @@
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
                     },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
                       "type": "boolean"
@@ -1726,6 +1756,16 @@
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
                     },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
                       "type": "boolean"
@@ -1932,6 +1972,16 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
@@ -2663,6 +2713,16 @@
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
                     },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
                       "type": "boolean"
@@ -2917,6 +2977,16 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
@@ -3175,6 +3245,16 @@
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
                     },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
+                    },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
                       "type": "boolean"
@@ -3335,6 +3415,16 @@
                     "UAVMipIndex": {
                       "description": "The mip index to use, if this is a UAV connection.",
                       "type": "integer"
+                    },
+                    "UAVMipIndexVariable": {
+                      "description": "If specified, this variable will control the UAV Mip index.",
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "description": "The name of the variable.",
+                          "type": "string"
+                        }
+                      }
                     },
                     "disallowDuplication": {
                       "description": "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.",
@@ -4305,7 +4395,7 @@
           "op": {
             "description": "",
             "type": "string",
-            "enum": ["Add", "Subtract", "Multiply", "Divide", "Modulo", "PowerOf2GE", "Minimum", "Maximum", "BitwiseOr", "BitwiseAnd", "BitwiseXor", "BitwiseNot", "Noop"]
+            "enum": ["Add", "Subtract", "Multiply", "Divide", "Modulo", "Pow", "PowerOf2GE", "Minimum", "Maximum", "BitwiseOr", "BitwiseAnd", "BitwiseXor", "BitwiseNot", "Noop"]
           },
           "BVar": {
             "description": "The variable on the right side of the operator",

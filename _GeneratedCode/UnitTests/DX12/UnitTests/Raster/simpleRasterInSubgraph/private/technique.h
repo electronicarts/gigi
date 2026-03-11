@@ -33,6 +33,9 @@ namespace simpleRasterInSubgraph
             float4x4 DoSimpleRaster_ViewProjMtx = {1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f, 0.f, 0.f, 1.f};
         };
 
+        // Variables
+        const int variable___loopIndexValue_0 = 0;
+
         // This is here for the benefit of simpleRasterInSubgraph. Need a reference to a struct type in a subgraph.
         ID3D12Resource* buffer_DoSimpleRaster_VBCopy = nullptr;
         DXGI_FORMAT buffer_DoSimpleRaster_VBCopy_format = DXGI_FORMAT_UNKNOWN; // For typed buffers, the type of the buffer

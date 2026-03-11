@@ -1,54 +1,63 @@
 // Unnamed technique, shader ModelViewerSkyboxCS
 /*$(ShaderResources)*/
 
-// from https://learnopengl.com/PBR/IBL/Diffuse-irradiance
-float2 SampleSphericalMap(float3 v)
-{
-    const float2 invAtan = float2(0.1591f, 0.3183f);
-    float2 uv = float2(atan2(v.z, v.x), asin(-v.y));
-    uv *= invAtan;
-    uv += 0.5;
-    return uv;
-}
-
-float3 LinearToSRGB(float3 linearCol)
-{
-    float3 sRGBLo = linearCol * 12.92;
-    float3 sRGBHi = (pow(abs(linearCol), float3(1.0 / 2.4, 1.0 / 2.4, 1.0 / 2.4)) * 1.055) - 0.055;
-    float3 sRGB;
-    sRGB.r = linearCol.r <= 0.0031308 ? sRGBLo.r : sRGBHi.r;
-    sRGB.g = linearCol.g <= 0.0031308 ? sRGBLo.g : sRGBHi.g;
-    sRGB.b = linearCol.b <= 0.0031308 ? sRGBLo.b : sRGBHi.b;
-    return sRGB;
-}
+#include "SRGB.hlsli"
+#include "tonemap.hlsl"
 
 /*$(_compute:csmain)*/(uint3 DTid : SV_DispatchThreadID)
 {
     uint2 px = DTid.xy;
 
-	if (Depth[px].r != 0.0f || /*$(Variable:Skybox)*/ == 0)
-		return;
+    if (Depth[px].r != 0.0f)
+        return;
 
     uint2 renderSize;
     Color.GetDimensions(renderSize.x, renderSize.y);
 
-	// Get the world position
-	float2 screenPos = (float2(px)+0.5f) / float2(renderSize) * 2.0 - 1.0;
-	screenPos.y = -screenPos.y;
-	float4 world = mul(float4(screenPos, 1.0f, 1.0f), /*$(Variable:InvViewProjMtx)*/);
-	world.xyz /= world.w;
+    // Get the world position
+    float2 screenPos = (float2(px) + 0.5f) / float2(renderSize) * 2.0 - 1.0;
+    screenPos.y = -screenPos.y;
+    float4 world = mul(float4(screenPos, 1.0f, 1.0f), /*$(Variable:InvViewProjMtx)*/);
+    world.xyz /= world.w;
 
     float3 rayDir = normalize(world.xyz - /*$(Variable:CameraPos)*/);
 
-    float2 uv = SampleSphericalMap(rayDir);
+    float3 color = SkyboxCubeMap.SampleLevel(LinearWrapSampler, rayDir, 0).rgb;
 
-	float3 texel = /*$(Image:Arches_E_PineTree_3k.hdr:RGBA32_Float:float4:false)*/.SampleLevel(texSampler, uv, 0).rgb;
+    // apply exposure
+    color *= pow(2.0f, /*$(Variable:ExposureFStops)*/);
 
-    Color[px] = float4(LinearToSRGB(texel), 1.0f);
+    // Do tonemapping
+	switch(/*$(Variable:ToneMapper)*/)
+	{
+		// Do nothing, only apply exposure
+		case ToneMappingOperation::None: break;
+
+		// https://64.github.io/tonemapping/
+		case ToneMappingOperation::Reinhard:
+		{
+			color = color / (1.0f + color);
+			break;
+		}
+		case ToneMappingOperation::ACES_Luminance:
+		{
+			// The * 0.6f is to undo the exposure baked in, per the author's instructions
+			color = ACESFilm(color * 0.6f);
+			break;
+		}
+		case ToneMappingOperation::ACES:
+		{
+			color = ACESFitted(color);
+			break;
+		}
+	}
+
+    Color[px] = float4(LinearToSRGB(color), 1.0f);
 }
 
 /*
 Shader Resources:
+    Texture SkyboxCubeMap (as SRV)
 	Texture Color (as UAV)
 	Texture Depth (as SRV)
 */

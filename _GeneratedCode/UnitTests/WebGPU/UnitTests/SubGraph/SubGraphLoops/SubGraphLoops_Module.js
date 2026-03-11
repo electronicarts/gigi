@@ -43,9 +43,9 @@ static ShaderCode_FilterSub_Iteration_0_DoBlur_FilterSub_Iteration_0_Blur_0 = `
 struct Struct_FilterSub_Iteration_0_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_0_sRGB_0 : u32,
-    @align(4) _loopIndexValue_0_0 : i32,
-    @align(8) _padding0_0 : f32,
-    @align(4) _padding1_0 : f32,
+    @align(4) _padding0_0 : f32,
+    @align(8) _padding1_0 : f32,
+    @align(4) _padding2_0 : f32,
 };
 
 @binding(3) @group(0) var<uniform> _FilterSub_Iteration_0_Blur_0CB : Struct_FilterSub_Iteration_0_Blur_0CB_std140_0;
@@ -98,10 +98,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_0_Blur_0CB._loopIndexValue_0_0 + i32(1);
-    const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
+    const _S5 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
-    var ret_0 : vec3<f32> = _S6;
+    var ret_0 : vec3<f32> = _S5;
     for(;;)
     {
         if(iy_0 <= i32(1))
@@ -121,9 +120,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
             {
                 break;
             }
-            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(_S5) + dims_0) % dims_0;
-            var _S7 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
-            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S7)).xy, ((_S7)).z)).xyz;
+            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) + dims_0) % dims_0;
+            var _S6 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
+            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S6)).xy, ((_S6)).z)).xyz;
             ix_0 = ix_0 + i32(1);
             ret_0 = ret_1;
         }
@@ -151,9 +150,9 @@ static ShaderCode_FilterSub_Iteration_1_DoBlur_FilterSub_Iteration_1_Blur_0 = `
 struct Struct_FilterSub_Iteration_1_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_1_sRGB_0 : u32,
-    @align(4) _loopIndexValue_1_0 : i32,
-    @align(8) _padding0_0 : f32,
-    @align(4) _padding1_0 : f32,
+    @align(4) _padding0_0 : f32,
+    @align(8) _padding1_0 : f32,
+    @align(4) _padding2_0 : f32,
 };
 
 @binding(3) @group(0) var<uniform> _FilterSub_Iteration_1_Blur_0CB : Struct_FilterSub_Iteration_1_Blur_0CB_std140_0;
@@ -206,10 +205,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_1_Blur_0CB._loopIndexValue_1_0 + i32(1);
-    const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
+    const _S5 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
-    var ret_0 : vec3<f32> = _S6;
+    var ret_0 : vec3<f32> = _S5;
     for(;;)
     {
         if(iy_0 <= i32(1))
@@ -229,9 +227,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
             {
                 break;
             }
-            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(_S5) + dims_0) % dims_0;
-            var _S7 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
-            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S7)).xy, ((_S7)).z)).xyz;
+            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(i32(2)) + dims_0) % dims_0;
+            var _S6 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
+            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S6)).xy, ((_S6)).z)).xyz;
             ix_0 = ix_0 + i32(1);
             ret_0 = ret_1;
         }
@@ -259,9 +257,9 @@ static ShaderCode_FilterSub_Iteration_2_DoBlur_FilterSub_Iteration_2_Blur_0 = `
 struct Struct_FilterSub_Iteration_2_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_2_sRGB_0 : u32,
-    @align(4) _loopIndexValue_2_0 : i32,
-    @align(8) _padding0_0 : f32,
-    @align(4) _padding1_0 : f32,
+    @align(4) _padding0_0 : f32,
+    @align(8) _padding1_0 : f32,
+    @align(4) _padding2_0 : f32,
 };
 
 @binding(3) @group(0) var<uniform> _FilterSub_Iteration_2_Blur_0CB : Struct_FilterSub_Iteration_2_Blur_0CB_std140_0;
@@ -314,10 +312,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_2_Blur_0CB._loopIndexValue_2_0 + i32(1);
-    const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
+    const _S5 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
-    var ret_0 : vec3<f32> = _S6;
+    var ret_0 : vec3<f32> = _S5;
     for(;;)
     {
         if(iy_0 <= i32(1))
@@ -337,9 +334,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
             {
                 break;
             }
-            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(_S5) + dims_0) % dims_0;
-            var _S7 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
-            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S7)).xy, ((_S7)).z)).xyz;
+            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(i32(3)) + dims_0) % dims_0;
+            var _S6 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
+            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S6)).xy, ((_S6)).z)).xyz;
             ix_0 = ix_0 + i32(1);
             ret_0 = ret_1;
         }
@@ -367,9 +364,9 @@ static ShaderCode_FilterSub_Iteration_3_DoBlur_FilterSub_Iteration_3_Blur_0 = `
 struct Struct_FilterSub_Iteration_3_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_3_sRGB_0 : u32,
-    @align(4) _loopIndexValue_3_0 : i32,
-    @align(8) _padding0_0 : f32,
-    @align(4) _padding1_0 : f32,
+    @align(4) _padding0_0 : f32,
+    @align(8) _padding1_0 : f32,
+    @align(4) _padding2_0 : f32,
 };
 
 @binding(3) @group(0) var<uniform> _FilterSub_Iteration_3_Blur_0CB : Struct_FilterSub_Iteration_3_Blur_0CB_std140_0;
@@ -422,10 +419,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_3_Blur_0CB._loopIndexValue_3_0 + i32(1);
-    const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
+    const _S5 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
-    var ret_0 : vec3<f32> = _S6;
+    var ret_0 : vec3<f32> = _S5;
     for(;;)
     {
         if(iy_0 <= i32(1))
@@ -445,9 +441,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
             {
                 break;
             }
-            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(_S5) + dims_0) % dims_0;
-            var _S7 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
-            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S7)).xy, ((_S7)).z)).xyz;
+            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(i32(4)) + dims_0) % dims_0;
+            var _S6 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
+            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S6)).xy, ((_S6)).z)).xyz;
             ix_0 = ix_0 + i32(1);
             ret_0 = ret_1;
         }
@@ -475,9 +471,9 @@ static ShaderCode_FilterSub_Iteration_4_DoBlur_FilterSub_Iteration_4_Blur_0 = `
 struct Struct_FilterSub_Iteration_4_Blur_0CB_std140_0
 {
     @align(16) FilterSub_Iteration_4_sRGB_0 : u32,
-    @align(4) _loopIndexValue_4_0 : i32,
-    @align(8) _padding0_0 : f32,
-    @align(4) _padding1_0 : f32,
+    @align(4) _padding0_0 : f32,
+    @align(8) _padding1_0 : f32,
+    @align(4) _padding2_0 : f32,
 };
 
 @binding(3) @group(0) var<uniform> _FilterSub_Iteration_4_Blur_0CB : Struct_FilterSub_Iteration_4_Blur_0CB_std140_0;
@@ -530,10 +526,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
     {var dim = textureDimensions((Input));((_S3)) = bitcast<i32>(dim.x);((_S4)) = bitcast<i32>(dim.y);};
     dims_0[i32(0)] = _S3;
     dims_0[i32(1)] = _S4;
-    var _S5 : i32 = _FilterSub_Iteration_4_Blur_0CB._loopIndexValue_4_0 + i32(1);
-    const _S6 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
+    const _S5 : vec3<f32> = vec3<f32>(0.0f, 0.0f, 0.0f);
     var iy_0 : i32 = i32(-1);
-    var ret_0 : vec3<f32> = _S6;
+    var ret_0 : vec3<f32> = _S5;
     for(;;)
     {
         if(iy_0 <= i32(1))
@@ -553,9 +548,9 @@ fn main(@builtin(global_invocation_id) DTid_0 : vec3<u32>)
             {
                 break;
             }
-            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(_S5) + dims_0) % dims_0;
-            var _S7 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
-            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S7)).xy, ((_S7)).z)).xyz;
+            var readpx_0 : vec2<i32> = (_S2 + vec2<i32>(ix_0, iy_0) * vec2<i32>(i32(5)) + dims_0) % dims_0;
+            var _S6 : vec3<i32> = vec3<i32>(vec3<u32>(vec2<u32>(readpx_0), u32(0)));
+            var ret_1 : vec3<f32> = ret_0 + (textureLoad((Input), ((_S6)).xy, ((_S6)).z)).xyz;
             ix_0 = ix_0 + i32(1);
             ret_0 = ret_1;
         }
@@ -763,45 +758,45 @@ variableChanged___loopIndexValue_4 = false;
 static StructOffsets__FilterSub_Iteration_0_Blur_0CB =
 {
     FilterSub_Iteration_0_sRGB: 0,
-    __loopIndexValue_0: 4,
-    _padding0: 8,
-    _padding1: 12,
+    _padding0: 4,
+    _padding1: 8,
+    _padding2: 12,
     _size: 16,
 }
 
 static StructOffsets__FilterSub_Iteration_1_Blur_0CB =
 {
     FilterSub_Iteration_1_sRGB: 0,
-    __loopIndexValue_1: 4,
-    _padding0: 8,
-    _padding1: 12,
+    _padding0: 4,
+    _padding1: 8,
+    _padding2: 12,
     _size: 16,
 }
 
 static StructOffsets__FilterSub_Iteration_2_Blur_0CB =
 {
     FilterSub_Iteration_2_sRGB: 0,
-    __loopIndexValue_2: 4,
-    _padding0: 8,
-    _padding1: 12,
+    _padding0: 4,
+    _padding1: 8,
+    _padding2: 12,
     _size: 16,
 }
 
 static StructOffsets__FilterSub_Iteration_3_Blur_0CB =
 {
     FilterSub_Iteration_3_sRGB: 0,
-    __loopIndexValue_3: 4,
-    _padding0: 8,
-    _padding1: 12,
+    _padding0: 4,
+    _padding1: 8,
+    _padding2: 12,
     _size: 16,
 }
 
 static StructOffsets__FilterSub_Iteration_4_Blur_0CB =
 {
     FilterSub_Iteration_4_sRGB: 0,
-    __loopIndexValue_4: 4,
-    _padding0: 8,
-    _padding1: 12,
+    _padding0: 4,
+    _padding1: 8,
+    _padding2: 12,
     _size: 16,
 }
 
@@ -1775,7 +1770,6 @@ async FillEncoder(device, encoder)
         const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB._size));
         const view = new DataView(bufferCPU);
         view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB.FilterSub_Iteration_0_sRGB, (this.variable_FilterSub_Iteration_0_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_0_Blur_0CB.__loopIndexValue_0, this.variable___loopIndexValue_0, true);
         device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_0_Blur_0CB, 0, bufferCPU);
     }
 
@@ -1878,7 +1872,6 @@ async FillEncoder(device, encoder)
         const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB._size));
         const view = new DataView(bufferCPU);
         view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB.FilterSub_Iteration_1_sRGB, (this.variable_FilterSub_Iteration_1_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_1_Blur_0CB.__loopIndexValue_1, this.variable___loopIndexValue_1, true);
         device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_1_Blur_0CB, 0, bufferCPU);
     }
 
@@ -1981,7 +1974,6 @@ async FillEncoder(device, encoder)
         const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB._size));
         const view = new DataView(bufferCPU);
         view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB.FilterSub_Iteration_2_sRGB, (this.variable_FilterSub_Iteration_2_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_2_Blur_0CB.__loopIndexValue_2, this.variable___loopIndexValue_2, true);
         device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_2_Blur_0CB, 0, bufferCPU);
     }
 
@@ -2084,7 +2076,6 @@ async FillEncoder(device, encoder)
         const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB._size));
         const view = new DataView(bufferCPU);
         view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB.FilterSub_Iteration_3_sRGB, (this.variable_FilterSub_Iteration_3_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_3_Blur_0CB.__loopIndexValue_3, this.variable___loopIndexValue_3, true);
         device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_3_Blur_0CB, 0, bufferCPU);
     }
 
@@ -2187,7 +2178,6 @@ async FillEncoder(device, encoder)
         const bufferCPU = new ArrayBuffer(Shared.Align(16, this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB._size));
         const view = new DataView(bufferCPU);
         view.setUint32(this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB.FilterSub_Iteration_4_sRGB, (this.variable_FilterSub_Iteration_4_sRGB === true ? 1 : 0), true);
-        view.setInt32(this.constructor.StructOffsets__FilterSub_Iteration_4_Blur_0CB.__loopIndexValue_4, this.variable___loopIndexValue_4, true);
         device.queue.writeBuffer(this.constantBuffer__FilterSub_Iteration_4_Blur_0CB, 0, bufferCPU);
     }
 

@@ -299,6 +299,7 @@
             document.getElementById('inputBox_missColor0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); TwoRayGensSubgraph.variable_missColor[0]=event.target.value;});
             document.getElementById('inputBox_missColor1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); TwoRayGensSubgraph.variable_missColor[1]=event.target.value;});
             document.getElementById('inputBox_missColor2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); TwoRayGensSubgraph.variable_missColor[2]=event.target.value;});
+            document.getElementById('inputBox___loopIndexValue_0').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); TwoRayGensSubgraph.variable___loopIndexValue_0=event.target.value;});
             document.getElementById('inputBox__dispatchSize_A_TwoRayGens10').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[0]=event.target.value;});
             document.getElementById('inputBox__dispatchSize_A_TwoRayGens11').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[1]=event.target.value;});
             document.getElementById('inputBox__dispatchSize_A_TwoRayGens12').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[2]=event.target.value;});
@@ -334,6 +335,7 @@
                     TwoRayGensSubgraph.variable_missColor[0] = TwoRayGensSubgraph.variableDefault_missColor[0];
                     TwoRayGensSubgraph.variable_missColor[1] = TwoRayGensSubgraph.variableDefault_missColor[1];
                     TwoRayGensSubgraph.variable_missColor[2] = TwoRayGensSubgraph.variableDefault_missColor[2];
+                    TwoRayGensSubgraph.variable___loopIndexValue_0 = TwoRayGensSubgraph.variableDefault___loopIndexValue_0;
                     TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[0] = TwoRayGensSubgraph.variableDefault__dispatchSize_A_TwoRayGens1[0];
                     TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[1] = TwoRayGensSubgraph.variableDefault__dispatchSize_A_TwoRayGens1[1];
                     TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[2] = TwoRayGensSubgraph.variableDefault__dispatchSize_A_TwoRayGens1[2];
@@ -370,6 +372,7 @@
                     document.getElementById('inputBox_missColor0').value = TwoRayGensSubgraph.variable_missColor[0];
                     document.getElementById('inputBox_missColor1').value = TwoRayGensSubgraph.variable_missColor[1];
                     document.getElementById('inputBox_missColor2').value = TwoRayGensSubgraph.variable_missColor[2];
+                    document.getElementById('inputBox___loopIndexValue_0').value = TwoRayGensSubgraph.variable___loopIndexValue_0;
                     document.getElementById('inputBox__dispatchSize_A_TwoRayGens10').value = TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[0];
                     document.getElementById('inputBox__dispatchSize_A_TwoRayGens11').value = TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[1];
                     document.getElementById('inputBox__dispatchSize_A_TwoRayGens12').value = TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[2];
@@ -629,6 +632,12 @@
                     TwoRayGensSubgraph.variableChanged_missColor[2] = false;
                 }
 
+                if (TwoRayGensSubgraph.variableChanged___loopIndexValue_0)
+                {
+                    document.getElementById('inputBox___loopIndexValue_0').value = TwoRayGensSubgraph.variable___loopIndexValue_0;
+                    TwoRayGensSubgraph.variableChanged___loopIndexValue_0 = false;
+                }
+
                 if (TwoRayGensSubgraph.variableChanged__dispatchSize_A_TwoRayGens1[0])
                 {
                     document.getElementById('inputBox__dispatchSize_A_TwoRayGens10').value = TwoRayGensSubgraph.variable__dispatchSize_A_TwoRayGens1[0];
@@ -793,6 +802,12 @@
                     <br><br>
                     <button type="button" class="collapsible">Internal Variables</button>
                     <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">__loopIndexValue_0&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox___loopIndexValue_0" disabled="true">
+                            </td>
+                        </tr>
                         <tr>
                             <td valign="top">_dispatchSize_A_TwoRayGens1&nbsp;</td>
                             <td>

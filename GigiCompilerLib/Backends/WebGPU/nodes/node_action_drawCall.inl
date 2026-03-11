@@ -530,8 +530,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 					continue;
 
 				int UAVMipIndex = 0;
+                int UAVMipIndexVariableIndex = -1;
 				if (dep.pinIndex < node.linkProperties.size())
+				{
 					UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+					UAVMipIndexVariableIndex = node.linkProperties[dep.pinIndex].UAVMipIndexVariable.variableIndex;
+				}
 
 				RenderGraphNode depNodeBase = renderGraph.nodes[dep.nodeIndex];
 
@@ -553,8 +557,13 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
 					if (dep.access != ShaderResourceAccessType::UAV)
 						stringReplacementMap["/*$(Execute)*/"] << ", format: this.texture_" << depNode.name << "_format, usage: GPUTextureUsage.TEXTURE_BINDING";
-					else
-						stringReplacementMap["/*$(Execute)*/"] << ", mipLevelCount: 1, baseMipLevel: " << UAVMipIndex;
+                    else
+                    {
+                        if (UAVMipIndexVariableIndex != -1)
+                            stringReplacementMap["/*$(Execute)*/"] << ", mipLevelCount: 1, baseMipLevel: this.variable_" << renderGraph.variables[UAVMipIndexVariableIndex].name;
+                        else
+                            stringReplacementMap["/*$(Execute)*/"] << ", mipLevelCount: 1, baseMipLevel: " << UAVMipIndex;
+                    }
 
 					stringReplacementMap["/*$(Execute)*/"] <<
 						" })\n"
@@ -616,8 +625,12 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 					continue;
 
 				int UAVMipIndex = 0;
-				if (dep.pinIndex < node.linkProperties.size())
-					UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+                int UAVMipIndexVariableIndex = -1;
+                if (dep.pinIndex < node.linkProperties.size())
+                {
+                    UAVMipIndex = node.linkProperties[dep.pinIndex].UAVMipIndex;
+                    UAVMipIndexVariableIndex = node.linkProperties[dep.pinIndex].UAVMipIndexVariable.variableIndex;
+                }
 
 				RenderGraphNode depNodeBase = renderGraph.nodes[dep.nodeIndex];
 
@@ -639,8 +652,13 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
 
 					if (dep.access != ShaderResourceAccessType::UAV)
 						stringReplacementMap["/*$(Execute)*/"] << ", format: this.texture_" << depNode.name << "_format, usage: GPUTextureUsage.TEXTURE_BINDING";
-					else
-						stringReplacementMap["/*$(Execute)*/"] << ", mipLevelCount: 1, baseMipLevel: " << UAVMipIndex;
+                    else
+                    {
+                        if (UAVMipIndexVariableIndex != -1)
+                            stringReplacementMap["/*$(Execute)*/"] << ", mipLevelCount: 1, baseMipLevel: this.variable_" << renderGraph.variables[UAVMipIndexVariableIndex].name;
+                        else
+                            stringReplacementMap["/*$(Execute)*/"] << ", mipLevelCount: 1, baseMipLevel: " << UAVMipIndex;
+                    }
 
 					stringReplacementMap["/*$(Execute)*/"] <<
 						" })\n"

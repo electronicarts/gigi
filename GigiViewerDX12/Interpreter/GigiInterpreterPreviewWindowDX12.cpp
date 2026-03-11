@@ -629,7 +629,17 @@ const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResou
 
 				if (dep.pinIndex < linkProperties.size())
 				{
-					desc.m_UAVMipIndex = min(linkProperties[dep.pinIndex].UAVMipIndex, resourceInfo.m_numMips - 1);
+                    if (linkProperties[dep.pinIndex].UAVMipIndexVariable.variableIndex != -1)
+                    {
+                        if (!GetRuntimeVariableAllowCast(linkProperties[dep.pinIndex].UAVMipIndexVariable.variableIndex, desc.m_UAVMipIndex))
+                            return false;
+                    }
+                    else
+                    {
+                        desc.m_UAVMipIndex = linkProperties[dep.pinIndex].UAVMipIndex;
+                    }
+
+                    desc.m_UAVMipIndex = min((int)desc.m_UAVMipIndex, (int)resourceInfo.m_numMips - 1);
 				}
 
 				switch (resourceNode.resourceTexture.dimension)

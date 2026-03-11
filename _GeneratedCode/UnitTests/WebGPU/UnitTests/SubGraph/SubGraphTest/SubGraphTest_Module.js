@@ -87,6 +87,11 @@ texture_Inner_Exported_Tex_size = [0, 0, 0];
 texture_Inner_Exported_Tex_format = "";
 texture_Inner_Exported_Tex_usageFlags = GPUTextureUsage.COPY_DST | GPUTextureUsage.COPY_SRC | GPUTextureUsage.STORAGE_BINDING;
 
+// -------------------- Private Variables
+
+variable___loopIndexValue_0 = 0;
+variableDefault___loopIndexValue_0 = 0;
+variableChanged___loopIndexValue_0 = false;
 
 async SetVarsBefore()
 {

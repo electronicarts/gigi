@@ -218,6 +218,14 @@ struct RenameReferencesVisitor
         return true;
     }
 
+    bool Visit(LinkProperties& properties, const std::string& path)
+    {
+        m_renameData.UpdateVariableName(properties.UAVMipIndexVariable.name);
+        m_renameData.UpdateVariableName(properties.bufferViewBeginVariable.name);
+        m_renameData.UpdateVariableName(properties.bufferViewSizeVariable.name);
+        return true;
+    }
+
     bool Visit(SetCBFromVar& setVar, const std::string& path)
     {
         m_renameData.UpdateVariableName(setVar.variable.name);
@@ -1301,6 +1309,7 @@ bool ExpandLoopedSubgraphs(RenderGraph& renderGraph)
 		{
 			// Just add the same node back.
 			// Note we don't currently properly handle loopCount <= 0
+            node.actionSubGraph.loopIndex = 0;
 			loopNodes.push_back(node);
 		}
 	}
@@ -1525,6 +1534,7 @@ bool InlineSubGraphs(RenderGraph& renderGraph)
         newVariable.dflt = value;
         newVariable.visibility = VariableVisibility::Internal;
         newVariable.transient = true;
+        newVariable.Const = true;
 
         renderGraph.variables.push_back(newVariable);
     }

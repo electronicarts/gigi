@@ -104,6 +104,11 @@ variable_Inner1_Inner1Mult = [ 1., 0.5, 2., 1. ];
 variableDefault_Inner1_Inner1Mult = [ 1., 0.5, 2., 1. ];
 variableChanged_Inner1_Inner1Mult = [ false, false, false, false ];
 
+// -------------------- Private Variables
+
+variable___loopIndexValue_0 = 0;
+variableDefault___loopIndexValue_0 = 0;
+variableChanged___loopIndexValue_0 = false;
 // -------------------- Structs
 
 static StructOffsets__Inner1_Inner2_Inner2CS_0CB =

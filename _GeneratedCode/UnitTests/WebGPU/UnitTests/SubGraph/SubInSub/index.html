@@ -277,6 +277,7 @@
             document.getElementById('inputBox_Inner1_Inner1Mult1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); SubInSub.variable_Inner1_Inner1Mult[1]=event.target.value;});
             document.getElementById('inputBox_Inner1_Inner1Mult2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); SubInSub.variable_Inner1_Inner1Mult[2]=event.target.value;});
             document.getElementById('inputBox_Inner1_Inner1Mult3').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); SubInSub.variable_Inner1_Inner1Mult[3]=event.target.value;});
+            document.getElementById('inputBox___loopIndexValue_0').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); SubInSub.variable___loopIndexValue_0=event.target.value;});
 
             function ResetVariables()
             {
@@ -284,6 +285,7 @@
                     SubInSub.variable_Inner1_Inner1Mult[1] = SubInSub.variableDefault_Inner1_Inner1Mult[1];
                     SubInSub.variable_Inner1_Inner1Mult[2] = SubInSub.variableDefault_Inner1_Inner1Mult[2];
                     SubInSub.variable_Inner1_Inner1Mult[3] = SubInSub.variableDefault_Inner1_Inner1Mult[3];
+                    SubInSub.variable___loopIndexValue_0 = SubInSub.variableDefault___loopIndexValue_0;
             }
 
             function SetUIToVariables()
@@ -292,6 +294,7 @@
                     document.getElementById('inputBox_Inner1_Inner1Mult1').value = SubInSub.variable_Inner1_Inner1Mult[1];
                     document.getElementById('inputBox_Inner1_Inner1Mult2').value = SubInSub.variable_Inner1_Inner1Mult[2];
                     document.getElementById('inputBox_Inner1_Inner1Mult3').value = SubInSub.variable_Inner1_Inner1Mult[3];
+                    document.getElementById('inputBox___loopIndexValue_0').value = SubInSub.variable___loopIndexValue_0;
             }
 
             // Set variables to their defaults
@@ -396,6 +399,12 @@
                     SubInSub.variableChanged_Inner1_Inner1Mult[3] = false;
                 }
 
+                if (SubInSub.variableChanged___loopIndexValue_0)
+                {
+                    document.getElementById('inputBox___loopIndexValue_0').value = SubInSub.variable___loopIndexValue_0;
+                    SubInSub.variableChanged___loopIndexValue_0 = false;
+                }
+
 
                 // Submit the command encoder
                 device.queue.submit([encoder.finish()]);
@@ -468,6 +477,16 @@
                                 <input type="text" id="inputBox_Inner1_Inner1Mult1">
                                 <input type="text" id="inputBox_Inner1_Inner1Mult2">
                                 <input type="text" id="inputBox_Inner1_Inner1Mult3">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">__loopIndexValue_0&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox___loopIndexValue_0" disabled="true">
                             </td>
                         </tr>
                     </table>

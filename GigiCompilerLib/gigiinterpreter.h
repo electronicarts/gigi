@@ -435,6 +435,8 @@ public:
 			case SetVariableOperator::BitwiseXor: dest = A ^ B; break;
 			case SetVariableOperator::BitwiseNot: dest = ~A; break;
 
+            case SetVariableOperator::Pow: dest = (T)std::pow(A, B); break;
+
 			case SetVariableOperator::PowerOf2GE:
 			{
 				float f = std::log2(float(A));
@@ -471,6 +473,8 @@ public:
 				case SetVariableOperator::BitwiseXor: dest = A ^ B; break;
 				case SetVariableOperator::BitwiseNot: dest = ~A; break;
 				*/
+
+            case SetVariableOperator::Pow: dest = std::pow(A, B); break;
 
 			case SetVariableOperator::PowerOf2GE:
 			{

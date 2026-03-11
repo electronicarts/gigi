@@ -568,6 +568,7 @@ table, th, td, tr
 <tr><td>Multiply</td><td>*</td></tr>
 <tr><td>Divide</td><td>/</td></tr>
 <tr><td>Modulo</td><td>%</td></tr>
+<tr><td>Pow</td><td>pow(A, B)</td></tr>
 <tr><td>PowerOf2GE</td><td>The next power of two, greater or equal to the current value</td></tr>
 <tr><td>Minimum</td><td>min(A,B)</td></tr>
 <tr><td>Maximum</td><td>max(A,B)</td></tr>
@@ -1287,6 +1288,7 @@ Italicized fields are not serialized, and are just used for runtime storage.<br/
 <table>
 <tr><th colspan=3>LinkProperties</th></tr>
 <tr><td>int UAVMipIndex</td><td>0</td><td>The mip index to use, if this is a UAV connection.</td></tr>
+<tr><td>VariableReference UAVMipIndexVariable</td><td>{}</td><td>If specified, this variable will control the UAV Mip index.</td></tr>
 <tr><td>bool disallowDuplication</td><td>false</td><td>If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.</td></tr>
 <tr><td>MemoryUnitOfMeasurement bufferViewUnits</td><td>MemoryUnitOfMeasurement::Items</td><td>How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.</td></tr>
 <tr><td>unsigned int bufferViewBegin</td><td>0</td><td>Where the buffer view starts.  If items, the index of first element of the view of a buffer. For raw buffers, this is the number of uint32s.</td></tr>

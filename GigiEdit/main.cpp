@@ -1845,7 +1845,7 @@ struct Example :
             {
                 auto& data = filteredData.at(index);
 
-                ImGui::PushID(data.name.c_str());
+                ImGui::PushID((int)index); // Protect against names not being unique strings
 
                 DrawMatchingStringBackground(windowState.searchQuery, data.name);
 
@@ -2091,6 +2091,15 @@ struct Example :
                     name << GetRHS(item.ALiteral, item.ANode, item.AVar, item.AVarIndex);
                     name << "%";
                     name << GetRHS(item.BLiteral, item.BNode, item.BVar, item.BVarIndex);
+                    break;
+                }
+                case SetVariableOperator::Pow:
+                {
+                    name << "Pow(";
+                    name << GetRHS(item.ALiteral, item.ANode, item.AVar, item.AVarIndex);
+                    name << ",";
+                    name << GetRHS(item.BLiteral, item.BNode, item.BVar, item.BVarIndex);
+                    name << ")";
                     break;
                 }
                 case SetVariableOperator::PowerOf2GE:

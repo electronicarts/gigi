@@ -78,7 +78,7 @@ bool g_nvInitialized = false;
 #define DX12_VALIDATION_ON_BY_DEFAULT() true
 #define DX12_GPUVALIDATION_ON_BY_DEFAULT() false
 
-#define DX12_BREAK_ON_WARN() false 
+#define DX12_BREAK_ON_WARN() false
 #define DX12_BREAK_ON_CORRUPTION() false
 #define DX12_BREAK_ON_ERROR() false
 
@@ -1216,7 +1216,7 @@ bool HandleOpenNonGGFile(const char* fileName)
     std::filesystem::remove_all(tempDir);
     std::filesystem::create_directories(tempDir);
 
-    std::filesystem::copy(searchPath, tempDir);
+    std::filesystem::copy(searchPath, tempDir, std::filesystem::copy_options::recursive);
 
     // Run view.py, with this filename as a command line parameter
     g_runPyFileName = std::filesystem::weakly_canonical(tempDir / std::filesystem::path("view.py")).string();
@@ -9897,6 +9897,7 @@ bool CreateDeviceD3D(HWND hWnd)
         desc.NodeMask = 1;
         if (g_pd3dDevice->CreateCommandQueue(&desc, IID_PPV_ARGS(&g_pd3dCommandQueue)) != S_OK)
             return false;
+        g_pd3dCommandQueue->SetName(L"Gigi Command Queue");
     }
 
     for (UINT i = 0; i < NUM_FRAMES_IN_FLIGHT; i++)

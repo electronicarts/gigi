@@ -648,14 +648,15 @@
     Host.SetVariableOperator_Multiply = 2
     Host.SetVariableOperator_Divide = 3
     Host.SetVariableOperator_Modulo = 4
-    Host.SetVariableOperator_PowerOf2GE = 5
-    Host.SetVariableOperator_Minimum = 6
-    Host.SetVariableOperator_Maximum = 7
-    Host.SetVariableOperator_BitwiseOr = 8
-    Host.SetVariableOperator_BitwiseAnd = 9
-    Host.SetVariableOperator_BitwiseXor = 10
-    Host.SetVariableOperator_BitwiseNot = 11
-    Host.SetVariableOperator_Noop = 12
-    Host.SetVariableOperator_LAST = 12
-    Host.SetVariableOperator_COUNT = 13
+    Host.SetVariableOperator_Pow = 5
+    Host.SetVariableOperator_PowerOf2GE = 6
+    Host.SetVariableOperator_Minimum = 7
+    Host.SetVariableOperator_Maximum = 8
+    Host.SetVariableOperator_BitwiseOr = 9
+    Host.SetVariableOperator_BitwiseAnd = 10
+    Host.SetVariableOperator_BitwiseXor = 11
+    Host.SetVariableOperator_BitwiseNot = 12
+    Host.SetVariableOperator_Noop = 13
+    Host.SetVariableOperator_LAST = 13
+    Host.SetVariableOperator_COUNT = 14
 
