@@ -15,6 +15,7 @@ fileName = sys.argv[0]
 Host.SetImportedBufferFile("VertexBuffer", fileName)
 Host.SetImportedBufferFile("LightBuffer", fileName)
 Host.SetImportedBufferFile("MaterialBuffer", fileName)
+Host.SetImportedBufferFile("BVH", fileName)
 Host.SetImportedBufferMaterialShaderFile("MaterialBuffer", "_material.hlsli")
 
 Host.SetCameraPos(0,0,0)
@@ -46,9 +47,11 @@ for index in range(vertexCount):
 
 Host.SetCameraPos((minX + maxX) / 2, (minY + maxY) / 2, maxZ * 5)
 
-farZ = (maxZ-minZ)*20
+ZRange = max((maxZ-minZ), 1.0)
+
+farZ = ZRange*20
 nearZ = farZ / 10000
 Host.SetCameraNearFarZ(nearZ, farZ)
-Host.SetCameraFlySpeed((maxZ - minZ) / 25)
+Host.SetCameraFlySpeed(ZRange / 25)
 
 # Vertex buffer contents: position(3), Color(3), Normal(3), Tagent(4), UV(2), MaterialID(1), ShapeID(1)

@@ -44,6 +44,7 @@ win64_build_release:
       - MakeCode_UnitTests_UE_5_3.py
       - MakeCode_UnitTests_WebGPU.bat
       - MakeCode_UnitTests_WebGPU.py
+      - RunViewerTests.bat
       - GigiViewerDX12/python/*
       - _GeneratedCode/*
       - Techniques/*

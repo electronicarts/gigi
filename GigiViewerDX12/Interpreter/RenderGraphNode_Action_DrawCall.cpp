@@ -628,7 +628,8 @@ bool GigiInterpreterPreviewWindowDX12::DrawCall_MakeRootSignature(const RenderGr
 				}
 			}
 
-            GigiAssert(sampleCount > 0, "sampleCount cannot be 0");
+            GigiAssert(psoDesc.NumRenderTargets > 0, "No render targets found for node \"%s\"", node.name.c_str());
+            GigiAssert(sampleCount > 0, "sampleCount cannot be 0. Node \"%s\"", node.name.c_str());
 			psoDesc.SampleDesc.Count = sampleCount;
 
 			return SetupPSODescRet::None;

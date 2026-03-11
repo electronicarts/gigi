@@ -2270,6 +2270,9 @@ variableChanged_missColor = [ false, false, false ];
 
 // -------------------- Private Variables
 
+variable___loopIndexValue_0 = 0;
+variableDefault___loopIndexValue_0 = 0;
+variableChanged___loopIndexValue_0 = false;
 variable__dispatchSize_A_TwoRayGens1 = [ 0,0,0 ];
 variableDefault__dispatchSize_A_TwoRayGens1 = [ 0,0,0 ];
 variableChanged__dispatchSize_A_TwoRayGens1 = [ false, false, false ];

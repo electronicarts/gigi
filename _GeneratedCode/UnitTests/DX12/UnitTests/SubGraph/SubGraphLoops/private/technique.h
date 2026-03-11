@@ -31,44 +31,39 @@ namespace SubGraphLoops
         struct Struct__FilterSub_Iteration_0_Blur_0CB
         {
             unsigned int FilterSub_Iteration_0_sRGB = true;
-            int __loopIndexValue_0 = 0;
-            float2 _padding0 = {0.f, 0.f};  // Padding
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_1_Blur_0CB
         {
             unsigned int FilterSub_Iteration_1_sRGB = true;
-            int __loopIndexValue_1 = 1;
-            float2 _padding0 = {0.f, 0.f};  // Padding
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_2_Blur_0CB
         {
             unsigned int FilterSub_Iteration_2_sRGB = true;
-            int __loopIndexValue_2 = 2;
-            float2 _padding0 = {0.f, 0.f};  // Padding
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_3_Blur_0CB
         {
             unsigned int FilterSub_Iteration_3_sRGB = true;
-            int __loopIndexValue_3 = 3;
-            float2 _padding0 = {0.f, 0.f};  // Padding
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
         struct Struct__FilterSub_Iteration_4_Blur_0CB
         {
             unsigned int FilterSub_Iteration_4_sRGB = true;
-            int __loopIndexValue_4 = 4;
-            float2 _padding0 = {0.f, 0.f};  // Padding
+            float3 _padding0 = {0.f, 0.f, 0.f};  // Padding
         };
 
         // Variables
-        int variable___loopIndexValue_0 = 0;
-        int variable___loopIndexValue_1 = 1;
-        int variable___loopIndexValue_2 = 2;
-        int variable___loopIndexValue_3 = 3;
-        int variable___loopIndexValue_4 = 4;
+        const int variable___loopIndexValue_0 = 0;
+        const int variable___loopIndexValue_1 = 1;
+        const int variable___loopIndexValue_2 = 2;
+        const int variable___loopIndexValue_3 = 3;
+        const int variable___loopIndexValue_4 = 4;
 
         Struct__FilterSub_Iteration_0_Blur_0CB constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu;
         ID3D12Resource* constantBuffer__FilterSub_Iteration_0_Blur_0CB = nullptr;

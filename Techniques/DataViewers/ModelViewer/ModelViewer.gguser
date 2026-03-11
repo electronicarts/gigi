@@ -15,18 +15,27 @@
         "ProjMtx_textureName": "ColorF32"
     },
     "snapshot": {
-        "resourceViewNodeIndex": 5,
-        "resourceViewResourceIndex": 4,
+        "resourceViewNodeIndex": 12,
+        "resourceViewResourceIndex": 10,
         "cameraPos": [
-            0.2265898883342743,
-            1.8571138381958008,
-            3.1201486587524416
+            1.5724594593048096,
+            1.570000410079956,
+            3.9463493824005129
         ],
         "cameraAltitudeAzimuth": [
-            -0.30342981219291689,
-            2.8151488304138185
+            -0.13211873173713685,
+            2.6631546020507814
         ],
         "importedResources": [
+            {
+                "nodeName": "BVH",
+                "isATexture": false,
+                "buffer": {
+                    "fileName": "..\\..\\UnitTests\\ObjAssets\\bunny.obj",
+                    "type": "Float3",
+                    "BLASOpaque": true
+                }
+            },
             {
                 "nodeName": "LightBuffer",
                 "isATexture": false,
@@ -46,6 +55,14 @@
                     "materialShaderFile": "_material.hlsli",
                     "structIndex": 2,
                     "BLASOpaque": true
+                }
+            },
+            {
+                "nodeName": "Skybox2D",
+                "texture": {
+                    "fileName": "Arches_E_PineTree_3k.hdr",
+                    "format": "RGBA32_Float",
+                    "binaryFormat": "Any"
                 }
             },
             {

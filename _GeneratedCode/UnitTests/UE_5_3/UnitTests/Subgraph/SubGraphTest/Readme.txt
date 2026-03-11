@@ -16,6 +16,24 @@ Copy Public/SubGraphTestTechnique.cpp to Engine/Source/Runtime/Renderer/Private/
 Copy the contents of Shaders to Engine/Shaders/Private/SubGraphTest/
 
 =====================================================================================================
+Set Up Non Transient Storage
+=====================================================================================================
+
+This technique requires non transient storage.
+
+To set that up, put this struct into Engine\Source\Runtime\Renderer\Private\ScenePrivate.h:
+
+struct FTechniqueState_SubGraphTest
+{
+    // Internal Variables - do not modify these
+    int32 Var___loopIndexValue_0 = int32(0);
+};
+
+and put this member variable into FSceneViewState:
+
+FTechniqueState_SubGraphTest TechniqueState_SubGraphTest;
+
+=====================================================================================================
 Connect Technique
 =====================================================================================================
 

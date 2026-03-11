@@ -247,6 +247,8 @@ STRUCT_END()
 
 STRUCT_BEGIN(LinkProperties, "Properties of links between nodes.")
     STRUCT_FIELD(int, UAVMipIndex, 0, "The mip index to use, if this is a UAV connection.", 0)
+    STRUCT_FIELD(VariableReference, UAVMipIndexVariable, {}, "If specified, this variable will control the UAV Mip index.", 0)
+
     STRUCT_FIELD(bool, disallowDuplication, false, "If you plug an output pin into multiple input pins, and some of them are reads and some of them are writes, Gigi will make copies for the reads by default.  You can check this box to have it read from the original resource instead of making a copy, but doing so may result in a race condition.", 0)
 
     STRUCT_FIELD(MemoryUnitOfMeasurement, bufferViewUnits, MemoryUnitOfMeasurement::Items, "How bufferViewBegin and bufferViewSize are measured: in number of items, or number of bytes.", 0)

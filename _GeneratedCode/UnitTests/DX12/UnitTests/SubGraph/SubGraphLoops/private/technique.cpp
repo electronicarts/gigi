@@ -1093,7 +1093,6 @@ namespace SubGraphLoops
         // Shader Constants: _FilterSub_Iteration_0_Blur_0CB
         {
             context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu.FilterSub_Iteration_0_sRGB = context->m_input.variable_FilterSub_Iteration_0_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu.__loopIndexValue_0 = context->m_internal.variable___loopIndexValue_0;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_0_Blur_0CB_cpu, Context::LogFn);
         }
 
@@ -1200,7 +1199,6 @@ namespace SubGraphLoops
         // Shader Constants: _FilterSub_Iteration_1_Blur_0CB
         {
             context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu.FilterSub_Iteration_1_sRGB = context->m_input.variable_FilterSub_Iteration_1_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu.__loopIndexValue_1 = context->m_internal.variable___loopIndexValue_1;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_1_Blur_0CB_cpu, Context::LogFn);
         }
 
@@ -1314,7 +1312,6 @@ namespace SubGraphLoops
         // Shader Constants: _FilterSub_Iteration_2_Blur_0CB
         {
             context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu.FilterSub_Iteration_2_sRGB = context->m_input.variable_FilterSub_Iteration_2_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu.__loopIndexValue_2 = context->m_internal.variable___loopIndexValue_2;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_2_Blur_0CB_cpu, Context::LogFn);
         }
 
@@ -1428,7 +1425,6 @@ namespace SubGraphLoops
         // Shader Constants: _FilterSub_Iteration_3_Blur_0CB
         {
             context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu.FilterSub_Iteration_3_sRGB = context->m_input.variable_FilterSub_Iteration_3_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu.__loopIndexValue_3 = context->m_internal.variable___loopIndexValue_3;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_3_Blur_0CB_cpu, Context::LogFn);
         }
 
@@ -1542,7 +1538,6 @@ namespace SubGraphLoops
         // Shader Constants: _FilterSub_Iteration_4_Blur_0CB
         {
             context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu.FilterSub_Iteration_4_sRGB = context->m_input.variable_FilterSub_Iteration_4_sRGB;
-            context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu.__loopIndexValue_4 = context->m_internal.variable___loopIndexValue_4;
             DX12Utils::CopyConstantsCPUToGPU(s_ubTracker, device, commandList, context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB, context->m_internal.constantBuffer__FilterSub_Iteration_4_Blur_0CB_cpu, Context::LogFn);
         }
 

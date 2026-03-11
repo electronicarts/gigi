@@ -260,6 +260,7 @@
             document.getElementById('inputBox___literal_1').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); ConstOverride.variable___literal_1=event.target.value;});
             document.getElementById('inputBox___literal_2').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); ConstOverride.variable___literal_2=event.target.value;});
             document.getElementById('inputBox___literal_3').addEventListener('change',(event) => {event.target.value=parseUint(event.target.value); ConstOverride.variable___literal_3=event.target.value;});
+            document.getElementById('inputBox___loopIndexValue_0').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); ConstOverride.variable___loopIndexValue_0=event.target.value;});
 
             function ResetVariables()
             {
@@ -267,6 +268,7 @@
                     ConstOverride.variable___literal_1 = ConstOverride.variableDefault___literal_1;
                     ConstOverride.variable___literal_2 = ConstOverride.variableDefault___literal_2;
                     ConstOverride.variable___literal_3 = ConstOverride.variableDefault___literal_3;
+                    ConstOverride.variable___loopIndexValue_0 = ConstOverride.variableDefault___loopIndexValue_0;
             }
 
             function SetUIToVariables()
@@ -275,6 +277,7 @@
                     document.getElementById('inputBox___literal_1').value = ConstOverride.variable___literal_1;
                     document.getElementById('inputBox___literal_2').value = ConstOverride.variable___literal_2;
                     document.getElementById('inputBox___literal_3').value = ConstOverride.variable___literal_3;
+                    document.getElementById('inputBox___loopIndexValue_0').value = ConstOverride.variable___loopIndexValue_0;
             }
 
             // Set variables to their defaults
@@ -372,6 +375,12 @@
                     ConstOverride.variableChanged___literal_3 = false;
                 }
 
+                if (ConstOverride.variableChanged___loopIndexValue_0)
+                {
+                    document.getElementById('inputBox___loopIndexValue_0').value = ConstOverride.variable___loopIndexValue_0;
+                    ConstOverride.variableChanged___loopIndexValue_0 = false;
+                }
+
 
                 // Submit the command encoder
                 device.queue.submit([encoder.finish()]);
@@ -460,6 +469,12 @@
                             <td valign="top"><div class="tooltip">__literal_3&nbsp;<span class="tooltiptext">Made to replace variable "MaxX" with a constant value in subgraph node "Right"</span></div></td>
                             <td>
                                 <input type="text" id="inputBox___literal_3" disabled="true">
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="top">__loopIndexValue_0&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox___loopIndexValue_0" disabled="true">
                             </td>
                         </tr>
                     </table>

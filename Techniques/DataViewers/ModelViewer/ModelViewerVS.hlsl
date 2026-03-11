@@ -62,7 +62,7 @@ VSOutput vsmain(VSInput input)
 		case ViewModes::ShapeID: ret.Color = float4(input.ShapeID, 0.0f, 0.0f, 1.0f); break;
         case ViewModes::MaterialOcclusion: ret.Color = float4(0.0f, 0.0f, 0.0f, 1.0f); break;
         case ViewModes::MaterialNormal: ret.Color = float4(0.0f, 0.0f, 0.0f, 1.0f); break;
-        case ViewModes::Shaded: ret.Color = float4(input.Color * /*$(Variable:ViewerColor)*/, 1.0f); break;
+        case ViewModes::Shaded: ret.Color = float4(input.Color, 1.0f); break;
 	}
 	
 	ret.Position = outPos;

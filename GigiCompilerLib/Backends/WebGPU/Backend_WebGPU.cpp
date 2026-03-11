@@ -347,6 +347,10 @@ struct BackendWebGPU : public BackendBase
             else
                 stream << "~";
         }
+        else if (setVar.op == SetVariableOperator::Pow)
+        {
+            stream << "Math.pow(";
+        }
         else if (setVar.op == SetVariableOperator::PowerOf2GE)
         {
             stream << "Pow2GE(";
@@ -403,6 +407,7 @@ struct BackendWebGPU : public BackendBase
                 case SetVariableOperator::Divide: stream << " / "; break;
                 case SetVariableOperator::Modulo: stream << " % "; break;
 
+                case SetVariableOperator::Pow:
                 case SetVariableOperator::Minimum:
                 case SetVariableOperator::Maximum: stream << ", "; break;
 
@@ -440,7 +445,7 @@ struct BackendWebGPU : public BackendBase
                 stream << setVar.BLiteral;
             }
 
-            if (setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
+            if (setVar.op == SetVariableOperator::Pow || setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
             {
                 stream << ")";
             }
@@ -2874,6 +2879,7 @@ void PostLoad_WebGPU(RenderGraph& renderGraph)
             // Make sure it's dealing with the same mip
             node.linkProperties.resize(node.connections.size());
             node.linkProperties.rbegin()->UAVMipIndex = node.linkProperties[pinIndex].UAVMipIndex;
+            node.linkProperties.rbegin()->UAVMipIndexVariable = node.linkProperties[pinIndex].UAVMipIndexVariable;
 
             return true;
         };

@@ -227,6 +227,11 @@ variable_DoSimpleRaster_CameraPos = [ 0., 0., 0. ];
 variableDefault_DoSimpleRaster_CameraPos = [ 0., 0., 0. ];
 variableChanged_DoSimpleRaster_CameraPos = [ false, false, false ];
 
+// -------------------- Private Variables
+
+variable___loopIndexValue_0 = 0;
+variableDefault___loopIndexValue_0 = 0;
+variableChanged___loopIndexValue_0 = false;
 // -------------------- Structs
 
 static StructOffsets_DoSimpleRaster_VertexFormat =

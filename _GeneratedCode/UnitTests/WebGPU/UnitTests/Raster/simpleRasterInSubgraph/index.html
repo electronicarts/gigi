@@ -374,6 +374,7 @@
             document.getElementById('inputBox_DoSimpleRaster_CameraPos0').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[0]=event.target.value;});
             document.getElementById('inputBox_DoSimpleRaster_CameraPos1').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[1]=event.target.value;});
             document.getElementById('inputBox_DoSimpleRaster_CameraPos2').addEventListener('change',(event) => {event.target.value=parseFloat(event.target.value); simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[2]=event.target.value;});
+            document.getElementById('inputBox___loopIndexValue_0').addEventListener('change',(event) => {event.target.value=parseInt(event.target.value); simpleRasterInSubgraph.variable___loopIndexValue_0=event.target.value;});
 
             function ResetVariables()
             {
@@ -495,6 +496,7 @@
                     simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[0] = simpleRasterInSubgraph.variableDefault_DoSimpleRaster_CameraPos[0];
                     simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[1] = simpleRasterInSubgraph.variableDefault_DoSimpleRaster_CameraPos[1];
                     simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[2] = simpleRasterInSubgraph.variableDefault_DoSimpleRaster_CameraPos[2];
+                    simpleRasterInSubgraph.variable___loopIndexValue_0 = simpleRasterInSubgraph.variableDefault___loopIndexValue_0;
             }
 
             function SetUIToVariables()
@@ -617,6 +619,7 @@
                     document.getElementById('inputBox_DoSimpleRaster_CameraPos0').value = simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[0];
                     document.getElementById('inputBox_DoSimpleRaster_CameraPos1').value = simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[1];
                     document.getElementById('inputBox_DoSimpleRaster_CameraPos2').value = simpleRasterInSubgraph.variable_DoSimpleRaster_CameraPos[2];
+                    document.getElementById('inputBox___loopIndexValue_0').value = simpleRasterInSubgraph.variable___loopIndexValue_0;
             }
 
             // Set variables to their defaults
@@ -1422,6 +1425,12 @@
                     simpleRasterInSubgraph.variableChanged_DoSimpleRaster_CameraPos[2] = false;
                 }
 
+                if (simpleRasterInSubgraph.variableChanged___loopIndexValue_0)
+                {
+                    document.getElementById('inputBox___loopIndexValue_0').value = simpleRasterInSubgraph.variable___loopIndexValue_0;
+                    simpleRasterInSubgraph.variableChanged___loopIndexValue_0 = false;
+                }
+
 
                 // Submit the command encoder
                 device.queue.submit([encoder.finish()]);
@@ -1693,6 +1702,16 @@
                                 <input type="text" id="inputBox_DoSimpleRaster_CameraPos0">
                                 <input type="text" id="inputBox_DoSimpleRaster_CameraPos1">
                                 <input type="text" id="inputBox_DoSimpleRaster_CameraPos2">
+                            </td>
+                        </tr>
+                    </table>
+                    <br><br>
+                    <button type="button" class="collapsible">Internal Variables</button>
+                    <table cellspacing="0" cellpadding="0" class="collapsiblecontent" style="display:none">
+                        <tr>
+                            <td valign="top">__loopIndexValue_0&nbsp;</td>
+                            <td>
+                                <input type="text" id="inputBox___loopIndexValue_0" disabled="true">
                             </td>
                         </tr>
                     </table>

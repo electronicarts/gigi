@@ -109,6 +109,9 @@ namespace TwoRayGensSubgraph
             float3 _padding1 = {0.f, 0.f, 0.f};  // Padding
         };
 
+        // Variables
+        const int variable___loopIndexValue_0 = 0;
+
         Struct__A_TwoRayGens1CB constantBuffer__A_TwoRayGens1CB_cpu;
         ID3D12Resource* constantBuffer__A_TwoRayGens1CB = nullptr;
 

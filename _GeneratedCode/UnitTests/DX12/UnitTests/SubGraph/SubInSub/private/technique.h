@@ -33,6 +33,9 @@ namespace SubInSub
             float4 Inner1_Inner1Mult = {1.f, 0.5f, 2.f, 1.f};
         };
 
+        // Variables
+        const int variable___loopIndexValue_0 = 0;
+
         Struct__Inner1_Inner2_Inner2CS_0CB constantBuffer__Inner1_Inner2_Inner2CS_0CB_cpu;
         ID3D12Resource* constantBuffer__Inner1_Inner2_Inner2CS_0CB = nullptr;
 

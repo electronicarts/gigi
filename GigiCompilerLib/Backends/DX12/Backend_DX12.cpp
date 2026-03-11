@@ -1285,6 +1285,10 @@ struct BackendDX12 : public BackendBase
                     else
                         stringReplacementMap[destinationString] << "~";
                 }
+                else if (setVar.op == SetVariableOperator::Pow)
+                {
+                    stringReplacementMap[destinationString] << "pow(";
+                }
                 else if (setVar.op == SetVariableOperator::PowerOf2GE)
                 {
                     stringReplacementMap[destinationString] << "Pow2GE(";
@@ -1335,6 +1339,7 @@ struct BackendDX12 : public BackendBase
                         case SetVariableOperator::Divide: stringReplacementMap[destinationString] << " / "; break;
                         case SetVariableOperator::Modulo: stringReplacementMap[destinationString] << " % "; break;
 
+                        case SetVariableOperator::Pow:
                         case SetVariableOperator::Minimum:
                         case SetVariableOperator::Maximum: stringReplacementMap[destinationString] << ", "; break;
 
@@ -1361,7 +1366,7 @@ struct BackendDX12 : public BackendBase
                         stringReplacementMap[destinationString] << setVar.BLiteral;
                     }
 
-                    if (setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
+                    if (setVar.op == SetVariableOperator::Pow || setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
                     {
                         stringReplacementMap[destinationString] << ")";
                     }

@@ -167,6 +167,9 @@ variableChanged___literal_2 = false;
 variable___literal_3 = 200;  // Made to replace variable "MaxX" with a constant value in subgraph node "Right"
 variableDefault___literal_3 = 200;  // Made to replace variable "MaxX" with a constant value in subgraph node "Right"
 variableChanged___literal_3 = false;
+variable___loopIndexValue_0 = 0;
+variableDefault___loopIndexValue_0 = 0;
+variableChanged___loopIndexValue_0 = false;
 
 async SetVarsBefore()
 {

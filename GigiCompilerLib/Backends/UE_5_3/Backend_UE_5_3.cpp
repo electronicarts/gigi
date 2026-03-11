@@ -135,12 +135,14 @@ struct BackendUE_5_3 : public BackendBase
             int bufferViewSizeVarIndex = -1;
             bool bufferViewInBytes = false;
             int UAVMipIndex = 0;
+            int UAVMipIndexVarIndex = -1;
             {
                 size_t pinIndex = depIndex;
                 if (pinIndex < node.linkProperties.size())
                 {
                     const LinkProperties& linkProperties = node.linkProperties[pinIndex];
                     UAVMipIndex = linkProperties.UAVMipIndex;
+                    UAVMipIndexVarIndex = linkProperties.UAVMipIndexVariable.variableIndex;
                     bufferViewBegin = linkProperties.bufferViewBegin;
                     bufferViewBeginVarIndex = linkProperties.bufferViewBeginVariable.variableIndex;
                     bufferViewSize = linkProperties.bufferViewSize;
@@ -160,8 +162,13 @@ struct BackendUE_5_3 : public BackendBase
                 {
                     RenderGraphNode_Resource_Texture& depNode = depNodeBase.resourceTexture;
 
-                    if (dep.access == ShaderResourceAccessType::UAV && UAVMipIndex > 0)
-                        shaderParams << "        TODO: make the below use UAV Mip " << UAVMipIndex << "\n";
+                    if (dep.access == ShaderResourceAccessType::UAV && (UAVMipIndex > 0 || UAVMipIndexVarIndex != -1))
+                    {
+                        if (UAVMipIndexVarIndex != -1)
+                            shaderParams << "        TODO: make the below use UAV Mip " << VariableToString(renderGraph.variables[UAVMipIndexVarIndex], renderGraph) << "\n";
+                        else
+                            shaderParams << "        TODO: make the below use UAV Mip " << UAVMipIndex << "\n";
+                    }
 
                     std::string macro = "";
                     std::string typePrefix = "";
@@ -1274,6 +1281,10 @@ struct BackendUE_5_3 : public BackendBase
                     else
                         stringReplacementMap[destinationString] << "~";
                 }
+                else if (setVar.op == SetVariableOperator::Pow)
+                {
+                    stringReplacementMap[destinationString] << "pow(";
+                }
                 else if (setVar.op == SetVariableOperator::PowerOf2GE)
                 {
                     stringReplacementMap[destinationString] << "Pow2GE(";
@@ -1325,6 +1336,7 @@ struct BackendUE_5_3 : public BackendBase
                         case SetVariableOperator::Divide: stringReplacementMap[destinationString] << " / "; break;
                         case SetVariableOperator::Modulo: stringReplacementMap[destinationString] << " % "; break;
 
+                        case SetVariableOperator::Pow:
                         case SetVariableOperator::Minimum:
                         case SetVariableOperator::Maximum: stringReplacementMap[destinationString] << ", "; break;
 
@@ -1352,7 +1364,7 @@ struct BackendUE_5_3 : public BackendBase
                         stringReplacementMap[destinationString] << setVar.BLiteral;
                     }
 
-                    if (setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
+                    if (setVar.op == SetVariableOperator::Pow || setVar.op == SetVariableOperator::Minimum || setVar.op == SetVariableOperator::Maximum)
                     {
                         stringReplacementMap[destinationString] << ")";
                     }

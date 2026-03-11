@@ -1,0 +1,144 @@
+{
+    "$schema": "gigischema.json",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "BakeSpecularIBL",
+            "type": "Bool",
+            "dflt": "true",
+            "visibility": "User"
+        },
+        {
+            "name": "LevelToBake",
+            "type": "Int",
+            "visibility": "User"
+        },
+        {
+            "name": "NumSamples",
+            "type": "Int",
+            "dflt": "10000",
+            "visibility": "User"
+        },
+        {
+            "name": "SpecularBakeLevelCountMinus1",
+            "type": "Int",
+            "dflt": "1",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "BakeSpecularIBL",
+            "fileName": "BakeSpecularIBL.hlsl",
+            "resources": [
+                {
+                    "name": "Input",
+                    "access": "SRV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                },
+                {
+                    "name": "Output",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "texture": {
+                        "dimension": "TextureCube"
+                    }
+                }
+            ],
+            "samplers": [
+                {
+                    "name": "LinearWrapSampler"
+                }
+            ]
+        }
+    ],
+    "fileCopies": [
+        {
+            "fileName": "PBR.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "CubeMap.hlsli",
+            "type": "Shader"
+        },
+        {
+            "fileName": "PCG.hlsli",
+            "type": "Shader"
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Skybox",
+                "editorPos": [
+                    -5.0,
+                    -14.0
+                ],
+                "visibility": "Imported",
+                "dimension": "TextureCube"
+            }
+        },
+        {
+            "resourceTexture": {
+                "name": "SpecularIBL",
+                "editorPos": [
+                    -21.0,
+                    34.0
+                ],
+                "transient": false,
+                "visibility": "Imported",
+                "format": {
+                    "node": {
+                        "name": "Skybox"
+                    }
+                },
+                "numMips": 0,
+                "dimension": "TextureCube"
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "BakeSpecularIBL",
+                "editorPos": [
+                    117.0,
+                    -1.0
+                ],
+                "condition": {
+                    "variable1": "BakeSpecularIBL",
+                    "comparison": "IsTrue"
+                },
+                "linkProperties": [
+                    {},
+                    {
+                        "UAVMipIndexVariable": {
+                            "name": "LevelToBake"
+                        }
+                    }
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Input",
+                        "dstNode": "Skybox",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "Output",
+                        "dstNode": "SpecularIBL",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "BakeSpecularIBL"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "SpecularIBL"
+                    }
+                }
+            }
+        }
+    ]
+}

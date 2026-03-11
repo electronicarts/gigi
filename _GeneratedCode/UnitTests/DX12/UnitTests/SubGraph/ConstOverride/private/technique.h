@@ -33,6 +33,7 @@ namespace ConstOverride
         const uint variable___literal_1 = 100;  // Made to replace variable "MaxX" with a constant value in subgraph node "Left"
         const uint variable___literal_2 = 150;  // Made to replace variable "MinX" with a constant value in subgraph node "Right"
         const uint variable___literal_3 = 200;  // Made to replace variable "MaxX" with a constant value in subgraph node "Right"
+        const int variable___loopIndexValue_0 = 0;
 
         static ID3D12PipelineState* computeShader_Clear_pso;
         static ID3D12RootSignature* computeShader_Clear_rootSig;
