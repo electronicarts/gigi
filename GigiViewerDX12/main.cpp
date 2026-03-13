@@ -8393,6 +8393,21 @@ public:
         g_systemVariables.camera.flySpeed = speed;
     }
 
+    void SetProjMtxTextureName(const char* name)
+    {
+        g_systemVariables.ProjMtx_textureName = name;
+    }
+
+    void SetCameraReverseZInfiniteDepth(bool reverseZInfiniteDepth)
+    {
+        g_systemVariables.camera.reverseZInfiniteDepth = reverseZInfiniteDepth;
+    }
+
+    virtual void SetCameraJitterLength(int jitterLength)
+    {
+        g_systemVariables.camera.jitterLength = jitterLength;
+    }
+
     void GetCameraPos(float& X, float& Y, float& Z) override final
     {
         X = g_systemVariables.camera.cameraPos[0];

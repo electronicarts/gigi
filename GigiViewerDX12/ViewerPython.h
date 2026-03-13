@@ -75,6 +75,9 @@ public:
 	virtual void SetCameraAltitudeAzimuth(float altitude, float azimuth) = 0;
 	virtual void SetCameraNearFarZ(float nearZ, float farZ) = 0;
 	virtual void SetCameraFlySpeed(float speed) = 0;
+    virtual void SetProjMtxTextureName(const char* name) = 0;
+    virtual void SetCameraReverseZInfiniteDepth(bool reverseZInfiniteDepth) = 0;
+    virtual void SetCameraJitterLength(int jitterLength) = 0;
 	virtual void GetCameraPos(float &X, float &Y, float &Z) = 0;
 	virtual void GetCameraAltitudeAzimuth(float &altitude, float &azimuth) = 0;
 	virtual void WriteGPUResource(const char* viewableResourceName, int subresourceIndex, const char* data, size_t size) = 0;

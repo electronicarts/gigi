@@ -766,6 +766,42 @@ static PyObject* Python_SetCameraFlySpeed(PyObject* self, PyObject* args)
     return Py_None;
 }
 
+static PyObject* Python_SetProjMtxTextureName(PyObject* self, PyObject* args)
+{
+    const char* name = nullptr;
+    if (!PyArg_ParseTuple(args, "s:Python_SetProjMtxTextureName", &name))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetProjMtxTextureName(name);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetCameraReverseZInfiniteDepth(PyObject* self, PyObject* args)
+{
+    int reverse = 0;
+    if (!PyArg_ParseTuple(args, "p:Python_SetCameraReverseZInfiniteDepth", &reverse))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraReverseZInfiniteDepth(reverse != 0);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetCameraJitterLength(PyObject* self, PyObject* args)
+{
+    int jitterLength = 0;
+    if (!PyArg_ParseTuple(args, "i:Python_SetCameraJitterLength", &jitterLength))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraJitterLength(jitterLength);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject* Python_GetCameraPos(PyObject* self, PyObject* args)
 {
     float x, y, z;
@@ -1219,6 +1255,9 @@ void PythonInit(PythonInterface* interface)
         {"SetCameraAltitudeAzimuth", Python_SetCameraAltitudeAzimuth, METH_VARARGS, "Set the camera altitude azimuth"},
         {"SetCameraNearFarZ", Python_SetCameraNearFarZ, METH_VARARGS, "Set the near and far plane"},
         {"SetCameraFlySpeed", Python_SetCameraFlySpeed, METH_VARARGS, "Set the fly speed of the camera"},
+        {"SetProjMtxTextureName", Python_SetProjMtxTextureName, METH_VARARGS, "Set the texture name used to compute projection matrix resolution"},
+        {"SetCameraReverseZInfiniteDepth", Python_SetCameraReverseZInfiniteDepth, METH_VARARGS, "Enable/disable reverseZInfiniteDepth camera option"},
+        {"SetCameraJitterLength", Python_SetCameraJitterLength, METH_VARARGS, "Set jitter sequence length for camera jitter"},        
         {"GetCameraPos", Python_GetCameraPos, METH_VARARGS, "Get camera position"},
         {"GetCameraAltitudeAzimuth", Python_GetCameraAltitudeAzimuth, METH_VARARGS, "Get the camera altitude azimuth"},
         {"WriteGPUResource", Python_WriteGPUResource, METH_VARARGS, "Writes a gpu resource during the next RunTechnique"},
