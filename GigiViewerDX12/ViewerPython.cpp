@@ -664,6 +664,19 @@ static PyObject* Python_SetImportedTextureSize(PyObject* self, PyObject* args)
     return Py_None;
 }
 
+static PyObject* Python_SetImportedBufferDataStream(PyObject* self, PyObject* args)
+{
+    const char* bufferName = nullptr;
+    int index = 0;
+    if (!PyArg_ParseTuple(args, "si:Python_SetImportedBufferDataStream", &bufferName, &index))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetImportedBufferDataStream(bufferName, index);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject* Python_SetImportedTextureBinarySize(PyObject* self, PyObject* args)
 {
     const char* textureName = nullptr;
@@ -761,6 +774,42 @@ static PyObject* Python_SetCameraFlySpeed(PyObject* self, PyObject* args)
         return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
 
     g_interface->SetCameraFlySpeed(speed);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetProjMtxTextureName(PyObject* self, PyObject* args)
+{
+    const char* name = nullptr;
+    if (!PyArg_ParseTuple(args, "s:Python_SetProjMtxTextureName", &name))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetProjMtxTextureName(name);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetCameraReverseZInfiniteDepth(PyObject* self, PyObject* args)
+{
+    int reverse = 0;
+    if (!PyArg_ParseTuple(args, "p:Python_SetCameraReverseZInfiniteDepth", &reverse))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraReverseZInfiniteDepth(reverse != 0);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
+static PyObject* Python_SetCameraJitterLength(PyObject* self, PyObject* args)
+{
+    int jitterLength = 0;
+    if (!PyArg_ParseTuple(args, "i:Python_SetCameraJitterLength", &jitterLength))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetCameraJitterLength(jitterLength);
 
     Py_INCREF(Py_None);
     return Py_None;
@@ -1076,6 +1125,8 @@ MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_PACING_LINES);
 MAKE_GETTER_SETTER_BOOL(AMDFrameGen_allowAsyncWorkloads);
 MAKE_GETTER_SETTER_BOOL(AMDFrameGen_onlyPresentGenerated);
 MAKE_GETTER_SETTER_BOOL(AMDFrameGen_constrainToRectangle);
+MAKE_GETTER_SETTER_STRING(AMDFrameGen_uiTexture);
+MAKE_GETTER_SETTER_STRING(AMDFrameGen_hudlessTexture);
 
 #undef MAKE_GETTER_SETTER_BOOL
 #undef MAKE_GETTER_SETTER_UNSIGNED_INT
@@ -1212,6 +1263,7 @@ void PythonInit(PythonInterface* interface)
         {"SetImportedTextureColor", Python_SetImportedTextureColor, METH_VARARGS, "Set the color of an imported texture"},
         {"SetImportedTextureSize", Python_SetImportedTextureSize, METH_VARARGS, "Set the x,y,z dimensions an imported texture"},
         {"SetImportedTextureBinarySize", Python_SetImportedTextureBinarySize, METH_VARARGS, "Sets the x,y,z dimensions of a binary imported texture."},
+        {"SetImportedBufferDataStream", Python_SetImportedBufferDataStream, METH_VARARGS, "Set the data stream of an imported buffer"},
         {"SetImportedTextureBinaryFormat", Python_SetImportedTextureBinaryFormat, METH_VARARGS, "Sets the format of the binary file."},
         {"SetFrameDeltaTime", Python_SetFrameDeltaTime, METH_VARARGS, "Set the frame delta time, in seconds. Useful for recording videos by setting a fixed frame rate. Clear by setting to 0."},
         {"SetCameraPos", Python_SetCameraPos, METH_VARARGS, "Set the camera position"},
@@ -1219,6 +1271,9 @@ void PythonInit(PythonInterface* interface)
         {"SetCameraAltitudeAzimuth", Python_SetCameraAltitudeAzimuth, METH_VARARGS, "Set the camera altitude azimuth"},
         {"SetCameraNearFarZ", Python_SetCameraNearFarZ, METH_VARARGS, "Set the near and far plane"},
         {"SetCameraFlySpeed", Python_SetCameraFlySpeed, METH_VARARGS, "Set the fly speed of the camera"},
+        {"SetProjMtxTextureName", Python_SetProjMtxTextureName, METH_VARARGS, "Set the texture name used to compute projection matrix resolution"},
+        {"SetCameraReverseZInfiniteDepth", Python_SetCameraReverseZInfiniteDepth, METH_VARARGS, "Enable/disable reverseZInfiniteDepth camera option"},
+        {"SetCameraJitterLength", Python_SetCameraJitterLength, METH_VARARGS, "Set jitter sequence length for camera jitter"},        
         {"GetCameraPos", Python_GetCameraPos, METH_VARARGS, "Get camera position"},
         {"GetCameraAltitudeAzimuth", Python_GetCameraAltitudeAzimuth, METH_VARARGS, "Get the camera altitude azimuth"},
         {"WriteGPUResource", Python_WriteGPUResource, METH_VARARGS, "Writes a gpu resource during the next RunTechnique"},
@@ -1256,6 +1311,8 @@ void PythonInit(PythonInterface* interface)
         {"AMDFrameGen_allowAsyncWorkloads", Python_AMDFrameGen_allowAsyncWorkloads, METH_VARARGS, ""},
         {"AMDFrameGen_onlyPresentGenerated", Python_AMDFrameGen_onlyPresentGenerated, METH_VARARGS, ""},
         {"AMDFrameGen_constrainToRectangle", Python_AMDFrameGen_constrainToRectangle, METH_VARARGS, ""},
+        {"AMDFrameGen_uiTexture", Python_AMDFrameGen_uiTexture, METH_VARARGS, ""},
+        {"AMDFrameGen_hudlessTexture", Python_AMDFrameGen_hudlessTexture, METH_VARARGS, ""},
 
         // Enum FromString and ToString functions
         #include "external/df_serialize/_common.h"

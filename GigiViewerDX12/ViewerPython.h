@@ -59,6 +59,7 @@ public:
 	virtual void SetImportedBufferCount(const char* bufferName, int count) = 0;
 	virtual void SetImportedBufferFile(const char* bufferName, const char* fileName) = 0;
     virtual void SetImportedBufferMaterialShaderFile(const char* bufferName, const char* fileName) = 0;
+    virtual void SetImportedBufferDataStream(const char* bufferName, int index) = 0;
 	virtual void SetImportedBufferStruct(const char* bufferName, const char* structName) = 0;
 	virtual void SetImportedBufferType(const char* bufferName, DataFieldType type) = 0;
 	virtual void SetImportedTextureFile(const char* textureName, const char* fileName) = 0;
@@ -75,6 +76,9 @@ public:
 	virtual void SetCameraAltitudeAzimuth(float altitude, float azimuth) = 0;
 	virtual void SetCameraNearFarZ(float nearZ, float farZ) = 0;
 	virtual void SetCameraFlySpeed(float speed) = 0;
+    virtual void SetProjMtxTextureName(const char* name) = 0;
+    virtual void SetCameraReverseZInfiniteDepth(bool reverseZInfiniteDepth) = 0;
+    virtual void SetCameraJitterLength(int jitterLength) = 0;
 	virtual void GetCameraPos(float &X, float &Y, float &Z) = 0;
 	virtual void GetCameraAltitudeAzimuth(float &altitude, float &azimuth) = 0;
 	virtual void WriteGPUResource(const char* viewableResourceName, int subresourceIndex, const char* data, size_t size) = 0;
@@ -122,6 +126,8 @@ public:
     virtual bool AMDFrameGen_allowAsyncWorkloads(bool value, bool wantToSet) = 0;
     virtual bool AMDFrameGen_onlyPresentGenerated(bool value, bool wantToSet) = 0;
     virtual bool AMDFrameGen_constrainToRectangle(bool value, bool wantToSet) = 0;
+    virtual std::string AMDFrameGen_uiTexture(const char* value, bool wantToSet) = 0;
+    virtual std::string AMDFrameGen_hudlessTexture(const char* value, bool wantToSet) = 0;
 
 	// The location and name of the python script
 	std::string m_scriptLocation;

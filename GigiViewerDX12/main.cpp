@@ -8319,6 +8319,23 @@ public:
         desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
     }
 
+    void SetImportedBufferDataStream(const char* bufferName, int index)
+    {
+        if (g_interpreter.m_importedResources.count(bufferName) == 0)
+        {
+            Log(LogLevel::Error, "Python: SetImportedBufferDataStream could not find imported buffer %s", bufferName);
+            return;
+        }
+        GigiInterpreterPreviewWindowDX12::ImportedResourceDesc& desc = g_interpreter.m_importedResources[bufferName];
+        if (desc.isATexture)
+        {
+            Log(LogLevel::Error, "Python: SetImportedBufferDataStream called for %s which is not a buffer", bufferName);
+            return;
+        }
+        desc.buffer.dataStream = (GGUserFile_SceneDataStream)index;
+        desc.state = GigiInterpreterPreviewWindowDX12::ImportedResourceState::dirty;
+    }
+
     void SetImportedTextureBinarySize(const char* textureName, int x, int y, int z) override final
     {
         if (g_interpreter.m_importedResources.count(textureName) == 0)
@@ -8391,6 +8408,21 @@ public:
     void SetCameraFlySpeed(float speed) override final
     {
         g_systemVariables.camera.flySpeed = speed;
+    }
+
+    void SetProjMtxTextureName(const char* name)
+    {
+        g_systemVariables.ProjMtx_textureName = name;
+    }
+
+    void SetCameraReverseZInfiniteDepth(bool reverseZInfiniteDepth)
+    {
+        g_systemVariables.camera.reverseZInfiniteDepth = reverseZInfiniteDepth;
+    }
+
+    virtual void SetCameraJitterLength(int jitterLength)
+    {
+        g_systemVariables.camera.jitterLength = jitterLength;
     }
 
     void GetCameraPos(float& X, float& Y, float& Z) override final
@@ -8674,6 +8706,8 @@ public:
     MAKE_GETTER_SETTER_BOOL(AMDFrameGen_allowAsyncWorkloads, g_AMDFrameInterpolation.allowAsyncWorkloads);
     MAKE_GETTER_SETTER_BOOL(AMDFrameGen_onlyPresentGenerated, g_AMDFrameInterpolation.onlyPresentGenerated);
     MAKE_GETTER_SETTER_BOOL(AMDFrameGen_constrainToRectangle, g_AMDFrameInterpolation.constrainToRectangle);
+    MAKE_GETTER_SETTER_STRING(AMDFrameGen_uiTexture, g_AMDFrameInterpolation.uiTexture);
+    MAKE_GETTER_SETTER_STRING(AMDFrameGen_hudlessTexture, g_AMDFrameInterpolation.hudlessTexture);
 
     #undef MAKE_GETTER_SETTER_BOOL
     #undef MAKE_GETTER_SETTER_UNSIGNED_INT
