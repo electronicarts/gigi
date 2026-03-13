@@ -59,6 +59,7 @@ public:
 	virtual void SetImportedBufferCount(const char* bufferName, int count) = 0;
 	virtual void SetImportedBufferFile(const char* bufferName, const char* fileName) = 0;
     virtual void SetImportedBufferMaterialShaderFile(const char* bufferName, const char* fileName) = 0;
+    virtual void SetImportedBufferDataStream(const char* bufferName, int index) = 0;
 	virtual void SetImportedBufferStruct(const char* bufferName, const char* structName) = 0;
 	virtual void SetImportedBufferType(const char* bufferName, DataFieldType type) = 0;
 	virtual void SetImportedTextureFile(const char* textureName, const char* fileName) = 0;
@@ -125,6 +126,8 @@ public:
     virtual bool AMDFrameGen_allowAsyncWorkloads(bool value, bool wantToSet) = 0;
     virtual bool AMDFrameGen_onlyPresentGenerated(bool value, bool wantToSet) = 0;
     virtual bool AMDFrameGen_constrainToRectangle(bool value, bool wantToSet) = 0;
+    virtual std::string AMDFrameGen_uiTexture(const char* value, bool wantToSet) = 0;
+    virtual std::string AMDFrameGen_hudlessTexture(const char* value, bool wantToSet) = 0;
 
 	// The location and name of the python script
 	std::string m_scriptLocation;

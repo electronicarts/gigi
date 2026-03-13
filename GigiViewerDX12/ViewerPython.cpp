@@ -664,6 +664,19 @@ static PyObject* Python_SetImportedTextureSize(PyObject* self, PyObject* args)
     return Py_None;
 }
 
+static PyObject* Python_SetImportedBufferDataStream(PyObject* self, PyObject* args)
+{
+    const char* bufferName = nullptr;
+    int index = 0;
+    if (!PyArg_ParseTuple(args, "si:Python_SetImportedBufferDataStream", &bufferName, &index))
+        return PyErr_Format(PyExc_TypeError, "type error in " __FUNCTION__ "()");
+
+    g_interface->SetImportedBufferDataStream(bufferName, index);
+
+    Py_INCREF(Py_None);
+    return Py_None;
+}
+
 static PyObject* Python_SetImportedTextureBinarySize(PyObject* self, PyObject* args)
 {
     const char* textureName = nullptr;
@@ -1112,6 +1125,8 @@ MAKE_GETTER_SETTER_BOOL(AMDFrameGen_DRAW_DEBUG_PACING_LINES);
 MAKE_GETTER_SETTER_BOOL(AMDFrameGen_allowAsyncWorkloads);
 MAKE_GETTER_SETTER_BOOL(AMDFrameGen_onlyPresentGenerated);
 MAKE_GETTER_SETTER_BOOL(AMDFrameGen_constrainToRectangle);
+MAKE_GETTER_SETTER_STRING(AMDFrameGen_uiTexture);
+MAKE_GETTER_SETTER_STRING(AMDFrameGen_hudlessTexture);
 
 #undef MAKE_GETTER_SETTER_BOOL
 #undef MAKE_GETTER_SETTER_UNSIGNED_INT
@@ -1248,6 +1263,7 @@ void PythonInit(PythonInterface* interface)
         {"SetImportedTextureColor", Python_SetImportedTextureColor, METH_VARARGS, "Set the color of an imported texture"},
         {"SetImportedTextureSize", Python_SetImportedTextureSize, METH_VARARGS, "Set the x,y,z dimensions an imported texture"},
         {"SetImportedTextureBinarySize", Python_SetImportedTextureBinarySize, METH_VARARGS, "Sets the x,y,z dimensions of a binary imported texture."},
+        {"SetImportedBufferDataStream", Python_SetImportedBufferDataStream, METH_VARARGS, "Set the data stream of an imported buffer"},
         {"SetImportedTextureBinaryFormat", Python_SetImportedTextureBinaryFormat, METH_VARARGS, "Sets the format of the binary file."},
         {"SetFrameDeltaTime", Python_SetFrameDeltaTime, METH_VARARGS, "Set the frame delta time, in seconds. Useful for recording videos by setting a fixed frame rate. Clear by setting to 0."},
         {"SetCameraPos", Python_SetCameraPos, METH_VARARGS, "Set the camera position"},
@@ -1295,6 +1311,8 @@ void PythonInit(PythonInterface* interface)
         {"AMDFrameGen_allowAsyncWorkloads", Python_AMDFrameGen_allowAsyncWorkloads, METH_VARARGS, ""},
         {"AMDFrameGen_onlyPresentGenerated", Python_AMDFrameGen_onlyPresentGenerated, METH_VARARGS, ""},
         {"AMDFrameGen_constrainToRectangle", Python_AMDFrameGen_constrainToRectangle, METH_VARARGS, ""},
+        {"AMDFrameGen_uiTexture", Python_AMDFrameGen_uiTexture, METH_VARARGS, ""},
+        {"AMDFrameGen_hudlessTexture", Python_AMDFrameGen_hudlessTexture, METH_VARARGS, ""},
 
         // Enum FromString and ToString functions
         #include "external/df_serialize/_common.h"
