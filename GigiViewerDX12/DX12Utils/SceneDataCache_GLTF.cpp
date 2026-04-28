@@ -294,7 +294,7 @@ bool SceneDataCache::LoadGLTF(FileCache::File& fileData, SceneData& sceneData)
                 relXForm = scale * rotation * translation;
             }
 
-            DirectX::XMMATRIX xForm = parentXForm * relXForm;
+            DirectX::XMMATRIX xForm = relXForm * parentXForm;
 
             if (node.light >= 0)
             {
