@@ -216,6 +216,7 @@ struct RuntimeTypes
         void Release(GigiInterpreterPreviewWindowDX12& interpreter);
 
         ID3D12RootSignature* m_rootSignature = nullptr;
+        ID3D12CommandSignature* m_commandSignature = nullptr;
         ID3D12PipelineState* m_pso = nullptr;
     };
 

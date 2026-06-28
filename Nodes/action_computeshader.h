@@ -14,7 +14,15 @@ namespace FrontEndNodes
             shaderResourceCount = (int)node.shader.shader->resources.size();
 
         if(node.enableIndirect)
+        {
             ++shaderResourceCount;  // Indirect dispatch buffer
+            ++shaderResourceCount;  // Indirect count buffer
+        }
+
+        if (node.shader.shader->usesIncrementingConstant)
+        {
+            --shaderResourceCount;
+        }
 
         return shaderResourceCount; // Shader resources
     }
@@ -29,6 +37,8 @@ namespace FrontEndNodes
             return node.shader.shader->resources[pinIndex].name;
         else if (node.enableIndirect && pinIndex == shaderResourceCount)
             return "indirectBuffer";
+        else if (node.enableIndirect && pinIndex == shaderResourceCount + 1)
+            return "indirectCountBuffer";
         else
             return "";
     }
@@ -41,6 +51,11 @@ namespace FrontEndNodes
         int shaderResourceCount = 0;
         if (node.shader.shader)
             shaderResourceCount = (int)node.shader.shader->resources.size();
+
+        if (node.shader.shader->usesIncrementingConstant)
+        {
+            --shaderResourceCount;
+        }
 
         if (pinIndex < shaderResourceCount)
         {
@@ -63,6 +78,13 @@ namespace FrontEndNodes
             ret.access = ShaderResourceAccessType::Indirect;
             ret.nodeIndex = node.dispatchSize.indirectBuffer.nodeIndex;
             ret.pinIndex = node.dispatchSize.indirectBuffer.nodePinIndex;
+            ret.required = false;
+        }
+        else if (node.enableIndirect && pinIndex == shaderResourceCount + 1)
+        {
+            ret.access = ShaderResourceAccessType::Indirect;
+            ret.nodeIndex = node.dispatchSize.indirectCountBuffer.nodeIndex;
+            ret.pinIndex = node.dispatchSize.indirectCountBuffer.nodePinIndex;
             ret.required = false;
         }
 

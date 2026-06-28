@@ -1369,7 +1369,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        if (data.connections.size() != shader.resources.size())
+        if (data.connections.size() != (shader.usesIncrementingConstant ? shader.resources.size() - 1: shader.resources.size()))
         {
             GigiAssert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
             return false;
@@ -3580,7 +3580,7 @@ struct ShaderDataVisitor
                             }
                         }
 
-                        // Remmeber that we've loaded this texture for this shader
+                        // Remember that we've loaded this texture for this shader
                         {
                             LoadedTextureReference shaderTextureLoaded;
                             shaderTextureLoaded.token = token;
@@ -3588,6 +3588,36 @@ struct ShaderDataVisitor
                             shader.loadedTextureRefs.push_back(shaderTextureLoaded);
                         }
                     }
+                }
+                else if (BeginsWith(token, tokenIndex, "DispatchIncrementingConstant"))
+                {
+                    shader.usesIncrementingConstant = true;
+
+                    ShaderConstantBuffer newCB;
+                    newCB.structName = "__GigiDispatchIncrementConstantCB";
+                    newCB.resourceName = "__GigiDispatchIncrementConstantCB";
+                    shader.constantBuffers.push_back(newCB);
+                    
+                    StructField newField;
+                    newField.name = "dispatchIncrementingConstant";
+                    newField.type = DataFieldType::Uint;
+                    newField.dflt = "0";
+                    newField.Enum = "";
+                    newField.comment = "";
+
+                    Struct newStruct;
+                    newStruct.isForShaderConstants = true;
+                    newStruct.name = "__GigiDispatchIncrementConstantCB";
+                    newStruct.fields.push_back(newField);
+
+                    // re-arrange and/or pad the struct fields to conform to alignment rules
+                    switch (backend)
+                    {
+                    case Backend::WebGPU: AdjustStructForAlignment_WebGPU(newStruct, path, true); break;
+                    default: AdjustUniformStructForAlignment_DX12(newStruct, path); break;
+                    }
+
+                    renderGraph.structs.push_back(newStruct);
                 }
             }
         );
