@@ -506,13 +506,24 @@ inline std::vector<NodePinInfo> GetNodePins(const RenderGraph& renderGraph, Rend
     // make a pin for indirect dispatch
     if (node.enableIndirect)
     {
-        NodePinInfo pin;
-        pin.name = "indirectBuffer";
-        pin.inputNode = &node.dispatchSize.indirectBuffer.node;
-        pin.inputNodePin = &node.dispatchSize.indirectBuffer.pin;
-        pin.accessLabel = " (R)";
-        pin.required = false;
-        ret.push_back(pin);
+        {
+            NodePinInfo pin;
+            pin.name = "indirectBuffer";
+            pin.inputNode = &node.dispatchSize.indirectBuffer.node;
+            pin.inputNodePin = &node.dispatchSize.indirectBuffer.pin;
+            pin.accessLabel = " (R)";
+            pin.required = false;
+            ret.push_back(pin);
+        }
+        {
+            NodePinInfo pin;
+            pin.name = "indirectCountBuffer";
+            pin.inputNode = &node.dispatchSize.indirectCountBuffer.node;
+            pin.inputNodePin = &node.dispatchSize.indirectCountBuffer.pin;
+            pin.accessLabel = " (R)";
+            pin.required = false;
+            ret.push_back(pin);
+        }
     }
 
     return ret;
