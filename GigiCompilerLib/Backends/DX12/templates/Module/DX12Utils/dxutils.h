@@ -140,6 +140,28 @@ namespace DX12Utils
         LPCWSTR debugName,
         TLogFn logFn);
 
+    bool MakeRootSig(
+        ID3D12Device* device,
+        D3D12_DESCRIPTOR_RANGE* ranges,
+        int rangeCount,
+        D3D12_STATIC_SAMPLER_DESC* samplers,
+        int samplerCount,
+        D3D12_ROOT_CONSTANTS* rootConstants,
+        int rootConstantsCount,
+        ID3D12RootSignature** rootSig,
+        LPCWSTR debugName,
+        TLogFn logFn);
+
+    bool MakeCommandSig(
+        ID3D12Device* device,
+        D3D12_INDIRECT_ARGUMENT_DESC* argDescs,
+        int argumentDescCount,
+        int byteStride,
+        ID3D12RootSignature* rootSig,
+        ID3D12CommandSignature** commandSig,
+        LPCWSTR debugName,
+        TLogFn logFn);
+
     struct ResourceDescriptor
     {
         ID3D12Resource* m_res = nullptr;

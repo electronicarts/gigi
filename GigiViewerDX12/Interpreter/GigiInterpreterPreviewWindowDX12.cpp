@@ -547,7 +547,7 @@ bool GigiInterpreterPreviewWindowDX12::BuildDescriptorRanges(const Shader* shade
 
     for (const ShaderResource& resource : resources)
     {
-        if (resource.name == "__GigiDispatchIncrementConstantCB")
+        if (resource.name == "__GigiDispatchIndexCB")
         {
             continue;
         }
@@ -614,7 +614,7 @@ const std::unordered_map<ID3D12Resource*, D3D12_RESOURCE_STATES>& importantResou
 	{
 		const ShaderResource& shaderResource = shader.resources[resourceIndex];
 
-        if (shaderResource.name == "__GigiDispatchIncrementConstantCB")
+        if (shaderResource.name == "__GigiDispatchIndexCB")
         {
             continue;
         }

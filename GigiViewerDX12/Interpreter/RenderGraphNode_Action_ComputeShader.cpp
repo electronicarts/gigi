@@ -176,33 +176,32 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
             if (ranges.size() > 0)
             {
-                D3D12_ROOT_PARAMETER rootParam;
+                D3D12_ROOT_PARAMETER rootParam = {};
                 rootParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
                 rootParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-                rootParam.DescriptorTable.NumDescriptorRanges = (UINT)ranges.size();
+                rootParam.DescriptorTable.NumDescriptorRanges = static_cast<UINT>(ranges.size());
                 rootParam.DescriptorTable.pDescriptorRanges = ranges.data();
                 rootParams.push_back(rootParam);
             }
 
-            if (node.dispatchSize.enableIncerementingConstant)
             {
+                auto it = std::find_if(node.shader.shader->resources.begin(), node.shader.shader->resources.end(), [](ShaderResource& buffer) { return buffer.name == "__GigiDispatchIndexCB"; });
 
-                auto it = std::find_if(node.shader.shader->resources.begin(), node.shader.shader->resources.end(), [](ShaderResource& buffer) { return buffer.name == "__GigiDispatchIncrementConstantCB"; });
-
-                if (it == node.shader.shader->resources.end())
+                const auto hasIncrementingConstant = (it != node.shader.shader->resources.end());
+                if (hasIncrementingConstant)
                 {
-                    m_logFn(LogLevel::Error, "Shader doesn't use DispatchIncrementConstant buildin constant.");
-                    return false;
-                }
-                const ShaderResource& bufferResource = *it;
+                    const ShaderResource& bufferResource = *it;
 
-                D3D12_ROOT_PARAMETER rootConstantParam;
-                rootConstantParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-                rootConstantParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-                rootConstantParam.Constants.Num32BitValues = 1;
-                rootConstantParam.Constants.ShaderRegister = static_cast<UINT>(bufferResource.registerIndex);
-                rootConstantParam.Constants.RegisterSpace = 0; //todo: extract from bufferResource
-                rootParams.push_back(rootConstantParam);
+                    GigiAssert(bufferResource.registerSpaceString == "", "Register space should be 0!");
+
+                    D3D12_ROOT_PARAMETER rootConstantParam = {};
+                    rootConstantParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+                    rootConstantParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+                    rootConstantParam.Constants.Num32BitValues = 1;
+                    rootConstantParam.Constants.ShaderRegister = static_cast<UINT>(bufferResource.registerIndex);
+                    rootConstantParam.Constants.RegisterSpace = 0;
+                    rootParams.push_back(rootConstantParam);
+                }
             }
 
             D3D12_ROOT_SIGNATURE_DESC rootDesc = {};

@@ -701,10 +701,10 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
                 shaderSpecificStringReplacementMap[token] << param;
             }
-            else if (token == "/*$(DispatchIncrementingConstant)*/")
+            else if (token == "/*$(DispatchIndex)*/")
             {
                 shaderSpecificStringReplacementMap[token] = std::ostringstream();
-                shaderSpecificStringReplacementMap[token] << "__GigiDispatchIncrementConstantCB.dispatchIncrementingConstant";
+                shaderSpecificStringReplacementMap[token] << "__GigiDispatchIndexCB.dispatchIndex";
             }
         }
     );

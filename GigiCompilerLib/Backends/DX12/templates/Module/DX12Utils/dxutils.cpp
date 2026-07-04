@@ -64,7 +64,7 @@ namespace DX12Utils
         srvHeapDesc.NumDescriptors = numDescriptors;
         srvHeapDesc.Type = type;
         srvHeapDesc.Flags = flags;
-        if(FAILED(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&heap.m_heap))))
+        if (FAILED(device->CreateDescriptorHeap(&srvHeapDesc, IID_PPV_ARGS(&heap.m_heap))))
         {
             logFn(LogLevel::Error, "Could not create heap");
             return false;
@@ -78,7 +78,7 @@ namespace DX12Utils
 
     void DestroyHeap(Heap& heap)
     {
-        if(heap.m_heap)
+        if (heap.m_heap)
         {
             heap.m_heap->Release();
             heap.m_heap = nullptr;
@@ -107,33 +107,33 @@ namespace DX12Utils
         textureDesc.SampleDesc.Count = 1;
         textureDesc.SampleDesc.Quality = 0;
 
-        switch(textureType)
+        switch (textureType)
         {
-            case ResourceType::Texture2D:
-            {
-                textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-                textureDesc.DepthOrArraySize = 1;
-                break;
-            }
-            case ResourceType::Texture2DArray:
-            {
-                textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-                textureDesc.DepthOrArraySize = size[2];
-                break;
-            }
-            case ResourceType::Texture3D:
-            {
-                textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
-                textureDesc.DepthOrArraySize = size[2];
-                break;
-            }
-            case ResourceType::TextureCube:
-            {
-                textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
-                textureDesc.DepthOrArraySize = 6;
-                break;
-            }
-            default: return nullptr;
+        case ResourceType::Texture2D:
+        {
+            textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+            textureDesc.DepthOrArraySize = 1;
+            break;
+        }
+        case ResourceType::Texture2DArray:
+        {
+            textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+            textureDesc.DepthOrArraySize = size[2];
+            break;
+        }
+        case ResourceType::Texture3D:
+        {
+            textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE3D;
+            textureDesc.DepthOrArraySize = size[2];
+            break;
+        }
+        case ResourceType::TextureCube:
+        {
+            textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
+            textureDesc.DepthOrArraySize = 6;
+            break;
+        }
+        default: return nullptr;
         }
 
         D3D12_HEAP_PROPERTIES heapProperties;
@@ -186,7 +186,7 @@ namespace DX12Utils
 
         ID3D12Resource* ret = nullptr;
         HRESULT hr = device->CreateCommittedResource(&heapDesc, D3D12_HEAP_FLAG_NONE, &resourceDesc, state, nullptr, IID_PPV_ARGS(&ret));
-        if(FAILED(hr))
+        if (FAILED(hr))
         {
             logFn(LogLevel::Error, "Could not create buffer");
             return nullptr;
@@ -198,7 +198,7 @@ namespace DX12Utils
         return ret;
     }
 
-    bool CopyConstantsCPUToGPU(UploadBufferTracker& tracker, ID3D12Device* device, ID3D12GraphicsCommandList* commandList,ID3D12Resource* resource, void* data, size_t dataSize, TLogFn logFn)
+    bool CopyConstantsCPUToGPU(UploadBufferTracker& tracker, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, ID3D12Resource* resource, void* data, size_t dataSize, TLogFn logFn)
     {
         UploadBufferTracker::UploadBufferTracker::Buffer* uploadBuffer = tracker.GetBuffer(device, dataSize, logFn);
 
@@ -206,7 +206,7 @@ namespace DX12Utils
         {
             void* CBStart = nullptr;
             HRESULT hr = uploadBuffer->buffer->Map(0, nullptr, reinterpret_cast<void**>(&CBStart));
-            if(hr)
+            if (hr)
             {
                 logFn(LogLevel::Error, "Could not map upload buffer");
                 return false;
@@ -282,8 +282,8 @@ namespace DX12Utils
         {
             const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
             logFn(LogLevel::Error, "Could not serialize root signature: %s", errorMsg);
-            if(sig) sig->Release();
-            if(error) error->Release();
+            if (sig) sig->Release();
+            if (error) error->Release();
             return false;
         }
 
@@ -292,12 +292,12 @@ namespace DX12Utils
         {
             const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
             logFn(LogLevel::Error, "Could not create root signature: %s", errorMsg);
-            if(sig) sig->Release();
-            if(error) error->Release();
+            if (sig) sig->Release();
+            if (error) error->Release();
             return false;
         }
-        if(sig) sig->Release();
-        if(error) error->Release();
+        if (sig) sig->Release();
+        if (error) error->Release();
         sig = nullptr;
         error = nullptr;
 
@@ -307,9 +307,116 @@ namespace DX12Utils
         return true;
     }
 
+    bool MakeRootSig(
+        ID3D12Device* device,
+        D3D12_DESCRIPTOR_RANGE* ranges,
+        int rangeCount,
+        D3D12_STATIC_SAMPLER_DESC* samplers,
+        int samplerCount,
+        D3D12_ROOT_CONSTANTS* rootConstants,
+        int rootConstantsCount,
+        ID3D12RootSignature** rootSig,
+        LPCWSTR debugName,
+        TLogFn logFn)
+    {
+        std::vector<D3D12_ROOT_PARAMETER> rootParams;
+        rootParams.resize(1 + rootConstantsCount);
+
+        rootParams[0].ParameterType = D3D12_ROOT_PARAMETER_TYPE_DESCRIPTOR_TABLE;
+        rootParams[0].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+        rootParams[0].DescriptorTable.NumDescriptorRanges = rangeCount;
+        rootParams[0].DescriptorTable.pDescriptorRanges = ranges;
+
+        for (int i = 0; i < rootConstantsCount; i++)
+        {
+            rootParams[1 + i].ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+            rootParams[1 + i].ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+            rootParams[1 + i].Constants = rootConstants[i];
+        }
+
+        D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
+        rootDesc.NumParameters = static_cast<UINT>(rootParams.size());
+        rootDesc.pParameters = rootParams.data();
+        rootDesc.NumStaticSamplers = samplerCount;
+        rootDesc.pStaticSamplers = samplers;
+        rootDesc.Flags = D3D12_ROOT_SIGNATURE_FLAG_NONE;
+
+        ID3DBlob* sig = nullptr;
+        ID3DBlob* error = nullptr;
+        HRESULT hr = D3D12SerializeRootSignature(&rootDesc, D3D_ROOT_SIGNATURE_VERSION_1, &sig, &error);
+        if (FAILED(hr))
+        {
+            const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
+            logFn(LogLevel::Error, "Could not serialize root signature: %s", errorMsg);
+            if (sig) sig->Release();
+            if (error) error->Release();
+            return false;
+        }
+
+        hr = device->CreateRootSignature(0, sig->GetBufferPointer(), sig->GetBufferSize(), IID_PPV_ARGS(rootSig));
+        if (FAILED(hr))
+        {
+            const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
+            logFn(LogLevel::Error, "Could not create root signature: %s", errorMsg);
+            if (sig) sig->Release();
+            if (error) error->Release();
+            return false;
+        }
+        if (sig) sig->Release();
+        if (error) error->Release();
+        sig = nullptr;
+        error = nullptr;
+
+        if (debugName)
+            (*rootSig)->SetName(debugName);
+
+        return true;
+    }
+
+    bool MakeCommandSig(
+        ID3D12Device* device,
+        D3D12_INDIRECT_ARGUMENT_DESC* argDescs,
+        int argumentDescCount,
+        int byteStride,
+        ID3D12RootSignature* rootSig,
+        ID3D12CommandSignature** commandSig,
+        LPCWSTR debugName,
+        TLogFn logFn)
+    {
+        D3D12_COMMAND_SIGNATURE_DESC dispatchDesc = {};
+        dispatchDesc.ByteStride = static_cast<UINT>(byteStride);
+        dispatchDesc.NumArgumentDescs = static_cast<UINT>(argumentDescCount);
+        dispatchDesc.pArgumentDescs = argDescs;
+        dispatchDesc.NodeMask = 0x0;
+
+        ID3DBlob* sig = nullptr;
+        ID3DBlob* error = nullptr;
+        const HRESULT hr = device->CreateCommandSignature(
+            &dispatchDesc,
+            rootSig,
+            IID_PPV_ARGS(commandSig));
+        if (FAILED(hr))
+        {
+            const char* errorMsg = (error ? (const char*)error->GetBufferPointer() : nullptr);
+            logFn(LogLevel::Error, "Could not create command signature: %s", errorMsg);
+            if (sig) sig->Release();
+            if (error) error->Release();
+            return false;
+        }
+        if (sig) sig->Release();
+        if (error) error->Release();
+        sig = nullptr;
+        error = nullptr;
+
+        if (debugName)
+            (*commandSig)->SetName(debugName);
+
+        return true;
+    }
+
     static inline size_t HashCombine(size_t a, size_t b)
     {
-        a ^= b + 0x9e3779b9 + (a<<6) + (a>>2);
+        a ^= b + 0x9e3779b9 + (a << 6) + (a >> 2);
         return a;
     }
 
@@ -370,96 +477,8 @@ namespace DX12Utils
                 }
                 else
                 {
-                    switch(descriptor.m_resourceType)
+                    switch (descriptor.m_resourceType)
                     {
-                        case ResourceType::Buffer:
-                        {
-                            unsigned int unitsDivider = 1;
-                            if (descriptor.m_bufferViewInBytes)
-                            {
-                                unitsDivider = descriptor.m_stride > 0
-                                    ? descriptor.m_stride
-                                    : DX12Utils::Get_DXGI_FORMAT_Info(descriptor.m_format, logFn).bytesPerPixel;
-                                unitsDivider = max(unitsDivider, 1);
-                            }
-                            unsigned int firstElement = descriptor.m_bufferViewBegin / unitsDivider;
-                            unsigned int elementCount = descriptor.m_count;
-
-                            if (elementCount >= firstElement)
-                                elementCount -= firstElement;
-                            else
-                                elementCount = 0;
-
-                            unsigned int bufferViewElements = descriptor.m_bufferViewSize / unitsDivider;
-                            if (bufferViewElements > 0)
-                                elementCount = min(elementCount, bufferViewElements);
-
-                            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
-                            srvDesc.Buffer.FirstElement = firstElement;
-                            srvDesc.Buffer.NumElements = elementCount;
-                            srvDesc.Buffer.StructureByteStride = descriptor.m_stride;
-                            srvDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
-                            srvDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
-                            break;
-                        }
-                        case ResourceType::Texture2D:
-                        {
-                            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
-                            srvDesc.Texture2D.MipLevels = -1;
-                            srvDesc.Texture2D.MostDetailedMip = 0;
-                            srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
-
-                            DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(srvDesc.Format, logFn);
-                            srvDesc.Texture2D.PlaneSlice = formatInfo.planeIndex;
-                            break;
-                        }
-                        case ResourceType::Texture2DArray:
-                        {
-                            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
-                            srvDesc.Texture2DArray.MipLevels = -1;
-                            srvDesc.Texture2DArray.MostDetailedMip = 0;
-                            srvDesc.Texture2DArray.ResourceMinLODClamp = 0;
-                            srvDesc.Texture2DArray.FirstArraySlice = 0;
-                            srvDesc.Texture2DArray.ArraySize = descriptor.m_count;
-
-                            DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(srvDesc.Format, logFn);
-                            srvDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
-                            break;
-                        }
-                        case ResourceType::Texture3D:
-                        {
-                            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
-                            srvDesc.Texture3D.MipLevels = -1;
-                            srvDesc.Texture3D.MostDetailedMip = 0;
-                            srvDesc.Texture3D.ResourceMinLODClamp = 0;
-                            break;
-                        }
-                        case ResourceType::TextureCube:
-                        {
-                            srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
-                            srvDesc.TextureCube.MipLevels = -1;
-                            srvDesc.TextureCube.MostDetailedMip = 0;
-                            srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
-                            break;
-                        }
-                    }
-
-                    device->CreateShaderResourceView(descriptor.m_res, &srvDesc, handle);
-                }
-            }
-            else if(descriptor.m_access == AccessType::UAV)
-            {
-                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
-                uavDesc.Format = SRV_Safe_DXGI_FORMAT(descriptor.m_format);
-
-                // Do some translation for unsupported formats
-                switch(uavDesc.Format)
-                {
-                    case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
-                }
-
-                switch(descriptor.m_resourceType)
-                {
                     case ResourceType::Buffer:
                     {
                         unsigned int unitsDivider = 1;
@@ -482,51 +501,139 @@ namespace DX12Utils
                         if (bufferViewElements > 0)
                             elementCount = min(elementCount, bufferViewElements);
 
-                        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
-                        uavDesc.Buffer.FirstElement = firstElement;
-                        uavDesc.Buffer.NumElements = elementCount;
-                        uavDesc.Buffer.StructureByteStride = descriptor.m_stride;
-                        uavDesc.Buffer.CounterOffsetInBytes = 0;
-                        uavDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;
-                        uavDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
+                        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+                        srvDesc.Buffer.FirstElement = firstElement;
+                        srvDesc.Buffer.NumElements = elementCount;
+                        srvDesc.Buffer.StructureByteStride = descriptor.m_stride;
+                        srvDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_SRV_FLAG_RAW : D3D12_BUFFER_SRV_FLAG_NONE;
+                        srvDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
                         break;
                     }
                     case ResourceType::Texture2D:
                     {
-                        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
-                        uavDesc.Texture2D.MipSlice = descriptor.m_UAVMipIndex;
+                        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2D;
+                        srvDesc.Texture2D.MipLevels = -1;
+                        srvDesc.Texture2D.MostDetailedMip = 0;
+                        srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
 
-                        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format, logFn);
-                        uavDesc.Texture2D.PlaneSlice = formatInfo.planeIndex;
+                        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(srvDesc.Format, logFn);
+                        srvDesc.Texture2D.PlaneSlice = formatInfo.planeIndex;
                         break;
                     }
                     case ResourceType::Texture2DArray:
-                    case ResourceType::TextureCube:
                     {
-                        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
-                        uavDesc.Texture2DArray.MipSlice = descriptor.m_UAVMipIndex;
-                        uavDesc.Texture2DArray.FirstArraySlice = 0;
-                        uavDesc.Texture2DArray.ArraySize = (descriptor.m_resourceType == ResourceType::TextureCube) ? 6 : descriptor.m_count;
+                        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE2DARRAY;
+                        srvDesc.Texture2DArray.MipLevels = -1;
+                        srvDesc.Texture2DArray.MostDetailedMip = 0;
+                        srvDesc.Texture2DArray.ResourceMinLODClamp = 0;
+                        srvDesc.Texture2DArray.FirstArraySlice = 0;
+                        srvDesc.Texture2DArray.ArraySize = descriptor.m_count;
 
-                        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format, logFn);
-                        uavDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
+                        DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(srvDesc.Format, logFn);
+                        srvDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
                         break;
                     }
                     case ResourceType::Texture3D:
                     {
-                        uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
-                        uavDesc.Texture3D.MipSlice = descriptor.m_UAVMipIndex;
-                        uavDesc.Texture3D.FirstWSlice = 0;
-
-                        int wsize = descriptor.m_count;
-                        for (UINT mipIndex = 0; mipIndex < descriptor.m_UAVMipIndex; ++mipIndex)
-                            wsize /= 2;
-                        if (wsize < 1)
-                            wsize = 1;
-
-                        uavDesc.Texture3D.WSize = wsize;
+                        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURE3D;
+                        srvDesc.Texture3D.MipLevels = -1;
+                        srvDesc.Texture3D.MostDetailedMip = 0;
+                        srvDesc.Texture3D.ResourceMinLODClamp = 0;
                         break;
                     }
+                    case ResourceType::TextureCube:
+                    {
+                        srvDesc.ViewDimension = D3D12_SRV_DIMENSION_TEXTURECUBE;
+                        srvDesc.TextureCube.MipLevels = -1;
+                        srvDesc.TextureCube.MostDetailedMip = 0;
+                        srvDesc.TextureCube.ResourceMinLODClamp = 0.0f;
+                        break;
+                    }
+                    }
+
+                    device->CreateShaderResourceView(descriptor.m_res, &srvDesc, handle);
+                }
+            }
+            else if (descriptor.m_access == AccessType::UAV)
+            {
+                D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+                uavDesc.Format = SRV_Safe_DXGI_FORMAT(descriptor.m_format);
+
+                // Do some translation for unsupported formats
+                switch (uavDesc.Format)
+                {
+                case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: uavDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM; break;
+                }
+
+                switch (descriptor.m_resourceType)
+                {
+                case ResourceType::Buffer:
+                {
+                    unsigned int unitsDivider = 1;
+                    if (descriptor.m_bufferViewInBytes)
+                    {
+                        unitsDivider = descriptor.m_stride > 0
+                            ? descriptor.m_stride
+                            : DX12Utils::Get_DXGI_FORMAT_Info(descriptor.m_format, logFn).bytesPerPixel;
+                        unitsDivider = max(unitsDivider, 1);
+                    }
+                    unsigned int firstElement = descriptor.m_bufferViewBegin / unitsDivider;
+                    unsigned int elementCount = descriptor.m_count;
+
+                    if (elementCount >= firstElement)
+                        elementCount -= firstElement;
+                    else
+                        elementCount = 0;
+
+                    unsigned int bufferViewElements = descriptor.m_bufferViewSize / unitsDivider;
+                    if (bufferViewElements > 0)
+                        elementCount = min(elementCount, bufferViewElements);
+
+                    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+                    uavDesc.Buffer.FirstElement = firstElement;
+                    uavDesc.Buffer.NumElements = elementCount;
+                    uavDesc.Buffer.StructureByteStride = descriptor.m_stride;
+                    uavDesc.Buffer.CounterOffsetInBytes = 0;
+                    uavDesc.Buffer.Flags = descriptor.m_raw ? D3D12_BUFFER_UAV_FLAG_RAW : D3D12_BUFFER_UAV_FLAG_NONE;
+                    uavDesc.Format = descriptor.m_raw ? DXGI_FORMAT_R32_TYPELESS : descriptor.m_format;
+                    break;
+                }
+                case ResourceType::Texture2D:
+                {
+                    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2D;
+                    uavDesc.Texture2D.MipSlice = descriptor.m_UAVMipIndex;
+
+                    DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format, logFn);
+                    uavDesc.Texture2D.PlaneSlice = formatInfo.planeIndex;
+                    break;
+                }
+                case ResourceType::Texture2DArray:
+                case ResourceType::TextureCube:
+                {
+                    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE2DARRAY;
+                    uavDesc.Texture2DArray.MipSlice = descriptor.m_UAVMipIndex;
+                    uavDesc.Texture2DArray.FirstArraySlice = 0;
+                    uavDesc.Texture2DArray.ArraySize = (descriptor.m_resourceType == ResourceType::TextureCube) ? 6 : descriptor.m_count;
+
+                    DXGI_FORMAT_Info formatInfo = Get_DXGI_FORMAT_Info(uavDesc.Format, logFn);
+                    uavDesc.Texture2DArray.PlaneSlice = formatInfo.planeIndex;
+                    break;
+                }
+                case ResourceType::Texture3D:
+                {
+                    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_TEXTURE3D;
+                    uavDesc.Texture3D.MipSlice = descriptor.m_UAVMipIndex;
+                    uavDesc.Texture3D.FirstWSlice = 0;
+
+                    int wsize = descriptor.m_count;
+                    for (UINT mipIndex = 0; mipIndex < descriptor.m_UAVMipIndex; ++mipIndex)
+                        wsize /= 2;
+                    if (wsize < 1)
+                        wsize = 1;
+
+                    uavDesc.Texture3D.WSize = wsize;
+                    break;
+                }
                 }
 
                 if (!FormatSupportedForUAV(device, uavDesc.Format))
@@ -536,7 +643,7 @@ namespace DX12Utils
 
                 device->CreateUnorderedAccessView(descriptor.m_res, nullptr, &uavDesc, handle);
             }
-            else if(descriptor.m_access == AccessType::CBV)
+            else if (descriptor.m_access == AccessType::CBV)
             {
                 D3D12_CONSTANT_BUFFER_VIEW_DESC cbvDesc = {};
                 cbvDesc.SizeInBytes = descriptor.m_stride;
@@ -602,14 +709,14 @@ namespace DX12Utils
         {
             switch (vertexPositionFormat)
             {
-                case DXGI_FORMAT_R32_FLOAT:
-                case DXGI_FORMAT_R32G32B32_FLOAT:
-                    break;
-                default:
-                {
-                    logFn(LogLevel::Error, "Invalid format for AABBs BLAS (%s)\n", Get_DXGI_FORMAT_Info(vertexPositionFormat, logFn).name);
-                    return false;
-                }
+            case DXGI_FORMAT_R32_FLOAT:
+            case DXGI_FORMAT_R32G32B32_FLOAT:
+                break;
+            default:
+            {
+                logFn(LogLevel::Error, "Invalid format for AABBs BLAS (%s)\n", Get_DXGI_FORMAT_Info(vertexPositionFormat, logFn).name);
+                return false;
+            }
             }
             DXGI_FORMAT_Info vertexFormatInfo = Get_DXGI_FORMAT_Info(vertexPositionFormat, logFn);
 
@@ -778,74 +885,74 @@ namespace DX12Utils
 
     bool CreateRTV(ID3D12Device* device, ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE rtvHandle, DXGI_FORMAT format, D3D12_RTV_DIMENSION dimension, int arrayIndex, int mipIndex)
     {
-	    // Create the RTV
-	    D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
-	    rtvDesc.Format = format;
-	    switch (dimension)
-	    {
-		    case D3D12_RTV_DIMENSION_TEXTURE2D:
-		    {
-			    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
-			    rtvDesc.Texture2D.MipSlice = mipIndex;
-			    rtvDesc.Texture2D.PlaneSlice = 0;
-			    break;
-		    }
-		    case D3D12_RTV_DIMENSION_TEXTURE2DARRAY:
-		    {
-			    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
-			    rtvDesc.Texture2DArray.MipSlice = mipIndex;
-			    rtvDesc.Texture2DArray.PlaneSlice = 0;
-			    rtvDesc.Texture2DArray.ArraySize = 1;
-			    rtvDesc.Texture2DArray.FirstArraySlice = arrayIndex;
-			    break;
-		    }
-		    case D3D12_RTV_DIMENSION_TEXTURE3D:
-		    {
-			    rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
-			    rtvDesc.Texture3D.MipSlice = mipIndex;
-			    rtvDesc.Texture3D.WSize = 1;
-			    rtvDesc.Texture3D.FirstWSlice = arrayIndex;
-                break;
-		    }
-		    default:
-		    {
-			    return false;
-		    }
-	    }
+        // Create the RTV
+        D3D12_RENDER_TARGET_VIEW_DESC rtvDesc;
+        rtvDesc.Format = format;
+        switch (dimension)
+        {
+        case D3D12_RTV_DIMENSION_TEXTURE2D:
+        {
+            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+            rtvDesc.Texture2D.MipSlice = mipIndex;
+            rtvDesc.Texture2D.PlaneSlice = 0;
+            break;
+        }
+        case D3D12_RTV_DIMENSION_TEXTURE2DARRAY:
+        {
+            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2DARRAY;
+            rtvDesc.Texture2DArray.MipSlice = mipIndex;
+            rtvDesc.Texture2DArray.PlaneSlice = 0;
+            rtvDesc.Texture2DArray.ArraySize = 1;
+            rtvDesc.Texture2DArray.FirstArraySlice = arrayIndex;
+            break;
+        }
+        case D3D12_RTV_DIMENSION_TEXTURE3D:
+        {
+            rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE3D;
+            rtvDesc.Texture3D.MipSlice = mipIndex;
+            rtvDesc.Texture3D.WSize = 1;
+            rtvDesc.Texture3D.FirstWSlice = arrayIndex;
+            break;
+        }
+        default:
+        {
+            return false;
+        }
+        }
 
-	    device->CreateRenderTargetView(resource, &rtvDesc, rtvHandle);
+        device->CreateRenderTargetView(resource, &rtvDesc, rtvHandle);
         return true;
     }
 
     bool CreateDSV(ID3D12Device* device, ID3D12Resource* resource, D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle, DXGI_FORMAT format, D3D12_DSV_DIMENSION dimension, int arrayIndex, int mipIndex)
     {
-	    D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
-	    dsvDesc.Format = DX12Utils::DSV_Safe_DXGI_FORMAT(format);
-	    dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
+        D3D12_DEPTH_STENCIL_VIEW_DESC dsvDesc;
+        dsvDesc.Format = DX12Utils::DSV_Safe_DXGI_FORMAT(format);
+        dsvDesc.Flags = D3D12_DSV_FLAG_NONE;
 
-	    switch (dimension)
-	    {
-		    case D3D12_DSV_DIMENSION_TEXTURE2D:
-		    {
-			    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-			    dsvDesc.Texture2D.MipSlice = mipIndex;
-			    break;
-		    }
-		    case D3D12_DSV_DIMENSION_TEXTURE2DARRAY:
-		    {
-			    dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
-			    dsvDesc.Texture2DArray.MipSlice = mipIndex;
-			    dsvDesc.Texture2DArray.FirstArraySlice = arrayIndex;
-			    dsvDesc.Texture2DArray.ArraySize = 1;
-			    break;
-		    }
-		    default:
-		    {
-			    return false;
-		    }
-	    }
+        switch (dimension)
+        {
+        case D3D12_DSV_DIMENSION_TEXTURE2D:
+        {
+            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+            dsvDesc.Texture2D.MipSlice = mipIndex;
+            break;
+        }
+        case D3D12_DSV_DIMENSION_TEXTURE2DARRAY:
+        {
+            dsvDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2DARRAY;
+            dsvDesc.Texture2DArray.MipSlice = mipIndex;
+            dsvDesc.Texture2DArray.FirstArraySlice = arrayIndex;
+            dsvDesc.Texture2DArray.ArraySize = 1;
+            break;
+        }
+        default:
+        {
+            return false;
+        }
+        }
 
-	    device->CreateDepthStencilView(resource, &dsvDesc, dsvHandle);
+        device->CreateDepthStencilView(resource, &dsvDesc, dsvHandle);
         return true;
     }
 
@@ -884,13 +991,13 @@ namespace DX12Utils
     {
         switch (type)
         {
-            case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, 1.0 / 255.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, 1.0 / 65535.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, 1.0 / 32767.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, 1.0 / 4294967296.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, 1.0 / 255.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, 1.0 / 65535.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, 1.0 / 32767.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, 1.0 / 4294967296.0); break;
             //case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, 1.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, 1.0); break;
-            default: return false;
+        case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, 1.0); break;
+        default: return false;
         }
         return true;
     }
@@ -899,13 +1006,13 @@ namespace DX12Utils
     {
         switch (type)
         {
-            case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, valueCount, 1.0 / 255.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, valueCount, 1.0 / 65535.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, valueCount, 1.0 / 32767.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, valueCount, 1.0 / 4294967296.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint8_t: doubles = ConvertToDoubles<uint8_t>(src, valueCount, 1.0 / 255.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint16_t: doubles = ConvertToDoubles<uint16_t>(src, valueCount, 1.0 / 65535.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_int16_t: doubles = ConvertToDoubles<int16_t>(src, valueCount, 1.0 / 32767.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint32_t: doubles = ConvertToDoubles<uint32_t>(src, valueCount, 1.0 / 4294967296.0); break;
             //case DXGI_FORMAT_Info::ChannelType::_half: doubles = ConvertToDoubles<half>(src, valueCount, 1.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, valueCount, 1.0); break;
-            default: return false;
+        case DXGI_FORMAT_Info::ChannelType::_float: doubles = ConvertToDoubles<float>(src, valueCount, 1.0); break;
+        default: return false;
         }
         return true;
     }
@@ -928,14 +1035,14 @@ namespace DX12Utils
     {
         switch (type)
         {
-            case DXGI_FORMAT_Info::ChannelType::_uint8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_int8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_int16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint32_t: dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_int8_t: dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_int16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint16_t: dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint32_t: dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
             //case DXGI_FORMAT_Info::ChannelType::_half: dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_float: dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
-            default: return false;
+        case DXGI_FORMAT_Info::ChannelType::_float: dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
+        default: return false;
         }
         return true;
     }
@@ -945,14 +1052,14 @@ namespace DX12Utils
         std::vector<unsigned char> _dest;
         switch (type)
         {
-            case DXGI_FORMAT_Info::ChannelType::_uint8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_int8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_int16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_uint32_t: _dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, 0.0, 255.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_int8_t: _dest = ConvertFromDoubles<uint8_t>(doubles, 256.0, -128.0, 127.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_int16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, -32768.0, 32767.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint16_t: _dest = ConvertFromDoubles<uint16_t>(doubles, 65536.0, 0.0, 65535.0); break;
+        case DXGI_FORMAT_Info::ChannelType::_uint32_t: _dest = ConvertFromDoubles<uint32_t>(doubles, 4294967296.0, 0.0, 4294967295.0); break;
             //case DXGI_FORMAT_Info::ChannelType::_half: _dest = ConvertFromDoubles<half>(doubles, 1.0, -65504.0, 65504.0); break;
-            case DXGI_FORMAT_Info::ChannelType::_float: _dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
-            default: return false;
+        case DXGI_FORMAT_Info::ChannelType::_float: _dest = ConvertFromDoubles<float>(doubles, 1.0, -FLT_MAX, FLT_MAX); break;
+        default: return false;
         }
 
         memcpy(dest, _dest.data(), _dest.size());

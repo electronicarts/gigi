@@ -3591,17 +3591,17 @@ struct ShaderDataVisitor
                         }
                     }
                 }
-                else if (BeginsWith(token, tokenIndex, "DispatchIncrementingConstant"))
+                else if (BeginsWith(token, tokenIndex, "DispatchIndex"))
                 {
                     shader.usesIncrementingConstant = true;
 
                     ShaderConstantBuffer newCB;
-                    newCB.structName = "__GigiDispatchIncrementConstantCB";
-                    newCB.resourceName = "__GigiDispatchIncrementConstantCB";
+                    newCB.structName = "__GigiDispatchIndexCB";
+                    newCB.resourceName = "__GigiDispatchIndexCB";
                     shader.constantBuffers.push_back(newCB);
                     
                     StructField newField;
-                    newField.name = "dispatchIncrementingConstant";
+                    newField.name = "dispatchIndex";
                     newField.type = DataFieldType::Uint;
                     newField.dflt = "0";
                     newField.Enum = "";
@@ -3609,7 +3609,7 @@ struct ShaderDataVisitor
 
                     Struct newStruct;
                     newStruct.isForShaderConstants = true;
-                    newStruct.name = "__GigiDispatchIncrementConstantCB";
+                    newStruct.name = "__GigiDispatchIndexCB";
                     newStruct.fields.push_back(newField);
 
                     // re-arrange and/or pad the struct fields to conform to alignment rules

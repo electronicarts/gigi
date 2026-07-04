@@ -147,7 +147,6 @@ STRUCT_BEGIN(DispatchSizeDesc, "The number of threads to dispatch. Not thread gr
     STRUCT_FIELD(int, indirectMaxCountValue, 1, "The count of indirect arguments.", 0)
     STRUCT_FIELD(VariableReference, indirectCountOffsetVariable, {}, "If a variable is given, it will be used as the offset into indirect count buffer for indirect dispatching.", 0)
     STRUCT_FIELD(int, indirectCountOffsetValue, 0, "The offsets in UINT into the indirect count buffer if no variable is given", 0)
-    STRUCT_FIELD(bool, enableIncerementingConstant, false, "If true, increments constant in root signature on each indirect dispatch. The incremented constant value can be accessed in compute shaders via variable /*$(DispatchIncrementingConstant)*/.", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(RayDispatchSizeDesc, "size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.")
