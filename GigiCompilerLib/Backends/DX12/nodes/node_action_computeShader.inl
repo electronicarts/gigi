@@ -539,7 +539,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n                context->" << GetResourceNodePathInContext(bufferNode.visibility) << "buffer_" << bufferNode.name.c_str() << ","
                 "\n                executeIndirectOffset * 4 * 4, // byte offset.  *4 because sizeof(UINT) is 4.  *4 again because of 4 items per dispatch."
                 "\n                counterBuffer,"
-                "\n                executeIndirectCountOffset);";
+                "\n                executeIndirectCountOffset * 4);"; // byte offset.  *4 because sizeof(UINT) is 4.
         }
         else
         {
@@ -551,7 +551,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n                context->" << GetResourceNodePathInContext(bufferNode.visibility) << "buffer_" << bufferNode.name.c_str() << ","
                 "\n                executeIndirectOffset * 4 * 4, // byte offset.  *4 because sizeof(UINT) is 4.  *4 again because of 4 items per dispatch."
                 "\n                counterBuffer,"
-                "\n                executeIndirectCountOffset);";
+                "\n                executeIndirectCountOffset * 4);"; // byte offset.  *4 because sizeof(UINT) is 4.
         }
 
     }
@@ -617,6 +617,13 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 "\n"
                 "\n            unsigned int baseDispatchSize[3] = { 1, 1, 1 };"
                 ;
+        }
+
+        if (node.shader.shader->usesIncrementingConstant)
+        {
+            stringReplacementMap["/*$(Execute)*/"] <<
+                "\n"
+                "\n            commandList->SetComputeRoot32BitConstant(1, 0, 0);";
         }
 
         stringReplacementMap["/*$(Execute)*/"] <<

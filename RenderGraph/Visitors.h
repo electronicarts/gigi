@@ -3599,27 +3599,34 @@ struct ShaderDataVisitor
                     newCB.structName = "__GigiDispatchIndexCB";
                     newCB.resourceName = "__GigiDispatchIndexCB";
                     shader.constantBuffers.push_back(newCB);
-                    
-                    StructField newField;
-                    newField.name = "dispatchIndex";
-                    newField.type = DataFieldType::Uint;
-                    newField.dflt = "0";
-                    newField.Enum = "";
-                    newField.comment = "";
 
-                    Struct newStruct;
-                    newStruct.isForShaderConstants = true;
-                    newStruct.name = "__GigiDispatchIndexCB";
-                    newStruct.fields.push_back(newField);
+                    auto it = std::find_if(renderGraph.structs.begin(), renderGraph.structs.end(), [](const Struct& customStruct) { return customStruct.name == "__GigiDispatchIndexCB"; });
 
-                    // re-arrange and/or pad the struct fields to conform to alignment rules
-                    switch (backend)
+                    const bool alreadyIncluded = it != renderGraph.structs.end();
+
+                    if (!alreadyIncluded)
                     {
-                    case Backend::WebGPU: AdjustStructForAlignment_WebGPU(newStruct, path, true); break;
-                    default: AdjustUniformStructForAlignment_DX12(newStruct, path); break;
-                    }
+                        StructField newField;
+                        newField.name = "dispatchIndex";
+                        newField.type = DataFieldType::Uint;
+                        newField.dflt = "0";
+                        newField.Enum = "";
+                        newField.comment = "";
 
-                    renderGraph.structs.push_back(newStruct);
+                        Struct newStruct;
+                        newStruct.isForShaderConstants = true;
+                        newStruct.name = "__GigiDispatchIndexCB";
+                        newStruct.fields.push_back(newField);
+
+                        // re-arrange and/or pad the struct fields to conform to alignment rules
+                        switch (backend)
+                        {
+                        case Backend::WebGPU: AdjustStructForAlignment_WebGPU(newStruct, path, true); break;
+                        default: AdjustUniformStructForAlignment_DX12(newStruct, path); break;
+                        }
+
+                        renderGraph.structs.push_back(newStruct);
+                    }
                 }
             }
         );

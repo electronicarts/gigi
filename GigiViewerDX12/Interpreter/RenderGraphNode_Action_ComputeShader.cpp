@@ -586,7 +586,15 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
 
             // Do Dispatch
             if (executionConditionMet)
+            {
+                if (node.shader.shader->usesIncrementingConstant)
+                {
+                    //note: The DispatchIndex constant is bound to the root parameter index 1
+                    m_commandList->SetComputeRoot32BitConstant(1, 0, 0);
+                }
+
                 m_commandList->Dispatch(dispatchSize[0], dispatchSize[1], dispatchSize[2]);
+            }
         }
         // Indirect dispatch
         else
@@ -633,7 +641,6 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             // Do resource transitions, and dispatch
             if (executionConditionMet)
             {
-                // Note: maybe this could move earlier, so there isn't an extra transition call here. like in the descriptor table logic even though it doesn't go in the descriptor table?
                 m_transitions.Transition(TRANSITION_DEBUG_INFO(resourceInfo.m_resource, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT));
 
                 if (indirectCountBufferExists && indirectCountBufferResource != resourceInfo.m_resource)
@@ -682,7 +689,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                     resourceInfo.m_resource,
                     argumentBufferOffset * 4 * 4, // byte offset.  *4 because sizeof(UINT) is 4.  *4 again because of 4 items per dispatch.
                     indirectCountBufferResource,
-                    argumentCountBufferOffset);
+                    argumentCountBufferOffset * 4);// byte offset.  *4 because sizeof(UINT) is 4.
             }
         }
 
