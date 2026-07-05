@@ -24,8 +24,8 @@
     ],
     "shaders": [
         {
-            "name": "Fill Indirect Dispatch Arguments And Counter Splited",
-            "fileName": "IndirectDispatchExtended_Fill_Splited.hlsl",
+            "name": "Fill Indirect Dispatch Arguments And Counter Split",
+            "fileName": "IndirectDispatchExtended_Fill_Split.hlsl",
             "entryPoint": "FillIndirectDispatch",
             "NumThreads": [
                 1,
@@ -83,8 +83,8 @@
             ]
         },
         {
-            "name": "Execute Indirect Dispatch Extended Splited",
-            "fileName": "IndirectDispatchExtended_Execute_Splited.hlsl",
+            "name": "Execute Indirect Dispatch Extended Split",
+            "fileName": "IndirectDispatchExtended_Execute_Split.hlsl",
             "entryPoint": "DoIndirectDispatch",
             "NumThreads": [
                 1,
@@ -209,7 +209,7 @@
         },
         {
             "actionComputeShader": {
-                "name": "Fill Indirect Dispatch Arguments And Counter Splited",
+                "name": "Fill Indirect Dispatch Arguments And Counter Split",
                 "editorPos": [
                     901.0,
                     511.0
@@ -231,13 +231,13 @@
                     }
                 ],
                 "shader": {
-                    "name": "Fill Indirect Dispatch Arguments And Counter Splited"
+                    "name": "Fill Indirect Dispatch Arguments And Counter Split"
                 }
             }
         },
         {
             "actionComputeShader": {
-                "name": "Test Indirect Dispatch Extended Splited",
+                "name": "Test Indirect Dispatch Extended Split",
                 "editorPos": [
                     1381.0,
                     386.0
@@ -255,15 +255,15 @@
                     }
                 ],
                 "shader": {
-                    "name": "Execute Indirect Dispatch Extended Splited"
+                    "name": "Execute Indirect Dispatch Extended Split"
                 },
                 "dispatchSize": {
                     "indirectBuffer": {
-                        "node": "Fill Indirect Dispatch Arguments And Counter Splited",
+                        "node": "Fill Indirect Dispatch Arguments And Counter Split",
                         "pin": "IndirectDispatchCount"
                     },
                     "indirectCountBuffer": {
-                        "node": "Fill Indirect Dispatch Arguments And Counter Splited",
+                        "node": "Fill Indirect Dispatch Arguments And Counter Split",
                         "pin": "IndirectDispatchCountBuffer"
                     },
                     "indirectMaxCountValue": 3
@@ -362,7 +362,7 @@
                 "connections": [
                     {
                         "srcPin": "Render Target",
-                        "dstNode": "Test Indirect Dispatch Extended Splited",
+                        "dstNode": "Test Indirect Dispatch Extended Split",
                         "dstPin": "Render Target"
                     }
                 ],
