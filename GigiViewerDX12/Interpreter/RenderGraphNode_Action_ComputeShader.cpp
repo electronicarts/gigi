@@ -184,24 +184,15 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 rootParams.push_back(rootParam);
             }
 
+            if (node.shader.shader->usesDispatchIndex)
             {
-                auto it = std::find_if(node.shader.shader->resources.begin(), node.shader.shader->resources.end(), [](ShaderResource& buffer) { return buffer.name == "__GigiDispatchIndexCB"; });
-
-                const auto hasIncrementingConstant = (it != node.shader.shader->resources.end());
-                if (hasIncrementingConstant)
-                {
-                    const ShaderResource& bufferResource = *it;
-
-                    GigiAssert(bufferResource.registerSpaceString == "", "Register space should be 0!");
-
-                    D3D12_ROOT_PARAMETER rootConstantParam = {};
-                    rootConstantParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
-                    rootConstantParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
-                    rootConstantParam.Constants.Num32BitValues = 1;
-                    rootConstantParam.Constants.ShaderRegister = static_cast<UINT>(bufferResource.registerIndex);
-                    rootConstantParam.Constants.RegisterSpace = 0;
-                    rootParams.push_back(rootConstantParam);
-                }
+                D3D12_ROOT_PARAMETER rootConstantParam = {};
+                rootConstantParam.ParameterType = D3D12_ROOT_PARAMETER_TYPE_32BIT_CONSTANTS;
+                rootConstantParam.ShaderVisibility = D3D12_SHADER_VISIBILITY_ALL;
+                rootConstantParam.Constants.Num32BitValues = 1;
+                rootConstantParam.Constants.ShaderRegister = 0;
+                rootConstantParam.Constants.RegisterSpace = 1000;
+                rootParams.push_back(rootConstantParam);
             }
 
             D3D12_ROOT_SIGNATURE_DESC rootDesc = {};
@@ -248,7 +239,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             runtimeData.m_rootSignature->SetName(ToWideString(node.name.c_str()).c_str());
         }
         // mMake specialized command signature, for example we require to have incrementing constant enabled for the dispatch
-        if (node.shader.shader->usesIncrementingConstant)
+        if (node.shader.shader->usesDispatchIndex)
         {
             D3D12_INDIRECT_ARGUMENT_DESC dispatchArg = {};
             dispatchArg.Type = D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH;
@@ -587,7 +578,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
             // Do Dispatch
             if (executionConditionMet)
             {
-                if (node.shader.shader->usesIncrementingConstant)
+                if (node.shader.shader->usesDispatchIndex)
                 {
                     //note: The DispatchIndex constant is bound to the root parameter index 1
                     m_commandList->SetComputeRoot32BitConstant(1, 0, 0);
@@ -684,7 +675,7 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 UINT maxCommandCount = static_cast<UINT>((std::max)({ node.dispatchSize.indirectMaxCountValue, 1 }));
 
                 m_commandList->ExecuteIndirect(
-                    node.shader.shader->usesIncrementingConstant ? runtimeData.m_commandSignature : m_commandSignatureDispatch,
+                    node.shader.shader->usesDispatchIndex ? runtimeData.m_commandSignature : m_commandSignatureDispatch,
                     maxCommandCount,
                     resourceInfo.m_resource,
                     argumentBufferOffset * 4 * 4, // byte offset.  *4 because sizeof(UINT) is 4.  *4 again because of 4 items per dispatch.

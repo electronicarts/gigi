@@ -449,6 +449,18 @@ bool ProcessShaderToMemory_HLSL(const Shader& shader, const char* entryPoint, Sh
         options.m_writeResourceDefinition(options, shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"], renderGraph, resource);
     shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "\n";
 
+    if (shader.usesDispatchIndex)
+    {
+        shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "struct Struct___GigiDispatchIndexCB\n"
+            "{\n"
+            "    uint dispatchIndex;\n"
+            "    float3 _padding0;\n"
+            "};\n";
+
+        shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "ConstantBuffer<Struct___GigiDispatchIndexCB> __GigiDispatchIndexCB : register(b0, space1000);\n";
+        shaderSpecificStringReplacementMap["/*$(ShaderResources)*/"] << "\n";
+    }
+
     // Handle string replacement for any references to loaded textures
     for (const LoadedTextureReference& loadedTexture : shader.loadedTextureRefs)
         shaderSpecificStringReplacementMap[loadedTexture.token] << loadedTexture.resourceName;

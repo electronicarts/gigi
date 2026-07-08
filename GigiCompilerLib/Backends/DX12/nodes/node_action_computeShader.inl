@@ -18,7 +18,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n        static ID3D12RootSignature* computeShader_" << node.name << "_rootSig;"
         ;
 
-    if (node.shader.shader->usesIncrementingConstant)
+    if (node.shader.shader->usesDispatchIndex)
     {
         stringReplacementMap["/*$(ContextInternal)*/"] <<
             "\n        static ID3D12CommandSignature* computeShader_" << node.name << "_commandSig;";
@@ -36,7 +36,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n    ID3D12RootSignature* ContextInternal::computeShader_" << node.name << "_rootSig = nullptr;"
         ;
 
-    if (node.shader.shader->usesIncrementingConstant)
+    if (node.shader.shader->usesDispatchIndex)
     {
         stringReplacementMap["/*$(StaticVariables)*/"] <<
             "\n    ID3D12CommandSignature* ContextInternal::computeShader_" << node.name << "_commandSig = nullptr;";
@@ -81,7 +81,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     }
 
     // Descriptor table
-    int descriptorTableRangeCount = node.shader.shader->usesIncrementingConstant ? (int)node.shader.shader->resources.size() - 1 : (int)node.shader.shader->resources.size();
+    int descriptorTableRangeCount = (int)node.shader.shader->resources.size();
     if (descriptorTableRangeCount == 0)
         stringReplacementMap["/*$(CreateShared)*/"] << "\n\n            D3D12_DESCRIPTOR_RANGE* ranges = nullptr;";
     else
@@ -92,12 +92,6 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
     for (size_t resourceIndex = 0; resourceIndex < node.shader.shader->resources.size(); ++resourceIndex)
     {
         ShaderResource& resource = node.shader.shader->resources[resourceIndex];
-
-        //note: __GigiDispatchIndexCB will be passed over root const
-        if (resource.name == "__GigiDispatchIndexCB")
-        {
-            continue;
-        }
 
         stringReplacementMap["/*$(CreateShared)*/"] << "\n\n            // " << resource.name;
 
@@ -123,20 +117,13 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         descriptorTableRangeIndex++;
     }
 
-    if (node.shader.shader->usesIncrementingConstant)
+    if (node.shader.shader->usesDispatchIndex)
     {
-        auto it = std::find_if(node.shader.shader->resources.begin(), node.shader.shader->resources.end(), [](ShaderResource& buffer) { return buffer.name == "__GigiDispatchIndexCB"; });
-
-        GigiAssert(it != node.shader.shader->resources.end(), "Shader doesn't use DispatchIndex buildin constant.");
-
-        const ShaderResource& bufferResource = *it;
-
         stringReplacementMap["/*$(CreateShared)*/"] <<
-            "\n\n            // " << bufferResource.name <<
             "\n            D3D12_ROOT_CONSTANTS constant;"
             "\n            constant.Num32BitValues = 1;"
-            "\n            constant.ShaderRegister = " << static_cast<unsigned int>(bufferResource.registerIndex) << ";"
-            "\n            constant.RegisterSpace = 0;";
+            "\n            constant.ShaderRegister = 0;"
+            "\n            constant.RegisterSpace = 1000;";
 
         // Root signature
         stringReplacementMap["/*$(CreateShared)*/"] <<
@@ -221,7 +208,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
         "\n        }"
         ;
 
-    if (node.shader.shader->usesIncrementingConstant)
+    if (node.shader.shader->usesDispatchIndex)
     {
         stringReplacementMap["/*$(DestroyShared)*/"] <<
             "\n        if(ContextInternal::computeShader_" << node.name << "_commandSig)"
@@ -529,7 +516,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 ;
         }
 
-        if (node.shader.shader->usesIncrementingConstant)
+        if (node.shader.shader->usesDispatchIndex)
         {
             stringReplacementMap["/*$(Execute)*/"] <<
                 "\n"
@@ -619,7 +606,7 @@ static void MakeStringReplacementForNode(std::unordered_map<std::string, std::os
                 ;
         }
 
-        if (node.shader.shader->usesIncrementingConstant)
+        if (node.shader.shader->usesDispatchIndex)
         {
             stringReplacementMap["/*$(Execute)*/"] <<
                 "\n"

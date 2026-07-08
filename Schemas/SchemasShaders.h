@@ -465,7 +465,7 @@ STRUCT_BEGIN(Shader, "A declaration of a shader")
 	STRUCT_DYNAMIC_ARRAY(ShaderSampler, samplers, "SRVs, UAVs etc. that the shader wants to access. Generates code into the shader for their declarations.", SCHEMA_FLAG_UI_COLLAPSABLE | SCHEMA_FLAG_UI_ARRAY_FATITEMS)
 	STRUCT_DYNAMIC_ARRAY(ShaderVariableAliasDeclaration, variableAliases, "Variable aliases allow a shader to read different variables per node by choosing what variable value is set for each alias", SCHEMA_FLAG_UI_COLLAPSABLE)
 	STRUCT_DYNAMIC_ARRAY(ShaderConstantBuffer, constantBuffers, "A list of constant buffers this shader wants.", SCHEMA_FLAG_NO_UI) // no UI since it's basically always automatic
-	STRUCT_FIELD(bool, usesIncrementingConstant, false, "", SCHEMA_FLAG_NO_UI)
+	STRUCT_FIELD(bool, usesDispatchIndex, false, "", SCHEMA_FLAG_NO_UI)
 
 	STRUCT_FIELD(std::vector<LoadedTextureReference>, loadedTextureRefs, {}, "The list of loaded textures this shader references.", SCHEMA_FLAG_NO_SERIALIZE)
 

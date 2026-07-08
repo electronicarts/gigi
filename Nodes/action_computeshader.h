@@ -13,15 +13,10 @@ namespace FrontEndNodes
         if (node.shader.shader)
             shaderResourceCount = (int)node.shader.shader->resources.size();
 
-        if(node.enableIndirect)
+        if (node.enableIndirect)
         {
             ++shaderResourceCount;  // Indirect dispatch buffer
             ++shaderResourceCount;  // Indirect count buffer
-        }
-
-        if (node.shader.shader->usesIncrementingConstant)
-        {
-            --shaderResourceCount;
         }
 
         return shaderResourceCount; // Shader resources
@@ -51,11 +46,6 @@ namespace FrontEndNodes
         int shaderResourceCount = 0;
         if (node.shader.shader)
             shaderResourceCount = (int)node.shader.shader->resources.size();
-
-        if (node.shader.shader->usesIncrementingConstant)
-        {
-            --shaderResourceCount;
-        }
 
         if (pinIndex < shaderResourceCount)
         {

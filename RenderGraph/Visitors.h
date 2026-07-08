@@ -1371,7 +1371,7 @@ struct ReferenceFixupVisitor
             }
         }
 
-        if (data.connections.size() != (shader.usesIncrementingConstant ? shader.resources.size() - 1: shader.resources.size()))
+        if (data.connections.size() != shader.resources.size())
         {
             GigiAssert(false, "node %s doesn't have the right number of connections for shader %s\nIn %s\n", data.name.c_str(), shader.name.c_str(), path.c_str());
             return false;
@@ -3593,40 +3593,7 @@ struct ShaderDataVisitor
                 }
                 else if (BeginsWith(token, tokenIndex, "DispatchIndex"))
                 {
-                    shader.usesIncrementingConstant = true;
-
-                    ShaderConstantBuffer newCB;
-                    newCB.structName = "__GigiDispatchIndexCB";
-                    newCB.resourceName = "__GigiDispatchIndexCB";
-                    shader.constantBuffers.push_back(newCB);
-
-                    auto it = std::find_if(renderGraph.structs.begin(), renderGraph.structs.end(), [](const Struct& customStruct) { return customStruct.name == "__GigiDispatchIndexCB"; });
-
-                    const bool alreadyIncluded = it != renderGraph.structs.end();
-
-                    if (!alreadyIncluded)
-                    {
-                        StructField newField;
-                        newField.name = "dispatchIndex";
-                        newField.type = DataFieldType::Uint;
-                        newField.dflt = "0";
-                        newField.Enum = "";
-                        newField.comment = "";
-
-                        Struct newStruct;
-                        newStruct.isForShaderConstants = true;
-                        newStruct.name = "__GigiDispatchIndexCB";
-                        newStruct.fields.push_back(newField);
-
-                        // re-arrange and/or pad the struct fields to conform to alignment rules
-                        switch (backend)
-                        {
-                        case Backend::WebGPU: AdjustStructForAlignment_WebGPU(newStruct, path, true); break;
-                        default: AdjustUniformStructForAlignment_DX12(newStruct, path); break;
-                        }
-
-                        renderGraph.structs.push_back(newStruct);
-                    }
+                    shader.usesDispatchIndex = true;
                 }
             }
         );
