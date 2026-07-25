@@ -135,6 +135,7 @@ STRUCT_BEGIN(DispatchSizeDesc, "The number of threads to dispatch. Not thread gr
     STRUCT_FIELD(TextureOrBufferNodeReference, node, {}, "If a texture or buffer is specified, the dispatch size will be based on the size of the texture or buffer. Padded with 1s to make it 3 dimensional.", 0)
     STRUCT_FIELD(VariableReference, variable, {}, "If a variable is given, the dispatch size will be based on the value of the variable. Padded with 1s to make it 3 dimensional.", 0)
     STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "If given, this buffer will be used as an indirect dispatch buffer, only used if enableIndirect", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(NodePinReferenceOptional, indirectCountBuffer, {}, "If given, this buffer will be used as an indirect count buffer, only used if enableIndirect", SCHEMA_FLAG_NO_UI)
     STRUCT_STATIC_ARRAY(int, multiply, 3, { 1 COMMA 1 COMMA 1 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
     STRUCT_STATIC_ARRAY(int, divide, 3, { 1 COMMA 1 COMMA 1 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
     STRUCT_STATIC_ARRAY(int, preAdd, 3, { 0 COMMA 0 COMMA 0 }, "", SCHEMA_FLAG_UI_ARRAY_HIDE_INDEX)
@@ -142,6 +143,10 @@ STRUCT_BEGIN(DispatchSizeDesc, "The number of threads to dispatch. Not thread gr
     STRUCT_FIELD(VariableReference, indirectOffsetVariable, {}, "If a variable is given, it will be used as the offset into the indirect dispatch buffer. 0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.", 0)
     STRUCT_FIELD(int, indirectOffsetValue, 0, "The offset into the indirect dispatch buffer if no variable given.  0 would be the start of the buffer, 1 would start at the 4th value in the buffer, and so on.", 0)
     STRUCT_STATIC_ARRAY(int, shaderNumThreads, 3, { 0 COMMA 0 COMMA 0 }, "", SCHEMA_FLAG_NO_SERIALIZE)
+    STRUCT_FIELD(VariableReference, indirectMaxCountVariable, {}, "If a variable is given, it will be used as the max count for indirect dispatching.", 0)
+    STRUCT_FIELD(int, indirectMaxCountValue, 1, "The count of indirect arguments.", 0)
+    STRUCT_FIELD(VariableReference, indirectCountOffsetVariable, {}, "If a variable is given, it will be used as the offset into indirect count buffer for indirect dispatching.", 0)
+    STRUCT_FIELD(int, indirectCountOffsetValue, 0, "The offsets in UINT into the indirect count buffer if no variable is given", 0)
 STRUCT_END()
 
 STRUCT_BEGIN(RayDispatchSizeDesc, "size = (inputSize + preAdd) * multiply / divide + postAdd.  inputSize is (1,1,1) if nothing given.")
@@ -429,6 +434,7 @@ STRUCT_INHERIT_BEGIN(RenderGraphNode_Action_DrawCall, RenderGraphNode_ActionBase
     STRUCT_FIELD(ShaderVariableAliases, pixelShaderVariableAliases, {}, "", 0)
 
     STRUCT_FIELD(NodePinReferenceOptional, indirectBuffer, {}, "Indirect buffer to make this draw use ExecuteIndirect, only used if enableIndirect", SCHEMA_FLAG_NO_UI)
+    STRUCT_FIELD(NodePinReferenceOptional, indirectBufferCounter, {}, "Indirect buffer count", SCHEMA_FLAG_NO_UI)
 
     // Vertex shader specific
     STRUCT_FIELD(int, countPerInstance, -1, "If using an index buffer, this is indexCountPerInstance, else is vertexCountPerInstance.  If -1, will use the count of the buffer.  Else, if a buffer is given, will use min(buffer count, countPerInstance).", 0)

@@ -755,7 +755,7 @@ inline int GetVariableAliasIndex(const Shader& shader, const char* name)
 
 // Shaders reference the original name of variables, before subgraph flattening and similar.
 // So, we need a special routine to find the variable mentioned.
-// All other varibale references should be updated to the correct variables.
+// All other variable references should be updated to the correct variables.
 inline int GetScopedVariableIndex(const RenderGraph& renderGraph, const char* variableName)
 {
     // extract the variable scope and name

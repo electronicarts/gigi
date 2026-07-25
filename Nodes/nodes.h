@@ -594,13 +594,24 @@ namespace FrontEndNodesNoCaching
 
                 if (node.enableIndirect)
                 {
-                    PinInfo info;
-                    info.srcPin = "indirectBuffer";
-                    info.dstNode = &node.dispatchSize.indirectBuffer.node;
-                    info.dstPin = &node.dispatchSize.indirectBuffer.pin;
-                    info.readOnly = true;
-                    info.access = ShaderResourceAccessType::Indirect;
-                    ret.push_back(info);
+                    {
+                        PinInfo info;
+                        info.srcPin = "indirectBuffer";
+                        info.dstNode = &node.dispatchSize.indirectBuffer.node;
+                        info.dstPin = &node.dispatchSize.indirectBuffer.pin;
+                        info.readOnly = true;
+                        info.access = ShaderResourceAccessType::Indirect;
+                        ret.push_back(info);
+                    }
+                    {
+                        PinInfo info;
+                        info.srcPin = "indirectCountBuffer";
+                        info.dstNode = &node.dispatchSize.indirectCountBuffer.node;
+                        info.dstPin = &node.dispatchSize.indirectCountBuffer.pin;
+                        info.readOnly = true;
+                        info.access = ShaderResourceAccessType::Indirect;
+                        ret.push_back(info);
+                    }
                 }
                 break;
             }

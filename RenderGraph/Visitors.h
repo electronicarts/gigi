@@ -1329,8 +1329,10 @@ struct ReferenceFixupVisitor
 
         // Make sure the indirect buffer is resolved too
         if(data.enableIndirect)
+        {
             Visit(data.dispatchSize.indirectBuffer, path);
-
+            Visit(data.dispatchSize.indirectCountBuffer, path);
+        }
         int connectionIndex = -1;
         Shader& shader = *data.shader.shader;
         for (NodePinConnection& connection : data.connections)
@@ -3580,7 +3582,7 @@ struct ShaderDataVisitor
                             }
                         }
 
-                        // Remmeber that we've loaded this texture for this shader
+                        // Remember that we've loaded this texture for this shader
                         {
                             LoadedTextureReference shaderTextureLoaded;
                             shaderTextureLoaded.token = token;
@@ -3588,6 +3590,10 @@ struct ShaderDataVisitor
                             shader.loadedTextureRefs.push_back(shaderTextureLoaded);
                         }
                     }
+                }
+                else if (BeginsWith(token, tokenIndex, "DispatchIndex"))
+                {
+                    shader.usesDispatchIndex = true;
                 }
             }
         );

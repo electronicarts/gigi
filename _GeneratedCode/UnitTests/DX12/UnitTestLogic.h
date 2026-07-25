@@ -397,6 +397,12 @@ void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12Grap
         testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Render_Target, context->m_output.c_texture_Render_Target_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\IndirectDispatch\\out.png");
 }
 
+void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, IndirectDispatchExtended::Context* context, UnitTestEvent event)
+{
+    if (testContext.IsFirstPostExecute(event))
+        testContext.VerifyReadbackPNG(device, commandList, context->m_output.texture_Render_Target, context->m_output.c_texture_Render_Target_endingState, 0, 0, "..\\..\\..\\Techniques\\UnitTests\\_GoldImages\\Compute\\IndirectDispatchExtended\\out.png");
+}
+
 void UnitTestImpl(UnitTestContext& testContext, ID3D12Device* device, ID3D12GraphicsCommandList* commandList, DX12Utils::ReadbackHelper& readbackHelper, buffertest::Context* context, UnitTestEvent event)
 {
     // Create buffers and put them into the context as inputs, as appropriate

@@ -1,0 +1,417 @@
+{
+    "$schema": "gigischema.json",
+    "name": "IndirectDispatchExtended",
+    "version": "1.01",
+    "variables": [
+        {
+            "name": "Dispatch Count 1",
+            "type": "Uint3",
+            "dflt": "50, 50, 1",
+            "visibility": "User"
+        },
+        {
+            "name": "Dispatch Count 2",
+            "type": "Uint3",
+            "dflt": "100, 100, 1",
+            "visibility": "User"
+        },
+        {
+            "name": "Second Dispatch Offset",
+            "type": "Int",
+            "dflt": "2",
+            "visibility": "User"
+        }
+    ],
+    "shaders": [
+        {
+            "name": "Fill Indirect Dispatch Arguments And Counter Split",
+            "fileName": "IndirectDispatchExtended_Fill_Split.hlsl",
+            "entryPoint": "FillIndirectDispatch",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "IndirectDispatchCount",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Uint4",
+                        "PODAsStructuredBuffer": false
+                    }
+                },
+                {
+                    "name": "IndirectDispatchCountBuffer",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Uint"
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "Execute Indirect Dispatch Extended Merged",
+            "fileName": "IndirectDispatchExtended_Execute_Merged.hlsl",
+            "entryPoint": "DoIndirectDispatch",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Render Target",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "Execute Indirect Dispatch Extended Split",
+            "fileName": "IndirectDispatchExtended_Execute_Split.hlsl",
+            "entryPoint": "DoIndirectDispatch",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Render Target",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "Clear Render Target",
+            "fileName": "IndirectDispatchExtended_Clear.hlsl",
+            "entryPoint": "csmain",
+            "resources": [
+                {
+                    "name": "Render Target",
+                    "access": "UAV",
+                    "type": "Texture"
+                }
+            ]
+        },
+        {
+            "name": "Fill Indirect Dispatch Arguments And Counter Merged",
+            "fileName": "IndirectDispatchExtended_Fill_Merged.hlsl",
+            "entryPoint": "FillIndirectDispatch",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "IndirectArgsAndCounterBuffer",
+                    "access": "UAV",
+                    "type": "Buffer",
+                    "buffer": {
+                        "type": "Uint",
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        },
+        {
+            "name": "Execute Indirect Dispatch Extended DispatchIndex Only",
+            "fileName": "IndirectDispatchExtended_Execute_DispatchIndexOnly.hlsl",
+            "entryPoint": "DoIndirectDispatch",
+            "NumThreads": [
+                1,
+                1,
+                1
+            ],
+            "resources": [
+                {
+                    "name": "Render Target",
+                    "access": "UAV",
+                    "type": "Texture",
+                    "buffer": {
+                        "PODAsStructuredBuffer": false
+                    }
+                }
+            ],
+            "CSNumThreads": [
+                1,
+                1,
+                1
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "resourceTexture": {
+                "name": "Render Target",
+                "editorPos": [
+                    531.0,
+                    386.0
+                ],
+                "visibility": "Exported",
+                "format": {
+                    "format": "RGBA8_Unorm_sRGB"
+                },
+                "size": {
+                    "multiply": [
+                        16,
+                        16,
+                        1
+                    ]
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Indirect Dispatch Count",
+                "editorPos": [
+                    696.0,
+                    514.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 12
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Fill Indirect Dispatch Arguments And Counter Split",
+                "editorPos": [
+                    901.0,
+                    511.0
+                ],
+                "linkProperties": [
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "IndirectDispatchCount",
+                        "dstNode": "Indirect Dispatch Count",
+                        "dstPin": "resource"
+                    },
+                    {
+                        "srcPin": "IndirectDispatchCountBuffer",
+                        "dstNode": "Indirect Count Buffer",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Fill Indirect Dispatch Arguments And Counter Split"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Test Indirect Dispatch Extended Split",
+                "editorPos": [
+                    1381.0,
+                    386.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Test Indirect Dispatch Extended DispatchIndex Only",
+                        "dstPin": "Render Target"
+                    }
+                ],
+                "shader": {
+                    "name": "Execute Indirect Dispatch Extended Split"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Fill Indirect Dispatch Arguments And Counter Split",
+                        "pin": "IndirectDispatchCount"
+                    },
+                    "indirectCountBuffer": {
+                        "node": "Fill Indirect Dispatch Arguments And Counter Split",
+                        "pin": "IndirectDispatchCountBuffer"
+                    },
+                    "indirectMaxCountValue": 3
+                },
+                "enableIndirect": true
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Clear Render Target",
+                "editorPos": [
+                    677.0,
+                    386.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Render Target",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Clear Render Target"
+                },
+                "dispatchSize": {
+                    "node": {
+                        "name": "Render Target"
+                    }
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Indirect Count Buffer",
+                "editorPos": [
+                    711.0,
+                    578.0
+                ],
+                "format": {
+                    "type": "Uint"
+                }
+            }
+        },
+        {
+            "resourceBuffer": {
+                "name": "Indirect Arguments And Counter",
+                "editorPos": [
+                    936.0,
+                    674.0
+                ],
+                "format": {
+                    "type": "Uint"
+                },
+                "count": {
+                    "multiply": 24
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Fill Indirect Dispatch Arguments And Counter",
+                "editorPos": [
+                    1205.0,
+                    674.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "IndirectArgsAndCounterBuffer",
+                        "dstNode": "Indirect Arguments And Counter",
+                        "dstPin": "resource"
+                    }
+                ],
+                "shader": {
+                    "name": "Fill Indirect Dispatch Arguments And Counter Merged"
+                }
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Test Indirect Dispatch Extended Merged",
+                "editorPos": [
+                    1717.0,
+                    546.0
+                ],
+                "linkProperties": [
+                    {},
+                    {},
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Test Indirect Dispatch Extended Split",
+                        "dstPin": "Render Target"
+                    }
+                ],
+                "shader": {
+                    "name": "Execute Indirect Dispatch Extended Merged"
+                },
+                "dispatchSize": {
+                    "indirectBuffer": {
+                        "node": "Fill Indirect Dispatch Arguments And Counter",
+                        "pin": "IndirectArgsAndCounterBuffer"
+                    },
+                    "indirectCountBuffer": {
+                        "node": "Fill Indirect Dispatch Arguments And Counter",
+                        "pin": "IndirectArgsAndCounterBuffer"
+                    },
+                    "indirectOffsetValue": 1,
+                    "indirectMaxCountValue": 3,
+                    "indirectCountOffsetValue": 1
+                },
+                "enableIndirect": true
+            }
+        },
+        {
+            "actionComputeShader": {
+                "name": "Test Indirect Dispatch Extended DispatchIndex Only",
+                "editorPos": [
+                    901.0,
+                    386.0
+                ],
+                "linkProperties": [
+                    {}
+                ],
+                "connections": [
+                    {
+                        "srcPin": "Render Target",
+                        "dstNode": "Clear Render Target",
+                        "dstPin": "Render Target"
+                    }
+                ],
+                "shader": {
+                    "name": "Execute Indirect Dispatch Extended DispatchIndex Only"
+                },
+                "dispatchSize": {
+                    "indirectMaxCountValue": 3
+                }
+            }
+        }
+    ],
+    "PrimaryOutput": {
+        "name": "Render Target"
+    }
+}
