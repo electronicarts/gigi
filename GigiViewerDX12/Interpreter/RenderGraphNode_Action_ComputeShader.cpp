@@ -673,6 +673,19 @@ bool GigiInterpreterPreviewWindowDX12::OnNodeAction(const RenderGraphNode_Action
                 }
 
                 UINT maxCommandCount = static_cast<UINT>((std::max)({ node.dispatchSize.indirectMaxCountValue, 1 }));
+                if (node.dispatchSize.indirectMaxCountVariable.variableIndex != -1)
+                {
+                    GigiInterpreterPreviewWindowDX12::RuntimeVariable rtVar = GetRuntimeVariable(node.dispatchSize.indirectMaxCountVariable.variableIndex);
+                    switch (rtVar.variable->type)
+                    {
+                    case DataFieldType::Int: maxCommandCount = static_cast<UINT>(*(int*)rtVar.storage.value); break;
+                    default:
+                    {
+                        m_logFn(LogLevel::Error, "Unhandled data type \"%s\" for Indirect Count Offset variable \"%s\" in compute shader node \"%s\"", EnumToString(rtVar.variable->type), rtVar.variable->name.c_str(), node.name.c_str());
+                        return false;
+                    }
+                    }
+                }
 
                 m_commandList->ExecuteIndirect(
                     node.shader.shader->usesDispatchIndex ? runtimeData.m_commandSignature : m_commandSignatureDispatch,
